@@ -23,6 +23,8 @@ import { createNpcs } from './world/npcs.js';
 import { createDialogueAudio } from './engine/dialogueAudio.js';
 import { createConversation } from './engine/conversation.js';
 import { createHud } from './ui/hud.js';
+import { createPouch, HELD_LAYER } from './world/pouch.js';
+import { createMissionOne } from './missionOne.js';
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('view');
@@ -34,11 +36,14 @@ const player = createPlayer(camera, canvas);
 const audio = createAudio();
 const hud = createHud();
 
-let mode = 'boot';              // boot -> entry -> play <-> pause / inspect / dialogue
+let mode = 'boot';              // boot -> entry -> play <-> pause / inspect / dialogue / pouch
 let noLock = params.has('nolock');
 let subtitlesOn = params.get('subs') !== '0';
 let world = null, clueRead = false, t = 0, last = performance.now();
-let dialogueAudio = null, conversation = null;
+let dialogueAudio = null, conversation = null, mission1 = null;
+// Temporary developer controls for Mission One (F8 start, F9 reset): dev server or ?dev only.
+const devControls = import.meta.env.DEV || params.has('dev');
+camera.layers.enable(HELD_LAYER);
 const _pairPos = new THREE.Vector3(npcLayout.pairFocus.x, npcLayout.pairFocus.y, npcLayout.pairFocus.z);
 
 async function boot() {
@@ -50,11 +55,12 @@ async function boot() {
   const sky = createSky(), skyline = createSkyline(), river = createRiver();
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
   const npcs = createNpcs(M);
-  scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group);
+  const pouch = createPouch();
+  scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes);
   const lighting = createLighting(scene, street.lanterns);
   scene.updateMatrixWorld(true);
   captureEnvironment(R.renderer, scene);
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs };
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch };
   dialogueAudio = createDialogueAudio({
     audio,
     camera,
@@ -68,6 +74,11 @@ async function boot() {
     audio: dialogueAudio,
     getPlayerDistance: () => _pairPos.distanceTo(camera.position),
     maxAudibleDist: npcLayout.audibility.maxDistance,
+  });
+  mission1 = createMissionOne({
+    hud, audio, pouch, npcs,
+    isClueRead: () => clueRead,
+    onViewClosed: () => { if (mode === 'pouch') { mode = 'play'; player.enabled = true; } },
   });
   document.getElementById('inspect-paper').appendChild(clue.canvas);
   player.update(0);
@@ -89,11 +100,13 @@ function play() {
 function begin() {
   if (mode !== 'entry') return;
   audio.start(); lock(); play(); hud.begin();
+  if (devControls) hud.show('dev', true);
   if (conversation && conversation.state === 'idle') conversation.start();
 }
 function pause() {
   if (mode === 'inspect') closeInspect(false);
   if (mode === 'dialogue') closeDialogue(false);
+  if (mode === 'pouch') closePouch();
   if (mode !== 'play') return;
   mode = 'pause'; player.enabled = false;
   if (conversation) conversation.setPaused(true);
@@ -113,19 +126,40 @@ function closeInspect(resume = true) {
 function openDialogue() {
   if (mode !== 'play') return;
   mode = 'dialogue'; player.enabled = false; hud.prompt(false);
-  if (conversation) conversation.enterInteraction();
+  // Mission One decides what Old Lin says (offer / reminder / handoff); null = ordinary greeting
+  const line = mission1 ? mission1.greetLine() : null;
+  if (conversation) conversation.enterInteraction(line);
 }
 function closeDialogue(resume = true) {
   if (conversation) conversation.exitInteraction();
   hud.subtitle(false);
   if (resume) { mode = 'play'; player.enabled = true; } else mode = 'play';
+  if (mission1) mission1.dialogueClosed();
+}
+function acceptOffer() {
+  const line = mission1 && mission1.accept();
+  if (line && conversation) conversation.enterInteraction(line);
+}
+function openPouch(kind) {
+  if (mode !== 'play' || !mission1) return;
+  const opened = kind === 'pickup' ? mission1.openPickup() : mission1.openCarried();
+  if (opened) { mode = 'pouch'; player.enabled = false; hud.prompt(false); hud.subtitle(false); }
+}
+function closePouch() { if (mission1) mission1.closeView(); if (mode === 'pouch') { mode = 'play'; player.enabled = true; } }
+function devMission(start) {
+  if (!mission1 || mode === 'boot' || mode === 'entry') return;
+  if (mode === 'dialogue') closeDialogue();
+  if (mode === 'inspect') closeInspect();
+  if (mode === 'pouch') closePouch();
+  if (start) mission1.devStart(); else mission1.mission.reset();
+  hud.toast(start ? 'DEV · 任务一开始 · Mission One started' : 'DEV · 任务一重置 · Mission One reset', 2.4);
 }
 
 document.getElementById('begin').addEventListener('click', begin);
 document.getElementById('pause').addEventListener('click', () => { lock(); if (noLock) play(); });
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) { if (mode === 'pause') play(); }
-  else if (!noLock && (mode === 'play' || mode === 'inspect' || mode === 'dialogue')) pause();
+  else if (!noLock && (mode === 'play' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch')) pause();
 });
 document.addEventListener('pointerlockerror', () => {
   // Pointer lock refused (embedded frame, or re-requested too soon after Esc)
@@ -136,8 +170,17 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyE') {
     if (mode === 'inspect') closeInspect();
     else if (mode === 'dialogue') closeDialogue();
+    else if (mode === 'pouch') mission1.viewKeep();
     else if (mode === 'play' && nearNpc) openDialogue();
+    else if (mode === 'play' && nearPouch) openPouch('pickup');
     else if (mode === 'play' && nearClue) openInspect();
+  } else if (e.code === 'KeyF') {
+    if (mode === 'dialogue' && mission1 && mission1.offerPending) acceptOffer();
+    else if (mode === 'pouch') mission1.viewHold(true);
+    else if (mode === 'play' && mission1 && mission1.mission.carrying) openPouch('carried');
+  } else if ((e.code === 'F8' || e.code === 'F9') && devControls) {
+    e.preventDefault();
+    devMission(e.code === 'F8');
   } else if (e.code === 'KeyC' && (mode === 'play' || mode === 'dialogue')) {
     subtitlesOn = !subtitlesOn;
     hud.toast(subtitlesOn ? '字幕开 · Subtitles on' : '字幕关 · Subtitles off', 1.6);
@@ -145,15 +188,18 @@ window.addEventListener('keydown', (e) => {
     hud.toast(audio.toggleMute() ? '静音 · Sound off' : '声音开 · Sound on', 1.6);
   } else if (e.code === 'Escape' && noLock) {
     if (mode === 'dialogue') closeDialogue();
+    else if (mode === 'pouch') closePouch();
     else if (mode === 'play' || mode === 'inspect') pause();
     else if (mode === 'pause') play();
   } else if (e.code === 'Enter' && mode === 'entry') begin();
 });
+window.addEventListener('keyup', (e) => { if (e.code === 'KeyF' && mission1) mission1.viewHold(false); });
+window.addEventListener('blur', () => { if (mission1) mission1.viewHold(false); });
 window.addEventListener('blur', () => { if ((mode === 'play' || mode === 'dialogue') && noLock) pause(); });
 player.onStep = (surface, running) => audio.step(surface, running);
 
 // ---- frame ----
-let nearClue = false, nearNpc = false, boundaryCooldown = 0;
+let nearClue = false, nearNpc = false, nearPouch = false, boundaryCooldown = 0;
 const debug = { noReflect: false };
 const _v = new THREE.Vector3(), _d = new THREE.Vector3();
 
@@ -194,6 +240,8 @@ function frame(now) {
     interacting: mode === 'dialogue',
     playerPos: player.body,
   });
+  if (mission1) mission1.update();
+  world.pouch.update(camera, t);
 
   // interactables: missing-person notice + waterfront NPCs
   camera.getWorldDirection(_d);
@@ -205,8 +253,15 @@ function frame(now) {
   const npcDist = _v.length();
   nearNpc = mode === 'play' && npcDist < npcLayout.interactDistance && _v.normalize().dot(_d) > 0.55;
 
+  nearPouch = false;
+  if (mode === 'play' && mission1 && mission1.canPickUp()) {
+    _v.copy(world.pouch.focus).sub(camera.position);
+    nearPouch = _v.length() < 2.4 && _v.normalize().dot(_d) > 0.72;
+  }
+
   if (nearClue) hud.prompt(true, clueRead ? '再看一眼 · Look again' : '查看启事 · Read the notice');
-  else if (nearNpc) hud.prompt(true, '打招呼 · Greet');
+  else if (nearNpc) hud.prompt(true, mission1 && mission1.mission.carrying ? '交给老林 · Hand over the pouch' : '打招呼 · Greet');
+  else if (nearPouch) hud.prompt(true, '拿起文件袋 · Pick up the pouch');
   else hud.prompt(false);
 
   // subtitles + interaction greeting bar
@@ -220,6 +275,7 @@ function frame(now) {
       source: sourceLabel,
       interacting: true,
       showText: subtitlesOn,
+      offer: !!(mission1 && mission1.offerPending),
     });
   } else if (mode === 'play' && subtitlesOn && line && npcDist < npcLayout.audibility.maxDistance) {
     hud.subtitle(true, {
@@ -254,6 +310,9 @@ Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   get clueRead() { return clueRead; }, get subtitlesOn() { return subtitlesOn; },
   get conversation() { return conversation; }, get dialogueAudio() { return dialogueAudio; },
   get npcs() { return world ? world.npcs : null; },
+  // Mission One integration surface: mission.start(source) / reset() / on('start'|'complete'|...)
+  get mission() { return mission1 ? mission1.mission : null; },
+  get mission1() { return mission1; }, get nearPouch() { return nearPouch; },
   start() { noLock = true; if (mode === 'entry') begin(); },
 }));
 

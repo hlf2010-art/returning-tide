@@ -144,11 +144,13 @@ export function createConversation({
     startExchange(initialExchange, initialLine);
   }
 
-  function enterInteraction() {
+  // `line` lets a caller (Mission One) put its own words in Old Lin's mouth through the same
+  // greeting path; without it a greeting is picked as before. Safe to call while interacting.
+  function enterInteraction(line = null) {
     token++;
     audio.stop();
     state = 'interacting';
-    const greeting = pickGreeting();
+    const greeting = line || pickGreeting();
     beginLine(greeting, true);
     return greeting;
   }

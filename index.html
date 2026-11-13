@@ -19,9 +19,24 @@
     <div id="subtitle" aria-live="polite">
       <div id="sub-meta"><span id="sub-speaker"></span><span id="sub-source"></span></div>
       <div id="sub-text"></div>
-      <div id="sub-exit" class="hidden"><kbd>E</kbd> 结束对话 · Step back</div>
+      <div id="sub-choices">
+        <div id="sub-agree" class="hidden"><kbd>F</kbd> 答应 · Agree</div>
+        <div id="sub-exit" class="hidden"><kbd>E</kbd> 结束对话 · Step back</div>
+      </div>
     </div>
-    <div id="keys"><b>WASD</b> walk · <b>Shift</b> hurry · <b>Space</b> jump · <b>Mouse</b> look · <b>E</b> interact · <b>C</b> subtitles · <b>M</b> sound · <b>Esc</b> pause</div>
+    <div id="objective" class="hidden" aria-live="polite">
+      <div class="m-head"><span class="m-num">任务一</span> 错交 <span class="m-en">Mission One · The Wrong Handoff</span></div>
+      <div class="m-zh" id="m-zh"></div>
+      <div class="m-en-step" id="m-en"></div>
+      <div class="m-hint hidden" id="m-hint"></div>
+    </div>
+    <div id="mission-card" aria-live="polite">
+      <div class="mc-kicker">任务一完成 · Mission One complete</div>
+      <div class="mc-title">错交 <span>The Wrong Handoff</span></div>
+      <div class="mc-outcome" id="mc-outcome"></div>
+    </div>
+    <div id="dev" class="hidden">DEV · <b>F8</b> start Mission One · <b>F9</b> reset</div>
+    <div id="keys"><b>WASD</b> walk · <b>Shift</b> hurry · <b>Space</b> jump · <b>Mouse</b> look · <b>E</b> interact · <b>F</b> agree / pouch · <b>C</b> subtitles · <b>M</b> sound · <b>Esc</b> pause</div>
   </div>
 
   <div id="inspect" class="hidden">
@@ -37,6 +52,19 @@
     </aside>
   </div>
 
+  <div id="pouch" class="hidden">
+    <div id="pouch-paper"></div>
+    <aside>
+      <h2 id="pouch-h"></h2>
+      <div id="pouch-body"></div>
+      <div class="choices">
+        <div id="pouch-keep"><kbd>E</kbd> <span id="pouch-keep-text"></span></div>
+        <div id="pouch-break"><kbd>F</kbd> 按住撕开封条 · Hold to break the seal <i id="pouch-hold"><b></b></i></div>
+      </div>
+      <div class="close" id="pouch-esc"></div>
+    </aside>
+  </div>
+
   <div id="pause" class="hidden"><div class="zh">暂停</div><div>Paused — click to return</div></div>
 
   <div id="entry">
@@ -46,7 +74,7 @@
       <div class="chapter">序 · Arriving at the Bund</div>
       <p class="premise">Eleven years away. Then a voicemail from Old Zhou, the watchmaker who half raised you: nine seconds, mostly river wind. <span class="zh">“到外滩来。海关钟下面……”</span> <i>Come to the Bund. Under the Customs clock.</i> He hasn't picked up since.</p>
       <button id="begin" disabled>Loading Shanghai…</button>
-      <div class="controls"><b>WASD</b> walk &nbsp; <b>Shift</b> hurry &nbsp; <b>Space</b> jump &nbsp; <b>Mouse</b> look &nbsp; <b>E</b> interact &nbsp; <b>C</b> subtitles &nbsp; <b>M</b> sound &nbsp; <b>Esc</b> pause</div>
+      <div class="controls"><b>WASD</b> walk &nbsp; <b>Shift</b> hurry &nbsp; <b>Space</b> jump &nbsp; <b>Mouse</b> look &nbsp; <b>E</b> interact &nbsp; <b>F</b> agree / pouch &nbsp; <b>C</b> subtitles &nbsp; <b>M</b> sound &nbsp; <b>Esc</b> pause</div>
     </div>
   </div>
   <script type="module" src="/src/main.js"></script>

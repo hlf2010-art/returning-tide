@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview --host",
-    "test": "node tests/collision.test.mjs && node tests/dialogue.test.mjs",
+    "test": "node tests/collision.test.mjs && node tests/dialogue.test.mjs && node tests/mission.test.mjs",
     "playtest": "node tools/playtest.mjs",
     "shots": "node tools/shot.mjs"
   },

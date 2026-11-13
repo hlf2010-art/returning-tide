@@ -49,9 +49,22 @@ export function createAudio() {
     g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + 0.008); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
     src.connect(f).connect(g).connect(master); src.start(t, Math.random() * 2, 0.2);
   }
+  // Paper: a short rustle (picking up / putting away) or a slower rip (breaking a seal).
+  function paper(kind = 'rustle') {
+    if (!ctx || muted) return;
+    const t = ctx.currentTime, tear = kind === 'tear', len = tear ? 0.55 : 0.22;
+    const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = tear ? 2.6 : 3.2;
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = tear ? 1800 : 2600; f.Q.value = 0.7;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    if (tear) for (let i = 0; i < 9; i++) g.gain.linearRampToValueAtTime((0.25 + Math.random() * 0.35) * (1 - i / 12), t + 0.03 + i * 0.055);
+    else g.gain.linearRampToValueAtTime(0.32, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    src.connect(f).connect(g).connect(master); src.start(t, Math.random() * 2, len + 0.05);
+  }
   const muteListeners = new Set();
   return {
-    start, step,
+    start, step, paper,
     update(dt, x) {
       if (!ctx) return;
       hornTimer -= dt; lapTimer -= dt;

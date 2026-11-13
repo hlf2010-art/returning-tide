@@ -43,20 +43,53 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0.12em 0.45em; border: 1
 #sub-speaker { font-weight: 700; letter-spacing: 0.08em; color: var(--gold); }
 #sub-source { font-size: 11px; letter-spacing: 0.03em; color: rgba(243,234,216,0.62); }
 #sub-text { font: 500 17px/1.55 var(--serif); color: var(--ink); }
+#sub-choices { display: flex; gap: 22px; flex-wrap: wrap; }
+#sub-agree { margin-top: 8px; font-size: 12.5px; letter-spacing: 0.05em; color: var(--gold); display: flex; align-items: center; gap: 8px; }
 #sub-exit { margin-top: 8px; font-size: 12.5px; letter-spacing: 0.05em; color: rgba(243,234,216,0.86); display: flex; align-items: center; gap: 8px; }
 #keys { position: absolute; left: clamp(20px, 5vw, 64px); bottom: 22px; font-size: 12px; letter-spacing: 0.04em; color: rgba(243,234,216,0.7); text-shadow: 0 1px 4px #000; transition: opacity 2s; }
 #keys.faded { opacity: 0; }
 
+/* Mission One: objective, completion card, dev chip */
+#objective { position: absolute; left: clamp(20px, 5vw, 64px); top: clamp(18px, 4vh, 40px); max-width: min(25rem, 70vw); padding: 10px 14px 11px; background: rgba(5,8,15,0.55); border-left: 2px solid var(--gold); text-shadow: 0 1px 6px #000; animation: fade 0.6s ease; }
+#objective .m-head { font: 900 15px var(--serif); letter-spacing: 0.12em; }
+#objective .m-num { color: var(--gold); margin-right: 4px; }
+#objective .m-en { font: 700 10.5px var(--sans); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(243,234,216,0.62); margin-left: 6px; }
+#objective .m-zh { font: 500 15px/1.5 var(--serif); margin-top: 6px; }
+#objective .m-en-step { font: 500 12.5px/1.45 var(--sans); color: rgba(243,234,216,0.78); }
+#objective .m-hint { margin-top: 7px; font-size: 12px; letter-spacing: 0.04em; color: rgba(243,234,216,0.86); display: flex; gap: 8px; align-items: center; }
+#objective.pulse { animation: objpulse 1.4s ease; }
+@keyframes objpulse { 0% { background: rgba(231,185,106,0.35); } 100% { background: rgba(5,8,15,0.55); } }
+#mission-card { position: absolute; left: 50%; top: 24%; transform: translateX(-50%); text-align: center; padding: 18px 34px 20px; background: rgba(5,8,15,0.66); border-top: 1px solid rgba(231,185,106,0.6); border-bottom: 1px solid rgba(231,185,106,0.6); text-shadow: 0 2px 12px #000; opacity: 0; transition: opacity 1.2s ease; white-space: nowrap; }
+#mission-card.on { opacity: 1; }
+#mission-card .mc-kicker { font: 700 11.5px var(--sans); letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); }
+#mission-card .mc-title { font: 900 38px var(--serif); letter-spacing: 0.14em; margin: 8px 0 6px; }
+#mission-card .mc-title span { font: 500 13px var(--sans); letter-spacing: 0.24em; text-transform: uppercase; margin-left: 10px; opacity: 0.8; }
+#mission-card .mc-outcome { font: 500 14px var(--serif); letter-spacing: 0.08em; opacity: 0.92; }
+#dev { position: absolute; right: 14px; top: 12px; font: 700 10.5px var(--sans); letter-spacing: 0.08em; padding: 4px 8px; color: #9fe3c8; background: rgba(0,0,0,0.5); border: 1px dashed rgba(159,227,200,0.5); }
+#dev b { color: #fff; }
+
 /* inspect */
-#inspect { position: fixed; inset: 0; display: flex; gap: clamp(18px, 4vw, 56px); align-items: center; justify-content: center; padding: 4vh 4vw; background: rgba(3,5,10,0.82); backdrop-filter: blur(6px); animation: fade 0.35s ease; }
-#inspect-paper canvas { height: min(88vh, 124vw); width: auto; display: block; box-shadow: 0 20px 70px rgba(0,0,0,0.7); transform: rotate(-1.2deg); }
+#inspect, #pouch { position: fixed; inset: 0; display: flex; gap: clamp(18px, 4vw, 56px); align-items: center; justify-content: center; padding: 4vh 4vw; background: rgba(3,5,10,0.82); backdrop-filter: blur(6px); animation: fade 0.35s ease; }
+#inspect-paper canvas, #pouch-paper canvas.doc { height: min(88vh, 124vw); width: auto; display: block; box-shadow: 0 20px 70px rgba(0,0,0,0.7); transform: rotate(-1.2deg); }
 #inspect aside { max-width: 23rem; font: 500 15px/1.7 var(--serif); }
 #inspect h2 { font: 700 13px var(--sans); letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin: 0 0 14px; }
 #inspect h2 span { letter-spacing: 0.1em; color: var(--ink); margin-left: 8px; }
 #inspect p { margin: 0 0 12px; opacity: 0.92; }
 #inspect .scrawl em { color: #ff8f80; font-size: 17px; }
 #inspect .close { margin-top: 24px; font: 500 13px var(--sans); letter-spacing: 0.06em; opacity: 0.85; }
-@media (max-width: 820px) { #inspect { flex-direction: column; overflow: auto; justify-content: flex-start; } #inspect-paper canvas { height: auto; width: min(84vw, 420px); } }
+#pouch-paper canvas { width: min(52vw, 640px); height: auto; display: block; box-shadow: 0 20px 70px rgba(0,0,0,0.7); transform: rotate(-1.5deg); }
+#pouch aside { max-width: 23rem; font: 500 15px/1.7 var(--serif); }
+#pouch h2 { font: 700 13px var(--sans); letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin: 0 0 14px; }
+#pouch h2 span { letter-spacing: 0.1em; color: var(--ink); margin-left: 8px; }
+#pouch p { margin: 0 0 12px; opacity: 0.92; }
+#pouch .label em, #pouch .scrawl em { color: #ff8f80; font-size: 17px; }
+#pouch .discrepancy { border-left: 2px solid #ff8f80; padding-left: 10px; }
+#pouch .choices { margin-top: 22px; display: grid; gap: 10px; font: 500 13px var(--sans); letter-spacing: 0.05em; }
+#pouch .choices > div { display: flex; align-items: center; gap: 8px; }
+#pouch-hold { display: inline-block; width: 64px; height: 4px; margin-left: 6px; background: rgba(243,234,216,0.2); border-radius: 2px; overflow: hidden; }
+#pouch-hold b { display: block; height: 100%; width: 0; background: #ff8f80; }
+#pouch .close { margin-top: 14px; font: 500 12px var(--sans); letter-spacing: 0.06em; opacity: 0.6; }
+@media (max-width: 820px) { #inspect { flex-direction: column; overflow: auto; justify-content: flex-start; } #inspect-paper canvas, #pouch-paper canvas.doc { height: auto; width: min(84vw, 420px); } }
 
 #pause { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; gap: 10px; background: rgba(3,5,10,0.6); backdrop-filter: blur(4px); font: 500 14px var(--sans); letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; }
 #pause .zh { font: 900 46px var(--serif); letter-spacing: 0.3em; margin-right: -0.3em; }

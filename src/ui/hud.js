@@ -2,7 +2,7 @@
 const $ = (id) => document.getElementById(id);
 
 export function createHud() {
-  let toastTimer = 0, thoughtTimer = 0, lastSubKey = '';
+  let toastTimer = 0, thoughtTimer = 0, cardTimer = 0, lastSubKey = '', lastObjKey = '';
   return {
     ready() { const b = $('begin'); b.disabled = false; b.textContent = 'Step out — 走出去'; b.focus(); },
     fail(err) { $('begin').textContent = 'Could not start (WebGL2 needed)'; console.error(err); },
@@ -28,8 +28,8 @@ export function createHud() {
       el.append(a, document.createTextNode(en)); el.classList.add('on');
       clearTimeout(thoughtTimer); thoughtTimer = setTimeout(() => el.classList.remove('on'), 9000);
     },
-    subtitle(on, { speaker = '', text = '', source = '', interacting = false, showText = true } = {}) {
-      const key = `${!!on}|${!!interacting}|${!!showText}|${speaker}|${source}|${text}`;
+    subtitle(on, { speaker = '', text = '', source = '', interacting = false, showText = true, offer = false } = {}) {
+      const key = `${!!on}|${!!interacting}|${!!showText}|${!!offer}|${speaker}|${source}|${text}`;
       if (key === lastSubKey) return;
       lastSubKey = key;
       const el = $('subtitle');
@@ -42,6 +42,27 @@ export function createHud() {
       textEl.textContent = showText ? text : '';
       textEl.classList.toggle('hidden', !showText || !text);
       $('sub-exit').classList.toggle('hidden', !interacting);
+      $('sub-agree').classList.toggle('hidden', !(interacting && offer));
     },
+    // Mission One objective panel. step: { zh, en, hint } or null to hide.
+    objective(step) {
+      const key = step ? `${step.zh}|${step.en}|${step.hint || ''}` : '';
+      if (key === lastObjKey) return;
+      const el = $('objective'), wasOn = !!lastObjKey;
+      lastObjKey = key;
+      el.classList.toggle('hidden', !step);
+      if (!step) return;
+      $('m-zh').textContent = step.zh; $('m-en').textContent = step.en;
+      const h = $('m-hint'); h.classList.toggle('hidden', !step.hint); h.innerHTML = step.hint || '';
+      if (wasOn) { el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }   // new step: brief flash
+    },
+    missionCard(outcome, seconds = 7) {
+      const el = $('mission-card');
+      clearTimeout(cardTimer);
+      if (!outcome) { el.classList.remove('on'); return; }
+      $('mc-outcome').textContent = outcome; el.classList.add('on');
+      cardTimer = setTimeout(() => el.classList.remove('on'), seconds * 1000);
+    },
+    clearThought() { clearTimeout(thoughtTimer); $('thought').classList.remove('on'); },
   };
 }

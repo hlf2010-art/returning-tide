@@ -61,5 +61,33 @@ export const T = {
       { id: 'greet-3', speaker: 'lin', text: '不急的话多吹吹风吧，夜里的江边比白天清净些。' },
     ],
   },
+  // Mission One, "The Wrong Handoff". Spoken lines stay Mandarin (TTS fallback); the pouch
+  // label is in Shanghainese, red marker, in the same hand as the scrawl on the notice.
+  mission: {
+    title: '错交', titleEn: 'The Wrong Handoff', number: '任务一', numberEn: 'Mission One',
+    label: ['家属托付', '交林先生', '勿要拆。'],
+    sealMark: '封', sealSign: '周',
+    doc: {
+      title: '摊位转让协议',
+      lines: [
+        '转让方：周伯年',
+        '受让方：',
+        '摊位：汉口路北侧 “周记修表” 摊位一处，',
+        '连同柜台、工具及摊位使用权一并转让。',
+        '双方自愿，签字即生效。',
+      ],
+      signLabel: '转让方签字：', sign: '周伯年',
+      dateLabel: '日期：', date: '2026年10月31日',
+    },
+    lines: {
+      offer: { id: 'm1-offer', speaker: 'lin', text: '你也在打听老周？二十九号傍晚他收了摊，就再没人见过他。他家里人托我取一样东西，我腿脚不方便，你能帮我跑一趟吗？' },
+      accept: { id: 'm1-accept', speaker: 'lin', text: '汉口路往西，老周的修表摊，柜台上有个封好的文件袋。原样拿回来给我，别拆。' },
+      remind: { id: 'm1-remind', speaker: 'lin', text: '就在汉口路北边，修表摊的柜台上。封好的那个。' },
+      sealed: { id: 'm1-sealed', speaker: 'lin', text: '封得好好的，辛苦你了。他家里人会放心的。' },
+      opened: { id: 'm1-opened', speaker: 'lin', text: '封条破了。……你看过了。那上面的日子，别跟别人提。' },
+      afterSealed: { id: 'm1-after-sealed', speaker: 'lin', text: '又碰到你了。上回那件事办妥了，多谢。' },
+      afterOpened: { id: 'm1-after-opened', speaker: 'lin', text: '还在这儿？江边风大，早点回去吧。' },
+    },
+  },
 };
 export const ALL_TEXT = JSON.stringify(T) + '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz·，。：.()-';
