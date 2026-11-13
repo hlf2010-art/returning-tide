@@ -91,12 +91,19 @@ export const crossing = {
     { id: 'm9', model: 'aito-m9', lane: 'nb2', s: -95, len: 5.230, width: 1.999, height: 1.800, wheelbase: 3.110 },
     { id: 'sedan', model: 'sedan', lane: 'nb2', s: -300, len: 4.6, width: 1.78, height: 1.5, wheelbase: 2.82 },
   ],
+  // what the background pedestrians do when the drizzle starts. Every leg is on a pavement:
+  // nobody leaves the crossing early or steps onto Zhongshan Road outside the zebra.
+  rainSpots: {
+    shelter: { via: [[-30.0, 16.0], [-30.4, 27.0]], spot: [-32.6, 27.0] },   // between the Customs portico's columns
+    hankouCorner: [-30.6, 5.0],                                               // step out of Hankou Road onto Zhongshan's pavement
+    cab: { west: [-28.75, -9.5], east: [-3.75, 13.0] },                       // kerbside, clear of the crossing, bikes and poles
+  },
   // background pedestrians: crossing line, which west corner they use, wander targets, speed
   peds: [
-    { id: 'p1', zc: -2.4, corner: -1, westWander: [-30.2, -11], eastWander: [-0.9, -12], speed: 1.32, look: 0 },
-    { id: 'p2', zc: -0.8, corner: 1, westWander: [-29.6, 15], eastWander: [-1.1, 9], speed: 1.12, look: 1, startEast: true },
-    { id: 'p3', zc: 0.9, corner: 1, westWander: [-40, 5.2], eastWander: [-0.8, 16], speed: 1.45, look: 2 },
-    { id: 'p4', zc: 2.5, corner: -1, westWander: [-42, -5.2], eastWander: [-1.0, -7], speed: 0.62, look: 3, startEast: true },  // elderly, slow
+    { id: 'p1', zc: -2.4, corner: -1, westWander: [-30.2, -11], eastWander: [-0.9, -12], speed: 1.32, look: 0, rain: 'umbrella' },
+    { id: 'p2', zc: -0.8, corner: 1, westWander: [-29.6, 15], eastWander: [-1.1, 9], speed: 1.12, look: 1, startEast: true, rain: 'shelter' },
+    { id: 'p3', zc: 0.9, corner: 1, westWander: [-40, 5.2], eastWander: [-0.8, 16], speed: 1.45, look: 2, rain: 'cab' },
+    { id: 'p4', zc: 2.5, corner: -1, westWander: [-42, -5.2], eastWander: [-1.0, -7], speed: 0.62, look: 3, startEast: true, rain: 'umbrella' },  // elderly, slow
   ],
 };
 

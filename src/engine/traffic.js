@@ -136,6 +136,8 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
       id: sp.id, look: sp.look, speed: sp.speed, nodes, idx: east ? 5 : 1,
       x: east ? sp.eastWander[0] : sp.westWander[0], z: east ? sp.eastWander[1] : sp.westWander[1], vx: 0, vz: 0, heading: 0,
       state: 'walk', crossing: false, delay: 0, blocked: 0, detour: null, walkPhase: rng() * 6,
+      // rain: 'umbrella' (keeps walking), 'shelter' (jogs under the portico), 'cab' (books one at the kerb)
+      rain: sp.rain || 'umbrella', react: 'none', path: [], jog: false, umbrella: 0, phone: 0, side: 0,
     };
   });
 
@@ -276,15 +278,50 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     }
   }
 
+  // ---- rain reactions ----
+  let rainy = false;                                                            // hysteresis on the drizzle level
+  const RS = geom.rainSpots;
+  const onZhongshan = (p) => p.x > road.x0 - 0.2 && p.x < road.x1 + 0.2;
+  function react(p, dt) {
+    // umbrella: open / close it while walking on (no detour)
+    if (p.rain === 'umbrella') { p.umbrella = Math.max(0, Math.min(1, p.umbrella + (rainy ? dt : -dt) / 1.3)); return; }
+    p.phone = Math.max(0, Math.min(1, p.phone + ((p.react === 'phoning') ? dt : -dt) / 0.8));
+    const free = !p.crossing && !onZhongshan(p) && !p.detour;                  // never divert mid-crossing
+    const west = p.x < -16;
+    if (rainy && p.react === 'none' && free) {
+      if (!west) {                                                              // the shelter / kerb is on the other side: cross first
+        if (p.rain === 'shelter' && p.idx === 4) p.idx = 5;
+        if (p.rain === 'cab' && p.state !== 'waiting') { p.path = [RS.cab.east]; p.react = 'cab'; p.side = 1; }
+        return;
+      }
+      p.state = 'walk';
+      const corner = p.x < -30.5 ? [[RS.hankouCorner[0], Math.sign(p.z || 1) * Math.abs(RS.hankouCorner[1])]] : [];
+      if (p.rain === 'shelter') { p.path = [...corner, ...(p.z < 16 ? [RS.shelter.via[0]] : []), RS.shelter.via[1], RS.shelter.spot]; p.react = 'shelter'; p.jog = true; }
+      else { p.path = [...corner, RS.cab.west]; p.react = 'cab'; p.side = -1; }
+    } else if (!rainy && p.react !== 'none' && p.react !== 'return') {
+      if (p.react === 'shelter' || p.react === 'sheltered') {
+        const wc = p.nodes[1].p;
+        p.path = [...(p.x < -31 ? [RS.shelter.via[1]] : []), RS.shelter.via[0], wc]; p.react = 'return'; p.jog = false;
+      } else { p.path = []; p.react = 'none'; p.state = 'walk'; p.idx = p.side > 0 ? 5 : 1; }
+    }
+  }
+
   function stepPeds(dt, player) {
     for (const p of peds) {
+      react(p, dt);
+      if (p.react === 'sheltered' || p.react === 'phoning') {                   // standing: under the portico / at the kerb
+        p.vx = p.vz = 0;
+        p.heading = p.react === 'phoning' ? (p.side > 0 ? -Math.PI / 2 : Math.PI / 2) : Math.PI / 2;
+        continue;
+      }
       const node = p.nodes[p.idx];
-      if (p.state === 'waiting') {
+      if (p.state === 'waiting' && !p.path.length) {
         p.vx = p.vz = 0;
         if (pedestrianPermission()) { p.delay -= dt; if (p.delay <= 0) { p.state = 'walk'; p.idx = (p.idx + 1) % p.nodes.length; } } else p.delay = 0.4 + rng() * 1.2;
         continue;
       }
-      const target = p.detour || node.p;
+      const onPath = p.path.length > 0;
+      const target = p.detour || (onPath ? p.path[0] : node.p);
       let dx = target[0] - p.x, dz = target[1] - p.z;
       const dist = Math.hypot(dx, dz);
       dx /= dist || 1; dz /= dist || 1;
@@ -301,7 +338,8 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
           }
         } else p.blocked = 0;
       }
-      const sp = blocked && !p.detour ? 0 : p.speed;
+      const base = p.jog ? Math.max(1.9, p.speed * 1.5) : p.speed * (p.umbrella > 0 && p.umbrella < 1 ? 0.6 : 1);   // a slow jog / slowing to open the umbrella
+      const sp = blocked && !p.detour ? 0 : base;
       const step = Math.min(dist, sp * dt);
       p.x += dx * step; p.z += dz * step;
       p.vx = dx * sp; p.vz = dz * sp;
@@ -309,11 +347,21 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
       p.walkPhase += step * 4.5;                                              // ~1.4 m per gait cycle
       if (dist - step < 0.03) {
         if (p.detour) { p.detour = null; p.blocked = 0; continue; }
+        if (onPath) {
+          p.path.shift();
+          if (!p.path.length) {
+            if (p.react === 'shelter') p.react = 'sheltered';
+            else if (p.react === 'cab') p.react = 'phoning';
+            else if (p.react === 'return') { p.react = 'none'; p.idx = 1; p.state = 'walk'; }
+          }
+          p.crossing = false;
+          continue;
+        }
         if (node.curb) { p.state = 'waiting'; p.delay = 0.4 + rng() * 1.2; p.crossing = false; }
         else p.idx = (p.idx + 1) % p.nodes.length;
       }
       const nn = p.nodes[p.idx];
-      p.crossing = !!nn.cross && p.state !== 'waiting';
+      p.crossing = !onPath && !!nn.cross && p.state !== 'waiting';
     }
   }
 
@@ -324,8 +372,9 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     };
   }
 
-  function update(dt, { player = null } = {}) {
+  function update(dt, { player = null, rain = 0 } = {}) {
     if (dt <= 0) return;
+    if (rain > 0.3) rainy = true; else if (rain < 0.08) rainy = false;
     let left = dt;
     while (left > 1e-6) {                                                       // fixed small steps: stable at any frame rate
       const h = Math.min(left, 0.05);
@@ -348,5 +397,6 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     update, vehiclePermission: (v, player) => vehiclePermission(v, people(player)), pedestrianPermission,
     occupancy: (player) => occupancy(people(player)),
     inCrosswalk, exitSpace,
+    get rainy() { return rainy; },
   };
 }

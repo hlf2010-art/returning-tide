@@ -69,6 +69,8 @@ const arch = archMaterial;
 // 1 = freshly rained on. Covered footprints (shop canopy, portico) never get the extra wetness.
 export const weatherUniforms = {
   wetBoost: { value: 0 },
+  rainRipples: { value: 0 },          // 0..1: drizzle intensity, drives ripple density
+  rippleTime: { value: 0 },           // seconds, frozen while paused
   coverXZ: { value: covers.map((c) => new THREE.Vector4(c.x0, c.x1, c.z0, c.z1)) },
 };
 
@@ -77,21 +79,54 @@ function puddles(material) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.wetBoost = weatherUniforms.wetBoost;
     shader.uniforms.coverXZ = weatherUniforms.coverXZ;
+    shader.uniforms.rainRipples = weatherUniforms.rainRipples;
+    shader.uniforms.rippleTime = weatherUniforms.rippleTime;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec2 vWetXZ;')
       .replace('#include <project_vertex>', '#include <project_vertex>\n  vWetXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-      varying vec2 vWetXZ; uniform float wetBoost; uniform vec4 coverXZ[${covers.length}];`)
+      varying vec2 vWetXZ; uniform float wetBoost, rainRipples, rippleTime; uniform vec4 coverXZ[${covers.length}];
+      float rHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      // Raindrop rings: each cell of a jittered grid hosts one ring at a time, born at a random
+      // moment, expanding and fading. Returns the surface slope (d height / d x, d height / d z).
+      vec2 rippleSlope(vec2 p, float t, float density) {
+        vec2 slope = vec2(0.0);
+        for (int layer = 0; layer < 2; layer++) {
+          float scale = layer == 0 ? 2.3 : 3.4;                         // ~0.43 m and ~0.29 m cells
+          vec2 q = p * scale + float(layer) * 17.31;
+          vec2 cell = floor(q), f = fract(q);
+          float h = rHash(cell);
+          if (h > density) continue;                                    // fewer active cells in lighter rain
+          float life = fract(t * (0.75 + 0.5 * rHash(cell + 1.7)) + h * 7.0);
+          vec2 c = 0.3 + 0.4 * vec2(rHash(cell + 3.1), rHash(cell + 7.7));
+          vec2 d = f - c; float r = length(d) + 1e-4;
+          float x = (r - life * 0.42) * 26.0;                            // ring front expanding to ~0.4 cell
+          float wave = sin(x * 3.14159) * exp(-x * x * 0.5) * (1.0 - life) * (1.0 - life);
+          slope += (d / r) * wave * scale;
+        }
+        return slope;
+      }`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
       float exposed = 1.0;
       for (int i = 0; i < ${covers.length}; i++) { vec4 c = coverXZ[i]; if (vWetXZ.x > c.x && vWetXZ.x < c.y && vWetXZ.y > c.z && vWetXZ.y < c.w) exposed = 0.0; }
       float wetW = wetBoost * exposed;
-      // damp, not glassy: dry patches lose ~40% of their roughness, nothing goes below 0.2 that wasn't already a puddle
-      roughnessFactor = mix(roughnessFactor, max(roughnessFactor * 0.6, min(roughnessFactor, 0.2)), wetW);
+      // damp, not glassy: dry patches lose ~30% of their roughness, nothing goes below 0.22 that wasn't already a puddle
+      roughnessFactor = mix(roughnessFactor, max(roughnessFactor * 0.7, min(roughnessFactor, 0.22)), wetW);
       diffuseColor.rgb *= 1.0 - 0.14 * wetW;
+      // a film of water fills the micro-relief: soften the fine normal detail so damp asphalt doesn't glitter
+      normal = normalize(mix(normal, nonPerturbedNormal, 0.55 * wetW));
       float puddle = smoothstep(0.3, 0.1, roughnessFactor);
       normal = normalize(mix(normal, nonPerturbedNormal, puddle));
+      // drizzle ripples: strong in standing water, faint on wet stone, only near the eye (no shimmer far off)
+      if (rainRipples > 0.0) {
+        float nearEye = 1.0 - smoothstep(9.0, 20.0, distance(vWetXZ, cameraPosition.xz));
+        float k = rainRipples * exposed * nearEye * mix(0.12, 1.0, puddle);
+        if (k > 0.001) {
+          vec2 sl = rippleSlope(vWetXZ, rippleTime, 0.35 + 0.55 * rainRipples) * 0.08 * k;
+          normal = normalize(normal + (viewMatrix * vec4(-sl.x, 0.0, -sl.y, 0.0)).xyz);
+        }
+      }
       diffuseColor.rgb *= mix(1.0, 0.55, puddle);`);
   };
   return material;

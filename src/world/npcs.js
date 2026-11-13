@@ -205,6 +205,18 @@ function buildCharacter(spec, M) {
   const leftArm = buildArm(1, isLin);
   const rightArm = buildArm(-1, false);
 
+  // Ms. Su carries a folding umbrella; it only appears (and opens) in the drizzle
+  let umbrella = null;
+  if (!isLin) {
+    const holder = new THREE.Group(); holder.position.set(0, -0.255, 0); leftArm.elbow.add(holder);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.72, 6), std({ color: 0x1a1a1a, roughness: 0.5 }));
+    shaft.position.y = 0.36;
+    const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.58, 0.3, 14, 1, true), std({ color: 0x6b2a36, roughness: 0.45, side: THREE.DoubleSide }));
+    canopy.position.y = 0.7;
+    holder.add(shaft, canopy); holder.visible = false;
+    umbrella = { holder, canopy };
+  }
+
   return {
     id: spec.id,
     spec,
@@ -214,6 +226,7 @@ function buildCharacter(spec, M) {
     headPivot,
     leftArm,
     rightArm,
+    umbrella,
     speakBlend: 0,
     interactBlend: 0,
     listenPhase: isLin ? 0.4 : 2.1,
@@ -236,7 +249,9 @@ export function createNpcs(M) {
     return c ? c.headOffset : npcLayout.pairFocus;
   }
 
-  function update(t, dt, { activeSpeaker = null, interacting = false, playerPos = null } = {}) {
+  const _q = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _e = new THREE.Euler();
+  // umbrella: 0..1, how far Ms. Su's umbrella is open (the drizzle); her left arm holds it up
+  function update(t, dt, { activeSpeaker = null, interacting = false, playerPos = null, umbrella = 0 } = {}) {
     const k = Math.min(1, dt * 5.5);
     for (const c of chars) {
       const isSpeaking = activeSpeaker === c.id;
@@ -296,6 +311,21 @@ export function createNpcs(M) {
         c.leftArm.shoulder.rotation.x = -0.06 + (lSpeakS + 0.06) * c.speakBlend;
         c.leftArm.shoulder.rotation.z = 0.09 + 0.04 * beat2 * c.speakBlend;
         c.leftArm.elbow.rotation.x = -0.22 + (lSpeakE + 0.22) * c.speakBlend;
+        if (c.umbrella) {
+          const w = Math.min(1, umbrella * 3);
+          c.leftArm.shoulder.rotation.x += (-0.5 - c.leftArm.shoulder.rotation.x) * w;
+          c.leftArm.shoulder.rotation.z += (0.16 - c.leftArm.shoulder.rotation.z) * w;
+          c.leftArm.elbow.rotation.x += (-1.2 - c.leftArm.elbow.rotation.x) * w;
+          const h = c.umbrella.holder;
+          h.visible = umbrella > 0.02;
+          if (h.visible) {
+            c.root.updateMatrixWorld(true);
+            h.parent.getWorldQuaternion(_q).invert();
+            _qw.setFromEuler(_e.set(0.05, c.root.rotation.y, -0.12, 'YXZ'));          // upright, leaning a little toward Old Lin
+            h.quaternion.copy(_q.multiply(_qw));
+            const u = umbrella; c.umbrella.canopy.scale.set(0.15 + 0.85 * u, 0.5 + 0.5 * u, 0.15 + 0.85 * u);
+          }
+        }
       }
     }
   }

@@ -81,7 +81,12 @@ const cA = contrast(A, SKY), cD = contrast(D, SKY);
 info(`skyline contrast (luma std dev): clear ${cA.toFixed(1)}, drizzle ${cD.toFixed(1)} (${(100 * (cD / cA - 1)).toFixed(0)}%)`);
 ok(cD > cA * 0.7, 'skyline stays readable (contrast kept above 70%)');
 await tp(...NOTICE); const ND = await shot('notice-drizzle');
-const NBOX = [560, 120, 860, 470];
+// the poster itself: project its centre to the screen and take a box around it
+const NBOX = await ev(() => {
+  const b = window.__bund, f = b.scene.getObjectByName('clue-poster').getWorldPosition(new b.THREE.Vector3()).project(b.camera);
+  const x = (f.x * 0.5 + 0.5) * innerWidth, y = (-f.y * 0.5 + 0.5) * innerHeight;
+  return [Math.round(x - 45), Math.round(y - 70), Math.round(x + 45), Math.round(y + 70)];
+});
 const nA = contrast(NA, NBOX), nD = contrast(ND, NBOX);
 info(`notice region contrast: clear ${nA.toFixed(1)}, drizzle ${nD.toFixed(1)}`);
 ok(nD > nA * 0.8, 'the missing-person notice stays legible');

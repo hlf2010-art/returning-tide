@@ -1,7 +1,7 @@
 // The signal-controlled crossing: phases, clearance, yellow, queues, departure, slow
 // pedestrians, blocked exits, the player crossing / jaywalking / loitering, pause, recovery.
 import { createTraffic, createSignalController, TRAFFIC_CONFIG } from '../src/engine/traffic.js';
-import { crossing } from '../src/world/layout.js';
+import { crossing, underCover } from '../src/world/layout.js';
 
 let failed = 0;
 const ok = (cond, msg) => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${msg}`); if (!cond) failed++; };
@@ -195,6 +195,36 @@ const clean = (T) => T.stats.redEntries === 0 && T.stats.blockedEntries === 0 &&
   const T = make({ seed: 31 });
   for (let i = 0; i < 600; i++) T.update(0.5);
   ok(clean(T), 'safety invariants hold with 2 fps frames (internal sub-steps)');
+}
+
+// 9. drizzle: umbrella / shelter / cab, safely, and back to normal afterwards
+{
+  const T = make({ seed: 17 });
+  const byRain = (r) => T.peds.filter((p) => p.rain === r);
+  let offZebra = 0, divertedMidCrossing = 0, umbrellaMoved = 0;
+  const wasCrossing = new Map(), lastPos = new Map();
+  const watch = (T) => {
+    for (const p of T.peds) {
+      if (p.x > crossing.road.x0 + 0.05 && p.x < crossing.road.x1 - 0.05 && !(p.z > crossing.crosswalk.z0 - 1.2 && p.z < crossing.crosswalk.z1 + 1.2)) offZebra++;
+      if (wasCrossing.get(p.id) && p.path.length && p.x > crossing.road.x0 && p.x < crossing.road.x1) divertedMidCrossing++;
+      wasCrossing.set(p.id, p.crossing);
+      if (p.rain === 'umbrella' && p.umbrella === 1) { const l = lastPos.get(p.id); if (l) umbrellaMoved += Math.hypot(p.x - l[0], p.z - l[1]); }
+      lastPos.set(p.id, [p.x, p.z]);
+    }
+  };
+  for (let i = 0; i < 60 / DT; i++) { T.update(DT); watch(T); }
+  for (let i = 0; i < 150 / DT; i++) { T.update(DT, { rain: 1 }); watch(T); }
+  const sh = byRain('shelter')[0], cab = byRain('cab')[0];
+  ok(sh.react === 'sheltered' && underCover(sh.x, sh.z, 1.6), `shelter: jogged to the Customs portico and stands under its roof (${sh.x.toFixed(1)}, ${sh.z.toFixed(1)})`);
+  ok(cab.react === 'phoning' && cab.phone === 1 && (cab.x < crossing.road.x0 - 0.15 || cab.x > crossing.road.x1 + 0.15), `cab: waiting at the kerb with the phone out, on the pavement (x=${cab.x.toFixed(2)}, ${cab.react}, phone ${cab.phone})`);
+  ok(byRain('umbrella').every((p) => p.umbrella === 1) && umbrellaMoved > 60, `umbrella: both opened them and kept walking (${umbrellaMoved.toFixed(0)} m under umbrellas)`);
+  ok(offZebra === 0, 'nobody stepped onto Zhongshan Road outside the crossing');
+  ok(divertedMidCrossing === 0, 'nobody abandoned a crossing half-way to get out of the rain');
+  for (let i = 0; i < 240 / DT; i++) { T.update(DT, { rain: 0 }); watch(T); }
+  ok(T.peds.every((p) => p.react === 'none' && p.umbrella === 0 && p.phone === 0 && !p.path.length), 'clear again: umbrellas closed, phone away, everyone back on their usual walk');
+  const crossed = new Set(); for (let i = 0; i < 300 / DT; i++) { T.update(DT); for (const p of T.peds) if (p.crossing) crossed.add(p.id); }
+  ok(crossed.size === T.peds.length, 'and every one of them crosses the road again');
+  ok(clean(T) && offZebra === 0, 'traffic safety invariants held throughout the shower');
 }
 
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');

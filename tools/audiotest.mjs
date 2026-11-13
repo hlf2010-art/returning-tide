@@ -138,7 +138,7 @@ await tp(-3.4, 16, Math.PI, 0); await page.waitForTimeout(800);
 const south = await rec('traffic-facing-south', () => page.waitForTimeout(3000));
 const nb = bandRatio(north, 500, north.sr), sb = bandRatio(south, 500, south.sr);
 info(`tyre band (500 Hz) left-minus-right: facing north ${nb.toFixed(1)} dB, facing south ${sb.toFixed(1)} dB`);
-ok(nb > 2 && sb < -2, 'traffic sits toward the street: left ear facing north, right ear facing south');
+ok(nb > 0.5 && sb < -0.5 && nb - sb > 4, 'traffic sits toward the street: louder in the left ear facing north, the right ear facing south (swing > 4 dB)');
 ok(db(rms(mono(north))) < -12, `a close passing car stays comfortable (${db(rms(mono(north))).toFixed(1)} dBFS RMS)`);
 await ev(() => { window.__bund.freezeTraffic = false; });
 

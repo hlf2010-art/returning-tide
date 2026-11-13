@@ -59,7 +59,7 @@ camera.layers.enable(HELD_LAYER); camera.layers.enable(RAIN_LAYER);
 const weather = createWeather();
 if (params.get('weather') === 'drizzle') weather.set('drizzle', { instant: true });
 const HAZE_FOG = new THREE.Color(0.072, 0.108, 0.2), FOG_DENSITY = scene.fog.density, HAZE_DENSITY = 0.00028;
-let weatherTime = 0;
+let weatherTime = 0, suUmbrella = 0;
 const _pairPos = new THREE.Vector3(npcLayout.pairFocus.x, npcLayout.pairFocus.y, npcLayout.pairFocus.z);
 
 async function boot() {
@@ -292,7 +292,7 @@ function updateTraffic(dt) {
   const b = player.body;
   _player.x = b.x; _player.z = b.z; _player.vx = b.vx; _player.vz = b.vz;
   // on the promenade deck the player is nowhere near the road
-  traffic.update(dt, { player: b.y > 1 ? null : _player });
+  traffic.update(dt, { player: b.y > 1 ? null : _player, rain: weather.rain });
   world.vehicles.update(traffic.vehicles);
   world.pedestrians.update(traffic.peds, dt);
   world.signals.update(traffic.controller);
@@ -325,9 +325,15 @@ function frame(now) {
   player.update(mode === 'pause' ? 0 : dt);
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0
-  if (mode !== 'pause') { weather.update(dt); weatherTime += dt; }
+  if (mode !== 'pause') {
+    weather.update(dt); weatherTime += dt;
+    // Ms. Su opens her umbrella once it is properly drizzling, folds it when it has stopped
+    const want = weather.rain > 0.3 ? 1 : weather.rain < 0.08 ? 0 : suUmbrella > 0.5 ? 1 : 0;
+    suUmbrella = Math.max(0, Math.min(1, suUmbrella + (want ? dt : -dt) / 1.4));
+  }
   world.rain.update(weatherTime, weather.rain, camera);
   weatherUniforms.wetBoost.value = weather.wet;
+  weatherUniforms.rainRipples.value = weather.rain; weatherUniforms.rippleTime.value = weatherTime;
   scene.fog.density = FOG_DENSITY + HAZE_DENSITY * weather.haze;
   scene.fog.color.lerpColors(FOG_COLOR, HAZE_FOG, weather.haze);
   audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye));
@@ -343,6 +349,7 @@ function frame(now) {
     activeSpeaker: conversation ? conversation.activeSpeaker : null,
     interacting: mode === 'dialogue',
     playerPos: player.body,
+    umbrella: suUmbrella,
   });
   if (mission1) mission1.update();
   updateTraffic(mode === 'pause' || debug.freezeTraffic ? 0 : dt);
