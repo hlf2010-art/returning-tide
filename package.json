@@ -1,0 +1,23 @@
+{
+  "name": "bund-rpg",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "test": "node tests/collision.test.mjs && node tests/dialogue.test.mjs",
+    "playtest": "node tools/playtest.mjs",
+    "shots": "node tools/shot.mjs"
+  },
+  "dependencies": {
+    "@fontsource/ma-shan-zheng": "^5.3.1",
+    "@fontsource/noto-sans-sc": "^5.3.1",
+    "@fontsource/noto-serif-sc": "^5.3.1",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8"
+  }
+}

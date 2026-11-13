@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>回潮 Returning Tide — Arriving at the Bund</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="/src/ui/style.css" />
+</head>
+<body>
+  <canvas id="view"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="reticle"></div>
+    <div id="prompt"><kbd>E</kbd><span id="prompt-text"></span></div>
+    <div id="place"><div class="zh">外滩 · 汉口路</div><div class="en">The Bund, Hankou Road — 17:42, November</div></div>
+    <div id="toast"></div>
+    <div id="thought"></div>
+    <div id="subtitle" aria-live="polite">
+      <div id="sub-meta"><span id="sub-speaker"></span><span id="sub-source"></span></div>
+      <div id="sub-text"></div>
+      <div id="sub-exit" class="hidden"><kbd>E</kbd> 结束对话 · Step back</div>
+    </div>
+    <div id="keys"><b>WASD</b> walk · <b>Shift</b> hurry · <b>Space</b> jump · <b>Mouse</b> look · <b>E</b> interact · <b>C</b> subtitles · <b>M</b> sound · <b>Esc</b> pause</div>
+  </div>
+
+  <div id="inspect" class="hidden">
+    <div id="inspect-paper"></div>
+    <aside>
+      <h2>Missing-person notice <span>寻人启事</span></h2>
+      <p><b>Zhou Bonian</b>, male, 67, about 1.70&nbsp;m, glasses, speaks Shanghainese. Has kept a watch-repair stall on Hankou Road for more than thirty years.</p>
+      <p>Lost contact at dusk on 29 October, near the Customs House on the Bund, after packing up his stall. Dark grey jacket; carrying a brown toolbox.</p>
+      <p>Anyone with information, please contact the family. The middle of the phone number has run in the rain.</p>
+      <p class="scrawl">Across it, in red marker, in Shanghainese:<br /><em>“Stop looking. If you want to know, take the last ferry.”</em></p>
+      <p>A ferry token is taped to the corner: <em>Jinling East Road</em>.</p>
+      <div class="close"><kbd>E</kbd> put it back</div>
+    </aside>
+  </div>
+
+  <div id="pause" class="hidden"><div class="zh">暂停</div><div>Paused — click to return</div></div>
+
+  <div id="entry">
+    <div class="card">
+      <div class="title-zh">回潮</div>
+      <div class="title-en">RETURNING TIDE</div>
+      <div class="chapter">序 · Arriving at the Bund</div>
+      <p class="premise">Eleven years away. Then a voicemail from Old Zhou, the watchmaker who half raised you: nine seconds, mostly river wind. <span class="zh">“到外滩来。海关钟下面……”</span> <i>Come to the Bund. Under the Customs clock.</i> He hasn't picked up since.</p>
+      <button id="begin" disabled>Loading Shanghai…</button>
+      <div class="controls"><b>WASD</b> walk &nbsp; <b>Shift</b> hurry &nbsp; <b>Space</b> jump &nbsp; <b>Mouse</b> look &nbsp; <b>E</b> interact &nbsp; <b>C</b> subtitles &nbsp; <b>M</b> sound &nbsp; <b>Esc</b> pause</div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
