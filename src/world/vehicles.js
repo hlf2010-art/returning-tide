@@ -13,6 +13,9 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildCar } from './street.js';
 import { createInstancer, mergeStatic } from './instancer.js';
+import { assembleCar } from './carbody.js';
+import { CARS } from './carModels.js';
+import { T } from './text.js';
 import { makeCanvas, tex, FONT } from './canvas.js';
 
 const std = (o) => new THREE.MeshStandardMaterial(o);
@@ -107,47 +110,39 @@ function wheelGeometry(d) {
 let wheels = null;
 const wheelPivot = (d) => () => wheels.add(`wheel-${d}`, wheelGeometry(d), wheelMat, new THREE.Object3D());
 
-function buildPlaceholder(spec) {
-  const M = MODELS[spec.model], L = spec.len, W = spec.width;
-  const g = new THREE.Group();
+// Fictional Shanghai new-energy plate (green gradient, 沪A + D...), rear only.
+function plateMaterial(text) {
+  const [c, ctx] = makeCanvas(256, 80);
+  const g = ctx.createLinearGradient(0, 0, 0, 80); g.addColorStop(0, '#e8f5e9'); g.addColorStop(1, '#5fbf6a');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 80); ctx.strokeStyle = '#1b1b1b'; ctx.lineWidth = 4; ctx.strokeRect(3, 3, 250, 74);
+  ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `700 46px ${FONT.sans}`; ctx.fillText(text, 128, 44);
+  const map = tex(c, { repeat: false });
+  return std({ map, roughness: 0.4, emissive: 0xffffff, emissiveMap: map, emissiveIntensity: 0.25 });
+}
+const trimShared = std({ color: 0x0d0e10, roughness: 0.55, side: THREE.DoubleSide });
+const chromeShared = std({ color: 0xc8ccd0, metalness: 1, roughness: 0.18 });
+const glassShared = std({ color: 0x0a0e13, roughness: 0.04, metalness: 0.9, side: THREE.DoubleSide });
+
+// The four named EVs: lofted lookalikes (carbody.js / carModels.js). Published dimensions, body
+// type, silhouette and light signature; NOT licensed models and no manufacturer logos.
+function buildLookalike(spec, plateText) {
+  const M = CARS[spec.model];
+  const paintMat = std({ color: M.paint, roughness: 0.22, metalness: 0.6, side: THREE.DoubleSide });
   const tailMat = new THREE.MeshBasicMaterial({ color: TAIL_RUN.clone() });
   const brakeOnly = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.05, 0, 0) });
-  const part = (geo, color) => { const m = new THREE.Mesh(geo); m.userData.color = new THREE.Color(color); return m; };
-  const at = (m, x, y, z) => { m.position.set(x, y, z); return m; };
-
-  // body, greenhouse, roof LiDAR and dark cladding: one vertex-coloured mesh
-  const PL = L - 0.12;                                                          // the 6 cm bevel brings it back to L
-  const roofY = Math.max(...M.glass.map((p) => p[1]));
-  const shell = [
-    part(profileGeometry(M.body, PL, W - 0.14), M.paint),
-    part(profileGeometry(M.glass, PL, W - 0.34), 0x05080c),
-    at(part(new THREE.BoxGeometry(0.34, 0.07, 0.2), 0x0c0d0f), 0, roofY + 0.06, M.lidar * L + 0.12),   // all four carry one
-    at(part(new THREE.BoxGeometry(W - 0.1, 0.16, L * 0.62), 0x0c0d0f), 0, 0.38, 0),
-  ];
-  g.add(new THREE.Mesh(mergeStatic(shell, { colors: true }), shellMat));
-
-  // lighting signatures
-  const nose = L / 2, tailZ = -L / 2, heads = [];
-  for (const h of M.head) for (const s of h.x ? [-1, 1] : [0]) heads.push(at(new THREE.Mesh(new THREE.BoxGeometry(h.w, h.h, 0.04)), s * h.x, h.y, h.z * L + 0.03));
-  g.add(new THREE.Mesh(mergeStatic(heads), headMat));
-  const tails = [at(new THREE.Mesh(new THREE.BoxGeometry(W - 0.2, M.tail.h, 0.04)), 0, M.tail.y, tailZ)];
-  for (const s of [-1, 1]) tails.push(at(new THREE.Mesh(new THREE.BoxGeometry(0.28, M.tail.h * 2.2, 0.05)), s * (W / 2 - 0.22), M.tail.y, tailZ - 0.01));
-  g.add(new THREE.Mesh(mergeStatic(tails), tailMat));
-  g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.03), brakeOnly), 0, roofY - 0.06, tailZ * 0.9));   // high-mounted stop lamp
-
-  // wheels at the published wheelbase, front axle one overhang back from the nose
-  const wl = [], fz = nose - M.frontOverhang, rz = fz - spec.wheelbase, track = W / 2 - 0.16;
-  for (const z of [fz, rz]) for (const s of [-1, 1]) {
-    const w = wheelPivot(M.wheelD)(); w.position.set(s * track, M.wheelD / 2, z); w.rotation.y = s < 0 ? Math.PI : 0;
-    g.add(w); wl.push(w);
+  const head = Object.assign(headMat.clone(), { userData: { chrome: chromeShared } });
+  const { group, wheels: wl } = assembleCar(M, { paintMat, glassMat: glassShared, trimMat: trimShared, headMat: head, tailMat, brakeMat: brakeOnly, wheelFactory: wheelPivot(M.wheelD) });
+  // merge everything static that shares a material: fewer draw calls per car
+  const byMat = new Map();
+  for (const o of [...group.children]) {
+    if (!o.isMesh) continue;
+    if (!byMat.has(o.material)) byMat.set(o.material, []);
+    byMat.get(o.material).push(o); group.remove(o);
   }
-  // placeholder labels, both sides + rear, one texture, one mesh
-  const plates = [];
-  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.32)); p.position.set(s * W / 2, 0.72, 0.1); p.rotation.y = s * Math.PI / 2; plates.push(p); }
-  const rp = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.32)); rp.scale.setScalar(0.62); rp.position.set(0, 0.62, tailZ - 0.03); rp.rotation.y = Math.PI; plates.push(rp);
-  g.add(new THREE.Mesh(mergeStatic(plates, { uv: true }), labelMaterial('占位 PLACEHOLDER', `${M.name} ${M.zh}`)));
-
-  return { g, wheels: wl, wheelRadius: M.wheelD / 2, setBraking(b) { tailMat.color.copy(b ? TAIL_BRAKE : TAIL_RUN); brakeOnly.color.setRGB(b ? 4 : 0.05, b ? 0.1 : 0, b ? 0.05 : 0); } };
+  for (const [mat, list] of byMat) group.add(new THREE.Mesh(mergeStatic(list, { uv: !!mat.map }), mat));
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.14), plateMaterial(plateText));
+  plate.position.set(0, M.sill(0) + 0.22, -M.length / 2 - 0.02); plate.rotation.y = Math.PI; group.add(plate);
+  return { g: group, wheels: wl, wheelRadius: M.wheelD / 2, setBraking(b) { tailMat.color.copy(b ? TAIL_BRAKE : TAIL_RUN); brakeOnly.color.setRGB(b ? 4 : 0.05, b ? 0.1 : 0, b ? 0.05 : 0); } };
 }
 
 function buildGeneric(spec) {
@@ -165,11 +160,11 @@ export const PLACEHOLDER_MODELS = Object.keys(MODELS);
 export function createVehicles(specs) {
   const group = new THREE.Group(); group.name = 'traffic-vehicles';
   wheels = createInstancer('traffic-wheels');
-  const list = specs.map((spec) => {
-    const v = MODELS[spec.model] ? buildPlaceholder(spec) : buildGeneric(spec);
+  const list = specs.map((spec, i) => {
+    const v = CARS[spec.model] ? buildLookalike(spec, T.plates[i % T.plates.length]) : buildGeneric(spec);
     v.g.name = `vehicle-${spec.id}`;
     group.add(v.g);
-    return { ...v, id: spec.id, placeholder: !!MODELS[spec.model], braking: null };
+    return { ...v, id: spec.id, lookalike: !!CARS[spec.model], braking: null };
   });
   wheels.build(); group.add(wheels.group);
   const instancer = wheels;

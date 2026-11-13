@@ -7,6 +7,7 @@ export const T = {
   shop: '阿芳烟纸店', shopOpen: '营业中', shopSub: '烟酒 · 饮料 · 杂货',
   stall: '周记修表', stallSub: '修表 · 换电池 · 配钥匙', stallClosed: '暂停营业',
   taxi: '出租', forHire: '空车',
+  plates: ['沪A·D52817', '沪A·F09M33', '沪B·D88216', '沪A·DM7061'],   // fictional new-energy plates
   poster: {
     title: '寻人启事',
     lines: [
