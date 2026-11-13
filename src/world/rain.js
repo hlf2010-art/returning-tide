@@ -40,15 +40,17 @@ export function createRain() {
         p.y = cam.y - box.y * 0.4 + mod(seed.y * box.y - time * speed, box.y);
         p.xz = cam.xz + mod(seed.xz * box.xz - cam.xz + wind * time + box.xz * 0.5, box.xz) - box.xz * 0.5;
         vec3 dir = normalize(vec3(wind.x, -speed, wind.y));
-        p -= dir * tip * 0.22;                                   // short streak trailing upward
+        vec3 head = p, tail = p - dir * 0.22;                     // short streak trailing upward
+        p = tip > 0.5 ? tail : head;
         float d = distance(p, cam);
         float a = smoothstep(1.4, 2.6, d) * (1.0 - smoothstep(8.0, 10.5, d));
         float pick = fract(sin(dot(seed.xy, vec2(12.9898, 78.233))) * 43758.5453);   // independent of position
         a *= step(pick, rain);                                   // density: fewer drops in lighter rain
         a *= rain;
-        for (int i = 0; i < NC; i++) {
+        for (int i = 0; i < NC; i++) {                         // the whole streak goes if either end is under a roof
           vec4 c = coverXZ[i];
-          if (p.x > c.x && p.x < c.y && p.z > c.z && p.z < c.w && p.y < coverTop[i]) a = 0.0;
+          if (head.x > c.x && head.x < c.y && head.z > c.z && head.z < c.w && head.y < coverTop[i]) a = 0.0;
+          if (tail.x > c.x && tail.x < c.y && tail.z > c.z && tail.z < c.w && tail.y < coverTop[i]) a = 0.0;
         }
         vA = a * (1.0 - tip);                                    // bright head, fading tail
         vP = p;

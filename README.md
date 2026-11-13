@@ -106,16 +106,31 @@ mast-arm heads with countdowns, red standing / green walking pedestrian heads wi
   stand). The closure barriers keep the pavements and curb lanes; the inner lanes are open.
 - The stop lines were on the wrong sides of the zebra for right-hand traffic; corrected.
 
-**Vehicle fidelity is incomplete.** No licensed or free 3D assets of the NIO ET5, Li Auto L9,
-Luxeed R7 or AITO M9 were available, so these four are **labelled placeholders** for behaviour
-testing: published length / width / height / wheelbase and wheel size, body type and an
-approximate lighting layout, no manufacturer logos, "占位 PLACEHOLDER" on both sides and the rear.
-They are not recognisable likenesses. Replace each in `src/world/vehicles.js` (`MODELS`, same
-origin and axes) with a licensed asset. The taxis and dark sedan reuse the existing street car.
+**The four named EVs are procedural lookalikes, not licensed models.** No free, properly licensed
+3D models of the NIO ET5, Li Auto L9, Luxeed R7 or AITO M9 exist (paid ones do, many "editorial use
+only"; none of the R7 at all), and using the real brands in a released game also needs the makers'
+trademark licences. So each is a lofted body (`src/world/carbody.js`, parameters in
+`carModels.js`): published length / width / height / wheelbase / wheel size, the body type and
+silhouette, and each car's light signature, read from press photographs. No logos; fictional green
+Shanghai new-energy plates. They read as those cars at street distance; up close, lamp shapes,
+panel seams and detailing are simplified. The taxis and dark sedan reuse the existing street car.
 
 Tests: `npm test` (includes `tests/traffic.test.mjs`); in the browser
 `tools/traffictest.mjs` (signals, meshes, brake lights, wheels, player crossing, pause),
 `tools/vehicleshots.mjs` (each vehicle from three angles), `tools/trafficperf.mjs` (A/B cost).
+
+## People (Microsoft Rocketbox, MIT)
+
+Old Lin, Ms. Su and the four crossing pedestrians are photo-textured, rigged humans from
+[Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (MIT licence, notice in
+`public/people/LICENSE-Rocketbox.md`) with its motion-captured animation: idle, look-around,
+talking gestures, phone texting, umbrella idle / talk / listen, walk and jog. Converted by
+`tools/rocketbox/convert.mjs` (FBX -> GLB: textures 1024 px, root motion removed, fingers kept only
+for gripping clips); ~29 MB in `public/people/`. Walk / jog playback follows the simulated speed (no
+foot sliding); an arm layer lets an umbrella be held while walking. If the files fail to load, the
+earlier hand-built figures are used. Casting is limited by the library: it has few East Asian
+avatars and no older East Asian man, so Old Lin is a younger avatar with greyed hair, and two
+passers-by read as foreign visitors.
 
 ## Weather: one light drizzle
 
@@ -132,11 +147,32 @@ Clear → light drizzle → clear, at the same blue hour. Developer toggle **F7*
 - **Wet ground**: the deck, pavements and carriageways (not under the covers) darken a little and
   lose ~40 % of their roughness on dry patches; nothing new becomes a mirror. Builds over ~40 s of
   rain, dries over ~75 s after.
+- **Ripples**: raindrop rings in the ground shader (strong in puddles, faint on wet stone, only near
+  the eye, none under cover), visible as broken-up reflections.
+- **People react**: one passer-by jogs under the Customs portico, one books a cab on their phone at
+  the kerb, two put up umbrellas and walk on (nobody leaves a crossing early); Ms. Su opens her
+  umbrella. Old Lin stays put (Mission One needs him at the railing). Everyone goes back to normal
+  when it clears.
 - **Sound**: one rain loop in the existing audio graph (part of the environment bus, so it still
   yields to NPC speech), muffled under cover.
 - Every level returns exactly to the approved clear values; toggling creates nothing new.
   State: `src/engine/weather.js` (pure, `tests/weather.test.mjs`); browser checks:
   `tools/weathertest.mjs`.
+
+## Lighting
+
+- **Wet-ground reflections**: screen-space reflections (three.js `SSRPass`) on the deck, pavements
+  and road only, with a per-pixel strength from each surface's wetness map: puddles mirror, damp
+  stone glistens, more in the drizzle, none under cover; people and cars standing in front of a
+  puddle occlude it (the mask carries the ground's depth). Costly: a full-scene normals render plus
+  the ray march and blur; under software GL it roughly doubled frame time (not measured on a real
+  GPU). So it runs on the top two quality steps only, the automatic quality ladder drops it when
+  frames run slow, and `?ssr=0` turns it off. The pass's depth texture is 32-bit: its default
+  16-bit depth made the Pudong towers z-fight into white-hot facades.
+- **Height haze**: fog a little denser at street and river level than at the tops of the towers.
+- **Floodlighting**: the Bund facades' wash is scalloped by fixtures every ~4 m at their feet,
+  brighter and whiter low down, fading upward.
+- **Bloom** slightly tighter (strength 0.36, threshold 0.94).
 
 ## Sound (procedural, no files, no music)
 

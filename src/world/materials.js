@@ -11,11 +11,11 @@ export const FLOOD_COLOR = new THREE.Color(1.0, 0.52, 0.18);
 
 const archVertex = /* glsl */ `
 attribute float flood;
-varying vec2 vUv; varying vec3 vN; varying float vFlood;
+varying vec2 vUv; varying vec3 vN; varying float vFlood; varying vec3 vW;
 #include <common>
 #include <fog_pars_vertex>
 void main() {
-  vUv = uv; vN = normalize(mat3(modelMatrix) * normal); vFlood = flood;
+  vUv = uv; vN = normalize(mat3(modelMatrix) * normal); vFlood = flood; vW = (modelMatrix * vec4(position, 1.0)).xyz;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mvPosition;
   #include <fog_vertex>
@@ -24,7 +24,7 @@ const archFragment = /* glsl */ `
 uniform sampler2D map; uniform sampler2D emissiveMap;
 uniform vec3 tint; uniform vec3 floodColor; uniform float floodGain; uniform float emissiveGain;
 uniform vec3 skyAmbient; uniform vec3 groundAmbient;
-varying vec2 vUv; varying vec3 vN; varying float vFlood;
+varying vec2 vUv; varying vec3 vN; varying float vFlood; varying vec3 vW;
 #include <common>
 #include <fog_pars_fragment>
 void main() {
@@ -36,7 +36,14 @@ void main() {
   amb += skyAmbient * 0.5 * max(dot(n, normalize(vec3(0.7, 0.45, -0.3))), 0.0);
   // floodlights sit low and aim up: undersides catch more, top faces almost nothing
   float shape = n.y > 0.0 ? 1.0 - 0.85 * n.y : 1.0 - 0.25 * n.y;
-  vec3 col = albedo * (amb + floodColor * (min(vFlood, 1.12) * floodGain * shape));
+  // real floodlighting: fixtures at the foot of the facade every ~4 m throw cones that widen and fade
+  // upward, so the wash is scalloped and brightest near the base, a touch whiter close to the lamps
+  float along = abs(n.x) > abs(n.z) ? vW.z : vW.x;
+  float cell = fract(along / 4.1) - 0.5, h = max(vW.y, 0.0), spread = 0.16 + h * 0.03;
+  float cone = exp(-cell * cell / (2.0 * spread * spread));
+  float scallop = mix(0.6, 1.4, cone) * (1.0 - 0.3 * smoothstep(3.0, 30.0, h));
+  vec3 fl = floodColor * mix(vec3(1.18, 1.06, 0.9), vec3(1.0), smoothstep(0.0, 9.0, h));
+  vec3 col = albedo * (amb + fl * (min(vFlood, 1.12) * floodGain * shape * scallop));
   col += texture2D(emissiveMap, vUv).rgb * emissiveGain;
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
@@ -130,6 +137,27 @@ function puddles(material) {
       diffuseColor.rgb *= mix(1.0, 0.55, puddle);`);
   };
   return material;
+}
+
+// Reflection strength for screen-space reflections, per pixel: standing water (low roughness in the
+// wetness map) mirrors, damp stone barely glistens, more of both while it drizzles, none under cover.
+export function ssrMask(material) {
+  const rm = material.roughnessMap; rm.updateMatrix();
+  return new THREE.ShaderMaterial({
+    uniforms: { rough: { value: rm }, uvT: { value: rm.matrix }, wetBoost: weatherUniforms.wetBoost, coverXZ: weatherUniforms.coverXZ },
+    vertexShader: `varying vec2 vUv; varying vec2 vXZ; varying float vViewZ; uniform mat3 uvT;
+      void main() { vUv = (uvT * vec3(uv, 1.0)).xy; vXZ = (modelMatrix * vec4(position, 1.0)).xz; vec4 mv = modelViewMatrix * vec4(position, 1.0); vViewZ = mv.z; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying vec2 vUv; varying vec2 vXZ; varying float vViewZ; uniform sampler2D rough; uniform float wetBoost; uniform vec4 coverXZ[${covers.length}];
+      void main() {
+        float r = texture2D(rough, vUv).g;
+        float exposed = 1.0;
+        for (int i = 0; i < ${covers.length}; i++) { vec4 c = coverXZ[i]; if (vXZ.x > c.x && vXZ.x < c.y && vXZ.y > c.z && vXZ.y < c.w) exposed = 0.0; }
+        float puddle = smoothstep(0.32, 0.08, r);
+        float damp = (0.1 + 0.22 * wetBoost * exposed) * (1.0 - r);
+        float m = max(puddle * (0.75 + 0.25 * wetBoost), damp);
+        gl_FragColor = vec4(m, vViewZ, 0.0, 1.0);                       // g: the ground's view depth
+      }`,
+  });
 }
 
 export function createMaterials() {

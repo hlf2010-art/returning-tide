@@ -28,7 +28,7 @@ import { createMissionOne } from './missionOne.js';
 import { pickTarget } from './engine/targeting.js';
 import { createWeather } from './engine/weather.js';
 import { createRain, RAIN_LAYER } from './world/rain.js';
-import { weatherUniforms } from './world/materials.js';
+import { weatherUniforms, ssrMask } from './world/materials.js';
 import { underCover } from './world/layout.js';
 import { colliders } from './world/layout.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
@@ -44,6 +44,13 @@ const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('view');
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(FOG_COLOR, 0.00085);
+// Aerial perspective with height: the air near the street and the water is denser than the air at the
+// skyline's tops, so towers rise out of the haze instead of fading uniformly. Applies to every fogged material.
+THREE.ShaderChunk.fog_pars_vertex = THREE.ShaderChunk.fog_pars_vertex.replace('#ifdef USE_FOG', '#ifdef USE_FOG\n\tvarying float vFogY;');
+THREE.ShaderChunk.fog_vertex = THREE.ShaderChunk.fog_vertex.replace('vFogDepth = - mvPosition.z;', 'vFogDepth = - mvPosition.z;\n\tvFogY = (inverse(viewMatrix) * mvPosition).y;');
+THREE.ShaderChunk.fog_pars_fragment = THREE.ShaderChunk.fog_pars_fragment.replace('#ifdef USE_FOG', '#ifdef USE_FOG\n\tvarying float vFogY;');
+THREE.ShaderChunk.fog_fragment = THREE.ShaderChunk.fog_fragment.replace('float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );',
+  'float hd = fogDensity * mix(1.18, 0.9, smoothstep(0.0, 160.0, vFogY));\n\tfloat fogFactor = 1.0 - exp( - hd * hd * vFogDepth * vFogDepth );');
 const camera = new THREE.PerspectiveCamera(68, 1, 0.1, 4500);
 const R = createRenderer(canvas, scene, camera, { fixedLevel: params.has('q') ? Number(params.get('q')) : null });
 const player = createPlayer(camera, canvas);
@@ -91,6 +98,10 @@ async function boot() {
   scene.updateMatrixWorld(true);
   captureEnvironment(R.renderer, scene);
   world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain };
+  // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
+  const reflectors = [];
+  scene.traverse((o) => { if (o.isMesh && (o.material === M.deck || o.material === M.sidewalk || o.material === M.asphalt)) { o.userData.ssrMask = ssrMask(o.material); reflectors.push(o); } });
+  if (params.get('ssr') !== '0') R.setReflectors(reflectors);
   dialogueAudio = createDialogueAudio({
     audio,
     camera,
