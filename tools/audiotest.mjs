@@ -167,16 +167,21 @@ const hfRatio = (s) => db(rms(biquad(mono(s), 'hp', 2500, s.sr))) - db(rms(biqua
 info(`brightness (HF over mid, dB): stone ${hfRatio(stone.walk).toFixed(1)}, asphalt ${hfRatio(asph.walk).toFixed(1)}`);
 ok(hfRatio(stone.walk) > hfRatio(asph.walk) + 2, 'stone steps are brighter than asphalt steps (audibly different surfaces)');
 
-// 4. mission cues, by playing: F8, the stall, E to look, E to take it; F to look, hold F to tear
+// 4. mission cues, by playing: F8, the stall, E to look, E to take it sealed; then F8 again,
+//    E to look, S to "break the seal", hold E
 await page.keyboard.press('F8'); await page.waitForTimeout(400);
 await tp(-56.8, -4.3, 0, -0.42); await page.waitForTimeout(900);
 await page.keyboard.press('KeyE'); await page.waitForTimeout(900);
 const s3 = await census();
 const collect = await rec('cue-collect', async () => { await mark('key'); await page.keyboard.press('KeyE'); await page.waitForTimeout(1500); });
-await page.keyboard.press('KeyF'); await page.waitForTimeout(900);
-const tear = await rec('cue-tear', async () => { await page.keyboard.down('KeyF'); await page.waitForFunction(() => window.__bund.mission1.view === 'opened', null, { timeout: 30000 }); await page.keyboard.up('KeyF'); await page.waitForTimeout(1400); });
+await page.keyboard.press('F8'); await page.waitForTimeout(400);
+await tp(-56.8, -4.3, 0, -0.42); await page.waitForTimeout(900);
+await page.keyboard.press('KeyE'); await page.waitForTimeout(900);
+await page.keyboard.press('KeyS'); await page.waitForTimeout(300);
+const tear = await rec('cue-tear', async () => { await page.keyboard.down('KeyE'); await page.waitForFunction(() => window.__bund.mission1.view === 'opened', null, { timeout: 30000 }); await page.keyboard.up('KeyE'); await page.waitForTimeout(1400); });
 const s4 = await census();
-ok(s4.cues.collect - s3.cues.collect === 1 && s4.cues.tear - s3.cues.tear === 1, 'each cue fired exactly once from real key presses');
+// breaking the seal at the counter also lifts the pouch: the second run plays both cues
+ok(s4.cues.collect - s3.cues.collect === 2 && s4.cues.tear - s3.cues.tear === 1, 'cues fire exactly once per action from real key presses');
 const cueStats = (s) => { const m = mono(s), on = onsets(m, s.sr, { hp: 2500, rise: 10, gap: 0.012, win: 0.004 }); return { peak: db(peak(m)), on: on.length, hf: hfRatio(s) }; };
 const cs = cueStats(collect), ts = cueStats(tear);
 info(`collect: peak ${cs.peak.toFixed(1)} dBFS, ${cs.on} transients, HF/mid ${cs.hf.toFixed(1)} dB; tear: peak ${ts.peak.toFixed(1)} dBFS, ${ts.on} transients, HF/mid ${ts.hf.toFixed(1)} dB`);

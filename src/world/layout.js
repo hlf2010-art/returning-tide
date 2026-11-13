@@ -142,7 +142,7 @@ around(sedan.x, sedan.z, 0.95, 2.4, 'car');
 box(bikes.x - 0.9, bikes.x + 0.9, bikes.z0 - 0.3, bikes.z0 + bikes.n * bikes.gap, 'bikes');
 around(stall.x, stall.z, 1.0, 0.75, 'stall');
 for (const t of streetTrees) around(t.x, t.z, 0.3, 0.3, 'tree');
-for (const n of npcs.list) around(n.x, n.z, 0.34, 0.34, 'npc');
+for (const n of npcs.list) { around(n.x, n.z, 0.34, 0.34, 'npc'); colliders[colliders.length - 1].id = n.id; }   // id: so a target can ignore its own body
 for (const p of crossing.vehPoles) around(p.x, p.z, 0.2, 0.2, 'signal');
 for (const p of crossing.pedPoles) around(p.x, p.z, 0.1, 0.1, 'signal');
 

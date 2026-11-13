@@ -25,6 +25,8 @@ import { createConversation, computeDistanceGain } from './engine/conversation.j
 import { createHud } from './ui/hud.js';
 import { createPouch, HELD_LAYER } from './world/pouch.js';
 import { createMissionOne } from './missionOne.js';
+import { pickTarget } from './engine/targeting.js';
+import { colliders } from './world/layout.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
 import { createTraffic } from './engine/traffic.js';
 import { createVehicles } from './world/vehicles.js';
@@ -89,7 +91,7 @@ async function boot() {
   mission1 = createMissionOne({
     hud, audio, pouch, npcs,
     isClueRead: () => clueRead,
-    onViewClosed: () => { if (mode === 'pouch') { mode = 'play'; player.enabled = true; } },
+    onViewClosed: () => { if (mode === 'pouch') exitInteraction(); },
   });
   document.getElementById('inspect-paper').appendChild(clue.canvas);
   player.update(0);
@@ -115,20 +117,30 @@ function begin() {
   if (conversation && conversation.state === 'idle') conversation.start();
 }
 function pause() {
-  if (mode === 'inspect') closeInspect(false);
-  if (mode === 'dialogue') closeDialogue(false);
+  // pausing cancels an open interaction (it can be re-entered afterwards)
+  if (mode === 'inspect') closeInspect();
+  if (mode === 'dialogue') closeDialogue();
   if (mode === 'pouch') closePouch();
   if (mode !== 'play') return;
   mode = 'pause'; player.enabled = false; audio.setPaused(true);
   if (conversation) conversation.setPaused(true);
   hud.show('pause', true); hud.prompt(false); hud.subtitle(false);
 }
-function openInspect() {
-  mode = 'inspect'; player.enabled = false; hud.prompt(false); hud.subtitle(false); hud.show('inspect', true);
+// Every interaction enters and leaves through these two, so controls always come back the same
+// way: movement re-enabled, held keys forgotten, the camera left exactly where it is (no snap).
+function enterInteraction(m) {
+  mode = m; player.enabled = false; player.clearInput(); hud.prompt(false);
+  target = null;
 }
-function closeInspect(resume = true) {
+function exitInteraction() {
+  mode = 'play'; player.enabled = true; player.clearInput();
+}
+function openInspect() {
+  enterInteraction('inspect'); hud.subtitle(false); hud.show('inspect', true);
+}
+function closeInspect() {
   hud.show('inspect', false);
-  if (resume) { mode = 'play'; player.enabled = true; } else mode = 'play';
+  exitInteraction();
   if (!clueRead) {
     clueRead = true;
     hud.thought('末班轮渡。金陵东路渡口，沿江往南。', 'The last ferry. Jinling East Road pier, south along the water.');
@@ -136,27 +148,28 @@ function closeInspect(resume = true) {
 }
 function openDialogue() {
   if (mode !== 'play') return;
-  mode = 'dialogue'; player.enabled = false; hud.prompt(false);
+  enterInteraction('dialogue');
   // Mission One decides what Old Lin says (offer / reminder / handoff); null = ordinary greeting
   const line = mission1 ? mission1.greetLine() : null;
   if (conversation) conversation.enterInteraction(line);
 }
-function closeDialogue(resume = true) {
+function closeDialogue() {
   if (conversation) conversation.exitInteraction();
   hud.subtitle(false);
-  if (resume) { mode = 'play'; player.enabled = true; } else mode = 'play';
+  exitInteraction();
   if (mission1) mission1.dialogueClosed();
 }
-function acceptOffer() {
-  const line = mission1 && mission1.accept();
-  if (line && conversation) conversation.enterInteraction(line);
+// E inside the dialogue: answer Old Lin's request if he made one, otherwise step back
+function confirmDialogue() {
+  const r = mission1 ? mission1.dialogueConfirm() : 'close';
+  if (r === 'accept') { const line = mission1.accept(); if (line && conversation) conversation.enterInteraction(line); }
+  else if (r === 'decline' || r === 'close') closeDialogue();
 }
-function openPouch(kind) {
+function openPouch() {
   if (mode !== 'play' || !mission1) return;
-  const opened = kind === 'pickup' ? mission1.openPickup() : mission1.openCarried();
-  if (opened) { mode = 'pouch'; player.enabled = false; hud.prompt(false); hud.subtitle(false); }
+  if (mission1.openPickup()) { enterInteraction('pouch'); hud.subtitle(false); }
 }
-function closePouch() { if (mission1) mission1.closeView(); if (mode === 'pouch') { mode = 'play'; player.enabled = true; } }
+function closePouch() { if (mission1) mission1.closeView(false); if (mode === 'pouch') exitInteraction(); }
 function devMission(start) {
   if (!mission1 || mode === 'boot' || mode === 'entry') return;
   if (mode === 'dialogue') closeDialogue();
@@ -176,37 +189,64 @@ document.addEventListener('pointerlockerror', () => {
   // Pointer lock refused (embedded frame, or re-requested too soon after Esc)
   if (mode === 'play' && !document.pointerLockElement) { noLock = true; hud.toast('按住鼠标拖动来环顾 · Hold the mouse button and drag to look', 5); }
 });
+// ---- input: one key press does exactly one thing ----
+// Priority, first match wins:
+//   1. global toggles that never touch the world: M sound, C subtitles, F8/F9 (dev builds)
+//   2. entry screen: Enter begins
+//   3. pause: Esc (drag-look mode) resumes; nothing else
+//   4. an open interaction owns E, W/S (arrows, wheel) and Esc:
+//        inspect  E or Esc closes
+//        dialogue W/S moves the highlighted answer; E confirms it (or steps back); Esc steps back
+//        pouch    W/S moves the highlight; E confirms / hold E on "break the seal"; Esc leaves it
+//   5. walking about: E acts on the single selected target, if there is one
+const CHOICE_KEYS = { KeyW: -1, ArrowUp: -1, KeyS: 1, ArrowDown: 1 };
 window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
-  if (e.code === 'KeyE') {
-    if (mode === 'inspect') closeInspect();
-    else if (mode === 'dialogue') closeDialogue();
-    else if (mode === 'pouch') mission1.viewKeep();
-    else if (mode === 'play' && nearNpc) openDialogue();
-    else if (mode === 'play' && nearPouch) openPouch('pickup');
-    else if (mode === 'play' && nearClue) openInspect();
-  } else if (e.code === 'KeyF') {
-    if (mode === 'dialogue' && mission1 && mission1.offerPending) acceptOffer();
-    else if (mode === 'pouch') mission1.viewHold(true);
-    else if (mode === 'play' && mission1 && mission1.mission.carrying) openPouch('carried');
-  } else if ((e.code === 'F8' || e.code === 'F9') && devControls) {
-    e.preventDefault();
-    devMission(e.code === 'F8');
-  } else if (e.code === 'KeyC' && (mode === 'play' || mode === 'dialogue')) {
+  const k = e.code;
+  if (k === 'KeyM') { hud.toast(audio.toggleMute() ? '静音 · Sound off' : '声音开 · Sound on', 1.6); return; }
+  if (k === 'KeyC' && (mode === 'play' || mode === 'dialogue')) {
     subtitlesOn = !subtitlesOn;
     hud.toast(subtitlesOn ? '字幕开 · Subtitles on' : '字幕关 · Subtitles off', 1.6);
-  } else if (e.code === 'KeyM') {
-    hud.toast(audio.toggleMute() ? '静音 · Sound off' : '声音开 · Sound on', 1.6);
-  } else if (e.code === 'Escape' && noLock) {
-    if (mode === 'dialogue') closeDialogue();
-    else if (mode === 'pouch') closePouch();
-    else if (mode === 'play' || mode === 'inspect') pause();
-    else if (mode === 'pause') play();
-  } else if (e.code === 'Enter' && mode === 'entry') begin();
+    return;
+  }
+  if ((k === 'F8' || k === 'F9') && devControls) { e.preventDefault(); devMission(k === 'F8'); return; }
+  if (mode === 'entry') { if (k === 'Enter') begin(); return; }
+  if (mode === 'pause') { if (k === 'Escape' && noLock) play(); return; }
+  if (mode === 'inspect') { if (k === 'KeyE' || (k === 'Escape' && noLock)) closeInspect(); return; }
+  if (mode === 'dialogue') {
+    if (k in CHOICE_KEYS) { if (mission1) mission1.dialogueMove(CHOICE_KEYS[k]); e.preventDefault(); }
+    else if (k === 'KeyE') confirmDialogue();
+    else if (k === 'Escape' && noLock) closeDialogue();
+    return;
+  }
+  if (mode === 'pouch') {
+    if (k in CHOICE_KEYS) { mission1.viewMove(CHOICE_KEYS[k]); e.preventDefault(); }
+    else if (k === 'KeyE') mission1.viewPress(true);
+    else if (k === 'Escape' && noLock) closePouch();
+    return;
+  }
+  if (mode === 'play') {
+    if (k === 'KeyE') interact();
+    else if (k === 'Escape' && noLock) pause();
+  }
 });
-window.addEventListener('keyup', (e) => { if (e.code === 'KeyF' && mission1) mission1.viewHold(false); });
-window.addEventListener('blur', () => { if (mission1) mission1.viewHold(false); });
-window.addEventListener('blur', () => { if ((mode === 'play' || mode === 'dialogue') && noLock) pause(); });
+window.addEventListener('keyup', (e) => { if (e.code === 'KeyE' && mission1) mission1.viewPress(false); });
+window.addEventListener('wheel', (e) => {
+  const d = Math.sign(e.deltaY);
+  if (!d) return;
+  if (mode === 'dialogue' && mission1) mission1.dialogueMove(d);
+  else if (mode === 'pouch' && mission1) mission1.viewMove(d);
+}, { passive: true });
+window.addEventListener('blur', () => { if (mission1) mission1.viewPress(false); });
+window.addEventListener('blur', () => { if ((mode === 'play' || mode === 'dialogue' || mode === 'pouch' || mode === 'inspect') && noLock) pause(); });
+
+// E while walking: act on the one selected target
+function interact() {
+  if (!target) return;
+  if (target.id === 'lin') openDialogue();
+  else if (target.id === 'pouch') openPouch();
+  else if (target.id === 'notice') openInspect();
+}
 player.onStep = (surface, running, landing) => audio.step(surface, running, landing);
 // If the browser kept the context suspended despite the Begin click, any later gesture wakes it.
 for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => {
@@ -215,7 +255,7 @@ for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => {
 });
 
 // ---- frame ----
-let nearClue = false, nearNpc = false, nearPouch = false, boundaryCooldown = 0;
+let target = null, boundaryCooldown = 0;   // target: { id, dist, cos } or null
 const debug = { noReflect: false, freezeTraffic: false };   // freezeTraffic: screenshot tool only
 const _v = new THREE.Vector3(), _d = new THREE.Vector3();
 
@@ -226,6 +266,12 @@ function wrapAngle(a) {
   return r;
 }
 
+// what the prompt says for each target: who / what, then the action E will take
+const PROMPTS = {
+  lin: () => ({ target: '老林 Old Lin', action: mission1 && mission1.mission.carrying ? '交还文件袋 · Hand over the pouch' : '交谈 · Talk' }),
+  notice: () => ({ target: '寻人启事 Notice', action: clueRead ? '再看一眼 · Look again' : '查看 · Read' }),
+  pouch: () => ({ target: '文件袋 Pouch', action: '查看 · Look' }),
+};
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
 function updateTraffic(dt) {
   const b = player.body;
@@ -280,25 +326,20 @@ function frame(now) {
   updateTraffic(mode === 'pause' || debug.freezeTraffic ? 0 : dt);
   world.pouch.update(camera, t);
 
-  // interactables: missing-person notice + waterfront NPCs
+  // interactables: ONE target at a time - within reach, in view, not hidden behind a wall or a person
   camera.getWorldDirection(_d);
-  _v.copy(world.clue.focus).sub(camera.position);
-  const clueDist = _v.length();
-  nearClue = mode === 'play' && clueDist < 2.7 && _v.normalize().dot(_d) > 0.78;
-
-  _v.copy(_pairPos).sub(camera.position);
-  const npcDist = _v.length();
-  nearNpc = mode === 'play' && npcDist < npcLayout.interactDistance && _v.normalize().dot(_d) > 0.55;
-
-  nearPouch = false;
-  if (mode === 'play' && mission1 && mission1.canPickUp()) {
-    _v.copy(world.pouch.focus).sub(camera.position);
-    nearPouch = _v.length() < 2.4 && _v.normalize().dot(_d) > 0.72;
+  const npcDist = _pairPos.distanceTo(camera.position);           // subtitles still use the pair's distance
+  target = null;
+  if (mode === 'play') {
+    const head = world.npcs.getSpeakerPosition('lin'), cf = world.clue.focus, pf = world.pouch.focus;
+    const cands = [
+      { id: 'lin', x: head.x, y: head.y - 0.1, z: head.z, reach: npcLayout.interactDistance, cone: 0.72, ignore: ['lin'] },
+      { id: 'notice', x: cf.x, y: cf.y, z: cf.z, reach: 2.7, cone: 0.78 },
+    ];
+    if (mission1 && mission1.canPickUp()) cands.push({ id: 'pouch', x: pf.x, y: pf.y, z: pf.z, reach: 2.4, cone: 0.72 });
+    target = pickTarget(camera.position, _d, cands, colliders);
   }
-
-  if (nearClue) hud.prompt(true, clueRead ? '再看一眼 · Look again' : '查看启事 · Read the notice');
-  else if (nearNpc) hud.prompt(true, mission1 && mission1.mission.carrying ? '交给老林 · Hand over the pouch' : '打招呼 · Greet');
-  else if (nearPouch) hud.prompt(true, '拿起文件袋 · Pick up the pouch');
+  if (target) hud.prompt(true, PROMPTS[target.id]());
   else hud.prompt(false);
 
   // subtitles + interaction greeting bar
@@ -312,7 +353,7 @@ function frame(now) {
       source: sourceLabel,
       interacting: true,
       showText: subtitlesOn,
-      offer: !!(mission1 && mission1.offerPending),
+      choices: mission1 ? mission1.dialogueChoices : null,
     });
   } else if (mode === 'play' && subtitlesOn && line && npcDist < npcLayout.audibility.maxDistance) {
     hud.subtitle(true, {
@@ -343,13 +384,14 @@ R.renderer.setAnimationLoop(frame);
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   player, camera, scene, R, audio,
-  get mode() { return mode; }, get nearClue() { return nearClue; }, get nearNpc() { return nearNpc; },
+  get mode() { return mode; }, get target() { return target; },
+  get nearClue() { return !!target && target.id === 'notice'; }, get nearNpc() { return !!target && target.id === 'lin'; },
   get clueRead() { return clueRead; }, get subtitlesOn() { return subtitlesOn; },
   get conversation() { return conversation; }, get dialogueAudio() { return dialogueAudio; },
   get npcs() { return world ? world.npcs : null; },
   // Mission One integration surface: mission.start(source) / reset() / on('start'|'complete'|...)
   get mission() { return mission1 ? mission1.mission : null; },
-  get mission1() { return mission1; }, get nearPouch() { return nearPouch; },
+  get mission1() { return mission1; }, get nearPouch() { return !!target && target.id === 'pouch'; },
   get traffic() { return traffic; },
   start() { noLock = true; if (mode === 'entry') begin(); },
 }));

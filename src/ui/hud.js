@@ -14,8 +14,12 @@ export function createHud() {
       setTimeout(() => $('keys').classList.add('faded'), 14000);
     },
     show(id, on) { $(id).classList.toggle('hidden', !on); },
+    // prompt(on, { target, action }) - the one thing E will do, and to what
     prompt(on, text) {
-      if (on && text) $('prompt-text').textContent = text;
+      if (on && text) {
+        const t = typeof text === 'string' ? { target: '', action: text } : text;
+        $('prompt-target').textContent = t.target || ''; $('prompt-text').textContent = t.action;
+      }
       $('prompt').classList.toggle('on', !!on); $('reticle').classList.toggle('on', !!on);
     },
     toast(text, seconds = 2.5) {
@@ -28,12 +32,13 @@ export function createHud() {
       el.append(a, document.createTextNode(en)); el.classList.add('on');
       clearTimeout(thoughtTimer); thoughtTimer = setTimeout(() => el.classList.remove('on'), 9000);
     },
-    subtitle(on, { speaker = '', text = '', source = '', interacting = false, showText = true, offer = false } = {}) {
-      const key = `${!!on}|${!!interacting}|${!!showText}|${!!offer}|${speaker}|${source}|${text}`;
+    subtitle(on, { speaker = '', text = '', source = '', interacting = false, showText = true, choices = null } = {}) {
+      const key = `${!!on}|${!!interacting}|${!!showText}|${choices ? choices.index : '-'}|${speaker}|${source}|${text}`;
       if (key === lastSubKey) return;
       lastSubKey = key;
       const el = $('subtitle');
       el.classList.toggle('on', !!on);
+      $('hud').classList.toggle('sub-on', !!on);                 // the thought line moves up out of its way
       el.classList.toggle('interacting', !!interacting);
       if (!on) return;
       $('sub-speaker').textContent = speaker;
@@ -41,8 +46,18 @@ export function createHud() {
       const textEl = $('sub-text');
       textEl.textContent = showText ? text : '';
       textEl.classList.toggle('hidden', !showText || !text);
-      $('sub-exit').classList.toggle('hidden', !interacting);
-      $('sub-agree').classList.toggle('hidden', !(interacting && offer));
+      const opts = $('sub-options'), choosing = !!(interacting && choices);
+      $('sub-exit').classList.toggle('hidden', !interacting || choosing);
+      opts.classList.toggle('hidden', !choosing);
+      if (choosing) {
+        opts.replaceChildren(...choices.options.map((o, i) => {
+          const row = document.createElement('div'); row.className = `opt${i === choices.index ? ' sel' : ''}`;
+          row.innerHTML = `<span class="mk">›</span> ${o.zh} · ${o.en}`; return row;
+        }));
+        const hint = document.createElement('div'); hint.className = 'opt-hint';
+        hint.innerHTML = '<kbd>W</kbd>/<kbd>S</kbd> 选择 · choose &nbsp; <kbd>E</kbd> 确认 · confirm';
+        opts.append(hint);
+      }
     },
     // Mission One objective panel. step: { zh, en, hint } or null to hide.
     objective(step) {

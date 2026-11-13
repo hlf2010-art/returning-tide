@@ -23,26 +23,26 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | Shift | hurry |
 | Space | jump (a short hop; barriers stay solid) |
 | Mouse | look (click the page to capture the pointer) |
-| E | read notice / greet NPCs / pick up / take sealed / put away / step back |
-| F | agree (when Old Lin asks) / look at the carried pouch / **hold** to break its seal |
+| E | the one interaction key: talk / read / look at the selected target; confirm the highlighted choice; **hold** on "break the seal" |
+| W / S, ↑ / ↓, wheel | while talking or looking at the pouch: move the highlighted choice |
 | C | Simplified Chinese subtitles on / off |
 | M | sound on / off (mutes ambience, footsteps, cues and voices) |
-| Esc | pause / step back from dialogue (click to return) |
+| Esc | back out of an open conversation / close-up / notice; otherwise pause (click to return). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
 
 ## Mission One — 错交 “The Wrong Handoff” (3–5 min)
 
 Old Lin asks you to fetch a sealed document pouch that Zhou's family supposedly left on the counter of
 Zhou's shuttered watch-repair stall on Hankou Road. The label is written in red marker, in Shanghainese,
-in the same hand as the threat scrawled over Zhou's missing-person notice. Take it sealed, or hold **F**
+in the same hand as the threat scrawled over Zhou's missing-person notice. Take it sealed, or select "break the seal" and hold **E**
 to break the seal: inside is a stall-transfer agreement signed in Zhou's name and dated **31 October**,
 two days after he was last seen (29 October, per the notice and Lin), with the new holder's name left
 blank. Opening it is permanent: the torn seal shows in your hand, in Lin's hands, and Lin remarks on it.
 
 | Step | Where | How |
 |---|---|---|
-| Offer | Old Lin, river railing | **E** greet → **F** agree (**E** steps back; he asks again next time) |
+| Offer | Old Lin, river railing | **E** talk → "Agree" highlighted, **E** confirms (**S** + **E** "Not now", or **Esc**: he asks again next time) |
 | Collect | Zhou's stall, north side of Hankou Road | look at the pouch on the counter, **E** |
-| Decide | close-up view | **E** take it sealed · hold **F** ~1 s to break the seal · **Esc** leave it |
+| Decide | close-up view | **E** "Take it, sealed" · **S** then hold **E** ~1 s "Break the seal" · **Esc** leave it |
 | Deliver | Old Lin | **E** hand over → completion card, Lin keeps the pouch, closing thought |
 
 Outcomes: `sealed` (agreement kept, contents unknown) or `opened` (discrepancy known, tampering visible).
@@ -60,6 +60,29 @@ mission.on('start' | 'change' | 'complete' | 'reset', fn)   // returns an unsubs
 // 'complete' payload: { outcome: 'sealed' | 'opened', seconds, source }
 mission.step / .sealed / .outcome / .snapshot()
 ```
+
+## Interaction loop (one key)
+
+**E** is the only interaction key. Walking about, the game picks **one** target, never two:
+within reach, roughly in front of the eye, on the same level, and not hidden behind a wall or a
+person (`src/engine/targeting.js`). The prompt names the target and what E will do
+(`老林 Old Lin  交谈 · Talk`, `文件袋 Pouch  查看 · Look`, `寻人启事 Notice  查看 · Read`).
+
+Input priority (`src/main.js`, first match wins, one key press = one action): global toggles
+(M, C, F8/F9) → entry screen → pause → the open interaction (it alone owns E, W/S/wheel, Esc) →
+walking (E acts on the selected target). Opening and closing any interaction goes through one pair
+of helpers: movement off / on, held keys forgotten, the camera left where it is.
+
+Loop: approach Old Lin → **E** → "Agree" (**E**) → the stall → **E** on the pouch → choose
+("Take it, sealed" or hold **E** on "Break the seal") → back to Old Lin → **E** → his response
+depends on the seal. The earlier extra "F: look at the carried pouch" is gone: the choice is made
+once, at the counter.
+
+**Voicing.** No line in the project has a recorded voice; all spoken lines use the existing
+Mandarin TTS fallback and the existing subtitle bar. Mission One's seven lines for Old Lin
+(`T.mission.lines`) are spoken that way like every other line. Everything else Mission One shows
+is **text only, unvoiced**: the choice labels, prompts, the objective panel, the pouch and document
+descriptions, the completion card and the closing thoughts.
 
 ## The Hankou Road crossing: signals and through traffic
 
@@ -143,7 +166,7 @@ src/ui/                HUD and stylesheet
 tests/                 node tests for movement, collision, boundaries, conversation and Mission One state (npm test)
 tools/                 headless screenshot / playtest / render-cost scripts (need Playwright installed globally:
                        NODE_PATH=$(npm root -g) node tools/playtest.mjs;
-                       tools/missiontest.mjs plays both Mission One branches with real key presses)
+                       tools/looptest.mjs plays the whole interaction loop, both outcomes, with real key presses)
 ```
 
 Everything is procedural (canvas textures, merged box/cylinder geometry, WebAudio synthesis; temporary Mandarin speech synthesis fallback for NPC lines).

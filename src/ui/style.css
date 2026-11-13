@@ -35,6 +35,8 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0.12em 0.45em; border: 1
 #toast.on { opacity: 1; }
 #thought { position: absolute; left: 50%; bottom: 13%; transform: translateX(-50%); max-width: min(40rem, 86vw); text-align: center; font: 500 italic 18px/1.6 var(--serif); text-shadow: 0 1px 10px #000, 0 0 2px #000; opacity: 0; transition: opacity 1.2s; }
 #thought.on { opacity: 1; }
+#thought { transition: opacity 1.2s, bottom 0.35s ease; }
+#hud.sub-on #thought { bottom: calc(58px + 190px); }
 #thought .zh { font-style: normal; color: var(--gold); display: block; }
 #subtitle { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); width: min(38rem, 88vw); padding: 11px 16px; background: rgba(5,8,15,0.72); border-left: 2px solid var(--gold); border-radius: 2px; text-shadow: 0 1px 6px #000; opacity: 0; transition: opacity 0.35s ease; }
 #subtitle.on { opacity: 1; }
@@ -44,7 +46,17 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0.12em 0.45em; border: 1
 #sub-source { font-size: 11px; letter-spacing: 0.03em; color: rgba(243,234,216,0.62); }
 #sub-text { font: 500 17px/1.55 var(--serif); color: var(--ink); }
 #sub-choices { display: flex; gap: 22px; flex-wrap: wrap; }
-#sub-agree { margin-top: 8px; font-size: 12.5px; letter-spacing: 0.05em; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+/* choices: one highlighted row, W/S to move, E to confirm (shared by dialogue and the pouch view) */
+#sub-options { margin-top: 9px; display: grid; gap: 4px; font-size: 13px; letter-spacing: 0.04em; }
+.opt { display: flex; align-items: center; gap: 8px; padding: 2px 6px; color: rgba(243,234,216,0.62); border-left: 2px solid transparent; }
+.opt .mk { visibility: hidden; color: var(--gold); }
+.opt.sel { color: var(--ink); border-left-color: var(--gold); background: rgba(231,185,106,0.1); }
+.opt.sel .mk { visibility: visible; }
+.opt small { opacity: 0.7; }
+.opt .hold { display: inline-block; width: 64px; height: 4px; background: rgba(243,234,216,0.2); border-radius: 2px; overflow: hidden; }
+.opt .hold b { display: block; height: 100%; width: 0; background: #ff8f80; }
+.opt-hint { margin-top: 4px; font-size: 11.5px; color: rgba(243,234,216,0.7); }
+#prompt-target { font-weight: 700; color: var(--gold); letter-spacing: 0.08em; }
 #sub-exit { margin-top: 8px; font-size: 12.5px; letter-spacing: 0.05em; color: rgba(243,234,216,0.86); display: flex; align-items: center; gap: 8px; }
 #keys { position: absolute; left: clamp(20px, 5vw, 64px); bottom: 22px; font-size: 12px; letter-spacing: 0.04em; color: rgba(243,234,216,0.7); text-shadow: 0 1px 4px #000; transition: opacity 2s; }
 #keys.faded { opacity: 0; }
@@ -85,9 +97,8 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0.12em 0.45em; border: 1
 #pouch .label em, #pouch .scrawl em { color: #ff8f80; font-size: 17px; }
 #pouch .discrepancy { border-left: 2px solid #ff8f80; padding-left: 10px; }
 #pouch .choices { margin-top: 22px; display: grid; gap: 10px; font: 500 13px var(--sans); letter-spacing: 0.05em; }
-#pouch .choices > div { display: flex; align-items: center; gap: 8px; }
-#pouch-hold { display: inline-block; width: 64px; height: 4px; margin-left: 6px; background: rgba(243,234,216,0.2); border-radius: 2px; overflow: hidden; }
-#pouch-hold b { display: block; height: 100%; width: 0; background: #ff8f80; }
+#pouch .choices { gap: 6px; }
+#pouch .hint { margin-top: 10px; font: 500 12px var(--sans); letter-spacing: 0.05em; opacity: 0.8; }
 #pouch .close { margin-top: 14px; font: 500 12px var(--sans); letter-spacing: 0.06em; opacity: 0.6; }
 @media (max-width: 820px) { #inspect { flex-direction: column; overflow: auto; justify-content: flex-start; } #inspect-paper canvas, #pouch-paper canvas.doc { height: auto; width: min(84vw, 420px); } }
 

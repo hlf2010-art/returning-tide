@@ -56,6 +56,9 @@ export function createPlayer(camera, dom) {
     camera.position.set(body.x, body.y + L.eye + bobY, body.z);
     camera.rotation.set(p.pitch, p.yaw, 0, 'YXZ');
   };
+  // Forget held movement / a queued jump (entering or leaving an interaction): keys still held
+  // come back through the OS key-repeat, so nothing sticks and nothing carries over silently.
+  p.clearInput = () => { for (const k in input) input[k] = false; jumpQueued = false; };
   p.teleport = (x, z, yaw = p.yaw, pitch = p.pitch) => {
     body.x = x; body.z = z; body.vx = body.vz = 0; body.vy = 0; body.air = false; body.y = groundHeight(x, z);
     p.yaw = yaw; p.pitch = pitch;

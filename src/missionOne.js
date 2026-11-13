@@ -6,8 +6,8 @@ import { T } from './world/text.js';
 
 // Both measured in wall-clock time: they are about human key presses, not the simulation
 // (which slows down when frames are long).
-const HOLD_TIME = 0.9;        // seconds F must be held to break the seal (no accidental taps)
-const INPUT_GUARD = 0.35;     // ignore E/F this long after a view opens (double presses, held keys)
+const HOLD_TIME = 0.9;        // seconds E must be held on "break the seal" (no accidental taps)
+const INPUT_GUARD = 0.35;     // ignore E this long after a view or a choice appears (double presses)
 const clock = () => performance.now() / 1000;
 const $ = (id) => document.getElementById(id);
 const L = T.mission.lines;
@@ -20,12 +20,10 @@ const STEP_TEXT = {
   carrySealed: {
     zh: '把文件袋交给江边栏杆旁的老林。',
     en: 'Bring the pouch to Old Lin at the river railing.',
-    hint: '<kbd>F</kbd> 看看文件袋 · Look at the pouch',
   },
   carryOpened: {
     zh: '把文件袋交给老林。封条已经破了。',
     en: 'Bring the pouch to Old Lin. The seal is broken.',
-    hint: '<kbd>F</kbd> 再看一眼 · Look again',
   },
 };
 const OUTCOME = {
@@ -41,13 +39,19 @@ const OUTCOME = {
   },
 };
 
+// Choices are text-only (unvoiced). W/S or the wheel moves the highlight; E confirms.
+const OFFER_OPTIONS = [{ id: 'accept', zh: '答应', en: 'Agree' }, { id: 'decline', zh: '先不了', en: 'Not now' }];
+const PICKUP_OPTIONS = [{ id: 'take', zh: '原封拿走', en: 'Take it, sealed' }, { id: 'break', zh: '撕开封条', en: 'Break the seal', hold: true }];
+const OPENED_OPTIONS = [{ id: 'away', zh: '收好', en: 'Put it away' }];
+
 export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => false, onViewClosed = () => {} }) {
   const mission = createWrongHandoff();
-  let offerPending = false;     // Old Lin has asked; waiting on F (agree) or E (step back)
+  let offerPending = false;     // Old Lin has asked; waiting on a choice (agree / not now)
+  let offerIndex = 0, offerShownAt = 0;
   let afterLineSaid = false;    // one outcome-specific greeting after completion, then normal ones
   let pendingThought = null;    // shown once the player steps back from the handoff
-  let view = null;              // null | 'pickup' | 'carry' | 'opened'
-  let viewOpenedAt = 0, holdStart = 0, hold = 0, holding = false;
+  let view = null;              // null | 'pickup' | 'opened'
+  let viewOpenedAt = 0, holdStart = 0, hold = 0, holding = false, viewIndex = 0;
   const viewAge = () => clock() - viewOpenedAt;
 
   pouch.attachToLin(npcs);
@@ -80,7 +84,7 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
   // What Lin says when greeted; null means "use an ordinary greeting".
   function greetLine() {
     switch (mission.step) {
-      case 'idle': offerPending = true; return L.offer;
+      case 'idle': offerPending = true; offerIndex = 0; offerShownAt = clock(); return L.offer;
       case 'collect': return L.remind;
       case 'carry': return L[mission.handOver()];
       default:
@@ -93,6 +97,14 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
     offerPending = false;
     mission.start('lin');
     return L.accept;
+  }
+  // the offer's two answers, chosen inside Old Lin's subtitle bar
+  function dialogueMove(d) { if (offerPending) offerIndex = Math.max(0, Math.min(OFFER_OPTIONS.length - 1, offerIndex + d)); }
+  // E in the dialogue: 'accept' | 'decline' | 'close' | null (too soon after the offer appeared)
+  function dialogueConfirm() {
+    if (!offerPending) return 'close';
+    if (clock() - offerShownAt < INPUT_GUARD) return null;
+    return OFFER_OPTIONS[offerIndex].id;
   }
   function dialogueClosed() {
     offerPending = false;                        // stepping back declines; Lin asks again next time
@@ -122,13 +134,23 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
         <p class="discrepancy">Nobody has seen Zhou since he packed up his stall at dusk on <b>29 October</b>. The notice by the river says so, and so does Old Lin.</p>
         <p>The seal is torn through. There is no pasting it back.</p>`;
     }
-    $('pouch-keep-text').textContent = kind === 'pickup' ? '原封拿走 · Take it, sealed' : '收好 · Put it away';
-    $('pouch-break').classList.toggle('hidden', !sealedNow);
+    renderOptions();
     $('pouch-esc').textContent = kind === 'pickup' ? 'Esc 先放着 · Leave it for now' : '';
-    $('pouch-hold').firstChild.style.width = '0%';
+  }
+  const viewOptions = () => (view === 'opened' ? OPENED_OPTIONS : PICKUP_OPTIONS);
+  function renderOptions() {
+    const box = $('pouch-options');
+    box.replaceChildren(...viewOptions().map((o, i) => {
+      const row = document.createElement('div');
+      row.className = `opt${i === viewIndex ? ' sel' : ''}`;
+      row.innerHTML = `<span class="mk">›</span> ${o.zh} · ${o.en}${o.hold ? ' <small>(按住 E · hold E)</small> <i class="hold"><b></b></i>' : ''}`;
+      return row;
+    }));
+    const multi = viewOptions().length > 1;
+    $('pouch-hint').innerHTML = multi ? '<kbd>W</kbd>/<kbd>S</kbd> 选择 · choose &nbsp; <kbd>E</kbd> 确认 · confirm' : '<kbd>E</kbd> 确认 · confirm';
   }
   function openView(kind) {
-    view = kind; viewOpenedAt = clock(); hold = 0; holding = false;
+    view = kind; viewOpenedAt = clock(); hold = 0; holding = false; viewIndex = 0;
     fillView(kind);
     hud.show('pouch', true);
   }
@@ -139,22 +161,26 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
     if (notify) onViewClosed();
   }
 
-  // E inside the view: take it sealed (at the stall) or put it away.
-  function viewKeep() {
-    if (!view || viewAge() < INPUT_GUARD) return;
-    if (view === 'pickup' && mission.pickUp()) audio.cue('collect');
-    closeView();
+  function viewMove(d) {
+    if (!view || holding) return;
+    const n = viewOptions().length, next = Math.max(0, Math.min(n - 1, viewIndex + d));
+    if (next !== viewIndex) { viewIndex = next; renderOptions(); }
   }
-  function viewHold(down) {
+  // E down / up inside the view. A plain option acts on press; a hold option needs E held.
+  function viewPress(down) {
     if (!down) { holding = false; return; }
-    if (!view || view === 'opened' || viewAge() < INPUT_GUARD || !mission.sealed || holding) return;
-    holding = true; holdStart = clock();
+    if (!view || viewAge() < INPUT_GUARD || holding) return;
+    const o = viewOptions()[viewIndex];
+    if (o.hold) { if (mission.sealed) { holding = true; holdStart = clock(); } return; }
+    if (o.id === 'take' && mission.pickUp()) audio.cue('collect');
+    closeView();
   }
 
   function update() {
     if (!view) return;
     hold = holding ? clock() - holdStart : 0;
-    $('pouch-hold').firstChild.style.width = `${Math.min(100, (hold / HOLD_TIME) * 100)}%`;
+    const bar = document.querySelector('#pouch-options .hold b');
+    if (bar) bar.style.width = `${Math.min(100, (hold / HOLD_TIME) * 100)}%`;
     if (hold >= HOLD_TIME && mission.sealed) {
       // taken and torn in one go: the lift, then the rip a beat later
       const lifted = mission.step === 'collect' && mission.pickUp();
@@ -172,9 +198,11 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
     greetLine, accept, dialogueClosed,
     canPickUp: () => mission.step === 'collect',
     openPickup: () => { if (mission.step === 'collect' && !view) openView('pickup'); return view === 'pickup'; },
-    openCarried: () => { if (mission.step === 'carry' && !view) openView(mission.sealed ? 'carry' : 'opened'); return !!view; },
-    viewKeep, viewHold, closeView, update, devStart,
+    viewMove, viewPress, closeView, update, devStart,
+    dialogueMove, dialogueConfirm,
+    get dialogueChoices() { return offerPending ? { options: OFFER_OPTIONS, index: offerIndex } : null; },
     get offerPending() { return offerPending; },
+    get viewIndex() { return viewIndex; },
     get view() { return view; },
     get hold() { return hold; },
   };
