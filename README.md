@@ -61,6 +61,39 @@ mission.on('start' | 'change' | 'complete' | 'reset', fn)   // returns an unsubs
 mission.step / .sealed / .outcome / .snapshot()
 ```
 
+## The Hankou Road crossing: signals and through traffic
+
+The zebra at the foot of the promenade stair is now a working signal-controlled crossing on
+Zhongshan East 1st Road: 7 vehicles in the two inner lanes each way (straight through only),
+4 background pedestrians (one elderly and slow), Chinese-style signals (horizontal red-yellow-green
+mast-arm heads with countdowns, red standing / green walking pedestrian heads with countdowns).
+
+- **One authority** (`src/engine/traffic.js`, `createSignalController`): owns the vehicle aspect,
+  the pedestrian aspect and every movement permission. Phases: green → green flashing (绿闪) →
+  yellow → all-red (held until the junction box is empty) → walk → walk flashing → all-red
+  (held until the crosswalk is empty, including the player) → green. All intervals live in
+  `TRAFFIC_CONFIG`.
+- **Vehicles**: Intelligent Driver Model car-following; smooth braking, safe queue spacing,
+  staggered reaction-time departures; a once-per-yellow stop/go decision (stop if ≤ 3 m/s² will do);
+  never pass the stop line without room beyond the junction; yield to anyone (player included)
+  in or stepping into their lane; wheels turn with distance, brake lamps follow deceleration.
+- **Pedestrians** step off only on a steady green figure, always finish crossing, and step round
+  the player if blocked. The player is treated as a pedestrian.
+- Vehicles leave and rejoin at the far ends of the road (≥ 320 m from anywhere the player can
+  stand). The closure barriers keep the pavements and curb lanes; the inner lanes are open.
+- The stop lines were on the wrong sides of the zebra for right-hand traffic; corrected.
+
+**Vehicle fidelity is incomplete.** No licensed or free 3D assets of the NIO ET5, Li Auto L9,
+Luxeed R7 or AITO M9 were available, so these four are **labelled placeholders** for behaviour
+testing: published length / width / height / wheelbase and wheel size, body type and an
+approximate lighting layout, no manufacturer logos, "占位 PLACEHOLDER" on both sides and the rear.
+They are not recognisable likenesses. Replace each in `src/world/vehicles.js` (`MODELS`, same
+origin and axes) with a licensed asset. The taxis and dark sedan reuse the existing street car.
+
+Tests: `npm test` (includes `tests/traffic.test.mjs`); in the browser
+`tools/traffictest.mjs` (signals, meshes, brake lights, wheels, player crossing, pause),
+`tools/vehicleshots.mjs` (each vehicle from three angles), `tools/trafficperf.mjs` (A/B cost).
+
 ## What is here
 
 - Walk from Hankou Road out onto Zhongshan East 1st Road, up the stair, along the promenade.
@@ -80,6 +113,10 @@ src/world/text.js      all in-world Chinese text, NPC dialogue and Mission One l
 src/world/pouch.js     Mission One's item: procedural pouch / torn pouch / document canvases, one placeholder box mesh
 src/engine/wrongHandoff.js  Mission One state (pure, node-tested): idle -> collect -> carry -> complete
 src/missionOne.js      Mission One glue: Lin's lines, pouch close-up view, objective HUD, outcomes
+src/engine/traffic.js  the crossing: signal controller (sole authority), IDM vehicles, pedestrians (pure, node-tested)
+src/world/vehicles.js  through-traffic visuals (4 labelled placeholders + reused street cars)
+src/world/signals.js   mast-arm vehicle heads, pedestrian heads, countdowns
+src/world/pedestrians.js, instancer.js   background walkers; instancing / merging to keep draw calls down
 src/ui/                HUD and stylesheet
 tests/                 node tests for movement, collision, boundaries, conversation and Mission One state (npm test)
 tools/                 headless screenshot / playtest / render-cost scripts (need Playwright installed globally:

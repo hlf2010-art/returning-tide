@@ -25,6 +25,11 @@ import { createConversation } from './engine/conversation.js';
 import { createHud } from './ui/hud.js';
 import { createPouch, HELD_LAYER } from './world/pouch.js';
 import { createMissionOne } from './missionOne.js';
+import { crossing, addDynamicCollider } from './world/layout.js';
+import { createTraffic } from './engine/traffic.js';
+import { createVehicles } from './world/vehicles.js';
+import { createSignals } from './world/signals.js';
+import { createPedestrians } from './world/pedestrians.js';
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('view');
@@ -40,7 +45,7 @@ let mode = 'boot';              // boot -> entry -> play <-> pause / inspect / d
 let noLock = params.has('nolock');
 let subtitlesOn = params.get('subs') !== '0';
 let world = null, clueRead = false, t = 0, last = performance.now();
-let dialogueAudio = null, conversation = null, mission1 = null;
+let dialogueAudio = null, conversation = null, mission1 = null, traffic = null;
 // Temporary developer controls for Mission One (F8 start, F9 reset): dev server or ?dev only.
 const devControls = import.meta.env.DEV || params.has('dev');
 camera.layers.enable(HELD_LAYER);
@@ -56,11 +61,16 @@ async function boot() {
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
   const npcs = createNpcs(M);
   const pouch = createPouch();
-  scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes);
+  // the signal-controlled crossing: one controller, through traffic, background pedestrians
+  traffic = createTraffic({ geom: crossing, vehicles: crossing.vehicles, peds: crossing.peds });
+  const vehicles = createVehicles(crossing.vehicles), signals = createSignals(), pedestrians = createPedestrians(traffic.peds);
+  const vehicleBoxes = traffic.vehicles.map(() => addDynamicCollider('vehicle'));
+  scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
+    vehicles.group, signals.group, pedestrians.group);
   const lighting = createLighting(scene, street.lanterns);
   scene.updateMatrixWorld(true);
   captureEnvironment(R.renderer, scene);
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch };
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes };
   dialogueAudio = createDialogueAudio({
     audio,
     camera,
@@ -200,7 +210,7 @@ player.onStep = (surface, running) => audio.step(surface, running);
 
 // ---- frame ----
 let nearClue = false, nearNpc = false, nearPouch = false, boundaryCooldown = 0;
-const debug = { noReflect: false };
+const debug = { noReflect: false, freezeTraffic: false };   // freezeTraffic: screenshot tool only
 const _v = new THREE.Vector3(), _d = new THREE.Vector3();
 
 function wrapAngle(a) {
@@ -208,6 +218,23 @@ function wrapAngle(a) {
   while (r > Math.PI) r -= Math.PI * 2;
   while (r < -Math.PI) r += Math.PI * 2;
   return r;
+}
+
+const _player = { x: 0, z: 0, vx: 0, vz: 0 };
+function updateTraffic(dt) {
+  const b = player.body;
+  _player.x = b.x; _player.z = b.z; _player.vx = b.vx; _player.vz = b.vz;
+  // on the promenade deck the player is nowhere near the road
+  traffic.update(dt, { player: b.y > 1 ? null : _player });
+  world.vehicles.update(traffic.vehicles);
+  world.pedestrians.update(traffic.peds, dt);
+  world.signals.update(traffic.controller);
+  traffic.vehicles.forEach((v, i) => {
+    const box = world.vehicleBoxes[i];
+    if (!v.active) { box.minX = box.maxX = box.minZ = box.maxZ = 1e6; return; }
+    box.minX = v.x - v.width / 2; box.maxX = v.x + v.width / 2;
+    box.minZ = v.z - v.len / 2; box.maxZ = v.z + v.len / 2;
+  });
 }
 
 function frame(now) {
@@ -241,6 +268,7 @@ function frame(now) {
     playerPos: player.body,
   });
   if (mission1) mission1.update();
+  updateTraffic(mode === 'pause' || debug.freezeTraffic ? 0 : dt);
   world.pouch.update(camera, t);
 
   // interactables: missing-person notice + waterfront NPCs
@@ -313,6 +341,7 @@ Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   // Mission One integration surface: mission.start(source) / reset() / on('start'|'complete'|...)
   get mission() { return mission1 ? mission1.mission : null; },
   get mission1() { return mission1; }, get nearPouch() { return nearPouch; },
+  get traffic() { return traffic; },
   start() { noLock = true; if (mode === 'entry') begin(); },
 }));
 

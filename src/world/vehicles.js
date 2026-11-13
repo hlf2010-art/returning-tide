@@ -1,0 +1,194 @@
+// Through-traffic vehicles for the Hankou Road crossing.
+//
+// FOUR NAMED MODELS ARE PLACEHOLDERS. No licensed or freely licensed 3D assets of the NIO ET5,
+// Li Auto L9, Luxeed R7 or AITO M9 were available to this project, so these are procedural
+// stand-ins for behaviour testing only. They have the published length / width / height /
+// wheelbase / wheel size, the right body type and an approximation of each car's lighting
+// layout, but they are NOT faithful models. They carry no manufacturer logos and are
+// labelled "占位 PLACEHOLDER" on both sides and the rear. Replace each with a real asset
+// (same origin: centre of the footprint at ground level, nose toward +z).
+//
+// The taxis and dark sedan reuse the street's existing generic car.
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { buildCar } from './street.js';
+import { createInstancer, mergeStatic } from './instancer.js';
+import { makeCanvas, tex, FONT } from './canvas.js';
+
+const std = (o) => new THREE.MeshStandardMaterial(o);
+const TAIL_RUN = new THREE.Color(0.55, 0.02, 0.015), TAIL_BRAKE = new THREE.Color(4.2, 0.12, 0.06);
+
+// Side profiles: [z as a fraction of length (-0.5 rear .. +0.5 nose), height in m].
+// Approximations of each car's silhouette from public photographs, not measured CAD.
+const MODELS = {
+  'nio-et5': {
+    name: 'NIO ET5', zh: '蔚来', paint: 0xb9c0c6, wheelD: 0.70, frontOverhang: 0.93,
+    body: [[-0.5, 0.32], [-0.5, 0.62], [-0.47, 0.93], [-0.36, 0.96], [0.2, 0.93], [0.42, 0.78], [0.5, 0.6], [0.49, 0.32]],
+    glass: [[-0.37, 0.95], [-0.14, 1.39], [0.03, 1.42], [0.21, 0.93]],
+    lidar: 0.05,
+    head: [{ y: 0.74, w: 0.36, h: 0.035, x: 0.6, z: 0.44 }, { y: 0.56, w: 0.22, h: 0.05, x: 0.68, z: 0.495 }],
+    tail: { y: 0.9, h: 0.04, through: true },
+  },
+  'li-l9': {
+    name: 'Li Auto L9', zh: '理想', paint: 0x8f9a94, wheelD: 0.77, frontOverhang: 0.98,
+    body: [[-0.5, 0.36], [-0.5, 1.06], [-0.47, 1.1], [0.27, 1.08], [0.4, 1.02], [0.5, 0.92], [0.5, 0.36]],
+    glass: [[-0.475, 1.08], [-0.46, 1.74], [0.11, 1.75], [0.27, 1.08]],
+    lidar: 0.1,
+    head: [{ y: 0.98, w: 1.82, h: 0.04, x: 0, z: 0.5 }],                     // full-width front light bar
+    tail: { y: 1.12, h: 0.06, through: true },
+  },
+  'luxeed-r7': {
+    name: 'Luxeed R7', zh: '智界', paint: 0xc8722f, wheelD: 0.74, frontOverhang: 0.95,
+    body: [[-0.5, 0.34], [-0.5, 0.78], [-0.46, 1.04], [-0.38, 1.03], [0.22, 0.99], [0.42, 0.88], [0.5, 0.66], [0.49, 0.34]],
+    glass: [[-0.4, 1.02], [-0.12, 1.6], [0.05, 1.62], [0.23, 0.99]],
+    lidar: 0.06,
+    head: [{ y: 0.86, w: 1.86, h: 0.025, x: 0, z: 0.47 }],                    // thin through-type strip
+    tail: { y: 1.0, h: 0.035, through: true },
+  },
+  'aito-m9': {
+    name: 'AITO M9', zh: '问界', paint: 0x45505c, wheelD: 0.77, frontOverhang: 1.0,
+    body: [[-0.5, 0.36], [-0.5, 1.0], [-0.46, 1.1], [0.25, 1.07], [0.42, 1.0], [0.5, 0.88], [0.5, 0.36]],
+    glass: [[-0.455, 1.09], [-0.42, 1.74], [0.08, 1.76], [0.25, 1.07]],
+    lidar: 0.08,
+    head: [{ y: 0.95, w: 1.7, h: 0.03, x: 0, z: 0.5 }, { y: 0.78, w: 0.3, h: 0.12, x: 0.66, z: 0.5 }],
+    tail: { y: 1.06, h: 0.05, through: true },
+  },
+};
+
+function profileGeometry(pts, L, depth) {
+  const sh = new THREE.Shape();
+  pts.forEach(([f, y], i) => (i ? sh.lineTo(f * L, y) : sh.moveTo(f * L, y)));
+  const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelSize: 0.06, bevelThickness: 0.06, bevelSegments: 2 });
+  g.translate(0, 0, -depth / 2); g.rotateY(-Math.PI / 2);                     // profile along z, extruded across x
+  return g;
+}
+
+function labelMaterial(text1, text2) {
+  const [c, ctx] = makeCanvas(512, 110);
+  ctx.fillStyle = 'rgba(12,14,18,0.82)'; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.strokeStyle = '#ffcf3a'; ctx.lineWidth = 8; ctx.strokeRect(4, 4, c.width - 8, c.height - 8);
+  ctx.fillStyle = '#ffcf3a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${c.height * 0.34}px ${FONT.sans}`; ctx.fillText(text1, c.width / 2, c.height * 0.33);
+  ctx.fillStyle = '#f2f2f2'; ctx.font = `700 ${c.height * 0.28}px ${FONT.sans}`; ctx.fillText(text2, c.width / 2, c.height * 0.72);
+  const map = tex(c, { repeat: false });
+  return std({ map, emissive: 0xffffff, emissiveMap: map, emissiveIntensity: 0.55, roughness: 0.6 });
+}
+// shared by every placeholder: vertex colours carry paint / glass / trim
+const shellMat = std({ vertexColors: true, roughness: 0.3, metalness: 0.5 });
+const headMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.5, 2.7) });
+
+// Wheel: tyre + five-spoke rim in one geometry (vertex colours), so it costs one draw call.
+const wheelCache = new Map();
+const wheelMat = std({ vertexColors: true, roughness: 0.55, metalness: 0.5 });
+function wheelGeometry(d) {
+  if (wheelCache.has(d)) return wheelCache.get(d);
+  const r = d / 2, parts = [];
+  const paint = (g, hex) => {
+    const c = new THREE.Color(hex), n = g.attributes.position.count, a = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) a.set([c.r, c.g, c.b], i * 3);
+    g.setAttribute('color', new THREE.BufferAttribute(a, 3));
+    return g.index ? g.toNonIndexed() : g;
+  };
+  const tyre = new THREE.CylinderGeometry(r, r, 0.24, 22); tyre.rotateZ(Math.PI / 2);
+  parts.push(paint(tyre, 0x0b0b0c));
+  const rim = new THREE.CylinderGeometry(r * 0.66, r * 0.66, 0.245, 22); rim.rotateZ(Math.PI / 2);
+  parts.push(paint(rim, 0x2a2d31));
+  for (let i = 0; i < 5; i++) {
+    const sp = new THREE.BoxGeometry(0.03, r * 1.2, 0.07); sp.translate(0.115, 0, 0); sp.rotateX((i / 5) * Math.PI * 2);
+    parts.push(paint(sp, 0xa8adb3));
+  }
+  const hub = new THREE.CylinderGeometry(0.05, 0.05, 0.25, 10); hub.rotateZ(Math.PI / 2);
+  parts.push(paint(hub, 0xc8ccd0));
+  const g = mergeGeometries(parts.map((p) => { for (const k of Object.keys(p.attributes)) if (!['position', 'normal', 'color'].includes(k)) p.deleteAttribute(k); return p; }));
+  wheelCache.set(d, g);
+  return g;
+}
+// wheels are pivots; the instancer draws all wheels of one size in a single call
+let wheels = null;
+const wheelPivot = (d) => () => wheels.add(`wheel-${d}`, wheelGeometry(d), wheelMat, new THREE.Object3D());
+
+function buildPlaceholder(spec) {
+  const M = MODELS[spec.model], L = spec.len, W = spec.width;
+  const g = new THREE.Group();
+  const tailMat = new THREE.MeshBasicMaterial({ color: TAIL_RUN.clone() });
+  const brakeOnly = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.05, 0, 0) });
+  const part = (geo, color) => { const m = new THREE.Mesh(geo); m.userData.color = new THREE.Color(color); return m; };
+  const at = (m, x, y, z) => { m.position.set(x, y, z); return m; };
+
+  // body, greenhouse, roof LiDAR and dark cladding: one vertex-coloured mesh
+  const PL = L - 0.12;                                                          // the 6 cm bevel brings it back to L
+  const roofY = Math.max(...M.glass.map((p) => p[1]));
+  const shell = [
+    part(profileGeometry(M.body, PL, W - 0.14), M.paint),
+    part(profileGeometry(M.glass, PL, W - 0.34), 0x05080c),
+    at(part(new THREE.BoxGeometry(0.34, 0.07, 0.2), 0x0c0d0f), 0, roofY + 0.06, M.lidar * L + 0.12),   // all four carry one
+    at(part(new THREE.BoxGeometry(W - 0.1, 0.16, L * 0.62), 0x0c0d0f), 0, 0.38, 0),
+  ];
+  g.add(new THREE.Mesh(mergeStatic(shell, { colors: true }), shellMat));
+
+  // lighting signatures
+  const nose = L / 2, tailZ = -L / 2, heads = [];
+  for (const h of M.head) for (const s of h.x ? [-1, 1] : [0]) heads.push(at(new THREE.Mesh(new THREE.BoxGeometry(h.w, h.h, 0.04)), s * h.x, h.y, h.z * L + 0.03));
+  g.add(new THREE.Mesh(mergeStatic(heads), headMat));
+  const tails = [at(new THREE.Mesh(new THREE.BoxGeometry(W - 0.2, M.tail.h, 0.04)), 0, M.tail.y, tailZ)];
+  for (const s of [-1, 1]) tails.push(at(new THREE.Mesh(new THREE.BoxGeometry(0.28, M.tail.h * 2.2, 0.05)), s * (W / 2 - 0.22), M.tail.y, tailZ - 0.01));
+  g.add(new THREE.Mesh(mergeStatic(tails), tailMat));
+  g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.03), brakeOnly), 0, roofY - 0.06, tailZ * 0.9));   // high-mounted stop lamp
+
+  // wheels at the published wheelbase, front axle one overhang back from the nose
+  const wl = [], fz = nose - M.frontOverhang, rz = fz - spec.wheelbase, track = W / 2 - 0.16;
+  for (const z of [fz, rz]) for (const s of [-1, 1]) {
+    const w = wheelPivot(M.wheelD)(); w.position.set(s * track, M.wheelD / 2, z); w.rotation.y = s < 0 ? Math.PI : 0;
+    g.add(w); wl.push(w);
+  }
+  // placeholder labels, both sides + rear, one texture, one mesh
+  const plates = [];
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.32)); p.position.set(s * W / 2, 0.72, 0.1); p.rotation.y = s * Math.PI / 2; plates.push(p); }
+  const rp = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.32)); rp.scale.setScalar(0.62); rp.position.set(0, 0.62, tailZ - 0.03); rp.rotation.y = Math.PI; plates.push(rp);
+  g.add(new THREE.Mesh(mergeStatic(plates, { uv: true }), labelMaterial('占位 PLACEHOLDER', `${M.name} ${M.zh}`)));
+
+  return { g, wheels: wl, wheelRadius: M.wheelD / 2, setBraking(b) { tailMat.color.copy(b ? TAIL_BRAKE : TAIL_RUN); brakeOnly.color.setRGB(b ? 4 : 0.05, b ? 0.1 : 0, b ? 0.05 : 0); } };
+}
+
+function buildGeneric(spec) {
+  const taxi = spec.model === 'taxi';
+  const c = buildCar(taxi ? 0x0c8f8a : 0x101216, taxi, { moving: true, wheelMesh: wheelPivot(0.66) });
+  c.tailMat.color.copy(TAIL_RUN);
+  // the parked model has no lit headlamps; moving cars at dusk need them
+  const lamps = [-1, 1].map((s) => { const h = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 0.03)); h.position.set(s * 0.62, 0.62, 2.35); return h; });
+  c.g.add(new THREE.Mesh(mergeStatic(lamps), headMat));
+  return { g: c.g, wheels: c.wheels, wheelRadius: 0.33, setBraking(b) { c.tailMat.color.copy(b ? TAIL_BRAKE : TAIL_RUN); } };
+}
+
+export const PLACEHOLDER_MODELS = Object.keys(MODELS);
+
+export function createVehicles(specs) {
+  const group = new THREE.Group(); group.name = 'traffic-vehicles';
+  wheels = createInstancer('traffic-wheels');
+  const list = specs.map((spec) => {
+    const v = MODELS[spec.model] ? buildPlaceholder(spec) : buildGeneric(spec);
+    v.g.name = `vehicle-${spec.id}`;
+    group.add(v.g);
+    return { ...v, id: spec.id, placeholder: !!MODELS[spec.model], braking: null };
+  });
+  wheels.build(); group.add(wheels.group);
+  const instancer = wheels;
+  return {
+    group, list,
+    // sim: traffic.vehicles (same order as specs)
+    update(sim) {
+      for (let i = 0; i < list.length; i++) {
+        const v = list[i], s = sim[i];
+        v.g.visible = s.active;
+        for (const w of v.wheels) w.visibleOwner = s.active;
+        if (!s.active) continue;
+        v.g.position.set(s.x, 0, s.z); v.g.rotation.y = s.yaw;
+        const ang = s.wheelDist / v.wheelRadius;
+        for (const w of v.wheels) w.rotation.x = ang;                        // Euler XYZ: spins about the axle even when mirrored
+        v.g.updateMatrixWorld(true);
+        if (s.braking !== v.braking) { v.braking = s.braking; v.setBraking(s.braking); }
+      }
+      instancer.sync();
+    },
+  };
+}

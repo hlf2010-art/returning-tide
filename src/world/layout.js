@@ -56,6 +56,50 @@ export const npcs = {
   ],
 };
 
+// ---- the signal-controlled crossing at Hankou Road / Zhongshan East 1st Road ----
+// Right-hand traffic, straight through only. Travel coordinate along a lane: s = z * dir
+// (dir +1 southbound / +z, dir -1 northbound / -z), so both directions share the numbers below.
+export const crossing = {
+  stopS: -5.4,                 // stop line (painted -5.6..-5.2 on each approach)
+  boxEndS: 5.6,                // far edge of the junction box (the opposing stop line)
+  crosswalk: { x0: -27.6, x1: -4.3, z0: -3.4, z1: 3.4 },
+  road: { x0: L.westCurbX, x1: L.eastCurbX },
+  entryS: -415, exitS: 415,    // where through traffic joins / leaves (>= 320 m from anywhere the player can stand)
+  // the two inner lanes each way carry traffic; curb lanes keep their parked cars
+  lanes: [
+    { id: 'sb1', x: -17.8, dir: 1 }, { id: 'sb2', x: -21.4, dir: 1 },
+    { id: 'nb1', x: -14.2, dir: -1 }, { id: 'nb2', x: -10.6, dir: -1 },
+  ],
+  openLanes: { x0: -23.2, x1: -8.8 },             // gap left in the closure barriers for them
+  // Chinese-style mast-arm signals on the far right of each approach, ped heads at each kerb
+  vehPoles: [
+    { x: -28.45, z: 8.6, armTo: -19.6, faces: -1 },  // serves southbound (faces north, -z)
+    { x: -3.55, z: -8.6, armTo: -12.4, faces: 1 },   // serves northbound (faces south, +z)
+  ],
+  pedPoles: [
+    { x: -28.4, z: -4.45, faces: 1 },              // west kerb; its head faces east, across the road
+    { x: -3.55, z: 3.95, faces: -1 },               // east kerb; faces west
+  ],
+  // through traffic. Dimensions (m) are the makers' published figures as I know them;
+  // `model` selects the visual in world/vehicles.js. s = initial front-bumper position.
+  vehicles: [
+    { id: 'l9', model: 'li-l9', lane: 'sb1', s: -14, len: 5.218, width: 1.998, height: 1.800, wheelbase: 3.105 },
+    { id: 'taxi-a', model: 'taxi', lane: 'sb1', s: -70, len: 4.6, width: 1.78, height: 1.5, wheelbase: 2.82 },
+    { id: 'r7', model: 'luxeed-r7', lane: 'sb2', s: -150, len: 4.956, width: 1.999, height: 1.656, wheelbase: 2.950 },
+    { id: 'et5', model: 'nio-et5', lane: 'nb1', s: -26, len: 4.790, width: 1.960, height: 1.499, wheelbase: 2.888 },
+    { id: 'taxi-b', model: 'taxi', lane: 'nb1', s: -210, len: 4.6, width: 1.78, height: 1.5, wheelbase: 2.82 },
+    { id: 'm9', model: 'aito-m9', lane: 'nb2', s: -95, len: 5.230, width: 1.999, height: 1.800, wheelbase: 3.110 },
+    { id: 'sedan', model: 'sedan', lane: 'nb2', s: -300, len: 4.6, width: 1.78, height: 1.5, wheelbase: 2.82 },
+  ],
+  // background pedestrians: crossing line, which west corner they use, wander targets, speed
+  peds: [
+    { id: 'p1', zc: -2.4, corner: -1, westWander: [-30.2, -11], eastWander: [-0.9, -12], speed: 1.32, look: 0 },
+    { id: 'p2', zc: -0.8, corner: 1, westWander: [-29.6, 15], eastWander: [-1.1, 9], speed: 1.12, look: 1, startEast: true },
+    { id: 'p3', zc: 0.9, corner: 1, westWander: [-40, 5.2], eastWander: [-0.8, 16], speed: 1.45, look: 2 },
+    { id: 'p4', zc: 2.5, corner: -1, westWander: [-42, -5.2], eastWander: [-1.0, -7], speed: 0.62, look: 3, startEast: true },  // elderly, slow
+  ],
+};
+
 // ---- colliders: axis-aligned boxes in the XZ plane ----
 export const colliders = [];
 function box(minX, maxX, minZ, maxZ, tag = 'solid') {
@@ -99,6 +143,15 @@ box(bikes.x - 0.9, bikes.x + 0.9, bikes.z0 - 0.3, bikes.z0 + bikes.n * bikes.gap
 around(stall.x, stall.z, 1.0, 0.75, 'stall');
 for (const t of streetTrees) around(t.x, t.z, 0.3, 0.3, 'tree');
 for (const n of npcs.list) around(n.x, n.z, 0.34, 0.34, 'npc');
+for (const p of crossing.vehPoles) around(p.x, p.z, 0.2, 0.2, 'signal');
+for (const p of crossing.pedPoles) around(p.x, p.z, 0.1, 0.1, 'signal');
+
+// Moving things (vehicles) keep their boxes here too; traffic updates them in place each frame.
+export function addDynamicCollider(tag) {
+  const b = { minX: 1e6, maxX: 1e6, minZ: 1e6, maxZ: 1e6, tag };   // parked far away until placed
+  colliders.push(b);
+  return b;
+}
 
 // ---- ground ----
 export function groundHeight(x, z) {

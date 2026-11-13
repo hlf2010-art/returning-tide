@@ -1,6 +1,6 @@
 // Street level: Zhongshan East 1st Road, Hankou Road and what stands on them.
 import * as THREE from 'three';
-import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees } from './layout.js';
+import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees, crossing } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT, glowTexture } from './canvas.js';
 import { tree } from './promenade.js';
@@ -43,7 +43,8 @@ function ground(B) {
     B.paint.floor(x - 0.075, x + 0.075, z, z + 4, y);
   }
   for (let x = -27.3; x < -4.6; x += 0.9) B.paint.floor(x, x + 0.45, -3.2, 3.2, y);                    // zebra
-  B.paint.floor(-27.3, -16.4, 5.2, 5.6, y); B.paint.floor(-15.6, -4.7, -5.6, -5.2, y);                 // stop lines
+  // stop lines, right-hand traffic: southbound (west half) stops north of the zebra, northbound south of it
+  B.paint.floor(-27.3, -16.4, -5.6, -5.2, y); B.paint.floor(-15.6, -4.7, 5.2, 5.6, y);
   for (let z = -3.4; z < 3.2; z += 0.9) B.paint.floor(-33.4, -30.2, z, z + 0.45, y);                   // zebra across Hankou Rd
   // manholes
   for (const [x, z] of [[-20, 9], [-10.5, -22], [-62, 1.2], [-44, -1.5], [-14, 48]]) B.iron.cyl(x, 0.002, z, 0.36, 0.36, 0.012, 20);
@@ -64,6 +65,14 @@ function roadLamp(B, x, z, armDir) {
 }
 
 function car(group, { x, z, yaw }, paint, isTaxi) {
+  const { g } = buildCar(paint, isTaxi);
+  g.position.set(x, x < L.eastCurbX ? 0 : CH, z); g.rotation.y = yaw;
+  group.add(g);
+}
+
+// The street's generic car (Shanghai taxi / dark sedan). `moving` keeps the wheels as separate
+// meshes (so traffic can spin them) and gives this car its own tail-lamp material (brake lights).
+export function buildCar(paint, isTaxi, { moving = false, wheelMesh = null } = {}) {
   const g = new THREE.Group();
   const prof = (pts, depth) => {
     const sh = new THREE.Shape(); pts.forEach(([a, b], i) => (i ? sh.lineTo(a, b) : sh.moveTo(a, b)));
@@ -78,18 +87,24 @@ function car(group, { x, z, yaw }, paint, isTaxi) {
   const glassMat = std({ color: 0x06090d, roughness: 0.06, metalness: 0.9 });
   g.add(new THREE.Mesh(body, bodyMat), new THREE.Mesh(cabin, bodyMat), new THREE.Mesh(glass, glassMat));
   const parts = batchSet(['rubber', 'steel', 'tail', 'head']);
+  const wheels = [];
   for (const sx of [-1, 1]) for (const sz of [-1.42, 1.4]) {
-    const w = new THREE.CylinderGeometry(0.33, 0.33, 0.24, 18); w.rotateZ(Math.PI / 2);
-    parts.rubber.add(w, { x: sx * 0.8, y: 0.33, z: sz });
-    const h = new THREE.CylinderGeometry(0.19, 0.19, 0.25, 12); h.rotateZ(Math.PI / 2);
-    parts.steel.add(h, { x: sx * 0.81, y: 0.33, z: sz });
+    if (moving && wheelMesh) {
+      const w = wheelMesh(); w.position.set(sx * 0.8, 0.33, sz); w.rotation.y = sx < 0 ? Math.PI : 0; g.add(w); wheels.push(w);
+    } else {
+      const w = new THREE.CylinderGeometry(0.33, 0.33, 0.24, 18); w.rotateZ(Math.PI / 2);
+      parts.rubber.add(w, { x: sx * 0.8, y: 0.33, z: sz });
+      const h = new THREE.CylinderGeometry(0.19, 0.19, 0.25, 12); h.rotateZ(Math.PI / 2);
+      parts.steel.add(h, { x: sx * 0.81, y: 0.33, z: sz });
+    }
     parts.tail.box(sx * 0.62, 0.68, -2.33, 0.36, 0.14, 0.06);
     parts.head.box(sx * 0.62, 0.62, 2.31, 0.4, 0.13, 0.06);
   }
   parts.rubber.box(0, 0.28, 0, 1.7, 0.14, 4.3);
+  const tailMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.04, 0.03) });
   flush(parts, {
     rubber: std({ color: 0x0a0a0b, roughness: 0.85 }), steel: std({ color: 0x8a8f95, roughness: 0.35, metalness: 0.9 }),
-    tail: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.04, 0.03) }),
+    tail: tailMat,
     head: std({ color: 0xcfd6dc, roughness: 0.15, metalness: 0.6 }),
   }, g);
   if (isTaxi) {
@@ -107,8 +122,7 @@ function car(group, { x, z, yaw }, paint, isTaxi) {
     const box = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.22, 0.03), std({ color: 0x222222 })); box.position.set(0, 1.56, -0.2);
     g.add(roof, back, hire, box);
   }
-  g.position.set(x, x < L.eastCurbX ? 0 : CH, z); g.rotation.y = yaw;
-  group.add(g);
+  return { g, wheels, tailMat, wheelRadius: 0.33 };
 }
 
 function bike(Bf, Bd, x, z, lean, ry) {
@@ -161,13 +175,17 @@ export function createStreet(M) {
   }, { emissive: 0.35 });
   for (const [z, face] of [[L.zNorth, 0], [L.zSouth, Math.PI]]) {
     const zz = z + (face ? 0.5 : -0.5), out = face ? 1 : -1;
-    barrierRow(B, L.facadeX, L.westCurbX - 0.1, CH, zz); barrierRow(B, L.westCurbX + 0.1, L.eastCurbX - 0.1, 0, zz);
+    // the closure keeps the pavements and curb lanes; the inner through lanes stay open for traffic
+    const ol = crossing.openLanes;
+    barrierRow(B, L.facadeX, L.westCurbX - 0.1, CH, zz);
+    barrierRow(B, L.westCurbX + 0.1, ol.x0 - 0.1, 0, zz); barrierRow(B, ol.x1 + 0.1, L.eastCurbX - 0.1, 0, zz);
     barrierRow(B, L.eastCurbX, L.wallX - 0.4, CH, zz); barrierRow(B, 4.1, L.deckEdgeX - 0.1, L.deckY, zz);
     for (let x = -26; x < -5; x += 3.2) {                           // water-filled barriers behind, on the carriageway
+      if (x + 0.75 > ol.x0 && x - 0.75 < ol.x1) continue;
       const m = (Math.round(x) % 2 ? B.red : B.white);
       m.box(x, 0, zz + out * 1.6, 1.5, 0.8, 0.5); m.box(x, 0.8, zz + out * 1.6, 1.2, 0.12, 0.3);
     }
-    for (const x of [-21.2, -10.8, 9.5, 20]) place(group, controlSign(), x, (x > 0 ? L.deckY : 0) + 0.66, zz - out * 0.035, face);
+    for (const x of [-25.6, -6.4, 9.5, 20]) place(group, controlSign(), x, (x > 0 ? L.deckY : 0) + 0.66, zz - out * 0.035, face);
     place(group, controlSign(), -31, CH + 0.66, zz - out * 0.035, face);
   }
   // Hankou Road ends at a construction hoarding
