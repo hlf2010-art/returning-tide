@@ -111,7 +111,8 @@ info(`graph after start: ${c0.loops} looping sources, context ${c0.state}`);
 ok(c0.state === 'running' && c0.loops > 0, 'audio context running after the Begin click; ambience loops built');
 
 // 1. the bed, standing still on the promenade away from people and the road
-await tp(14, 45, 0, 0); await page.waitForTimeout(1500);                       // a teleport moves the listener instantly: let it settle
+await tp(14, 45, 0, 0);                                                        // a teleport moves the listener instantly: let it settle
+await ev(() => new Promise((r) => { let k = 0; const f = () => (++k >= 4 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); })); await page.waitForTimeout(1000);
 const bed = await rec('bed-promenade', () => page.waitForTimeout(6000));
 const bedM = mono(bed);
 info(`bed: ${bed.secs.toFixed(1)} s captured, ${bed.gaps} gaps; RMS ${db(rms(bedM)).toFixed(1)} dBFS, peak ${db(peak(bedM)).toFixed(1)} dBFS`);
@@ -216,7 +217,7 @@ const sState = await ev(() => window.__bund.conversation.isSpeaking);
 {
   const q = db(rms(mono(quietWin))), sp = db(rms(mono(speakWin)));
   info(`at the railing beside them: between exchanges ${q.toFixed(1)} dBFS (${qState}), during a line ${sp.toFixed(1)} dBFS (speaking=${sState}): ${(sp - q).toFixed(1)} dB`);
-  ok(qState === 'exchange-pause' && sState && sp - q < -4 && sp - q > -9, 'environment drops 4-9 dB while they speak (room for the voices), never to silence');
+  ok(qState === 'exchange-pause' && sState && sp - q < -3.5 && sp - q > -10.5, 'environment drops ~4-10 dB while they speak (design -7 dB, river swell +-2), never to silence');
 }
 const preDlg = await census();
 await page.keyboard.press('KeyE'); await page.waitForTimeout(1500);

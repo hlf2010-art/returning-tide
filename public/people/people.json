@@ -1,0 +1,104 @@
+{
+ "source": "Microsoft Rocketbox (MIT): https://github.com/microsoft/Microsoft-Rocketbox",
+ "units": "centimetres (scale 0.01 at runtime)",
+ "cast": {
+  "lin": {
+   "avatar": "Business_Male_02",
+   "sex": "m",
+   "file": "lin.glb",
+   "bytes": 3011880
+  },
+  "su": {
+   "avatar": "Business_Female_03",
+   "sex": "f",
+   "file": "su.glb",
+   "bytes": 3691196
+  },
+  "p1": {
+   "avatar": "Male_Adult_09",
+   "sex": "m",
+   "file": "p1.glb",
+   "bytes": 3195968
+  },
+  "p2": {
+   "avatar": "Female_Adult_09",
+   "sex": "f",
+   "file": "p2.glb",
+   "bytes": 3932976
+  },
+  "p3": {
+   "avatar": "Male_Adult_10",
+   "sex": "m",
+   "file": "p3.glb",
+   "bytes": 3291444
+  },
+  "p4": {
+   "avatar": "Male_Adult_03",
+   "sex": "m",
+   "file": "p4.glb",
+   "bytes": 3863416
+  }
+ },
+ "clips": {
+  "m": {
+   "file": "anim-m.glb",
+   "bytes": 3664836,
+   "speeds": {
+    "walk": 1.0117003356734777,
+    "jog": 2.410625341884475
+   },
+   "durations": {
+    "idle": 11.667,
+    "look": 4.633,
+    "talk1": 35.567,
+    "talk2": 32.333,
+    "phone": 34.467,
+    "umbrella": 42.133,
+    "walk": 1.2,
+    "jog": 0.767
+   },
+   "from": {
+    "idle": "m_idle_neutral_01",
+    "look": "m_idle_look_around_01",
+    "talk1": "m_gestic_talk_neutral_01",
+    "talk2": "m_gestic_talk_relaxed_01",
+    "phone": "m_cell_phone_textmessage",
+    "umbrella": "m_umbrella_idle_01",
+    "walk": "m_walk_neutral_01",
+    "jog": "m_run_slow_01"
+   }
+  },
+  "f": {
+   "file": "anim-f.glb",
+   "bytes": 4076640,
+   "speeds": {
+    "walk": 1.2137673213574363,
+    "jog": 2.2694198539118733
+   },
+   "durations": {
+    "idle": 15.533,
+    "look": 4.467,
+    "talk1": 27.333,
+    "talk2": 27.5,
+    "phone": 20.533,
+    "umbrella": 32.733,
+    "umbrellaTalk": 32.533,
+    "umbrellaListen": 32.733,
+    "walk": 1.2,
+    "jog": 0.833
+   },
+   "from": {
+    "idle": "f_idle_neutral_01",
+    "look": "f_idle_look_around_01",
+    "talk1": "f_gestic_talk_neutral_01",
+    "talk2": "f_gestic_talk_relaxed_01",
+    "phone": "f_cell_phone_textmessage",
+    "umbrella": "f_umbrella_idle_01",
+    "umbrellaTalk": "f_umbrella_talk_01",
+    "umbrellaListen": "f_umbrella_listen_01",
+    "walk": "f_walk_neutral_01",
+    "jog": "f_run_slow_01"
+   }
+  }
+ }
+}

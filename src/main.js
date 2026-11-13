@@ -36,6 +36,9 @@ import { createTraffic } from './engine/traffic.js';
 import { createVehicles } from './world/vehicles.js';
 import { createSignals } from './world/signals.js';
 import { createPedestrians } from './world/pedestrians.js';
+import { loadPeople } from './world/people.js';
+import { createRealNpcs } from './world/npcsReal.js';
+import { createRealPedestrians } from './world/pedestriansReal.js';
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('view');
@@ -70,12 +73,16 @@ async function boot() {
   const M = createMaterials();
   const sky = createSky(), skyline = createSkyline(), river = createRiver();
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
-  const npcs = createNpcs(M);
+  // real people (Microsoft Rocketbox, MIT) when their files load; the hand-built figures otherwise
+  let people = null;
+  try { people = await loadPeople('./people/'); } catch (err) { console.warn('people assets unavailable, using simple figures', err); }
+  const npcs = people ? createRealNpcs(people) : createNpcs(M);
   const pouch = createPouch();
   const rain = createRain();
   // the signal-controlled crossing: one controller, through traffic, background pedestrians
   traffic = createTraffic({ geom: crossing, vehicles: crossing.vehicles, peds: crossing.peds });
-  const vehicles = createVehicles(crossing.vehicles), signals = createSignals(), pedestrians = createPedestrians(traffic.peds);
+  const vehicles = createVehicles(crossing.vehicles), signals = createSignals();
+  const pedestrians = people ? createRealPedestrians(traffic.peds, people) : createPedestrians(traffic.peds);
   const vehicleBoxes = traffic.vehicles.map(() => addDynamicCollider('vehicle'));
   traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(crossing.vehicles[i].model); });   // petrol engines get an engine note
   scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
@@ -422,6 +429,7 @@ Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   get mission() { return mission1 ? mission1.mission : null; },
   get mission1() { return mission1; }, get nearPouch() { return !!target && target.id === 'pouch'; },
   get traffic() { return traffic; }, weather, THREE,                // THREE: for verification tools only
+  get pedestrians() { return world ? world.pedestrians : null; },
   start() { noLock = true; if (mode === 'entry') begin(); },
 }));
 
