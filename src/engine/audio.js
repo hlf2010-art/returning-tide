@@ -25,7 +25,7 @@ const MASTER_LEVEL = 0.8;
 export function createAudio() {
   let ctx = null, master = null, env = null, duck = null, sfx = null, pauseBus = null, limiter = null, meter = null;
   let muted = false, paused = false, pauseToken = 0, hornTimer = 35;
-  let buf = null, river = null, wind = null, city = null, lastFoot = { pan: 0.12, f: 0 }, lastDuck = -1;
+  let buf = null, river = null, wind = null, city = null, rain = null, lastFoot = { pan: 0.12, f: 0 }, lastDuck = -1, lastRain = -1;
   const loops = [];                                          // every looping source ever started (for the duplicate check)
   const voices = new Map();                                  // vehicle id -> voice
   const stats = { startCalls: 0, cues: { collect: 0, tear: 0 }, steps: { stone: 0, asphalt: 0 }, landings: 0, horns: 0 };
@@ -112,6 +112,16 @@ export function createAudio() {
     const cf = filt('lowpass', 240, 0.6), cg = gainNode(0.9);
     loop(buf, cf, cg, cp); lfo(0.023, 0.2, cg.gain);
     city = { p: cp };
+
+    // drizzle: ONE loop, built once, silent until the weather asks for it. Fine high hiss on
+    // stone and water, with a little body; widened by delaying one ear (same source, no second loop).
+    // It goes through env, so it yields to NPC speech like the rest of the bed.
+    const rf = filt('highpass', 1100, 0.5), rb = filt('peaking', 4200, 0.8); rb.gain.value = 3;
+    const rlp = filt('lowpass', 9000, 0.5), rg = gainNode(0);
+    const split = ctx.createChannelMerger(2), dly = ctx.createDelay(0.05); dly.delayTime.value = 0.013;
+    loop(white, rf, rb, rlp, rg);
+    rg.connect(split, 0, 0); rg.connect(dly).connect(split, 0, 1); split.connect(env);
+    rain = { g: rg, lp: rlp };
   }
 
   // one voice per through-traffic vehicle: tyre roar (+ engine for the petrol taxis / sedan)
@@ -242,6 +252,16 @@ export function createAudio() {
       if (d !== lastDuck) { lastDuck = d; duck.gain.setTargetAtTime(duckGain(d), t, 0.3); }   // ~1 s to settle: no abrupt drop
       if (hornTimer < 0) { hornTimer = 60 + Math.random() * 80; if (!muted && !paused) horn(); }
     },
+    // weather: level 0..1; covered = standing under the canopy / portico (muffled, quieter)
+    setRain(level, covered = false) {
+      if (!ctx || !rain) return;
+      const v = Math.round(level * 100) / 100 + (covered ? 2 : 0);
+      if (v === lastRain) return;
+      lastRain = v;
+      const t = ctx.currentTime;
+      rain.g.gain.setTargetAtTime(0.11 * level * level * (covered ? 0.55 : 1), t, 0.4);
+      rain.lp.frequency.setTargetAtTime(covered ? 2600 : 9000, t, 0.4);
+    },
     setPaused(p) {
       paused = !!p;
       if (!ctx) return;
@@ -269,6 +289,6 @@ export function createAudio() {
     // verification hooks (tools only): live meter on the final output, graph census
     get meter() { return meter; },
     get output() { return limiter; },
-    census() { return { loops: loops.length, vehicleVoices: voices.size, state: ctx ? ctx.state : 'none', ...stats, duck: duck ? duck.gain.value : 1, pause: pauseBus ? pauseBus.gain.value : 1 }; },
+    census() { return { loops: loops.length, rainGain: rain ? rain.g.gain.value : 0, vehicleVoices: voices.size, state: ctx ? ctx.state : 'none', ...stats, duck: duck ? duck.gain.value : 1, pause: pauseBus ? pauseBus.gain.value : 1 }; },
   };
 }

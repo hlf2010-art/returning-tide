@@ -8,7 +8,7 @@ import { makeCanvas, tex, grain, rng, FONT } from './canvas.js';
 import { T } from './text.js';
 
 const PW = 1024, PH = 720;              // pouch face canvas (aspect matches the box top)
-export const HELD_LAYER = 1;            // camera.layers.enable(HELD_LAYER) in main
+export const HELD_LAYER = 2;            // camera.layers.enable(HELD_LAYER) in main. NOT 1: the river's mirror camera renders layer 1
 const SIZE = { w: 0.34, h: 0.014, d: 0.24 };
 
 function kraft(ctx, w, h, seed) {

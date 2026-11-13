@@ -117,6 +117,27 @@ Tests: `npm test` (includes `tests/traffic.test.mjs`); in the browser
 `tools/traffictest.mjs` (signals, meshes, brake lights, wheels, player crossing, pause),
 `tools/vehicleshots.mjs` (each vehicle from three angles), `tools/trafficperf.mjs` (A/B cost).
 
+## Weather: one light drizzle
+
+Clear → light drizzle → clear, at the same blue hour. Developer toggle **F7** (dev server or
+`?dev`); `?weather=drizzle` starts already wet. Not tied to the mission.
+
+- **Rain near the player**: one `LineSegments` mesh (1,200 short streaks) animated in the vertex
+  shader inside a box that follows the camera. Drops fade out within ~2 m of the eye (never
+  screen-filling) and beyond ~10 m, thin out with intensity, and are never drawn under the shop
+  canopy on Hankou Road or inside the Customs House portico (`covers` in `layout.js`). Hidden,
+  and free, when clear.
+- **Atmosphere**: fog density +33 % and a slightly greyer fog colour, plus a thin veil low on the
+  sky's horizon; the zenith and the Pudong skyline keep their contrast.
+- **Wet ground**: the deck, pavements and carriageways (not under the covers) darken a little and
+  lose ~40 % of their roughness on dry patches; nothing new becomes a mirror. Builds over ~40 s of
+  rain, dries over ~75 s after.
+- **Sound**: one rain loop in the existing audio graph (part of the environment bus, so it still
+  yields to NPC speech), muffled under cover.
+- Every level returns exactly to the approved clear values; toggling creates nothing new.
+  State: `src/engine/weather.js` (pure, `tests/weather.test.mjs`); browser checks:
+  `tools/weathertest.mjs`.
+
 ## Sound (procedural, no files, no music)
 
 Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings are bundled.
@@ -134,7 +155,7 @@ Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings ar
   to settle; it never goes silent). Recorded voice clips and TTS are not ducked.
 - Pause fades out then suspends; resume fades in. **M** still mutes everything. A gentle limiter
   sits on the output. Starting, pausing and Mission One restarts never add loops.
-- Rain is not here: that belongs to the weather work.
+- Rain: one loop, driven by the weather (see above).
 
 `tools/audiotest.mjs` records the game's real output (an AudioWorklet after the limiter) while
 playing, writes each scenario as a WAV, and measures it.

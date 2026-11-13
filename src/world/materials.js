@@ -3,6 +3,7 @@
 //    pay for the scene's point lights; their golden wash is baked per vertex (`flood`).
 //  - wet ground / props: MeshStandardMaterial lit by lamps + captured environment.
 import * as THREE from 'three';
+import { covers } from './layout.js';
 import { stoneTexture, fluteTexture, facadeAtlas, pavingTextures, sidewalkTextures, asphaltTextures, wetnessTexture } from './textures.js';
 
 // three's ACES curve carries a built-in 1/0.6 exposure, so these read ~2x brighter on screen
@@ -64,10 +65,31 @@ export function archMaterial({ map = white, emissiveMap = black, tint = 0xffffff
 }
 const arch = archMaterial;
 
+// Drizzle wetness, shared by the three exposed ground materials: 0 = the approved after-rain look,
+// 1 = freshly rained on. Covered footprints (shop canopy, portico) never get the extra wetness.
+export const weatherUniforms = {
+  wetBoost: { value: 0 },
+  coverXZ: { value: covers.map((c) => new THREE.Vector4(c.x0, c.x1, c.z0, c.z1)) },
+};
+
 // Standing water lies flat: blend the paving normal away wherever roughness is very low.
 function puddles(material) {
   material.onBeforeCompile = (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+    shader.uniforms.wetBoost = weatherUniforms.wetBoost;
+    shader.uniforms.coverXZ = weatherUniforms.coverXZ;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vWetXZ;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\n  vWetXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+      varying vec2 vWetXZ; uniform float wetBoost; uniform vec4 coverXZ[${covers.length}];`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      float exposed = 1.0;
+      for (int i = 0; i < ${covers.length}; i++) { vec4 c = coverXZ[i]; if (vWetXZ.x > c.x && vWetXZ.x < c.y && vWetXZ.y > c.z && vWetXZ.y < c.w) exposed = 0.0; }
+      float wetW = wetBoost * exposed;
+      // damp, not glassy: dry patches lose ~40% of their roughness, nothing goes below 0.2 that wasn't already a puddle
+      roughnessFactor = mix(roughnessFactor, max(roughnessFactor * 0.6, min(roughnessFactor, 0.2)), wetW);
+      diffuseColor.rgb *= 1.0 - 0.14 * wetW;
       float puddle = smoothstep(0.3, 0.1, roughnessFactor);
       normal = normalize(mix(normal, nonPerturbedNormal, puddle));
       diffuseColor.rgb *= mix(1.0, 0.55, puddle);`);

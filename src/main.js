@@ -26,6 +26,10 @@ import { createHud } from './ui/hud.js';
 import { createPouch, HELD_LAYER } from './world/pouch.js';
 import { createMissionOne } from './missionOne.js';
 import { pickTarget } from './engine/targeting.js';
+import { createWeather } from './engine/weather.js';
+import { createRain, RAIN_LAYER } from './world/rain.js';
+import { weatherUniforms } from './world/materials.js';
+import { underCover } from './world/layout.js';
 import { colliders } from './world/layout.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
 import { createTraffic } from './engine/traffic.js';
@@ -50,7 +54,12 @@ let world = null, clueRead = false, t = 0, last = performance.now();
 let dialogueAudio = null, conversation = null, mission1 = null, traffic = null;
 // Temporary developer controls for Mission One (F8 start, F9 reset): dev server or ?dev only.
 const devControls = import.meta.env.DEV || params.has('dev');
-camera.layers.enable(HELD_LAYER);
+camera.layers.enable(HELD_LAYER); camera.layers.enable(RAIN_LAYER);
+// Weather: clear <-> light drizzle only. Developer toggle F7 (dev builds / ?dev); ?weather=drizzle starts wet.
+const weather = createWeather();
+if (params.get('weather') === 'drizzle') weather.set('drizzle', { instant: true });
+const HAZE_FOG = new THREE.Color(0.072, 0.108, 0.2), FOG_DENSITY = scene.fog.density, HAZE_DENSITY = 0.00028;
+let weatherTime = 0;
 const _pairPos = new THREE.Vector3(npcLayout.pairFocus.x, npcLayout.pairFocus.y, npcLayout.pairFocus.z);
 
 async function boot() {
@@ -63,17 +72,18 @@ async function boot() {
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
   const npcs = createNpcs(M);
   const pouch = createPouch();
+  const rain = createRain();
   // the signal-controlled crossing: one controller, through traffic, background pedestrians
   traffic = createTraffic({ geom: crossing, vehicles: crossing.vehicles, peds: crossing.peds });
   const vehicles = createVehicles(crossing.vehicles), signals = createSignals(), pedestrians = createPedestrians(traffic.peds);
   const vehicleBoxes = traffic.vehicles.map(() => addDynamicCollider('vehicle'));
   traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(crossing.vehicles[i].model); });   // petrol engines get an engine note
   scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
-    vehicles.group, signals.group, pedestrians.group);
+    vehicles.group, signals.group, pedestrians.group, rain.mesh);
   const lighting = createLighting(scene, street.lanterns);
   scene.updateMatrixWorld(true);
   captureEnvironment(R.renderer, scene);
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes };
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain };
   dialogueAudio = createDialogueAudio({
     audio,
     camera,
@@ -210,6 +220,11 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if ((k === 'F8' || k === 'F9') && devControls) { e.preventDefault(); devMission(k === 'F8'); return; }
+  if (k === 'F7' && devControls) {
+    e.preventDefault();
+    hud.toast(weather.toggle() === 'drizzle' ? 'DEV · 小雨 · Drizzle coming in' : 'DEV · 转晴 · Clearing', 2.4);
+    return;
+  }
   if (mode === 'entry') { if (k === 'Enter') begin(); return; }
   if (mode === 'pause') { if (k === 'Escape' && noLock) play(); return; }
   if (mode === 'inspect') { if (k === 'KeyE' || (k === 'Escape' && noLock)) closeInspect(); return; }
@@ -309,7 +324,14 @@ function frame(now) {
   }
   player.update(mode === 'pause' ? 0 : dt);
 
-  world.sky.update(t); world.skyline.update(t); world.river.update(t, dt); world.bund.update(t); world.street.update(t);
+  // weather (frozen while paused): every value is exactly the approved clear scene at 0
+  if (mode !== 'pause') { weather.update(dt); weatherTime += dt; }
+  world.rain.update(weatherTime, weather.rain, camera);
+  weatherUniforms.wetBoost.value = weather.wet;
+  scene.fog.density = FOG_DENSITY + HAZE_DENSITY * weather.haze;
+  scene.fog.color.lerpColors(FOG_COLOR, HAZE_FOG, weather.haze);
+  audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye));
+  world.sky.update(t, weather.haze); world.skyline.update(t); world.river.update(t, dt); world.bund.update(t); world.street.update(t);
   world.lighting.update(camera.position);
   // environment yields to NPC speech: fully while in conversation, by audibility otherwise
   let speech = 0;
@@ -392,7 +414,7 @@ Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   // Mission One integration surface: mission.start(source) / reset() / on('start'|'complete'|...)
   get mission() { return mission1 ? mission1.mission : null; },
   get mission1() { return mission1; }, get nearPouch() { return !!target && target.id === 'pouch'; },
-  get traffic() { return traffic; },
+  get traffic() { return traffic; }, weather, THREE,                // THREE: for verification tools only
   start() { noLock = true; if (mode === 'entry') begin(); },
 }));
 

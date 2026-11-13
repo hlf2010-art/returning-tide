@@ -8,7 +8,7 @@ export const REFLECT_LAYER = 1;   // far scenery that the river mirrors
 export function createSky() {
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
-    uniforms: { time: { value: 0 } },
+    uniforms: { time: { value: 0 }, haze: { value: 0 } },
     vertexShader: /* glsl */ `
       varying vec3 vDir;
       void main() {
@@ -17,7 +17,7 @@ export function createSky() {
         gl_Position = p.xyww;
       }`,
     fragmentShader: /* glsl */ `
-      uniform float time; varying vec3 vDir;
+      uniform float time, haze; varying vec3 vDir;
       float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p) {
         vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -42,6 +42,8 @@ export function createSky() {
         cloud += vec3(0.11, 0.07, 0.15) * east * exp(-h * 3.0);
         col = mix(col, cloud, c * 0.8);
         if (d.y < 0.0) col = mix(col, vec3(0.03, 0.05, 0.09), smoothstep(0.0, -0.2, d.y));
+        // drizzle: a thin grey-blue veil low on the horizon only; the zenith keeps its blue hour
+        col = mix(col, vec3(0.075, 0.11, 0.2), haze * 0.4 * (1.0 - smoothstep(0.0, 0.3, h)));
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -50,5 +52,5 @@ export function createSky() {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), mat);
   mesh.frustumCulled = false; mesh.renderOrder = -10; mesh.name = 'sky';
   mesh.layers.enable(REFLECT_LAYER);
-  return { mesh, update(t) { mat.uniforms.time.value = t; } };
+  return { mesh, update(t, haze = 0) { mat.uniforms.time.value = t; mat.uniforms.haze.value = haze; } };
 }

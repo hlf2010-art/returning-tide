@@ -100,6 +100,15 @@ export const crossing = {
   ],
 };
 
+// ---- covered places the rain must not reach (footprint + underside height) ----
+// Only spaces with a roof you can see under: the sundries shop's canopy on Hankou Road and the
+// Customs House's Doric portico. Everything else at street level is open to the sky.
+export const covers = [
+  { id: 'shop-canopy', x0: -71.7, x1: -66.7, z0: -6.5, z1: -5.48, top: 3.75 },
+  { id: 'customs-portico', x0: -34.0, x1: -31.0, z0: 18.0, z1: 36.0, top: 13.35 },
+];
+export const underCover = (x, z, y = 0) => covers.some((c) => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && y < c.top);
+
 // ---- colliders: axis-aligned boxes in the XZ plane ----
 export const colliders = [];
 function box(minX, maxX, minZ, maxZ, tag = 'solid') {
