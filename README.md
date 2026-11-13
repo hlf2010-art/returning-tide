@@ -26,7 +26,7 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | E | read notice / greet NPCs / pick up / take sealed / put away / step back |
 | F | agree (when Old Lin asks) / look at the carried pouch / **hold** to break its seal |
 | C | Simplified Chinese subtitles on / off |
-| M | sound on / off |
+| M | sound on / off (mutes ambience, footsteps, cues and voices) |
 | Esc | pause / step back from dialogue (click to return) |
 
 ## Mission One — 错交 “The Wrong Handoff” (3–5 min)
@@ -93,6 +93,28 @@ origin and axes) with a licensed asset. The taxis and dark sedan reuse the exist
 Tests: `npm test` (includes `tests/traffic.test.mjs`); in the browser
 `tools/traffictest.mjs` (signals, meshes, brake lights, wheels, player crossing, pause),
 `tools/vehicleshots.mjs` (each vehicle from three angles), `tools/trafficperf.mjs` (A/B cost).
+
+## Sound (procedural, no files, no music)
+
+Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings are bundled.
+
+- **Bed**: river wind (two filtered noise layers, slow unrelated gust cycles, drifting stereo) and
+  the Huangpu lapping at the wall, placed out over the water.
+- **Traffic toward the street**: each through-traffic vehicle carries its own tyre roar (and an
+  engine note for the petrol taxis / sedan) at its position, rising with speed, dulled with
+  distance; a low city wash sits west, behind the Bund buildings. Far ship horns, now and then.
+- **Footsteps** on two surfaces: stone (pavement, stair, deck) and asphalt (carriageways); heel
+  then toe, every parameter jittered, landing on the head-bob low point; none when standing still.
+- **Mission One**: collecting the pouch (a kraft slide, a soft lift, the string ticking its button)
+  and breaking the seal (a crack, an accelerating granular rip, the flap falling open).
+- **Speech first**: while an NPC talks the environment eases down by up to 7 dB (about a second
+  to settle; it never goes silent). Recorded voice clips and TTS are not ducked.
+- Pause fades out then suspends; resume fades in. **M** still mutes everything. A gentle limiter
+  sits on the output. Starting, pausing and Mission One restarts never add loops.
+- Rain is not here: that belongs to the weather work.
+
+`tools/audiotest.mjs` records the game's real output (an AudioWorklet after the limiter) while
+playing, writes each scenario as a WAV, and measures it.
 
 ## What is here
 

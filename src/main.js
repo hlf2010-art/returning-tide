@@ -21,7 +21,7 @@ import { createLighting, captureEnvironment } from './world/lighting.js';
 import { createClue } from './world/clue.js';
 import { createNpcs } from './world/npcs.js';
 import { createDialogueAudio } from './engine/dialogueAudio.js';
-import { createConversation } from './engine/conversation.js';
+import { createConversation, computeDistanceGain } from './engine/conversation.js';
 import { createHud } from './ui/hud.js';
 import { createPouch, HELD_LAYER } from './world/pouch.js';
 import { createMissionOne } from './missionOne.js';
@@ -65,6 +65,7 @@ async function boot() {
   traffic = createTraffic({ geom: crossing, vehicles: crossing.vehicles, peds: crossing.peds });
   const vehicles = createVehicles(crossing.vehicles), signals = createSignals(), pedestrians = createPedestrians(traffic.peds);
   const vehicleBoxes = traffic.vehicles.map(() => addDynamicCollider('vehicle'));
+  traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(crossing.vehicles[i].model); });   // petrol engines get an engine note
   scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
     vehicles.group, signals.group, pedestrians.group);
   const lighting = createLighting(scene, street.lanterns);
@@ -118,7 +119,7 @@ function pause() {
   if (mode === 'dialogue') closeDialogue(false);
   if (mode === 'pouch') closePouch();
   if (mode !== 'play') return;
-  mode = 'pause'; player.enabled = false;
+  mode = 'pause'; player.enabled = false; audio.setPaused(true);
   if (conversation) conversation.setPaused(true);
   hud.show('pause', true); hud.prompt(false); hud.subtitle(false);
 }
@@ -206,7 +207,12 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => { if (e.code === 'KeyF' && mission1) mission1.viewHold(false); });
 window.addEventListener('blur', () => { if (mission1) mission1.viewHold(false); });
 window.addEventListener('blur', () => { if ((mode === 'play' || mode === 'dialogue') && noLock) pause(); });
-player.onStep = (surface, running) => audio.step(surface, running);
+player.onStep = (surface, running, landing) => audio.step(surface, running, landing);
+// If the browser kept the context suspended despite the Begin click, any later gesture wakes it.
+for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => {
+  const c = audio.getContext();
+  if (c && c.state === 'suspended' && !audio.paused && mode !== 'pause') c.resume();
+});
 
 // ---- frame ----
 let nearClue = false, nearNpc = false, nearPouch = false, boundaryCooldown = 0;
@@ -259,7 +265,10 @@ function frame(now) {
 
   world.sky.update(t); world.skyline.update(t); world.river.update(t, dt); world.bund.update(t); world.street.update(t);
   world.lighting.update(camera.position);
-  audio.update(dt, player.body.x);
+  // environment yields to NPC speech: fully while in conversation, by audibility otherwise
+  let speech = 0;
+  if (conversation && conversation.isSpeaking) speech = mode === 'dialogue' ? 1 : computeDistanceGain(_pairPos.distanceTo(camera.position), npcLayout.audibility.refDistance, npcLayout.audibility.maxDistance);
+  audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: traffic ? traffic.vehicles : null, speech });
   if (dialogueAudio) dialogueAudio.updateListener();
   if (conversation) conversation.update(mode === 'pause' ? 0 : dt);
   world.npcs.update(t, mode === 'pause' ? 0 : dt, {

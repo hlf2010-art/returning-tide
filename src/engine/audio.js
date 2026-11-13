@@ -1,83 +1,261 @@
-// Procedural ambience (no audio files): river wind, water against the wall, a far
-// ship's horn now and then, and wet footsteps. Starts on the first user gesture.
+// Procedural sound (no audio files, no music): a restrained waterfront bed, distant city and the
+// crossing's traffic placed in 3-D, footsteps on two surfaces, and Mission One's two cues.
+// Starts on the first user gesture (Web Audio autoplay rules).
+//
+//   [wind, river, city bed, vehicles, ship horn] -> env -> duck ┐
+//   [footsteps, mission cues]                    -> sfx ────────┼-> pause -> master (mute/level) -> limiter -> out
+//   recorded NPC clips (dialogueAudio)  ──────────────────────────────────────> master
+//
+// `duck` lowers only the environment (never below -7 dB) while an NPC is speaking; `pause`
+// fades env + sfx out, then suspends the context, and fades back in on resume.
+
+// ---- pure helpers (unit-tested in node) ----
+export const FOOT_SURFACES = ['stone', 'asphalt'];
+// granite paving, the promenade deck and its stair all read as stone; the carriageways as asphalt
+export const footSurface = (surface) => (surface === 'road' ? 'asphalt' : 'stone');
+export const DUCK_DB = -7;
+export const duckGain = (level) => Math.pow(10, (DUCK_DB * Math.max(0, Math.min(1, level))) / 20);
+// air absorption: distant things lose their top end
+export const airCutoff = (dist) => Math.max(600, Math.min(16000, 16000 / (1 + dist / 25)));
+// tyre / road noise rises steeply with speed; nothing at standstill
+export const tyreLevel = (v) => Math.min(1, Math.pow(Math.max(0, v) / 12, 1.6));
+
+const MASTER_LEVEL = 0.8;
+
 export function createAudio() {
-  let ctx = null, master = null, lap = null, muted = false, hornTimer = 35, lapTimer = 0;
+  let ctx = null, master = null, env = null, duck = null, sfx = null, pauseBus = null, limiter = null, meter = null;
+  let muted = false, paused = false, pauseToken = 0, hornTimer = 35;
+  let buf = null, river = null, wind = null, city = null, lastFoot = { pan: 0.12, f: 0 }, lastDuck = -1;
+  const loops = [];                                          // every looping source ever started (for the duplicate check)
+  const voices = new Map();                                  // vehicle id -> voice
+  const stats = { startCalls: 0, cues: { collect: 0, tear: 0 }, steps: { stone: 0, asphalt: 0 }, landings: 0, horns: 0 };
+
   const noiseBuffer = () => {
-    const b = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate), d = b.getChannelData(0);
+    // 6 s of soft brown-ish noise; loops start at random offsets / rates so nothing lines up.
+    // Generated 0.25 s long and cross-faded end-into-start, so the loop point has no seam (click).
+    const n = ctx.sampleRate * 6, xf = Math.floor(ctx.sampleRate * 0.25), raw = new Float32Array(n + xf);
     let last = 0;
-    for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5 + w * 0.02; }
+    for (let i = 0; i < raw.length; i++) { const w = Math.random() * 2 - 1; last = (last + 0.02 * w) / 1.02; raw[i] = last * 3.5 + w * 0.02; }
+    const b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = raw[i];
+    for (let i = 0; i < xf; i++) { const k = i / xf, c = Math.sin(k * Math.PI / 2), e = Math.cos(k * Math.PI / 2); d[i] = raw[i] * c + raw[n + i] * e; }
     return b;
   };
-  let buf = null;
-  const loop = (freq, q, gain, type = 'lowpass') => {
-    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
-    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
-    const g = ctx.createGain(); g.gain.value = gain;
-    src.connect(f).connect(g).connect(master); src.start();
-    return { f, g };
+  const whiteBuffer = () => {
+    const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return b;
   };
+  let white = null;
+  const src = (buffer, loop, rate = 1) => {
+    const s = ctx.createBufferSource(); s.buffer = buffer; s.loop = loop; s.playbackRate.value = rate;
+    return s;
+  };
+  const filt = (type, f, q = 0.7) => { const n = ctx.createBiquadFilter(); n.type = type; n.frequency.value = f; n.Q.value = q; return n; };
+  const gainNode = (g) => { const n = ctx.createGain(); n.gain.value = g; return n; };
+  const panner = (ref, rolloff, model = 'equalpower') => {
+    const p = ctx.createPanner(); p.panningModel = model; p.distanceModel = 'inverse';
+    p.refDistance = ref; p.rolloffFactor = rolloff; p.maxDistance = 10000;
+    return p;
+  };
+  const place = (p, x, y, z, tau = 0.05) => {
+    const t = ctx.currentTime;
+    if (p.positionX) { p.positionX.setTargetAtTime(x, t, tau); p.positionY.setTargetAtTime(y, t, tau); p.positionZ.setTargetAtTime(z, t, tau); } else p.setPosition(x, y, z);
+  };
+  const loop = (buffer, ...chain) => {
+    const s = src(buffer, true, 0.9 + Math.random() * 0.2);
+    let n = s; for (const c of chain) { n.connect(c); n = c; }
+    s.start(0, Math.random() * buffer.duration);
+    loops.push(s);
+    return s;
+  };
+  const lfo = (freq, depth, target) => {
+    const o = ctx.createOscillator(), g = gainNode(depth); o.frequency.value = freq;
+    o.connect(g).connect(target); o.start(); loops.push(o);
+  };
+
   function start() {
-    if (ctx) { ctx.resume(); return; }
+    stats.startCalls++;
+    if (ctx) { if (!paused) ctx.resume(); return; }        // never builds a second graph
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
-    ctx = new AC(); buf = noiseBuffer();
-    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
-    master.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 3);
-    const wind = loop(320, 0.4, 0.55);
-    const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 140;
-    lfo.connect(lg).connect(wind.f.frequency); lfo.start();
-    loop(90, 0.7, 0.5);                                   // the city, far off
-    lap = loop(900, 1.2, 0.0, 'bandpass');                // water on stone, faded in near the railing
-    const l2 = ctx.createOscillator(), l2g = ctx.createGain(); l2.frequency.value = 0.31; l2g.gain.value = 350;
-    l2.connect(l2g).connect(lap.f.frequency); l2.start();
+    ctx = new AC(); buf = noiseBuffer(); white = whiteBuffer();
+    limiter = ctx.createDynamicsCompressor();               // safety only: speech + cues never clip
+    limiter.threshold.value = -4; limiter.knee.value = 4; limiter.ratio.value = 12; limiter.attack.value = 0.003; limiter.release.value = 0.25;
+    meter = ctx.createAnalyser(); meter.fftSize = 2048;
+    master = gainNode(0); master.connect(limiter); limiter.connect(ctx.destination); limiter.connect(meter);
+    master.gain.linearRampToValueAtTime(muted ? 0 : MASTER_LEVEL, ctx.currentTime + 3);   // gentle first fade-in
+    pauseBus = gainNode(1); pauseBus.connect(master);
+    duck = gainNode(1); duck.connect(pauseBus);
+    env = gainNode(1); env.connect(duck);
+    sfx = gainNode(1); sfx.connect(pauseBus);
+
+    // wind off the river: two filtered noise layers with slow, unrelated gust cycles, drifting across the stereo field
+    const windPan = ctx.createStereoPanner(); windPan.connect(env);
+    const wf = filt('lowpass', 320, 0.4), wg = gainNode(0.26);
+    loop(buf, wf, wg, windPan);
+    lfo(0.07, 140, wf.frequency); lfo(0.031, 0.08, wg.gain); lfo(0.017, 0.35, windPan.pan);
+    const wf2 = filt('bandpass', 700, 0.6), wg2 = gainNode(0.035);
+    loop(buf, wf2, wg2, env); lfo(0.043, 250, wf2.frequency);
+    wind = { wg };
+
+    // the Huangpu against the river wall: placed out over the water, level with the listener
+    const rp = panner(6, 1.0); rp.connect(env);
+    const lap = filt('bandpass', 900, 1.2), lapG = gainNode(0.32);
+    loop(buf, lap, lapG, rp); lfo(0.31, 350, lap.frequency); lfo(0.11, 0.08, lapG.gain);
+    const body = filt('lowpass', 180, 0.5), bodyG = gainNode(0.22);
+    loop(buf, body, bodyG, rp);
+    river = { p: rp };
+
+    // the city, far off, behind the Bund buildings (west); a low wash, not a hum
+    const cp = panner(40, 1.0); cp.connect(env);
+    const cf = filt('lowpass', 240, 0.6), cg = gainNode(0.9);
+    loop(buf, cf, cg, cp); lfo(0.023, 0.2, cg.gain);
+    city = { p: cp };
   }
+
+  // one voice per through-traffic vehicle: tyre roar (+ engine for the petrol taxis / sedan)
+  function vehicleVoice(v) {
+    const p = panner(5, 1.3); p.connect(env);
+    const air = filt('lowpass', 8000, 0.5); air.connect(p);
+    const tyre = filt('bandpass', 500, 0.6), tg = gainNode(0);
+    loop(buf, tyre, tg, air);
+    let eg = null;
+    if (v.ice) {                                             // a small four-cylinder idling / pulling
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 32 + Math.random() * 6;
+      const lp = filt('lowpass', 140, 0.8); eg = gainNode(0);
+      o.connect(lp).connect(eg).connect(air); o.start(); loops.push(o);
+      return { p, air, tyre, tg, eg, osc: o };
+    }
+    return { p, air, tyre, tg, eg };
+  }
+
+  function updateVehicles(list, lx, lz) {
+    const t = ctx.currentTime;
+    for (const v of list) {
+      let voice = voices.get(v.id);
+      if (!voice) { voice = vehicleVoice(v); voices.set(v.id, voice); }
+      const lv = v.active ? tyreLevel(v.v) : 0;
+      voice.tg.gain.setTargetAtTime(lv * 0.42, t, 0.12);
+      voice.tyre.frequency.setTargetAtTime(380 + v.v * 28, t, 0.2);
+      if (voice.eg) {
+        voice.eg.gain.setTargetAtTime(v.active ? 0.05 + 0.05 * Math.min(1, v.v / 10) : 0, t, 0.15);
+        voice.osc.frequency.setTargetAtTime(30 + v.v * 3.2, t, 0.3);
+      }
+      if (!v.active) continue;
+      place(voice.p, v.x, 0.5, v.z);
+      voice.air.frequency.setTargetAtTime(airCutoff(Math.hypot(v.x - lx, v.z - lz)), t, 0.2);
+    }
+  }
+
   function horn() {
-    const t = ctx.currentTime, g = ctx.createGain(), f = ctx.createBiquadFilter();
-    f.type = 'lowpass'; f.frequency.value = 420;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.11, t + 0.4); g.gain.setValueAtTime(0.11, t + 2.2); g.gain.exponentialRampToValueAtTime(0.0005, t + 5.5);
-    for (const hz of [98, 123.5, 147]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz; o.connect(f); o.start(t); o.stop(t + 5.6); }
-    const d = ctx.createDelay(1); d.delayTime.value = 0.42; const fb = ctx.createGain(); fb.gain.value = 0.38;
-    f.connect(g); g.connect(master); g.connect(d); d.connect(fb).connect(d); d.connect(master);
+    // a far ship on the Huangpu: three detuned notes, out over the water
+    stats.horns++;
+    const t = ctx.currentTime, g = gainNode(0), f = filt('lowpass', 420), p = panner(60, 1);
+    place(p, 220, 2, (Math.random() - 0.5) * 600, 0.001);
+    const peak = 0.5 + Math.random() * 0.3, len = 3.5 + Math.random() * 2.5, base = 0.92 + Math.random() * 0.16;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + 0.5); g.gain.setValueAtTime(peak, t + len - 1); g.gain.exponentialRampToValueAtTime(0.0005, t + len + 2.5);
+    for (const hz of [98, 123.5, 147]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz * base; o.connect(f); o.start(t); o.stop(t + len + 2.6); }
+    const d = ctx.createDelay(1); d.delayTime.value = 0.42; const fb = gainNode(0.32);
+    f.connect(g); g.connect(p); p.connect(env); g.connect(d); d.connect(fb).connect(d); d.connect(p);
+    setTimeout(() => { try { p.disconnect(); fb.disconnect(); } catch { /* gone */ } }, (len + 4) * 1000);
   }
-  function step(surface, running) {
+
+  // ---- one-shots ----
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function burst(t, { buffer = white, type = 'bandpass', f = 1500, q = 1, gain = 0.2, attack = 0.003, decay = 0.06, rate = 1, pan = 0, sweepTo = null, dest = sfx }) {
+    const s = src(buffer, false, rate), fl = filt(type, f, q), g = gainNode(0), sp = ctx.createStereoPanner();
+    sp.pan.value = pan;
+    if (sweepTo) { fl.frequency.setValueAtTime(f, t); fl.frequency.exponentialRampToValueAtTime(sweepTo, t + attack + decay); }
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + attack); g.gain.exponentialRampToValueAtTime(0.0008, t + attack + decay);
+    s.connect(fl).connect(g).connect(sp).connect(dest);
+    s.start(t, Math.random() * (buffer.duration - 0.5), attack + decay + 0.05);
+  }
+  function thump(t, f, gain, decay = 0.07, pan = 0) {
+    const o = ctx.createOscillator(), g = gainNode(0), sp = ctx.createStereoPanner(); sp.pan.value = pan;
+    o.frequency.setValueAtTime(f * 1.6, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.03);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0008, t + decay);
+    o.connect(g).connect(sp).connect(sfx); o.start(t); o.stop(t + decay + 0.02);
+  }
+  function ping(t, f, gain, decay = 0.03) {
+    const o = ctx.createOscillator(), g = gainNode(0); o.type = 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0008, t + decay);
+    o.connect(g).connect(sfx); o.start(t); o.stop(t + decay + 0.02);
+  }
+
+  // Footsteps: heel then toe, on stone (granite / deck / stair) or asphalt. Every parameter
+  // jitters and the centre frequency is kept away from the previous step's, so no two match.
+  const FOOT = {
+    stone: { f: 2100, q: 1.1, thump: 95, gain: 0.19, decay: 0.05 },
+    asphalt: { f: 1050, q: 0.7, thump: 72, gain: 0.15, decay: 0.07 },
+  };
+  function step(surface, running = false, landing = false) {
+    if (!ctx || muted || paused) return;
+    const kind = footSurface(surface), P = FOOT[kind], t = ctx.currentTime + 0.005;
+    let f = P.f * rnd(0.88, 1.12);
+    if (Math.abs(f - lastFoot.f) < P.f * 0.04) f *= 1.07;
+    lastFoot.f = f; lastFoot.pan = -lastFoot.pan;                                  // left foot, right foot
+    const pan = lastFoot.pan * rnd(0.6, 1), loud = (landing ? 1.7 : running ? 1.35 : 1) * rnd(0.85, 1.1);
+    burst(t, { f, q: P.q, gain: P.gain * loud, decay: P.decay * rnd(0.85, 1.15), rate: rnd(0.85, 1.2), pan });
+    thump(t, P.thump * rnd(0.9, 1.1), 0.12 * loud * (landing ? 1.6 : 1), landing ? 0.12 : 0.07, pan);
+    if (kind === 'asphalt') burst(t + 0.004, { type: 'highpass', f: 4200, q: 0.5, gain: 0.025 * loud, decay: 0.03, pan });   // grit
+    if (!landing) burst(t + (running ? rnd(0.035, 0.05) : rnd(0.055, 0.085)), { f: f * 1.25, q: P.q, gain: P.gain * 0.45 * loud, decay: P.decay * 0.7, rate: rnd(0.9, 1.25), pan });
+    if (landing) stats.landings++; else stats.steps[kind]++;
+  }
+
+  // Mission One's two cues. Collecting: a smooth kraft slide off the counter, a soft lift thump,
+  // the string ticking against its button. Breaking the seal: a sharp crack, then an accelerating
+  // granular rip, then the flap falling open.
+  function cue(name, delay = 0) {
     if (!ctx || muted) return;
-    const t = ctx.currentTime, src = ctx.createBufferSource(); src.buffer = buf;
-    src.playbackRate.value = 0.8 + Math.random() * 0.5;
-    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.9;
-    f.frequency.value = surface === 'road' ? 700 : surface === 'stairs' ? 1500 : 1150;
-    const g = ctx.createGain(), peak = (running ? 0.5 : 0.32) * (0.8 + Math.random() * 0.4);
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + 0.008); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
-    src.connect(f).connect(g).connect(master); src.start(t, Math.random() * 2, 0.2);
+    const t = ctx.currentTime + 0.01 + delay;
+    if (name === 'collect') {
+      stats.cues.collect++;
+      burst(t, { buffer: buf, f: 1700, q: 0.9, gain: 0.5, attack: 0.04, decay: 0.32, sweepTo: 3300, rate: 2.2 });
+      burst(t + 0.02, { buffer: buf, type: 'lowpass', f: 420, q: 0.7, gain: 0.34, attack: 0.01, decay: 0.12, rate: 1.4 });
+      ping(t + 0.2, 2350, 0.05); ping(t + 0.27, 3050, 0.035);
+    } else if (name === 'tear') {
+      stats.cues.tear++;
+      burst(t, { type: 'highpass', f: 2600, q: 0.6, gain: 0.32, attack: 0.001, decay: 0.012 });
+      let k = 0;
+      for (let tt = 0.03; tt < 0.7; tt += 0.045 * (1 - tt * 0.9) + Math.random() * 0.012) {
+        burst(t + tt, { f: rnd(3200, 6600), q: rnd(1, 2.5), gain: rnd(0.07, 0.2), attack: 0.001, decay: rnd(0.006, 0.016), pan: rnd(-0.2, 0.2) });
+        k++;
+      }
+      burst(t + 0.03, { f: 2400, q: 0.5, gain: 0.07, attack: 0.25, decay: 0.4 });
+      burst(t + 0.72, { buffer: buf, type: 'lowpass', f: 500, q: 0.7, gain: 0.22, attack: 0.01, decay: 0.15, rate: 1.6 });
+    }
   }
-  // Paper: a short rustle (picking up / putting away) or a slower rip (breaking a seal).
-  function paper(kind = 'rustle') {
-    if (!ctx || muted) return;
-    const t = ctx.currentTime, tear = kind === 'tear', len = tear ? 0.55 : 0.22;
-    const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = tear ? 2.6 : 3.2;
-    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = tear ? 1800 : 2600; f.Q.value = 0.7;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0, t);
-    if (tear) for (let i = 0; i < 9; i++) g.gain.linearRampToValueAtTime((0.25 + Math.random() * 0.35) * (1 - i / 12), t + 0.03 + i * 0.055);
-    else g.gain.linearRampToValueAtTime(0.32, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.001, t + len);
-    src.connect(f).connect(g).connect(master); src.start(t, Math.random() * 2, len + 0.05);
-  }
+
   const muteListeners = new Set();
   return {
-    start, step, paper,
-    update(dt, x) {
+    start, step, cue,
+    // per frame: listener position, the crossing's vehicles, how much an NPC is speaking (0..1)
+    update(dt, x, { z = 0, vehicles = null, speech = 0 } = {}) {
       if (!ctx) return;
-      hornTimer -= dt; lapTimer -= dt;
-      if (lapTimer < 0) {                                        // a few times a second is plenty
-        lapTimer = 0.3;
-        const near = Math.max(0, Math.min(1, (x - 6) / 18));     // 0 in the street, 1 at the railing
-        lap.g.gain.setTargetAtTime(0.02 + near * 0.3, ctx.currentTime, 0.4);
+      hornTimer -= dt;
+      const t = ctx.currentTime;
+      place(river.p, 32, -1, z, 0.3);
+      place(city.p, -150, 4, z * 0.7, 0.5);
+      if (vehicles) updateVehicles(vehicles, x, z);
+      const d = Math.round(speech * 20) / 20;
+      if (d !== lastDuck) { lastDuck = d; duck.gain.setTargetAtTime(duckGain(d), t, 0.3); }   // ~1 s to settle: no abrupt drop
+      if (hornTimer < 0) { hornTimer = 60 + Math.random() * 80; if (!muted && !paused) horn(); }
+    },
+    setPaused(p) {
+      paused = !!p;
+      if (!ctx) return;
+      const tok = ++pauseToken, t = ctx.currentTime;
+      if (paused) {
+        pauseBus.gain.setTargetAtTime(0, t, 0.08);
+        setTimeout(() => { if (tok === pauseToken && paused) ctx.suspend(); }, 450);
+      } else {
+        ctx.resume().then(() => { if (tok === pauseToken) pauseBus.gain.setTargetAtTime(1, ctx.currentTime, 0.18); });
       }
-      if (hornTimer < 0) { hornTimer = 50 + Math.random() * 60; if (!muted) horn(); }
     },
     toggleMute() {
       muted = !muted;
-      if (master) master.gain.setTargetAtTime(muted ? 0 : 0.8, ctx.currentTime, 0.1);
+      if (master) master.gain.setTargetAtTime(muted ? 0 : MASTER_LEVEL, ctx.currentTime, 0.1);
       for (const fn of muteListeners) fn(muted);
       return muted;
     },
@@ -85,7 +263,12 @@ export function createAudio() {
     getContext() { return ctx; },
     getMaster() { return master; },
     get muted() { return muted; },
-    suspend() { if (ctx) ctx.suspend(); }, resume() { if (ctx) ctx.resume(); },
+    get paused() { return paused; },
+    suspend() { this.setPaused(true); }, resume() { this.setPaused(false); },
     get running() { return !!ctx && ctx.state === 'running'; },
+    // verification hooks (tools only): live meter on the final output, graph census
+    get meter() { return meter; },
+    get output() { return limiter; },
+    census() { return { loops: loops.length, vehicleVoices: voices.size, state: ctx ? ctx.state : 'none', ...stats, duck: duck ? duck.gain.value : 1, pause: pauseBus ? pauseBus.gain.value : 1 }; },
   };
 }

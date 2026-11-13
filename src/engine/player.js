@@ -43,13 +43,14 @@ export function createPlayer(camera, dom) {
     }
     stepBody(body, wx, wz, p.enabled && input.run, dt, jumpQueued && p.enabled);
     if (dt > 0) jumpQueued = false;
-    if (body.landed && p.onStep) p.onStep(surfaceAt(body.x, body.z), true);
+    if (body.landed && p.onStep) p.onStep(surfaceAt(body.x, body.z), true, true);
     // footfall rhythm + a small head bob that fades when you stop
     const speed = body.air ? 0 : Math.hypot(body.vx, body.vz);   // no footfalls or bob in the air
     const moving = Math.min(1, speed / WALK_SPEED);
     const before = p.stride;
     p.stride += speed * dt * 0.62;
-    if (Math.floor(p.stride) !== Math.floor(before) && speed > 0.6 && p.onStep) p.onStep(surfaceAt(body.x, body.z), speed > WALK_SPEED * 1.3);
+    // a footfall lands where the head bob bottoms out (sin(2π·stride) = -1, i.e. stride ≡ 0.75)
+    if (Math.floor(p.stride + 0.25) !== Math.floor(before + 0.25) && speed > 0.6 && p.onStep) p.onStep(surfaceAt(body.x, body.z), speed > WALK_SPEED * 1.3, false);
     p.bob += (moving - p.bob) * Math.min(1, dt * 8);
     const bobY = Math.sin(p.stride * Math.PI * 2) * 0.028 * p.bob;
     camera.position.set(body.x, body.y + L.eye + bobY, body.z);

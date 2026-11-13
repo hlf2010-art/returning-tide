@@ -82,7 +82,7 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
     switch (mission.step) {
       case 'idle': offerPending = true; return L.offer;
       case 'collect': return L.remind;
-      case 'carry': { const outcome = mission.handOver(); audio.paper('rustle'); return L[outcome]; }
+      case 'carry': return L[mission.handOver()];
       default:
         if (!afterLineSaid) { afterLineSaid = true; return mission.outcome === 'opened' ? L.afterOpened : L.afterSealed; }
         return null;
@@ -131,7 +131,6 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
     view = kind; viewOpenedAt = clock(); hold = 0; holding = false;
     fillView(kind);
     hud.show('pouch', true);
-    audio.paper('rustle');
   }
   function closeView(notify = true) {
     if (!view) return;
@@ -143,8 +142,7 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
   // E inside the view: take it sealed (at the stall) or put it away.
   function viewKeep() {
     if (!view || viewAge() < INPUT_GUARD) return;
-    if (view === 'pickup') mission.pickUp();
-    audio.paper('rustle');
+    if (view === 'pickup' && mission.pickUp()) audio.cue('collect');
     closeView();
   }
   function viewHold(down) {
@@ -158,8 +156,10 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
     hold = holding ? clock() - holdStart : 0;
     $('pouch-hold').firstChild.style.width = `${Math.min(100, (hold / HOLD_TIME) * 100)}%`;
     if (hold >= HOLD_TIME && mission.sealed) {
-      if (mission.step === 'collect') mission.pickUp();
-      if (mission.breakSeal()) audio.paper('tear');
+      // taken and torn in one go: the lift, then the rip a beat later
+      const lifted = mission.step === 'collect' && mission.pickUp();
+      if (lifted) audio.cue('collect');
+      if (mission.breakSeal()) audio.cue('tear', lifted ? 0.22 : 0);
       openView('opened');
     }
   }
