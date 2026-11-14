@@ -31,7 +31,7 @@ export function createPlayer(camera, dom) {
   dom.addEventListener('mousedown', () => { dragging = true; });
   window.addEventListener('mouseup', () => { dragging = false; });
   document.addEventListener('mousemove', (e) => {
-    if (!p.enabled) return;
+    if (!p.enabled && !p.lookOnly) return;                // lookOnly: in a car, you can still turn your head
     const locked = document.pointerLockElement === dom;
     if (!locked && !dragging) return;                       // drag-look is the fallback when pointer lock is unavailable
     const mx = e.movementX || 0, my = e.movementY || 0;

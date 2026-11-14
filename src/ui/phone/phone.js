@@ -12,6 +12,7 @@ import { shape } from '../../engine/delivery.js';
 import { getLang, onLang } from '../i18n.js';
 import { enText } from '../../world/agendaEn.js';
 import { createShopApp } from './shopApp.js';
+import { createDidiApp } from './didiApp.js';
 
 // one language at a time: Z(zh, en) picks; X(text) translates what people wrote; nm(id) names them
 const Z = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -53,7 +54,7 @@ export const MANNER_MENU = [
   { id: 'osmanthus', name: '桂花拿铁', en: 'Osmanthus latte', price: 20, desc: '秋季限定', descEn: 'Autumn special' },
 ];
 
-export function createPhone({ getLife, calls, audio = null, onChange = null, onEvent = null }) {
+export function createPhone({ getLife, calls, audio = null, onChange = null, onEvent = null, ride = null }) {
   const root = document.createElement('div'); root.id = 'phone';
   root.innerHTML = '<div class="body"><div class="screen"><div class="island"></div><div class="status"></div><div class="host"></div><div class="homebar"></div></div></div>';
   document.body.appendChild(root);
@@ -66,7 +67,11 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   const top = () => S.stack[S.stack.length - 1];
   const go = (s, arg = {}) => { S.stack.push({ s, ...arg }); render(); };
   const shopApp = createShopApp({ L: () => getLife(), Z, esc, yuan, go: (s, arg) => go(s, arg), render: () => render(), top: () => top(), openSheet: (sh) => { S.sheet = sh; render(); } });
-  const SHOP_APPS = ['jd', 'taobao'];
+  const didiApp = createDidiApp({
+    L: () => getLife(), Z, esc, go: (s, arg) => go(s, arg), render: () => render(), top: () => top(),
+    getRide: () => (ride && ride.get ? ride.get() : null), onRequest: (id) => ride && ride.request(id), onCancel: () => ride && ride.cancel(), onMessage: (q) => ride && ride.message(q),
+  });
+  const SHOP_APPS = ['jd', 'taobao', 'didi'];                              // apps that notify as themselves, not through WeChat
   const back = () => {
     if (S.sheet) { S.sheet = null; render(); return; }
     if (S.call) return;                                                     // hang up with the red button
@@ -106,6 +111,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (t.s === 'manner') html = mannerView(l, t);
     else if (t.s === 'call') html = callView(l);
     else if (shopApp.views[t.s]) html = shopApp.views[t.s](l, t);
+    else if (didiApp.views[t.s]) html = didiApp.views[t.s](l, t);
     host.innerHTML = html + (S.sheet ? sheetView(l) : '');
     if (t.s === 'chat') { const m = host.querySelector('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
   }
@@ -127,6 +133,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       ${app('recents', Z('电话', 'Phone'), 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}
       ${app('jd', Z('京东', 'JD'), 'linear-gradient(160deg,#f2453c,#c8160e)', '<span style="font-size:22px;font-weight:700">京</span>', shopUnread('jd'))}
       ${app('taobao', Z('淘宝', 'Taobao'), 'linear-gradient(160deg,#ff7a2e,#ff4d00)', '<span style="font-size:22px;font-weight:700">淘</span>', shopUnread('taobao'))}
+      ${app('didi', Z('滴滴出行', 'DiDi'), 'linear-gradient(160deg,#ff9a3c,#ff6a00)', '<span style="font-size:22px;font-weight:700">滴</span>', shopUnread('didi'))}
       ${app('manner', 'Manner', 'linear-gradient(160deg,#1b1b1b,#3a3a3a)', '<span style="font-size:13px;letter-spacing:0.5px">MNR</span>')}
       </div>
       <div class="dock">${app('chats', '', 'linear-gradient(160deg,#2bd46b,#05a845)', '◔◔', 0)}${app('recents', '', 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}${app('wallet', '', 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}${app('calendar', '', '#fff', `<span style="color:#e33;font-size:20px">${l.clock.day + 13}</span>`)}</div></div>`;
@@ -260,9 +267,11 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const el = e.target.closest('[data-act]'); if (!el) return;
     const act = el.dataset.act, id = el.dataset.id, l = L();
     if (shopApp.act(act, id)) return;
+    if (didiApp.act(act, id, el)) return;
     if (act === 'unlock') unlock();
     else if (act === 'back') back();
-    else if (act === 'app') { if (SHOP_APPS.includes(id)) go('shop', { shop: id }); else go(id); }
+    else if (act === 'app') { if (id === 'jd' || id === 'taobao') go('shop', { shop: id }); else go(id); }
+    else if (act === 'openThread' && id === 'didi') { const to = () => { S.stack = [{ s: 'home' }]; go('didi'); }; if (!S.unlocked) unlock(to); else to(); }
     else if (act === 'openThread' && SHOP_APPS.includes(id)) { const to = () => { S.stack = [{ s: 'home' }, { s: 'shop', shop: id }]; go('orders', { id }); }; if (!S.unlocked) unlock(to); else to(); }
     else if (act === 'openThread') { if (!S.unlocked) { unlock(() => { S.stack = [{ s: 'home' }, { s: 'chats' }]; go('chat', { id }); }); } else go('chat', { id }); }
     else if (act === 'reply') { const t = top(); reply(l, t.id, id, +el.dataset.i); render(); }
@@ -318,7 +327,13 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   }
 
   // called every frame: status bar, banners for new messages while the phone is down
+  let rideKey = '';
   function update(dt) {
+    // the DiDi screen follows the ride (driver found, ETA, arrived) while it's open
+    if (S.open && top().s === 'didi' && ride && ride.get) {
+      const R = ride.get(), k = R ? `${R.phase}|${Math.round(R.etaMin || 0)}` : '-';
+      if (k !== rideKey) { rideKey = k; if (getLife().threads.didi) getLife().threads.didi.unread = 0; render(); }
+    }
     const l = L();
     if (S.call && S.call.state === 'active') S.call.secs += dt;
     if (S.call && S.call.state === 'ringing') {

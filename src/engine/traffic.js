@@ -223,7 +223,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   function stepVehicles(dt, list) {
     for (const lane of Object.values(lanes)) {
       lane.vehicles.sort((a, b) => b.s - a.s);                                 // front-most first
-      const act = lane.vehicles.filter((v) => v.active);
+      const act = lane.vehicles.filter((v) => v.active && !(v.pickup && v.pickup.state === 'parked' && Math.abs(v.dx || 0) > 2.5));
       for (let i = 0; i < act.length; i++) {
         const veh = act[i], lead = act[i - 1] || null;
         let acc = idm(veh.v, veh.v0, Infinity, 0, veh.p), why = 'free';
@@ -248,7 +248,17 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
           const a = idm(veh.v, veh.v0, ps - veh.s, veh.v, veh.p, 1.6);
           if (a < acc) { acc = a; why = 'yielding to pedestrian'; }
         }
-        acc = Math.max(-cfg.maxDecel - 1.5, acc);
+        // a ride-hail pickup: slow to a stop at the kerb and wait there; then pull away
+        const pk = veh.pickup;
+        if (pk && pk.state === 'approach') {
+          const d = pk.stopS - veh.s;
+          const a = idm(veh.v, veh.v0, Math.max(0.01, d + 2.2), veh.v, veh.p, 0.6);
+          if (a < acc) { acc = a; why = 'pulling in'; }
+          if (d < 0.6 && veh.v < 0.4) { pk.state = 'parked'; veh.v = 0; acc = 0; }
+        }
+        if (pk && pk.state === 'parked') { acc = 0; veh.v = 0; why = 'waiting at the kerb'; }
+        if (veh.forceBrake) { acc = Math.min(acc, -veh.forceBrake); why = 'emergency stop'; }
+        acc = Math.max(-cfg.maxDecel - 1.5, veh.forceBrake ? -veh.forceBrake : -Infinity, acc);
         // progressive departure: from standstill, wait a reaction time before moving off
         if (veh.v < 0.05 && acc > 0.05) { veh.waited += dt; if (veh.waited < veh.reaction) acc = 0; } else if (veh.v < 0.05) veh.waited = 0;
         const before = veh.s;
@@ -267,7 +277,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
         veh.acc = acc; veh.why = why;
         veh.braking = acc < -0.6 || (veh.v < 0.3 && acc <= 0.05);
         veh.wheelDist += veh.v * dt;
-        if (veh.s - veh.len > geom.exitS) { veh.active = false; veh.hold = 1 + rng() * 9; veh.v = 0; stats.recycled++; }
+        if (veh.s - veh.len > geom.exitS && !veh.hidden) { veh.active = false; veh.hold = 1 + rng() * 9; veh.v = 0; stats.recycled++; }
       }
       // rejoin at the far end once the entry is clear (>= 320 m from the player's reachable area)
       for (const veh of lane.vehicles) {
@@ -281,8 +291,24 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
       }
     }
     for (const veh of vehicles) {
-      veh.x = veh.lane.x; veh.z = veh.s * veh.lane.dir - (veh.len / 2) * veh.lane.dir;   // z of the body centre
-      veh.yaw = veh.lane.dir > 0 ? 0 : Math.PI;
+      // sideways: a pickup easing in to the kerb and back out; a lane change
+      const pk = veh.pickup;
+      let want = 0;
+      if (pk) {
+        const d = pk.stopS - veh.s, sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+        want = pk.state === 'go' ? pk.dx * (1 - sm(0, 28, -d)) : pk.dx * sm(34, 4, d);
+      }
+      if (veh.laneChange) {
+        const lc = veh.laneChange; lc.t += dt;
+        want = (lc.to.x - veh.lane.x) * Math.min(1, lc.t / lc.dur);
+        if (lc.t >= lc.dur) {                                                   // arrived in the new lane
+          veh.lane.vehicles.splice(veh.lane.vehicles.indexOf(veh), 1); lc.to.vehicles.push(veh); veh.lane = lc.to; veh.laneChange = null; want = 0; veh.dx = 0;
+        }
+      }
+      const prev = veh.dx || 0; veh.dx = want;
+      veh.x = veh.lane.x + veh.dx; veh.z = veh.s * veh.lane.dir - (veh.len / 2) * veh.lane.dir;   // z of the body centre
+      const ds = Math.max(0.05, veh.v * dt);
+      veh.yaw = (veh.lane.dir > 0 ? 0 : Math.PI) + (veh.v > 0.1 ? Math.atan2(veh.dx - prev, ds) * veh.lane.dir : 0);
     }
   }
 
@@ -451,6 +477,8 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
 
   return {
     controller: ctl, vehicles, peds, lanes, stats, config: cfg, shop,
+    // a car moves over into the next lane over `dur` seconds (a cut-in)
+    changeLane(veh, toId, dur = 1.5) { if (!veh.laneChange && lanes[toId] && veh.lane !== lanes[toId]) veh.laneChange = { to: lanes[toId], t: 0, dur }; },
     update, vehiclePermission: (v, player) => vehiclePermission(v, people(player)), pedestrianPermission,
     occupancy: (player) => occupancy(people(player)),
     inCrosswalk, exitSpace,

@@ -164,7 +164,7 @@ export function createVehicles(specs) {
     const v = CARS[spec.model] ? buildLookalike(spec, T.plates[i % T.plates.length]) : buildGeneric(spec);
     v.g.name = `vehicle-${spec.id}`;
     group.add(v.g);
-    return { ...v, id: spec.id, lookalike: !!CARS[spec.model], braking: null };
+    return { ...v, id: spec.id, model: spec.model, lookalike: !!CARS[spec.model], braking: null };
   });
   wheels.build(); group.add(wheels.group);
   const instancer = wheels;
@@ -174,8 +174,8 @@ export function createVehicles(specs) {
     update(sim) {
       for (let i = 0; i < list.length; i++) {
         const v = list[i], s = sim[i];
-        v.g.visible = s.active;
-        for (const w of v.wheels) w.visibleOwner = s.active;
+        v.g.visible = s.active && !s.hidden;                                  // hidden: you're inside it (world/didi.js draws the cabin)
+        for (const w of v.wheels) w.visibleOwner = s.active && !s.hidden;
         if (!s.active) continue;
         v.g.position.set(s.x, 0, s.z); v.g.rotation.y = s.yaw;
         const ang = s.wheelDist / v.wheelRadius;

@@ -86,6 +86,10 @@ export const S = {
   hintAnc: { zh: '耳机在身上：按 H 开降噪', en: 'Headphones on you: H for noise cancelling' },
   umbrellaOpen: { zh: '撑伞', en: 'Umbrella up' }, umbrellaClose: { zh: '收伞', en: 'Umbrella down' },
   ancOn: { zh: '降噪已开', en: 'Noise cancelling on' }, ancOff: { zh: '降噪已关', en: 'Noise cancelling off' },
+  // DiDi
+  rideArrived: { zh: '已到达', en: 'Arrived' }, rideContinue: { zh: '继续', en: 'Continue' },
+  pDidi: { zh: (p) => `滴滴 ${p}`, en: (p) => `DiDi ${p}` }, pGetIn: { zh: '上车', en: 'Get in' }, mapDidi: { zh: '你的车', en: 'Your ride' },
+  rideHint: { zh: '1–4 回话 · 鼠标环顾', en: '1–4 to answer · mouse to look around' },
   // map areas
   areas: { hankou: { zh: '汉口路', en: 'Hankou Road' }, zhongshan: { zh: '中山东一路', en: 'Zhongshan Road (E-1)' }, promenade: { zh: '外滩观景平台', en: 'The Promenade' }, customs: { zh: '海关大楼', en: 'Customs House' } },
 };

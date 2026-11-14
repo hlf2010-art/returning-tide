@@ -39,6 +39,10 @@ export const EN = {
   '你是不是在汉口路那家Manner？我们工地的人天天去，燕麦拿铁不错。': 'Are you at the Manner on Hankou Road? The guys from our site go every day. The oat latte\'s good.',
   '怎么不接电话？': 'Why aren\'t you picking up?', '在忙？': 'Busy?',
   // default answers to invitations
+  // DiDi
+  '师傅：到了哈，我在路边打着双闪，你快点哦，这里不让停。': "Driver: I'm here, at the kerb with my hazards on. Be quick, you can't stop here.",
+  '行程已取消': 'Ride cancelled', '师傅：好的': 'Driver: OK', '我在路口了，马上到': "I'm at the corner, coming now", '稍等我两分钟': 'Give me two minutes', '我穿深色外套': "I'm in a dark coat",
+  '今天谢了，改天请你吃饭。': "Thanks for today. Dinner's on me sometime.",
   '好，到时候见。': 'OK, see you then.', '这次去不了，下次一定。': 'Can\'t make this one. Next time for sure.',
   // Dad
   '到上海了？': 'You\'re in Shanghai?', '到了，在外滩。': 'Yes, I\'m on the Bund.', '嗯，到了。': 'Mm, I\'m here.', '住哪儿？': 'Where are you staying?',
@@ -50,6 +54,7 @@ export const EN = {
 
 // the shops' order updates and item names (engine/shopping.js)
 import { CATALOGUE } from '../engine/shopping.js';
+import { DRIVER_NAME_EN } from './driversEn.js';
 const ITEM_EN = Object.fromEntries(CATALOGUE.map((c) => [c.name, c.en]));
 const SHOP_EN = {
   您的订单已打包: 'Your order is packed', 您的订单已发货: 'Your order has shipped', '快递员正在派送，预计45分钟内送达': 'Out for delivery, arriving within 45 minutes',
@@ -63,6 +68,12 @@ export function enText(text) {
   if (EN[text]) return EN[text];
   const m = /^您的(.+)已做好，取餐号 (\d+)/.exec(text);
   if (m) return `Your ${(DRINKS[m[1]] || 'order').toLowerCase()} is ready. Order No. ${m[2]}, collect at the window`;
+  // DiDi's app
+  let m2;
+  if ((m2 = /^司机已接单：(\S+) · (.+)$/.exec(text))) return `Driver accepted: ${DRIVER_NAME_EN[m2[1]] || m2[1]} · ${m2[2]}`;
+  if ((m2 = /^司机已到达上车点，请尽快上车（(.+)）$/.exec(text))) return `Your driver is at the pickup point. Please get in (${m2[1]})`;
+  if ((m2 = /^乘客未上车，订单已取消，收取取消费 ¥(\S+)$/.exec(text))) return `You didn't come down, so the ride was cancelled. Cancellation fee ¥${m2[1]}`;
+  if ((m2 = /^行程结束，已支付 ¥(\S+)。感谢乘坐，请为(\S+)评价$/.exec(text))) return `Trip complete, ¥${m2[1]} paid. Thanks for riding. Rate ${DRIVER_NAME_EN[m2[2]] || m2[2]}`;
   // the shops' order updates: "<what happened>：<items>"
   const o = /^(.+?)：(.+)$/.exec(text);
   if (o && SHOP_EN[o[1]]) return `${SHOP_EN[o[1]]}: ${o[2].split('、').map((n) => ITEM_EN[n] || n).join(', ')}`;

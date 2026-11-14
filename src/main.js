@@ -49,6 +49,8 @@ import { createTrees } from './world/trees.js';
 import { createBumps } from './world/bumps.js';
 import { createManner } from './world/shops.js';
 import { createBelongings } from './world/belongings.js';
+import { createDidi, PICKUP } from './world/didi.js';
+import { createRideFlow } from './world/rideFlow.js';
 import { createShop } from './engine/errands.js';
 import { manner as mannerSpec, stall as stallSpot } from './world/layout.js';
 import { createMinimap } from './ui/minimap.js';
@@ -147,7 +149,11 @@ async function boot() {
   captureEnvironment(R.renderer, scene);
   // what you buy: the courier at the kerb, parcels, the umbrella, headphones (world/belongings.js)
   const belongings = createBelongings({ scene, people, camera, hud, audio, getLife: () => life, save: () => saveLife() });
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings };
+  // DiDi: a car from the traffic comes to the kerb; you ride in it (world/didi.js, world/rideFlow.js)
+  const didi = createDidi({ scene, people, traffic, vehicles, camera, player });
+  const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode });
+  document.querySelector('#ride-card .go').addEventListener('click', () => rideFlow.closeCard());
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow };
   // bumping into people: their reactions, a passing remark, a jolt for you
   bumps = createBumps({ hud, audio, onPlayerBump: ({ closing }) => { player.head.dipV -= 0.1 + 0.05 * Math.min(4, closing); player.head.roll += (Math.random() - 0.5) * 0.04; } });
   // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
@@ -193,8 +199,22 @@ function lock() {
   if (noLock) return;
   try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch { /* handled by pointerlockerror */ }
 }
+// in a DiDi: the car has the camera; you can look around and answer (1-4)
+let pausedFrom = 'play';
+function rideMode(m) {
+  if (m === 'ride') {
+    if (phone.isOpen) phone.close();
+    mode = 'ride'; player.enabled = false; player.lookOnly = true; player.clearInput(); hud.prompt(false); target = null;
+    hud.toast(tx('rideHint'), 4);
+  } else {                                                                     // back on the Bund: out at the pickup point
+    player.lookOnly = false;
+    player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0);                 // facing west, toward Hankou Road
+    mode = 'play'; player.enabled = true; player.clearInput();
+  }
+}
 function play() {
-  mode = 'play'; player.enabled = true; audio.resume();
+  const back = pausedFrom === 'ride' && world && world.rideFlow && (world.rideFlow.inCar || world.rideFlow.card);
+  mode = back ? 'ride' : 'play'; player.enabled = !back; pausedFrom = 'play'; audio.resume();
   if (conversation) conversation.setPaused(false);
   hud.show('pause', false);
 }
@@ -209,7 +229,8 @@ function pause() {
   if (mode === 'inspect') closeInspect();
   if (mode === 'dialogue') closeDialogue();
   if (mode === 'pouch') closePouch();
-  if (mode !== 'play') return;
+  if (mode !== 'play' && mode !== 'ride') return;
+  pausedFrom = mode;
   mode = 'pause'; player.enabled = false; audio.setPaused(true);
   if (conversation) conversation.setPaused(true);
   hud.show('pause', true); hud.prompt(false); hud.subtitle(false);
@@ -305,7 +326,7 @@ onLang(() => syncSettings());
 syncSettings();
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) { if (mode === 'pause') play(); }
-  else if (!noLock && (mode === 'play' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch') && !(phone && phone.isOpen)) pause();   // the phone frees the mouse on purpose
+  else if (!noLock && (mode === 'play' || mode === 'ride' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch') && !(phone && phone.isOpen)) pause();   // the phone frees the mouse on purpose
 });
 document.addEventListener('pointerlockerror', () => {
   // Pointer lock refused (embedded frame, or re-requested too soon after Esc)
@@ -358,6 +379,11 @@ window.addEventListener('keydown', (e) => {
     else if (k === 'Escape' && noLock) closePouch();
     return;
   }
+  if (mode === 'ride') {
+    if (world.rideFlow.key(k)) { e.preventDefault(); return; }
+    if (k === 'Escape' && noLock) pause();
+    return;
+  }
   if (mode === 'play') {
     if (world && world.belongings && world.belongings.key(k)) return;
     if (k === 'KeyE') interact();
@@ -380,6 +406,7 @@ function interact() {
   if (target.id === 'lin') openDialogue();
   else if (target.id === 'pouch') openPouch();
   else if (target.id === 'notice') openInspect();
+  else if (target.id === 'didi') world.rideFlow.board();
   else if (world.belongings.interact(target.id)) { /* the courier */ }
   else if (target.id === 'manner') {
     const mo = life.flags.mannerOrder;
@@ -433,6 +460,10 @@ const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); }
 let lifeSaveIn = 5, pendingCalls = [], cupFor = 0;
 const phone = createPhone({
   getLife: () => life, calls: CALLS, audio,
+  ride: {
+    get: () => (world && world.rideFlow ? world.rideFlow.ride : null), request: (id) => world && world.rideFlow.request(id),
+    cancel: () => world && world.rideFlow.cancel(), message: (q) => world && world.rideFlow.message(q),
+  },
   onChange: (up) => { player.capScale = up ? 0.55 : 1; if (!up && mode === 'play' && !noLock) canvas.requestPointerLock?.(); },
   onEvent: (ev) => {
     if (ev.type === 'paid') {
@@ -450,7 +481,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyP' && !e.repeat) { phone.toggle(); e.stopImmediatePropagation(); }
 }, true);
 function updateLife(dt) {
-  if (mode !== 'play' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
+  if (mode !== 'play' && mode !== 'ride' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
   lifeAdvance(life, dt);
   if (params.get('life') !== '0') { runAgenda(life); deliverFollowUps(life); }   // ?life=0: nobody gets in touch (measurement tools)
   for (const inv of lifeLapse(life)) lifeReact(life, { type: 'invite', id: inv.id, status: 'missed', from: inv.from, thread: inv.thread });
@@ -483,6 +514,8 @@ function mapObjective() {
   return null;
 }
 function mapTarget() {
+  const r = world && world.rideFlow && world.rideFlow.ride;
+  if (r && (r.phase === 'coming' || r.phase === 'waiting')) return { x: PICKUP.x, z: PICKUP.z, label: tx('mapDidi') };
   return mapObjective() || (world && world.belongings ? world.belongings.mapObjective() : null);
 }
 function updateMap(dt) {
@@ -529,7 +562,7 @@ function updateTraffic(dt) {
 }
 
 function frame(now) {
-  const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now; t += dt;
+  const dt = Math.min(debug.dtMax || 0.05, Math.max(0, (now - last) / 1000)); last = now; t += dt;   // dtMax: tools only (slow software GL)
   if (!world) return;
 
   if (mode === 'entry') {             // a slow breath of camera movement behind the title
@@ -546,8 +579,12 @@ function frame(now) {
     player.yaw += wrapAngle(targetYaw - player.yaw) * lk;
     player.pitch += (targetPitch - player.pitch) * lk;
   }
-  player.update(mode === 'pause' ? 0 : dt);
-  if (world.playerBody) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position);
+  const riding = mode === 'ride' || (mode === 'pause' && pausedFrom === 'ride');
+  world.didi.update(mode === 'pause' ? 0 : dt);
+  world.rideFlow.update(mode === 'pause' ? 0 : dt);
+  if (riding && world.didi.car) { player.body.x = world.didi.car.x; player.body.z = world.didi.car.z; }   // you (and your ears) are in the car
+  if (!riding) player.update(mode === 'pause' ? 0 : dt);
+  if (world.playerBody) { world.playerBody.setVisible(!riding); if (!riding) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0
   if (mode !== 'pause') {
@@ -609,10 +646,12 @@ function frame(now) {
     ];
     if (mission1 && mission1.canPickUp()) cands.push({ id: 'pouch', x: pf.x, y: pf.y, z: pf.z, reach: 2.4, cone: 0.72 });
     cands.push(...world.belongings.candidates());
+    if (world.rideFlow.canBoard()) { const d = world.didi.doorFocus(); if (d) cands.push({ id: 'didi', ...d, reach: 2.8, cone: 0.6 }); }
     cands.push({ id: 'manner', x: mannerSpec.queue[0].x + 0.2, y: L.curbH + 1.15, z: mannerSpec.zWall + mannerSpec.depth - 0.1, reach: 2.6, cone: 0.7 });
     target = pickTarget(camera.position, _d, cands, colliders);
   }
-  if (target) hud.prompt(true, PROMPTS[target.id] ? PROMPTS[target.id]() : world.belongings.prompt(target.id));
+  if (target && target.id === 'didi') hud.prompt(true, { target: tx('pDidi', world.rideFlow.ride.driver.plate), action: tx('pGetIn') });
+  else if (target) hud.prompt(true, PROMPTS[target.id] ? PROMPTS[target.id]() : world.belongings.prompt(target.id));
   else hud.prompt(false);
 
   // subtitles + interaction greeting bar

@@ -14,6 +14,7 @@ export const PEOPLE = {
   zhixia: { name: '韩知夏', short: '知夏', en: 'Han Zhixia', role: 'EV engineer, amateur GT racer', color: '#b5463f', voice: { pitch: 1.05, rate: 1.12 }, sex: 'f' },
   yinuo:  { name: '程以诺', short: '以诺', en: 'Cheng Yinuo', role: 'family office, art & property', color: '#8a6aa8', voice: { pitch: 1.1, rate: 0.96 }, sex: 'f' },
   manner: { name: 'Manner Coffee', short: 'M', en: 'Manner Coffee (Hankou Rd)', role: 'coffee', color: '#151515', voice: { pitch: 1, rate: 1 } },
+  didi:   { name: '滴滴出行', short: '滴滴', en: 'DiDi', role: 'app', color: '#ff7a00', voice: { pitch: 1, rate: 1 } },
   jd:     { name: '京东', short: '京东', en: 'JD', role: 'shop', color: '#e1251b', voice: { pitch: 1, rate: 1 } },
   taobao: { name: '淘宝', short: '淘宝', en: 'Taobao', role: 'shop', color: '#ff5000', voice: { pitch: 1, rate: 1 } },
   dad:    { name: '爸', short: '爸', en: 'Dad (Shen Jianguo)', role: 'machining firm, Nanjing', color: '#6b6b6b', voice: { pitch: 0.82, rate: 0.92 }, sex: 'm' },

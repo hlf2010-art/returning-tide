@@ -244,6 +244,21 @@ export function createAudio() {
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.05 * level, t + 0.05); g.gain.linearRampToValueAtTime(0.0001, t + 0.3);
       o.connect(f).connect(lp).connect(g).connect(sfx); o.start(t); o.stop(t + 0.34);
       stats.cues.hum = (stats.cues.hum || 0) + 1;
+    } else if (name === 'carhorn') {
+      // a car horn just ahead: two detuned reeds, a short angry double blast
+      stats.cues.carhorn = (stats.cues.carhorn || 0) + 1;
+      for (const [at, len] of [[0, 0.32], [0.42, 0.55]]) {
+        const g = gainNode(0), f = filt('bandpass', 900, 0.9);
+        g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(0.16 * level, t + at + 0.02); g.gain.setValueAtTime(0.16 * level, t + at + len); g.gain.linearRampToValueAtTime(0, t + at + len + 0.05);
+        for (const hz of [415, 498]) { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = hz; o.connect(f); o.start(t + at); o.stop(t + at + len + 0.08); }
+        f.connect(g); g.connect(sfx);
+      }
+    } else if (name === 'door') {
+      // a car door: the latch, then the heavy shut
+      stats.cues.door = (stats.cues.door || 0) + 1;
+      burst(t, { f: 2600, q: 1.2, gain: 0.12, attack: 0.002, decay: 0.05, rate: 1.4 });
+      thump(t + 0.9, 70, 0.4, 0.14);
+      burst(t + 0.9, { buffer: buf, type: 'lowpass', f: 600, q: 0.7, gain: 0.3, attack: 0.003, decay: 0.16, rate: 1.2 });
     } else if (name === 'bump') {
       // shoulder into shoulder: a soft cloth thud and a scuff of feet
       stats.cues.bump = (stats.cues.bump || 0) + 1;

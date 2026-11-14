@@ -149,7 +149,11 @@ const walk = async (name, x, z, yaw) => {
   const s0 = await census();
   const still = await rec(`${name}-still`, () => page.waitForTimeout(2500));
   const s1 = await census();
+  // under slow software GL the simulation runs well behind real time (each frame's step is capped);
+  // let it keep up during the walk so a 6 s walk covers a walk's worth of steps
+  await page.evaluate(() => { window.__bund.dtMax = 0.12; });
   const r = await rec(`${name}-walk`, async () => { await page.keyboard.down('KeyW'); await page.waitForTimeout(6000); await page.keyboard.up('KeyW'); await page.waitForTimeout(300); });
+  await page.evaluate(() => { window.__bund.dtMax = 0; });
   const s2 = await census();
   return { still, walk: r, stillSteps: s1.steps.stone + s1.steps.asphalt - s0.steps.stone - s0.steps.asphalt, steps: s2.steps, before: s1.steps };
 };

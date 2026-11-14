@@ -294,3 +294,49 @@ html[lang="zh-CN"] #mission-card .mc-title { font: 900 44px var(--serif); letter
 html[lang="zh-CN"] #entry .cityline { letter-spacing: 0.2em; }
 .mbtn.primary:focus-visible { box-shadow: 0 12px 34px rgba(233,185,111,0.38), 0 0 0 3px rgba(233,185,111,0.28); }
 @media (max-height: 460px), (max-width: 640px) { #entry .cityline { display: none; } }
+
+/* ---- a DiDi ride ---- */
+#ride-sub { position: fixed; left: 50%; bottom: 9vh; transform: translate(-50%, 8px); width: min(760px, 88vw); text-align: center; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; z-index: 12; }
+#ride-sub.on { opacity: 1; transform: translate(-50%, 0); }
+#ride-sub .sp { display: inline-block; font: 600 11px var(--ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+html[lang="zh-CN"] #ride-sub .sp { letter-spacing: 0.2em; }
+#ride-sub .tx { font: 500 clamp(15px, 1.6vw, 19px)/1.5 var(--ui); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.9), 0 0 18px rgba(0,0,0,0.6); }
+#ride-sub .ch { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 14px; margin-top: 12px; }
+#ride-sub .ch span { font: 500 13px var(--ui); color: rgba(255,255,255,0.88); background: rgba(10,12,18,0.55); border: 1px solid rgba(255,255,255,0.14); border-radius: 999px; padding: 6px 12px; backdrop-filter: blur(8px); }
+#ride-sub .ch kbd { font: 700 11px var(--ui); color: #111; background: var(--gold); border-radius: 4px; padding: 1px 5px; margin-right: 7px; }
+#ride-interlude { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 60%, #121725 0%, #05070c 70%); opacity: 0; pointer-events: none; transition: opacity 1.4s ease; z-index: 11; overflow: hidden; }
+#ride-interlude.on { opacity: 1; }
+#ride-interlude .streaks i { position: absolute; left: -40%; height: 2px; width: 38%; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255,190,120,0.85), transparent); filter: blur(0.6px); animation: streak 1.6s linear infinite; }
+#ride-interlude .streaks i:nth-child(1) { top: 22%; animation-delay: 0s; } #ride-interlude .streaks i:nth-child(2) { top: 31%; animation-delay: 0.5s; animation-duration: 2.1s; }
+#ride-interlude .streaks i:nth-child(3) { top: 64%; animation-delay: 0.9s; background: linear-gradient(90deg, transparent, rgba(150,190,255,0.7), transparent); }
+#ride-interlude .streaks i:nth-child(4) { top: 72%; animation-delay: 0.2s; animation-duration: 1.3s; } #ride-interlude .streaks i:nth-child(5) { top: 15%; animation-delay: 1.2s; animation-duration: 2.6s; background: linear-gradient(90deg, transparent, rgba(255,90,180,0.6), transparent); }
+#ride-interlude .streaks i:nth-child(6) { top: 80%; animation-delay: 0.7s; animation-duration: 1.8s; }
+@keyframes streak { to { transform: translateX(380%); } }
+#ride-card { position: fixed; left: clamp(22px, 7vw, 120px); bottom: 14vh; max-width: min(30rem, 86vw); opacity: 0; transform: translateY(10px); transition: opacity 0.5s, transform 0.5s; pointer-events: none; z-index: 13; color: var(--ink); }
+#ride-card.on { opacity: 1; transform: none; pointer-events: auto; }
+#ride-card .place { font: 800 clamp(30px, 4vw, 52px)/1.05 var(--ui); margin: 14px 0 10px; }
+html[lang="zh-CN"] #ride-card .place { font-family: var(--serif); font-weight: 900; letter-spacing: 0.04em; }
+#ride-card .line, #ride-card .back { font: 400 15px/1.65 var(--ui); color: rgba(244,241,234,0.85); }
+#ride-card .fare { font: 600 12px var(--ui); letter-spacing: 0.12em; color: var(--gold); margin: 10px 0; }
+#ride-card .go { margin-top: 18px; }
+/* the phone's DiDi app */
+#phone .view.didi { background: #f5f5f7; color: #111; }
+#phone .didibar { background: #ff7a00; color: #fff; } #phone .didibar .back { color: #fff; }
+#phone .dmap { position: relative; height: 130px; background: #e9edf2; overflow: hidden; }
+#phone .dmap .road { position: absolute; background: #fff; box-shadow: 0 0 0 1px #dde2e8; } #phone .dmap .r1 { left: 46%; top: -10%; width: 14px; height: 120%; } #phone .dmap .r2 { left: -10%; top: 58%; width: 120%; height: 10px; }
+#phone .dmap .river { position: absolute; right: -10%; top: -10%; width: 32%; height: 120%; background: #bfd6ea; transform: rotate(8deg); }
+#phone .dmap .pin { position: absolute; left: calc(46% + 7px); top: 58%; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: #18a058; box-shadow: 0 0 0 5px rgba(24,160,88,0.25); }
+#phone .dmap .dlabel { position: absolute; left: 10px; bottom: 8px; font-size: 11px; font-weight: 600; background: #fff; border-radius: 8px; padding: 3px 8px; }
+#phone .dfrom { display: flex; align-items: center; gap: 8px; padding: 9px 14px; background: #fff; border-bottom: 1px solid #eee; font-size: 13px; }
+#phone .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; } #phone .dot.g { background: #18a058; } #phone .dot.o { background: #ff7a00; }
+#phone .drow { display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: #fff; border-bottom: 1px solid #f0f0f2; cursor: pointer; }
+#phone .drow .mid { flex: 1; } #phone .drow .n { font-size: 14px; font-weight: 600; } #phone .drow .pv { font-size: 11.5px; color: #888; margin-top: 2px; } #phone .drow .pr { font-weight: 700; }
+#phone .dquote { margin: 14px; background: #fff; border-radius: 14px; padding: 14px; text-align: center; } #phone .dquote .k { font-size: 12px; color: #888; } #phone .dquote .amt { font-size: 30px; font-weight: 800; margin: 4px 0; } #phone .dquote .pv { font-size: 12px; color: #888; }
+#phone .dcall { display: block; width: calc(100% - 28px); margin: 14px; padding: 13px 0; font-size: 15px; background: #ff7a00; }
+#phone .dstat { padding: 12px 14px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+#phone .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #ffd2a8; border-top-color: #ff7a00; animation: spin 0.8s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
+#phone .dcard { margin: 0 14px; background: #fff; border-radius: 14px; padding: 14px; }
+#phone .dcard .plate { display: inline-block; font-size: 20px; font-weight: 800; letter-spacing: 0.04em; background: linear-gradient(#e8f5e9, #7fcf88); border: 2px solid #1b1b1b; border-radius: 5px; padding: 2px 10px; }
+#phone .dcard .car { font-size: 13px; color: #555; margin: 8px 0; } #phone .dcard .who { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+#phone .dcard .who .av { width: 26px; height: 26px; border-radius: 50%; background: #ff7a00; color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+#phone .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px; } #phone .dcancel { margin: 14px; }
