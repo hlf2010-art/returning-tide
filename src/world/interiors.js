@@ -22,7 +22,7 @@
 // (the hotel's name, signs) stays as it would be on site.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { L, colliders, covers, addDynamicCollider } from './layout.js';
+import { L, colliders, addDynamicCollider } from './layout.js';
 import { createPerson } from './people.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
@@ -59,7 +59,6 @@ function carve() {
   for (let i = 0; i < lanes.length - 1; i++) solid.push([lanes[i] + w, lanes[i + 1] - w]);
   solid.push([lanes[lanes.length - 1] + w, A.z1]);                   // wall to wall: no way round
   for (const [a, b] of solid) if (b > a) colliders.push({ minX: A.gateX - 0.15, maxX: A.gateX + 0.15, minZ: a, maxZ: b, tag: 'gates' });
-  covers.push({ id: 'peace-hall', x0: P.x0, x1: P.x1, z0: P.z0, z1: P.z1, top: 30 }, { id: 'aia-lobby', x0: A.x0, x1: A.x1, z0: A.z0, z1: A.z1, top: 30 });
 }
 carve();
 
@@ -104,10 +103,10 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const marble = new THREE.MeshStandardMaterial({ map: tx('marble_01_diff_1k.jpg', 3, true), normalMap: tx('marble_01_nor_gl_1k.jpg', 3, false), roughnessMap: tx('marble_01_rough_1k.jpg', 3, false), roughness: 0.6, color: 0xe8e2d6, envMapIntensity: 1.1 });
   const marbleDark = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, roughness: 0.25, color: 0x3d4a44, envMapIntensity: 1.3 });
   const walnut = new THREE.MeshStandardMaterial({ color: 0x3b2416, roughness: 0.4, metalness: 0.05, emissive: 0x070302 });
-  const plaster = new THREE.MeshStandardMaterial({ color: 0xe6d7bc, roughness: 0.9, emissive: 0x15100a });
+  const plaster = new THREE.MeshStandardMaterial({ color: 0xead8b8, roughness: 0.9, emissive: 0x3a2814 });   // warm: lamplight, not the blue night outside
   const brass = new THREE.MeshStandardMaterial({ color: 0xc89b4a, roughness: 0.3, metalness: 1, envMapIntensity: 1.4 });
   const granite = new THREE.MeshStandardMaterial({ map: tx('granite_tile_04_diff_1k.jpg', 1, true), color: 0xb9b2a6, roughness: 0.5, emissive: 0x0d0c0a });
-  const frosted = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.85, 1.35) });            // lit glass (bloom makes it glow)
+  const frosted = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.45, 1.22, 0.9) });             // lit glass (bloom makes it glow)
   const glass = new THREE.MeshStandardMaterial({ color: 0x9fb2b8, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
   const dark = new THREE.MeshStandardMaterial({ color: 0x141210, roughness: 0.7 });
   const add = (geo, mat, x, y, z, ry = 0, rx = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); m.receiveShadow = true; group.add(m); return m; };
@@ -131,6 +130,14 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     }
   }
   const lights = [];   // extra light sources for world/lighting.js's pool
+  const clerestory = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.75, 0.62, 0.45) });   // dim glazing round the drum
+  // a club armchair: seat, rolled back, two arms, in burgundy leather
+  const chairMat = new THREE.MeshStandardMaterial({ color: 0x5c1f1c, roughness: 0.5 });
+  function armchair(x, z, ry) {
+    const g = new THREE.Group(); g.position.set(x, Y0, z); g.rotation.y = ry; group.add(g);
+    const part = (w, h, d, px, py, pz) => { const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.35), chairMat); m.position.set(px, py + h / 2, pz); g.add(m); };
+    part(0.62, 0.42, 0.62, 0, 0, 0.04); part(0.62, 0.42, 0.18, 0, 0.36, -0.26); part(0.14, 0.26, 0.6, -0.3, 0.38, 0.02); part(0.14, 0.26, 0.6, 0.3, 0.38, 0.02);
+  }
 
   // ================= THE PEACE HOTEL =================
   const P = PEACE, pcx = (P.x0 + P.x1) / 2, pcz = (P.z0 + P.z1) / 2;
@@ -148,8 +155,9 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   }
   // ceiling with the octagon open to the drum and the rotunda
   {
-    const sh = new THREE.Shape(); sh.moveTo(P.x0, -P.z0); sh.lineTo(P.x1, -P.z0); sh.lineTo(P.x1, -P.z1); sh.lineTo(P.x0, -P.z1); sh.closePath();
-    const hole = new THREE.Path(); for (let i = 0; i <= 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; const x = P.oct.x + Math.cos(a) * (P.oct.r + 0.6), z = P.oct.z + Math.sin(a) * (P.oct.r + 0.6); i ? hole.lineTo(x, -z) : hole.moveTo(x, -z); }
+    // (shape y becomes world z once turned face-down by +90° about x)
+    const sh = new THREE.Shape(); sh.moveTo(P.x0, P.z0); sh.lineTo(P.x1, P.z0); sh.lineTo(P.x1, P.z1); sh.lineTo(P.x0, P.z1); sh.closePath();
+    const hole = new THREE.Path(); for (let i = 0; i <= 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; const x = P.oct.x + Math.cos(a) * (P.oct.r + 0.6), z = P.oct.z + Math.sin(a) * (P.oct.r + 0.6); i ? hole.lineTo(x, z) : hole.moveTo(x, z); }
     sh.holes.push(hole);
     const ceil = add(new THREE.ShapeGeometry(sh), plaster, 0, Y0 + P.h, 0, 0, Math.PI / 2); ceil.material = plaster.clone(); ceil.material.side = THREE.DoubleSide;
     // coffers: brass-lined frosted panels in a grid (the Lalique-style light)
@@ -162,11 +170,18 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     for (let i = 0; i < 8; i++) {
       const a0 = (i / 8) * Math.PI * 2 + Math.PI / 8, a1 = ((i + 1) / 8) * Math.PI * 2 + Math.PI / 8, r = P.oct.r + 0.6;
       const ax = P.oct.x + Math.cos(a0) * r, az = P.oct.z + Math.sin(a0) * r, bx = P.oct.x + Math.cos(a1) * r, bz = P.oct.z + Math.sin(a1) * r;
-      wall(ax, az, bx, bz, Y0 + P.h, Y0 + P.oct.top - 1.4, plaster, P.oct.x, P.oct.z);
-      wall(ax, az, bx, bz, Y0 + P.oct.top - 1.4, Y0 + P.oct.top, frosted, P.oct.x, P.oct.z);
+      wall(ax, az, bx, bz, Y0 + P.h, Y0 + P.oct.top - 0.9, plaster, P.oct.x, P.oct.z);
+      wall(ax, az, bx, bz, Y0 + P.oct.top - 0.9, Y0 + P.oct.top - 0.45, clerestory, P.oct.x, P.oct.z);
+      wall(ax, az, bx, bz, Y0 + P.oct.top - 0.45, Y0 + P.oct.top, plaster, P.oct.x, P.oct.z);
     }
-    const dome = add(new THREE.SphereGeometry(P.oct.r + 0.6, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2.6), new THREE.MeshBasicMaterial({ map: stainedGlass(), side: THREE.BackSide, color: new THREE.Color(1.6, 1.45, 1.2) }), P.oct.x, Y0 + P.oct.top - 0.4, P.oct.z);
-    dome.scale.y = 0.5; dome.rotation.y = 0.2;
+    // the rotunda: a shallow dome of stained glass, its pattern laid on flat from above (as a laylight
+    // reads from below), lit from behind
+    const dg = new THREE.SphereGeometry(P.oct.r + 0.6, 40, 12, 0, Math.PI * 2, 0, Math.PI / 2.6), R0 = P.oct.r + 0.6, pos = dg.attributes.position, uv = dg.attributes.uv;
+    for (let i = 0; i < pos.count; i++) uv.setXY(i, 0.5 + pos.getX(i) / (2 * R0 * 0.92), 0.5 + pos.getZ(i) / (2 * R0 * 0.92));
+    const dome = add(dg, new THREE.MeshBasicMaterial({ map: stainedGlass(), side: THREE.BackSide, color: new THREE.Color(1.25, 1.12, 0.95) }), P.oct.x, Y0 + P.oct.top - 0.3, P.oct.z);
+    dome.scale.y = 0.45;
+    const cap = add(new THREE.CircleGeometry(P.oct.r + 0.75, 8, Math.PI / 8), plaster, P.oct.x, Y0 + P.oct.top + 0.02, P.oct.z, 0, Math.PI / 2);   // the drum's ceiling round the glass
+    cap.material = plaster.clone(); cap.material.side = THREE.DoubleSide;
   }
   // the eight marble pillars, brass capitals and bases
   for (let i = 0; i < 8; i++) {
@@ -178,6 +193,11 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const sconce = (x, z, ry) => { const g = new THREE.Group(); g.position.set(x, Y0 + 2.6, z); g.rotation.y = ry; const f = new THREE.Mesh(new THREE.CircleGeometry(0.32, 3, -Math.PI / 6, Math.PI / 3 * 2), frosted); f.rotation.z = Math.PI; f.position.z = 0.05; g.add(f); const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), brass); b.position.set(0, 0.1, 0.03); g.add(b); group.add(g); };
   for (let x = P.x0 + 4; x < P.x1 - 3; x += 5) { sconce(x, P.z0 + 0.03, 0); }
   for (let z = P.z1 - 4; z > P.z0 + 3; z -= 5) sconce(P.x0 + 0.03, z, Math.PI / 2);
+  // Art Deco detail: brass-capped walnut pilasters along the walls, a stepped cornice under the ceiling
+  for (let x = P.x0 + 2; x < P.x1 - 1; x += 4) for (const z of [P.z0 + 0.12, P.z1 - 0.12]) { if (z > -213 && x > P.door[0] - 1 && x < P.door[1] + 1) continue; box(0.34, P.h - 0.4, 0.14, walnut, x, Y0, z); box(0.4, 0.14, 0.18, brass, x, Y0 + P.h - 0.54, z); }
+  for (const [ax, az, bx, bz] of [[P.x0, P.z0, P.x1, P.z0], [P.x0, P.z1, P.x1, P.z1]]) box(Math.abs(bx - ax), 0.22, 0.3, walnut, (ax + bx) / 2, Y0 + P.h - 0.26, az + (az < -230 ? 0.15 : -0.15));
+  for (const x of [P.x0, P.x1]) box(0.3, 0.22, P.z1 - P.z0, walnut, x + (x < -50 ? 0.15 : -0.15), Y0 + P.h - 0.26, pcz);
+  box(0.06, 0.05, P.z1 - P.z0, brass, P.x0 + 0.33, Y0 + P.h - 0.3, pcz); box(0.06, 0.05, P.z1 - P.z0, brass, P.x1 - 0.33, Y0 + P.h - 0.3, pcz);
   // the front desk and concierge: walnut, marble tops, brass rails, a backlit panel with the name
   rbox(2.2, 1.1, 8.2, 0.04, walnut, P.x0 + 2.4, Y0, -228.9); box(2.3, 0.06, 8.4, marbleDark, P.x0 + 2.4, Y0 + 1.1, -228.9);
   box(0.05, 0.05, 8.2, brass, P.x0 + 3.53, Y0 + 0.95, -228.9);
@@ -193,9 +213,18 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   // the Jasmine Lounge: round tables, chairs, a grand piano by the windows
   for (const [x, z] of [[-38.2, -230], [-38.4, -234.5], [-38.2, -238], [-41.5, -232], [-41.6, -236.4]]) {
     add(new THREE.CylinderGeometry(0.45, 0.45, 0.04, 24), marbleDark, x, Y0 + 0.74, z); add(new THREE.CylinderGeometry(0.05, 0.12, 0.72, 10), brass, x, Y0 + 0.36, z);
-    for (const a of [0, Math.PI]) rbox(0.5, 0.75, 0.5, 0.08, new THREE.MeshStandardMaterial({ color: 0x5a3b2a, roughness: 0.6 }), x + Math.sin(a) * 0.8, Y0, z + Math.cos(a) * 0.8);
+    for (const a of [0, Math.PI]) armchair(x + Math.sin(a) * 0.85, z + Math.cos(a) * 0.85, a + Math.PI);
   }
-  rbox(1.6, 1.0, 2.2, 0.06, new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.15, metalness: 0.3 }), -40.4, Y0, -241.5);
+  // the grand piano: curved case, raised lid, three legs
+  {
+    const lacquer = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.12, metalness: 0.2, envMapIntensity: 1.5 });
+    const sh = new THREE.Shape(); sh.moveTo(-0.75, 0); sh.lineTo(0.75, 0); sh.lineTo(0.75, 1.2); sh.bezierCurveTo(0.75, 1.9, 0.2, 2.2, -0.1, 2.1); sh.bezierCurveTo(-0.5, 1.95, -0.75, 1.6, -0.75, 1.2); sh.closePath();
+    const caseGeo = new THREE.ExtrudeGeometry(sh, { depth: 0.32, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 2 }); caseGeo.rotateX(Math.PI / 2);
+    add(caseGeo, lacquer, -40.4, Y0 + 1.0, -242.6);
+    const lid = add(new THREE.ShapeGeometry(sh), lacquer, -40.4, Y0 + 1.02, -242.6); lid.rotation.set(-Math.PI / 2 + 0.55, 0, 0); lid.material = lacquer;
+    for (const [lx, lz] of [[-0.6, 0.2], [0.6, 0.2], [0, 1.9]]) add(new THREE.CylinderGeometry(0.05, 0.04, 0.68, 8), lacquer, -40.4 + lx, Y0 + 0.34, -242.6 + lz);
+    box(1.4, 0.06, 0.22, new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.4 }), -40.4, Y0 + 0.72, -242.55);   // the keys
+  }
   // the Jazz Bar's door and its stand
   box(2.0, 3.2, 0.1, walnut, P.x1 - 3.6, Y0, P.z1 - 0.06);
   add(new THREE.PlaneGeometry(1.6, 0.4), new THREE.MeshBasicMaterial({ map: signTex([['爵士吧 · JAZZ BAR', 48]], { w: 640, h: 128 }) }), P.x1 - 3.6, Y0 + 3.5, P.z1 - 0.13, Math.PI);
@@ -207,7 +236,8 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const doorX = (P.door[0] + P.door[1]) / 2;
   box(6.4, 0.25, 2.6, brass, doorX, Y0 + 3.6, -211.0);
   for (const x of [doorX - 3, doorX + 3]) add(new THREE.CylinderGeometry(0.06, 0.06, 3.6, 8), brass, x, Y0 + 1.8, -209.9);
-  add(new THREE.PlaneGeometry(4.2, 3.2), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.62, 0.32) }), doorX, Y0 + 1.6, -211.93, 0);   // the warm lobby seen through the door
+  const glowTex = canvasTex(256, 256, (x, w, h) => { const g = x.createRadialGradient(w / 2, h * 0.7, 10, w / 2, h * 0.6, w * 0.7); g.addColorStop(0, '#c9935a'); g.addColorStop(0.5, '#6b4524'); g.addColorStop(1, '#1d130b'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.fillStyle = 'rgba(255,220,160,0.5)'; for (let i = 0; i < 3; i++) x.fillRect(w * (0.2 + i * 0.25), h * 0.08, w * 0.12, h * 0.05); });
+  add(new THREE.PlaneGeometry(4.2, 3.2), new THREE.MeshBasicMaterial({ map: glowTex }), doorX, Y0 + 1.6, -211.93, 0);   // the warm lobby seen through the door
   const drum = new THREE.Group(); drum.position.set(doorX, Y0, -212.2); group.add(drum);
   const vanes = new THREE.Group(); drum.add(vanes);
   for (let i = 0; i < 4; i++) { const v = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 2.6), glass); v.position.set(Math.cos(i * Math.PI / 2) * 0.62, 1.3, Math.sin(i * Math.PI / 2) * 0.62); v.rotation.y = -i * Math.PI / 2; vanes.add(v); }
@@ -224,8 +254,9 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   walls(A.x0, A.z1, A.x0, A.z0, A.h, acx, acz, [], 3, granite, granite);
   walls(A.x1, A.z0, A.x1, A.z1, A.h, acx, acz, [[A.door[0] - A.z0, A.door[1] - A.z0]], 4.6, granite, granite);
   add(new THREE.PlaneGeometry(A.x1 - A.x0, A.z1 - A.z0), new THREE.MeshStandardMaterial({ color: 0xd8d2c6, roughness: 0.8, emissive: 0x1a1814, side: THREE.DoubleSide }), acx, Y0 + A.h, acz, 0, Math.PI / 2);
-  for (let x = A.x0 + 2; x < A.x1 - 1; x += 3) add(new THREE.PlaneGeometry(0.25, A.z1 - A.z0 - 2), frosted, x, Y0 + A.h - 0.02, acz, 0, Math.PI / 2);   // linear light slots
-  add(new THREE.PlaneGeometry(3.4, 4.4), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.85, 0.8, 0.7) }), L.facadeX + 0.07, Y0 + 2.2, (A.door[0] + A.door[1]) / 2, Math.PI / 2);   // the lobby glow through the open door
+  const slot = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.85, 0.85, 0.82) });
+  for (let x = A.x0 + 2; x < A.x1 - 1; x += 3) add(new THREE.PlaneGeometry(0.12, A.z1 - A.z0 - 2), slot, x, Y0 + A.h - 0.02, acz, 0, Math.PI / 2);   // linear light slots
+  add(new THREE.PlaneGeometry(3.4, 4.4), new THREE.MeshBasicMaterial({ map: glowTex, color: new THREE.Color(0.8, 0.85, 0.9) }), L.facadeX + 0.07, Y0 + 2.2, (A.door[0] + A.door[1]) / 2, Math.PI / 2);   // the lobby seen through the open door
   // reception: a long granite desk on the south side; a tenant directory; a visitor QR stand
   rbox(4.2, 1.1, 1.4, 0.05, granite, -38.5, Y0, -139.9);                                                 // reception, south side of the public lobby
   box(4.3, 0.05, 1.5, marbleDark, -38.5, Y0 + 1.1, -139.9);

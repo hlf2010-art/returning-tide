@@ -132,7 +132,9 @@ export const crossing = {
 export const covers = [
   { id: 'shop-canopy', x0: -71.7, x1: -66.7, z0: -6.5, z1: -5.48, top: 3.75 },
   { id: 'customs-portico', x0: -34.0, x1: -31.0, z0: 18.0, z1: 36.0, top: 13.35 },
-];
+  { id: 'peace-hall', x0: -60, x1: -35.4, z0: -244, z1: -212.6, top: 30 },     // the Peace Hotel's ground floor (world/interiors.js)
+  { id: 'aia-lobby', x0: -47, x1: -34.6, z0: -152, z1: -139, top: 30 },        // the AIA lobby
+];   // (read at module load by materials.js and rain.js: everything with a roof is declared here)
 export const underCover = (x, z, y = 0) => covers.some((c) => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && y < c.top);
 
 // ---- colliders: axis-aligned boxes in the XZ plane ----

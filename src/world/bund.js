@@ -38,7 +38,10 @@ function tiers(B, fp, y0, list, faces = 'ENS', seed = 0, faceGain = {}) {
     if (faces.includes('W')) facade(B, t.style, x0, z0, x0, z1, y, y1, o('W'));
     if (t.cornice) {
       const c = t.cornice;
-      B.stone.box((x0 + x1) / 2, y1 - c.h, (z0 + z1) / 2, x1 - x0 + 2 * c.out, c.h, z1 - z0 + 2 * c.out, { flood: (t.f1 ?? 0.62) + 0.25 });
+      // a ring round the edges, not a slab through the building (interiors live inside some of them)
+      const fl = { flood: (t.f1 ?? 0.62) + 0.25 }, d = 2 * c.out + 1.2, W = x1 - x0 + 2 * c.out, D = z1 - z0 + 2 * c.out, yy = y1 - c.h;
+      B.stone.box((x0 + x1) / 2, yy, z0 - c.out + d / 2, W, c.h, d, fl); B.stone.box((x0 + x1) / 2, yy, z1 + c.out - d / 2, W, c.h, d, fl);
+      B.stone.box(x0 - c.out + d / 2, yy, (z0 + z1) / 2, d, c.h, D - 2 * d, fl); B.stone.box(x1 + c.out - d / 2, yy, (z0 + z1) / 2, d, c.h, D - 2 * d, fl);
     }
     y = y1;
   }
@@ -281,8 +284,9 @@ function aiaBuilding(B, extra, z0, z1) {
     B.stone.cyl(FX - 4.5, ty + 3.2, z, 0.8, 0.8, 2.2, 10, { flood: 1.0, tileU: 2, tileV: 1 });
     B.copper.add(new THREE.ConeGeometry(0.9, 1.6, 10), { x: FX - 4.5, y: ty + 6.2, z, flood: 0.9 });
   }
-  // the entrance: a tall arched opening in the rusticated base, bronze doors set back
-  B.stone.box(FX + 0.25, 0, zc, 0.6, 7.2, 5.6, { flood: 1.3 });
+  // the entrance: a tall opening in the rusticated base framed by stone jambs and a heavy lintel
+  for (const s of [-1, 1]) B.stone.box(FX + 0.25, 0, zc + s * 2.15, 0.6, 7.2, 0.9, { flood: 1.3 });
+  B.stone.box(FX + 0.25, 4.75, zc, 0.6, 2.45, 5.2, { flood: 1.3 });
   extra.flags.push({ x: FX - 4.5, y: y + 9, z: zc, h: 6 });
   return y;
 }

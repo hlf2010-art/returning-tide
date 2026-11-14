@@ -47,5 +47,16 @@ function passBy(persona, seed) {
   ok(!noticed, 'it has to be ahead of you to be noticed');
   ok(Object.keys(INTEREST).every((k) => INTEREST[k].look >= INTEREST[k].photo), 'nobody photographs what they did not look at');
 }
+{
+  // an office worker pacing back and forth past it for ten minutes: notices it again now and then
+  const r = rng(21), p = { x: -14, z: 2.5, vx: 1.2, vz: 0, persona: 'office', pause: 0 };
+  let notices = 0, dir = 1;
+  for (let i = 0; i < 12000; i++) {
+    if (noticeSights(p, [car], 0.05, r) === 'noticed') notices++;
+    if (p.pause > 0) { p.pause -= 0.05; continue; }
+    p.x += dir * 1.2 * 0.05; p.vx = dir * 1.2; if (p.x > 14 || p.x < -14) dir = -dir;
+  }
+  ok(notices >= 3 && notices <= 9, `pacing past it for ten minutes, noticed it ${notices} times (not every pass)`);
+}
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);
