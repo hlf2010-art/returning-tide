@@ -23,12 +23,17 @@ export const CAST = [
   { role: 'p2', avatar: 'Female_Adult_09', sex: 'f' },                        // (Female_Adult_03 wears a tank top: wrong for November)
   { role: 'p3', avatar: 'Male_Adult_10', sex: 'm' },
   { role: 'p4', avatar: 'Male_Adult_03', sex: 'm' },
+  { role: 'player', avatar: 'Male_Adult_07', sex: 'm' },                     // the player's own body (head hidden in first person)
 ];
 const CLIPS = {
   m: { idle: 'm_idle_neutral_01', look: 'm_idle_look_around_01', talk1: 'm_gestic_talk_neutral_01', talk2: 'm_gestic_talk_relaxed_01', phone: 'm_cell_phone_textmessage', umbrella: 'm_umbrella_idle_01', walk: 'm_walk_neutral_01', jog: 'm_run_slow_01' },
   f: { idle: 'f_idle_neutral_01', look: 'f_idle_look_around_01', talk1: 'f_gestic_talk_neutral_01', talk2: 'f_gestic_talk_relaxed_01', phone: 'f_cell_phone_textmessage', umbrella: 'f_umbrella_idle_01', umbrellaTalk: 'f_umbrella_talk_01', umbrellaListen: 'f_umbrella_listen_01', walk: 'f_walk_neutral_01', jog: 'f_run_slow_01' },
 };
 
+// the player's own set: same skeleton as 'm', plus a proper run and the catch-your-breath idles
+const PLAYER_CLIPS = { idle: 'm_idle_neutral_01', walk: 'm_walk_neutral_01', jog: 'm_run_slow_01', sprint: 'm_run_fast_01' };   // (the library's breathe idles are calm, so getting winded is procedural)
+// ONLY=player converts just the player's avatar and clips and merges them into an existing people.json
+const ONLY = process.env.ONLY || null;
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage();
 page.on('console', (m) => { if (!m.text().startsWith('THREE.FBXLoader')) console.log('[page]', m.text()); });
@@ -127,7 +132,8 @@ await page.evaluate(async () => {
         return !/MotionExtractionHelper/.test(t.name);
       });
       // slow clips (idles, talking, phone, umbrella) resampled to 15 fps; walk / jog keep 30
-      if (name !== 'walk' && name !== 'jog') {
+      const gait = ['walk', 'jog', 'run', 'sprint'].includes(name);
+      if (!gait) {
         clip.tracks = clip.tracks.map((t) => {
           const T = t.times[t.times.length - 1], n = Math.max(2, Math.round(T * 15) + 1), interp = t.createInterpolant(), size = t.getValueSize();
           const times = new Float32Array(n), values = new Float32Array(n * size);
@@ -136,7 +142,7 @@ await page.evaluate(async () => {
         });
       }
       const root = clip.tracks.find((t) => t.name === 'Bip01.position');
-      if (root && (name === 'walk' || name === 'jog')) {
+      if (root && gait) {
         // remove the forward drift (root motion along +Z); keep sway and bob. The game moves the body.
         const v = root.values, n = v.length / 3, z0 = v[2], z1 = v[n * 3 - 1], T = root.times[n - 1] || 1;
         speeds[name] = ((z1 - z0) / 100) / T;                // metres per second
@@ -150,20 +156,25 @@ await page.evaluate(async () => {
   };
 });
 
-const manifest = { source: 'Microsoft Rocketbox (MIT): https://github.com/microsoft/Microsoft-Rocketbox', units: 'centimetres (scale 0.01 at runtime)', cast: {}, clips: {} };
+const manifestPath = join(out, 'people.json');
+const manifest = ONLY && existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8'))
+  : { source: 'Microsoft Rocketbox (MIT): https://github.com/microsoft/Microsoft-Rocketbox', units: 'centimetres (scale 0.01 at runtime)', cast: {}, clips: {} };
 for (const c of CAST) {
+  if (ONLY && c.role !== ONLY) continue;
   const b64 = await page.evaluate(([f, g]) => window.convertAvatar(f, g), [c.avatar, !!c.greyHair]);
   const buf = Buffer.from(b64, 'base64');
   writeFileSync(join(out, `${c.role}.glb`), buf);
   manifest.cast[c.role] = { avatar: c.avatar, sex: c.sex, file: `${c.role}.glb`, bytes: buf.length };
   console.log(`${c.role}: ${c.avatar} -> ${(buf.length / 1e6).toFixed(2)} MB`);
 }
-for (const [sex, folder] of [['m', 'Business_Male_02'], ['f', 'Business_Female_03']]) {
-  const r = await page.evaluate(([f, m]) => window.convertAnims(f, m), [folder, CLIPS[sex]]);
+const sets = [['m', 'Business_Male_02', CLIPS.m], ['f', 'Business_Female_03', CLIPS.f], ['player', 'Male_Adult_07', PLAYER_CLIPS]]
+  .filter(([k]) => !ONLY || k === ONLY);
+for (const [sex, folder, map] of sets) {
+  const r = await page.evaluate(([f, m]) => window.convertAnims(f, m), [folder, map]);
   const buf = Buffer.from(r.b64, 'base64');
   writeFileSync(join(out, `anim-${sex}.glb`), buf);
-  manifest.clips[sex] = { file: `anim-${sex}.glb`, bytes: buf.length, speeds: r.speeds, durations: r.durations, from: CLIPS[sex] };
-  console.log(`anim-${sex}: ${Object.keys(CLIPS[sex]).length} clips -> ${(buf.length / 1e6).toFixed(2)} MB; speeds ${JSON.stringify(r.speeds)}`);
+  manifest.clips[sex] = { file: `anim-${sex}.glb`, bytes: buf.length, speeds: r.speeds, durations: r.durations, from: map };
+  console.log(`anim-${sex}: ${Object.keys(map).length} clips -> ${(buf.length / 1e6).toFixed(2)} MB; speeds ${JSON.stringify(r.speeds)}`);
 }
-writeFileSync(join(out, 'people.json'), JSON.stringify(manifest, null, 1));
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));
 await browser.close();

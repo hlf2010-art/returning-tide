@@ -97,7 +97,10 @@ export function createAudio() {
     lfo(0.07, 140, wf.frequency); lfo(0.031, 0.08, wg.gain); lfo(0.017, 0.35, windPan.pan);
     const wf2 = filt('bandpass', 700, 0.6), wg2 = gainNode(0.035);
     loop(buf, wf2, wg2, env); lfo(0.043, 250, wf2.frequency);
-    wind = { wg };
+    // leaves in the wind: a dry high rustle, only near the trees and only as strong as the wind
+    const lf = filt('bandpass', 3400, 0.5), lg = gainNode(0), lp2 = filt('lowpass', 7000, 0.5);
+    loop(white, lf, lp2, lg, env); lfo(0.19, 900, lf.frequency); lfo(0.13, 0.4, lf.Q);
+    wind = { wg, leaves: lg };
 
     // the Huangpu against the river wall: placed out over the water, level with the listener
     const rp = panner(6, 1.0); rp.connect(env);
@@ -237,6 +240,21 @@ export function createAudio() {
     }
   }
 
+  // Breathing after a run: an exhale (warm, mouth) then an inhale (thinner), at the rate the head
+  // motion uses, louder and quicker the more spent you are. Silent at rest.
+  let breathPhase = 0, breathLevel = 0, lastWind = -1;
+  function breathe(dt) {
+    if (!ctx || muted || paused || breathLevel < 0.12 || dt <= 0) return;
+    const rate = 0.24 + 0.75 * breathLevel, before = breathPhase;
+    breathPhase += rate * dt;
+    if (Math.floor(breathPhase) !== Math.floor(before)) {
+      const t = ctx.currentTime + 0.01, g = 0.05 * breathLevel * breathLevel, len = 0.5 / rate;
+      burst(t, { buffer: buf, f: rnd(900, 1200), q: 0.7, gain: g * 2.2, attack: 0.06, decay: len * 0.55, rate: rnd(1.6, 2.1) });
+      burst(t + len * 0.95, { f: rnd(1700, 2300), q: 0.9, gain: g * 0.8, attack: 0.12, decay: len * 0.45, rate: rnd(0.9, 1.1) });
+      stats.breaths = (stats.breaths || 0) + 1;
+    }
+  }
+
   const muteListeners = new Set();
   return {
     start, step, cue,
@@ -251,6 +269,19 @@ export function createAudio() {
       const d = Math.round(speech * 20) / 20;
       if (d !== lastDuck) { lastDuck = d; duck.gain.setTargetAtTime(duckGain(d), t, 0.3); }   // ~1 s to settle: no abrupt drop
       if (hornTimer < 0) { hornTimer = 60 + Math.random() * 80; if (!muted && !paused) horn(); }
+      breathe(dt);
+    },
+    // how hard the player is breathing, 0..1 (stamina.js)
+    setBreath(level) { breathLevel = Math.max(0, Math.min(1, level)); },
+    // wind 0..~1.3 (wind.js); nearTree 0..1: how close the nearest tree is
+    setWind(level, nearTree = 0) {
+      if (!ctx || !wind) return;
+      const v = Math.round(level * 50) / 50 + Math.round(nearTree * 20) * 10;
+      if (v === lastWind) return;
+      lastWind = v;
+      const t = ctx.currentTime;
+      wind.wg.gain.setTargetAtTime(0.14 + 0.32 * Math.min(1.3, level), t, 0.8);
+      wind.leaves.gain.setTargetAtTime(0.045 * Math.min(1.3, level) * nearTree, t, 0.5);
     },
     // weather: level 0..1; covered = standing under the canopy / portico (muffled, quieter)
     setRain(level, covered = false) {

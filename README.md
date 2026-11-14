@@ -20,7 +20,7 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | | |
 |---|---|
 | W A S D / arrows | walk |
-| Shift | hurry |
+| Shift | hurry (a run; run ~15 s flat out and you have to stop and catch your breath) |
 | Space | jump (a short hop; barriers stay solid) |
 | Mouse | look (click the page to capture the pointer) |
 | E | the one interaction key: talk / read / look at the selected target; confirm the highlighted choice; **hold** on "break the seal" |
@@ -159,6 +159,72 @@ Clear → light drizzle → clear, at the same blue hour. Developer toggle **F7*
   State: `src/engine/weather.js` (pure, `tests/weather.test.mjs`); browser checks:
   `tools/weathertest.mjs`.
 
+## First person: body, weight, breath
+
+- **Your own body.** Look down and you see it: a Rocketbox avatar (`Male_Adult_07`, grey jacket,
+  jeans) with motion-captured idle / walk / jog / sprint (`m_run_fast_01`). The gait clips are
+  blended by speed and *phase-locked to the footstep rhythm*, so the legs you glimpse, the head bob
+  and the footstep sounds land together. Walking backwards plays the walk in reverse; strafing turns
+  the hips toward the motion; standing still, you can look ~35° round before the body turns to
+  follow. The drawn body's head bone is collapsed (the eye is inside the head, and a hidden head
+  would leave the collar open to look into); an undrawn copy in the same pose, head included, casts
+  your shadow. The neck hangs just behind the eye whatever the clip does, so a sprint's forward lean
+  never swings the collar into view.
+- **Head motion** (`src/engine/headMotion.js`, node-tested): a bob per step (more when running), the
+  side-to-side weight shift of each stride with a touch of roll, a lean into strafes and turns, a
+  nod when braking and a tip back when speeding up, a spring-damped dip on landing, breathing that
+  deepens with effort, and a little weight-shifting when standing.
+- **Weight and momentum** (`movement.js`): speeding up (~0.4 s to walking pace) and stopping (a
+  step or so) take time; winding up from a walk into a run takes about a second; little steering
+  in the air. Walk 2.2 m/s, run 5.0 m/s; step cadence ~1.9/s walking, ~3/s running.
+- **Stamina** (`src/engine/stamina.js`, node-tested): running spends it (~15 s from full); below 30%
+  the run fades toward a jog; at zero you are winded: a forced 3.2 s stop bent over, hands toward
+  your knees, breathing hard (the camera follows the body's head down), then walking only until 40%
+  is back. Standing recovers faster than walking. Breathing is audible (procedural exhale / inhale
+  at the same rate the head moves) once you are working.
+
+The library has no "out of breath" mocap (its breathe idles are calm), so the winded bend is a
+procedural spine bend on top of the idle; the legs stay straight, so it reads as a stoop rather
+than true hands-on-knees.
+
+## Shadows
+
+The lamps cast them. The nearest one or two lamps (deck lamps, road lamps, Hankou Road's wall
+lanterns) also get a downward spot light with a 1024² shadow map, crossfaded against their point
+light so handing a lamp's shadow to the next lamp as you walk never pops. Everything solid at street
+level casts and receives: people (and your own body), cars, trees (leaves through an alpha-tested
+depth material that sways with the wind), lamp posts, signals, street furniture. Two shadowed lamps
+on the top two quality steps, one on the next two, none below; `?shadows=0` turns them off. Shadow
+maps are drawn once per frame, not again for the river mirror or the reflection passes.
+
+## Trees (`src/world/trees.js`, `src/world/wind.js`)
+
+Grown procedurally, no image assets. **London planes** (法国梧桐) on Hankou Road: a clear trunk
+pruned into the three-forked vase Shanghai's planes are known for, curved tapering limbs, branches
+and twigs, mottled peeling bark (cream / olive / grey-brown patches, with a normal map), big
+five-lobed toothed leaves in November yellows and ochres with some twigs already bare; crowns grow
+out over the street, away from the walls. **Camphor laurels** (香樟) in the promenade planters:
+short trunk, rounded evergreen crown, dark furrowed bark, small glossy elliptic leaves with the
+odd reddish young one. Leaves are instanced alpha-tested cards (each a sprig drawn on a canvas atlas: ~1,900 sprig cards per plane tree, 3-4 leaves each; ~1,900 per camphor, ~12 small leaves
+each), lit with crown-rounded normals
+so a canopy shades like a volume; a little light comes through. Bark darkens and gets a sheen in
+the rain.
+
+**Wind** is hierarchical and runs on the GPU: the trunk leans and sways slowly (∝ height²); each
+limb sways with its own phase; each branch moves faster and crosswise on top of its limb; each
+leaf flutters about its stem with its own phase. Strength = the weather's wind × a gust field that
+travels across the trees, so neighbouring trees don't move in step. The wind is a river breeze that
+picks up in the drizzle; rain also weighs the leaves and branch tips down and knocks leaves as drops
+land. You hear it too: the wind bed follows the wind, and a dry leaf rustle rises near the trees.
+Developer control **F6** cycles wind: auto / calm / breeze / windy / gale (`?wind=gale` pins it).
+Cost: one mesh per tree so trees out of view are culled; on the lower quality steps the crowns
+thin out (65% / 40% of the cards, each drawn a little larger) and twigs are dropped. Under software
+GL at the lowest step, a view down Hankou Road with three planes in frame costs ~40% more than
+without trees, the deck view ~17%, a view without trees nothing (not a real-GPU figure).
+`tests/body.test.mjs` checks a JS twin of the shader's wind function: the trunk's foot never moves,
+motion grows trunk < limb < branch < leaf, two branches (and two trees) don't move in step, every
+step up in wind moves everything further, rain weighs and knocks the leaves.
+
 ## Lighting
 
 - **Wet-ground reflections**: screen-space reflections (three.js `SSRPass`) on the deck, pavements
@@ -219,6 +285,8 @@ src/engine/traffic.js  the crossing: signal controller (sole authority), IDM veh
 src/world/vehicles.js  through-traffic visuals (4 labelled placeholders + reused street cars)
 src/world/signals.js   mast-arm vehicle heads, pedestrian heads, countdowns
 src/world/pedestrians.js, instancer.js   background walkers; instancing / merging to keep draw calls down
+src/world/playerBody.js, src/engine/headMotion.js, src/engine/stamina.js   first-person body, head motion, stamina
+src/world/trees.js, src/world/wind.js     procedural plane / camphor trees and their wind
 src/ui/                HUD and stylesheet
 tests/                 node tests for movement, collision, boundaries, conversation and Mission One state (npm test)
 tools/                 headless screenshot / playtest / render-cost scripts (need Playwright installed globally:
@@ -230,5 +298,6 @@ Everything is procedural (canvas textures, merged box/cylinder geometry, WebAudi
 The only third-party assets are three.js and three open-licensed fonts from Fontsource
 (Noto Serif SC, Noto Sans SC, Ma Shan Zheng).
 
-Useful URL switches: `?q=0..5` pins the render quality step (0 = best), `?nolock` uses
+Useful URL switches: `?q=0..5` pins the render quality step (0 = best), `?body=0` hides your own
+body, `?shadows=0`, `?ssr=0`, `?wind=calm|breeze|windy|gale`, `?nolock` uses
 click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.

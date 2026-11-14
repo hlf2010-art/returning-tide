@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview --host",
-    "test": "node tests/collision.test.mjs && node tests/dialogue.test.mjs && node tests/mission.test.mjs && node tests/traffic.test.mjs && node tests/audio.test.mjs && node tests/targeting.test.mjs",
+    "test": "node tests/collision.test.mjs && node tests/body.test.mjs && node tests/social.test.mjs && node tests/ridehail.test.mjs && node tests/smalltalk.test.mjs && node tests/weather.test.mjs && node tests/dialogue.test.mjs && node tests/mission.test.mjs && node tests/traffic.test.mjs && node tests/audio.test.mjs && node tests/targeting.test.mjs",
     "playtest": "node tools/playtest.mjs",
     "shots": "node tools/shot.mjs"
   },

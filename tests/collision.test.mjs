@@ -1,6 +1,6 @@
 // Headless checks for movement, collision and boundaries (run: npm test)
 import { L, colliders, groundHeight } from '../src/world/layout.js';
-import { createBody, stepBody, resolve } from '../src/engine/movement.js';
+import { createBody, stepBody, resolve, WALK_SPEED, RUN_SPEED } from '../src/engine/movement.js';
 
 let failed = 0;
 const ok = (cond, msg) => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${msg}`); if (!cond) failed++; };
@@ -33,9 +33,21 @@ function walk(body, dirX, dirZ, seconds, run = false) {
   const b = createBody();
   walk(b, 1, 0, 4);
   const v = Math.hypot(b.vx, b.vz);
-  ok(Math.abs(v - 2.5) < 0.05, `walk speed settles at 2.5 m/s (${v.toFixed(2)})`);
-  walk(b, 1, 0, 2, true);
-  ok(Math.abs(Math.hypot(b.vx, b.vz) - 5.2) < 0.1, 'run speed settles at 5.2 m/s');
+  ok(Math.abs(v - WALK_SPEED) < 0.05, `walk speed settles at ${WALK_SPEED} m/s (${v.toFixed(2)})`);
+  walk(b, 1, 0, 3, true);
+  ok(Math.abs(Math.hypot(b.vx, b.vz) - RUN_SPEED) < 0.1, `run speed settles at ${RUN_SPEED} m/s`);
+  // weight: speeding up and stopping both take time, and winding up into a run is slower again
+  const c = createBody(); let tWalk = 0;
+  while (Math.hypot(c.vx, c.vz) < WALK_SPEED * 0.9 && tWalk < 5) { stepBody(c, 1, 0, false, 1 / 60); tWalk += 1 / 60; }
+  ok(tWalk > 0.25 && tWalk < 0.7, `reaching 90% of walking pace takes a moment (${tWalk.toFixed(2)} s)`);
+  let tRun = 0;
+  while (Math.hypot(c.vx, c.vz) < RUN_SPEED * 0.9 && tRun < 8) { stepBody(c, 1, 0, true, 1 / 60); tRun += 1 / 60; }
+  ok(tRun > 0.8 && tRun < 2.5, `walk to 90% of a run takes longer (${tRun.toFixed(2)} s)`);
+  let tStop = 0, dist = 0;
+  while (Math.hypot(c.vx, c.vz) > 0.2 && tStop < 5) { const x0 = c.x; stepBody(c, 0, 0, false, 1 / 60); dist += Math.abs(c.x - x0); tStop += 1 / 60; }
+  ok(tStop > 0.25 && dist > 0.4 && dist < 1.5, `a running stop carries on for a step or so (${dist.toFixed(2)} m in ${tStop.toFixed(2)} s)`);
+  const d = createBody(); for (let i = 0; i < 120; i++) stepBody(d, 1, 0, true, 1 / 60, false, 1.0);
+  ok(Math.abs(Math.hypot(d.vx, d.vz) - 1.0) < 0.05, 'a stamina speed cap holds');
 }
 // 4. the retaining wall cannot be crossed except by the stairs
 {

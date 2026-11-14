@@ -110,13 +110,13 @@ export function createPromenade(M) {
     for (let k = 0; k < 3; k++) B.wood.box(b.x - 0.27, Y + 0.52 + k * 0.13, b.z, 0.035, 0.1, 2.1);
   }
 
-  // planter islands with a clipped hedge and a small tree each
+  // planter islands with a clipped hedge (and a camphor tree each, see trees.js)
   planterIslands.forEach((p, i) => {
     const cx = (p.x0 + p.x1) / 2, cz = (p.z0 + p.z1) / 2, w = p.x1 - p.x0, d = p.z1 - p.z0;
     B.granite.box(cx, Y, cz, w, 0.46, d);
     B.granite.box(cx, Y + 0.46, cz, w + 0.06, 0.06, d + 0.06);
     B.hedge.box(cx, Y + 0.52, cz, w - 0.7, 0.38, d - 0.7);
-    tree(B, cx, Y + 0.5, cz + (i % 2 ? 1.5 : -1.5), i + 1, { h: 3.1, spread: 2.0 });
+    // (its camphor tree comes from trees.js)
   });
 
   // coin telescope, pointed at Lujiazui

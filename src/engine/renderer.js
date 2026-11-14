@@ -10,9 +10,10 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // Each step is cheaper than the one before: anti-aliasing goes first, then resolution.
 // ssr: screen-space reflections on the wet ground (about 2.5 scene renders), top two steps only
 const SSR_LAYER = 3;                                   // ground meshes, for the reflection passes only
+// shadows: how many lamps cast shadow maps (lighting.js)
 const LADDER = [
-  { msaa: 4, scale: 1, ssr: true }, { msaa: 2, scale: 1, ssr: true }, { msaa: 0, scale: 1 },
-  { msaa: 0, scale: 0.8 }, { msaa: 0, scale: 0.65 }, { msaa: 0, scale: 0.5 },
+  { msaa: 4, scale: 1, ssr: true, shadows: 2 }, { msaa: 2, scale: 1, ssr: true, shadows: 2 }, { msaa: 0, scale: 1, shadows: 1 },
+  { msaa: 0, scale: 0.8, shadows: 1 }, { msaa: 0, scale: 0.65, shadows: 0 }, { msaa: 0, scale: 0.5, shadows: 0 },
 ];
 
 export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}) {
@@ -20,6 +21,11 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
   renderer.info.autoReset = false;
+  // shadow maps are drawn once per frame (main.js sets needsUpdate before the main render), not
+  // again for every extra pass (river mirror, SSR) that renders the scene
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;            // (r187: PCFSoft is gone; softness comes from shadow.radius)
+  renderer.shadowMap.autoUpdate = false;
 
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   let level = fixedLevel ?? (dpr > 1.2 ? 1 : 0);            // hi-dpi screens need less MSAA

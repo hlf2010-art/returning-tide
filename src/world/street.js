@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees, crossing } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT, glowTexture } from './canvas.js';
-import { tree } from './promenade.js';
 import { T } from './text.js';
 
 const FAR = 430, S = L.street, CH = L.curbH;
@@ -309,7 +308,7 @@ export function createStreet(M) {
   // plane trees in their November yellow, and what they've dropped
   const lr = rng(404);
   streetTrees.forEach((t, i) => {
-    tree(B, t.x, CH, t.z, i + 31, { h: 5.6, spread: 2.9, leaf: 'leafAutumn' });
+    // (the tree itself comes from trees.js)
     B.iron.box(t.x, CH, t.z, 1.2, 0.012, 1.2);
     for (let k = 0; k < 70; k++) {
       const a = lr() * 6.283, d = 0.4 + lr() * lr() * 6, lx = t.x + Math.cos(a) * d, lz = t.z + Math.sin(a) * d * 0.7;

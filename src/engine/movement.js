@@ -1,15 +1,20 @@
 // Pure movement + collision. No three.js, no DOM.
 import { L, colliders, groundHeight } from '../world/layout.js';
 
-export const WALK_SPEED = 2.5;
-export const RUN_SPEED = 5.2;
-const ACCEL = 14;      // how fast velocity chases the wish direction
+export const WALK_SPEED = 2.2;
+export const RUN_SPEED = 5.0;
+// Weight: velocity chases the wish at different rates for speeding up and slowing down, a body
+// at walking pace is slower still to wind up into a run, and there is little steering in the air.
+export const ACCEL = 5.5;       // 1/s: ~0.55 s to walking pace
+export const DECEL = 7.5;       // 1/s: a stop takes a step or so, not an instant
+const RUN_UP = 0.3;             // acceleration factor above walking pace (~1 s from a walk to a run)
+const AIR = 0.7;                // steering in the air
 const MAX_STEP = 0.12; // metres per collision sub-step
 const GRAVITY = 9.8;
 export const JUMP_SPEED = 3.3; // ~0.55 m hop: for feel, not for clearing barriers (colliders ignore height)
 
 export function createBody() {
-  return { x: L.spawn.x, z: L.spawn.z, y: groundHeight(L.spawn.x, L.spawn.z), vx: 0, vz: 0, vy: 0, air: false, landed: false, hit: null };
+  return { x: L.spawn.x, z: L.spawn.z, y: groundHeight(L.spawn.x, L.spawn.z), vx: 0, vz: 0, vy: 0, air: false, landed: false, impact: 0, hit: null };
 }
 
 // Push a circle (x,z,r) out of every collider. Returns the tag of the last thing touched.
@@ -41,12 +46,17 @@ export function resolve(p, r = L.radius) {
   return hit;
 }
 
-// wishX/wishZ: desired direction in world space (length 0..1).
-export function stepBody(body, wishX, wishZ, run, dt, jump = false) {
-  const speed = run ? RUN_SPEED : WALK_SPEED;
-  const k = 1 - Math.exp(-ACCEL * dt);
-  body.vx += (wishX * speed - body.vx) * k;
-  body.vz += (wishZ * speed - body.vz) * k;
+// wishX/wishZ: desired direction in world space (length 0..1). cap: speed limit (m/s) from
+// stamina (a winded body can't run, an exhausted one stops).
+export function stepBody(body, wishX, wishZ, run, dt, jump = false, cap = Infinity) {
+  const speed = Math.min(run ? RUN_SPEED : WALK_SPEED, cap);
+  const tx = wishX * speed, tz = wishZ * speed;
+  const cur = Math.hypot(body.vx, body.vz), tgt = Math.hypot(tx, tz);
+  let rate = tgt > cur + 0.02 ? ACCEL * (cur > WALK_SPEED * 0.9 ? RUN_UP : 1) : DECEL;
+  if (body.air) rate = AIR;
+  const k = 1 - Math.exp(-rate * dt);
+  body.vx += (tx - body.vx) * k;
+  body.vz += (tz - body.vz) * k;
 
   let dx = body.vx * dt, dz = body.vz * dt;
   const dist = Math.hypot(dx, dz);
@@ -63,12 +73,12 @@ export function stepBody(body, wishX, wishZ, run, dt, jump = false) {
   if (dt > 0) { body.vx = (body.x - px) / dt; body.vz = (body.z - pz) / dt; }
 
   const gy = groundHeight(body.x, body.z);
-  body.landed = false;
+  body.landed = false; body.impact = 0;
   if (!body.air && jump && dt > 0) { body.air = true; body.vy = JUMP_SPEED; }
   if (body.air) {
     body.vy -= GRAVITY * dt;
     body.y += body.vy * dt;
-    if (body.y <= gy && body.vy <= 0) { body.y = gy; body.vy = 0; body.air = false; body.landed = true; }
+    if (body.y <= gy && body.vy <= 0) { body.impact = -body.vy; body.y = gy; body.vy = 0; body.air = false; body.landed = true; }
   } else body.y += (gy - body.y) * (1 - Math.exp(-18 * dt));
   return body;
 }

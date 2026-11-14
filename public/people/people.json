@@ -37,6 +37,12 @@
    "sex": "m",
    "file": "p4.glb",
    "bytes": 3863416
+  },
+  "player": {
+   "avatar": "Male_Adult_07",
+   "sex": "m",
+   "file": "player.glb",
+   "bytes": 3021332
   }
  },
  "clips": {
@@ -98,6 +104,27 @@
     "umbrellaListen": "f_umbrella_listen_01",
     "walk": "f_walk_neutral_01",
     "jog": "f_run_slow_01"
+   }
+  },
+  "player": {
+   "file": "anim-player.glb",
+   "bytes": 477868,
+   "speeds": {
+    "walk": 1.0117003356734777,
+    "jog": 2.410625341884475,
+    "sprint": 5.839486462295593
+   },
+   "durations": {
+    "idle": 11.667,
+    "walk": 1.2,
+    "jog": 0.767,
+    "sprint": 0.6
+   },
+   "from": {
+    "idle": "m_idle_neutral_01",
+    "walk": "m_walk_neutral_01",
+    "jog": "m_run_slow_01",
+    "sprint": "m_run_fast_01"
    }
   }
  }

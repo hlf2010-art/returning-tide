@@ -39,6 +39,11 @@ import { createPedestrians } from './world/pedestrians.js';
 import { loadPeople } from './world/people.js';
 import { createRealNpcs } from './world/npcsReal.js';
 import { createRealPedestrians } from './world/pedestriansReal.js';
+import { createPlayerBody } from './world/playerBody.js';
+import { WALK_SPEED, RUN_SPEED } from './engine/movement.js';
+import { createTrees } from './world/trees.js';
+import { createWind, WIND_LEVELS } from './world/wind.js';
+import { planterIslands, streetTrees } from './world/layout.js';
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('view');
@@ -69,7 +74,12 @@ camera.layers.enable(HELD_LAYER); camera.layers.enable(RAIN_LAYER);
 const weather = createWeather();
 if (params.get('weather') === 'drizzle') weather.set('drizzle', { instant: true });
 const HAZE_FOG = new THREE.Color(0.072, 0.108, 0.2), FOG_DENSITY = scene.fog.density, HAZE_DENSITY = 0.00028;
-let weatherTime = 0, suUmbrella = 0;
+let weatherTime = 0, suUmbrella = 0, treeLevel = -1;
+// Wind in the trees: a river breeze that rises with the drizzle. Developer control F6 cycles
+// auto / calm / breeze / windy / gale; ?wind=<level> pins it.
+const wind = createWind();
+const TREE_SPOTS = [...streetTrees, ...planterIslands.map((p) => ({ x: (p.x0 + p.x1) / 2, z: (p.z0 + p.z1) / 2 }))];
+if (params.get('wind') in WIND_LEVELS) wind.setOverride(params.get('wind'));
 const _pairPos = new THREE.Vector3(npcLayout.pairFocus.x, npcLayout.pairFocus.y, npcLayout.pairFocus.z);
 
 async function boot() {
@@ -84,6 +94,9 @@ async function boot() {
   let people = null;
   try { people = await loadPeople('./people/'); } catch (err) { console.warn('people assets unavailable, using simple figures', err); }
   const npcs = people ? createRealNpcs(people) : createNpcs(M);
+  // the player's own body, seen when looking down (?body=0 to leave it out)
+  const playerBody = people && people.avatars.player && params.get('body') !== '0' ? createPlayerBody(people, { walk: WALK_SPEED, run: RUN_SPEED }) : null;
+  if (playerBody) scene.add(playerBody.root);
   const pouch = createPouch();
   const rain = createRain();
   // the signal-controlled crossing: one controller, through traffic, background pedestrians
@@ -94,10 +107,26 @@ async function boot() {
   traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(crossing.vehicles[i].model); });   // petrol engines get an engine note
   scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
     vehicles.group, signals.group, pedestrians.group, rain.mesh);
+  // trees: London planes on Hankou Road (November: turning, some twigs already bare), camphor
+  // laurels in the promenade planters
+  const trees = createTrees([
+    ...streetTrees.map((t, i) => ({ x: t.x, y: L.curbH, z: t.z, h: 8.4 + (i % 2) * 0.7, species: 'plane', seed: 31 + i, bare: 0.12, away: [0, -Math.sign(t.z)] })),
+    ...planterIslands.map((p, i) => ({ x: (p.x0 + p.x1) / 2, y: L.deckY + 0.5, z: (p.z0 + p.z1) / 2 + (i % 2 ? 1.5 : -1.5), h: 4.2 + (i % 3) * 0.3, species: 'camphor', seed: 1 + i })),
+  ], { wetBoost: weatherUniforms.wetBoost });
+  scene.add(trees.group);
   const lighting = createLighting(scene, street.lanterns);
+  // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
+  for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
+    g.traverse((o) => {
+      if (!o.isMesh) return;
+      const m = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!m || m.transparent || m.blending === THREE.AdditiveBlending) return;
+      o.castShadow = true; o.receiveShadow = true;
+    });
+  }
   scene.updateMatrixWorld(true);
   captureEnvironment(R.renderer, scene);
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain };
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees };
   // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
   const reflectors = [];
   scene.traverse((o) => { if (o.isMesh && (o.material === M.deck || o.material === M.sidewalk || o.material === M.asphalt)) { o.userData.ssrMask = ssrMask(o.material); reflectors.push(o); } });
@@ -238,6 +267,12 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if ((k === 'F8' || k === 'F9') && devControls) { e.preventDefault(); devMission(k === 'F8'); return; }
+  if (k === 'F6' && devControls) {
+    e.preventDefault();
+    const w = wind.cycle();
+    hud.toast(`DEV · 风 · Wind: ${w || 'auto (breeze, stronger in rain)'}`, 2.4);
+    return;
+  }
   if (k === 'F7' && devControls) {
     e.preventDefault();
     hud.toast(weather.toggle() === 'drizzle' ? 'DEV · 小雨 · Drizzle coming in' : 'DEV · 转晴 · Clearing', 2.4);
@@ -341,6 +376,7 @@ function frame(now) {
     player.pitch += (targetPitch - player.pitch) * lk;
   }
   player.update(mode === 'pause' ? 0 : dt);
+  if (world.playerBody) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position);
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0
   if (mode !== 'pause') {
@@ -350,16 +386,26 @@ function frame(now) {
     suUmbrella = Math.max(0, Math.min(1, suUmbrella + (want ? dt : -dt) / 1.4));
   }
   world.rain.update(weatherTime, weather.rain, camera);
+  if (mode !== 'pause') wind.update(dt, weather.rain);
+  world.trees.update(weatherTime, wind.level, weather.rain, wind.dir);
   weatherUniforms.wetBoost.value = weather.wet;
   weatherUniforms.rainRipples.value = weather.rain; weatherUniforms.rippleTime.value = weatherTime;
   scene.fog.density = FOG_DENSITY + HAZE_DENSITY * weather.haze;
   scene.fog.color.lerpColors(FOG_COLOR, HAZE_FOG, weather.haze);
   audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye));
   world.sky.update(t, weather.haze); world.skyline.update(t); world.river.update(t, dt); world.bund.update(t); world.street.update(t);
-  world.lighting.update(camera.position);
+  world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);
+  if (R.level !== treeLevel) { treeLevel = R.level; world.trees.setQuality(R.level); }
+  if (world.playerBody) world.playerBody.shadow.visible = world.lighting.shadowCount > 0;   // the shadow copy only matters with shadows
+  world.lighting.update(camera.position, dt);
   // environment yields to NPC speech: fully while in conversation, by audibility otherwise
   let speech = 0;
   if (conversation && conversation.isSpeaking) speech = mode === 'dialogue' ? 1 : computeDistanceGain(_pairPos.distanceTo(camera.position), npcLayout.audibility.refDistance, npcLayout.audibility.maxDistance);
+  audio.setBreath(player.stamina.breath);
+  {
+    let near = 0; for (const t of TREE_SPOTS) near = Math.max(near, 1 - Math.hypot(t.x - player.body.x, t.z - player.body.z) / 14);
+    audio.setWind(wind.level, near);
+  }
   audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: traffic ? traffic.vehicles : null, speech });
   if (dialogueAudio) dialogueAudio.updateListener();
   if (conversation) conversation.update(mode === 'pause' ? 0 : dt);
@@ -422,6 +468,7 @@ function frame(now) {
 
   if (!debug.noReflect) world.river.renderReflection(R.renderer, scene, camera);
   R.renderer.info.reset();
+  R.renderer.shadowMap.needsUpdate = true;
   R.composer.render(dt);
   R.tick();
 }
@@ -430,7 +477,7 @@ R.renderer.setAnimationLoop(frame);
 // Small handle for automated checks and console poking; not used by the game itself.
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
-  player, camera, scene, R, audio,
+  player, camera, scene, R, audio, wind,
   get mode() { return mode; }, get target() { return target; },
   get nearClue() { return !!target && target.id === 'notice'; }, get nearNpc() { return !!target && target.id === 'lin'; },
   get clueRead() { return clueRead; }, get subtitlesOn() { return subtitlesOn; },
@@ -441,6 +488,7 @@ Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   get mission1() { return mission1; }, get nearPouch() { return !!target && target.id === 'pouch'; },
   get traffic() { return traffic; }, weather, THREE,                // THREE: for verification tools only
   get pedestrians() { return world ? world.pedestrians : null; },
+  get world() { return world; },
   start() { noLock = true; if (mode === 'entry') begin(); },
 }));
 

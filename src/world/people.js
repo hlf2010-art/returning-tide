@@ -26,6 +26,7 @@ export async function loadPeople(base = './people/') {
   // which hand each skeleton's umbrella clip raises (measured, not assumed)
   const umbrellaHand = {};
   for (const sex of Object.keys(clips)) {
+    if (!clips[sex].some((c) => c.name === 'umbrella')) continue;       // the player's own set has none
     const role = Object.keys(manifest.cast).find((r) => manifest.cast[r].sex === sex);
     const probe = SkeletonUtils.clone(avatars[role]), mixer = new THREE.AnimationMixer(probe);
     const clip = clips[sex].find((c) => c.name === 'umbrella');
