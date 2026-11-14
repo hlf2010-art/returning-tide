@@ -79,6 +79,13 @@ export const S = {
   m1Done: { zh: '任务完成', en: 'Mission complete' },
   devDrizzle: { zh: '开发 · 小雨将至', en: 'DEV · Drizzle coming in' }, devClear: { zh: '开发 · 转晴', en: 'DEV · Clearing' },
   mapStall: { zh: '修表摊', en: 'Watch stall' },
+  // belongings
+  pCourier: { zh: '快递员', en: 'Courier' }, pTakeParcel: { zh: '取快递', en: 'Take your parcel' },
+  gotParcel: { zh: (n) => `收到：${n}`, en: (n) => `Got it: ${n}` }, listSep: { zh: '、', en: ', ' },
+  hintUmbrella: { zh: '伞在手上了：按 U 撑伞', en: 'You have an umbrella now: U to open it' },
+  hintAnc: { zh: '耳机在身上：按 H 开降噪', en: 'Headphones on you: H for noise cancelling' },
+  umbrellaOpen: { zh: '撑伞', en: 'Umbrella up' }, umbrellaClose: { zh: '收伞', en: 'Umbrella down' },
+  ancOn: { zh: '降噪已开', en: 'Noise cancelling on' }, ancOff: { zh: '降噪已关', en: 'Noise cancelling off' },
   // map areas
   areas: { hankou: { zh: '汉口路', en: 'Hankou Road' }, zhongshan: { zh: '中山东一路', en: 'Zhongshan Road (E-1)' }, promenade: { zh: '外滩观景平台', en: 'The Promenade' }, customs: { zh: '海关大楼', en: 'Customs House' } },
 };

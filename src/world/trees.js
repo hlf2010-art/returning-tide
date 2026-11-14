@@ -210,9 +210,14 @@ function grow(spec, twigsOut, out, leaves) {
   for (let li = 0; li < nL; li++) {
     const p1 = r(), ang = R(...S.limbAngle), around = rot0 + (li / nL) * 6.283 + R(-0.3, 0.3);
     const ld = awayFrom(spread([0, 1, 0], ang, around)), lenL = h * S.limbLen * R(0.85, 1.1);
-    const limb = path(top.map((v, j) => v - (j === 1 ? 0.15 : 0)), ld, lenL, 6, S.up * 0.15, S.sag, 0.18);
-    const rL = tr * 0.62, w1At = (t) => t * lenL / 3;
-    tube(out, limb, limb.map((_, i) => rL * (1 - 0.65 * (i / (limb.length - 1)))), 7, (t) => [p1, 0, w1At(t), 0], base, 1.2);
+    // limbs grow out of the trunk, not off its rim: they start inside the top of the trunk and flare
+    // to the trunk's width at the fork (the knuckle a pollarded plane tree makes), so the crotch reads
+    // as one piece of wood rather than a stick pushed into a pipe
+    const limb = path(top.map((v, j) => v - (j === 1 ? 0.42 : 0)), ld, lenL, 6, S.up * 0.15, S.sag, 0.18);
+    const rL = tr * 0.62, w1At = (t) => t * lenL / 3, trTop = tr * 0.8;
+    const limbR = limb.map((_, i) => rL * (1 - 0.65 * (i / (limb.length - 1))));
+    limbR[0] = trTop * 0.95; limbR[1] = Math.max(limbR[1], trTop * 0.8);
+    tube(out, limb, limbR, 7, (t) => [p1, 0, w1At(t), 0], base, 1.2);
     const nK = RI(...S.kids);
     for (let ki = 0; ki < nK; ki++) {
       const tk = 0.35 + 0.65 * (ki + r() * 0.6) / nK, at = along(limb, Math.min(1, tk)), p2 = r();

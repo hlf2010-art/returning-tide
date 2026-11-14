@@ -48,6 +48,14 @@ export const EN = {
   '知道了，爸。': 'Got it, Dad.', '我在上海有自己的打算。': 'I have my own plans in Shanghai.', '行。挂了。': 'Fine. I\'m hanging up.',
 };
 
+// the shops' order updates and item names (engine/shopping.js)
+import { CATALOGUE } from '../engine/shopping.js';
+const ITEM_EN = Object.fromEntries(CATALOGUE.map((c) => [c.name, c.en]));
+const SHOP_EN = {
+  您的订单已打包: 'Your order is packed', 您的订单已发货: 'Your order has shipped', '快递员正在派送，预计45分钟内送达': 'Out for delivery, arriving within 45 minutes',
+  '快递员已到汉口路路口（Manner门口），请下楼取件': 'Your courier is at the Hankou Road corner, outside Manner. Please come and collect',
+  已由前台代收: 'Signed for at the front desk', 已签收: 'Received', '联系不上您，快递已放和平饭店前台': 'Couldn\'t reach you, so it\'s at the Peace Hotel front desk',
+};
 // Manner's ready message is built per order
 const DRINKS = { 美式: 'Americano', 拿铁: 'Latte', 燕麦拿铁: 'Oat latte', 澳白: 'Flat white', 桂花拿铁: 'Osmanthus latte' };
 export function enText(text) {
@@ -55,5 +63,8 @@ export function enText(text) {
   if (EN[text]) return EN[text];
   const m = /^您的(.+)已做好，取餐号 (\d+)/.exec(text);
   if (m) return `Your ${(DRINKS[m[1]] || 'order').toLowerCase()} is ready. Order No. ${m[2]}, collect at the window`;
+  // the shops' order updates: "<what happened>：<items>"
+  const o = /^(.+?)：(.+)$/.exec(text);
+  if (o && SHOP_EN[o[1]]) return `${SHOP_EN[o[1]]}: ${o[2].split('、').map((n) => ITEM_EN[n] || n).join(', ')}`;
   return text;
 }

@@ -59,20 +59,66 @@ function tower(batch, x, z, w, d, h, r, y0 = 0) {
   batch.push(g);
 }
 
-function pearlTexture() {
-  // lattice of light points over the spheres
-  const [c, ctx] = makeCanvas(512, 256);
-  const g = ctx.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, '#ff5fb0'); g.addColorStop(0.5, '#d532a8'); g.addColorStop(1, '#6a2bd0');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 256);
-  ctx.strokeStyle = 'rgba(30,0,50,0.55)'; ctx.lineWidth = 2;
-  for (let i = -16; i < 48; i++) {
-    ctx.beginPath(); ctx.moveTo(i * 16, 0); ctx.lineTo(i * 16 + 128, 256); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(i * 16 + 128, 0); ctx.lineTo(i * 16, 256); ctx.stroke();
+// The spheres are clad in a lattice of mirrored, pink-tinted glass panels: each diamond panel sits at
+// its own slight angle (so reflections break up panel by panel), the seams are dark, and LED points sit
+// at the lattice nodes. Three maps from one canvas pass: tangent-space normals, roughness, glow.
+// 32 diamonds around x 16 rows over the sphere's UVs.
+function pearlPanels() {
+  const W = 1024, H = 512, cw = W / 32, ch = H / 16, r = rng(468);
+  const [nc, nx] = makeCanvas(W, H), [rc, rx] = makeCanvas(W, H), [ec, ex] = makeCanvas(W, H);
+  nx.fillStyle = 'rgb(128,128,255)'; nx.fillRect(0, 0, W, H);
+  rx.fillStyle = 'rgb(150,150,150)'; rx.fillRect(0, 0, W, H);
+  ex.fillStyle = '#000'; ex.fillRect(0, 0, W, H);
+  const diamond = (ctx, cx, cy, k) => { ctx.beginPath(); ctx.moveTo(cx, cy - ch / 2 * k); ctx.lineTo(cx + cw / 2 * k, cy); ctx.lineTo(cx, cy + ch / 2 * k); ctx.lineTo(cx - cw / 2 * k, cy); ctx.closePath(); };
+  for (let row = -1; row <= 16; row++) for (let col = -1; col <= 32; col++) {
+    for (const off of [0, 0.5]) {                                   // two interleaved grids = a diamond lattice
+      const cx = (col + off) * cw, cy = (row + off) * ch + ch / 2;
+      // each panel tilted a little: a flat colour in the normal map
+      const tx = (r() - 0.5) * 0.34, ty = (r() - 0.5) * 0.34, tz = Math.sqrt(1 - tx * tx - ty * ty);
+      nx.fillStyle = `rgb(${Math.round((tx * 0.5 + 0.5) * 255)},${Math.round((ty * 0.5 + 0.5) * 255)},${Math.round((tz * 0.5 + 0.5) * 255)})`;
+      diamond(nx, cx, cy, 0.9); nx.fill();
+      const rough = 0.1 + r() * 0.16;                               // polished glass, not all panels alike
+      rx.fillStyle = `rgb(${Math.round(rough * 255)},${Math.round(rough * 255)},${Math.round(rough * 255)})`;
+      diamond(rx, cx, cy, 0.9); rx.fill();
+      // the glass glows faintly from the lighting behind it; some panels a touch brighter
+      const g = 0.42 + r() * 0.14 + (r() < 0.06 ? 0.2 : 0);
+      ex.fillStyle = `rgba(255,${Math.round(40 + r() * 35)},${Math.round(160 + r() * 40)},${g})`;
+      diamond(ex, cx, cy, 0.86); ex.fill();
+    }
   }
-  ctx.fillStyle = 'rgba(255,235,250,0.95)';
-  for (let y = 0; y <= 256; y += 16) for (let x = 0; x < 512; x += 16) ctx.fillRect(x + (y / 16) % 2 * 8 - 1.5, y - 1.5, 3, 3);
-  return tex(c, { aniso: 4 });
+  // LED points at the lattice nodes
+  for (let row = 0; row <= 32; row++) for (let col = 0; col <= 64; col++) {
+    const x = col * cw / 2, y = row * ch / 2 + ((col % 2) ? ch / 2 : 0) % ch;
+    const grd = ex.createRadialGradient(x, y, 0, x, y, 3);
+    grd.addColorStop(0, 'rgba(255,225,248,0.8)'); grd.addColorStop(0.45, 'rgba(255,120,220,0.35)'); grd.addColorStop(1, 'rgba(255,90,200,0)');
+    ex.fillStyle = grd; ex.fillRect(x - 5, y - 5, 10, 10);
+  }
+  const normal = tex(nc, { aniso: 8 }), roughness = tex(rc, { aniso: 8 }), glow = tex(ec, { aniso: 8 });
+  normal.colorSpace = THREE.NoColorSpace; roughness.colorSpace = THREE.NoColorSpace;
+  return { normal, roughness, glow };
+}
+
+// Floodlit concrete: uplights at the podium and on the decks above each sphere throw light up the
+// columns, fading with height; a pink spill near the spheres; rounder-looking because the light falls
+// off toward each column's edges. World-space, so it works on the batched geometry.
+function floodlit(mat, { spheres, deckLights }) {
+  mat.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWP = (modelMatrix * vec4(position, 1.0)).xyz;');
+    const sph = spheres.map(([y, r]) => `spill += exp(-max(0.0, distance(vWP, vec3(${PEARL.x.toFixed(1)}, ${y.toFixed(1)}, ${PEARL.z.toFixed(1)})) - ${r.toFixed(1)}) / 9.0);`).join('\n');
+    const decks = deckLights.map(([y, k]) => `up += ${k.toFixed(2)} * step(${y.toFixed(1)}, vWP.y) * exp(-(vWP.y - ${y.toFixed(1)}) / 38.0);`).join('\n');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      {
+        float up = 0.0, spill = 0.0;
+        ${decks}
+        ${sph}
+        float facing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+        float shade = 0.3 + 0.7 * pow(facing, 0.8);
+        totalEmissiveRadiance += (vec3(1.0, 0.93, 0.84) * up + vec3(1.0, 0.35, 0.8) * spill * 0.28) * shade * 0.85;
+      }`);
+  };
+  return mat;
 }
 
 function stripeTexture(colors, rows, dark = '#070b14') {
@@ -90,30 +136,42 @@ function stripeTexture(colors, rows, dark = '#070b14') {
 }
 
 function buildPearl(group) {
-  const pink = basic(pearlTexture(), 1.5);
-  const white = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.75, 0.72, 0.9) });
+  const P = pearlPanels();
+  // the spheres: tinted mirror glass. Reflections come from the captured environment (the sky, the
+  // Bund and the river), the panels break them up, a clear coat adds the sharp sheen on top, and
+  // the lattice glows from inside.
+  const pink = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(1.0, 0.36, 0.78), metalness: 0.85, roughness: 1, roughnessMap: P.roughness,
+    normalMap: P.normal, normalScale: new THREE.Vector2(1, 1),
+    clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 2.2,
+    emissive: new THREE.Color(1, 1, 1), emissiveMap: P.glow, emissiveIntensity: 1.5,
+  });
+  pink.name = 'pearl-glass';
+  const concrete = floodlit(new THREE.MeshStandardMaterial({ color: new THREE.Color(0.72, 0.71, 0.74), roughness: 0.62, metalness: 0.04, envMapIntensity: 0.7 }),
+    { spheres: [[93, 25], [272, 22.5], [342, 8]], deckLights: [[10, 1.0], [118, 0.75], [294, 0.8], [350, 0.6]] });
+  const steel = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.8, 0.82, 0.86), metalness: 1, roughness: 0.28, envMapIntensity: 1.6, emissive: new THREE.Color(0.1, 0.09, 0.12) });
   const hot = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 1.3, 2.4) });
-  const spheres = new Batch(), struct = new Batch(), glow = new Batch();
+  const spheres = new Batch(), struct = new Batch(), mast = new Batch(), glow = new Batch();
   const { x, z } = PEARL;
-  const sph = (r, y, seg = 28) => spheres.add(new THREE.SphereGeometry(r, seg, Math.floor(seg * 0.6)), { x, y, z });
-  sph(25, 93); sph(22.5, 272); sph(8, 342, 16);
+  const sph = (r, y, seg = 48) => spheres.add(new THREE.SphereGeometry(r, seg, Math.floor(seg * 0.6)), { x, y, z });
+  sph(25, 93); sph(22.5, 272); sph(8, 342, 28);
   // three main columns with the five small spheres strung between the big ones
   for (let i = 0; i < 3; i++) {
     const a = (i / 3) * Math.PI * 2 + 0.5, cx = x + Math.cos(a) * 7.5, cz = z + Math.sin(a) * 7.5;
-    struct.cyl(cx, 0, cz, 4.5, 4.5, 262, 12);
+    struct.cyl(cx, 0, cz, 4.5, 4.5, 262, 20);
     // raking struts from the ground up into the lower sphere
-    const g = new THREE.CylinderGeometry(3.4, 3.4, 110, 10);
+    const g = new THREE.CylinderGeometry(3.4, 3.4, 110, 16);
     g.rotateZ(0.6); g.rotateY(-a);
     struct.add(g, { x: x + Math.cos(a) * 36, y: 42, z: z + Math.sin(a) * 36 });
   }
-  for (let k = 0; k < 5; k++) spheres.add(new THREE.SphereGeometry(6.5, 14, 10), { x, y: 128 + k * 24, z });
-  struct.cyl(x, 0, z, 30, 34, 10, 24);                 // podium
-  struct.cyl(x, 292, z, 5.5, 8, 44, 12);               // upper shaft
-  struct.cyl(x, 349, z, 0.8, 3.2, 119, 8);             // antenna mast -> 468 m
-  for (const y of [93, 272]) glow.add(new THREE.TorusGeometry(y === 93 ? 25.4 : 22.9, 0.7, 6, 48), { x, y, z, rx: Math.PI / 2 });
-  for (let y = 360; y < 468; y += 18) glow.cyl(x, y, z, 1.6, 1.6, 2, 6);
+  for (let k = 0; k < 5; k++) spheres.add(new THREE.SphereGeometry(6.5, 24, 16), { x, y: 128 + k * 24, z });
+  struct.cyl(x, 0, z, 30, 34, 10, 32);                 // podium
+  struct.cyl(x, 292, z, 5.5, 8, 44, 20);               // upper shaft
+  mast.cyl(x, 349, z, 0.8, 3.2, 119, 10);              // antenna mast -> 468 m
+  for (const y of [93, 272]) glow.add(new THREE.TorusGeometry(y === 93 ? 25.4 : 22.9, 0.7, 6, 64), { x, y, z, rx: Math.PI / 2 });
+  for (let y = 360; y < 468; y += 18) glow.cyl(x, y, z, 1.6, 1.6, 2, 8);
   const sm = spheres.mesh(pink, 'pearl-spheres');
-  group.add(sm, struct.mesh(white, 'pearl-structure'), glow.mesh(hot, 'pearl-glow'));
+  group.add(sm, struct.mesh(concrete, 'pearl-structure'), mast.mesh(steel, 'pearl-mast'), glow.mesh(hot, 'pearl-glow'));
   return pink;
 }
 
@@ -281,9 +339,10 @@ export function createSkyline() {
 
   group.traverse((o) => { o.layers.enable(REFLECT_LAYER); o.matrixAutoUpdate = false; o.updateMatrix(); });
 
-  const c1 = new THREE.Color(1.5, 1.5, 1.5), c2 = new THREE.Color(1.15, 1.25, 1.9);
+  // the lattice lighting breathes slowly between pink and violet
+  const c1 = new THREE.Color(1, 1, 1), c2 = new THREE.Color(0.72, 0.8, 1.35);
   return {
     group,
-    update(t) { pearlMat.color.lerpColors(c1, c2, 0.5 + 0.5 * Math.sin(t * 0.25)); }, // slow pink -> violet breathing
+    update(t) { pearlMat.emissive.lerpColors(c1, c2, 0.5 + 0.5 * Math.sin(t * 0.25)); },
   };
 }

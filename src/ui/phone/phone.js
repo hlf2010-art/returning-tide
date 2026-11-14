@@ -11,6 +11,7 @@ import { PEOPLE, GROUP, ME } from '../../world/cast.js';
 import { shape } from '../../engine/delivery.js';
 import { getLang, onLang } from '../i18n.js';
 import { enText } from '../../world/agendaEn.js';
+import { createShopApp } from './shopApp.js';
 
 // one language at a time: Z(zh, en) picks; X(text) translates what people wrote; nm(id) names them
 const Z = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -64,6 +65,8 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   const L = () => getLife();
   const top = () => S.stack[S.stack.length - 1];
   const go = (s, arg = {}) => { S.stack.push({ s, ...arg }); render(); };
+  const shopApp = createShopApp({ L: () => getLife(), Z, esc, yuan, go: (s, arg) => go(s, arg), render: () => render(), top: () => top(), openSheet: (sh) => { S.sheet = sh; render(); } });
+  const SHOP_APPS = ['jd', 'taobao'];
   const back = () => {
     if (S.sheet) { S.sheet = null; render(); return; }
     if (S.call) return;                                                     // hang up with the red button
@@ -102,31 +105,34 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (t.s === 'recents') html = recentsView(l);
     else if (t.s === 'manner') html = mannerView(l, t);
     else if (t.s === 'call') html = callView(l);
+    else if (shopApp.views[t.s]) html = shopApp.views[t.s](l, t);
     host.innerHTML = html + (S.sheet ? sheetView(l) : '');
     if (t.s === 'chat') { const m = host.querySelector('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
   }
 
   function lockView(l) {
     const d = new Date(2026, 10, 14 + (l.clock.day - 1));
-    const notes = l.notifications.slice(-5).reverse().map((n) => `<div class="note" data-act="openThread" data-id="${esc(n.thread)}">${avatar(n.from)}<div><div class="t">${Z('微信', 'WeChat')} · ${esc(nm(n.from))}</div><div class="p">${esc(X(n.text))}</div></div></div>`).join('');
+    const notes = l.notifications.slice(-5).reverse().map((n) => `<div class="note" data-act="openThread" data-id="${esc(n.thread)}">${avatar(n.from)}<div><div class="t">${SHOP_APPS.includes(n.from) ? esc(nm(n.from)) : `${Z('微信', 'WeChat')} · ${esc(nm(n.from))}`}</div><div class="p">${esc(X(n.text))}</div></div></div>`).join('');
     const date = Z(`${d.getMonth() + 1}月${d.getDate()}日 星期${WEEK[d.getDay()]}`, `${DAYS_EN[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`);
     return `<div class="view lock"><div class="date">${date}</div><div class="time">${clockText(l.clock.minute)}</div>
       <div class="notes">${notes}</div>${S.unlocking ? '<div class="face"></div>' : ''}<div class="hint" data-act="unlock" style="cursor:pointer">${Z('轻点或按 Enter 用面容解锁', 'Tap or press Enter to unlock')}</div></div>`;
   }
   function homeView(l) {
-    const unread = unreadTotal(l);
+    const unread = unreadTotal(l) - SHOP_APPS.reduce((n, k) => n + ((l.threads[k] && l.threads[k].unread) || 0), 0), shopUnread = (k) => (l.threads[k] && l.threads[k].unread) || 0;
     const app = (id, label, bg, glyph, badge = 0) => `<div class="app" data-act="app" data-id="${id}"><div class="ic" style="background:${bg}">${glyph}</div>${badge ? `<span class="badge">${badge}</span>` : ''}<span>${label}</span></div>`;
     return `<div class="view home"><div class="grid">
       ${app('chats', Z('微信', 'WeChat'), 'linear-gradient(160deg,#2bd46b,#05a845)', '◔◔', unread)}
       ${app('wallet', Z('钱包', 'Wallet'), 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}
       ${app('calendar', Z('日历', 'Calendar'), '#fff;color:#e33', `<span style="color:#e33;font-size:24px">${l.clock.day + 13}</span>`)}
       ${app('recents', Z('电话', 'Phone'), 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}
+      ${app('jd', Z('京东', 'JD'), 'linear-gradient(160deg,#f2453c,#c8160e)', '<span style="font-size:22px;font-weight:700">京</span>', shopUnread('jd'))}
+      ${app('taobao', Z('淘宝', 'Taobao'), 'linear-gradient(160deg,#ff7a2e,#ff4d00)', '<span style="font-size:22px;font-weight:700">淘</span>', shopUnread('taobao'))}
       ${app('manner', 'Manner', 'linear-gradient(160deg,#1b1b1b,#3a3a3a)', '<span style="font-size:13px;letter-spacing:0.5px">MNR</span>')}
       </div>
       <div class="dock">${app('chats', '', 'linear-gradient(160deg,#2bd46b,#05a845)', '◔◔', 0)}${app('recents', '', 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}${app('wallet', '', 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}${app('calendar', '', '#fff', `<span style="color:#e33;font-size:20px">${l.clock.day + 13}</span>`)}</div></div>`;
   }
   function chatsView(l) {
-    const rows = l.order.map((id) => l.threads[id]).filter(Boolean).map((t) => {
+    const rows = l.order.map((id) => l.threads[id]).filter((t) => t && !SHOP_APPS.includes(t.id)).map((t) => {
       const last = t.messages[t.messages.length - 1];
       const who = last && t.kind === 'group' && last.from !== 'me' ? `${short(last.from)}: ` : '';
       const av = t.kind === 'group' ? `<div class="av" style="background:#5d6b82;font-size:12px">${Z('五虎', 'J5')}</div>` : avatar(t.members.find((m) => m !== 'me'));
@@ -253,9 +259,11 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   root.addEventListener('click', (e) => {
     const el = e.target.closest('[data-act]'); if (!el) return;
     const act = el.dataset.act, id = el.dataset.id, l = L();
+    if (shopApp.act(act, id)) return;
     if (act === 'unlock') unlock();
     else if (act === 'back') back();
-    else if (act === 'app') go(id === 'chats' ? 'chats' : id);
+    else if (act === 'app') { if (SHOP_APPS.includes(id)) go('shop', { shop: id }); else go(id); }
+    else if (act === 'openThread' && SHOP_APPS.includes(id)) { const to = () => { S.stack = [{ s: 'home' }, { s: 'shop', shop: id }]; go('orders', { id }); }; if (!S.unlocked) unlock(to); else to(); }
     else if (act === 'openThread') { if (!S.unlocked) { unlock(() => { S.stack = [{ s: 'home' }, { s: 'chats' }]; go('chat', { id }); }); } else go('chat', { id }); }
     else if (act === 'reply') { const t = top(); reply(l, t.id, id, +el.dataset.i); render(); }
     else if (act === 'invite') { respondToInvite(l, id, el.dataset.yes === '1'); render(); }
@@ -280,6 +288,11 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     if (balance(l, sh.method) < sh.amount) { sh.error = Z('余额不足，换个付款方式', 'Not enough there. Try another way to pay'); render(); return; }
     sh.paying = true; render();
     setTimeout(() => {
+      if (sh.run) {                                                           // the shop takes the payment with the order
+        const r = sh.run(sh.method);
+        if (!r.ok) { sh.paying = false; sh.error = Z('付款没有成功，换个方式试试', 'The payment didn\'t go through. Try another way to pay'); render(); return; }
+        S.sheet = null; if (onEvent) onEvent({ type: 'ordered', orders: r.orders }); render(); return;
+      }
       const r = pay(l, { method: sh.method, amount: sh.amount, to: sh.to, memo: sh.memo });
       if (r.ok && sh.memoEn) r.entry.memoEn = sh.memoEn;
       S.sheet = null;

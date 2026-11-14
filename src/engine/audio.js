@@ -24,7 +24,7 @@ const MASTER_LEVEL = 0.8;
 
 export function createAudio() {
   let ctx = null, master = null, env = null, duck = null, sfx = null, pauseBus = null, limiter = null, meter = null;
-  let muted = false, paused = false, pauseToken = 0, hornTimer = 35;
+  let muted = false, paused = false, pauseToken = 0, hornTimer = 35, ancF = null, ancG = null, anc = false;
   let buf = null, river = null, wind = null, city = null, rain = null, lastFoot = { pan: 0.12, f: 0 }, lastDuck = -1, lastRain = -1;
   const loops = [];                                          // every looping source ever started (for the duplicate check)
   const voices = new Map();                                  // vehicle id -> voice
@@ -88,7 +88,9 @@ export function createAudio() {
     master.gain.linearRampToValueAtTime(muted ? 0 : MASTER_LEVEL, ctx.currentTime + 3);   // gentle first fade-in
     pauseBus = gainNode(1); pauseBus.connect(master);
     duck = gainNode(1); duck.connect(pauseBus);
-    env = gainNode(1); env.connect(duck);
+    // noise cancelling (headphones): the world's sound through a low-pass and turned down; speech and cues untouched
+    ancF = ctx.createBiquadFilter(); ancF.type = 'lowpass'; ancF.frequency.value = 20000; ancF.Q.value = 0.707; ancG = gainNode(1);
+    env = gainNode(1); env.connect(ancF); ancF.connect(ancG); ancG.connect(duck);
     sfx = gainNode(1); sfx.connect(pauseBus);
 
     // wind off the river: two filtered noise layers with slow, unrelated gust cycles, drifting across the stereo field
@@ -307,6 +309,13 @@ export function createAudio() {
       wind.leaves.gain.setTargetAtTime(0.045 * Math.min(1.3, level) * nearTree, t, 0.5);
     },
     // weather: level 0..1; covered = standing under the canopy / portico (muffled, quieter)
+    setAnc(on) {
+      anc = !!on;
+      if (!ctx || !ancF) return;
+      const t = ctx.currentTime;
+      ancF.frequency.setTargetAtTime(anc ? 520 : 20000, t, 0.25); ancG.gain.setTargetAtTime(anc ? 0.32 : 1, t, 0.25);
+    },
+    get anc() { return anc; },
     setRain(level, covered = false) {
       if (!ctx || !rain) return;
       const v = Math.round(level * 100) / 100 + (covered ? 2 : 0);

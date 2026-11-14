@@ -48,6 +48,7 @@ import { WALK_SPEED, RUN_SPEED } from './engine/movement.js';
 import { createTrees } from './world/trees.js';
 import { createBumps } from './world/bumps.js';
 import { createManner } from './world/shops.js';
+import { createBelongings } from './world/belongings.js';
 import { createShop } from './engine/errands.js';
 import { manner as mannerSpec, stall as stallSpot } from './world/layout.js';
 import { createMinimap } from './ui/minimap.js';
@@ -144,7 +145,9 @@ async function boot() {
   }
   scene.updateMatrixWorld(true);
   captureEnvironment(R.renderer, scene);
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees };
+  // what you buy: the courier at the kerb, parcels, the umbrella, headphones (world/belongings.js)
+  const belongings = createBelongings({ scene, people, camera, hud, audio, getLife: () => life, save: () => saveLife() });
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings };
   // bumping into people: their reactions, a passing remark, a jolt for you
   bumps = createBumps({ hud, audio, onPlayerBump: ({ closing }) => { player.head.dipV -= 0.1 + 0.05 * Math.min(4, closing); player.head.roll += (Math.random() - 0.5) * 0.04; } });
   // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
@@ -356,6 +359,7 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (mode === 'play') {
+    if (world && world.belongings && world.belongings.key(k)) return;
     if (k === 'KeyE') interact();
     else if (k === 'Escape' && noLock) pause();
   }
@@ -376,6 +380,7 @@ function interact() {
   if (target.id === 'lin') openDialogue();
   else if (target.id === 'pouch') openPouch();
   else if (target.id === 'notice') openInspect();
+  else if (world.belongings.interact(target.id)) { /* the courier */ }
   else if (target.id === 'manner') {
     const mo = life.flags.mannerOrder;
     if (mo && !mo.done && mo.notified) { mo.done = true; cupFor = 240; hud.bark({ speaker: { zh: '店员', en: 'Barista' }, text: { zh: `${mo.num}号，您的${mo.item.name}，拿好～`, en: `Number ${mo.num}, your ${mo.item.en.toLowerCase()}. Here you go.` }, seconds: 2.6 }); saveLife(); }
@@ -449,7 +454,9 @@ function updateLife(dt) {
   lifeAdvance(life, dt);
   if (params.get('life') !== '0') { runAgenda(life); deliverFollowUps(life); }   // ?life=0: nobody gets in touch (measurement tools)
   for (const inv of lifeLapse(life)) lifeReact(life, { type: 'invite', id: inv.id, status: 'missed', from: inv.from, thread: inv.thread });
-  for (const ev of lifeDrain(life)) if (ev.type === 'call') pendingCalls.push(ev);
+  const events = lifeDrain(life);
+  for (const ev of events) if (ev.type === 'call') pendingCalls.push(ev);
+  if (world && world.belongings) world.belongings.step(dt, events);
   // calls wait until you're not in the middle of something else
   if (pendingCalls.length && mode === 'play' && !phone.inCall) { const c = pendingCalls.shift(); phone.ring(c.script); }
   const mo = life.flags.mannerOrder;
@@ -475,8 +482,11 @@ function mapObjective() {
   if (m.step === 'carry') return { x: npcLayout.list[0].x, z: npcLayout.list[0].z, label: tx('pLin') };
   return null;
 }
+function mapTarget() {
+  return mapObjective() || (world && world.belongings ? world.belongings.mapObjective() : null);
+}
 function updateMap(dt) {
-  const b = player.body, obj = mapObjective(), zone = zoneAt(b.x, b.z, L);
+  const b = player.body, obj = mapTarget(), zone = zoneAt(b.x, b.z, L);
   updateMinimap(mapState, dt, { mode, moving: player.speed > 0.6, objective: !!obj, zone, held: mapHeld });
   minimap.setShown(mapState.shown);
   document.getElementById('hud').classList.toggle('map-on', mapState.shown);
@@ -553,7 +563,7 @@ function frame(now) {
   weatherUniforms.rainRipples.value = weather.rain; weatherUniforms.rippleTime.value = weatherTime;
   scene.fog.density = FOG_DENSITY + HAZE_DENSITY * weather.haze;
   scene.fog.color.lerpColors(FOG_COLOR, HAZE_FOG, weather.haze);
-  audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye));
+  audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye) || world.belongings.umbrellaUp);
   world.sky.update(t, weather.haze); world.skyline.update(t); world.river.update(t, dt); world.bund.update(t); world.street.update(t);
   world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);
   if (R.level !== treeLevel) { treeLevel = R.level; world.trees.setQuality(R.level); }
@@ -583,7 +593,8 @@ function frame(now) {
   if (mode === 'play' && bumps) bumps.update(t, bumpActors(), player.body);
   updateMap(dt);
   updateLife(mode === 'pause' ? 0 : dt);
-  if (world.playerBody) { world.playerBody.setHold({ cup: cupFor > 0, phone: phone.isOpen }); world.playerBody.placeProps(camera.position); }
+  world.belongings.update(mode === 'pause' ? 0 : dt, player.body, player);
+  if (world.playerBody) { world.playerBody.setHold({ cup: cupFor > 0 && !world.belongings.holdingParcel, phone: phone.isOpen }); world.playerBody.placeProps(camera.position); }
   world.pouch.update(camera, t);
 
   // interactables: ONE target at a time - within reach, in view, not hidden behind a wall or a person
@@ -597,10 +608,11 @@ function frame(now) {
       { id: 'notice', x: cf.x, y: cf.y, z: cf.z, reach: 2.7, cone: 0.78 },
     ];
     if (mission1 && mission1.canPickUp()) cands.push({ id: 'pouch', x: pf.x, y: pf.y, z: pf.z, reach: 2.4, cone: 0.72 });
+    cands.push(...world.belongings.candidates());
     cands.push({ id: 'manner', x: mannerSpec.queue[0].x + 0.2, y: L.curbH + 1.15, z: mannerSpec.zWall + mannerSpec.depth - 0.1, reach: 2.6, cone: 0.7 });
     target = pickTarget(camera.position, _d, cands, colliders);
   }
-  if (target) hud.prompt(true, PROMPTS[target.id]());
+  if (target) hud.prompt(true, PROMPTS[target.id] ? PROMPTS[target.id]() : world.belongings.prompt(target.id));
   else hud.prompt(false);
 
   // subtitles + interaction greeting bar

@@ -27,6 +27,8 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | W / S, ↑ / ↓, wheel | while talking or looking at the pouch: move the highlighted choice |
 | Tab (hold) | minimap |
 | P | your phone (Esc: back) |
+| U | open / close your umbrella (once you've bought one and have it with you) |
+| H | noise cancelling on / off (once you have the headphones with you) |
 | C | subtitles on / off |
 | M | sound on / off (mutes ambience, footsteps, cues and voices) |
 | Esc | back out of an open conversation / close-up / notice; otherwise pause (Resume / Settings). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
@@ -278,6 +280,44 @@ drawn from the same layout data the colliders use.
 - **Gets out of the way:** it hides while talking, reading or paused, and after ~5 s standing still.
   Short stops mid-walk don't make it flicker (node-tested).
 
+## Shopping: JD and Taobao, and the courier at the kerb (`src/engine/shopping.js`, `src/ui/phone/shopApp.js`, `src/world/courier.js`, `src/world/belongings.js`)
+
+Two shop apps on the phone, as plain coloured tiles with the shops' names as text (no logos, no
+copied interface). Each product page quotes a real delivery time from the shop's rhythm:
+- **JD** has same-day delivery before 19:00 and next morning after that. Small stock items go by
+  express (秒送) within the hour, until 22:00.
+- **Taobao** takes two or three days.
+
+You choose where it goes:
+- **Hankou Road, hand it to me.** This works the way it does in Shanghai. When the order is out for
+  delivery, the courier parks his e-bike on the Hankou Road pavement by Manner (a generic scooter
+  with a delivery box and the quilted handlebar cover they all use in November). He messages you
+  to come down and collect, and he shows on the minimap. He waits on his phone, glances up the
+  street, and looks at you and waves when you come close. **E** takes the parcel from him; it's in
+  your hands for a moment, then it's yours. If you don't come within 30 game minutes, he leaves it
+  at the Peace Hotel front desk and tells you so.
+- **Peace Hotel front desk.** The desk signs for it and keeps it (bulky things always go there).
+  Collecting from the desk comes with the Peace Hotel interior.
+
+The phone's orders page shows a five-step track for each order, what you have with you, and what's
+waiting at the desk. Payment is in-game money through the shared pay sheet.
+
+What you buy does something:
+- **Umbrella:** **U** opens it. The canopy is over your head (look up and you see its ribs), and
+  the drizzle drums on it instead of on you.
+- **Noise-cancelling headphones:** **H** hushes the city. Wind, traffic and the crowd go through a
+  low-pass and drop away; speech, your phone and cues stay clear.
+- **Everything else:** goes into your belongings (parts for later builds, a tea gift box, a coat).
+
+Node-tested (`tests/shopping.test.mjs`):
+- the shops' timings
+- express only for small stock and only until 22:00
+- the courier's wait, and the desk when you don't come
+- handing over only once
+- refused payments charge nothing
+- bulky things never go to the kerb
+- every shop message reads in English too
+
 ## Manner Coffee, Hankou Road (`src/world/shops.js`)
 
 Why here:
@@ -397,7 +437,28 @@ depth material that sways with the wind), lamp posts, signals, street furniture.
 on the top two quality steps, one on the next two, none below; `?shadows=0` turns them off. Shadow
 maps are drawn once per frame, not again for the river mirror or the reflection passes.
 
+## The Oriental Pearl Tower (`src/world/skyline.js`)
+
+The spheres are lit physically, not painted:
+- **Glass:** they are a tinted mirror glass (metalness 0.85 with a clear coat) reflecting the
+  captured environment: the sky, the Bund, the river.
+- **Panels:** a diamond lattice of panels, each at its own slight angle (a per-panel normal map), so
+  reflections break up panel by panel the way the real cladding does. Roughness varies a little
+  from panel to panel.
+- **Glow:** the lattice glows pink from inside, with LED points at the nodes, breathing slowly
+  between pink and violet.
+
+The columns are floodlit concrete:
+- uplights at the podium and on the decks, fading with height
+- a pink spill near the spheres
+- light falling off toward each column's edges, so they read as round
+
+The antenna mast is steel.
+
 ## Trees (`src/world/trees.js`, `src/world/wind.js`)
+
+The big limbs grow out of the top of the trunk and flare to its width at the fork (the knuckle a
+pollarded plane tree makes), so the crotch reads as one piece of wood, not a stick pushed into a pipe.
 
 Grown procedurally, no image assets. **London planes** (法国梧桐) on Hankou Road: a clear trunk
 pruned into the three-forked vase Shanghai's planes are known for, curved tapering limbs, branches

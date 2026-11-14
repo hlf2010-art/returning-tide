@@ -109,3 +109,29 @@
 #phone-banner .av { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; flex: none; }
 #phone-banner .t { font-size: 13px; font-weight: 600; } #phone-banner .p { font-size: 13px; opacity: 0.9; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 #phone-banner .k { margin-left: auto; font-size: 11px; opacity: 0.6; align-self: flex-start; }
+
+/* JD / Taobao: a coloured header, product rows, a product page, orders with a five-step track */
+#phone .shopbar { background: var(--c); color: #fff; } #phone .shopbar .back { color: #fff; }
+#phone .orders-btn { margin-left: auto; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: rgba(255,255,255,0.22); cursor: pointer; }
+#phone .view.shop { background: #f4f4f6; color: #111; }
+#phone .prow { display: flex; gap: 12px; align-items: center; padding: 10px 14px; background: #fff; border-bottom: 1px solid #eee; cursor: pointer; }
+#phone .prow .mid { flex: 1; min-width: 0; } #phone .prow .n { font-size: 14px; font-weight: 600; line-height: 1.3; }
+#phone .prow .pv { font-size: 11.5px; color: #888; margin-top: 3px; } #phone .prow .pr { font-weight: 700; color: #e1251b; font-size: 15px; }
+#phone .pimg { width: 54px; height: 54px; flex: none; border-radius: 10px; display: grid; place-items: center; font-size: 26px; color: var(--c);
+  background: linear-gradient(150deg, #fff, #eceef2); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); }
+#phone .pimg.big { width: 100%; height: 150px; font-size: 64px; border-radius: 14px; margin-bottom: 12px; }
+#phone .fast { display: inline-block; font-size: 10px; font-weight: 700; color: #fff; background: #e1251b; border-radius: 4px; padding: 1px 5px; margin-right: 6px; vertical-align: 1px; }
+#phone .product { padding: 14px; } #phone .pname { font-size: 17px; font-weight: 700; line-height: 1.3; }
+#phone .pprice { font-size: 24px; font-weight: 800; color: #e1251b; margin: 6px 0 2px; } #phone .pmeta { font-size: 12px; color: #999; }
+#phone .pdel { margin: 12px 0; font-size: 13px; color: #333; background: #fff; border-radius: 10px; padding: 10px 12px; }
+#phone .plabel { font-size: 12px; color: #888; margin: 14px 14px 6px; } #phone .product .plabel { margin: 10px 0 6px; }
+#phone .addr { display: flex; flex-direction: column; gap: 6px; }
+#phone .addr button { appearance: none; text-align: left; border: 1px solid #ddd; background: #fff; border-radius: 10px; padding: 10px 12px; font: 500 13px var(--ui); color: #222; cursor: pointer; }
+#phone .addr button.on { border-color: #111; box-shadow: inset 0 0 0 1px #111; } #phone .addr button:disabled { opacity: 0.4; cursor: default; }
+#phone .pnote { font-size: 12px; color: #888; margin-top: 8px; line-height: 1.45; }
+#phone .buy { width: 100%; margin-top: 16px; padding: 13px 0; font-size: 15px; background: #e1251b; }
+#phone .order { background: #fff; margin: 10px 12px 0; border-radius: 12px; padding: 12px; }
+#phone .order .on { font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; gap: 10px; } #phone .order .ot { color: #555; font-weight: 600; }
+#phone .order .track { display: flex; gap: 4px; margin: 10px 0 8px; } #phone .order .track i { flex: 1; height: 4px; border-radius: 2px; background: #e6e6ea; }
+#phone .order .track i.done { background: #18a058; } #phone .order .os { font-size: 12px; color: #666; line-height: 1.4; }
+#phone .things { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 16px; } #phone .thing { background: #fff; border-radius: 14px; padding: 6px 10px; font-size: 12px; }
