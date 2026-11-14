@@ -42,6 +42,7 @@ import { createRealPedestrians } from './world/pedestriansReal.js';
 import { createPlayerBody } from './world/playerBody.js';
 import { WALK_SPEED, RUN_SPEED } from './engine/movement.js';
 import { createTrees } from './world/trees.js';
+import { createBumps } from './world/bumps.js';
 import { createWind, WIND_LEVELS } from './world/wind.js';
 import { planterIslands, streetTrees } from './world/layout.js';
 
@@ -104,6 +105,8 @@ async function boot() {
   const vehicles = createVehicles(crossing.vehicles), signals = createSignals();
   const pedestrians = people ? createRealPedestrians(traffic.peds, people) : createPedestrians(traffic.peds);
   const vehicleBoxes = traffic.vehicles.map(() => addDynamicCollider('vehicle'));
+  // the crossing's pedestrians are solid to the player (they steer round you; you can still walk into them)
+  pedBoxes = traffic.peds.map((p) => { const b = addDynamicCollider('npc'); b.id = p.id; return b; });
   traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(crossing.vehicles[i].model); });   // petrol engines get an engine note
   scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
     vehicles.group, signals.group, pedestrians.group, rain.mesh);
@@ -127,6 +130,8 @@ async function boot() {
   scene.updateMatrixWorld(true);
   captureEnvironment(R.renderer, scene);
   world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees };
+  // bumping into people: their reactions, a passing remark, a jolt for you
+  bumps = createBumps({ hud, audio, onPlayerBump: ({ closing }) => { player.head.dipV -= 0.1 + 0.05 * Math.min(4, closing); player.head.roll += (Math.random() - 0.5) * 0.04; } });
   // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
   const reflectors = [];
   scene.traverse((o) => { if (o.isMesh && (o.material === M.deck || o.material === M.sidewalk || o.material === M.asphalt)) { o.userData.ssrMask = ssrMask(o.material); reflectors.push(o); } });
@@ -341,14 +346,35 @@ const PROMPTS = {
   pouch: () => ({ target: '文件袋 Pouch', action: '查看 · Look' }),
 };
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
+let pedBoxes = [], bumps = null;
+const REACT_FOR = { sorry: 1.6, fine: 1.2, scold: 2.8, tut: 1.4, look: 0.9 };
+function bumpActors() {
+  const out = traffic.peds.map((p) => ({
+    id: p.id, persona: p.persona, x: p.x, z: p.z, vx: p.vx, vz: p.vz, r: 0.3, busy: p.phone > 0.5,
+    apply(r, other) {
+      const dur = REACT_FOR[r.kind] || 1;
+      p.faceTo = [other.x, other.z]; p.faceFor = dur + 0.8; p.gesture = r.kind;
+      if (r.kind !== 'look') p.pause = p.crossing ? 0 : dur;                // never stop in the road
+      if (r.stagger) { const dx = p.x - other.x, dz = p.z - other.z, d = Math.hypot(dx, dz) || 1; p.shove = { x: dx / d * 0.28, z: dz / d * 0.28, t: 0.35 }; }
+    },
+  }));
+  if (world.npcs.react) {
+    for (const s of npcLayout.list) out.push({ id: s.id, persona: s.id, x: s.x, z: s.z, vx: 0, vz: 0, r: 0.4,
+      apply(r, other) { world.npcs.react(s.id, r.kind, [other.x, other.z], t + (REACT_FOR[r.kind] || 1) + 0.6); } });
+  }
+  const b = player.body;
+  out.push({ id: 'player', x: b.x, z: b.z, vx: b.pvx || 0, vz: b.pvz || 0, r: 0.42 });
+  return out;
+}
 function updateTraffic(dt) {
   const b = player.body;
   _player.x = b.x; _player.z = b.z; _player.vx = b.vx; _player.vz = b.vz;
   // on the promenade deck the player is nowhere near the road
   traffic.update(dt, { player: b.y > 1 ? null : _player, rain: weather.rain });
   world.vehicles.update(traffic.vehicles);
-  world.pedestrians.update(traffic.peds, dt);
+  world.pedestrians.update(traffic.peds, dt, camera.position);
   world.signals.update(traffic.controller);
+  traffic.peds.forEach((p, i) => { const bx = pedBoxes[i]; if (bx) { bx.minX = p.x - 0.22; bx.maxX = p.x + 0.22; bx.minZ = p.z - 0.22; bx.maxZ = p.z + 0.22; } });
   traffic.vehicles.forEach((v, i) => {
     const box = world.vehicleBoxes[i];
     if (!v.active) { box.minX = box.maxX = box.minZ = box.maxZ = 1e6; return; }
@@ -417,6 +443,7 @@ function frame(now) {
   });
   if (mission1) mission1.update();
   updateTraffic(mode === 'pause' || debug.freezeTraffic ? 0 : dt);
+  if (mode === 'play' && bumps) bumps.update(t, bumpActors(), player.body);
   world.pouch.update(camera, t);
 
   // interactables: ONE target at a time - within reach, in view, not hidden behind a wall or a person
@@ -488,7 +515,7 @@ Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   get mission1() { return mission1; }, get nearPouch() { return !!target && target.id === 'pouch'; },
   get traffic() { return traffic; }, weather, THREE,                // THREE: for verification tools only
   get pedestrians() { return world ? world.pedestrians : null; },
-  get world() { return world; },
+  get world() { return world; }, get bumps() { return bumps; },
   start() { noLock = true; if (mode === 'entry') begin(); },
 }));
 

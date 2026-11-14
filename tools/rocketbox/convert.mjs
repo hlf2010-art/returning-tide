@@ -23,11 +23,12 @@ export const CAST = [
   { role: 'p2', avatar: 'Female_Adult_09', sex: 'f' },                        // (Female_Adult_03 wears a tank top: wrong for November)
   { role: 'p3', avatar: 'Male_Adult_10', sex: 'm' },
   { role: 'p4', avatar: 'Male_Adult_03', sex: 'm' },
-  { role: 'player', avatar: 'Male_Adult_07', sex: 'm' },                     // the player's own body (head hidden in first person)
+  { role: 'player', avatar: 'Male_Adult_07', sex: 'm' },
+  { role: 'p5', avatar: 'Business_Female_02', sex: 'f', greyHair: true },  // an older local woman (the library's oldest woman; hair greyed)                     // the player's own body (head hidden in first person)
 ];
 const CLIPS = {
-  m: { idle: 'm_idle_neutral_01', look: 'm_idle_look_around_01', talk1: 'm_gestic_talk_neutral_01', talk2: 'm_gestic_talk_relaxed_01', phone: 'm_cell_phone_textmessage', umbrella: 'm_umbrella_idle_01', walk: 'm_walk_neutral_01', jog: 'm_run_slow_01' },
-  f: { idle: 'f_idle_neutral_01', look: 'f_idle_look_around_01', talk1: 'f_gestic_talk_neutral_01', talk2: 'f_gestic_talk_relaxed_01', phone: 'f_cell_phone_textmessage', umbrella: 'f_umbrella_idle_01', umbrellaTalk: 'f_umbrella_talk_01', umbrellaListen: 'f_umbrella_listen_01', walk: 'f_walk_neutral_01', jog: 'f_run_slow_01' },
+  m: { idle: 'm_idle_neutral_01', look: 'm_idle_look_around_01', talk1: 'm_gestic_talk_neutral_01', talk2: 'm_gestic_talk_relaxed_01', phone: 'm_cell_phone_textmessage', umbrella: 'm_umbrella_idle_01', walk: 'm_walk_neutral_01', jog: 'm_run_slow_01', wave: 'm_wave_01', shrug: 'm_gestic_shrug_01', angry: 'm_idle_angry_01' },
+  f: { idle: 'f_idle_neutral_01', look: 'f_idle_look_around_01', talk1: 'f_gestic_talk_neutral_01', talk2: 'f_gestic_talk_relaxed_01', phone: 'f_cell_phone_textmessage', umbrella: 'f_umbrella_idle_01', umbrellaTalk: 'f_umbrella_talk_01', umbrellaListen: 'f_umbrella_listen_01', walk: 'f_walk_neutral_01', jog: 'f_run_slow_01', wave: 'f_wave_01', shrug: 'f_gestic_shrug_01', angry: 'f_gestic_talk_angry_01' },
 };
 
 // the player's own set: same skeleton as 'm', plus a proper run and the catch-your-breath idles

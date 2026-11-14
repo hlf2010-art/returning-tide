@@ -100,10 +100,12 @@ export const crossing = {
   },
   // background pedestrians: crossing line, which west corner they use, wander targets, speed
   peds: [
-    { id: 'p1', zc: -2.4, corner: -1, westWander: [-30.2, -11], eastWander: [-0.9, -12], speed: 1.32, look: 0, rain: 'umbrella' },
-    { id: 'p2', zc: -0.8, corner: 1, westWander: [-29.6, 15], eastWander: [-1.1, 9], speed: 1.12, look: 1, startEast: true, rain: 'shelter' },
-    { id: 'p3', zc: 0.9, corner: 1, westWander: [-40, 5.2], eastWander: [-0.8, 16], speed: 1.45, look: 2, rain: 'cab' },
-    { id: 'p4', zc: 2.5, corner: -1, westWander: [-42, -5.2], eastWander: [-1.0, -7], speed: 0.62, look: 3, startEast: true, rain: 'umbrella' },  // elderly, slow
+    { id: 'p1', zc: -2.4, corner: -1, westWander: [-30.2, -11], eastWander: [-0.9, -12], speed: 1.32, look: 0, rain: 'umbrella', persona: 'youngMan', phoneHabit: 0.6 },
+    { id: 'p2', zc: -0.8, corner: 1, westWander: [-29.6, 15], eastWander: [-1.1, 9], speed: 1.12, look: 1, startEast: true, rain: 'shelter', persona: 'office', phoneHabit: 0.5 },
+    { id: 'p3', zc: 0.9, corner: 1, westWander: [-40, 5.2], eastWander: [-0.8, 16], speed: 1.45, look: 2, rain: 'cab', persona: 'office', phoneHabit: 0.3 },
+    { id: 'p4', zc: 2.5, corner: -1, westWander: [-42, -5.2], eastWander: [-1.0, -7], speed: 0.62, look: 3, startEast: true, rain: 'umbrella', persona: 'elder', phoneHabit: 0.05 },  // elderly, slow
+    // an older local woman on her way home with the shopping: brisk, and not one to be pushed about
+    { id: 'p5', zc: 1.7, corner: 1, westWander: [-38, 5.4], eastWander: [-0.9, 4], speed: 1.0, look: 4, rain: 'umbrella', persona: 'auntie', phoneHabit: 0.15 },
   ],
 };
 

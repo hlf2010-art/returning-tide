@@ -10,6 +10,7 @@
 //
 // Along a lane, positions use s = z * dir, so both directions share stop line / box numbers.
 
+import { avoid, SOCIAL, DISTRACTED } from './social.js';
 export const TRAFFIC_CONFIG = {
   vehGreen: 16, vehGreenFlash: 3, yellow: 3,
   allRedVeh: 2, vehClearMax: 20,       // all-red after yellow; held while a vehicle is still in the box
@@ -138,6 +139,11 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
       state: 'walk', crossing: false, delay: 0, blocked: 0, detour: null, walkPhase: rng() * 6,
       // rain: 'umbrella' (keeps walking), 'shelter' (jogs under the portico), 'cab' (books one at the kerb)
       rain: sp.rain || 'umbrella', react: 'none', path: [], jog: false, umbrella: 0, phone: 0, side: 0,
+      // how they take a bump (engine/social.js), and a reaction in progress: stop for a moment,
+      // turn to the other person, be knocked a little off line
+      persona: sp.persona || 'office', pause: 0, faceTo: null, faceFor: 0, gesture: null, shove: null,
+      // eyes on a phone while walking (messages, short videos, a drama episode): decided leg by leg
+      phoneHabit: sp.phoneHabit ?? 0.2, phoneWalk: false, phoneKind: 'chat', phoneW: 0,
     };
   });
 
@@ -307,8 +313,22 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   }
 
   function stepPeds(dt, player) {
+    // everyone on foot, for anticipatory avoidance (people don't walk into each other on purpose)
+    const others = peds.map((q) => ({ x: q.x, z: q.z, vx: q.vx, vz: q.vz, r: 0.3, ref: q }));
+    if (player) others.push({ x: player.x, z: player.z, vx: player.vx || 0, vz: player.vz || 0, r: 0.36, ref: null });
     for (const p of peds) {
       react(p, dt);
+      if (p.faceFor > 0) p.faceFor -= dt; else p.faceTo = null;
+      if (p.shove) {                                                          // knocked off line by a bump
+        const k = Math.min(1, dt / p.shove.t);
+        p.x += p.shove.x * k; p.z += p.shove.z * k; p.shove.t -= dt;
+        if (p.shove.t <= 0) p.shove = null;
+      }
+      if (p.pause > 0 && !p.crossing) {                                      // stopped for a moment (never in the road)
+        p.pause -= dt; p.vx = p.vz = 0;
+        if (p.faceTo) p.heading = Math.atan2(p.faceTo[0] - p.x, p.faceTo[1] - p.z);
+        continue;
+      }
       if (p.react === 'sheltered' || p.react === 'phoning') {                   // standing: under the portico / at the kerb
         p.vx = p.vz = 0;
         p.heading = p.react === 'phoning' ? (p.side > 0 ? -Math.PI / 2 : Math.PI / 2) : Math.PI / 2;
@@ -339,11 +359,25 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
         } else p.blocked = 0;
       }
       const base = p.jog ? Math.max(1.9, p.speed * 1.5) : p.speed * (p.umbrella > 0 && p.umbrella < 1 ? 0.6 : 1);   // a slow jog / slowing to open the umbrella
-      const sp = blocked && !p.detour ? 0 : base;
-      const step = Math.min(dist, sp * dt);
-      p.x += dx * step; p.z += dz * step;
-      p.vx = dx * sp; p.vz = dz * sp;
-      if (sp > 0) p.heading = Math.atan2(dx, dz);
+      // a new leg: phone up or not (put away for the road itself more often than not)
+      if (p.legIdx !== p.idx) {
+        p.legIdx = p.idx;
+        const crossingLeg = !!(p.nodes[p.idx] && p.nodes[p.idx].cross);
+        p.phoneWalk = !p.jog && p.react === 'none' && rng() < p.phoneHabit * (crossingLeg ? 0.45 : 1);
+        if (p.phoneWalk) p.phoneKind = rng() < 0.55 ? 'video' : 'chat';
+      }
+      p.phoneW = Math.max(0, Math.min(1, p.phoneW + (p.phoneWalk ? dt : -dt) / 0.6));
+      const sp = blocked && !p.detour ? 0 : base * (1 - 0.15 * p.phoneW);
+      // steer round anyone about to be in the way (off the crosswalk lines only a little)
+      let vx = dx * sp, vz = dz * sp;
+      if (sp > 0 && !p.detour) {
+        const me = others.find((o) => o.ref === p);
+        [vx, vz] = avoid({ x: p.x, z: p.z, r: 0.3 }, [vx, vz], others.filter((o) => o !== me), p.phoneW > 0.5 ? DISTRACTED : { space: p.crossing ? 0.15 : SOCIAL.space });
+      }
+      const vl = Math.hypot(vx, vz), step = Math.min(dist, vl * dt);
+      if (vl > 1e-6) { p.x += vx / vl * step; p.z += vz / vl * step; }
+      p.vx = vx; p.vz = vz;
+      if (vl > 0.05) p.heading = Math.atan2(vx, vz);                     // (a glance back at someone is the head's job)
       p.walkPhase += step * 4.5;                                              // ~1.4 m per gait cycle
       if (dist - step < 0.03) {
         if (p.detour) { p.detour = null; p.blocked = 0; continue; }

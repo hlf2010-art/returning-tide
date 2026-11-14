@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { L, npcs as npcLayout } from './layout.js';
 import { createPerson } from './people.js';
+import { addGlasses } from './glasses.js';
 
 const std = (o) => new THREE.MeshStandardMaterial(o);
 function wrapAngle(a) { let r = a; while (r > Math.PI) r -= Math.PI * 2; while (r < -Math.PI) r += Math.PI * 2; return r; }
@@ -13,12 +14,13 @@ export function createRealNpcs(people) {
   const chars = npcLayout.list.map((spec) => {
     const person = createPerson(people, spec.id);
     const root = person.root; root.name = `npc-${spec.id}`;
+    if (spec.id === 'su') addGlasses(person, 'rimless');                     // (before placing: fitted in her own frame)
     root.position.set(spec.x, L.deckY, spec.z); root.rotation.y = spec.yaw;
     group.add(root);
     // the pouch's holder: follows the chest, oriented with the body (old torso frame: origin ~0.27 m below the chest bone)
     const torso = new THREE.Group(); torso.position.set(0, -0.27, 0);
     person.anchors.chest.add(torso); group.add(person.anchors.chest);
-    const c = { id: spec.id, spec, root, person, torso, talkPick: 0, wasSpeaking: false, headOffset: new THREE.Vector3(spec.x, L.deckY + spec.height * 0.91, spec.z) };
+    const c = { id: spec.id, spec, root, person, torso, talkPick: 0, wasSpeaking: false, reaction: null, headOffset: new THREE.Vector3(spec.x, L.deckY + spec.height * 0.91, spec.z) };
     if (spec.id === 'su') {                                                   // her folding umbrella
       const umb = new THREE.Group(); umb.visible = false;
       const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.72, 6), std({ color: 0x1a1a1a, roughness: 0.5 })); shaft.position.y = 0.36;
@@ -40,10 +42,13 @@ export function createRealNpcs(people) {
       if (speaking && !c.wasSpeaking) c.talkPick = 1 - c.talkPick;            // a different gesture set each line
       c.wasSpeaking = speaking;
       let targetYaw = c.spec.yaw;
+      if (c.reaction && t > c.reaction.until) c.reaction = null;
       if (interacting && playerPos) targetYaw = Math.atan2(playerPos.x - c.spec.x, playerPos.z - c.spec.z);
+      else if (c.reaction && c.reaction.faceTo) targetYaw = Math.atan2(c.reaction.faceTo[0] - c.spec.x, c.reaction.faceTo[1] - c.spec.z);
       c.root.rotation.y += wrapAngle(targetYaw - c.root.rotation.y) * k;
       const rain = c.umbrella && umbrella > 0.5;
-      const state = rain ? (speaking ? 'umbrellaTalk' : 'umbrellaListen') : speaking ? (c.talkPick ? 'talk2' : 'talk1') : 'idle';
+      let state = rain ? (speaking ? 'umbrellaTalk' : 'umbrellaListen') : speaking ? (c.talkPick ? 'talk2' : 'talk1') : 'idle';
+      if (c.reaction && !speaking && !rain) state = { sorry: 'wave', fine: 'shrug', scold: 'angry' }[c.reaction.kind] || state;
       c.person.play(state, 0.5);
       c.person.setUmbrella(c.umbrella ? umbrella : 0);
       c.person.update(dt);
@@ -60,5 +65,7 @@ export function createRealNpcs(people) {
       }
     }
   }
-  return { group, chars, byId, getSpeakerPosition, update };
+  // a bump: turn to whoever it was, and gesture for a moment
+  function react(id, kind, faceTo, until) { const c = byId[id]; if (c) c.reaction = { kind, faceTo, until }; }
+  return { group, chars, byId, getSpeakerPosition, update, react };
 }

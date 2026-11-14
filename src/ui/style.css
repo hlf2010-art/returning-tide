@@ -57,6 +57,13 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0.12em 0.45em; border: 1
 .opt .hold b { display: block; height: 100%; width: 0; background: #ff8f80; }
 .opt-hint { margin-top: 4px; font-size: 11.5px; color: rgba(243,234,216,0.7); }
 #prompt-target { font-weight: 700; color: var(--gold); letter-spacing: 0.08em; }
+/* a passing remark from someone nearby (bumps): smaller than dialogue, above it, fades on its own */
+#bark { position: absolute; left: 50%; bottom: calc(58px + 112px); transform: translate(-50%, 6px); max-width: min(34rem, 84vw); padding: 6px 12px; background: rgba(5,8,15,0.55); border-radius: 2px; text-align: center; text-shadow: 0 1px 6px #000; opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; pointer-events: none; }
+#bark.on { opacity: 1; transform: translate(-50%, 0); }
+#bark-who { display: block; font-size: 11px; letter-spacing: 0.08em; color: rgba(231,185,106,0.9); margin-bottom: 1px; }
+#bark-text { font: 500 16px/1.45 var(--serif); color: var(--ink); }
+#bark-gloss { display: block; font-size: 12px; color: rgba(243,234,216,0.68); margin-top: 2px; }
+#bark-gloss:empty { display: none; }
 #sub-exit { margin-top: 8px; font-size: 12.5px; letter-spacing: 0.05em; color: rgba(243,234,216,0.86); display: flex; align-items: center; gap: 8px; }
 #keys { position: absolute; left: clamp(20px, 5vw, 64px); bottom: 22px; font-size: 12px; letter-spacing: 0.04em; color: rgba(243,234,216,0.7); text-shadow: 0 1px 4px #000; transition: opacity 2s; }
 #keys.faded { opacity: 0; }

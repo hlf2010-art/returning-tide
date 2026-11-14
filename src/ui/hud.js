@@ -22,6 +22,15 @@ export function createHud() {
       }
       $('prompt').classList.toggle('on', !!on); $('reticle').classList.toggle('on', !!on);
     },
+    // bark({ speaker, text, gloss, lang }): someone nearby says something in passing
+    bark({ speaker = '', text = '', gloss = null, lang = 'zh', seconds = 3.2 } = {}) {
+      const el = $('bark');
+      $('bark-who').textContent = lang === 'wuu' ? `${speaker} · 沪语 Shanghainese (no voice)` : speaker;
+      $('bark-text').textContent = text;
+      $('bark-gloss').textContent = gloss ? `（${gloss}）` : '';
+      el.classList.add('on');
+      clearTimeout(this._barkTimer); this._barkTimer = setTimeout(() => el.classList.remove('on'), seconds * 1000);
+    },
     toast(text, seconds = 2.5) {
       const el = $('toast'); el.textContent = text; el.classList.add('on');
       clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), seconds * 1000);

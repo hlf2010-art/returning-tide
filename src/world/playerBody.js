@@ -27,7 +27,13 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
   const root = SkeletonUtils.clone(people.avatars.player);
   root.scale.setScalar(0.01);
   root.name = 'player-body';
-  root.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; o.castShadow = false; o.receiveShadow = true; } });
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    o.frustumCulled = false; o.castShadow = false; o.receiveShadow = true;
+    // head and hair are not drawn at all: collapsed, the hair cards weighted between head and neck
+    // stretch into slivers right in front of the eye (the shadow copy keeps them)
+    if (/head|opacity/i.test(o.material.name)) o.visible = false;
+  });
   // The eye sits where the head is, so the drawn body has its head bone collapsed to a point: that
   // closes the collar (an invisible head would leave a hole to look down into). Its shadow comes
   // from a second, undrawn copy in the same pose with the head in place.
@@ -76,7 +82,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
   }
 
   let yaw = 0, init = false, bend = 0, lastX = 0, lastZ = 0;
-  const tune = { back: 0.05, backDown: 0.03, neckDrop: 0.1 };   // where the neck sits relative to the eye (m)
+  const tune = { back: 0.05, backDown: 0.03, neckDrop: 0.1, headScale: 0.001 };   // where the neck sits relative to the eye (m)
   const _q = new THREE.Quaternion(), _p = new THREE.Quaternion(), _axis = new THREE.Vector3(), _v = new THREE.Vector3();
 
   // bend a bone about a world-space axis, on top of whatever the animation did
@@ -161,7 +167,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
       }
       shadowHead.scale.setScalar(1);
       shadow.updateMatrixWorld(true);
-      head.scale.setScalar(0.001);
+      head.scale.setScalar(tune.headScale);
       head.updateMatrixWorld(true);
     },
     setVisible(v) { group.visible = v; },

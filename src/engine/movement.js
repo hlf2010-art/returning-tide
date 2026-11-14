@@ -58,6 +58,7 @@ export function stepBody(body, wishX, wishZ, run, dt, jump = false, cap = Infini
   body.vx += (tx - body.vx) * k;
   body.vz += (tz - body.vz) * k;
 
+  body.pvx = body.vx; body.pvz = body.vz;                       // before collisions: how hard we hit things
   let dx = body.vx * dt, dz = body.vz * dt;
   const dist = Math.hypot(dx, dz);
   const n = Math.max(1, Math.ceil(dist / MAX_STEP));

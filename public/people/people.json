@@ -43,12 +43,18 @@
    "sex": "m",
    "file": "player.glb",
    "bytes": 3021332
+  },
+  "p5": {
+   "avatar": "Business_Female_02",
+   "sex": "f",
+   "file": "p5.glb",
+   "bytes": 4518552
   }
  },
  "clips": {
   "m": {
    "file": "anim-m.glb",
-   "bytes": 3664836,
+   "bytes": 4278984,
    "speeds": {
     "walk": 1.0117003356734777,
     "jog": 2.410625341884475
@@ -61,7 +67,10 @@
     "phone": 34.467,
     "umbrella": 42.133,
     "walk": 1.2,
-    "jog": 0.767
+    "jog": 0.767,
+    "wave": 2.833,
+    "shrug": 1.833,
+    "angry": 28.333
    },
    "from": {
     "idle": "m_idle_neutral_01",
@@ -71,12 +80,15 @@
     "phone": "m_cell_phone_textmessage",
     "umbrella": "m_umbrella_idle_01",
     "walk": "m_walk_neutral_01",
-    "jog": "m_run_slow_01"
+    "jog": "m_run_slow_01",
+    "wave": "m_wave_01",
+    "shrug": "m_gestic_shrug_01",
+    "angry": "m_idle_angry_01"
    }
   },
   "f": {
    "file": "anim-f.glb",
-   "bytes": 4076640,
+   "bytes": 4803864,
    "speeds": {
     "walk": 1.2137673213574363,
     "jog": 2.2694198539118733
@@ -91,7 +103,10 @@
     "umbrellaTalk": 32.533,
     "umbrellaListen": 32.733,
     "walk": 1.2,
-    "jog": 0.833
+    "jog": 0.833,
+    "wave": 5.533,
+    "shrug": 1.833,
+    "angry": 32.767
    },
    "from": {
     "idle": "f_idle_neutral_01",
@@ -103,7 +118,10 @@
     "umbrellaTalk": "f_umbrella_talk_01",
     "umbrellaListen": "f_umbrella_listen_01",
     "walk": "f_walk_neutral_01",
-    "jog": "f_run_slow_01"
+    "jog": "f_run_slow_01",
+    "wave": "f_wave_01",
+    "shrug": "f_gestic_shrug_01",
+    "angry": "f_gestic_talk_angry_01"
    }
   },
   "player": {

@@ -187,6 +187,43 @@ The library has no "out of breath" mocap (its breathe idles are calm), so the wi
 procedural spine bend on top of the idle; the legs stay straight, so it reads as a stoop rather
 than true hands-on-knees.
 
+## Sharing the pavement: avoidance, bumps, reactions (`src/engine/social.js`, `src/world/bumps.js`)
+
+People don't walk into each other on purpose: each walker looks ~3 s ahead along where it means to
+go, and anyone it would pass too close to nudges it aside (keeping right in a head-on meeting, as
+people do here) or slows it. In a node test of a busy 4 m pavement (16 people, both directions,
+90 s) that is 3 contacts instead of 31. The crossing's pedestrians are solid to you now (before,
+you could walk through them); they steer round you, but you can still walk or run into them.
+
+A contact is noticed once per pair (then not again for 8 s), with who was moving into whom and how
+hard. Each of the two reacts according to who they are (persona: temper, politeness, language) and
+who was at fault:
+- whoever walked into someone almost always apologises;
+- the one walked into mostly says "没事" / apologises anyway (very common), sometimes just looks or
+  tuts, now and then says something; a hard knock makes them stagger a step;
+- an older local woman (阿姨, p5) is the likeliest to say something, and says it in Shanghainese
+  ("当心点呀！眼睛看看路好伐？"), shown with a Mandarin gloss;
+- you: brushing someone is shrugged off more than running into them, and doing it again to the same
+  person within ~40 s gets a sharper answer each time ("又是侬！侬拎拎清爽好伐？"). Old Lin takes it
+  in good part; Ms. Su is shorter with you; a visitor apologises even when it was you.
+They stop (never in the road), turn their head and body to whoever it was, and gesture (a raised
+hand for sorry, a shrug, an annoyed gesture: Rocketbox `wave`, `gestic_shrug`, `idle_angry` /
+`gestic_talk_angry`); you get a jolt and a soft cloth thud. What they say appears as a passing line
+above the subtitles, voiced through the browser's Mandarin / English voice when it is free (Old Lin
+and Ms. Su's conversation has priority). **There is no browser voice for Shanghainese**, so her
+lines are subtitle-only, labelled as such. Casting: the library has no older East Asian woman;
+p5 is its oldest woman (`Business_Female_02`, glasses, tweed jacket) with greyed hair.
+
+**Eyes on a phone.** Walkers sometimes have their phone up while they walk (decided leg by leg;
+some people much more than others): the right arm, neck and head take the texting pose over the
+walk, the screen shows a vertical short video or drama (shifting colour, someone on screen, burnt-in
+subtitles, a progress bar) or a chat, both generic with no app or logo, redrawn only near the camera.
+They walk ~15% slower and look ahead less than a second, so they are the ones who bump into people
+(a node test: half a busy crowd on phones doubles the bumps). Mostly they put it away to cross.
+
+**Glasses.** Many people here wear them: p1 black acetate, p2 rimless, p3 thin metal, Ms. Su
+rimless, p5 her own; fitted from each avatar's eye bones and parented to the head.
+
 ## Shadows
 
 The lamps cast them. The nearest one or two lamps (deck lamps, road lamps, Hankou Road's wall

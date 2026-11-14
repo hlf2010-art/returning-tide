@@ -36,6 +36,8 @@ export async function loadPeople(base = './people/') {
   }
   return { manifest, avatars, clips, umbrellaHand };
 }
+// walking with a phone: the texting clip's right arm, neck and head, layered over the walk
+const PHONE_LAYER = /^Bip01_(R_(Clavicle|UpperArm|Forearm|Hand|Finger)|Neck|Head)/;
 
 export function createPerson(people, role) {
   const cast = people.manifest.cast[role], sex = cast.sex, speeds = people.manifest.clips[sex].speeds;
@@ -68,9 +70,13 @@ export function createPerson(people, role) {
   umbArm.setEffectiveWeight(0).play();
 
   const bone = (n) => root.getObjectByName(n);
-  const bones = { head: bone('Bip01_Head'), chest: bone('Bip01_Spine2'), L: bone('Bip01_L_Hand'), R: bone('Bip01_R_Hand') };
+  const bones = { head: bone('Bip01_Head'), neck: bone('Bip01_Neck'), chest: bone('Bip01_Spine2'), L: bone('Bip01_L_Hand'), R: bone('Bip01_R_Hand') };
   const anchors = { chest: new THREE.Object3D(), head: new THREE.Object3D(), umbrella: new THREE.Object3D(), phone: new THREE.Object3D() };
-  const _q = new THREE.Quaternion(), _e = new THREE.Euler();
+  const _q = new THREE.Quaternion(), _e = new THREE.Euler(), _hq = new THREE.Quaternion(), _hp = new THREE.Quaternion(), _hv = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
+  let headYaw = 0;
+  const phoneClip = people.clips[sex].find((c) => c.name === 'phone');
+  const phoneLayer = phoneClip ? mixer.clipAction(new THREE.AnimationClip('phone:hold', phoneClip.duration, phoneClip.tracks.filter((t) => PHONE_LAYER.test(boneOf(t))))) : null;
+  if (phoneLayer) { phoneLayer.play(); phoneLayer.setEffectiveWeight(0); phoneLayer.time = phoneClip.duration * (0.15 + Math.random() * 0.6); }
   return {
     root, mixer, role, sex, speeds, anchors, bones, umbrellaHand: hand,
     get state() { return current; },
@@ -81,14 +87,40 @@ export function createPerson(people, role) {
       umbArm.setEffectiveWeight(u);
       if (current && arm[current] !== umbArm) arm[current].setEffectiveWeight(1 - u);
     },
+    // 0..1: how far a phone is up in front of the face while walking
+    // (blended by weight: the mixer averages layers by weight, so a large weight makes it dominate)
+    setPhoneHold(w) {
+      if (!phoneLayer) return;
+      phoneLayer.setEffectiveWeight(w > 0.001 ? w * w * 12 : 0);
+      const d = phoneClip.duration;                                     // stay in the stretch where the phone is up
+      if (phoneLayer.time < d * 0.12 || phoneLayer.time > d * 0.88) phoneLayer.time = d * 0.12;
+    },
     // speed (m/s) drives walk / jog playback so the stride matches the ground
     setGait(speed) {
       if (current === 'walk') base.walk.timeScale = arm.walk.timeScale = THREE.MathUtils.clamp(speed / speeds.walk, 0.55, 1.7);
       if (current === 'jog') base.jog.timeScale = arm.jog.timeScale = THREE.MathUtils.clamp(speed / speeds.jog, 0.6, 1.4);
     },
-    update(dt) {
+    // look: world [x, z] to turn the head (and a little of the neck) toward, or null
+    update(dt, look = null) {
       mixer.update(dt);
       root.updateMatrixWorld(true);
+      let want = 0;
+      if (look) {
+        bones.head.getWorldPosition(_hv);
+        let d = Math.atan2(look[0] - _hv.x, look[1] - _hv.z) - root.rotation.y;
+        while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
+        want = Math.max(-1.2, Math.min(1.2, d));
+      }
+      headYaw += (want - headYaw) * Math.min(1, dt * 7);
+      if (Math.abs(headYaw) > 0.005) {
+        for (const [b, k] of [[bones.neck, 0.35], [bones.head, 0.65]]) {
+          if (!b) continue;
+          b.parent.getWorldQuaternion(_hp);
+          const axis = _hv.copy(UP).applyQuaternion(_hp.invert());
+          b.quaternion.premultiply(_hq.setFromAxisAngle(axis, headYaw * k));
+        }
+        root.updateMatrixWorld(true);
+      }
       const yaw = _q.setFromEuler(_e.set(0, root.rotation.y, 0));
       for (const [k, b] of [['chest', bones.chest], ['head', bones.head]]) { b.getWorldPosition(anchors[k].position); anchors[k].quaternion.copy(yaw); }
       bones[hand].getWorldPosition(anchors.umbrella.position); anchors.umbrella.quaternion.copy(yaw);

@@ -227,6 +227,12 @@ export function createAudio() {
       burst(t, { buffer: buf, f: 1700, q: 0.9, gain: 0.5, attack: 0.04, decay: 0.32, sweepTo: 3300, rate: 2.2 });
       burst(t + 0.02, { buffer: buf, type: 'lowpass', f: 420, q: 0.7, gain: 0.34, attack: 0.01, decay: 0.12, rate: 1.4 });
       ping(t + 0.2, 2350, 0.05); ping(t + 0.27, 3050, 0.035);
+    } else if (name === 'bump') {
+      // shoulder into shoulder: a soft cloth thud and a scuff of feet
+      stats.cues.bump = (stats.cues.bump || 0) + 1;
+      thump(t, 90, 0.22, 0.09);
+      burst(t, { buffer: buf, type: 'lowpass', f: 900, q: 0.6, gain: 0.3, attack: 0.004, decay: 0.12, rate: 1.8 });
+      burst(t + 0.05, { f: 2200, q: 0.8, gain: 0.08, attack: 0.01, decay: 0.08, rate: 1.1 });
     } else if (name === 'tear') {
       stats.cues.tear++;
       burst(t, { type: 'highpass', f: 2600, q: 0.6, gain: 0.32, attack: 0.001, decay: 0.012 });
