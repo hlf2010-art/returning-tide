@@ -58,7 +58,7 @@ async function restored(label, yawBefore) {
   ok(s.mode === 'play' && s.enabled && nothingHeld && noJump && moved, `${label}: back to walking, no held keys, camera unmoved, ${key || 'NOT moving'}`);
 }
 
-await page.goto(url + '?q=5&nolock&dev', { waitUntil: 'load' });
+await page.goto(url + '?q=5&nolock&dev&lang=en', { waitUntil: 'load' });
 await page.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', null, { timeout: 240000 });
 await page.click('#begin'); await page.waitForTimeout(1200);
 ok((await S()).mode === 'play', 'game running');
@@ -71,12 +71,12 @@ await press('KeyE');
 ok((await S()).mode === 'play', 'E with no target does nothing');
 await lookAt(22.2, -13.0, LIN.x, LIN.y, LIN.z, DECK_EYE);
 s = await S();
-ok(s.target === 'lin' && s.prompt.includes('老林') && s.prompt.includes('Talk'), `step aside: prompt names the target and the action ("${s.prompt}")`);
+ok(s.target === 'lin' && s.prompt.includes('Old Lin') && s.prompt.includes('Talk'), `step aside: prompt names the target and the action ("${s.prompt}")`);
 await tp(22.2, -13.0, Math.PI / 2, 0); await frames(3);
 ok((await S()).target === null, 'turn away: target drops');
 await lookAt(22.9, 10.9, 24.6 - 0.09, 4.52, 12 - 0.13, DECK_EYE);
 s = await S();
-ok(s.target === 'notice' && s.prompt.includes('寻人启事'), 'walk to the lamp post: the notice becomes the target');
+ok(s.target === 'notice' && s.prompt.includes('Missing-person notice'), 'walk to the lamp post: the notice becomes the target');
 await press('KeyE');
 ok((await S()).mode === 'inspect', 'E reads the notice');
 await press('KeyE', 700);
@@ -129,7 +129,7 @@ ok(Math.abs(yawBeforeClose - yawDlg) < 0.6 && yaw0 !== null, 'during the convers
 // ---- 3. inspect the pouch, cancel, re-enter, choose "break the seal" ----
 await atStall();
 s = await S();
-ok(s.target === 'pouch' && s.prompt.includes('文件袋'), 'at the stall: the pouch is the only target');
+ok(s.target === 'pouch' && s.prompt.includes('Pouch'), 'at the stall: the pouch is the only target');
 await press('KeyE', 600);
 s = await S();
 ok(s.mode === 'pouch' && s.view === 'pickup' && s.viewIndex === 0, 'E opens the close-up, "Take it, sealed" highlighted');

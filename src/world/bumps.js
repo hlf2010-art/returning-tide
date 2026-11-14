@@ -27,7 +27,7 @@ export function createBumps({ hud, audio, onPlayerBump = null, rnd = Math.random
     log.push({ t, id: actor.id, persona: actor.persona, line, text: b.text, lang: b.lang });
     if (dist > HEAR) return;
     const who = WHO[actor.persona] || WHO.office;
-    hud.bark({ speaker: `${who.zh} · ${who.en}`, text: b.text, gloss: b.gloss, lang: b.lang, toPlayer: other === 'player' });
+    hud.bark({ speaker: who, text: { zh: b.zh, en: b.en }, gloss: b.gloss, lang: b.lang, toPlayer: other === 'player' });
     lastBarkAt = t;
     // a voice, if the browser has one free (the conversation's lines take precedence)
     if (synth && b.lang !== 'wuu' && !synth.speaking && !synth.pending) {

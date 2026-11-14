@@ -51,9 +51,10 @@ import { createManner } from './world/shops.js';
 import { createShop } from './engine/errands.js';
 import { manner as mannerSpec, stall as stallSpot } from './world/layout.js';
 import { createMinimap } from './ui/minimap.js';
-import { createLife, advance as lifeAdvance, lapse as lifeLapse, drain as lifeDrain, save as lifeSave, load as lifeLoad, post as lifePost, stamp as lifeStamp, thread as lifeThread, nudge as lifeNudge } from './engine/life.js';
+import { createLife, advance as lifeAdvance, lapse as lifeLapse, drain as lifeDrain, save as lifeSave, clockText as lifeClock, load as lifeLoad, post as lifePost, stamp as lifeStamp, thread as lifeThread, nudge as lifeNudge } from './engine/life.js';
 import { setupThreads, runAgenda, deliverFollowUps, react as lifeReact, CALLS } from './world/agenda.js';
 import { createPhone } from './ui/phone/phone.js';
+import { t as tx, tr, getLang, setLang, onLang } from './ui/i18n.js';
 import { createMinimapState, updateMinimap, zoneAt } from './engine/minimapLogic.js';
 import { createWind, WIND_LEVELS } from './world/wind.js';
 import { planterIslands, streetTrees } from './world/layout.js';
@@ -181,7 +182,7 @@ async function boot() {
   player.update(0);
   R.renderer.compile(scene, camera);
   mode = 'entry';
-  hud.ready();
+  hud.ready(lifeClock(life.clock.minute));
 }
 
 // ---- mode changes ----
@@ -196,7 +197,7 @@ function play() {
 }
 function begin() {
   if (mode !== 'entry') return;
-  audio.start(); lock(); play(); hud.begin();
+  audio.start(); lock(); play(); hud.begin(lifeClock(life.clock.minute));
   if (devControls) hud.show('dev', true);
   if (conversation && conversation.state === 'idle') conversation.start();
 }
@@ -219,7 +220,20 @@ function enterInteraction(m) {
 function exitInteraction() {
   mode = 'play'; player.enabled = true; player.clearInput();
 }
+const INSPECT = {
+  zh: `<h2>寻人启事</h2>
+    <p>纸被雨打湿过，中间那段电话号码晕开了。</p>
+    <p class="scrawl">上面有人用红色马克笔写了一行沪语：<br /><em>“侬勿要再寻了。想晓得，就乘末班轮渡。”</em></p>
+    <p>角上用胶带粘着一枚轮渡筹码：<em>金陵东路</em>。</p>`,
+  en: `<h2>Missing-person notice</h2>
+    <p><b>Zhou Bonian</b>, male, 67, about 1.70&nbsp;m, glasses, speaks Shanghainese. Has kept a watch-repair stall on Hankou Road for more than thirty years.</p>
+    <p>Lost contact at dusk on 29 October, near the Customs House on the Bund, after packing up his stall. Dark grey jacket; carrying a brown toolbox.</p>
+    <p>Anyone with information, please contact the family. The middle of the phone number has run in the rain.</p>
+    <p class="scrawl">Across it, in red marker, in Shanghainese:<br /><em>"Stop looking. If you want to know, take the last ferry."</em></p>
+    <p>A ferry token is taped to the corner: <em>Jinling East Road</em>.</p>`,
+};
 function openInspect() {
+  document.getElementById('inspect-aside').innerHTML = `${INSPECT[getLang()]}<div class="close"><kbd>E</kbd> ${tx('putBack')}</div>`;
   enterInteraction('inspect'); hud.subtitle(false); hud.show('inspect', true);
 }
 function closeInspect() {
@@ -227,7 +241,7 @@ function closeInspect() {
   exitInteraction();
   if (!clueRead) {
     clueRead = true;
-    hud.thought('末班轮渡。金陵东路渡口，沿江往南。', 'The last ferry. Jinling East Road pier, south along the water.');
+    hud.thought('末班轮渡。金陵东路渡口，沿江往南。', 'The last ferry. Jinling East Road pier, south along the water.');   // (one shown, by language)
   }
 }
 function openDialogue() {
@@ -264,14 +278,35 @@ function devMission(start) {
 }
 
 document.getElementById('begin').addEventListener('click', begin);
-document.getElementById('pause').addEventListener('click', () => { lock(); if (noLock) play(); });
+document.getElementById('resume').addEventListener('click', () => { lock(); if (noLock) play(); });
+// ---- settings: language, subtitles, sound (title screen and pause menu) ----
+function syncSettings() {
+  for (const seg of document.querySelectorAll('.seg[data-setting]')) {
+    const cur = { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on' }[seg.dataset.setting];
+    for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
+  }
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.seg[data-setting] button');
+  if (b) {
+    const k = b.parentElement.dataset.setting, v = b.dataset.v;
+    if (k === 'lang') setLang(v);
+    if (k === 'subs') subtitlesOn = v === 'on';
+    if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
+    syncSettings(); return;
+  }
+  if (e.target.closest('[data-open-settings]')) { document.getElementById('settings').classList.remove('hidden'); syncSettings(); return; }
+  if (e.target.closest('[data-close-settings]') || e.target.id === 'settings') document.getElementById('settings').classList.add('hidden');
+});
+onLang(() => syncSettings());
+syncSettings();
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) { if (mode === 'pause') play(); }
   else if (!noLock && (mode === 'play' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch') && !(phone && phone.isOpen)) pause();   // the phone frees the mouse on purpose
 });
 document.addEventListener('pointerlockerror', () => {
   // Pointer lock refused (embedded frame, or re-requested too soon after Esc)
-  if (mode === 'play' && !document.pointerLockElement) { noLock = true; hud.toast('按住鼠标拖动来环顾 · Hold the mouse button and drag to look', 5); }
+  if (mode === 'play' && !document.pointerLockElement) { noLock = true; hud.toast(tx('dragLook'), 5); }
 });
 // ---- input: one key press does exactly one thing ----
 // Priority, first match wins:
@@ -287,10 +322,10 @@ const CHOICE_KEYS = { KeyW: -1, ArrowUp: -1, KeyS: 1, ArrowDown: 1 };
 window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
   const k = e.code;
-  if (k === 'KeyM') { hud.toast(audio.toggleMute() ? '静音 · Sound off' : '声音开 · Sound on', 2.4); return; }
+  if (k === 'KeyM') { hud.toast(tx(audio.toggleMute() ? 'soundOff' : 'soundOn'), 2.4); syncSettings(); return; }
   if (k === 'KeyC' && (mode === 'play' || mode === 'dialogue')) {
     subtitlesOn = !subtitlesOn;
-    hud.toast(subtitlesOn ? '字幕开 · Subtitles on' : '字幕关 · Subtitles off', 2.4);
+    hud.toast(tx(subtitlesOn ? 'subsOn' : 'subsOff'), 2.4); syncSettings();
     return;
   }
   if ((k === 'F8' || k === 'F9') && devControls) { e.preventDefault(); devMission(k === 'F8'); return; }
@@ -302,7 +337,7 @@ window.addEventListener('keydown', (e) => {
   }
   if (k === 'F7' && devControls) {
     e.preventDefault();
-    hud.toast(weather.toggle() === 'drizzle' ? 'DEV · 小雨 · Drizzle coming in' : 'DEV · 转晴 · Clearing', 2.4);
+    hud.toast(weather.toggle() === 'drizzle' ? tx('devDrizzle') : tx('devClear'), 2.4);
     return;
   }
   if (mode === 'entry') { if (k === 'Enter') begin(); return; }
@@ -343,9 +378,9 @@ function interact() {
   else if (target.id === 'notice') openInspect();
   else if (target.id === 'manner') {
     const mo = life.flags.mannerOrder;
-    if (mo && !mo.done && mo.notified) { mo.done = true; cupFor = 240; hud.bark({ speaker: '店员 · Barista', text: `${mo.num}号，您的${mo.item.name}，拿好～`, seconds: 2.6 }); saveLife(); }
-    else if (mo && !mo.done) hud.bark({ speaker: '店员 · Barista', text: '稍等一下哦，马上好。', seconds: 2.2 });
-    else { hud.bark({ speaker: '店员 · Barista', text: '您好～扫码点单哦，码在窗口这边。', seconds: 2.6 }); phone.openManner(); }
+    if (mo && !mo.done && mo.notified) { mo.done = true; cupFor = 240; hud.bark({ speaker: { zh: '店员', en: 'Barista' }, text: { zh: `${mo.num}号，您的${mo.item.name}，拿好～`, en: `Number ${mo.num}, your ${mo.item.en.toLowerCase()}. Here you go.` }, seconds: 2.6 }); saveLife(); }
+    else if (mo && !mo.done) hud.bark({ speaker: { zh: '店员', en: 'Barista' }, text: { zh: '稍等一下哦，马上好。', en: 'Just a moment, nearly ready.' }, seconds: 2.2 });
+    else { hud.bark({ speaker: { zh: '店员', en: 'Barista' }, text: { zh: '您好～扫码点单哦，码在窗口这边。', en: 'Hi! Scan the code by the window to order.' }, seconds: 2.6 }); phone.openManner(); }
   }
 }
 player.onStep = (surface, running, landing) => audio.step(surface, running, landing);
@@ -367,16 +402,19 @@ function wrapAngle(a) {
   return r;
 }
 
+// subtitles: the spoken line (Mandarin) or, in English, its translation
+const SPEAKER_NAMES = { lin: { zh: '老林', en: 'Old Lin' }, su: { zh: '苏女士', en: 'Ms. Su' } };
+const lineText = (line) => (getLang() === 'zh' ? line.text : (line.en || line.text));
 // what the prompt says for each target: who / what, then the action E will take
 const PROMPTS = {
-  lin: () => ({ target: '老林 Old Lin', action: mission1 && mission1.mission.carrying ? '交还文件袋 · Hand over the pouch' : '交谈 · Talk' }),
-  notice: () => ({ target: '寻人启事 Notice', action: clueRead ? '再看一眼 · Look again' : '查看 · Read' }),
-  pouch: () => ({ target: '文件袋 Pouch', action: '查看 · Look' }),
+  lin: () => ({ target: tx('pLin'), action: tx(mission1 && mission1.mission.carrying ? 'pHandOver' : 'pTalk') }),
+  notice: () => ({ target: tx('pNotice'), action: tx(clueRead ? 'pReread' : 'pRead') }),
+  pouch: () => ({ target: tx('pPouch'), action: tx('pLook') }),
   manner: () => {
     const mo = life.flags.mannerOrder;
-    if (mo && !mo.done && mo.notified) return { target: 'Manner Coffee', action: `取餐 ${mo.num} · Collect your ${mo.item.en}` };
-    if (mo && !mo.done) return { target: 'Manner Coffee', action: '在做了 · Being made' };
-    return { target: 'Manner Coffee', action: '扫码点单 · Order on your phone' };
+    if (mo && !mo.done && mo.notified) return { target: 'Manner Coffee', action: tx('pCollect', mo.num) };
+    if (mo && !mo.done) return { target: 'Manner Coffee', action: tx('pBeingMade') };
+    return { target: 'Manner Coffee', action: tx('pOrder') };
   },
 };
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
@@ -417,8 +455,8 @@ function updateLife(dt) {
   const mo = life.flags.mannerOrder;
   if (mo && !mo.notified && lifeStamp(life) >= mo.ready) {
     mo.notified = true;
-    lifeThread(life, 'manner', { title: 'Manner Coffee 汉口路店', members: ['me', 'manner'], kind: 'service' });
-    lifePost(life, 'manner', { from: 'manner', kind: 'text', text: `您的${mo.item.name}已做好，取餐号 ${mo.num}，请到窗口取餐 · Your ${mo.item.en} is ready (No. ${mo.num})` });
+    lifeThread(life, 'manner', { title: 'Manner Coffee', members: ['me', 'manner'], kind: 'service' });
+    lifePost(life, 'manner', { from: 'manner', kind: 'text', text: `您的${mo.item.name}已做好，取餐号 ${mo.num}，请到窗口取餐` });
   }
   if (cupFor > 0) cupFor = Math.max(0, cupFor - dt);
   phone.update(dt);
@@ -433,8 +471,8 @@ window.addEventListener('blur', () => { mapHeld = false; });
 function mapObjective() {
   const m = mission1 && mission1.mission;
   if (!m) return null;
-  if (m.step === 'collect') return { x: stallSpot.x, z: stallSpot.z, label: '修表摊 Stall' };
-  if (m.step === 'carry') return { x: npcLayout.list[0].x, z: npcLayout.list[0].z, label: '老林 Old Lin' };
+  if (m.step === 'collect') return { x: stallSpot.x, z: stallSpot.z, label: tx('mapStall') };
+  if (m.step === 'carry') return { x: npcLayout.list[0].x, z: npcLayout.list[0].z, label: tx('pLin') };
   return null;
 }
 function updateMap(dt) {
@@ -568,11 +606,12 @@ function frame(now) {
   // subtitles + interaction greeting bar
   const line = conversation ? conversation.currentLine : null;
   const audioStatus = dialogueAudio ? dialogueAudio.getStatus() : { labelZh: '', labelEn: '' };
-  const sourceLabel = `${audioStatus.labelZh} · ${audioStatus.labelEn}`;
+  const sourceLabel = getLang() === 'zh' ? audioStatus.labelZh : audioStatus.labelEn;
+  const who = (id) => tr(SPEAKER_NAMES[id]) || '';
   if (mode === 'dialogue') {
     hud.subtitle(true, {
-      speaker: line ? (T.dialogue.speakers[line.speaker] || '') : T.dialogue.speakers.lin,
-      text: line ? line.text : '',
+      speaker: who(line ? line.speaker : 'lin'),
+      text: line ? lineText(line) : '',
       source: sourceLabel,
       interacting: true,
       showText: subtitlesOn,
@@ -580,8 +619,8 @@ function frame(now) {
     });
   } else if (mode === 'play' && subtitlesOn && line && npcDist < npcLayout.audibility.maxDistance) {
     hud.subtitle(true, {
-      speaker: T.dialogue.speakers[line.speaker] || '',
-      text: line.text,
+      speaker: who(line.speaker),
+      text: lineText(line),
       source: sourceLabel,
       interacting: false,
       showText: true,
@@ -593,7 +632,7 @@ function frame(now) {
   boundaryCooldown -= dt;
   if (mode === 'play' && player.body.hit === 'boundary' && boundaryCooldown < 0) {
     boundaryCooldown = 6;
-    hud.toast(player.body.x < L.facadeX - 20 ? '前方施工，此路不通 · Hoarding: no way through' : '交通管制，请绕行 · Closed beyond the barriers', 3);
+    hud.toast(tx(player.body.x < L.facadeX - 20 ? 'hoarding' : 'barriers'), 3);
   }
 
   if (!debug.noReflect) world.river.renderReflection(R.renderer, scene, camera);
@@ -605,6 +644,7 @@ function frame(now) {
 R.renderer.setAnimationLoop(frame);
 
 // Small handle for automated checks and console poking; not used by the game itself.
+debug.setLang = setLang; debug.getLang = getLang;
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   player, camera, scene, R, audio, wind,

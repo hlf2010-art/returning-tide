@@ -2,6 +2,7 @@
 // use), so it can't disagree with the world. Static ground is painted once into an offscreen
 // canvas; each frame only rotates it under the player and adds the live marks (you, the objective,
 // people nearby). Shown and hidden by engine/minimapLogic.js; CSS does the fade.
+import { S, tr, onLang } from './i18n.js';
 import { L, colliders, crossing, planterIslands, streetTrees, stall, npcs as npcLayout } from '../world/layout.js';
 
 const PPM = 2.4;                                   // pixels per metre in the offscreen map
@@ -44,7 +45,7 @@ export function createMinimap(el) {
   const label = document.createElement('div'); label.className = 'mm-area'; el.appendChild(label);
   const g = canvas.getContext('2d');
   let base = null, lastArea = '';
-  const AREA = { hankou: '汉口路 Hankou Rd', zhongshan: '中山东一路 Zhongshan Rd (E-1)', promenade: '外滩观景平台 The Promenade', customs: '海关大楼 Customs House' };
+  onLang(() => { lastArea = ''; });
 
   // state: { x, z, yaw, objective: {x, z, label}|null, people: [{x, z}], area }
   function draw(s) {
@@ -86,7 +87,7 @@ export function createMinimap(el) {
     const nxp = R + Math.sin(s.yaw) * (R - 10), nyp = R - Math.cos(s.yaw) * (R - 10);
     g.fillStyle = 'rgba(231,185,106,0.9)'; g.font = '700 10px "Noto Sans SC", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText('N', nxp, nyp); g.textBaseline = 'alphabetic';
-    if (s.area !== lastArea) { lastArea = s.area; label.textContent = AREA[s.area] || ''; }
+    if (s.area !== lastArea) { lastArea = s.area; label.textContent = S.areas[s.area] ? tr(S.areas[s.area]) : ''; }
   }
   return {
     draw,

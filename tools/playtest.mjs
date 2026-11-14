@@ -106,7 +106,7 @@ if (lockedRun) {
   ok((await S()).mode === 'pause' && await vis('pause'), 'losing pointer lock (Esc) pauses');
   await page.screenshot({ path: `${out}/pt-pause.png` });
   await page.waitForTimeout(1300);
-  await page.click('#pause'); await page.waitForTimeout(700);
+  await page.click('#resume'); await page.waitForTimeout(700);
   s = await S();
   ok(s.mode === 'play', `clicking the pause screen resumes (mode=${s.mode}, locked=${s.locked})`);
 }

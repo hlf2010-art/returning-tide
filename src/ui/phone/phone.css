@@ -104,8 +104,8 @@
 
 /* banner notifications while the phone is down */
 #phone-banner { position: fixed; top: 14px; right: 16px; width: min(360px, 90vw); z-index: 21; display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 18px; background: rgba(28,30,36,0.78); backdrop-filter: blur(20px); color: #fff; font-family: var(--ui); box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-  transform: translateY(-140%); transition: transform 0.4s cubic-bezier(0.2, 0.75, 0.2, 1); pointer-events: none; }
-#phone-banner.on { transform: none; }
+  transform: translateY(calc(-100% - 40px)); opacity: 0; transition: transform 0.4s cubic-bezier(0.2, 0.75, 0.2, 1), opacity 0.3s; pointer-events: none; }
+#phone-banner.on { transform: none; opacity: 1; }
 #phone-banner .av { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; flex: none; }
 #phone-banner .t { font-size: 13px; font-weight: 600; } #phone-banner .p { font-size: 13px; opacity: 0.9; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 #phone-banner .k { margin-left: auto; font-size: 11px; opacity: 0.6; align-self: flex-start; }

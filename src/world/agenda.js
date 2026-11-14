@@ -24,7 +24,7 @@ const BEATS = [
   { id: 'g2', at: 2.4, run: (L) => post(L, 'wuhu', { from: 'xuan', kind: 'text', text: '下午就到了，我让他先去外滩吹吹风，倒倒时差' }) },
   { id: 'g3', at: 3.2, run: (L) => {
     post(L, 'wuhu', { from: 'momo', kind: 'text', text: '吹啥风，晚上来和平饭店听我们弹琴😎' });
-    invite(L, { id: 'momo-gig', from: 'momo', thread: 'wuhu', title: '和平饭店爵士吧 · Momo trio', place: '和平饭店 Peace Hotel, Jazz Bar', at: D(1, 21, 30), deadline: D(1, 21, 0),
+    invite(L, { id: 'momo-gig', from: 'momo', thread: 'wuhu', title: '和平饭店爵士吧 · Momo trio', place: '和平饭店 · 爵士吧', at: D(1, 21, 30), deadline: D(1, 21, 0),
       text: '今晚九点半，和平饭店爵士吧，给你留位置', onAccept: 6, onDecline: -2, onMiss: -6,
       yesText: '来，给我留个靠前的位置', noText: '今晚倒时差，下次一定' });
   } },
@@ -45,7 +45,7 @@ const BEATS = [
   { id: 'd1', at: 13, run: (L) => emit(L, { type: 'call', from: 'dad', script: 'dad-arrival' }) },
   { id: 'y1', at: 17, run: (L) => {
     post(L, 'yinuo', { from: 'yinuo', kind: 'text', text: '回国了也不说一声。' });
-    invite(L, { id: 'yinuo-flat', from: 'yinuo', thread: 'yinuo', title: '北外滩 · 看房', place: '北外滩 North Bund', at: D(3, 14, 0), deadline: D(2, 22, 0),
+    invite(L, { id: 'yinuo-flat', from: 'yinuo', thread: 'yinuo', title: '北外滩 · 看房', place: '北外滩', at: D(3, 14, 0), deadline: D(2, 22, 0),
       text: '后天下午我在上海，家里让我看北外滩一套顶层，你学设计的，陪我去？', onAccept: 5, onDecline: -2, onMiss: -4,
       yesText: '好，地址发我', noText: '后天可能不行' });
   } },

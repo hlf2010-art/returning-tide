@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>回潮 Returning Tide — Arriving at the Bund</title>
+  <title>回潮 Returning Tide</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="/src/ui/style.css" />
 </head>
@@ -13,7 +13,7 @@
   <div id="hud" class="hidden">
     <div id="reticle"></div>
     <div id="prompt"><kbd>E</kbd><span id="prompt-target"></span><span id="prompt-text"></span></div>
-    <div id="place"><div class="zh">外滩 · 汉口路</div><div class="en">The Bund, Hankou Road — 17:42, November</div></div>
+    <div id="place"><div class="kicker"><span class="neon"></span><span data-t="placeSub"></span></div><div class="name" data-t="place"></div></div>
     <div id="toast"></div>
     <div id="thought"></div>
     <div id="subtitle" aria-live="polite">
@@ -21,36 +21,28 @@
       <div id="sub-text"></div>
       <div id="sub-choices">
         <div id="sub-options" class="hidden"></div>
-        <div id="sub-exit" class="hidden"><kbd>E</kbd> 结束对话 · Step back</div>
+        <div id="sub-exit" class="hidden"><kbd>E</kbd> <span data-t="stepBack"></span></div>
       </div>
     </div>
     <div id="minimap" aria-hidden="true"></div>
     <div id="bark" aria-live="polite"><span id="bark-who"></span><span id="bark-text"></span><span id="bark-gloss"></span></div>
     <div id="objective" class="hidden" aria-live="polite">
-      <div class="m-head"><span class="m-num">任务一</span> 错交 <span class="m-en">Mission One · The Wrong Handoff</span></div>
-      <div class="m-zh" id="m-zh"></div>
-      <div class="m-en-step" id="m-en"></div>
+      <div class="m-head"><span class="m-num" data-t="m1Num"></span><span class="m-title" data-t="m1Title"></span></div>
+      <div class="m-step" id="m-step"></div>
       <div class="m-hint hidden" id="m-hint"></div>
     </div>
     <div id="mission-card" aria-live="polite">
-      <div class="mc-kicker">任务一完成 · Mission One complete</div>
-      <div class="mc-title">错交 <span>The Wrong Handoff</span></div>
+      <div class="mc-kicker"><span data-t="m1Num"></span> · <span data-t="m1Done"></span></div>
+      <div class="mc-title" data-t="m1Title"></div>
       <div class="mc-outcome" id="mc-outcome"></div>
     </div>
     <div id="dev" class="hidden">DEV · <b>F7</b> weather · <b>F8</b> start Mission One · <b>F9</b> reset</div>
-    <div id="keys"><b>WASD</b> walk · <b>Shift</b> hurry · <b>Space</b> jump · <b>Mouse</b> look · <b>E</b> interact · <b>Tab</b> map · <b>P</b> phone · <b>C</b> subtitles · <b>M</b> sound · <b>Esc</b> pause</div>
+    <div id="keys"></div>
   </div>
 
   <div id="inspect" class="hidden">
     <div id="inspect-paper"></div>
-    <aside>
-      <h2>Missing-person notice <span>寻人启事</span></h2>
-      <p><b>Zhou Bonian</b>, male, 67, about 1.70&nbsp;m, glasses, speaks Shanghainese. Has kept a watch-repair stall on Hankou Road for more than thirty years.</p>
-      <p>Lost contact at dusk on 29 October, near the Customs House on the Bund, after packing up his stall. Dark grey jacket; carrying a brown toolbox.</p>
-      <p>Anyone with information, please contact the family. The middle of the phone number has run in the rain.</p>
-      <p class="scrawl">Across it, in red marker, in Shanghainese:<br /><em>“Stop looking. If you want to know, take the last ferry.”</em></p>
-      <p>A ferry token is taped to the corner: <em>Jinling East Road</em>.</p>
-      <div class="close"><kbd>E</kbd> put it back</div>
+    <aside id="inspect-aside">
     </aside>
   </div>
 
@@ -65,17 +57,37 @@
     </aside>
   </div>
 
-  <div id="pause" class="hidden"><div class="zh">暂停</div><div>Paused — click to return</div></div>
+  <div id="pause" class="hidden">
+    <div class="menu-col">
+      <div class="kicker"><span class="neon"></span><span data-t="place"></span></div>
+      <h1 data-t="paused"></h1>
+      <button id="resume" class="mbtn primary" data-t="resume"></button>
+      <button class="mbtn" data-open-settings data-t="settings"></button>
+    </div>
+  </div>
+
+  <div id="settings" class="hidden" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="ph"><span data-t="settings"></span><button class="x" data-close-settings aria-label="close">✕</button></div>
+      <div class="row"><span data-t="language"></span><div class="seg" data-setting="lang"><button data-v="zh">中文</button><button data-v="en">English</button></div></div>
+      <div class="row"><span data-t="subtitles"></span><div class="seg" data-setting="subs"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
+      <div class="row"><span data-t="sound"></span><div class="seg" data-setting="sound"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
+    </div>
+  </div>
 
   <div id="entry">
+    <div class="topbar"><div class="seg lang-quick" data-setting="lang"><button data-v="zh">中文</button><button data-v="en">EN</button></div></div>
     <div class="card">
-      <div class="title-zh">回潮</div>
-      <div class="title-en">RETURNING TIDE</div>
-      <div class="chapter">序 · Arriving at the Bund</div>
-      <p class="premise"><span class="zh">沈既白</span> · Shen Jibai, 23. Nanjing-born; four years of industrial design in San Francisco; back a week. Every summer until you were twelve you sat at Old Zhou's watch stall on Hankou Road. Eleven years away. Then a voicemail from Old Zhou, the watchmaker who half raised you: nine seconds, mostly river wind. <span class="zh">“到外滩来。海关钟下面……”</span> <i>Come to the Bund. Under the Customs clock.</i> He hasn't picked up since.</p>
-      <button id="begin" disabled>Loading Shanghai…</button>
-      <div class="controls"><b>WASD</b> walk &nbsp; <b>Shift</b> hurry &nbsp; <b>Space</b> jump &nbsp; <b>Mouse</b> look &nbsp; <b>E</b> interact &nbsp; <b>Tab</b> map &nbsp; <b>P</b> phone &nbsp; <b>C</b> subtitles &nbsp; <b>M</b> sound &nbsp; <b>Esc</b> pause</div>
+      <div class="kicker"><span class="neon"></span><span data-t="kicker"></span></div>
+      <h1 class="logo" data-t="title"></h1>
+      <div class="chapter" data-t="chapter"></div>
+      <p class="premise" data-t="premise"></p>
+      <div class="actions">
+        <button id="begin" class="mbtn primary" disabled data-t="loading"></button>
+        <button class="mbtn" data-open-settings data-t="settings"></button>
+      </div>
     </div>
+    <div class="cityline"><span class="geo">31.2397° N&nbsp;&nbsp;121.4906° E</span><span data-t="district"></span><span data-t="weatherNow"></span><span id="entry-time"></span></div>
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>

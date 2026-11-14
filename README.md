@@ -27,9 +27,9 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | W / S, ↑ / ↓, wheel | while talking or looking at the pouch: move the highlighted choice |
 | Tab (hold) | minimap |
 | P | your phone (Esc: back) |
-| C | Simplified Chinese subtitles on / off |
+| C | subtitles on / off |
 | M | sound on / off (mutes ambience, footsteps, cues and voices) |
-| Esc | back out of an open conversation / close-up / notice; otherwise pause (click to return). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
+| Esc | back out of an open conversation / close-up / notice; otherwise pause (Resume / Settings). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
 
 ## Mission One — 错交 “The Wrong Handoff” (3–5 min)
 
@@ -225,7 +225,37 @@ Still to come in this brief:
   delivery).
 - The penthouse and helicopter journeys, then owned spaces you can furnish and host in.
 
-## Interface (HUD v2)
+## Language: 中文 or English, one at a time (`src/ui/i18n.js`)
+
+Everything on screen is in **one language**, the one you chose. You can choose on the title screen
+(中文 / EN, top right), or under **Settings** on the title screen or the pause menu. The choice is
+remembered in the browser; the first time, the game follows the browser's language. Changing it
+redraws whatever is already on screen, including an open phone, in place.
+- **Interface strings** live in one table (`S` in `i18n.js`). Static markup binds with `data-t`.
+- **Content** travels as `{ zh, en }` pairs with what it belongs to:
+  - spoken lines (`world/text.js`) and passing remarks (`world/barks.js`)
+  - Mission One's text and the notice
+  - the phone's interface
+- **Messages** are written and stored in Chinese, the way these people would write them, and read
+  in English through `world/agendaEn.js`. Names use given names in English (Mingxuan, Ruoan, Momo).
+- **What stays as-is:**
+  - The world itself: shop signs, the bilingual Manner menu board, the lamp-post notice and the label
+    on the pouch.
+  - Brand names (Manner, Model 3) inside Chinese sentences, where people really say them that way.
+  - The language names in the switch (中文 / English).
+- **Shanghainese** remarks show in Chinese with a Mandarin gloss, or in English with a small "in
+  Shanghainese" tag.
+- `?lang=zh|en` overrides the setting, for tools. `tools/langtest.mjs` checks for stray characters
+  of the other language on the title, settings, HUD and phone, the live switch, and that the choice
+  survives a reload.
+
+## Interface (HUD v3)
+
+The title is cinematic: letterbox bars, the name set large, Inter for English and a heavy serif
+for 回潮. A city status line runs along the bottom bar (coordinates, district, weather, the live
+game clock). The palette is one neon gradient (magenta to cyan, the Bund's night) used only as
+hairlines and accents, with a gold primary button. The pause and settings panels are glass over a
+blurred city.
 
 Quiet and contemporary: Inter with Noto Sans SC, translucent glass panels with hairline borders,
 one warm accent, and nothing decorative or "Oriental".
@@ -461,7 +491,8 @@ src/ui/                HUD and stylesheet
 tests/                 node tests for movement, collision, boundaries, conversation and Mission One state (npm test)
 tools/                 headless screenshot / playtest / render-cost scripts (need Playwright installed globally:
                        NODE_PATH=$(npm root -g) node tools/playtest.mjs;
-                       tools/looptest.mjs plays the whole interaction loop, both outcomes, with real key presses)
+                       tools/looptest.mjs plays the whole interaction loop, both outcomes, with real key presses;
+                       tools/langtest.mjs checks the language setting)
 ```
 
 Everything is procedural (canvas textures, merged box/cylinder geometry, WebAudio synthesis; temporary Mandarin speech synthesis fallback for NPC lines).
