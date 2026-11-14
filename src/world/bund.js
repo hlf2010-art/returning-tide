@@ -255,6 +255,38 @@ function genericBlock(B, extra, z0, z1, h, { style = 'classic', seed = 0, featur
   return y;
 }
 
+function aiaBuilding(B, extra, z0, z1) {
+  // No.17, the AIA Building (former North China Daily News, 1924): granite neo-Renaissance, a two-storey
+  // rusticated base, five storeys under a giant order, a heavy cornice, then the two baroque towers
+  // that crown the Bund corners. Its entrance, a tall arched doorway at the centre of the Bund front,
+  // opens on the lobby (world/interiors/aia.js).
+  const zc = (z0 + z1) / 2;
+  tiers(B, { x0: -84, x1: FX, z0, z1 }, 0, [
+    { h: 8.2, style: 'rustic', bay: 4.1, f0: 1.15, f1: 0.95, cornice: { out: 0.45, h: 0.7 } },
+  ], 'ENS', 21);
+  tiers(B, { x0: -84, x1: FX - 1.2, z0, z1 }, 8.2, [
+    { h: 18.4, style: 'arched', floors: 5, bay: 4.1, f0: 1.25, f1: 0.75 },
+  ], 'ENS', 22);
+  colonnade(B, FX - 0.6, z0 + 6.2, z1 - 6.2, 4, 8.2, 18.4, 0.62);                       // the giant order, framing the centre bays
+  for (const z of [z0 + 1.2, z1 - 1.2]) B.stone.box(FX - 0.6, 8.2, z, 1.4, 18.4, 2.4, { flood: 1.05 });   // corner piers
+  B.stone.box(-59, 26.6, zc, 50.4, 1.6, z1 - z0 + 0.8, { flood: 0.95 });                 // the cornice
+  const y = tiers(B, { x0: -84, x1: FX, z0, z1 }, 28.2, [
+    { h: 4.4, style: 'classic', floors: 1, bay: 4.1, inset: 0.8, f0: 0.9, f1: 0.7, cornice: { out: 0.35, h: 0.5 } },
+  ], 'ENS', 23);
+  // the two corner towers: square drums, then small domes and lanterns
+  for (const z of [z0 + 4, z1 - 4]) {
+    const ty = tiers(B, { x0: FX - 8, x1: FX - 1, z0: z - 3.5, z1: z + 3.5 }, y, [
+      { h: 6, style: 'arched', floors: 1, bay: 3.5, f0: 1.15, f1: 0.9, cornice: { out: 0.4, h: 0.5 } }], 'ENSW', 24);
+    B.copper.add(new THREE.SphereGeometry(3.3, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), { x: FX - 4.5, y: ty, z, flood: 0.95 });
+    B.stone.cyl(FX - 4.5, ty + 3.2, z, 0.8, 0.8, 2.2, 10, { flood: 1.0, tileU: 2, tileV: 1 });
+    B.copper.add(new THREE.ConeGeometry(0.9, 1.6, 10), { x: FX - 4.5, y: ty + 6.2, z, flood: 0.9 });
+  }
+  // the entrance: a tall arched opening in the rusticated base, bronze doors set back
+  B.stone.box(FX + 0.25, 0, zc, 0.6, 7.2, 5.6, { flood: 1.3 });
+  extra.flags.push({ x: FX - 4.5, y: y + 9, z: zc, h: 6 });
+  return y;
+}
+
 function peaceHotel(B, extra, z0, z1) {
   // Sassoon House: the green copper pyramid that everyone knows
   genericBlock(B, extra, z0, z1, 40, { style: 'deco', seed: 5 });
@@ -297,7 +329,7 @@ export function createBund(M) {
   // north of No.15, up to and past Nanjing Road
   genericBlock(B, extra, -91, -65.4, 20, { style: 'arched', seed: 1, feature: 'pediment' });
   genericBlock(B, extra, -117, -91.4, 33, { style: 'classic', seed: 2, feature: 'cupolas' });
-  genericBlock(B, extra, -160, -131, 25, { style: 'arched', seed: 3 });
+  aiaBuilding(B, extra, -160, -131);
   genericBlock(B, extra, -190, -160.4, 28, { style: 'brick', seed: 4, feature: 'cupolas', gain: 1.5 });
   peaceHotel(B, extra, -252, -212);
   const boc = genericBlock(B, extra, -292, -253, 58, { style: 'deco', seed: 6 });

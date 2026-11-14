@@ -34,6 +34,7 @@ function threadTitle(t) {
 function previewOf(m) {
   const secs = Math.max(2, Math.round((m.text || '').length / 4));
   if (m.kind === 'voice') return Z(`[语音] ${secs}″`, `[Voice] ${secs}″`);
+  if (m.kind === 'card') return Z('[名片]', '[Contact card]');
   if (m.kind === 'invite') return Z(`[邀请] ${m.meta && m.meta.title}`, `[Invitation] ${X(m.meta && m.meta.title)}`);
   return X(m.text);
 }
@@ -165,6 +166,10 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
         const when = m.meta.at != null ? `${dayDiff === 1 ? Z('明天 ', 'Tomorrow ') : dayDiff === 2 ? Z('后天 ', 'In two days, ') : ''}${clockText(m.meta.at)}` : '';
         bub = `<div class="card"><div class="k">${Z('邀请', 'Invitation')}</div><div class="ti">${esc(X(m.meta.title))}</div><div class="pl">${esc(when)} · ${esc(X(m.meta.place))}</div>${m.text ? `<div style="margin-top:6px">${esc(X(m.text))}</div>` : ''}
           ${inv.status === 'pending' ? `<div class="act"><button class="btn go" data-act="invite" data-id="${esc(inv.id)}" data-yes="1">${Z('接受', 'Accept')}</button><button class="btn no" data-act="invite" data-id="${esc(inv.id)}" data-yes="0">${Z('婉拒', 'Decline')}</button></div>` : `<div class="st ${inv.status === 'accepted' ? '' : 'no'}">${{ accepted: Z('已接受', 'Accepted'), declined: Z('已婉拒', 'Declined'), missed: Z('已过期', 'Missed') }[inv.status] || ''}</div>`}</div>`;
+      } else if (m.kind === 'card') {                                          // a WeChat contact card
+        const id = m.meta && m.meta.contact, added = !!(l.threads[id]);
+        bub = `<div class="card contact"><div class="k">${Z('个人名片', 'Contact card')}</div><div class="ti">${esc(nm(id))}</div><div class="pl">${esc(Z('兰博基尼上海 · 销售顾问', 'Lamborghini Shanghai · Sales consultant'))}</div>
+          ${added ? `<div class="st">${Z('已添加', 'Added')}</div>` : `<div class="act"><button class="btn go" data-act="addContact" data-id="${esc(id)}">${Z('添加到通讯录', 'Add contact')}</button></div>`}</div>`;
       } else bub = `<div class="bub">${esc(X(m.text))}</div>`;
       if (!mine && m.replies && m.replied == null) pendingReplies = m;
       out += `<div class="m ${mine ? 'me' : ''}">${avatar(m.from)}<div>${t.kind === 'group' && !mine ? `<div class="who">${esc(short(m.from))}</div>` : ''}${bub}</div></div>`;
@@ -274,7 +279,8 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (act === 'openThread' && id === 'didi') { const to = () => { S.stack = [{ s: 'home' }]; go('didi'); }; if (!S.unlocked) unlock(to); else to(); }
     else if (act === 'openThread' && SHOP_APPS.includes(id)) { const to = () => { S.stack = [{ s: 'home' }, { s: 'shop', shop: id }]; go('orders', { id }); }; if (!S.unlocked) unlock(to); else to(); }
     else if (act === 'openThread') { if (!S.unlocked) { unlock(() => { S.stack = [{ s: 'home' }, { s: 'chats' }]; go('chat', { id }); }); } else go('chat', { id }); }
-    else if (act === 'reply') { const t = top(); reply(l, t.id, id, +el.dataset.i); render(); }
+    else if (act === 'reply') { const t = top(), c = reply(l, t.id, id, +el.dataset.i); render(); if (c && c.do && onEvent) onEvent({ type: 'reply-do', do: c.do, thread: t.id }); }
+    else if (act === 'addContact') { if (onEvent) onEvent({ type: 'add-contact', id }); render(); }
     else if (act === 'invite') { respondToInvite(l, id, el.dataset.yes === '1'); render(); }
     else if (act === 'transcribe') { const m = findMsg(l, id); if (m) { m.transcribed = true; render(); } }
     else if (act === 'playVoice') { const m = findMsg(l, id); if (m && !S.playing) { S.playing = m.id; render(); speak(m.text, m.from, () => { S.playing = null; render(); }); } }

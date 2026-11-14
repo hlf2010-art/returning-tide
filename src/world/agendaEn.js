@@ -39,6 +39,26 @@ export const EN = {
   '你是不是在汉口路那家Manner？我们工地的人天天去，燕麦拿铁不错。': 'Are you at the Manner on Hankou Road? The guys from our site go every day. The oat latte\'s good.',
   '怎么不接电话？': 'Why aren\'t you picking up?', '在忙？': 'Busy?',
   // default answers to invitations
+  // the Huracán: Zhixia's card, Vivian
+  '推给你，Vivian，人很实在，不会硬推销。你就说是我朋友。': "Here's Vivian. She's straight with people, no hard sell. Just say you're my friend.",
+  '[名片] Vivian 陈': '[Contact card] Vivian Chen',
+  '你好，我是知夏的朋友沈既白，想了解一下 Huracán。': "Hi, I'm Shen Jibai, a friend of Zhixia's. I'd like to know about the Huracán.",
+  '沈先生您好！知夏跟我说过您～ 我们这边可以把试驾车开到您那边，外滩可以吗？': "Hello Mr Shen! Zhixia told me about you. We can bring the demo car to you. Would the Bund work?",
+  '定金收到啦，合同我发您邮箱。配额已经帮您锁好，大概两周到店。': "Deposit received! I'll email you the contract. Your allocation is locked in; it should reach us in about two weeks.",
+  '上牌的话，车在哪儿买不影响，跟着户口走。您是南京户口，我们这边可以帮您代办苏A，车先挂临牌。': "For the plate, it doesn't matter where you buy the car: registration follows your hukou. Yours is Nanjing, so we can register it on a 苏A plate for you. The car runs on temporary plates meanwhile.",
+  '好，上苏A。': "OK, 苏A it is.", '拍沪牌不行吗？': "Couldn't I bid for a Shanghai plate?",
+  '外地户口拍沪牌要有上海居住证，社保或个税连续满36个月。您刚回国，暂时还不够……以后在上海注册了公司，也可以用公司名义拍。这次先上苏A？': "Without a Shanghai hukou you need a Shanghai residence permit and 36 months of continuous social insurance or tax here to bid. You've only just come back, so not yet... If you set up a company in Shanghai later, it could bid in its own name. 苏A for now?",
+  '好的，苏A我们的代办同事去南京办，交车前牌照就到。提醒您一下，外牌工作日早晚高峰不能上高架。': "Great. Our agent will register it in Nanjing; the plates will be here before delivery. Just a reminder: out-of-town plates can't use the elevated roads at weekday rush hours.",
+  '恭喜！这个月的沪牌拍到了！': 'Congratulations! We won a Shanghai plate this month!',
+  '这个月没拍到……先给您办临牌，下个月我们再拍。': "No luck at the auction this month... I'll get you temporary plates and we'll try again next month.",
+  '苏A的话手续简单，我们帮您办，就是外牌高峰时段不能上高架，这个您要注意。': "苏A is simple, we'll handle the paperwork. Just remember out-of-town plates can't use the elevated roads at rush hour.",
+  '全款。': 'In full.', '做金融吧。': "Let's finance it.",
+  '尾款收到！我们准备交车～': "Balance received! We're getting her ready for delivery.",
+  '好消息，这次沪牌拍到了！': 'Good news: we won a Shanghai plate this time!',
+  '恭喜提车！以后有什么问题随时找我～': "Congratulations on your new car! Any questions at all, just message me.",
+  '车到了！明天下午我们把车开到汉口路给您交车，您看几点方便？': "She's arrived! We'll bring her to Hankou Road for the handover. I'll be there with the key.",
+  '银行余额不够全款……要不做金融？首付三成就行。': "The account doesn't cover paying in full... Shall we do finance? Just 30% down.",
+  '？？？白白提车了？？？': '??? Baibai bought a CAR???', '我就说吧😎 周末天马，带上它。': 'Told you 😎 Tianma this weekend, bring it.', '……你爸知道吗': '...Does your dad know?',
   // DiDi
   '师傅：到了哈，我在路边打着双闪，你快点哦，这里不让停。': "Driver: I'm here, at the kerb with my hazards on. Be quick, you can't stop here.",
   '行程已取消': 'Ride cancelled', '师傅：好的': 'Driver: OK', '我在路口了，马上到': "I'm at the corner, coming now", '稍等我两分钟': 'Give me two minutes', '我穿深色外套': "I'm in a dark coat",
@@ -74,6 +94,11 @@ export function enText(text) {
   if ((m2 = /^司机已到达上车点，请尽快上车（(.+)）$/.exec(text))) return `Your driver is at the pickup point. Please get in (${m2[1]})`;
   if ((m2 = /^乘客未上车，订单已取消，收取取消费 ¥(\S+)$/.exec(text))) return `You didn't come down, so the ride was cancelled. Cancellation fee ¥${m2[1]}`;
   if ((m2 = /^行程结束，已支付 ¥(\S+)。感谢乘坐，请为(\S+)评价$/.exec(text))) return `Trip complete, ¥${m2[1]} paid. Thanks for riding. Rate ${DRIVER_NAME_EN[m2[2]] || m2[2]}`;
+  // Vivian's lines built with numbers
+  let m3;
+  if ((m3 = /^那就(\d+)点(\d+)在汉口路，车停在路边，我在车旁边等您。$/.exec(text))) return `Then ${m3[1]}:${m3[2]} on Hankou Road. The car will be at the kerb and I'll be waiting beside it.`;
+  if ((m3 = /^尾款(\d+)万，可以全款转账，也可以做金融，首付三成，月供([\d,]+)。$/.exec(text))) return `The balance is ¥${(+m3[1] / 100).toFixed(2)} million. You can pay it in full by transfer, or finance it: 30% down, ¥${m3[2]} a month.`;
+  if ((m3 = /^首付收到，金融合同签好了，月供 ¥([\d,]+)，(\d+)期。$/.exec(text))) return `Down payment received and the finance contract's signed: ¥${m3[1]} a month for ${m3[2]} months.`;
   // the shops' order updates: "<what happened>：<items>"
   const o = /^(.+?)：(.+)$/.exec(text);
   if (o && SHOP_EN[o[1]]) return `${SHOP_EN[o[1]]}: ${o[2].split('、').map((n) => ITEM_EN[n] || n).join(', ')}`;

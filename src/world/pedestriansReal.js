@@ -1,12 +1,30 @@
 // The four background pedestrians as real people (Rocketbox avatars, see people.js). Same
 // contract as pedestrians.js: behaviour comes from engine/traffic.js, this only draws and animates.
+import { twoBone } from './driverPose.js';
+import { cup as makeCup, holdCup } from './cups.js';
 import * as THREE from 'three';
 import { groundHeight } from './layout.js';
 import { createPerson } from './people.js';
 import { addGlasses } from './glasses.js';
 import { createFace } from './face.js';
-const cupGeo = new THREE.CylinderGeometry(0.042, 0.033, 0.13, 12), lidGeo = new THREE.CylinderGeometry(0.044, 0.044, 0.012, 12);
-const cupMat = new THREE.MeshStandardMaterial({ color: 0xf1efe9, roughness: 0.6 }), lidMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 });
+const _hand = new THREE.Vector3();
+// a phone flash: a hot white blink (bloom does the rest)
+const flashMat = new THREE.SpriteMaterial({ color: new THREE.Color(6, 6, 6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, map: (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.6)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c); })() });
+// taking a photo: the right hand up in front of the face, toward what they're shooting (two-bone IK)
+const _eyeP = new THREE.Vector3(), _tgt = new THREE.Vector3(), _pole = new THREE.Vector3();
+function raisePhone(person, at, yaw) {
+  const b = person._photoBones || (person._photoBones = ['Bip01_R_UpperArm', 'Bip01_R_Forearm', 'Bip01_R_Hand'].map((n) => person.root.getObjectByName(n)));
+  if (!b[0] || !b[1] || !b[2]) return;
+  person.bones.head.getWorldPosition(_eyeP);
+  let fx = Math.sin(yaw), fz = Math.cos(yaw);
+  if (at) { const dx = at[0] - _eyeP.x, dz = at[1] - _eyeP.z, d = Math.hypot(dx, dz) || 1; fx = dx / d; fz = dz / d; }
+  _tgt.set(_eyeP.x + fx * 0.3 - fz * 0.04, _eyeP.y - 0.06, _eyeP.z + fz * 0.3 + fx * 0.04);   // a forearm's length out, a touch to the right
+  _pole.set(-fz * 0.8, -1, fx * 0.8).normalize();                                             // elbow down and out to the right
+  twoBone(b[0], b[1], b[2], _tgt, _pole);
+}
 
 // glasses: plenty of people here wear them (p5's come with her avatar)
 const GLASSES = { p1: 'acetate', p2: 'rimless', p3: 'metal' };
@@ -101,9 +119,11 @@ export function createRealPedestrians(simPeds, people) {
     phone.add(new THREE.Mesh(phoneGeo, phoneMat), screen);
     group.add(person.root, umb, phone);
     if (GLASSES[p.id]) addGlasses(person, GLASSES[p.id]);
-    const cup = new THREE.Group(); cup.add(new THREE.Mesh(cupGeo, cupMat)); const lid = new THREE.Mesh(lidGeo, lidMat); lid.position.y = 0.07; cup.add(lid); cup.visible = false;
-    group.add(cup);
-    return { person, umb, canopy, phone, scr, cup, face: createFace(person), look: new THREE.Vector3() };
+    // takeaway coffee: the Manner cup from a coffee run, or a Starbucks brought from up the road (world/cups.js)
+    const cup = { manner: makeCup('manner'), starbucks: makeCup('starbucks') };
+    for (const c of Object.values(cup)) { c.visible = false; group.add(c); }
+    const flash = new THREE.Sprite(flashMat); flash.scale.setScalar(0.5); flash.visible = false; group.add(flash);
+    return { person, umb, canopy, phone, scr, cup, flash, face: createFace(person), look: new THREE.Vector3() };
   });
   return {
     group,
@@ -123,6 +143,7 @@ export function createRealPedestrians(simPeds, people) {
         else if (p.umbrella > 0.5) state = 'umbrella';
         else state = p.react === 'sheltered' || p.state === 'waiting' ? 'look' : 'idle';
         if (p.gesture && speed < 0.15 && p.pause > 0) state = GESTURE[p.gesture] || state;
+        if (p.photo && speed < 0.15) state = 'idle';                            // stopped for a photo (the arm is posed below)
         // a coffee run: phone out to scan and pay at the hatch, a word with the barista, then waiting on the phone
         if (p.errand && speed < 0.15) {
           const ph = p.errand.phase, et = p.errand.t;
@@ -132,13 +153,15 @@ export function createRealPedestrians(simPeds, people) {
         person.setGait(speed);
         person.setUmbrella(state === 'phone' ? 0 : p.umbrella);
         person.setPhoneHold(state === 'walk' || state === 'look' || state === 'idle' ? p.phoneW : 0);
-        person.update(dt, p.faceTo);
+        person.update(dt, p.faceTo || p.gaze);                                  // heads follow a sight while passing it
+        if (p.photo) raisePhone(person, p.photo.of ? p.faceTo : null, r.rotation.y);
         if (camPos && r.position.distanceToSquared(camPos) < 400) {           // faces only matter up close
           if (p.faceTo) look.set(p.faceTo[0], r.position.y + 1.55, p.faceTo[1]);
           face.update(dt, { lookAt: p.faceTo ? look : null, speaking: p.errand && p.errand.phase === 'order' && p.errand.t > 3.5, annoyed: p.gesture === 'scold' && p.pause > 0 });
         }
-        cup.visible = p.cup > 0 || (p.errand && p.errand.phase === 'collect' && p.errand.t > 0.8);
-        if (cup.visible) { person.bones.L.getWorldPosition(cup.position); cup.position.y += 0.02; cup.rotation.set(0, r.rotation.y, 0); }
+        const holding = p.cup > 0 || (p.errand && p.errand.phase === 'collect' && p.errand.t > 0.8), brand = p.errand ? 'manner' : (p.cupBrand || 'manner');
+        for (const k in cup) cup[k].visible = holding && k === brand;
+        if (holding) { person.bones.L.getWorldPosition(_hand); holdCup(cup[brand], _hand, r.rotation.y); }
         // umbrella: in the raised hand, kept upright, opening with the simulation's amount
         const u = p.umbrella;
         umb.visible = u > 0.02;
@@ -148,9 +171,12 @@ export function createRealPedestrians(simPeds, people) {
           canopy.scale.set(0.15 + 0.85 * u, 0.5 + 0.5 * u, 0.15 + 0.85 * u);
         }
         // phone: in the right palm, following the hand
-        phone.visible = p.phone > 0.02 || p.phoneW > 0.3;
-        if (phone.visible && camPos && r.position.distanceToSquared(camPos) < 100) scr.draw(p.phoneW > 0.3 ? p.phoneKind : 'chat', dt);
-        if (phone.visible) holdPhone(phone, person, r.rotation.y);
+        phone.visible = p.phone > 0.02 || p.phoneW > 0.3 || !!p.photo;
+        if (phone.visible && camPos && r.position.distanceToSquared(camPos) < 100) scr.draw(p.photo ? 'video' : p.phoneW > 0.3 ? p.phoneKind : 'chat', dt);
+        if (phone.visible) { holdPhone(phone, person, r.rotation.y); if (p.photo) phone.rotateZ(Math.PI / 2); }   // a photo: sideways
+        // the flash, if it fires: a blink at the phone
+        const fl = list[i].flash, on = p.photo && p.photo.flashAt > 0 && Math.abs(p.photo.t - p.photo.flashAt) < 0.06;
+        fl.visible = !!on; if (on) fl.position.copy(phone.position);
       }
     },
   };

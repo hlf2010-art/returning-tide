@@ -60,7 +60,7 @@ function walk(body, dirX, dirZ, seconds, run = false) {
 }
 // 5. boundaries on all sides
 {
-  const n = createBody(); n.x = -15; n.z = -40; walk(n, 0, -1, 30, true);
+  const n = createBody(); n.x = -15; n.z = L.zNorth + 20; walk(n, 0, -1, 30, true);
   ok(n.z > L.zNorth && n.hit === 'boundary', `north barrier holds (z=${n.z.toFixed(2)})`);
   const s = createBody(); s.x = 15; s.z = 60; s.y = 3; walk(s, 0, 1, 30, true);
   ok(s.z < L.zSouth && s.hit === 'boundary', `south barrier holds on the deck (z=${s.z.toFixed(2)})`);

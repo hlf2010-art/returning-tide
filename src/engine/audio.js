@@ -253,6 +253,20 @@ export function createAudio() {
         for (const hz of [415, 498]) { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = hz; o.connect(f); o.start(t + at); o.stop(t + at + len + 0.08); }
         f.connect(g); g.connect(sfx);
       }
+    } else if (name === 'v10') {
+      // a V10 starting: the starter, a bark up to ~4000 rpm, then a lumpy idle that fades
+      stats.cues.v10 = (stats.cues.v10 || 0) + 1;
+      burst(t, { buffer: buf, type: 'bandpass', f: 1400, q: 2, gain: 0.08, attack: 0.01, decay: 0.5, rate: 3 });
+      const g = gainNode(0), f = filt('lowpass', 900, 0.9), dist = ctx.createWaveShaper();
+      const curve = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(x * 2.6); } dist.curve = curve;
+      for (const [mul, w] of [[1, 'sawtooth'], [0.5, 'square'], [2.02, 'sawtooth']]) {
+        const o = ctx.createOscillator(); o.type = w;
+        o.frequency.setValueAtTime(28 * mul, t + 0.5); o.frequency.exponentialRampToValueAtTime(160 * mul, t + 0.95); o.frequency.exponentialRampToValueAtTime(40 * mul, t + 1.7);
+        o.connect(dist); o.start(t + 0.5); o.stop(t + 5.2);
+      }
+      dist.connect(f); f.connect(g); g.connect(sfx);
+      g.gain.setValueAtTime(0, t + 0.5); g.gain.linearRampToValueAtTime(0.32 * level, t + 0.62); g.gain.linearRampToValueAtTime(0.4 * level, t + 0.95);
+      g.gain.linearRampToValueAtTime(0.14 * level, t + 1.8); g.gain.linearRampToValueAtTime(0.0001, t + 5.1);
     } else if (name === 'door') {
       // a car door: the latch, then the heavy shut
       stats.cues.door = (stats.cues.door || 0) + 1;

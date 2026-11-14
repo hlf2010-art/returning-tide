@@ -6,13 +6,18 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SSRPass } from 'three/addons/postprocessing/SSRPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+import { createGradePass } from './grade.js';
 
 // Each step is cheaper than the one before: anti-aliasing goes first, then resolution.
 // ssr: screen-space reflections on the wet ground (about 2.5 scene renders), top two steps only
 const SSR_LAYER = 3;                                   // ground meshes, for the reflection passes only
 // shadows: how many lamps cast shadow maps (lighting.js)
+// ao: ground-truth ambient occlusion (contact darkening where things meet: kerbs, walls, under cars,
+// people's feet), top two steps only; smaa: edge anti-aliasing wherever MSAA is off
 const LADDER = [
-  { msaa: 4, scale: 1, ssr: true, shadows: 2 }, { msaa: 2, scale: 1, ssr: true, shadows: 2 }, { msaa: 0, scale: 1, shadows: 1 },
+  { msaa: 4, scale: 1, ssr: true, shadows: 2, ao: true }, { msaa: 2, scale: 1, ssr: true, shadows: 2, ao: true }, { msaa: 0, scale: 1, shadows: 1 },
   { msaa: 0, scale: 0.8, shadows: 1 }, { msaa: 0, scale: 0.65, shadows: 0 }, { msaa: 0, scale: 0.5, shadows: 0 },
 ];
 
@@ -41,20 +46,36 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}
     composer.passes[0] = want ? ssr : renderPass;
     if (ssr) ssr.beautyRenderTarget.samples = LADDER[level].msaa;
   }
+  // ambient occlusion from a twin of the camera that leaves out layer 2 (rain streaks, the held pouch)
+  const aoCam = camera.clone();
+  const gtao = new GTAOPass(scene, aoCam, 512, 512);
+  gtao.blendIntensity = 0.7;
+  gtao.updateGtaoMaterial({ radius: 0.55, distanceExponent: 1.4, thickness: 1.2, scale: 1, samples: 12 });
+  gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 });
+  const gtaoRender = gtao.render.bind(gtao);
+  gtao.render = (...a) => { aoCam.copy(camera, false); aoCam.layers.mask = camera.layers.mask & ~(1 << 2); gtaoRender(...a); };
+  composer.addPass(gtao);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
+  const smaa = new SMAAPass();
+  composer.addPass(smaa);
+  const grade = createGradePass();                    // vignette, a trace of lens fringing, film grain (engine/grade.js)
+  composer.addPass(grade);
+  function useLevelPasses() { gtao.enabled = !!LADDER[level].ao; smaa.enabled = !LADDER[level].msaa; }
+  useLevelPasses();
 
   function resize() {
     const w = window.innerWidth, h = window.innerHeight, s = dpr * LADDER[level].scale;
     renderer.setPixelRatio(s); renderer.setSize(w, h, false);
     composer.setPixelRatio(s); composer.setSize(w, h);
     bloom.setSize(Math.round(w * s / 2), Math.round(h * s / 2));   // bloom from a half-size source: wide glow, a quarter of the cost
+    gtao.setSize(Math.round(w * s), Math.round(h * s));
     camera.aspect = w / h; camera.updateProjectionMatrix();
   }
   function setLevel(n) {
     level = Math.max(0, Math.min(LADDER.length - 1, n));
     composer.reset(makeTarget());
-    usePasses();
+    usePasses(); useLevelPasses();
     resize();
   }
   window.addEventListener('resize', resize);
@@ -73,7 +94,8 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}
     if (fixedLevel == null && slowWindows >= 2 && level < LADDER.length - 1) { slowWindows = 0; setLevel(level + 1); }
   }
   return {
-    renderer, composer, bloom, resize, tick, setLevel,
+    renderer, composer, bloom, gtao, grade, resize, tick, setLevel,
+    frame(t) { grade.uniforms.time.value = t; },
     get ssr() { return ssr; },
     get reflections() { return composer.passes[0] === ssr; },
     setReflections(on) { ssrEnabled = !!on; usePasses(); },

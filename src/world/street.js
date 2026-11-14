@@ -1,6 +1,6 @@
 // Street level: Zhongshan East 1st Road, Hankou Road and what stands on them.
 import * as THREE from 'three';
-import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees, crossing } from './layout.js';
+import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees, crossing, sideStreets } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT, glowTexture } from './canvas.js';
 import { T } from './text.js';
@@ -20,13 +20,31 @@ function place(group, mesh, x, y, z, ry = 0) { mesh.position.set(x, y, z); mesh.
 function ground(B) {
   B.asphalt.floor(L.westCurbX, L.eastCurbX, -FAR, FAR, 0, 6);
   B.asphalt.floor(-200, L.westCurbX, -S.roadHalfW, S.roadHalfW, 0, 6);
+  // the west sidewalk (and its kerb) runs the length of the Bund, broken where a road comes out
+  const gaps = [[-S.roadHalfW, S.roadHalfW], ...sideStreets.map((st) => [st.zc - st.roadHalfW, st.zc + st.roadHalfW])].sort((a, b) => a[0] - b[0]);
+  let from = -FAR;
+  for (const [g0, g1] of [...gaps, [FAR, FAR]]) {
+    if (g0 > from) {
+      const zc = (from + g0) / 2, len = g0 - from;
+      B.sidewalk.box((L.facadeX + L.westCurbX) / 2, -0.3, zc, 6, 0.3 + CH, len, { tile: 2.4 });
+      B.granite.box(L.westCurbX + 0.08, -0.3, zc, 0.16, 0.3 + CH + 0.005, len);
+    }
+    from = g1;
+  }
   for (const s of [-1, 1]) {
-    const zc = s * (FAR + S.roadHalfW) / 2, len = FAR - S.roadHalfW;
-    B.sidewalk.box((L.facadeX + L.westCurbX) / 2, -0.3, zc, 6, 0.3 + CH, len, { tile: 2.4 });        // west sidewalk
     const sz = s * (S.halfW + S.roadHalfW) / 2;
     B.sidewalk.box((-200 + L.facadeX) / 2, -0.3, sz, 166, 0.3 + CH, S.halfW - S.roadHalfW, { tile: 2.4 }); // Hankou Rd sidewalks
-    B.granite.box(L.westCurbX + 0.08, -0.3, zc, 0.16, 0.3 + CH + 0.005, len);                          // curb stones
     B.granite.box((-200 + L.westCurbX) / 2, -0.3, s * (S.roadHalfW + 0.08), 172, 0.3 + CH + 0.005, 0.16);
+  }
+  // Jiujiang Road and Nanjing Road East: carriageway, pavements both sides, kerbs, a zebra at the mouth
+  for (const st of sideStreets) {
+    const x0 = st.xEnd - 1.5, rz0 = st.zc - st.roadHalfW, rz1 = st.zc + st.roadHalfW;
+    B.asphalt.floor(x0, L.westCurbX, rz0, rz1, 0, 6);
+    for (const [a, b] of [[st.z0, rz0], [rz1, st.z1]]) {
+      if (b - a < 0.2) continue;
+      B.sidewalk.box((x0 + L.facadeX) / 2, -0.3, (a + b) / 2, L.facadeX - x0, 0.3 + CH, b - a, { tile: 2.4 });
+    }
+    for (const z of [rz0 - 0.08, rz1 + 0.08]) B.granite.box((x0 + L.westCurbX) / 2, -0.3, z, L.westCurbX - x0, 0.3 + CH + 0.005, 0.16);
   }
   B.sidewalk.box((L.eastCurbX + L.wallX) / 2, -0.3, 0, 6, 0.3 + CH, FAR * 2, { tile: 2.4 });           // east sidewalk
   B.granite.box(L.eastCurbX - 0.08, -0.3, 0, 0.16, 0.3 + CH + 0.005, FAR * 2);
@@ -45,6 +63,7 @@ function ground(B) {
   // stop lines, right-hand traffic: southbound (west half) stops north of the zebra, northbound south of it
   B.paint.floor(-27.3, -16.4, -5.6, -5.2, y); B.paint.floor(-15.6, -4.7, 5.2, 5.6, y);
   for (let z = -3.4; z < 3.2; z += 0.9) B.paint.floor(-33.4, -30.2, z, z + 0.45, y);                   // zebra across Hankou Rd
+  for (const st of sideStreets) for (let z = st.zc - st.roadHalfW + 0.3; z < st.zc + st.roadHalfW - 0.3; z += 0.9) B.paint.floor(-33.4, -30.2, z, z + 0.45, y);
   // manholes
   for (const [x, z] of [[-20, 9], [-10.5, -22], [-62, 1.2], [-44, -1.5], [-14, 48]]) B.iron.cyl(x, 0.002, z, 0.36, 0.36, 0.012, 20);
 }
@@ -186,6 +205,13 @@ export function createStreet(M) {
     }
     for (const x of [-25.6, -6.4, 9.5, 20]) place(group, controlSign(), x, (x > 0 ? L.deckY : 0) + 0.66, zz - out * 0.035, face);
     place(group, controlSign(), -31, CH + 0.66, zz - out * 0.035, face);
+  }
+  // the side streets end at hoardings too (roadworks), a little way in
+  for (const st of sideStreets) {
+    const sx = st.xEnd - 0.5, w = st.z1 - st.z0;
+    B.hoarding.box(sx, 0, st.zc, 0.12, 2.5, w);
+    for (let z = st.z0; z <= st.z1; z += 1.85) B.steel.box(sx + 0.08, 0, z, 0.06, 2.6, 0.06);
+    B.paintYellow.box(sx + 0.07, 2.3, st.zc, 0.02, 0.2, w);
   }
   // Hankou Road ends at a construction hoarding
   const hx = S.xEnd - 0.5;

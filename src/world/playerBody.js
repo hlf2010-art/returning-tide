@@ -6,6 +6,7 @@
 //   - standing still, the head can look about before the body turns to follow;
 //   - the head and hair are not drawn (the camera is inside them) but still cast a shadow;
 //   - winded: the spine bends forward over the knees (the camera bends with it, headMotion.js).
+import { cup as makeCup } from './cups.js';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
@@ -188,10 +189,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
     placeProps(eye) {
       if (!props) {
         props = { cup: new THREE.Group(), phone: new THREE.Group() };
-        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.033, 0.13, 14), new THREE.MeshStandardMaterial({ color: 0xf1efe9, roughness: 0.6 }));
-        const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.044, 0.012, 14), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 })); lid.position.y = 0.07;
-        const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.0425, 0.038, 0.05, 14), new THREE.MeshStandardMaterial({ color: 0x8a6a48, roughness: 0.9 })); sleeve.position.y = 0.0;
-        props.cup.add(c, lid, sleeve);
+        props.cup.add(makeCup('manner'));                                   // your Manner cup (world/cups.js)
         const ph = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.152, 0.008), new THREE.MeshStandardMaterial({ color: 0x18181a, roughness: 0.3, metalness: 0.5 }));
         const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.066, 0.144), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.75, 0.8, 0.9) })); scr.position.z = 0.0045;
         props.phone.add(ph, scr);
@@ -204,7 +202,9 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
       const hand = root.getObjectByName('Bip01_R_Hand'), finger = root.getObjectByName('Bip01_R_Finger2');
       hand.getWorldPosition(_v); const palm = _v.clone();
       if (finger) { finger.getWorldPosition(_v); palm.add(_v).multiplyScalar(0.5); }
-      if (props.cup.visible) { props.cup.position.copy(palm); props.cup.position.y += 0.02; props.cup.rotation.set(0, yaw, 0); }
+      if (props.cup.visible) {                                             // in the curl of the right hand: the cup sits on the palm side (toward the body)
+        props.cup.position.copy(palm); props.cup.position.y -= 0.03; props.cup.position.x -= Math.cos(yaw) * 0.042; props.cup.position.z += Math.sin(yaw) * 0.042; props.cup.rotation.set(0, yaw, 0);
+      }
       if (props.phone.visible && eye) {
         const z = eye.clone().sub(palm).normalize(), fy = new THREE.Vector3(Math.sin(yaw), 0.6, Math.cos(yaw)).normalize();
         fy.addScaledVector(z, -fy.dot(z)).normalize(); const x = new THREE.Vector3().crossVectors(fy, z).normalize(); fy.crossVectors(z, x);

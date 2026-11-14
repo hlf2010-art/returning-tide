@@ -29,6 +29,7 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | P | your phone (Esc: back) |
 | U | open / close your umbrella (once you've bought one and have it with you) |
 | H | noise cancelling on / off (once you have the headphones with you) |
+| 1–4 | in a DiDi: answer the driver (engage / short answer / change the subject / say nothing) |
 | C | subtitles on / off |
 | M | sound on / off (mutes ambience, footsteps, cues and voices) |
 | Esc | back out of an open conversation / close-up / notice; otherwise pause (Resume / Settings). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
@@ -318,6 +319,199 @@ Node-tested (`tests/shopping.test.mjs`):
 - bulky things never go to the kerb
 - every shop message reads in English too
 
+## DiDi rides (`src/engine/ride.js`, `src/world/didi.js`, `src/world/cabin.js`, `src/world/driverPose.js`, `src/world/rideFlow.js`)
+
+**Calling a car.** Open DiDi on the phone and pick a destination: North Bund, Lujiazui IFC,
+Jing'an Kerry Centre, Xintiandi or Tianma Circuit. Each shows the distance and a DiDi Express fare
+(Shanghai pricing, with the night rate after 23:00).
+- A driver accepts. The app shows their name, rating, car and plate, and you can send quick
+  messages ("I'm at the corner").
+- One of the real northbound cars in the Zhongshan Road traffic gets that plate. It works its way
+  up, signals, and pulls in to the east kerb just north of Hankou Road with its hazards on.
+- Check the plate on the back, walk to the rear door and press **E**.
+- Free waiting is five minutes; then the driver messages you. At eight minutes they cancel and the
+  app charges the no-show fee.
+
+**In the car.** You sit in the rear right seat, where people sit in a Shanghai cab, and the mouse
+looks around.
+- The car's own body stays around you: its glass is made see-through, and its shell is cut open
+  only where the cabin is. So the pillars, doors, roofline and the bonnet through the windscreen are
+  the real car's.
+- The interior is fitted to that model's curves (windscreen base, beltline, roof over each row):
+  - seats in light Nappa leather (CC0 photographed leather) with side bolsters, piping and
+    headrests on posts
+  - a sculpted dashboard with a slim driver display and a big centre screen showing the route
+  - a three-spoke wheel, rear-view mirror and sun visors
+  - door cards with armrests, handles, speakers and a warm ambient strip
+  - a centre console with a Manner cup in the holder
+- The streetlamps sweep a little warm light through the cabin as you pass each one.
+- **The driver is properly seated.** The avatars only have standing animations, so the sitting is
+  posed every frame with two-bone IK: pelvis on the cushion, a slight recline, feet on the pedals,
+  both hands on the rim at ten to two (they follow the wheel as it turns), elbows down and out. The
+  head still turns to you when they talk.
+
+**The driver.** Five drivers with their own moods, opinions and ways of talking, from chatty to
+silent. Their lines come up as subtitles in your language.
+- Answer with **1–4**: engage, short answer, change the subject, or say nothing. Not answering
+  within a few seconds counts as saying nothing; ignore them twice and they stop talking.
+- Now and then a remark carries a rumour, a place or a name. Nothing marks which ones matter, and
+  some are wrong.
+- On the way someone may step out looking at their phone, or a car may cut in. The car brakes
+  hard, the horn goes, and the driver says what they think of it.
+
+**Arriving.** Past the north end of the Bund the drive continues as passing light. Then a card
+shows where you are, what it cost, and whether you kept an invitation there (on time means within
+two hours: your friend is glad, and your relationship improves). The evening there passes, and a
+DiDi brings you back to the Bund.
+
+**What isn't there yet:**
+- Those destinations aren't built, so the visit is told by the card rather than played.
+- The drivers' voices are subtitles only.
+
+## The northern Bund: Jiujiang Road, the AIA Building, Nanjing Road, the Peace Hotel
+
+The walkable Bund now runs north from Hankou Road past the AIA Building to Nanjing Road East and the
+Peace Hotel (`L.zNorth` −262).
+- **Side streets.** Jiujiang Road and Nanjing Road East are real side streets: carriageway,
+  pavements both sides, kerbs and a zebra at the mouth. Each ends at a roadworks hoarding a little
+  way in.
+- **No. 17, the AIA Building (1924).** Granite neo-Renaissance: a two-storey rusticated base, five
+  storeys behind a giant order, a heavy cornice, and the two baroque corner towers with small domes
+  and lanterns. Its arched door on the Bund stands open.
+- **No. 20, the Peace Hotel.** The green copper pyramid, and on Nanjing Road the main entrance: a
+  bronze canopy, the name in bronze letters, a doorman, and a revolving door that turns as you go
+  through.
+
+### Inside the Peace Hotel (`src/world/interiors.js`)
+
+**The building:**
+- One great hall laid out as the original arcades meeting at the octagon: eight dark marble pillars
+  with brass bases and capitals, and an inlaid octagon star in the marble floor (CC0 photographed
+  marble).
+- Above it, the octagonal drum with clerestory glazing and the stained-glass rotunda, lit from
+  within.
+- Walnut wainscot, cream plaster, brass, and frosted glass lights in the Lalique manner (ceiling
+  coffers and wall fans).
+- The hall's lamps join the light pool, so they're real lights when you're inside and cost nothing
+  when you're not.
+
+**People and places:**
+- **The front desk.** They know you, because you told your father you're staying here. Your key card
+  is 612, a river view.
+- **The concierge** hands over whatever couriers left at the desk (the JD/Taobao orders sent to the
+  hotel).
+- **The Jasmine Lounge** runs along the Bund windows (round marble tables, a grand piano).
+- **The Jazz Bar's door** has the Old Jazz Band's 21:30 stand beside it. If you accepted Momo's
+  invitation and turn up on time, you're in for his trio: a card, the evening passes, and he's glad.
+- **The lift lobby** is guests only, with a guard. With your key, he tells you the sixth floor is
+  being refitted (the hotel really is being renovated in 2026).
+- **A staff-only door.** The desk staff tell you off if they're looking up when you try it; otherwise
+  it's simply locked.
+
+### Inside the AIA Building
+
+- **The lobby:** granite, marble, linear light slots, and a tenant directory (fictional tenants
+  apart from AIA itself).
+- **Reception:** the receptionist explains the visitor process. Register on the mini-program and
+  your host confirms, then your face opens the gates; they were put in last month. There's a visitor
+  QR stand too.
+- **The gates:** four glass-flap speed gates, wall to wall, with a guard.
+
+**Getting past the gates:**
+- **Tailgating.** An office worker comes in off the Bund every 35–60 s, badges through, and takes a
+  lift. The guard watches the gates, but every so often he's on his phone. Slip through behind a
+  worker while he's looking down and you're in; if he sees you, he walks you back.
+- **Face scan.** Without a registration it fails.
+- **The lifts** need a staff badge.
+
+(Zhao the DiDi driver's rumour, that the guards were being replaced by face recognition, turns out
+half true: the gates are new, the guard is still there.)
+
+**Honest note:** both interiors follow published descriptions, not floor plans. The AIA lobby isn't
+publicly documented, so it is plausible rather than accurate.
+
+### People with somewhere to be (`src/world/walkers.js`)
+
+Twelve walkers on the northern Bund, each with a purpose that sets their route and what they do on
+it:
+- **Tourists:** stroll the promenade and stop at the railing to photograph Pudong (phone up,
+  sideways).
+- **Shoppers:** come off Nanjing Road with paper shopping bags.
+- **Hotel guests:** walk to the Peace Hotel's door and go in.
+- **AIA staff:** leave work fast with their phones out, stopping to check them on the way to
+  Nanjing Road.
+- **Couples:** walk slowly side by side.
+
+They slow down and step aside for you. They're simulated and drawn only within about 80 m of you,
+and a new one starts out of sight whenever one finishes.
+
+## Cars on the street
+
+A **Lamborghini Huracán** is parked on Hankou Road by the south kerb, right where people walk, nose toward the Bund, with a
+soft contact shadow. It is solid: you walk round it. It's the car the purchase journey will make
+yours. The model is real scale (4.46 m, about 134k triangles, 11 MB, loaded in the background).
+
+## Buying the Huracán (`src/engine/carPurchase.js`, `src/world/carSale.js`)
+
+A journey, not a checkout, and the way it really works at this end of the Shanghai market.
+
+1. **A friend's lead.** Tell Zhixia "we'll see about the car" and, a little later, she sends you a
+   WeChat contact card for Vivian, a Lamborghini sales consultant ("just say you're my friend").
+2. **The demo car comes to you.** Add Vivian and she offers to bring the demo car to the Bund (a
+   door-to-door test drive, normal for buyers like this). Twenty minutes later the yellow Huracán on
+   Hankou Road is her demo car, and she's waiting on the pavement beside it.
+3. **At the car.** E to talk; answer with 1–4:
+   - sit inside (the passenger seat; mouse to look round)
+   - have her start the V10 (people on the pavement turn round)
+   - choose the colour (Giallo Midas, Nero Noctis, Bianco Icarus, Verde Mantis) and the interior
+     (black Alcantara or terracotta leather)
+   - hear the price (about ¥2.68M on the road) and the finance terms
+   - pay the ¥200,000 deposit by bank transfer
+4. **On WeChat.** Vivian follows up with two decisions:
+   - **The plate.** Registration follows the owner's hukou, not where the car was bought.
+     - **苏A (Nanjing).** With a Nanjing hukou the realistic route is a 苏A plate: the dealer's agent
+       registers it in Nanjing while the car runs on temporary plates. Blue out-of-town plates are
+       barred from Shanghai's elevated roads at weekday rush hours.
+     - **The Shanghai auction.** Ask about a Shanghai plate and Vivian explains that without a
+       Shanghai hukou you need a residence permit and 36 months of continuous Shanghai social
+       insurance or tax to bid at all. He's a week back from San Francisco, so not yet. A company in
+       Shanghai could bid in its own name later. (For someone eligible, the auction costs about ¥95k
+       and is won about 12% of the time; that path is modelled and tested.)
+   - **The balance.** Paying ¥2.48M in full is more than your ¥1.65M account holds, so it's
+     refused. Dealer finance is 30% down and about ¥55k a month for 36 months. (Your father said:
+     don't throw the patent money at a car.)
+5. **Delivery,** about two weeks after the order. Vivian brings it back to Hankou Road in your colour
+   with your plate, hands you the key, and the engine starts. The group chat reacts ("??? Baibai
+   bought a CAR???", "...Does your dad know?"). It stays parked there as yours.
+
+All in-game money; every stage is node-tested (`tests/carpurchase.test.mjs`).
+
+**What isn't there yet:**
+- Driving it.
+- Vivian's own avatar: she uses the library's business-suited woman.
+
+## People notice a nice car (`src/engine/sights.js`)
+
+Pass the Huracán and you'll see what really happens on the Bund:
+- **Most people look.** They slow a little and their heads follow it as they go by.
+- **Some stop for a photo.** They stand a few metres off, turn to face it, and raise the phone to eye
+  level, sideways (the arm is posed with IK). It takes a couple of seconds, sometimes with a flash,
+  then they walk on.
+- **It depends on who they are.** Young men, students and visitors are the ones with phones out;
+  office workers sometimes; older people mostly just look.
+- **It has to be ahead of you.** Nobody turns round to notice something behind them. Once someone
+  has walked well away they can notice it again, but they're less likely to stop twice.
+
+Node-tested (`tests/sights.test.mjs`).
+
+## Coffee cups
+
+The Manner cup and the Starbucks cup are props made for this game (see `docs/props/`). Each is
+built once and shared as clones, so a street full of coffee costs two label textures.
+- **Manner:** in your hand after you collect an order, in the hands of people coming back from a
+  coffee run, and on Manner's pass.
+- **Starbucks:** one office worker starts the evening with one from the store up Hankou Road.
+
 ## Manner Coffee, Hankou Road (`src/world/shops.js`)
 
 Why here:
@@ -563,3 +757,15 @@ The only third-party assets are three.js and three open-licensed fonts from Font
 Useful URL switches: `?fresh` (new life, ignore the save), `?q=0..5` pins the render quality step (0 = best), `?body=0` hides your own
 body, `?shadows=0`, `?ssr=0`, `?wind=calm|breeze|windy|gale`, `?nolock` uses
 click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.
+
+
+## Credits
+
+- People: Microsoft Rocketbox avatars (MIT).
+- Photographed surfaces: Poly Haven (CC0), https://polyhaven.com
+- **"Lamborghini Huracan LP-6104 2014"** by MdMahib, CC-BY-4.0:
+  https://sketchfab.com/3d-models/lamborghini-huracan-lp-6104-2014-4b7b162bcb4f48849f30b1c25b3102a3
+  (supplied for this project and used unmodified). Its material names (`CSR2_…`) suggest it was
+  extracted from a commercial mobile game, so the uploader's right to license it is uncertain.
+  Treat it as fine for a private build only.
+- Manner and Starbucks cup props: made for this project (`docs/props/`).

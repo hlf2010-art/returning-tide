@@ -4,9 +4,10 @@
 //     in the ordinary traffic; near the corner it signals, slows and pulls in to the east kerb
 //     just north of Hankou Road (the pickup point), hazards on
 //   - you walk to its rear door (check the plate on the back!) and E gets you in
-//   - inside: the rear right seat (where people sit in a Shanghai taxi), the driver in front of you
-//     with their phone on the dash showing the route, the city going past the windows; mouse to
-//     look around. The driver talks or doesn't; you answer with 1-4, or don't
+//   - inside (world/cabin.js): the rear right seat (where people sit in a Shanghai taxi), the car's
+//     own body around you with its glass see-through, the driver sat at the wheel (world/driverPose.js:
+//     hands on the rim, feet on the pedals), the route on the centre screen, street light sweeping
+//     through; mouse to look around. The driver talks or doesn't; you answer with 1-4, or don't
 //   - on the way: someone steps out looking at their phone, or a car cuts in. Hard braking, and the
 //     driver says what they think of it
 //   - at the end of the Bund the car goes on into the city (the drive continues as passing light),
@@ -16,63 +17,13 @@ import { createPerson } from './people.js';
 import { holdPhone } from './pedestriansReal.js';
 import { makeCanvas, tex, FONT } from './canvas.js';
 import { CARS } from './carModels.js';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { makeCabin } from './cabin.js';
+import { createSeatedPose } from './driverPose.js';
 
 export const PICKUP = { x: -3.2, z: -18.5, kerbX: -5.35 };      // where you stand / where the car's centre stops
-const SEAT_EYE = new THREE.Vector3(-0.36, 1.2, -0.66);           // car frame: +z forward, +x the driver's side (left)
 const RIDE_END_Z = -330;                                          // the car leaves the modelled Bund here
 
 function std(o) { return new THREE.MeshStandardMaterial(o); }
-
-// the car's interior, built in its own frame; sized for a mid-size EV
-function makeCabin(model) {
-  const M = CARS[model] || CARS['nio-et5'];
-  const g = new THREE.Group(); g.name = 'didi-cabin';
-  const W = Math.min(1.56, (M.width || 1.96) - 0.36), roofY = Math.min(1.42, (M.height || 1.5) - 0.06);
-  // lit faintly by the city through the glass and by the screens (emissive: a real light here would recompile every material)
-  const glow = (r, g, b) => new THREE.Color(r, g, b);
-  const dark = std({ color: 0x1d1e22, roughness: 0.8, emissive: glow(0.011, 0.012, 0.016) }), leather = std({ color: 0x2c2b2e, roughness: 0.45, emissive: glow(0.016, 0.015, 0.017) });
-  const head = std({ color: 0x55565c, roughness: 0.9, emissive: glow(0.014, 0.014, 0.017) });
-  const trim = std({ color: 0x101012, roughness: 0.4, metalness: 0.4, emissive: glow(0.004, 0.004, 0.006) }), wood = std({ color: 0x4a3828, roughness: 0.4, emissive: glow(0.016, 0.011, 0.008) });
-  const box = (w, h, d, m, x, y, z, rx = 0) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.rotation.x = rx; g.add(b); return b; };
-  const soft = (w, h, d, m, x, y, z, rx = 0, r = 0.04) => { const b = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(r, d / 2 - 0.001)), m); b.position.set(x, y, z); b.rotation.x = rx; g.add(b); return b; };
-  box(W, 0.04, 2.6, dark, 0, 0.32, 0);                                          // floor
-  box(W + 0.1, 0.04, 2.0, head, 0, roofY, -0.15);                               // headliner
-  for (const s of [-1, 1]) {
-    box(0.06, 0.6, 2.5, dark, s * (W / 2 + 0.03), 0.66, 0);                     // door panels up to the beltline
-    box(0.07, 0.03, 2.45, wood, s * (W / 2 - 0.0), 0.97, 0);                    // the beltline trim
-    box(0.05, 0.48, 0.07, trim, s * (W / 2 + 0.03), roofY - 0.24, -0.05);       // B pillar
-    box(0.07, 0.5, 0.14, trim, s * (W / 2 + 0.02), roofY - 0.25, -1.2, -0.45);   // C pillar, raked
-    const a = box(0.06, 0.62, 0.08, trim, s * (W / 2 - 0.02), roofY - 0.2, 1.02, 0.75); a.rotation.z = s * -0.08;   // A pillar
-  }
-  box(W + 0.1, 0.12, 0.08, trim, 0, roofY - 0.05, 1.18);                        // windscreen header
-  box(W + 0.1, 0.07, 0.1, trim, 0, roofY - 0.05, -1.32);                        // rear window header
-  // dashboard, wheel, the centre screen and the driver's phone in its clamp
-  box(W, 0.2, 0.42, dark, 0, 0.9, 1.08);
-  const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.022, 8, 24), trim); wheel.position.set(0.37, 0.98, 0.82); wheel.rotation.x = -0.5; g.add(wheel);
-  const [sc, sx] = makeCanvas(256, 160);
-  sx.fillStyle = '#0d1520'; sx.fillRect(0, 0, 256, 160);
-  sx.strokeStyle = '#2b3a4f'; sx.lineWidth = 6; for (let i = 0; i < 7; i++) { sx.beginPath(); sx.moveTo(-20 + i * 50, 170); sx.lineTo(40 + i * 45, -10); sx.stroke(); }
-  sx.strokeStyle = '#22c46b'; sx.lineWidth = 7; sx.beginPath(); sx.moveTo(128, 150); sx.lineTo(128, 90); sx.lineTo(170, 40); sx.lineTo(176, 0); sx.stroke();
-  sx.fillStyle = '#fff'; sx.beginPath(); sx.moveTo(128, 120); sx.lineTo(118, 140); sx.lineTo(138, 140); sx.fill();
-  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.19), new THREE.MeshBasicMaterial({ map: tex(sc, { repeat: false }), color: new THREE.Color(0.9, 0.9, 0.9) }));
-  screen.position.set(0, 1.08, 1.0); screen.rotation.set(-0.35, Math.PI, 0); g.add(screen);
-  const phone = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.15), screen.material); phone.position.set(0.12, 1.16, 0.98); phone.rotation.set(-0.2, Math.PI, 0); g.add(phone);
-  // front seats (their backs and headrests are most of what you see from behind), the rear bench
-  for (const s of [-1, 1]) {
-    soft(0.48, 0.5, 0.12, leather, s * 0.37, 0.8, 0.34, -0.14, 0.05);          // seat back, top ~1.05
-    soft(0.22, 0.15, 0.09, leather, s * 0.37, 1.17, 0.3, -0.08, 0.04);         // headrest
-    for (const k of [-1, 1]) box(0.012, 0.1, 0.012, trim, s * 0.37 + k * 0.06, 1.07, 0.31);   // its two posts
-    soft(0.48, 0.12, 0.5, leather, s * 0.37, 0.52, 0.6, 0, 0.05);
-  }
-  soft(W - 0.1, 0.14, 0.52, leather, 0, 0.5, -0.66, 0, 0.06);
-  soft(W - 0.1, 0.62, 0.14, leather, 0, 0.84, -0.95, 0.18, 0.06);
-  // a strip of ambient light along the doors (EVs all have one)
-  const strip = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.16, 0.26, 0.62) });
-  for (const s of [-1, 1]) box(0.01, 0.008, 2.0, strip, s * (W / 2 - 0.04), 0.95, 0.05);
-  g.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
-  return { group: g, W, roofY };
-}
 
 // the plate on the back of the picked car, swapped for the driver's
 function plateCanvas(text) {
@@ -83,7 +34,8 @@ function plateCanvas(text) {
   return tex(c, { repeat: false });
 }
 
-export function createDidi({ scene, people, traffic, vehicles, camera, player }) {
+export function createDidi({ scene, people, traffic, vehicles, camera, player, renderer = null }) {
+  if (renderer) renderer.localClippingEnabled = true;                       // the cut-away in the ride car's body (costs nothing elsewhere)
   const S = { veh: null, view: null, cabin: null, driver: null, state: 'idle', t: 0, events: [], plate: '', look: 0, hazard: 0, ped: null, cut: null, scheduled: [] };
   const _m = new THREE.Matrix4(), _v = new THREE.Vector3(), _q = new THREE.Quaternion();
   const hazardMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 1.2, 0.1) });
@@ -124,16 +76,31 @@ export function createDidi({ scene, people, traffic, vehicles, camera, player })
   function board(driverSpec) {
     if (S.state !== 'waiting') return false;
     S.cabin = makeCabin(S.view.model); scene.add(S.cabin.group);
+    // the car stays as it is around you: its glass made see-through and its closed shell cut open
+    // where the cabin is (this car only; the planes follow the car, see update)
+    const B = S.cabin.clipBox;
+    S.clipLocal = [[1, 0, 0, -B.x], [-1, 0, 0, -B.x], [0, 1, 0, -B.y1], [0, -1, 0, B.y0], [0, 0, 1, -B.z1], [0, 0, -1, B.z0]].map(([a, b, c, d]) => new THREE.Plane(new THREE.Vector3(a, b, c), d));
+    S.clipWorld = S.clipLocal.map((p) => p.clone());
+    S.glass = [];
+    S.view.g.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      S.glass.push([o, o.material]);
+      if (o.material.roughness === 0.04 && o.material.metalness === 0.9) {
+        o.material = new THREE.MeshStandardMaterial({ color: 0x0c1116, roughness: 0.03, metalness: 0.1, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 1.4 });
+      } else {
+        o.material = o.material.clone(); o.material.clippingPlanes = S.clipWorld; o.material.clipIntersection = true;
+      }
+    });
     if (people) {
       const role = driverSpec.sex === 'f' ? 'p2' : driverSpec.id === 'shi-gu' ? 'lin' : 'p1';
       S.driver = createPerson(people, role); S.cabin.group.add(S.driver.root);
-      // sat: the head at about 1.25 m, in front of the seat back; legs go under the dash out of sight
-      S.driver.root.position.set(0.37, driverSpec.sex === 'f' ? -0.36 : -0.44, 0.56); S.driver.root.rotation.y = 0;
+      S.pose = createSeatedPose(S.driver);
+      S.driver.root.position.set(S.cabin.driverSide, 0, S.cabin.hip.z); S.driver.root.rotation.y = 0;   // seated properly by the pose each frame
       S.driver.root.traverse((o) => { if (o.isMesh && o.material) { o.material = o.material.clone(); o.material.emissive = new THREE.Color(0.018, 0.018, 0.02); } });
     }
-    S.veh.hidden = true; S.state = 'boarding'; S.t = 0;
+    S.state = 'boarding'; S.t = 0; S.steer = 0; S.prevYaw = S.veh.yaw;
     player.lookOnly = true; player.enabled = false;
-    player.yaw = S.veh.yaw + Math.PI; player.pitch = -0.08;                      // looking forward, past the driver
+    player.yaw = S.veh.yaw + Math.PI + 0.14; player.pitch = -0.1;               // forward, toward the gap by the driver
     ev({ type: 'door' });
     return true;
   }
@@ -215,9 +182,14 @@ export function createDidi({ scene, people, traffic, vehicles, camera, player })
       // the cabin rides with the car; the camera sits in the rear right seat
       if (S.cabin) {
         S.cabin.group.position.set(veh.x, 0, veh.z); S.cabin.group.rotation.y = veh.yaw;
+        // the wheel turns with the car (yaw rate), a little
+        const yr = dt > 0 ? (veh.yaw - S.prevYaw) / dt : 0; S.prevYaw = veh.yaw;
+        S.steer += (Math.max(-0.9, Math.min(0.9, yr * 6)) - S.steer) * Math.min(1, dt * 4);
+        S.cabin.update(dt, veh, S.steer);
         S.cabin.group.updateMatrixWorld(true);
-        if (S.driver) S.driver.update(dt, S.look > 0 ? [camera.position.x, camera.position.z] : null);
-        _v.copy(SEAT_EYE).applyMatrix4(S.cabin.group.matrixWorld);
+        if (S.clipWorld) for (let i = 0; i < 6; i++) S.clipWorld[i].copy(S.clipLocal[i]).applyMatrix4(S.cabin.group.matrixWorld);
+        if (S.driver) { S.driver.update(dt, S.look > 0 ? [camera.position.x, camera.position.z] : null); S.pose(S.cabin, S.cabin.group); }
+        _v.copy(S.cabin.eye).applyMatrix4(S.cabin.group.matrixWorld);
         // braking pitches you forward a little
         const pitchKick = Math.max(-0.06, Math.min(0.06, (veh.acc || 0) * -0.008));
         camera.position.copy(_v);
@@ -230,8 +202,9 @@ export function createDidi({ scene, people, traffic, vehicles, camera, player })
     glance(sec = 1.5) { S.look = sec; setTimeout(() => { S.look = 0; }, sec * 1000); },
     // the ride is over: you're out, the car goes on its way
     end() {
-      if (S.cabin) { scene.remove(S.cabin.group); S.cabin = null; S.driver = null; }
-      if (S.veh) { S.veh.hidden = false; if (S.veh.pickup) S.veh.pickup = null; S.veh.forceBrake = 0; }
+      if (S.cabin) { scene.remove(S.cabin.group); S.cabin = null; S.driver = null; S.pose = null; }
+      for (const [o, m] of S.glass || []) o.material = m; S.glass = [];
+      if (S.veh) { if (S.veh.pickup) S.veh.pickup = null; S.veh.forceBrake = 0; }
       S.veh = null; S.state = 'idle'; hazards.visible = false; S.ped = null; S.cut = null; S.cutBraked = false;
       if (walker) { walker.root.visible = false; walkerPhone.visible = false; }
       player.lookOnly = false;

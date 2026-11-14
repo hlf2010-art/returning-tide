@@ -21,7 +21,7 @@ void main() {
   #include <fog_vertex>
 }`;
 const archFragment = /* glsl */ `
-uniform sampler2D map; uniform sampler2D emissiveMap;
+uniform sampler2D map; uniform sampler2D emissiveMap; uniform sampler2D grainMap; uniform float grainAmount;
 uniform vec3 tint; uniform vec3 floodColor; uniform float floodGain; uniform float emissiveGain;
 uniform vec3 skyAmbient; uniform vec3 groundAmbient;
 varying vec2 vUv; varying vec3 vN; varying float vFlood; varying vec3 vW;
@@ -30,6 +30,13 @@ varying vec2 vUv; varying vec3 vN; varying float vFlood; varying vec3 vW;
 void main() {
   vec3 n = normalize(vN);
   vec3 albedo = texture2D(map, vUv).rgb * tint;
+  // real stone grain (a photographed granite, world-space, ~1.6 m tile) as a ratio to its own blurred
+  // average, so it adds texture without moving the tuned brightness (photoTextures.js sets it)
+  if (grainAmount > 0.0) {
+    vec2 gp = abs(n.y) > 0.7 ? vW.xz / 1.6 : vec2(abs(n.x) > abs(n.z) ? vW.z : vW.x, vW.y) / 1.6;
+    float gl = dot(texture2D(grainMap, gp).rgb, vec3(0.3333)), ga = dot(texture2D(grainMap, gp, 7.0).rgb, vec3(0.3333));
+    albedo *= mix(1.0, clamp(gl / max(ga, 0.02), 0.45, 1.7), grainAmount);
+  }
   // ambient: blue dusk sky from above, warm street bounce from below, a breath of
   // directional sky from the river side so mouldings and columns keep their form
   vec3 amb = mix(groundAmbient, skyAmbient, n.y * 0.5 + 0.5);
@@ -60,14 +67,14 @@ export function archMaterial({ map = white, emissiveMap = black, tint = 0xffffff
   const m = new THREE.ShaderMaterial({
     vertexShader: archVertex, fragmentShader: archFragment, fog: true,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
-      map: { value: null }, emissiveMap: { value: null },
+      map: { value: null }, emissiveMap: { value: null }, grainMap: { value: null }, grainAmount: { value: 0 },
       tint: { value: new THREE.Color(tint) }, floodColor: { value: FLOOD_COLOR.clone() },
       floodGain: { value: floodGain }, emissiveGain: { value: emissiveGain },
       skyAmbient: { value: new THREE.Color(0.05, 0.08, 0.17) },
       groundAmbient: { value: new THREE.Color(0.075, 0.06, 0.05) },
     }]),
   });
-  m.uniforms.map.value = map; m.uniforms.emissiveMap.value = emissiveMap;   // (merge() would have cloned the textures)
+  m.uniforms.map.value = map; m.uniforms.emissiveMap.value = emissiveMap; m.uniforms.grainMap.value = white;   // (merge() would have cloned the textures)
   return m;
 }
 const arch = archMaterial;

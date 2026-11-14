@@ -4,6 +4,7 @@
 // a narrow glazed front, black steel, a white-tiled bright interior with the espresso machine on
 // show, a menu lightbox, a hatch you order at, and a short queue. Signage is the name set in
 // type; no logo artwork is reproduced. Prices are typical Manner prices, not a live menu.
+import { cup as makeCup } from './cups.js';
 import * as THREE from 'three';
 import { makeCanvas, tex, FONT } from './canvas.js';
 import { manner as M } from './layout.js';
@@ -52,7 +53,7 @@ export function createManner(curbH, { x = MANNER.x, zWall = MANNER.zWall } = {})
   add(new THREE.BoxGeometry(0.8, 0.42, 0.4), steel, x + 0.7, y0 + 1.25, zWall + 0.28);
   for (const dx of [-0.2, 0.2]) add(new THREE.CylinderGeometry(0.035, 0.035, 0.08, 10), black, x + 0.7 + dx, y0 + 1.08, zWall + 0.47);
   add(new THREE.CylinderGeometry(0.08, 0.1, 0.42, 12), black, x + 1.4, y0 + 1.25, zWall + 0.25);       // grinder
-  for (let i = 0; i < 4; i++) add(new THREE.CylinderGeometry(0.04, 0.032, 0.12, 10), white, x - 0.9 + i * 0.12, y0 + 1.1, zWall + 0.42);   // cups on the pass
+  for (let i = 0; i < 4; i++) { const c = makeCup('manner'); c.position.set(x - 0.9 + i * 0.12, y0 + 1.04, zWall + 0.42); c.rotation.y = (i % 2 ? 0.3 : -0.2); g.add(c); }   // cups waiting on the pass
   // glass, and the open hatch you order at
   const glass = std({ color: 0x9fb3bd, roughness: 0.05, metalness: 0.3, transparent: true, opacity: 0.16, depthWrite: false });
   add(new THREE.BoxGeometry(W - 0.2, 2.1, 0.02), glass, x + 0.45, y0 + 1.95, zf - 0.02).scale.x = 0.78;

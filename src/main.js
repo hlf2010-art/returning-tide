@@ -49,6 +49,12 @@ import { createTrees } from './world/trees.js';
 import { createBumps } from './world/bumps.js';
 import { createManner } from './world/shops.js';
 import { createBelongings } from './world/belongings.js';
+import { createHuracan, HURACAN_SPOT } from './world/huracan.js';
+import { createCarSale } from './world/carSale.js';
+import { createInteriors } from './world/interiors.js';
+import { createWalkers } from './world/walkers.js';
+import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
+import { usePhotoSurfaces } from './world/photoTextures.js';
 import { createDidi, PICKUP } from './world/didi.js';
 import { createRideFlow } from './world/rideFlow.js';
 import { createShop } from './engine/errands.js';
@@ -105,6 +111,7 @@ async function boot() {
     [`700 40px ${FONT.sans}`, ALL_TEXT], [`40px ${FONT.hand}`, ALL_TEXT],
   ]);
   const M = createMaterials();
+  usePhotoSurfaces(M, R.renderer).then((r) => { if (r) console.info('photo surfaces', r); });   // CC0 photographed stone and asphalt, swapped in when loaded
   const sky = createSky(), skyline = createSkyline(), river = createRiver();
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
   // real people (Microsoft Rocketbox, MIT) when their files load; the hand-built figures otherwise
@@ -135,7 +142,12 @@ async function boot() {
   scene.add(trees.group);
   // Manner Coffee's takeaway front on Hankou Road (world/shops.js), lit from inside
   const manner = createManner(L.curbH); scene.add(manner.group);
-  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }]);
+  // a Lamborghini parked on Hankou Road (loads in the background; world/huracan.js)
+  const huracan = createHuracan(scene);
+  huracan.ready.then((r) => { if (r) traffic.setSights([{ id: 'huracan', x: HURACAN_SPOT.x, z: HURACAN_SPOT.z }]); });   // passers-by look; some take a photo
+  // the Peace Hotel's ground floor and the AIA lobby (world/interiors.js); their lamps join the light pool
+  const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard });
+  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights]);
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -150,10 +162,13 @@ async function boot() {
   // what you buy: the courier at the kerb, parcels, the umbrella, headphones (world/belongings.js)
   const belongings = createBelongings({ scene, people, camera, hud, audio, getLife: () => life, save: () => saveLife() });
   // DiDi: a car from the traffic comes to the kerb; you ride in it (world/didi.js, world/rideFlow.js)
-  const didi = createDidi({ scene, people, traffic, vehicles, camera, player });
+  const didi = createDidi({ scene, people, traffic, vehicles, camera, player, renderer: R.renderer });
   const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode });
-  document.querySelector('#ride-card .go').addEventListener('click', () => rideFlow.closeCard());
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow };
+  document.querySelector('#ride-card .go').addEventListener('click', () => { if (!closeInfoCard()) rideFlow.closeCard(); });
+  // buying it: Vivian, the consultant, at the car (world/carSale.js, engine/carPurchase.js)
+  const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode });
+  if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, walkers: createWalkers({ scene, people }) };
   // bumping into people: their reactions, a passing remark, a jolt for you
   bumps = createBumps({ hud, audio, onPlayerBump: ({ closing }) => { player.head.dipV -= 0.1 + 0.05 * Math.min(4, closing); player.head.roll += (Math.random() - 0.5) * 0.04; } });
   // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
@@ -198,6 +213,20 @@ async function boot() {
 function lock() {
   if (noLock) return;
   try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch { /* handled by pointerlockerror */ }
+}
+// a card for an evening somewhere (the Jazz Bar): E or click to carry on
+function showInfoCard({ place, line, fare = '', back = '' }) {
+  const c = document.getElementById('ride-card'); if (!c) return;
+  c.querySelector('.place').textContent = place; c.querySelector('.line').textContent = line;
+  c.querySelector('.fare').textContent = fare; c.querySelector('.back').textContent = back; c.querySelector('.go').textContent = tx('rideContinue');
+  c.classList.add('on'); c.dataset.info = '1';
+}
+function closeInfoCard() { const c = document.getElementById('ride-card'); if (c && c.dataset.info) { c.classList.remove('on'); delete c.dataset.info; return true; } return false; }
+// talking with Vivian at the car (1-4), or sat in it (the car sale has the camera)
+function saleMode(m) {
+  if (m === 'sale') { mode = 'sale'; player.enabled = false; player.lookOnly = false; player.clearInput(); hud.prompt(false); target = null; }
+  else if (m === 'sale-seat') { mode = 'sale-seat'; player.enabled = false; player.lookOnly = true; }
+  else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
 }
 // in a DiDi: the car has the camera; you can look around and answer (1-4)
 let pausedFrom = 'play';
@@ -379,12 +408,14 @@ window.addEventListener('keydown', (e) => {
     else if (k === 'Escape' && noLock) closePouch();
     return;
   }
+  if (mode === 'sale' || mode === 'sale-seat') { if (world.carSale.key(k)) e.preventDefault(); return; }
   if (mode === 'ride') {
     if (world.rideFlow.key(k)) { e.preventDefault(); return; }
     if (k === 'Escape' && noLock) pause();
     return;
   }
   if (mode === 'play') {
+    if ((k === 'KeyE' || k === 'Enter') && closeInfoCard()) return;
     if (world && world.belongings && world.belongings.key(k)) return;
     if (k === 'KeyE') interact();
     else if (k === 'Escape' && noLock) pause();
@@ -407,6 +438,8 @@ function interact() {
   else if (target.id === 'pouch') openPouch();
   else if (target.id === 'notice') openInspect();
   else if (target.id === 'didi') world.rideFlow.board();
+  else if (target.id === 'vivian') world.carSale.interact();
+  else if (world.interiors.owns(target.id)) world.interiors.interact(target.id);
   else if (world.belongings.interact(target.id)) { /* the courier */ }
   else if (target.id === 'manner') {
     const mo = life.flags.mannerOrder;
@@ -471,6 +504,14 @@ const phone = createPhone({
       life.flags.mannerOrder = { num: ev.num, item: ev.item, ready: lifeStamp(life) + ev.wait, done: false };
     }
     if (ev.type === 'call-declined') lifeReact(life, ev);
+    if (ev.type === 'add-contact' && ev.id === 'vivian') carContact(life, lifeStamp(life) + 20);   // she brings the demo car in twenty minutes
+    if (ev.type === 'reply-do') {
+      if (ev.do === 'plate-auction' || ev.do === 'plate-nanjing') choosePlate(life, ev.do.slice(6));
+      if (ev.do === 'pay-full' || ev.do === 'pay-finance') {
+        const r = payBalance(life, ev.do.slice(4));
+        if (!r.ok && r.reason === 'insufficient') lifePost(life, 'vivian', { from: 'vivian', kind: 'text', text: '银行余额不够全款……要不做金融？首付三成就行。', replies: [{ text: '做金融吧。', do: 'pay-finance' }] });
+      }
+    }
     if (ev.type === 'call-choice' && ev.choice) { if (ev.choice.delta) lifeNudge(life, ev.from, ev.choice.delta, 'call'); if (ev.choice.flag) life.flags[ev.choice.flag] = true; }
     saveLife();
   },
@@ -481,13 +522,14 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyP' && !e.repeat) { phone.toggle(); e.stopImmediatePropagation(); }
 }, true);
 function updateLife(dt) {
-  if (mode !== 'play' && mode !== 'ride' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
+  if (mode !== 'play' && mode !== 'ride' && mode !== 'sale' && mode !== 'sale-seat' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
   lifeAdvance(life, dt);
   if (params.get('life') !== '0') { runAgenda(life); deliverFollowUps(life); }   // ?life=0: nobody gets in touch (measurement tools)
   for (const inv of lifeLapse(life)) lifeReact(life, { type: 'invite', id: inv.id, status: 'missed', from: inv.from, thread: inv.thread });
   const events = lifeDrain(life);
   for (const ev of events) if (ev.type === 'call') pendingCalls.push(ev);
   if (world && world.belongings) world.belongings.step(dt, events);
+  if (world && world.carSale) updateCarSale(events);
   // calls wait until you're not in the middle of something else
   if (pendingCalls.length && mode === 'play' && !phone.inCall) { const c = pendingCalls.shift(); phone.ring(c.script); }
   const mo = life.flags.mannerOrder;
@@ -499,6 +541,24 @@ function updateLife(dt) {
   if (cupFor > 0) cupFor = Math.max(0, cupFor - dt);
   phone.update(dt);
   if ((lifeSaveIn -= dt) <= 0) { lifeSaveIn = 5; saveLife(); }
+}
+// the Huracán: Zhixia's lead (after you said you'd think about a car), the appointment, the
+// purchase's own clock, delivery, and what your friends make of it
+function updateCarSale(events) {
+  const f = life.flags, now = lifeStamp(life);
+  if (f.carCurious && params.get('life') !== '0') { f.carCuriousAt ??= now; if (!f.carBuy && now >= f.carCuriousAt + 25) carLead(life); }
+  for (const ev of events) {
+    if (ev.type === 'car-appointment') f.carAppointAt = ev.at;
+    if (ev.type === 'car-delivered') {
+      lifePost(life, 'wuhu', { from: 'momo', kind: 'text', text: '？？？白白提车了？？？' });
+      (f.pendingFollow ||= []).push({ at: now + 2, thread: 'wuhu', from: 'zhixia', text: '我就说吧😎 周末天马，带上它。' }, { at: now + 5, thread: 'wuhu', from: 'xuan', text: '……你爸知道吗' });
+    }
+  }
+  const b = f.carBuy;
+  if (b && b.stage === 'booked' && f.carAppointAt != null && now >= f.carAppointAt - 5 && !world.carSale.present) world.carSale.appear('viewing');
+  if (b) for (const e of stepPurchase(life)) {
+    if (e === 'delivery-due' && !f.deliveryNoted) { f.deliveryNoted = true; lifePost(life, 'vivian', { from: 'vivian', kind: 'text', text: '车到了！明天下午我们把车开到汉口路给您交车，您看几点方便？' }); world.carSale.appear('delivery'); }
+  }
 }
 // minimap: shown when it helps (engine/minimapLogic.js); hold Tab to keep it up
 const minimap = createMinimap(document.getElementById('minimap')), mapState = createMinimapState();
@@ -583,7 +643,10 @@ function frame(now) {
   world.didi.update(mode === 'pause' ? 0 : dt);
   world.rideFlow.update(mode === 'pause' ? 0 : dt);
   if (riding && world.didi.car) { player.body.x = world.didi.car.x; player.body.z = world.didi.car.z; }   // you (and your ears) are in the car
-  if (!riding) player.update(mode === 'pause' ? 0 : dt);
+  world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
+  if (player.body.z < -120) world.interiors.update(mode === 'pause' ? 0 : dt, player.body);
+  if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
+  if (!riding && mode !== 'sale-seat') player.update(mode === 'pause' ? 0 : dt);
   if (world.playerBody) { world.playerBody.setVisible(!riding); if (!riding) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0
@@ -645,12 +708,15 @@ function frame(now) {
       { id: 'notice', x: cf.x, y: cf.y, z: cf.z, reach: 2.7, cone: 0.78 },
     ];
     if (mission1 && mission1.canPickUp()) cands.push({ id: 'pouch', x: pf.x, y: pf.y, z: pf.z, reach: 2.4, cone: 0.72 });
-    cands.push(...world.belongings.candidates());
+    cands.push(...world.belongings.candidates(), ...world.carSale.candidates());
+    if (player.body.z < -125) cands.push(...world.interiors.candidates());
     if (world.rideFlow.canBoard()) { const d = world.didi.doorFocus(); if (d) cands.push({ id: 'didi', ...d, reach: 2.8, cone: 0.6 }); }
     cands.push({ id: 'manner', x: mannerSpec.queue[0].x + 0.2, y: L.curbH + 1.15, z: mannerSpec.zWall + mannerSpec.depth - 0.1, reach: 2.6, cone: 0.7 });
     target = pickTarget(camera.position, _d, cands, colliders);
   }
-  if (target && target.id === 'didi') hud.prompt(true, { target: tx('pDidi', world.rideFlow.ride.driver.plate), action: tx('pGetIn') });
+  if (target && world.interiors.owns(target.id)) hud.prompt(true, world.interiors.prompt(target.id));
+  else if (target && target.id === 'vivian') hud.prompt(true, world.carSale.prompt());
+  else if (target && target.id === 'didi') hud.prompt(true, { target: tx('pDidi', world.rideFlow.ride.driver.plate), action: tx('pGetIn') });
   else if (target) hud.prompt(true, PROMPTS[target.id] ? PROMPTS[target.id]() : world.belongings.prompt(target.id));
   else hud.prompt(false);
 
@@ -689,6 +755,7 @@ function frame(now) {
   if (!debug.noReflect) world.river.renderReflection(R.renderer, scene, camera);
   R.renderer.info.reset();
   R.renderer.shadowMap.needsUpdate = true;
+  R.frame(t);
   R.composer.render(dt);
   R.tick();
 }

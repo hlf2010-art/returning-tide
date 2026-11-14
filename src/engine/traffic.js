@@ -10,6 +10,7 @@
 //
 // Along a lane, positions use s = z * dir, so both directions share stop line / box numbers.
 
+import { noticeSights, gawkSpeed } from './sights.js';
 import { avoid, SOCIAL, DISTRACTED } from './social.js';
 import { startErrand, errandTarget, stepErrand } from './errands.js';
 export const TRAFFIC_CONFIG = {
@@ -99,6 +100,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   const ctl = createSignalController(cfg);
   const lanes = Object.fromEntries(geom.lanes.map((l) => [l.id, { ...l, vehicles: [] }]));
   const cw = geom.crosswalk, road = geom.road;
+  let sights = [];
   const stats = { redEntries: 0, blockedEntries: 0, yellowGo: 0, yellowStop: 0, minGap: Infinity, overlaps: 0, pedConflicts: 0, recycled: 0 };
 
   const vehicles = vSpecs.map((sp) => {
@@ -145,7 +147,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
       persona: sp.persona || 'office', pause: 0, faceTo: null, faceFor: 0, gesture: null, shove: null,
       // eyes on a phone while walking (messages, short videos, a drama episode): decided leg by leg
       phoneHabit: sp.phoneHabit ?? 0.2, phoneWalk: false, phoneKind: 'chat', phoneW: 0,
-      coffee: sp.coffee || 0, errand: null, cup: 0,                          // a coffee run now and then (errands.js)
+      coffee: sp.coffee || 0, errand: null, cup: sp.startCup || 0, cupBrand: sp.startCup ? 'starbucks' : 'manner',   // some arrive with a coffee from elsewhere                          // a coffee run now and then (errands.js)
     };
   });
 
@@ -347,6 +349,8 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     for (const p of peds) {
       react(p, dt);
       if (p.faceFor > 0) p.faceFor -= dt; else p.faceTo = null;
+      // a sight worth a look (a supercar at the kerb): heads turn, some stop for a photo (sights.js)
+      if (sights.length && !p.crossing && !p.errand && p.react === 'none' && !p.jog) noticeSights(p, sights, dt, rng); else if (!p.photo) p.gaze = null;
       if (p.shove) {                                                          // knocked off line by a bump
         const k = Math.min(1, dt / p.shove.t);
         p.x += p.shove.x * k; p.z += p.shove.z * k; p.shove.t -= dt;
@@ -380,7 +384,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
           stepErrand(shop, e, dt, arrived);
           continue;
         }
-        p.cup = e.cupFor; p.errand = null; p.idx = (p.idx + 1) % p.nodes.length;   // back on the way, coffee in hand
+        p.cup = e.cupFor; p.cupBrand = 'manner'; p.errand = null; p.idx = (p.idx + 1) % p.nodes.length;   // back on the way, coffee in hand
       }
       const node = p.nodes[p.idx];
       if (p.state === 'waiting' && !p.path.length) {
@@ -415,7 +419,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
         if (p.phoneWalk) p.phoneKind = rng() < 0.55 ? 'video' : 'chat';
       }
       p.phoneW = Math.max(0, Math.min(1, p.phoneW + (p.phoneWalk ? dt : -dt) / 0.6));
-      const sp = blocked && !p.detour ? 0 : base * (1 - 0.15 * p.phoneW);
+      const sp = blocked && !p.detour ? 0 : base * (1 - 0.15 * p.phoneW) * gawkSpeed(p);
       // steer round anyone about to be in the way (off the crosswalk lines only a little)
       let vx = dx * sp, vz = dz * sp;
       if (sp > 0 && !p.detour) {
@@ -477,6 +481,8 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
 
   return {
     controller: ctl, vehicles, peds, lanes, stats, config: cfg, shop,
+    // things worth stopping to look at: [{ id, x, z }]
+    setSights(list) { sights = list || []; },
     // a car moves over into the next lane over `dur` seconds (a cut-in)
     changeLane(veh, toId, dur = 1.5) { if (!veh.laneChange && lanes[toId] && veh.lane !== lanes[toId]) veh.laneChange = { to: lanes[toId], t: 0, dur }; },
     update, vehiclePermission: (v, player) => vehiclePermission(v, people(player)), pedestrianPermission,

@@ -12,7 +12,7 @@ export const L = {
   deckY: 3,
   curbH: 0.15,
   waterY: -2.4,
-  zNorth: -60,       // playable extent along the waterfront
+  zNorth: -262,      // playable extent along the waterfront: north past Nanjing Road and the Peace Hotel
   zSouth: 95,
   stair: { x0: 2, x1: 9.2, halfW: 6, steps: 20 },
   street: { halfW: 6.5, roadHalfW: 4, xEnd: -92 },  // Hankou Road
@@ -20,6 +20,16 @@ export const L = {
   eye: 1.68,
   radius: 0.36,
 };
+
+// Side streets running west off the Bund north of Hankou Road (the blocks between them: bund.js).
+// Each is open from the Bund to a hoarding at xEnd; the carriageway is roadHalfW either side of zc.
+//   Jiujiang Road  between No.16 and No.17 (the AIA Building)
+//   Nanjing Road E between No.19 and No.20 (the Peace Hotel, whose main entrance is on it)
+export const sideStreets = [
+  { id: 'jiujiang', z0: -131, z1: -117, roadHalfW: 3.4, xEnd: -56 },
+  { id: 'nanjing', z0: -212, z1: -190, roadHalfW: 5, xEnd: -80 },
+].map((s) => ({ ...s, zc: (s.z0 + s.z1) / 2 }));
+const inSideRoad = (x, z) => x < -28 && sideStreets.some((s) => Math.abs(z - s.zc) < s.roadHalfW && x > s.xEnd - 1);
 
 // ---- prop placement (shared by visuals and colliders) ----
 export const deckLamps = [];          // z positions of promenade lamps (x = 24.6)
@@ -108,7 +118,7 @@ export const crossing = {
   // background pedestrians: crossing line, which west corner they use, wander targets, speed
   peds: [
     { id: 'p1', zc: -2.4, corner: -1, westWander: [-30.2, -11], eastWander: [-0.9, -12], speed: 1.32, look: 0, rain: 'umbrella', persona: 'youngMan', phoneHabit: 0.6, coffee: 0.3 },
-    { id: 'p2', zc: -0.8, corner: 1, westWander: [-29.6, 15], eastWander: [-1.1, 9], speed: 1.12, look: 1, startEast: true, rain: 'shelter', persona: 'office', phoneHabit: 0.5, coffee: 0.35 },
+    { id: 'p2', zc: -0.8, corner: 1, westWander: [-29.6, 15], eastWander: [-1.1, 9], speed: 1.12, look: 1, startEast: true, rain: 'shelter', persona: 'office', phoneHabit: 0.5, coffee: 0.35, startCup: 900 },   // a Starbucks from up the road
     { id: 'p3', zc: 0.9, corner: 1, westWander: [-40, 5.2], eastWander: [-0.8, 16], speed: 1.45, look: 2, rain: 'cab', persona: 'office', phoneHabit: 0.3, coffee: 0.6 },
     { id: 'p4', zc: 2.5, corner: -1, westWander: [-42, -5.2], eastWander: [-1.0, -7], speed: 0.62, look: 3, startEast: true, rain: 'umbrella', persona: 'elder', phoneHabit: 0.05 },  // elderly, slow
     // an older local woman on her way home with the shopping: brisk, and not one to be pushed about
@@ -136,7 +146,10 @@ const S = L.street;
 // Buildings
 box(-140, L.facadeX, S.halfW, 48, 'customs');          // Customs House
 box(-140, L.facadeX, 48, 140, 'hsbc');                 // HSBC Building
-box(-140, L.facadeX, -140, -S.halfW, 'north-block');   // No.14, No.15 and the Hankou Rd north side
+box(-140, L.facadeX, -117, -S.halfW, 'north-block');   // No.14, No.15, No.16 and the Hankou Rd north side
+box(-140, L.facadeX, -190, -131, 'aia-block');          // No.17 (AIA) to No.19 (the lobby is carved out in world/interiors)
+box(-140, L.facadeX, L.zNorth - 1, -212, 'peace-block');   // No.20, the Peace Hotel (likewise)
+for (const st of sideStreets) box(st.xEnd - 1, st.xEnd, st.z0, st.z1, 'boundary');   // each side street ends at a hoarding
 box(L.facadeX, -31.0, 17.5, 35.5, 'portico');
 box(L.facadeX, -32.2, 68, 98, 'hsbc-centre');          // HSBC central pavilion          // Customs House portico plinth
 for (const l of lions) around(l.x - 0.1, l.z, 1.4, 0.7, 'lion');
@@ -187,8 +200,8 @@ export function groundHeight(x, z) {
     return L.deckY;
   }
   if (x < L.westCurbX) {
-    // Hankou Road carriageway runs out through the west sidewalk
-    if (Math.abs(z) < S.roadHalfW) return 0;
+    // Hankou Road (and the side streets further north) run out through the west sidewalk
+    if (Math.abs(z) < S.roadHalfW || inSideRoad(x, z)) return 0;
     return L.curbH;
   }
   if (x > L.eastCurbX) return L.curbH;
@@ -198,7 +211,7 @@ export function groundHeight(x, z) {
 // Coarse "where am I" for footstep sounds etc.
 export function surfaceAt(x, z) {
   if (x >= L.wallX) return Math.abs(z) < L.stair.halfW && x < L.stair.x1 ? 'stairs' : 'deck';
-  if (x < L.westCurbX && Math.abs(z) >= S.roadHalfW) return 'pavement';
+  if (x < L.westCurbX && Math.abs(z) >= S.roadHalfW && !inSideRoad(x, z)) return 'pavement';
   if (x > L.eastCurbX) return 'pavement';
   return 'road';
 }
