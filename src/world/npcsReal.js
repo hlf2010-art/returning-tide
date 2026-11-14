@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { L, npcs as npcLayout } from './layout.js';
 import { createPerson } from './people.js';
 import { addGlasses } from './glasses.js';
+import { createFace } from './face.js';
 
 const std = (o) => new THREE.MeshStandardMaterial(o);
 function wrapAngle(a) { let r = a; while (r > Math.PI) r -= Math.PI * 2; while (r < -Math.PI) r += Math.PI * 2; return r; }
@@ -20,7 +21,7 @@ export function createRealNpcs(people) {
     // the pouch's holder: follows the chest, oriented with the body (old torso frame: origin ~0.27 m below the chest bone)
     const torso = new THREE.Group(); torso.position.set(0, -0.27, 0);
     person.anchors.chest.add(torso); group.add(person.anchors.chest);
-    const c = { id: spec.id, spec, root, person, torso, talkPick: 0, wasSpeaking: false, reaction: null, headOffset: new THREE.Vector3(spec.x, L.deckY + spec.height * 0.91, spec.z) };
+    const c = { id: spec.id, spec, root, person, torso, talkPick: 0, wasSpeaking: false, reaction: null, face: createFace(person), nodT: 0, look: new THREE.Vector3(), headOffset: new THREE.Vector3(spec.x, L.deckY + spec.height * 0.91, spec.z) };
     if (spec.id === 'su') {                                                   // her folding umbrella
       const umb = new THREE.Group(); umb.visible = false;
       const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.72, 6), std({ color: 0x1a1a1a, roughness: 0.5 })); shaft.position.y = 0.36;
@@ -31,11 +32,11 @@ export function createRealNpcs(people) {
     return c;
   });
   const byId = Object.fromEntries(chars.map((c) => [c.id, c]));
-  const _e = new THREE.Euler(), _q = new THREE.Quaternion();
+  const _e = new THREE.Euler(), _q = new THREE.Quaternion();   // (also used by the nod)
 
   function getSpeakerPosition(id) { const c = byId[id]; return c ? c.headOffset : npcLayout.pairFocus; }
 
-  function update(t, dt, { activeSpeaker = null, interacting = false, playerPos = null, umbrella = 0 } = {}) {
+  function update(t, dt, { activeSpeaker = null, interacting = false, playerPos = null, umbrella = 0, voice = null, eye = null } = {}) {
     const k = Math.min(1, dt * 5.5);
     for (const c of chars) {
       const speaking = activeSpeaker === c.id;
@@ -52,6 +53,19 @@ export function createRealNpcs(people) {
       c.person.play(state, 0.5);
       c.person.setUmbrella(c.umbrella ? umbrella : 0);
       c.person.update(dt);
+      // the face: talking (jaw on the phrases, still in the pauses), brows on questions, eyes on
+      // whoever matters (the player if you're talking to them, otherwise the other one)
+      const other = chars.find((o) => o !== c);
+      if (interacting && eye) c.look.copy(eye); else if (other) c.look.copy(other.headOffset);
+      const ph = voice && speaking ? voice.phrase : null;
+      // (the jaw follows the conversation itself; the voice's phrases only add the pauses, so faces
+      // still talk with subtitles only or without a speech voice)
+      c.face.update(dt, { speaking, pause: !!(ph && voice.pause), question: !!(ph && ph.question), annoyed: !!(c.reaction && c.reaction.kind === 'scold'), lookAt: c.look });
+      if (c.nodT > 0) {                                                       // a listener's nod
+        c.nodT = Math.max(0, c.nodT - dt);
+        const k = Math.sin((1 - c.nodT / 0.45) * Math.PI) * 0.12, side = new THREE.Vector3(Math.cos(c.root.rotation.y), 0, -Math.sin(c.root.rotation.y));
+        const hd = c.person.bones.head; hd.parent.getWorldQuaternion(_q); hd.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(side.applyQuaternion(_q.invert()), k)); c.root.updateMatrixWorld(true);
+      }
       // live head position for voices / targeting
       c.person.bones.head.getWorldPosition(c.headOffset); c.headOffset.y += 0.08;
       if (c.umbrella) {
@@ -67,5 +81,7 @@ export function createRealNpcs(people) {
   }
   // a bump: turn to whoever it was, and gesture for a moment
   function react(id, kind, faceTo, until) { const c = byId[id]; if (c) c.reaction = { kind, faceTo, until }; }
-  return { group, chars, byId, getSpeakerPosition, update, react };
+  // the listener's "嗯": a small nod (the sound is audio.js's 'hum')
+  function nod(id) { const c = byId[id]; if (c) c.nodT = 0.45; }
+  return { group, chars, byId, getSpeakerPosition, update, react, nod };
 }

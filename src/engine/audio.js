@@ -219,7 +219,7 @@ export function createAudio() {
   // Mission One's two cues. Collecting: a smooth kraft slide off the counter, a soft lift thump,
   // the string ticking against its button. Breaking the seal: a sharp crack, then an accelerating
   // granular rip, then the flap falling open.
-  function cue(name, delay = 0) {
+  function cue(name, delay = 0, level = 1) {
     if (!ctx || muted) return;
     const t = ctx.currentTime + 0.01 + delay;
     if (name === 'collect') {
@@ -227,6 +227,14 @@ export function createAudio() {
       burst(t, { buffer: buf, f: 1700, q: 0.9, gain: 0.5, attack: 0.04, decay: 0.32, sweepTo: 3300, rate: 2.2 });
       burst(t + 0.02, { buffer: buf, type: 'lowpass', f: 420, q: 0.7, gain: 0.34, attack: 0.01, decay: 0.12, rate: 1.4 });
       ping(t + 0.2, 2350, 0.05); ping(t + 0.27, 3050, 0.035);
+    } else if (name === 'hum') {
+      // a closed-mouth "嗯": a low voiced murmur, nasal, a quarter of a second, rising a touch
+      const o = ctx.createOscillator(), g = gainNode(0), f = filt('bandpass', 420, 1.2), lp = filt('lowpass', 900, 0.7);
+      o.type = 'sawtooth'; const f0 = rnd(118, 150);
+      o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.12, t + 0.24);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.05 * level, t + 0.05); g.gain.linearRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(f).connect(lp).connect(g).connect(sfx); o.start(t); o.stop(t + 0.34);
+      stats.cues.hum = (stats.cues.hum || 0) + 1;
     } else if (name === 'bump') {
       // shoulder into shoulder: a soft cloth thud and a scuff of feet
       stats.cues.bump = (stats.cues.bump || 0) + 1;

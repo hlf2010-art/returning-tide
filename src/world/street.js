@@ -258,7 +258,7 @@ export function createStreet(M) {
     c.font = `700 ${h * 0.22}px ${FONT.sans}`; c.textAlign = 'right'; c.fillText(T.shopSub, w * 0.97, h * 0.55);
   }, { emissive: 0.75 }), -69.2, CH + 3.15, wz + 0.1, 0);
   B.wood.box(-69.2, CH + 3.6, wz + 0.5, 5.0, 0.06, 1.0);                         // canopy
-  for (const x of [-77.3, -86.2]) B.shutter.box(x, CH, wz + 0.02, 4.4, 2.9, 0.06);
+  B.shutter.box(-86.2, CH, wz + 0.02, 4.4, 2.9, 0.06);                         // (-77.3 is Manner's front now: shops.js)
   B.shutter.box(-60.6, CH, wz + 0.02, 2.2, 2.4, 0.05);
   // crates and a stool outside the shop
   B.red.box(-72.4, CH, wz + 0.5, 0.5, 0.32, 0.36); B.red.box(-72.4, CH + 0.32, wz + 0.5, 0.5, 0.32, 0.36); B.wood.box(-66.2, CH, wz + 0.55, 0.32, 0.42, 0.32);

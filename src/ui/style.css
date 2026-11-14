@@ -113,3 +113,73 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0.12em 0.45em; border: 1
 #pause .zh { font: 900 46px var(--serif); letter-spacing: 0.3em; margin-right: -0.3em; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { * { transition-duration: 0.01s !important; animation-duration: 0.01s !important; } }
+/* ---- HUD v2: contemporary, quiet, legible; glass panels, one warm accent, motion that informs ---- */
+:root {
+  --ui: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --glass: rgba(14, 17, 24, 0.56); --glass-strong: rgba(12, 14, 20, 0.74);
+  --hair: rgba(255, 255, 255, 0.12); --hair-strong: rgba(255, 255, 255, 0.22);
+  --text: #f4f1ea; --muted: rgba(244, 241, 234, 0.64); --faint: rgba(244, 241, 234, 0.4);
+  --accent: #f2b766; --accent-soft: rgba(242, 183, 102, 0.16); --alert: #ff8f80;
+  --radius: 12px; --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+#hud { font-family: var(--ui); }
+.glass { background: var(--glass); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2); border: 1px solid var(--hair); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28); }
+kbd { min-width: 1.6em; padding: 0.1em 0.42em; border: 1px solid var(--hair-strong); border-bottom-width: 2px; border-radius: 6px; font: 600 0.82em var(--ui); background: rgba(255, 255, 255, 0.08); color: var(--text); }
+
+/* the one thing E will do: a pill under the reticle */
+#prompt { top: calc(50% + 40px); gap: 8px; padding: 6px 12px 6px 6px; font: 500 13.5px var(--ui); letter-spacing: 0.01em; text-shadow: none;
+  background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--hair); border-radius: 999px; transform: translate(-50%, 4px); transition: opacity 0.22s var(--ease), transform 0.22s var(--ease); }
+#prompt.on { transform: translate(-50%, 0); }
+#prompt kbd { background: var(--accent); color: #17130c; border-color: transparent; }
+#prompt-target { font-weight: 600; color: var(--text); letter-spacing: 0.01em; }
+#prompt-target::after { content: '·'; margin-left: 8px; color: var(--faint); }
+#prompt-text { color: var(--muted); }
+#reticle { width: 5px; height: 5px; margin: -2.5px; background: rgba(255, 255, 255, 0.8); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.18); }
+
+/* subtitles: a speaker chip and the line; dialogue gets a stronger panel */
+#subtitle { bottom: 52px; width: min(40rem, 90vw); padding: 12px 16px 13px; text-shadow: none; border-left: 0;
+  background: var(--glass); backdrop-filter: blur(14px); border: 1px solid var(--hair); border-radius: var(--radius); transform: translate(-50%, 8px); transition: opacity 0.3s var(--ease), transform 0.3s var(--ease); }
+#subtitle.on { transform: translate(-50%, 0); }
+#subtitle.interacting { background: var(--glass-strong); border-color: var(--hair-strong); }
+#sub-speaker { font: 600 11.5px var(--ui); letter-spacing: 0.06em; color: #17130c; background: var(--accent); padding: 2px 8px; border-radius: 999px; }
+#sub-source { font-size: 10.5px; color: var(--faint); }
+#sub-text { font: 500 17px/1.6 var(--ui); color: var(--text); margin-top: 6px; }
+.opt { border-radius: 8px; border-left: 0; padding: 4px 8px; }
+.opt.sel { background: var(--accent-soft); color: var(--text); }
+.opt .mk { color: var(--accent); }
+
+/* a passing remark: lighter, higher, fades on its own */
+#bark { bottom: calc(52px + 118px); padding: 7px 14px 8px; background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--hair); border-radius: 10px; text-shadow: none; }
+#bark-who { font: 500 10.5px var(--ui); letter-spacing: 0.04em; color: var(--muted); }
+#bark-text { font: 500 15.5px/1.45 var(--ui); }
+#bark-gloss { color: var(--faint); }
+
+/* toasts: a pill at the top */
+#toast { top: 22px; padding: 8px 16px; font: 500 13px var(--ui); letter-spacing: 0.01em; border-left: 0; border-radius: 999px;
+  background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--hair); transform: translate(-50%, -6px); transition: opacity 0.3s var(--ease), transform 0.3s var(--ease); }
+#toast.on { transform: translate(-50%, 0); }
+
+/* objective: a compact card top-left; expands when it changes, settles to one line */
+#objective { top: 20px; left: 20px; max-width: min(23rem, 70vw); padding: 10px 14px 11px; border-left: 0; text-shadow: none;
+  background: var(--glass); backdrop-filter: blur(14px); border: 1px solid var(--hair); border-radius: var(--radius); }
+#objective .m-head { font: 600 11px var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+#objective .m-num { color: var(--accent); }
+#objective .m-en { font-weight: 500; letter-spacing: 0.06em; color: var(--faint); }
+#objective .m-zh { font: 600 15px/1.45 var(--ui); margin-top: 5px; color: var(--text); }
+#objective .m-en-step { font: 400 12.5px/1.45 var(--ui); color: var(--muted); }
+#objective.pulse { animation: objpulse2 1.4s var(--ease); }
+@keyframes objpulse2 { 0% { box-shadow: 0 0 0 0 rgba(242, 183, 102, 0.55); border-color: var(--accent); } 100% { box-shadow: 0 0 0 14px rgba(242, 183, 102, 0); border-color: var(--hair); } }
+
+/* minimap: a disc bottom-left, only when it helps */
+#minimap { position: absolute; left: 20px; bottom: 20px; width: 168px; height: 168px; border-radius: 50%; overflow: visible;
+  background: rgba(10, 12, 18, 0.6); backdrop-filter: blur(10px); border: 1px solid var(--hair-strong); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  opacity: 0; transform: translateY(10px) scale(0.96); transition: opacity 0.45s var(--ease), transform 0.45s var(--ease); }
+#minimap.on { opacity: 1; transform: none; }
+#minimap canvas { display: block; border-radius: 50%; }
+#minimap .mm-area { position: absolute; left: 50%; top: -24px; transform: translateX(-50%); white-space: nowrap; font: 500 11px var(--ui); letter-spacing: 0.02em; color: var(--muted); text-shadow: 0 1px 6px #000; }
+#hud.map-on #keys { opacity: 0; }
+
+#keys { left: 20px; bottom: 16px; font: 400 11.5px var(--ui); color: var(--faint); text-shadow: none; }
+#place .zh { font-family: var(--serif); }
+#mission-card { border-radius: var(--radius); border: 1px solid var(--hair); background: var(--glass-strong); backdrop-filter: blur(16px); }
+#dev { border-radius: 8px; }

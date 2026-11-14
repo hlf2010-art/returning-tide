@@ -3,6 +3,7 @@
 // recorded voice clips are unavailable.
 import * as THREE from 'three';
 import { computeDistanceGain } from './conversation.js';
+import { shape, moodOf } from './delivery.js';
 
 const SPEAKER_PROFILE = {
   lin: { pitch: 0.88, rate: 0.94, hints: ['yunxi', 'kangkang', 'yunjian', 'yunyang', 'danny', 'male', '男'] },
@@ -158,32 +159,47 @@ export function createDialogueAudio({
     if (voices.zhCount === 0) refreshVoices(false);
     voicesConfirmed = true;
     const prof = SPEAKER_PROFILE[line.speaker] || SPEAKER_PROFILE.lin;
-    const u = new SpeechSynthesisUtterance(line.text);
-    u.lang = 'zh-CN';
-    const picked = voices[line.speaker];
-    if (picked) u.voice = picked;
-    u.pitch = prof.pitch;
-    u.rate = prof.rate;
-    // Web Speech API supports scalar volume set at utterance start (no WebAudio PannerNode routing).
-    u.volume = Math.max(0, Math.min(1, gain));
-    lastVolume = u.volume;
+    // Said phrase by phrase (engine/delivery.js): real pauses, a lift on questions, a slower tail
+    // when trailing off, a little drift so no two phrases match. One utterance per phrase.
+    const phrases = shape(line.text, prof, { mood: line.mood || moodOf(line.text) });
     spokenCount++;
-    activeUtterance = u;
-
-    u.onend = () => {
-      if (activeUtterance === u) activeUtterance = null;
-      if (playToken === myToken && onEnd) onEnd();
+    lastVolume = Math.max(0, Math.min(1, gain));
+    let i = 0;
+    const next = () => {
+      if (playToken !== myToken) return;
+      if (i >= phrases.length) { delivery.phrase = null; if (onEnd) onEnd(); return; }
+      const ph = phrases[i++];
+      delivery.phrase = ph; delivery.pause = false;
+      const u = new SpeechSynthesisUtterance(ph.text);
+      u.lang = 'zh-CN';
+      const picked = voices[line.speaker];
+      if (picked) u.voice = picked;
+      u.pitch = Math.max(0.1, Math.min(2, ph.pitch)); u.rate = Math.max(0.5, Math.min(1.6, ph.rate));
+      // Web Speech API supports scalar volume set at utterance start (no WebAudio PannerNode routing).
+      u.volume = lastVolume;
+      activeUtterance = u;
+      const after = () => {
+        if (activeUtterance === u) activeUtterance = null;
+        if (playToken !== myToken) return;
+        delivery.pause = true;
+        if (ph.backchannel && delivery.onBackchannel) delivery.onBackchannel(line.speaker);
+        setTimeout(next, ph.pauseAfter * 1000);
+      };
+      u.onend = after;
+      u.onerror = (ev) => {
+        if (ev && ev.error && ev.error !== 'interrupted' && ev.error !== 'canceled') ttsError = ev.error;
+        if (ev && (ev.error === 'interrupted' || ev.error === 'canceled')) { if (activeUtterance === u) activeUtterance = null; return; }
+        silent();
+      };
+      // no voice to speak it: the phrase still takes as long as it would to say (~4.5 chars/s), so
+      // the line keeps its length, the face keeps talking and the room keeps yielding to it
+      const silent = () => setTimeout(after, Math.max(0.35, ph.text.length / (4.5 * u.rate)) * 1000);
+      try { synth.speak(u); } catch { activeUtterance = null; silent(); }
     };
-    u.onerror = (ev) => {
-      if (activeUtterance === u) activeUtterance = null;
-      if (ev && ev.error && ev.error !== 'interrupted' && ev.error !== 'canceled') ttsError = ev.error;
-    };
-    try {
-      synth.speak(u);
-    } catch {
-      activeUtterance = null;
-    }
+    next();
   }
+  // what the voice is doing right now, for faces and listeners: { phrase, pause, onBackchannel }
+  const delivery = { phrase: null, pause: false, onBackchannel: null };
 
   async function playRecordedClip(url, line, myToken, onEnd) {
     const ctx = audio.getContext();
@@ -282,6 +298,7 @@ export function createDialogueAudio({
 
   return {
     playLine,
+    delivery,
     stop,
     updateListener,
     getStatus,

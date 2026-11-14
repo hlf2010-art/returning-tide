@@ -44,6 +44,13 @@ export const taxi = { x: -5.25, z: 24, yaw: Math.PI };   // northbound side, nos
 export const sedan = { x: -26.8, z: -31, yaw: 0 };
 export const bikes = { x: -29.2, z0: -18.5, n: 6, gap: 0.62 };
 export const stall = { x: -57, z: -5.7 };          // watch-repair stall, north sidewalk
+// Manner Coffee's takeaway shop on Hankou Road's north side (see world/shops.js)
+export const manner = { x: -77.3, zWall: -6.48, depth: 0.85, width: 4.2 };
+{
+  const zf = manner.zWall + manner.depth, x = manner.x;
+  manner.queue = [{ x: x - 1.55, z: zf + 0.5 }, { x: x - 2.35, z: zf + 0.78 }, { x: x - 3.1, z: zf + 0.95 }];
+  manner.pickup = { x: x - 0.35, z: zf + 0.5 };
+}
 export const streetTrees = [{ x: -46, z: 5.2 }, { x: -72, z: -5.2 }, { x: -64, z: 5.2 }];
 export const lions = [{ x: -32.4, z: 76 }, { x: -32.4, z: 90 }];
 export const npcs = {
@@ -100,9 +107,9 @@ export const crossing = {
   },
   // background pedestrians: crossing line, which west corner they use, wander targets, speed
   peds: [
-    { id: 'p1', zc: -2.4, corner: -1, westWander: [-30.2, -11], eastWander: [-0.9, -12], speed: 1.32, look: 0, rain: 'umbrella', persona: 'youngMan', phoneHabit: 0.6 },
-    { id: 'p2', zc: -0.8, corner: 1, westWander: [-29.6, 15], eastWander: [-1.1, 9], speed: 1.12, look: 1, startEast: true, rain: 'shelter', persona: 'office', phoneHabit: 0.5 },
-    { id: 'p3', zc: 0.9, corner: 1, westWander: [-40, 5.2], eastWander: [-0.8, 16], speed: 1.45, look: 2, rain: 'cab', persona: 'office', phoneHabit: 0.3 },
+    { id: 'p1', zc: -2.4, corner: -1, westWander: [-30.2, -11], eastWander: [-0.9, -12], speed: 1.32, look: 0, rain: 'umbrella', persona: 'youngMan', phoneHabit: 0.6, coffee: 0.3 },
+    { id: 'p2', zc: -0.8, corner: 1, westWander: [-29.6, 15], eastWander: [-1.1, 9], speed: 1.12, look: 1, startEast: true, rain: 'shelter', persona: 'office', phoneHabit: 0.5, coffee: 0.35 },
+    { id: 'p3', zc: 0.9, corner: 1, westWander: [-40, 5.2], eastWander: [-0.8, 16], speed: 1.45, look: 2, rain: 'cab', persona: 'office', phoneHabit: 0.3, coffee: 0.6 },
     { id: 'p4', zc: 2.5, corner: -1, westWander: [-42, -5.2], eastWander: [-1.0, -7], speed: 0.62, look: 3, startEast: true, rain: 'umbrella', persona: 'elder', phoneHabit: 0.05 },  // elderly, slow
     // an older local woman on her way home with the shopping: brisk, and not one to be pushed about
     { id: 'p5', zc: 1.7, corner: 1, westWander: [-38, 5.4], eastWander: [-0.9, 4], speed: 1.0, look: 4, rain: 'umbrella', persona: 'auntie', phoneHabit: 0.15 },
@@ -160,6 +167,7 @@ around(sedan.x, sedan.z, 0.95, 2.4, 'car');
 box(bikes.x - 0.9, bikes.x + 0.9, bikes.z0 - 0.3, bikes.z0 + bikes.n * bikes.gap, 'bikes');
 around(stall.x, stall.z, 1.0, 0.75, 'stall');
 for (const t of streetTrees) around(t.x, t.z, 0.3, 0.3, 'tree');
+box(manner.x - manner.width / 2, manner.x + manner.width / 2, manner.zWall - 0.1, manner.zWall + manner.depth, 'shop');
 for (const n of npcs.list) { around(n.x, n.z, 0.34, 0.34, 'npc'); colliders[colliders.length - 1].id = n.id; }   // id: so a target can ignore its own body
 for (const p of crossing.vehPoles) around(p.x, p.z, 0.2, 0.2, 'signal');
 for (const p of crossing.pedPoles) around(p.x, p.z, 0.1, 0.1, 'signal');

@@ -25,6 +25,7 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | Mouse | look (click the page to capture the pointer) |
 | E | the one interaction key: talk / read / look at the selected target; confirm the highlighted choice; **hold** on "break the seal" |
 | W / S, ↑ / ↓, wheel | while talking or looking at the pouch: move the highlighted choice |
+| Tab (hold) | minimap |
 | C | Simplified Chinese subtitles on / off |
 | M | sound on / off (mutes ambience, footsteps, cues and voices) |
 | Esc | back out of an open conversation / close-up / notice; otherwise pause (click to return). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
@@ -158,6 +159,73 @@ Clear → light drizzle → clear, at the same blue hour. Developer toggle **F7*
 - Every level returns exactly to the approved clear values; toggling creates nothing new.
   State: `src/engine/weather.js` (pure, `tests/weather.test.mjs`); browser checks:
   `tools/weathertest.mjs`.
+
+## Interface (HUD v2)
+
+Quiet and contemporary: Inter with Noto Sans SC, translucent glass panels with hairline borders,
+one warm accent, and nothing decorative or "Oriental".
+- The interaction prompt is a pill under the reticle (key, target, action).
+- Subtitles carry a speaker chip.
+- A passing remark (a bump) sits lighter and higher than dialogue.
+- Toasts are a pill at the top.
+- The objective is a compact card that pulses when it changes.
+
+Everything moves in short fades and slides (0.2–0.45 s, one easing curve) and respects reduced
+motion.
+
+**Minimap** (`src/ui/minimap.js`, `src/engine/minimapLogic.js`): a heading-up disc, bottom left,
+drawn from the same layout data the colliders use.
+- **Shows:** you, people nearby, and the mission target (pinned to the rim with its distance when
+  it's off the map), plus north.
+- **Appears when it helps:** a mission target exists and you're moving, you've just walked into a
+  new area (Hankou Road, Zhongshan East 1st Road, the promenade, the Customs House), or you hold
+  **Tab**.
+- **Gets out of the way:** it hides while talking, reading or paused, and after ~5 s standing still.
+  Short stops mid-walk don't make it flicker (node-tested).
+
+## Manner Coffee, Hankou Road (`src/world/shops.js`)
+
+Why here:
+- Manner's official store list includes a Hankou Road shop ("汉口路126店"). The listing doesn't make
+  clear whether 126 is the street number, so its exact spot on the road is approximate.
+- The other chains named in the brief: Starbucks' Hankou Road shop (申大厦店, 汉口路266号, in
+  2018-era listings) is several blocks west of this stretch and outside the map. No 7-Eleven or
+  Subway could be confirmed on these blocks, so none are placed.
+
+The front is built like Manner's small takeaway shops:
+- a narrow glazed front in black steel
+- a bright white-tiled interior with the espresso machine and grinder on show, cups on the pass
+- a menu on the wall at typical Manner prices (not a live menu) and an order hatch with a ledge
+- an A-frame with the seasonal osmanthus latte
+
+The name is set in type; no logo artwork is reproduced. The shop is a light source like the lamps.
+
+**Coffee runs** (`src/engine/errands.js`, node-tested). Some passers-by stop on the way. They:
+1. join the queue (one at a time, in arrival order, nobody sharing a spot)
+2. at the hatch, take out their phone to scan and pay, then have a word with the barista
+3. step aside to wait on their phone
+4. take the cup, and walk on with it in their hand for a while.
+
+## Faces, voices and listening (`src/world/face.js`, `src/engine/delivery.js`)
+
+**Faces.** Every Rocketbox avatar has facial bones (jaw, eyelids, eyebrows, eyes), now driven on top
+of the body animation:
+- blinks every 2–6 s, sometimes double
+- a jaw that follows the speech, open on syllables and still in the pauses
+- brows that lift on a question and knit when annoyed
+- eyes that find who they're looking at (each other; you, when you're talking to them) and make
+  small saccades away and back
+
+**Voices.** Browser speech reads a whole sentence at one flat rate and pitch. Lines are now spoken
+phrase by phrase:
+- the pauses people leave (a breath at a comma, longer at a full stop, longest trailing off)
+- a lift at the end of a question, a slower tail on "……", a catch on "——", a quicker clip on "！"
+- a mood from the words (annoyed / tired / warm)
+- a little drift so no two phrases match
+
+The listener now listens: at natural pauses in the other's line, they sometimes nod and murmur "嗯"
+(a procedural voiced hum, not a voice clip). It is still the browser's voice, and the limits are
+honest: no emotional prosody beyond rate and pitch, and Shanghainese remains subtitle-only.
 
 ## First person: body, weight, breath
 

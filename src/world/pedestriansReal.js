@@ -4,6 +4,9 @@ import * as THREE from 'three';
 import { groundHeight } from './layout.js';
 import { createPerson } from './people.js';
 import { addGlasses } from './glasses.js';
+import { createFace } from './face.js';
+const cupGeo = new THREE.CylinderGeometry(0.042, 0.033, 0.13, 12), lidGeo = new THREE.CylinderGeometry(0.044, 0.044, 0.012, 12);
+const cupMat = new THREE.MeshStandardMaterial({ color: 0xf1efe9, roughness: 0.6 }), lidMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 });
 
 // glasses: plenty of people here wear them (p5's come with her avatar)
 const GLASSES = { p1: 'acetate', p2: 'rimless', p3: 'metal' };
@@ -76,14 +79,16 @@ export function createRealPedestrians(simPeds, people) {
     phone.add(new THREE.Mesh(phoneGeo, phoneMat), screen);
     group.add(person.root, umb, phone);
     if (GLASSES[p.id]) addGlasses(person, GLASSES[p.id]);
-    return { person, umb, canopy, phone, scr };
+    const cup = new THREE.Group(); cup.add(new THREE.Mesh(cupGeo, cupMat)); const lid = new THREE.Mesh(lidGeo, lidMat); lid.position.y = 0.07; cup.add(lid); cup.visible = false;
+    group.add(cup);
+    return { person, umb, canopy, phone, scr, cup, face: createFace(person), look: new THREE.Vector3() };
   });
   return {
     group,
     people: list.map((l) => l.person),
     update(sim, dt, camPos = null) {
       for (let i = 0; i < list.length; i++) {
-        const { person, umb, canopy, phone, scr } = list[i], p = sim[i], r = person.root;
+        const { person, umb, canopy, phone, scr, cup, face, look } = list[i], p = sim[i], r = person.root;
         r.position.set(p.x, pedGround(p.x, p.z), p.z);
         let d = p.heading - r.rotation.y;                                          // turn smoothly, never snap
         while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
@@ -96,11 +101,22 @@ export function createRealPedestrians(simPeds, people) {
         else if (p.umbrella > 0.5) state = 'umbrella';
         else state = p.react === 'sheltered' || p.state === 'waiting' ? 'look' : 'idle';
         if (p.gesture && speed < 0.15 && p.pause > 0) state = GESTURE[p.gesture] || state;
+        // a coffee run: phone out to scan and pay at the hatch, a word with the barista, then waiting on the phone
+        if (p.errand && speed < 0.15) {
+          const ph = p.errand.phase, et = p.errand.t;
+          state = ph === 'order' ? (et < 3.5 ? 'phone' : 'talk1') : ph === 'collect' ? 'wave' : ph === 'queue' || ph === 'wait' ? 'phone' : state;
+        }
         person.play(state, 0.4);
         person.setGait(speed);
         person.setUmbrella(state === 'phone' ? 0 : p.umbrella);
         person.setPhoneHold(state === 'walk' || state === 'look' || state === 'idle' ? p.phoneW : 0);
         person.update(dt, p.faceTo);
+        if (camPos && r.position.distanceToSquared(camPos) < 400) {           // faces only matter up close
+          if (p.faceTo) look.set(p.faceTo[0], r.position.y + 1.55, p.faceTo[1]);
+          face.update(dt, { lookAt: p.faceTo ? look : null, speaking: p.errand && p.errand.phase === 'order' && p.errand.t > 3.5, annoyed: p.gesture === 'scold' && p.pause > 0 });
+        }
+        cup.visible = p.cup > 0 || (p.errand && p.errand.phase === 'collect' && p.errand.t > 0.8);
+        if (cup.visible) { person.bones.L.getWorldPosition(cup.position); cup.position.y += 0.02; cup.rotation.set(0, r.rotation.y, 0); }
         // umbrella: in the raised hand, kept upright, opening with the simulation's amount
         const u = p.umbrella;
         umb.visible = u > 0.02;

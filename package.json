@@ -7,11 +7,12 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview --host",
-    "test": "node tests/collision.test.mjs && node tests/body.test.mjs && node tests/social.test.mjs && node tests/ridehail.test.mjs && node tests/smalltalk.test.mjs && node tests/weather.test.mjs && node tests/dialogue.test.mjs && node tests/mission.test.mjs && node tests/traffic.test.mjs && node tests/audio.test.mjs && node tests/targeting.test.mjs",
+    "test": "node tests/collision.test.mjs && node tests/delivery.test.mjs && node tests/errands.test.mjs && node tests/minimap.test.mjs && node tests/body.test.mjs && node tests/social.test.mjs && node tests/ridehail.test.mjs && node tests/smalltalk.test.mjs && node tests/weather.test.mjs && node tests/dialogue.test.mjs && node tests/mission.test.mjs && node tests/traffic.test.mjs && node tests/audio.test.mjs && node tests/targeting.test.mjs",
     "playtest": "node tools/playtest.mjs",
     "shots": "node tools/shot.mjs"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
     "@fontsource/ma-shan-zheng": "^5.3.1",
     "@fontsource/noto-sans-sc": "^5.3.1",
     "@fontsource/noto-serif-sc": "^5.3.1",

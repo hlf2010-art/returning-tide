@@ -3,6 +3,10 @@ import '@fontsource/noto-serif-sc/900.css';
 import '@fontsource/noto-sans-sc/500.css';
 import '@fontsource/noto-sans-sc/700.css';
 import '@fontsource/ma-shan-zheng/400.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/800.css';
 import * as THREE from 'three';
 import { createRenderer } from './engine/renderer.js';
 import { createPlayer } from './engine/player.js';
@@ -43,6 +47,11 @@ import { createPlayerBody } from './world/playerBody.js';
 import { WALK_SPEED, RUN_SPEED } from './engine/movement.js';
 import { createTrees } from './world/trees.js';
 import { createBumps } from './world/bumps.js';
+import { createManner } from './world/shops.js';
+import { createShop } from './engine/errands.js';
+import { manner as mannerSpec, stall as stallSpot } from './world/layout.js';
+import { createMinimap } from './ui/minimap.js';
+import { createMinimapState, updateMinimap, zoneAt } from './engine/minimapLogic.js';
 import { createWind, WIND_LEVELS } from './world/wind.js';
 import { planterIslands, streetTrees } from './world/layout.js';
 
@@ -101,7 +110,7 @@ async function boot() {
   const pouch = createPouch();
   const rain = createRain();
   // the signal-controlled crossing: one controller, through traffic, background pedestrians
-  traffic = createTraffic({ geom: crossing, vehicles: crossing.vehicles, peds: crossing.peds });
+  traffic = createTraffic({ geom: crossing, vehicles: crossing.vehicles, peds: crossing.peds, shop: createShop({ queue: mannerSpec.queue, pickup: mannerSpec.pickup }) });
   const vehicles = createVehicles(crossing.vehicles), signals = createSignals();
   const pedestrians = people ? createRealPedestrians(traffic.peds, people) : createPedestrians(traffic.peds);
   const vehicleBoxes = traffic.vehicles.map(() => addDynamicCollider('vehicle'));
@@ -117,7 +126,9 @@ async function boot() {
     ...planterIslands.map((p, i) => ({ x: (p.x0 + p.x1) / 2, y: L.deckY + 0.5, z: (p.z0 + p.z1) / 2 + (i % 2 ? 1.5 : -1.5), h: 4.2 + (i % 3) * 0.3, species: 'camphor', seed: 1 + i })),
   ], { wetBoost: weatherUniforms.wetBoost });
   scene.add(trees.group);
-  const lighting = createLighting(scene, street.lanterns);
+  // Manner Coffee's takeaway front on Hankou Road (world/shops.js), lit from inside
+  const manner = createManner(L.curbH); scene.add(manner.group);
+  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }]);
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -143,6 +154,14 @@ async function boot() {
     refDistance: npcLayout.audibility.refDistance,
     maxDistance: npcLayout.audibility.maxDistance,
   });
+  // the listener's 嗯 at a natural pause in the other's line: a murmur and a nod
+  dialogueAudio.delivery.onBackchannel = (speaker) => {
+    if (Math.random() > 0.55) return;
+    const listener = speaker === 'lin' ? 'su' : 'lin';
+    if (npcs.nod) npcs.nod(listener);
+    const d = _pairPos.distanceTo(camera.position);
+    if (d < npcLayout.audibility.maxDistance) audio.cue('hum', 0, Math.max(0.15, Math.min(1, 3 / Math.max(1, d))));
+  };
   conversation = createConversation({
     exchanges: T.dialogue.exchanges,
     greetings: T.dialogue.greetings,
@@ -347,6 +366,26 @@ const PROMPTS = {
 };
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
 let pedBoxes = [], bumps = null;
+// minimap: shown when it helps (engine/minimapLogic.js); hold Tab to keep it up
+const minimap = createMinimap(document.getElementById('minimap')), mapState = createMinimapState();
+let mapHeld = false, mapFrame = 0;
+window.addEventListener('keydown', (e) => { if (e.code === 'Tab') { e.preventDefault(); mapHeld = true; } });
+window.addEventListener('keyup', (e) => { if (e.code === 'Tab') mapHeld = false; });
+window.addEventListener('blur', () => { mapHeld = false; });
+function mapObjective() {
+  const m = mission1 && mission1.mission;
+  if (!m) return null;
+  if (m.step === 'collect') return { x: stallSpot.x, z: stallSpot.z, label: '修表摊 Stall' };
+  if (m.step === 'carry') return { x: npcLayout.list[0].x, z: npcLayout.list[0].z, label: '老林 Old Lin' };
+  return null;
+}
+function updateMap(dt) {
+  const b = player.body, obj = mapObjective(), zone = zoneAt(b.x, b.z, L);
+  updateMinimap(mapState, dt, { mode, moving: player.speed > 0.6, objective: !!obj, zone, held: mapHeld });
+  minimap.setShown(mapState.shown);
+  document.getElementById('hud').classList.toggle('map-on', mapState.shown);
+  if (mapState.shown && (mapFrame++ % 2 === 0)) minimap.draw({ x: b.x, z: b.z, yaw: player.yaw, objective: obj, people: traffic ? traffic.peds : [], area: zone });
+}
 const REACT_FOR = { sorry: 1.6, fine: 1.2, scold: 2.8, tut: 1.4, look: 0.9 };
 function bumpActors() {
   const out = traffic.peds.map((p) => ({
@@ -440,10 +479,13 @@ function frame(now) {
     interacting: mode === 'dialogue',
     playerPos: player.body,
     umbrella: suUmbrella,
+    voice: dialogueAudio ? dialogueAudio.delivery : null,
+    eye: camera.position,
   });
   if (mission1) mission1.update();
   updateTraffic(mode === 'pause' || debug.freezeTraffic ? 0 : dt);
   if (mode === 'play' && bumps) bumps.update(t, bumpActors(), player.body);
+  updateMap(dt);
   world.pouch.update(camera, t);
 
   // interactables: ONE target at a time - within reach, in view, not hidden behind a wall or a person

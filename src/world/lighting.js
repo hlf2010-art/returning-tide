@@ -13,7 +13,7 @@ const POOL = 6;
 // Night shadows come from the lamps, so they fan out from under each one, soft-edged.
 export const SHADOW_SLOTS = 2;
 
-export function createLighting(scene, lanterns) {
+export function createLighting(scene, lanterns, extra = []) {
   const group = new THREE.Group(); group.name = 'lighting';
   group.add(new THREE.HemisphereLight(0x5578c8, 0x2a221c, 0.55));
   const sky = new THREE.DirectionalLight(0x6f8fd8, 0.35);      // the last of the sky, from over the river
@@ -34,6 +34,7 @@ export function createLighting(scene, lanterns) {
   }
   for (const l of lanterns) { halos.push(l.x, l.y - 0.38, l.z + l.n * 0.4); source(l.x, l.y - 0.45, l.z + l.n * 0.55, 20, 20, WARM, 1.35); }
   source(-69.2, 2.1, -L.street.halfW + 1.3, 9, 13, new THREE.Color(1.0, 0.85, 0.62), 1.4);   // shop window spill
+  for (const e of extra) source(e.x, e.y, e.z, e.intensity, e.distance, e.color || WARM, e.angle || 1.3);
   for (const x of [-112, -134, -156]) halos.push(x, 4, x % 4 ? 6 : -6);                // lamps beyond the hoarding
 
   const lights = [];

@@ -11,6 +11,7 @@
 // Along a lane, positions use s = z * dir, so both directions share stop line / box numbers.
 
 import { avoid, SOCIAL, DISTRACTED } from './social.js';
+import { startErrand, errandTarget, stepErrand } from './errands.js';
 export const TRAFFIC_CONFIG = {
   vehGreen: 16, vehGreenFlash: 3, yellow: 3,
   allRedVeh: 2, vehClearMax: 20,       // all-red after yellow; held while a vehicle is still in the box
@@ -93,7 +94,7 @@ function idm(v, v0, gap, dv, p, s0 = p.s0) {
  * geom: layout.crossing; vehicles: [{ id, lane, len, width, v0?, s }]; peds: layout.crossing.peds
  * rng: deterministic in tests. Returns the live state plus update(dt, { player }).
  */
-export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], config = TRAFFIC_CONFIG, rng = Math.random }) {
+export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], config = TRAFFIC_CONFIG, rng = Math.random, shop = null }) {
   const cfg = { ...TRAFFIC_CONFIG, ...config };
   const ctl = createSignalController(cfg);
   const lanes = Object.fromEntries(geom.lanes.map((l) => [l.id, { ...l, vehicles: [] }]));
@@ -144,6 +145,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
       persona: sp.persona || 'office', pause: 0, faceTo: null, faceFor: 0, gesture: null, shove: null,
       // eyes on a phone while walking (messages, short videos, a drama episode): decided leg by leg
       phoneHabit: sp.phoneHabit ?? 0.2, phoneWalk: false, phoneKind: 'chat', phoneW: 0,
+      coffee: sp.coffee || 0, errand: null, cup: 0,                          // a coffee run now and then (errands.js)
     };
   });
 
@@ -334,6 +336,26 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
         p.heading = p.react === 'phoning' ? (p.side > 0 ? -Math.PI / 2 : Math.PI / 2) : Math.PI / 2;
         continue;
       }
+      if (p.cup > 0) p.cup = Math.max(0, p.cup - dt);
+      // on a coffee run: walk to the queue / pickup, stand while ordering and waiting
+      if (p.errand) {
+        const e = p.errand, tg = errandTarget(shop, e);
+        if (tg && e.phase !== 'leave') {
+          const dx = tg.x - p.x, dz = tg.z - p.z, d = Math.hypot(dx, dz), arrived = d < 0.08;
+          if (!arrived) {
+            let [vx, vz] = [dx / d * Math.min(p.speed, d / Math.max(dt, 1e-3)), dz / d * Math.min(p.speed, d / Math.max(dt, 1e-3))];
+            const me = others.find((o) => o.ref === p);
+            [vx, vz] = avoid({ x: p.x, z: p.z, r: 0.3 }, [vx, vz], others.filter((o) => o !== me), { space: 0.1 });
+            const vl = Math.hypot(vx, vz), st = Math.min(d, vl * dt);
+            if (vl > 1e-6) { p.x += vx / vl * st; p.z += vz / vl * st; }
+            p.vx = vx; p.vz = vz; if (vl > 0.05) p.heading = Math.atan2(vx, vz);
+            p.walkPhase += st * 4.5;
+          } else { p.vx = p.vz = 0; p.heading = Math.PI; }                    // facing the shop (north)
+          stepErrand(shop, e, dt, arrived);
+          continue;
+        }
+        p.cup = e.cupFor; p.errand = null; p.idx = (p.idx + 1) % p.nodes.length;   // back on the way, coffee in hand
+      }
       const node = p.nodes[p.idx];
       if (p.state === 'waiting' && !p.path.length) {
         p.vx = p.vz = 0;
@@ -392,6 +414,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
           continue;
         }
         if (node.curb) { p.state = 'waiting'; p.delay = 0.4 + rng() * 1.2; p.crossing = false; }
+        else if (shop && p.idx === 0 && p.coffee && p.react === 'none' && !p.cup && rng() < p.coffee) { p.errand = startErrand(shop, p.id, rng); p.phoneWalk = false; }
         else p.idx = (p.idx + 1) % p.nodes.length;
       }
       const nn = p.nodes[p.idx];
@@ -427,7 +450,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   }
 
   return {
-    controller: ctl, vehicles, peds, lanes, stats, config: cfg,
+    controller: ctl, vehicles, peds, lanes, stats, config: cfg, shop,
     update, vehiclePermission: (v, player) => vehiclePermission(v, people(player)), pedestrianPermission,
     occupancy: (player) => occupancy(people(player)),
     inCrosswalk, exitSpace,
