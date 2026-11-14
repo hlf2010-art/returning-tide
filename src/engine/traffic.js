@@ -100,7 +100,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   const ctl = createSignalController(cfg);
   const lanes = Object.fromEntries(geom.lanes.map((l) => [l.id, { ...l, vehicles: [] }]));
   const cw = geom.crosswalk, road = geom.road;
-  let sights = [];
+  let sights = [], obstacles = [];
   const stats = { redEntries: 0, blockedEntries: 0, yellowGo: 0, yellowStop: 0, minGap: Infinity, overlaps: 0, pedConflicts: 0, recycled: 0 };
 
   const vehicles = vSpecs.map((sp) => {
@@ -346,6 +346,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     // everyone on foot, for anticipatory avoidance (people don't walk into each other on purpose)
     const others = peds.map((q) => ({ x: q.x, z: q.z, vx: q.vx, vz: q.vz, r: 0.3, ref: q }));
     if (player) others.push({ x: player.x, z: player.z, vx: player.vx || 0, vz: player.vz || 0, r: 0.36, ref: null });
+    for (const o of obstacles) others.push({ x: o.x, z: o.z, vx: 0, vz: 0, r: o.r, ref: null });   // parked things people walk round
     for (const p of peds) {
       react(p, dt);
       if (p.faceFor > 0) p.faceFor -= dt; else p.faceTo = null;
@@ -450,6 +451,12 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
       const nn = p.nodes[p.idx];
       p.crossing = !onPath && !!nn.cross && p.state !== 'waiting';
     }
+    // hard guarantee: nobody ends a step inside a parked thing (the steering above nearly always
+    // keeps them clear; this catches the odd graze)
+    for (const p of peds) for (const o of obstacles) {
+      const dx = p.x - o.x, dz = p.z - o.z, d = Math.hypot(dx, dz), min = o.r + 0.3;
+      if (d < min) { const k = (min - d) / (d || 1); p.x += dx * k; p.z += dz * k; }
+    }
   }
 
   function occupancy(list) {
@@ -483,6 +490,8 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     controller: ctl, vehicles, peds, lanes, stats, config: cfg, shop,
     // things worth stopping to look at: [{ id, x, z }]
     setSights(list) { sights = list || []; },
+    // fixed things in the way (a parked car as a few circles): [{ x, z, r }]
+    setObstacles(list) { obstacles = list || []; },
     // a car moves over into the next lane over `dur` seconds (a cut-in)
     changeLane(veh, toId, dur = 1.5) { if (!veh.laneChange && lanes[toId] && veh.lane !== lanes[toId]) veh.laneChange = { to: lanes[toId], t: 0, dur }; },
     update, vehiclePermission: (v, player) => vehiclePermission(v, people(player)), pedestrianPermission,

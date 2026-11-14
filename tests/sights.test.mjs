@@ -1,6 +1,9 @@
 // People and a nice car (src/engine/sights.js). npm test.
 import { noticeSights, INTEREST, SIGHT } from '../src/engine/sights.js';
 import { rng } from './util-rng.mjs';
+import { createTraffic } from '../src/engine/traffic.js';
+import { crossing, manner } from '../src/world/layout.js';
+import { createShop } from '../src/engine/errands.js';
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
 const car = { id: 'huracan', x: 0, z: 0 };
@@ -57,6 +60,19 @@ function passBy(persona, seed) {
     p.x += dir * 1.2 * 0.05; p.vx = dir * 1.2; if (p.x > 14 || p.x < -14) dir = -dir;
   }
   ok(notices >= 3 && notices <= 9, `pacing past it for ten minutes, noticed it ${notices} times (not every pass)`);
+}
+{
+  // the real Hankou Road crowd with the Huracán at the kerb: nobody walks through it; some photos
+  const t = createTraffic({ geom: crossing, vehicles: crossing.vehicles, peds: crossing.peds, shop: createShop({ queue: manner.queue, pickup: manner.pickup }), rng: rng(4) });
+  const car = { x: -40.6, z: 2.86 }, circles = [-1.5, 0, 1.5].map((dx) => ({ x: car.x + dx, z: car.z, r: 1.15 }));
+  t.setSights([{ id: 'huracan', ...car }]); t.setObstacles(circles);
+  let closest = 99, photos = 0;
+  for (let i = 0; i < 20 * 60 * 20; i++) {
+    t.update(0.05);
+    for (const q of t.peds) { for (const c of circles) closest = Math.min(closest, Math.hypot(q.x - c.x, q.z - c.z) - c.r); if (q.photo && q.photo.t < 0.06) photos++; }
+  }
+  ok(closest > 0.15, `twenty minutes of the Hankou Road crowd: nobody walks through the parked car (closest ${closest.toFixed(2)} m from its body)`);
+  console.log(`INFO  photos of it in those twenty minutes: ${photos}`);
 }
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);

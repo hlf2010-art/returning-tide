@@ -144,7 +144,11 @@ async function boot() {
   const manner = createManner(L.curbH); scene.add(manner.group);
   // a Lamborghini parked on Hankou Road (loads in the background; world/huracan.js)
   const huracan = createHuracan(scene);
-  huracan.ready.then((r) => { if (r) traffic.setSights([{ id: 'huracan', x: HURACAN_SPOT.x, z: HURACAN_SPOT.z }]); });   // passers-by look; some take a photo
+  huracan.ready.then((r) => {
+    if (!r) return;
+    traffic.setSights([{ id: 'huracan', x: HURACAN_SPOT.x, z: HURACAN_SPOT.z }]);                        // passers-by look; some take a photo
+    traffic.setObstacles([-1.5, 0, 1.5].map((dx) => ({ x: HURACAN_SPOT.x + dx, z: HURACAN_SPOT.z, r: 1.15 })));   // and walk round it
+  });
   // the Peace Hotel's ground floor and the AIA lobby (world/interiors.js); their lamps join the light pool
   const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard });
   const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights]);
