@@ -26,6 +26,7 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | E | the one interaction key: talk / read / look at the selected target; confirm the highlighted choice; **hold** on "break the seal" |
 | W / S, ↑ / ↓, wheel | while talking or looking at the pouch: move the highlighted choice |
 | Tab (hold) | minimap |
+| P | your phone (Esc: back) |
 | C | Simplified Chinese subtitles on / off |
 | M | sound on / off (mutes ambience, footsteps, cues and voices) |
 | Esc | back out of an open conversation / close-up / notice; otherwise pause (click to return). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
@@ -159,6 +160,70 @@ Clear → light drizzle → clear, at the same blue hour. Developer toggle **F7*
 - Every level returns exactly to the approved clear values; toggling creates nothing new.
   State: `src/engine/weather.js` (pure, `tests/weather.test.mjs`); browser checks:
   `tools/weathertest.mjs`.
+
+## You, your friends, your phone
+
+**You** are 沈既白 Shen Jibai, 23. You were born in Nanjing, where your father built a machining
+firm. You studied industrial design and digital engineering in San Francisco and have been back
+in China a week, with a patent fee in the bank and a year on your own terms. Every summer until
+you were twelve you sat at Old Zhou's watch stall on Hankou Road. **Your friends** are five people
+from your Nanjing middle-school class:
+- **陆明轩 Lu Mingxuan**, a VC analyst in Lujiazui
+- **许若安 Xu Ruoan**, an architect restoring Bund buildings
+- **周子墨 "Momo" Zhou Zimo**, a jazz keyboardist and creator
+- **韩知夏 Han Zhixia**, an EV engineer and amateur racer
+- **程以诺 Cheng Yinuo**, who runs her family office's art and property
+
+Full profiles, and how their lives move without you, are in `docs/characters.md`.
+
+**The phone** (P). It is an original design in the idiom of a current flagship (island, glass,
+Face-ID unlock), not a copy of any real phone's interface. Apps carry the real service names as
+text with original icons. While it's up the mouse works the screen and you can still walk slowly;
+Esc goes back.
+- **微信 (chats)**: your friends one by one, the group chat 「金陵五虎+1」 and services.
+  - Text and **voice notes**: tap to hear them (the browser's voice, phrase by phrase), or
+    transcribe them.
+  - **Invitation cards**: accept or decline.
+  - Quick replies appear when a message wants an answer, and your answer moves things on.
+- **Calls**: they ring in your pocket (a banner and a ringtone; P to answer). The caller's lines
+  play with subtitles and you choose what to say. Leave a call unanswered and it's missed, and the
+  caller notices.
+- **钱包 (wallet)**: WeChat Pay and Alipay balances, a bank account, a card and a ledger of every
+  movement. **All money is fictional**; nothing here touches a real payment service.
+- **日历 (calendar)**: what you've agreed to, and what's still waiting for an answer.
+- **电话 (recents)** and **Manner**: the Hankou Road shop's ordering screen.
+
+**Friends live without you** (`world/agenda.js`, node-tested).
+- On your first evening:
+  - Momo invites you to his trio's set at the Peace Hotel's Jazz Bar.
+  - Ruoan checks you're dressed for the river wind.
+  - Zhixia sends a voice note about the circuit and about how you should buy a real car.
+  - Xuan needs your eye on a robotics team's stuck prototype tomorrow at 3 pm.
+  - Your father calls.
+  - Yinuo asks you to look at a penthouse with her.
+- Then the group chat keeps its own life.
+- **Invitations have consequences:** accepting warms a friend and goes in your calendar,
+  declining cools them a little, and letting one lapse unanswered costs more and they say so.
+- **Friends react to the world:** buy a coffee at Manner on Hankou Road and Ruoan, who works on the
+  street, guesses where you are.
+- **Saving:** the life state (clock, money, chats, relationships, calendar, inventory) saves to
+  this browser's local storage and survives a reload; `?fresh` starts over.
+- **Time:** the phone's clock runs (a real minute is four game minutes), but the sky stays at blue
+  hour: there's no day/night cycle yet.
+
+**Ordering a coffee**: walk up to Manner's hatch.
+1. E opens the ordering screen; choose a drink.
+2. Pay with WeChat Pay, Alipay or the card (Face-ID sheet, balance checked, ledger entry).
+3. You get an order number; a couple of game minutes later the shop messages you that it's ready.
+4. Collect at the hatch (the barista calls your number), and the cup is in your own right hand,
+   visible as you walk. With the phone up, your hand holds the phone too.
+
+Still to come in this brief:
+- Online shopping (京东 / 淘宝) with a rider bringing the parcel to you in the world.
+- DiDi rides, with the talkative drivers already written.
+- The car purchase journey (a consultant, a showroom visit, specification, test drive, negotiation,
+  delivery).
+- The penthouse and helicopter journeys, then owned spaces you can furnish and host in.
 
 ## Interface (HUD v2)
 
@@ -403,6 +468,6 @@ Everything is procedural (canvas textures, merged box/cylinder geometry, WebAudi
 The only third-party assets are three.js and three open-licensed fonts from Fontsource
 (Noto Serif SC, Noto Sans SC, Ma Shan Zheng).
 
-Useful URL switches: `?q=0..5` pins the render quality step (0 = best), `?body=0` hides your own
+Useful URL switches: `?fresh` (new life, ignore the save), `?q=0..5` pins the render quality step (0 = best), `?body=0` hides your own
 body, `?shadows=0`, `?ssr=0`, `?wind=calm|breeze|windy|gale`, `?nolock` uses
 click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.

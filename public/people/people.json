@@ -126,7 +126,7 @@
   },
   "player": {
    "file": "anim-player.glb",
-   "bytes": 477868,
+   "bytes": 1381656,
    "speeds": {
     "walk": 1.0117003356734777,
     "jog": 2.410625341884475,
@@ -136,13 +136,15 @@
     "idle": 11.667,
     "walk": 1.2,
     "jog": 0.767,
-    "sprint": 0.6
+    "sprint": 0.6,
+    "phone": 34.467
    },
    "from": {
     "idle": "m_idle_neutral_01",
     "walk": "m_walk_neutral_01",
     "jog": "m_run_slow_01",
-    "sprint": "m_run_fast_01"
+    "sprint": "m_run_fast_01",
+    "phone": "m_cell_phone_textmessage"
    }
   }
  }

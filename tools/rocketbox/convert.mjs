@@ -32,7 +32,7 @@ const CLIPS = {
 };
 
 // the player's own set: same skeleton as 'm', plus a proper run and the catch-your-breath idles
-const PLAYER_CLIPS = { idle: 'm_idle_neutral_01', walk: 'm_walk_neutral_01', jog: 'm_run_slow_01', sprint: 'm_run_fast_01' };   // (the library's breathe idles are calm, so getting winded is procedural)
+const PLAYER_CLIPS = { idle: 'm_idle_neutral_01', walk: 'm_walk_neutral_01', jog: 'm_run_slow_01', sprint: 'm_run_fast_01', phone: 'm_cell_phone_textmessage' };   // phone: the right arm holding something up (a phone, a cup)   // (the library's breathe idles are calm, so getting winded is procedural)
 // ONLY=player converts just the player's avatar and clips and merges them into an existing people.json
 const ONLY = process.env.ONLY || null;
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });

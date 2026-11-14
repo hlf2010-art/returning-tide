@@ -57,6 +57,12 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
     if (name !== 'idle') act[name].timeScale = 0;             // driven by the stride, not by the clock
   }
   act.idle.setEffectiveWeight(1);
+  // holding something up in the right hand (a cup, the phone): the texting clip's right arm only
+  // (the camera owns the head), layered over whatever the legs are doing
+  const holdClip = clips.phone ? new THREE.AnimationClip('hold', clips.phone.duration, clips.phone.tracks.filter((t) => /^Bip01_R_(Clavicle|UpperArm|Forearm|Hand|Finger)/.test(t.name))) : null;
+  const hold = holdClip ? mixer.clipAction(holdClip) : null;
+  if (hold) { hold.play(); hold.setEffectiveWeight(0); hold.time = holdClip.duration * 0.3; }
+  let holdW = 0, want = { cup: false, phone: false };
 
   const bone = (n) => root.getObjectByName(n);
   root.remove(shadow);
@@ -81,7 +87,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
     }
   }
 
-  let yaw = 0, init = false, bend = 0, lastX = 0, lastZ = 0;
+  let yaw = 0, init = false, bend = 0, lastX = 0, lastZ = 0, props = null;
   const tune = { back: 0.05, backDown: 0.03, neckDrop: 0.1, headScale: 0.001 };   // where the neck sits relative to the eye (m)
   const _q = new THREE.Quaternion(), _p = new THREE.Quaternion(), _axis = new THREE.Vector3(), _v = new THREE.Vector3();
 
@@ -125,6 +131,11 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
         a.setEffectiveWeight(w[g]);
         let ph = ((player.stride - 0.75) / 2 + plant[g]) % 1; if (ph < 0) ph += 1;
         a.time = (reverse ? 1 - ph : ph) * d;
+      }
+      holdW += ((want.cup || want.phone ? 1 : 0) - holdW) * Math.min(1, dt * 5);
+      if (hold) {
+        hold.setEffectiveWeight(holdW > 0.01 ? holdW * holdW * 12 : 0);
+        const d = holdClip.duration; if (hold.time < d * 0.12 || hold.time > d * 0.88) hold.time = d * 0.12;
       }
       mixer.update(dt);
 
@@ -171,5 +182,34 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
       head.updateMatrixWorld(true);
     },
     setVisible(v) { group.visible = v; },
+    // what's in the right hand: { cup, phone } (Manner's cup; the phone while its screen is up)
+    setHold(h) { want = { cup: !!h.cup, phone: !!h.phone }; },
+    // place the props in the palm, after update(); eye: camera position (the phone's screen faces it)
+    placeProps(eye) {
+      if (!props) {
+        props = { cup: new THREE.Group(), phone: new THREE.Group() };
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.033, 0.13, 14), new THREE.MeshStandardMaterial({ color: 0xf1efe9, roughness: 0.6 }));
+        const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.044, 0.012, 14), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 })); lid.position.y = 0.07;
+        const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.0425, 0.038, 0.05, 14), new THREE.MeshStandardMaterial({ color: 0x8a6a48, roughness: 0.9 })); sleeve.position.y = 0.0;
+        props.cup.add(c, lid, sleeve);
+        const ph = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.152, 0.008), new THREE.MeshStandardMaterial({ color: 0x18181a, roughness: 0.3, metalness: 0.5 }));
+        const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.066, 0.144), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.75, 0.8, 0.9) })); scr.position.z = 0.0045;
+        props.phone.add(ph, scr);
+        group.add(props.cup, props.phone);
+        for (const g of [props.cup, props.phone]) g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      }
+      const show = holdW > 0.6;
+      props.cup.visible = show && want.cup && !want.phone; props.phone.visible = show && want.phone;
+      if (!show) return;
+      const hand = root.getObjectByName('Bip01_R_Hand'), finger = root.getObjectByName('Bip01_R_Finger2');
+      hand.getWorldPosition(_v); const palm = _v.clone();
+      if (finger) { finger.getWorldPosition(_v); palm.add(_v).multiplyScalar(0.5); }
+      if (props.cup.visible) { props.cup.position.copy(palm); props.cup.position.y += 0.02; props.cup.rotation.set(0, yaw, 0); }
+      if (props.phone.visible && eye) {
+        const z = eye.clone().sub(palm).normalize(), fy = new THREE.Vector3(Math.sin(yaw), 0.6, Math.cos(yaw)).normalize();
+        fy.addScaledVector(z, -fy.dot(z)).normalize(); const x = new THREE.Vector3().crossVectors(fy, z).normalize(); fy.crossVectors(z, x);
+        props.phone.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, fy, z)); props.phone.position.copy(palm).addScaledVector(z, 0.012);
+      }
+    },
   };
 }

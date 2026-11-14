@@ -51,6 +51,9 @@ import { createManner } from './world/shops.js';
 import { createShop } from './engine/errands.js';
 import { manner as mannerSpec, stall as stallSpot } from './world/layout.js';
 import { createMinimap } from './ui/minimap.js';
+import { createLife, advance as lifeAdvance, lapse as lifeLapse, drain as lifeDrain, save as lifeSave, load as lifeLoad, post as lifePost, stamp as lifeStamp, thread as lifeThread, nudge as lifeNudge } from './engine/life.js';
+import { setupThreads, runAgenda, deliverFollowUps, react as lifeReact, CALLS } from './world/agenda.js';
+import { createPhone } from './ui/phone/phone.js';
 import { createMinimapState, updateMinimap, zoneAt } from './engine/minimapLogic.js';
 import { createWind, WIND_LEVELS } from './world/wind.js';
 import { planterIslands, streetTrees } from './world/layout.js';
@@ -264,7 +267,7 @@ document.getElementById('begin').addEventListener('click', begin);
 document.getElementById('pause').addEventListener('click', () => { lock(); if (noLock) play(); });
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) { if (mode === 'pause') play(); }
-  else if (!noLock && (mode === 'play' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch')) pause();
+  else if (!noLock && (mode === 'play' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch') && !(phone && phone.isOpen)) pause();   // the phone frees the mouse on purpose
 });
 document.addEventListener('pointerlockerror', () => {
   // Pointer lock refused (embedded frame, or re-requested too soon after Esc)
@@ -284,10 +287,10 @@ const CHOICE_KEYS = { KeyW: -1, ArrowUp: -1, KeyS: 1, ArrowDown: 1 };
 window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
   const k = e.code;
-  if (k === 'KeyM') { hud.toast(audio.toggleMute() ? '静音 · Sound off' : '声音开 · Sound on', 1.6); return; }
+  if (k === 'KeyM') { hud.toast(audio.toggleMute() ? '静音 · Sound off' : '声音开 · Sound on', 2.4); return; }
   if (k === 'KeyC' && (mode === 'play' || mode === 'dialogue')) {
     subtitlesOn = !subtitlesOn;
-    hud.toast(subtitlesOn ? '字幕开 · Subtitles on' : '字幕关 · Subtitles off', 1.6);
+    hud.toast(subtitlesOn ? '字幕开 · Subtitles on' : '字幕关 · Subtitles off', 2.4);
     return;
   }
   if ((k === 'F8' || k === 'F9') && devControls) { e.preventDefault(); devMission(k === 'F8'); return; }
@@ -338,6 +341,12 @@ function interact() {
   if (target.id === 'lin') openDialogue();
   else if (target.id === 'pouch') openPouch();
   else if (target.id === 'notice') openInspect();
+  else if (target.id === 'manner') {
+    const mo = life.flags.mannerOrder;
+    if (mo && !mo.done && mo.notified) { mo.done = true; cupFor = 240; hud.bark({ speaker: '店员 · Barista', text: `${mo.num}号，您的${mo.item.name}，拿好～`, seconds: 2.6 }); saveLife(); }
+    else if (mo && !mo.done) hud.bark({ speaker: '店员 · Barista', text: '稍等一下哦，马上好。', seconds: 2.2 });
+    else { hud.bark({ speaker: '店员 · Barista', text: '您好～扫码点单哦，码在窗口这边。', seconds: 2.6 }); phone.openManner(); }
+  }
 }
 player.onStep = (surface, running, landing) => audio.step(surface, running, landing);
 // If the browser kept the context suspended despite the Begin click, any later gesture wakes it.
@@ -363,9 +372,58 @@ const PROMPTS = {
   lin: () => ({ target: '老林 Old Lin', action: mission1 && mission1.mission.carrying ? '交还文件袋 · Hand over the pouch' : '交谈 · Talk' }),
   notice: () => ({ target: '寻人启事 Notice', action: clueRead ? '再看一眼 · Look again' : '查看 · Read' }),
   pouch: () => ({ target: '文件袋 Pouch', action: '查看 · Look' }),
+  manner: () => {
+    const mo = life.flags.mannerOrder;
+    if (mo && !mo.done && mo.notified) return { target: 'Manner Coffee', action: `取餐 ${mo.num} · Collect your ${mo.item.en}` };
+    if (mo && !mo.done) return { target: 'Manner Coffee', action: '在做了 · Being made' };
+    return { target: 'Manner Coffee', action: '扫码点单 · Order on your phone' };
+  },
 };
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
 let pedBoxes = [], bumps = null;
+// ---- the protagonist's life and phone (engine/life.js, world/agenda.js, ui/phone) ----
+const LIFE_KEY = 'bund-life-v1';
+let life = null;
+try { life = params.has('fresh') ? null : lifeLoad(localStorage.getItem(LIFE_KEY)); } catch { life = null; }
+if (!life) { life = createLife(); setupThreads(life); }
+const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); } catch { /* private mode: no saving */ } };
+let lifeSaveIn = 5, pendingCalls = [], cupFor = 0;
+const phone = createPhone({
+  getLife: () => life, calls: CALLS, audio,
+  onChange: (up) => { player.capScale = up ? 0.55 : 1; if (!up && mode === 'play' && !noLock) canvas.requestPointerLock?.(); },
+  onEvent: (ev) => {
+    if (ev.type === 'paid') {
+      lifeReact(life, ev);
+      life.flags.mannerOrder = { num: ev.num, item: ev.item, ready: lifeStamp(life) + ev.wait, done: false };
+    }
+    if (ev.type === 'call-declined') lifeReact(life, ev);
+    if (ev.type === 'call-choice' && ev.choice) { if (ev.choice.delta) lifeNudge(life, ev.from, ev.choice.delta, 'call'); if (ev.choice.flag) life.flags[ev.choice.flag] = true; }
+    saveLife();
+  },
+});
+window.addEventListener('keydown', (e) => {
+  if (mode !== 'play') return;
+  if (phone.key(e)) { e.stopImmediatePropagation(); return; }
+  if (e.code === 'KeyP' && !e.repeat) { phone.toggle(); e.stopImmediatePropagation(); }
+}, true);
+function updateLife(dt) {
+  if (mode !== 'play' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
+  lifeAdvance(life, dt);
+  if (params.get('life') !== '0') { runAgenda(life); deliverFollowUps(life); }   // ?life=0: nobody gets in touch (measurement tools)
+  for (const inv of lifeLapse(life)) lifeReact(life, { type: 'invite', id: inv.id, status: 'missed', from: inv.from, thread: inv.thread });
+  for (const ev of lifeDrain(life)) if (ev.type === 'call') pendingCalls.push(ev);
+  // calls wait until you're not in the middle of something else
+  if (pendingCalls.length && mode === 'play' && !phone.inCall) { const c = pendingCalls.shift(); phone.ring(c.script); }
+  const mo = life.flags.mannerOrder;
+  if (mo && !mo.notified && lifeStamp(life) >= mo.ready) {
+    mo.notified = true;
+    lifeThread(life, 'manner', { title: 'Manner Coffee 汉口路店', members: ['me', 'manner'], kind: 'service' });
+    lifePost(life, 'manner', { from: 'manner', kind: 'text', text: `您的${mo.item.name}已做好，取餐号 ${mo.num}，请到窗口取餐 · Your ${mo.item.en} is ready (No. ${mo.num})` });
+  }
+  if (cupFor > 0) cupFor = Math.max(0, cupFor - dt);
+  phone.update(dt);
+  if ((lifeSaveIn -= dt) <= 0) { lifeSaveIn = 5; saveLife(); }
+}
 // minimap: shown when it helps (engine/minimapLogic.js); hold Tab to keep it up
 const minimap = createMinimap(document.getElementById('minimap')), mapState = createMinimapState();
 let mapHeld = false, mapFrame = 0;
@@ -486,6 +544,8 @@ function frame(now) {
   updateTraffic(mode === 'pause' || debug.freezeTraffic ? 0 : dt);
   if (mode === 'play' && bumps) bumps.update(t, bumpActors(), player.body);
   updateMap(dt);
+  updateLife(mode === 'pause' ? 0 : dt);
+  if (world.playerBody) { world.playerBody.setHold({ cup: cupFor > 0, phone: phone.isOpen }); world.playerBody.placeProps(camera.position); }
   world.pouch.update(camera, t);
 
   // interactables: ONE target at a time - within reach, in view, not hidden behind a wall or a person
@@ -499,6 +559,7 @@ function frame(now) {
       { id: 'notice', x: cf.x, y: cf.y, z: cf.z, reach: 2.7, cone: 0.78 },
     ];
     if (mission1 && mission1.canPickUp()) cands.push({ id: 'pouch', x: pf.x, y: pf.y, z: pf.z, reach: 2.4, cone: 0.72 });
+    cands.push({ id: 'manner', x: mannerSpec.queue[0].x + 0.2, y: L.curbH + 1.15, z: mannerSpec.zWall + mannerSpec.depth - 0.1, reach: 2.6, cone: 0.7 });
     target = pickTarget(camera.position, _d, cands, colliders);
   }
   if (target) hud.prompt(true, PROMPTS[target.id]());
@@ -557,7 +618,8 @@ Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   get mission1() { return mission1; }, get nearPouch() { return !!target && target.id === 'pouch'; },
   get traffic() { return traffic; }, weather, THREE,                // THREE: for verification tools only
   get pedestrians() { return world ? world.pedestrians : null; },
-  get world() { return world; }, get bumps() { return bumps; },
+  get world() { return world; }, get life() { return life; }, phone,
+  get cup() { return cupFor; }, set cup(v) { cupFor = v; }, get bumps() { return bumps; },
   start() { noLock = true; if (mode === 'entry') begin(); },
 }));
 

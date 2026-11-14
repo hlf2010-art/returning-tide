@@ -183,3 +183,16 @@ kbd { min-width: 1.6em; padding: 0.1em 0.42em; border: 1px solid var(--hair-stro
 #place .zh { font-family: var(--serif); }
 #mission-card { border-radius: var(--radius); border: 1px solid var(--hair); background: var(--glass-strong); backdrop-filter: blur(16px); }
 #dev { border-radius: 8px; }
+
+/* the title card on short screens (landscape phones, small windows): it scales down and, if it
+   still doesn't fit, scrolls; the begin button is never off-screen */
+#entry { overflow-y: auto; }
+@media (max-height: 640px) {
+  #entry { padding: 18px clamp(16px, 5vw, 48px); align-items: center; }
+  .title-zh { font-size: clamp(40px, 13vh, 86px); }
+  .title-en { margin-top: 6px; font-size: 11px; }
+  .chapter { margin: 12px 0 6px 4px; font-size: 13px; }
+  .premise { margin-bottom: 14px; font-size: 13px; line-height: 1.55; }
+  #begin { padding: 11px 22px; font-size: 13px; }
+  .controls { margin-top: 12px; font-size: 11px; }
+}

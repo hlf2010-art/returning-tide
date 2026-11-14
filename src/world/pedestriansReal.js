@@ -63,6 +63,28 @@ export function pedGround(x, z) {
   return groundHeight(x, z);
 }
 
+// A phone held to be read: in the right palm, its screen turned to the eyes, the top of the phone
+// tipped forward and up (the way people actually hold one), not glued to the hand bone's axes
+// (which left screens facing sideways or away).
+const _eye = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3(), _m = new THREE.Matrix4();
+export function holdPhone(phone, person, yaw) {
+  const wrist = person.anchors.phone.position, fwdX = Math.sin(yaw), fwdZ = Math.cos(yaw);
+  const finger = person._finger || (person._finger = person.root.getObjectByName('Bip01_R_Finger2'));
+  person.bones.head.getWorldPosition(_eye);
+  _eye.x += fwdX * 0.08; _eye.z += fwdZ * 0.08; _eye.y += 0.06;               // the eyes: in front of and above the head bone
+  // the palm: between the wrist and the base of the middle finger
+  if (finger) { finger.getWorldPosition(_y); phone.position.addVectors(wrist, _y).multiplyScalar(0.5); _y.sub(wrist); }
+  else { phone.position.copy(wrist); _y.set(fwdX, 0.3, fwdZ); }
+  _z.subVectors(_eye, phone.position).normalize();                            // screen normal: toward the eyes
+  // the phone's long axis runs along the fingers (wrist -> fingertips), tipped up a little
+  _y.normalize().addScaledVector(_z, -_y.dot(_z));
+  if (_y.lengthSq() < 1e-4) _y.set(fwdX, 0.6, fwdZ).addScaledVector(_z, -_z.dot(_y.set(fwdX, 0.6, fwdZ)));
+  _y.normalize();
+  _x.crossVectors(_y, _z).normalize(); _y.crossVectors(_z, _x).normalize();   // orthonormal, right-handed
+  _m.makeBasis(_x, _y, _z); phone.quaternion.setFromRotationMatrix(_m);
+  phone.position.addScaledVector(_z, 0.012);                                  // resting on the palm, screen up
+}
+
 export function createRealPedestrians(simPeds, people) {
   const group = new THREE.Group(); group.name = 'crossing-pedestrians';
   const _e = new THREE.Euler(), _q = new THREE.Quaternion();
@@ -128,11 +150,7 @@ export function createRealPedestrians(simPeds, people) {
         // phone: in the right palm, following the hand
         phone.visible = p.phone > 0.02 || p.phoneW > 0.3;
         if (phone.visible && camPos && r.position.distanceToSquared(camPos) < 100) scr.draw(p.phoneW > 0.3 ? p.phoneKind : 'chat', dt);
-        if (phone.visible) {
-          phone.position.copy(person.anchors.phone.position);
-          phone.quaternion.copy(person.anchors.phone.quaternion);
-          phone.translateY(-0.02); phone.translateZ(0.05);
-        }
+        if (phone.visible) holdPhone(phone, person, r.rotation.y);
       }
     },
   };

@@ -16,7 +16,7 @@ const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(e.message));
-await page.goto(url + '?q=5&nolock&dev&wind=calm', { waitUntil: 'load' });   // calm: no leaf rustle colouring the footstep recordings
+await page.goto(url + '?q=5&nolock&dev&wind=calm&life=0', { waitUntil: 'load' });   // calm: no leaf rustle; life=0: no message pings in the recordings
 await page.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', null, { timeout: 240000 });
 await page.click('#begin');
 await page.waitForTimeout(3500);                                                 // master fade-in

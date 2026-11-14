@@ -72,6 +72,7 @@ export function createAudio() {
   const lfo = (freq, depth, target) => {
     const o = ctx.createOscillator(), g = gainNode(depth); o.frequency.value = freq;
     o.connect(g).connect(target); o.start(); loops.push(o);
+    return g;
   };
 
   function start() {
@@ -94,13 +95,13 @@ export function createAudio() {
     const windPan = ctx.createStereoPanner(); windPan.connect(env);
     const wf = filt('lowpass', 320, 0.4), wg = gainNode(0.26);
     loop(buf, wf, wg, windPan);
-    lfo(0.07, 140, wf.frequency); lfo(0.031, 0.08, wg.gain); lfo(0.017, 0.35, windPan.pan);
+    lfo(0.07, 140, wf.frequency); const gust = lfo(0.031, 0.08, wg.gain); lfo(0.017, 0.35, windPan.pan);
     const wf2 = filt('bandpass', 700, 0.6), wg2 = gainNode(0.035);
     loop(buf, wf2, wg2, env); lfo(0.043, 250, wf2.frequency);
     // leaves in the wind: a dry high rustle, only near the trees and only as strong as the wind
     const lf = filt('bandpass', 3400, 0.5), lg = gainNode(0), lp2 = filt('lowpass', 7000, 0.5);
     loop(white, lf, lp2, lg, env); lfo(0.19, 900, lf.frequency); lfo(0.13, 0.4, lf.Q);
-    wind = { wg, leaves: lg };
+    wind = { wg, leaves: lg, gust };
 
     // the Huangpu against the river wall: placed out over the water, level with the listener
     const rp = panner(6, 1.0); rp.connect(env);
@@ -227,6 +228,12 @@ export function createAudio() {
       burst(t, { buffer: buf, f: 1700, q: 0.9, gain: 0.5, attack: 0.04, decay: 0.32, sweepTo: 3300, rate: 2.2 });
       burst(t + 0.02, { buffer: buf, type: 'lowpass', f: 420, q: 0.7, gain: 0.34, attack: 0.01, decay: 0.12, rate: 1.4 });
       ping(t + 0.2, 2350, 0.05); ping(t + 0.27, 3050, 0.035);
+    } else if (name === 'ping') {
+      // a message: two soft notes, a fourth apart
+      ping(t, 1318, 0.05 * level, 0.12); ping(t + 0.09, 1760, 0.04 * level, 0.16);
+    } else if (name === 'ring') {
+      // the phone ringing: a short marimba-ish figure (this is called once per ring)
+      [988, 1319, 1175, 1568].forEach((f, i) => ping(t + i * 0.13, f, 0.07 * level, 0.22));
     } else if (name === 'hum') {
       // a closed-mouth "嗯": a low voiced murmur, nasal, a quarter of a second, rising a touch
       const o = ctx.createOscillator(), g = gainNode(0), f = filt('bandpass', 420, 1.2), lp = filt('lowpass', 900, 0.7);
@@ -294,7 +301,9 @@ export function createAudio() {
       if (v === lastWind) return;
       lastWind = v;
       const t = ctx.currentTime;
-      wind.wg.gain.setTargetAtTime(0.14 + 0.32 * Math.min(1.3, level), t, 0.8);
+      const base = 0.14 + 0.32 * Math.min(1.3, level);
+      wind.wg.gain.setTargetAtTime(base, t, 0.8);
+      wind.gust.gain.setTargetAtTime(base * (0.12 + 0.25 * Math.min(1, level)), t, 0.8);   // gusts scale with the wind: calm air is steady
       wind.leaves.gain.setTargetAtTime(0.045 * Math.min(1.3, level) * nearTree, t, 0.5);
     },
     // weather: level 0..1; covered = standing under the canopy / portico (muffled, quieter)

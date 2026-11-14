@@ -50,7 +50,8 @@ export function createPlayer(camera, dom) {
     }
     const st = p.stamina;
     const wantRun = p.enabled && input.run && canRun(st) && !input.b;          // nobody sprints backwards
-    stepBody(body, wx, wz, wantRun, dt, jumpQueued && p.enabled && st.winded <= 0, speedCap(st, WALK_SPEED, RUN_SPEED));
+    // capScale < 1: eyes on the phone, a slow walk
+    stepBody(body, wx, wz, wantRun && (p.capScale ?? 1) >= 1, dt, jumpQueued && p.enabled && st.winded <= 0, speedCap(st, WALK_SPEED, RUN_SPEED) * (p.capScale ?? 1));
     if (dt > 0) jumpQueued = false;
     if (body.landed && p.onStep) p.onStep(surfaceAt(body.x, body.z), true, true);
     const speed = body.air ? 0 : Math.hypot(body.vx, body.vz);   // no footfalls or bob in the air
