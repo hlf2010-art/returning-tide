@@ -38,9 +38,9 @@ export function createHud() {
       $('prompt').classList.toggle('on', !!on); $('reticle').classList.toggle('on', !!on);
     },
     // bark({ speaker, text, gloss, lang }): someone nearby says something in passing
-    bark({ speaker = '', text = '', gloss = null, lang = 'zh', seconds = 3.2, voice = true, at = null, who = null } = {}) {
+    bark({ speaker = '', text = '', gloss = null, lang = 'zh', seconds = 3.2, voice = true, at = null, who = null, rate = 1 } = {}) {
       // and said aloud, in the speaker's own recorded voice (engine/voice.js), unless the caller voices it
-      if (voice && this.voice && lang !== 'wuu') this.voice.say({ zh: typeof text === 'object' ? text.zh : text, en: typeof text === 'object' ? text.en : text, who: who || (typeof speaker === 'object' ? speaker.zh : speaker), at });
+      if (voice && this.voice && lang !== 'wuu') this.voice.say({ zh: typeof text === 'object' ? text.zh : text, en: typeof text === 'object' ? text.en : text, who: who || (typeof speaker === 'object' ? speaker.zh : speaker), at, rate, noSynth: true });
       const el = $('bark');
       // speaker / text / gloss may be { zh, en } pairs. Shanghainese: Chinese readers get the words
       // and a Mandarin gloss; English readers get the English, marked as said in Shanghainese.
@@ -58,6 +58,14 @@ export function createHud() {
       el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
       clearTimeout(this._achvT); this._achvT = setTimeout(() => el.classList.remove('on'), 4200);
       this.audio && this.audio.cue && this.audio.cue('chime', 0, 1);
+    },
+    // stamina: a slim bar at the bottom while you run or recover; gone when it's full again
+    stamina(level, show, out = false) {
+      let el = document.getElementById('stamina');
+      if (!el) { el = document.createElement('div'); el.id = 'stamina'; el.innerHTML = '<i></i>'; document.body.appendChild(el); }
+      const k = Math.round(Math.max(0, Math.min(1, level)) * 200) / 200;
+      if (k !== this._stK) { this._stK = k; el.firstChild.style.transform = `scaleX(${k})`; }
+      el.classList.toggle('on', !!show); el.classList.toggle('low', k < 0.25 && !out); el.classList.toggle('out', !!out);
     },
     toast(text, seconds = 2.5) {
       const el = $('toast'); el.textContent = tr(text); el.classList.add('on');

@@ -55,6 +55,7 @@ import { createTips } from './ui/tips.js';
 import { BENCH_SECONDS, BENCH_WARMUP, BENCH_HOUR, benchAt, benchStats } from './engine/bench.js';
 import { createCruise } from './world/cruise.js';
 import { createDumpling } from './world/dumpling.js';
+import { createEntrances, entranceList } from './world/entrances.js';
 import { underCover } from './world/layout.js';
 import { colliders } from './world/layout.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
@@ -245,7 +246,9 @@ async function boot() {
   const dumpling = createDumpling({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), onMode: shopMode });
   const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); },
     roles: people ? Object.keys(people.manifest.cast).filter((r) => !['lin', 'su', 'player', 'dad'].includes(r)) : [] });
-  const lighting = createLighting(scene, street.lanterns, [...dumpling.lights, { ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...buses.lights, ...nanjing.lights, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
+  // where you can go in: a pool of light at each open door, a label over it when it's in view
+  const entrances = createEntrances({ scene, camera, list: entranceList({ shopOpen: () => { const m = life.clock.minute; return m >= 390 && m < 1290; }, cruiseOpen: () => { const m = life.clock.minute; return m >= 9 * 60 + 30 && m < 21 * 60 + 30; }, metroOpen: () => hourState.metro }) });
+  const lighting = createLighting(scene, street.lanterns, [...entrances.lights, ...dumpling.lights, { ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...buses.lights, ...nanjing.lights, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -273,7 +276,7 @@ async function boot() {
   if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
-  world = { cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  world = { entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -996,6 +999,7 @@ function mapBlips() {
     { x: mannerSpec.queue[0].x, z: mannerSpec.zWall, glyph: 'M', bg: '#111', fg: '#fff', name: { zh: 'Manner 咖啡', en: 'Manner Coffee' } },
     { x: (PEACE_R.x0 + PEACE_R.x1) / 2, z: -211, glyph: '和', bg: '#2b2416', fg: '#e7b96a', name: { zh: '和平饭店（你住这里）', en: 'Peace Hotel (where you\'re staying)' } },
     { x: PICKUP.x, z: PICKUP.z, glyph: 'D', bg: '#ff7a00', fg: '#fff', name: { zh: '滴滴上车点', en: 'DiDi pick-up' } },
+    { x: L.facadeX + 1.5, z: (AIA_R.door[0] + AIA_R.door[1]) / 2, glyph: '友', bg: '#24303f', fg: '#cfe0f5', name: { zh: '友邦大厦（大堂）', en: 'The AIA Building (lobby)' } },
     ...METRO_EXITS.map((m) => ({ x: m.top + Math.sign(m.top - m.bottom) * 1.5, z: (m.z0 + m.z1) / 2, glyph: String(m.exit), bg: '#c8161e', fg: '#fff', name: { zh: `南京东路站 ${m.exit} 号口`, en: `East Nanjing Rd station, Exit ${m.exit}` } })),
   ];
   if (tod >= 19 * 60 || tod < 60) out.push({ x: (JAZZ.x0 + JAZZ.x1) / 2, z: JAZZ.z0, glyph: '♪', bg: '#3b1f3f', fg: '#f3c6ff', name: { zh: '爵士吧', en: 'The Jazz Bar' } });
@@ -1032,7 +1036,8 @@ function bumpActors() {
   // the evening crowd's nearby people: a look, a word, a step back
   if (world.crowdView) for (const a of world.crowdView.nearAgents()) {
     if (Math.abs(a.y - player.body.y) > 1.2) continue;
-    out.push({ id: `crowd:${a.id}`, persona: a.persona, x: a.x, z: a.z, vx: a.vx, vz: a.vz, r: 0.3, busy: a.phone,
+    const grp = a.group ? `tour${a.group.guide.id}` : a.leader ? `with${a.leader.id}` : a.partner || a.kid ? `with${a.id}` : null;   // (together: they don't bump each other)
+    out.push({ id: `crowd:${a.id}`, group: grp, persona: a.persona, x: a.x, z: a.z, vx: a.vx, vz: a.vz, r: 0.3, busy: a.phone,
       apply(r, other) {
         if (r.stagger) { const dx = a.x - other.x, dz = a.z - other.z, d = Math.hypot(dx, dz) || 1; a.vx += dx / d * 0.9; a.vz += dz / d * 0.9; }
         if (r.kind !== 'look' && a.state === 'walk') { a._saved = { state: 'walk', act: null, wait: 0 }; a.state = 'act'; a.act = 'look'; a.wait = REACT_FOR[r.kind] || 1; a.heading = Math.atan2(other.x - a.x, other.z - a.z); }
@@ -1193,11 +1198,13 @@ function frame(now) {
   world.moments.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });
   world.cruise.update(mode === 'pause' ? 0 : dt, player);                              // the boat moves, carrying whoever's aboard (before your own step)
   world.dumpling.update(mode === 'pause' ? 0 : dt, player.body);
+  world.entrances.update(dt, { eye: camera.position, prompting: !!target, active: mode === 'play' || mode === 'ride' });
   const driving = mode === 'drive' || (mode === 'pause' && pausedFrom === 'drive');
   if (driving) world.driving.update(dt, mode === 'pause');
   else if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) (world.dumpling.seated ? world.dumpling : world.jazz).seatCamera(camera);
   else if (!riding && mode !== 'sale-seat' && mode !== 'bench') player.update(mode === 'pause' ? 0 : dt);
   const seated = mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat') || driving;
+  { const st = player.stamina, show = mode === 'play' && (player.running || st.level < 0.995 || st.winded > 0); hud.stamina(st.level, show, st.exhausted || st.winded > 0); }
   if (world.playerBody) { world.playerBody.setVisible(!riding && !seated); if (!riding && !seated) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0

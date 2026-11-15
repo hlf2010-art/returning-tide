@@ -2,13 +2,15 @@
 // long enough and the body slows, then runs out: a forced stop to catch your breath, then a
 // walk until there is enough back to run again. `breath` (0..1) is how hard you are breathing,
 // for the camera, the body and the panting sound; it climbs while running and settles slowly.
+// Tuned for getting about a city, not a sprint race: a long hurry, quick to come back (the HUD shows
+// it as a slim bar while you run or recover).
 export const STAMINA = {
-  runTime: 15,          // s of continuous running from full
-  regenWalk: 1 / 28,    // per second while walking
-  regenIdle: 1 / 11,    // per second while standing
-  windedFor: 3.2,       // s of forced stop when it runs out
-  runAgainAt: 0.4,      // after running out, no running until this much is back
-  tireBelow: 0.3,       // below this the run fades toward a jog
+  runTime: 45,          // s of continuous running from full
+  regenWalk: 1 / 18,    // per second while walking (empty to full in 18 s)
+  regenIdle: 1 / 7,     // per second while standing
+  windedFor: 2.0,       // s of forced stop when it runs out
+  runAgainAt: 0.45,     // after running out, no running until this much is back (a few seconds of walking)
+  tireBelow: 0.2,       // below this the run fades toward a jog
 };
 
 export function createStamina() {
@@ -33,7 +35,9 @@ export function updateStamina(s, dt, { running = false, moving = false } = {}) {
     if (s.exhausted && s.level >= STAMINA.runAgainAt) s.exhausted = false;
   }
   // breathing effort: rises with running and with how spent you are; eases off slowly
-  const target = s.winded > 0 ? 1 : spending ? 0.25 + 0.75 * (1 - s.level) : (1 - s.level) * (moving ? 0.8 : 0.65);
+  // (fresh, a run is light breathing; it gets heavy only as you tire)
+  const spent = 1 - s.level;
+  const target = s.winded > 0 ? 1 : spending ? 0.1 + 0.85 * spent ** 1.5 : spent * (moving ? 0.7 : 0.55);
   const rate = target > s.breath ? 1.4 : 0.22;
   s.breath += (target - s.breath) * (1 - Math.exp(-rate * dt));
   return s;

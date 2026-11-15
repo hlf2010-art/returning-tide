@@ -24,7 +24,7 @@ const DT = 1 / 60;
   const cap = speedCap(s, WALK_SPEED, RUN_SPEED);
   ok(!canRun(s) && cap > 0 && cap <= WALK_SPEED, `then can walk (cap ${cap.toFixed(2)}) but not run`);
   let back = 0; while (!canRun(s) && back < 60) { updateStamina(s, DT, { running: true, moving: true }); back += DT; }
-  ok(canRun(s) && back > 3 && back < 20, `able to run again after ${back.toFixed(1)} s of walking`);
+  ok(canRun(s) && back > 2 && back < 20, `able to run again after ${back.toFixed(1)} s of walking (after catching breath)`);
   const r = createStamina(); r.level = 0.2;
   let idle = 0; while (r.level < 0.99) { updateStamina(r, DT, { moving: false }); idle += DT; }
   const w = createStamina(); w.level = 0.2;

@@ -70,9 +70,9 @@ export function createVoice({ audio, getLang, camera = null }) {
     if (zh && CJK.test(zh) && !/^bump:visitor|^tourist/.test(who || '')) return 'zh';
     return en ? 'en' : 'zh';
   }
-  function play(buf, { at, phone, gain = 1, onEnd }) {
+  function play(buf, { at, phone, gain = 1, onEnd, rate = 1 }) {
     const out = bus(); if (!out) return null;
-    const src = ctx.createBufferSource(); src.buffer = buf;
+    const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;   // rate: a person's own pitch (several people share one recorded voice)
     let node = src;
     if (phone) {                                                          // a phone line: 300-3400 Hz, a touch of grit
       const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 320;
@@ -121,12 +121,14 @@ export function createVoice({ audio, getLang, camera = null }) {
     langFor,
     update() { listener(); for (const h of S.active) if (h.at && h.pan && h.follow) { const p = h.follow(); if (p) { h.pan.positionX.value = p[0]; h.pan.positionY.value = p[1]; h.pan.positionZ.value = p[2]; } } },
     stopAll() { for (const h of [...S.active]) h.stop(); S.active.clear(); try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch { /* none */ } },
-    // { zh, en, who, sex, at, phone, gain, onEnd, voice (server voice id) }
+    // { zh, en, who, sex, at, phone, gain, onEnd, voice (server voice id), rate, noSynth }
+    // noSynth: an incidental line (a passer-by's "sorry"): the recorded voice or nothing, never the
+    // browser's robotic last resort
     async say(o) {
       const lang = o.lang || langFor(o.who, o.zh, o.en), text = (lang === 'zh' ? o.zh : o.en) || o.zh || o.en;
       if (!text) { o.onEnd && o.onEnd(); return null; }
       S.last = { lang, text: text.slice(0, 40), who: o.who };
-      if (!bus()) return synthSay(text, lang, o);
+      if (!bus()) return o.noSynth ? (o.onEnd && o.onEnd(), null) : synthSay(text, lang, o);
       const url = this.clipUrl(lang, text);
       try {
         if (url) { const b = await buffer(url); S.clipHits++; return play(b, o); }
@@ -135,6 +137,7 @@ export function createVoice({ audio, getLang, camera = null }) {
           if (r.ok) { const b = await ctx.decodeAudioData(await r.arrayBuffer()); S.serverHits++; return play(b, o); }
         }
       } catch (e) { console.warn('voice:', e.message || e); }
+      if (o.noSynth) { o.onEnd && o.onEnd(); return null; }
       return synthSay(text, lang, o);
     },
   };
