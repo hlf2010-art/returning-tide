@@ -20,7 +20,7 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | | |
 |---|---|
 | W A S D / arrows | walk |
-| Shift | hurry (a run; run ~15 s flat out and you have to stop and catch your breath) |
+| Shift | hurry (a run; ~45 s flat out before you must stop and catch your breath; a slim bar shows your stamina) |
 | Space | jump (a short hop; barriers stay solid) |
 | Mouse | look (click the page to capture the pointer) |
 | E | the one interaction key: talk / read / look at the selected target; confirm the highlighted choice; **hold** on "break the seal" |
@@ -807,10 +807,11 @@ honest: no emotional prosody beyond rate and pitch, and Shanghainese remains sub
 - **Weight and momentum** (`movement.js`): speeding up (~0.4 s to walking pace) and stopping (a
   step or so) take time; winding up from a walk into a run takes about a second; little steering
   in the air. Walk 2.2 m/s, run 5.0 m/s; step cadence ~1.9/s walking, ~3/s running.
-- **Stamina** (`src/engine/stamina.js`, node-tested): running spends it (~15 s from full); below 30%
-  the run fades toward a jog; at zero you are winded: a forced 3.2 s stop bent over, hands toward
-  your knees, breathing hard (the camera follows the body's head down), then walking only until 40%
-  is back. Standing recovers faster than walking. Breathing is audible (procedural exhale / inhale
+- **Stamina** (`src/engine/stamina.js`, node-tested): running spends it (~45 s from full; tuned for
+  getting about a city, after players found 15 s too short); below 20% the run fades toward a jog; at
+  zero you are winded: a forced 2 s stop bent over, hands toward your knees, breathing hard (the
+  camera follows the body's head down), then a few seconds' walk until 45% is back. It comes back in
+  18 s walking, 7 s standing. A slim bar at the bottom shows it while you run or recover. Breathing is audible (procedural exhale / inhale
   at the same rate the head moves) once you are working.
 
 The library has no "out of breath" mocap (its breathe idles are calm), so the winded bend is a
@@ -826,7 +827,10 @@ people do here) or slows it. In a node test of a busy 4 m pavement (16 people, b
 you could walk through them); they steer round you, but you can still walk or run into them.
 
 A contact is noticed once per pair (then not again for 8 s), with who was moving into whom and how
-hard. Each of the two reacts according to who they are (persona: temper, politeness, language) and
+hard. Only bumps that involve **you** get words: passers-by brushing past each other just glance (in a
+real crowd nobody makes a scene of it), and people walking together (couples, families, a tour
+group) never count as bumping each other. One line at a time (3 s apart), and the same person not
+again for half a minute. Each of the two reacts according to who they are (persona: temper, politeness, language) and
 who was at fault:
 - whoever walked into someone almost always apologises;
 - the one walked into mostly says "没事" / apologises anyway (very common), sometimes just looks or
@@ -839,9 +843,9 @@ who was at fault:
 They stop (never in the road), turn their head and body to whoever it was, and gesture (a raised
 hand for sorry, a shrug, an annoyed gesture: Rocketbox `wave`, `gestic_shrug`, `idle_angry` /
 `gestic_talk_angry`); you get a jolt and a soft cloth thud. What they say appears as a passing line
-above the subtitles, voiced through the browser's Mandarin / English voice when it is free (Old Lin
-and Ms. Su's conversation has priority). **There is no browser voice for Shanghainese**, so her
-lines are subtitle-only, labelled as such. Casting: the library has no older East Asian woman;
+above the subtitles, in the recorded voice for that kind of person, pitched a little differently for
+each individual so a crowd doesn't share one voice; never the browser's synthetic voice (a line
+without a recording is subtitle-only). Shanghainese lines are subtitle-only, labelled as such. Casting: the library has no older East Asian woman;
 p5 is its oldest woman (`Business_Female_02`, glasses, tweed jacket) with greyed hair.
 
 **Eyes on a phone.** Walkers sometimes have their phone up while they walk (decided leg by leg;
@@ -916,8 +920,10 @@ step up in wind moves everything further, rain weighs and knocks the leaves.
 ## Lighting
 
 - **Wet-ground reflections**: screen-space reflections (three.js `SSRPass`) on the deck, pavements
-  and road only, with a per-pixel strength from each surface's wetness map: puddles mirror, damp
-  stone glistens, more in the drizzle, none under cover; people and cars standing in front of a
+  and road only, with a per-pixel strength from each surface's wetness map: puddles (a metre or two
+  across, about one part in eight of the ground) reflect at about half strength, damp stone has a
+  sheen; rays fade out by ~30 m. (Until phase 4's fixes the shader dropped the mask whenever distance
+  attenuation was on, so every wet surface was a full mirror: that is fixed.) More in the drizzle, none under cover; people and cars standing in front of a
   puddle occlude it (the mask carries the ground's depth). Costly: a full-scene normals render plus
   the ray march and blur; under software GL it roughly doubled frame time (not measured on a real
   GPU). So it runs on the top two quality steps only, the automatic quality ladder drops it when
@@ -1149,6 +1155,11 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
   restarts in it), export a slot to a .json file, import one into any slot (anything that isn't a save
   from this game is refused). All in this browser's local storage, as before; exporting is the way to
   keep a save safe or move it to another machine.
+- **Where you can go in** (`src/world/entrances.js`): every door that opens (the Peace Hotel, the AIA
+  Building, the shengjian shop, the metro exits, the cruise pier) has a warm pool of light on the
+  pavement in front and, when it's in view within ~35 m, a small label over it ("Peace Hotel · go
+  in") that hides behind buildings and gives way to the E prompt at the door. Closed doors aren't
+  marked. Everything else on the Bund is façade.
 - **First-play tips** (`src/ui/tips.js`): short tips, each once, one at a time, only when you're free:
   walking and acting, the journal, the phone, the map, talking, the hours, street moments, the cruise,
   the shop, sitting down. Settings → General → Tips turns them off (on again shows them from the start).
