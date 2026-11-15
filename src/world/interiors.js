@@ -406,6 +406,17 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     prompt(id) { const p = PROMPT[id] || (id.startsWith('aGate') ? () => [T('闸机', 'Gate'), T('刷脸', 'Face scan')] : null); if (!p) return null; const [target, action] = p(); return { target, action }; },
     owns(id) { return targets.some((t) => t.id === id); },
     interact,
+    // the two guests talking in the hall (world/ambient.js gives them new things to say)
+    talkPairs() {
+      const a = ppl.guestA, b = ppl.guestB; if (!a || !b) return [];
+      const at = (p) => () => [p.root.position.x, p.root.position.y + 1.6, p.root.position.z];
+      return [{ keys: ['a', 'b'], near: (pp) => pp.y < 5 && Math.hypot(pp.x - a.root.position.x, pp.z - a.root.position.z) < 9,
+        who: { a: { persona: 'office', card: 'a woman in her forties from Hong Kong staying at the Peace Hotel for a family wedding, chatty', at: at(a) }, b: { persona: 'office', card: 'her younger sister who lives in Shanghai, dry, practical', at: at(b) } } }];
+    },
+    talkables() {
+      const P2 = { receptionist: 'receptionist', concierge: 'concierge', liftGuard: 'liftGuard', doorman: 'doorman', aiaDesk: 'aiaDesk', aiaGuard: 'aiaGuard' };
+      return Object.entries(P2).filter(([k]) => ppl[k] && ppl[k].root.visible).map(([k, persona]) => { const r = ppl[k].root.position; return { key: k, persona, x: r.x, y: r.y + 1.62, z: r.z, hold() {} }; });
+    },
     update(dt, pp) {
       const nearPeace = pp.z < -200 && pp.z > -262, nearAia = pp.z < -125 && pp.z > -165;
       if (nearPeace) updatePeace(dt, pp);

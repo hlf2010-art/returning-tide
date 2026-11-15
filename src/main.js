@@ -27,6 +27,14 @@ import { createNpcs } from './world/npcs.js';
 import { createDialogueAudio } from './engine/dialogueAudio.js';
 import { createConversation, computeDistanceGain } from './engine/conversation.js';
 import { createHud } from './ui/hud.js';
+import { createVoice } from './engine/voice.js';
+import { createLLM } from './engine/llm.js';
+import { createTalk } from './ui/talk.js';
+import { createAmbient } from './world/ambient.js';
+import { cannedReply, PERSONAS } from './world/personas.js';
+import { PEACE as PEACE_R, AIA as AIA_R } from './world/interiors.js';
+import { JAZZ } from './world/jazzBar.js';
+import { clockText as clockOf } from './engine/life.js';
 import { createPouch, HELD_LAYER } from './world/pouch.js';
 import { createMissionOne } from './missionOne.js';
 import { pickTarget } from './engine/targeting.js';
@@ -90,6 +98,13 @@ const R = createRenderer(canvas, scene, camera, { fixedLevel: params.has('q') ? 
 const player = createPlayer(camera, canvas);
 const audio = createAudio();
 const hud = createHud();
+// people's voices: recorded clips per character (engine/voice.js); barks speak through the HUD
+const voice = createVoice({ audio, getLang, camera });
+hud.voice = voice;
+// talking to people in your own words (engine/llm.js, ui/talk.js): typed or spoken, Mandarin or English
+const llm = createLLM({ canned: (id, said, ctx) => cannedReply(id, said, { first: ctx.first, lang: /[\u4e00-\u9fff]/.test(said || '') || (!said && getLang() === 'zh') ? 'zh' : 'en' }) });
+const talk = createTalk({ llm, voice, getLife: () => life, save: () => saveLife() });
+llm.ready();
 
 let mode = 'boot';              // boot -> entry -> play <-> pause / inspect / dialogue / pouch
 let noLock = params.has('nolock');
@@ -161,7 +176,7 @@ async function boot() {
   const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });
   // the Jazz Bar off the hall: the trio, Momo's night (world/jazzBar.js)
   // places a DiDi takes you that you can walk into (the North Bund flat, IFC 32F)
-  const dests = createDestinations({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });
+  const dests = createDestinations({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, voice });
   const jazz = createJazzBar({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: seatMode });
   const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights]);
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
@@ -179,15 +194,19 @@ async function boot() {
   const belongings = createBelongings({ scene, people, camera, hud, audio, getLife: () => life, save: () => saveLife() });
   // DiDi: a car from the traffic comes to the kerb; you ride in it (world/didi.js, world/rideFlow.js)
   const didi = createDidi({ scene, people, traffic, vehicles, camera, player, renderer: R.renderer });
-  const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode, arriveAt: (d, info) => world.dest.arrive(d.id, info) });
+  const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode, voice, arriveAt: (d, info) => world.dest.arrive(d.id, info) });
   document.querySelector('#ride-card .go').addEventListener('click', () => { if (!closeInfoCard()) rideFlow.closeCard(); });
   // buying it: Vivian, the consultant, at the car (world/carSale.js, engine/carPurchase.js)
-  const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode });
+  const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode, voice });
   if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
   world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   places = [interiors, upper, jazz, dests, driving];
+  // new conversations among the people around you, and now and then to you (world/ambient.js)
+  world.ambient = createAmbient({ llm, voice, hud, getLife: () => life, sceneText: () => sceneText(),
+    convExchanges: T.dialogue.exchanges,
+    getPeople: () => ({ linSu: { x: npcLayout.pairFocus.x, z: npcLayout.pairFocus.z }, pairs: [...world.interiors.talkPairs(), ...world.jazz.talkPairs()], talkables }) });
   // bumping into people: their reactions, a passing remark, a jolt for you
   bumps = createBumps({ hud, audio, onPlayerBump: ({ closing }) => { player.head.dipV -= 0.1 + 0.05 * Math.min(4, closing); player.head.roll += (Math.random() - 0.5) * 0.04; } });
   // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
@@ -195,6 +214,8 @@ async function boot() {
   scene.traverse((o) => { if (o.isMesh && (o.material === M.deck || o.material === M.sidewalk || o.material === M.asphalt)) { o.userData.ssrMask = ssrMask(o.material); reflectors.push(o); } });
   if (params.get('ssr') !== '0') R.setReflectors(reflectors);
   dialogueAudio = createDialogueAudio({
+    speakLive: (line, onEnd) => { const p = npcs.getSpeakerPosition(line.speaker); voice.say({ zh: line.text, en: line.en, who: line.speaker, at: p ? [p.x, p.y, p.z] : null, onEnd }).then((h) => { if (!h && onEnd) onEnd(); }); },
+    clipFor: (line) => voice.clipUrl(voice.langFor(line.speaker, line.text, line.en), voice.langFor(line.speaker, line.text, line.en) === 'zh' ? line.text : line.en),
     audio,
     camera,
     getSpeakerPosition: (id) => npcs.getSpeakerPosition(id),
@@ -259,6 +280,42 @@ function saleMode(m) {
 function driveMode(m) {
   if (m === 'drive') { if (phone.isOpen) phone.close(); mode = 'drive'; player.enabled = false; player.lookOnly = true; player.clearInput(); hud.prompt(false); target = null; }
   else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
+}
+// where you are and what's going on, in a sentence or two, for whoever you're talking to
+function sceneText(extra = '') {
+  const b = player.body, l = life, m = l.clock.minute, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
+  const where = world.dest && world.dest.here === 'lujiazui' ? 'the 32nd floor of IFC in Lujiazui, a robot-arm start-up\'s office, the Bund lit up across the river'
+    : world.dest && world.dest.here === 'northbund' ? 'an empty top-floor show flat on the North Bund, 160 m up, the river and Lujiazui through the glass'
+    : world.upper && world.upper.here ? 'the sixth floor of the Peace Hotel, by room 612'
+    : b.y < 5 && b.x > JAZZ.x0 && b.x < JAZZ.x1 && b.z > JAZZ.z0 && b.z < JAZZ.z1 ? 'the Peace Hotel Jazz Bar: dim, panelled, a piano trio on the little stage'
+    : inR(PEACE_R) ? 'the Peace Hotel\'s great hall on the Bund (1929): marble, brass, the stained-glass rotunda overhead'
+    : inR(AIA_R) ? 'the granite lobby of the AIA Building on the Bund, by the face-recognition gates'
+    : b.x > L.wallX ? 'the Bund promenade by the Huangpu river, Pudong\'s towers and the Oriental Pearl lit up across the water, people taking photos'
+    : Math.abs(b.z) < 6 && b.x < L.westCurbX ? 'Hankou Road just off the Bund, by the Manner Coffee window and the old Customs House'
+    : b.z < -190 && b.z > -215 && b.x < L.westCurbX ? 'Nanjing Road East at the Bund, outside the Peace Hotel, crowds and shopping bags'
+    : 'Zhongshan East 1st Road on the Bund, the old banks floodlit gold, traffic going by';
+  const wx = weather.rain > 0.3 ? 'a light drizzle' : 'a cool clear November evening, a breeze off the river';
+  const has = [cupFor > 0 ? 'he is holding a Manner coffee' : '', world.belongings && world.belongings.umbrellaUp ? 'he has an umbrella up' : '', l.flags.car ? 'he owns a new yellow Lamborghini Huracán (parked nearby)' : ''].filter(Boolean).join('; ');
+  return `${clockOf(m)}, ${wx}. ${where}.${has ? ` (${has}.)` : ''}${extra ? ` ${extra}` : ''}`;
+}
+// talking: whoever it is stops and turns to you; the conversation has the keyboard
+let talkHold = null;
+function startTalk(t, { inRide = false, opener = null } = {}) {
+  if (!t || talk.open) return;
+  talkHold = t; t.hold && t.hold(true, player.body);
+  if (!inRide) { mode = 'talk'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null; }
+  world.rideFlow.quiet = inRide;
+  talk.start({ id: t.persona, opener, greet: !opener, scene: () => sceneText(inRide ? `You are driving him in your DiDi${world.rideFlow.ride ? ` to ${world.rideFlow.ride.to}` : ''}.` : ''), at: () => [t.x, t.y, t.z], onClose: () => {
+    if (talkHold && talkHold.hold) talkHold.hold(false, player.body); talkHold = null; world.rideFlow.quiet = false;
+    if (mode === 'talk') { mode = 'play'; player.enabled = true; player.clearInput(); }
+  } });
+}
+// everyone near enough to talk to
+function talkables() {
+  const out = [];
+  for (const q of traffic ? traffic.peds : []) if (q.active !== false && q.visible !== false) out.push({ key: `ped:${q.id}`, persona: PERSONAS[q.persona] ? q.persona : 'office', x: q.x, y: (q.y ?? L.curbH) + 1.62, z: q.z, hold(on, pp) { if (on) { q.pause = 999; q.faceTo = [pp.x, pp.z]; q.faceFor = 999; } else { q.pause = 0.3; q.faceFor = 0; q.faceTo = null; } } });
+  for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale]) if (m && m.talkables) out.push(...m.talkables());
+  return out;
 }
 // sat at a table in the Jazz Bar: look around, E to stand
 function seatMode(m) {
@@ -373,10 +430,19 @@ document.getElementById('resume').addEventListener('click', () => { lock(); if (
 // ---- settings: language, subtitles, sound (title screen and pause menu) ----
 function syncSettings() {
   for (const seg of document.querySelectorAll('.seg[data-setting]')) {
-    const cur = { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on' }[seg.dataset.setting];
+    const c = llm.conf();
+    const cur = { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto' }[seg.dataset.setting];
     for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
   }
+  const c = llm.conf(), sv = document.getElementById('ai-server'), md = document.getElementById('ai-model');
+  if (sv && document.activeElement !== sv) sv.value = c.server; if (md && document.activeElement !== md) md.value = c.model;
+  const st = document.getElementById('ai-status'), vs = voice.stats;
+  if (st) st.textContent = getLang() === 'zh'
+    ? `AI：${llm.backend === 'server' ? `已连接本地服务` : llm.backend === 'browser' ? '浏览器内模型' : llm.status.startsWith('loading') ? `加载中 ${Math.round(llm.progress * 100)}%` : '未连接（简单回应）'} · 语音：${vs.size} 句录好的人声${vs.serverUp ? ' + 本地语音服务' : ''}`
+    : `AI: ${llm.backend === 'server' ? 'local server connected' : llm.backend === 'browser' ? 'model in the browser' : llm.status.startsWith('loading') ? `loading ${Math.round(llm.progress * 100)}%` : 'not connected (simple replies)'} · Voices: ${vs.size} recorded lines${vs.serverUp ? ' + local voice server' : ''}`;
 }
+for (const id of ['ai-server', 'ai-model']) document.getElementById(id)?.addEventListener('change', () => { llm.configure({ aiServer: document.getElementById('ai-server').value.trim(), aiModel: document.getElementById('ai-model').value.trim() }).then(syncSettings); });
+for (const id of ['ai-server', 'ai-model']) document.getElementById(id)?.addEventListener('keydown', (e) => e.stopPropagation());
 document.addEventListener('click', (e) => {
   const b = e.target.closest('.seg[data-setting] button');
   if (b) {
@@ -384,6 +450,8 @@ document.addEventListener('click', (e) => {
     if (k === 'lang') setLang(v);
     if (k === 'subs') subtitlesOn = v === 'on';
     if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
+    if (k === 'voices') voice.setMode(v);
+    if (k === 'ai') llm.configure({ ai: v === 'browser' ? 'browser' : v, aiBrowser: v === 'browser' ? 1 : 0 }).then(syncSettings);
     syncSettings(); return;
   }
   if (e.target.closest('[data-open-settings]')) { document.getElementById('settings').classList.remove('hidden'); syncSettings(); return; }
@@ -450,6 +518,7 @@ window.addEventListener('keydown', (e) => {
   if (mode === 'seat') { if (k === 'KeyE') world.jazz.stand(); else if (k === 'Escape' && noLock) pause(); return; }
   if (mode === 'drive') { if (world.driving.key(k)) e.preventDefault(); else if (k === 'Escape' && noLock) pause(); return; }
   if (mode === 'ride') {
+    if (k === 'KeyT' && world.rideFlow.inCar && world.rideFlow.ride && world.rideFlow.ride.driver && !talk.open) { const d = world.rideFlow.ride.driver; startTalk({ key: 'driver', persona: `driver:${d.id}`, x: camera.position.x, y: camera.position.y, z: camera.position.z }, { inRide: true }); e.preventDefault(); return; }
     if (world.rideFlow.key(k)) { e.preventDefault(); return; }
     if (k === 'Escape' && noLock) pause();
     return;
@@ -458,6 +527,8 @@ window.addEventListener('keydown', (e) => {
     if ((k === 'KeyE' || k === 'Enter') && closeInfoCard()) return;
     if (world && world.belongings && world.belongings.key(k)) return;
     if (world.dest.key(k)) return;
+    if (k === 'KeyT' && world.ambient.opener) { const o = world.ambient.opener; world.ambient.clearOpener(); startTalk(o.talkable, { opener: o.line }); e.preventDefault(); return; }
+    if (k === 'KeyT' && talkTarget) { startTalk(talkTarget); e.preventDefault(); return; }
     if (k === 'KeyE') interact();
     else if (k === 'Escape' && noLock) pause();
   }
@@ -497,7 +568,7 @@ for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => {
 });
 
 // ---- frame ----
-let target = null, boundaryCooldown = 0;   // target: { id, dist, cos } or null
+let target = null, boundaryCooldown = 0, talkTarget = null;   // target: { id, dist, cos } or null
 const debug = { noReflect: false, freezeTraffic: false };   // freezeTraffic: screenshot tool only
 const _v = new THREE.Vector3(), _d = new THREE.Vector3();
 
@@ -533,7 +604,7 @@ if (!life) { life = createLife(); setupThreads(life); }
 const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); } catch { /* private mode: no saving */ } };
 let lifeSaveIn = 5, pendingCalls = [], cupFor = 0;
 const phone = createPhone({
-  getLife: () => life, calls: CALLS, audio,
+  getLife: () => life, calls: CALLS, audio, voice, llm,
   ride: {
     get: () => (world && world.rideFlow ? world.rideFlow.ride : null), request: (id) => world && world.rideFlow.request(id),
     cancel: () => world && world.rideFlow.cancel(), message: (q) => world && world.rideFlow.message(q),
@@ -687,6 +758,7 @@ function frame(now) {
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
   world.dest.update(mode === 'pause' ? 0 : dt, player.body);
+  if (mode !== 'pause') world.ambient.update(dt, player.body, { talking: talk.open });
   if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
   else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
   { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
@@ -727,6 +799,7 @@ function frame(now) {
     audio.setWind(wind.level, near);
   }
   audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: traffic ? traffic.vehicles : null, speech });
+  voice.update();                                                                  // where the listener is, for positional voices
   if (dialogueAudio) dialogueAudio.updateListener();
   if (conversation) conversation.update(mode === 'pause' ? 0 : dt);
   world.npcs.update(t, mode === 'pause' ? 0 : dt, {
@@ -762,10 +835,15 @@ function frame(now) {
     if (world.rideFlow.canBoard()) { const d = world.didi.doorFocus(); if (d) cands.push({ id: 'didi', ...d, reach: 2.8, cone: 0.6 }); }
     cands.push({ id: 'manner', x: mannerSpec.queue[0].x + 0.2, y: L.curbH + 1.15, z: mannerSpec.zWall + mannerSpec.depth - 0.1, reach: 2.6, cone: 0.7 });
     target = pickTarget(camera.position, _d, cands, colliders);
-  }
+    const tl = talkables(), tc = tl.map((q, i) => ({ id: String(i), x: q.x, y: q.y, z: q.z, reach: 2.8, cone: 0.82 }));
+    const tp = pickTarget(camera.position, _d, tc, colliders);
+    talkTarget = tp ? tl[Number(tp.id)] : null;
+  } else talkTarget = null;
   const place = target && places.find((p) => p.owns(target.id));
+  const talkName = talkTarget && PERSONAS[talkTarget.persona] ? (getLang() === 'zh' ? PERSONAS[talkTarget.persona].zh : PERSONAS[talkTarget.persona].en) : null;
   if (mode === 'seat') hud.prompt(true, world.jazz.seatPrompt());
-  else if (place) hud.prompt(true, place.prompt(target.id));
+  else if (!target && talkName && mode === 'play') hud.prompt(true, { target: talkName, action: getLang() === 'zh' ? '聊天' : 'Talk', key: 'T' });
+  else if (place) hud.prompt(true, { ...place.prompt(target.id), talk: talkName });
   else if (target && target.id === 'vivian') hud.prompt(true, world.carSale.prompt());
   else if (target && target.id === 'didi') hud.prompt(true, { target: tx('pDidi', world.rideFlow.ride.driver.plate), action: tx('pGetIn') });
   else if (target) hud.prompt(true, PROMPTS[target.id] ? PROMPTS[target.id]() : world.belongings.prompt(target.id));
@@ -813,7 +891,7 @@ function frame(now) {
 R.renderer.setAnimationLoop(frame);
 
 // Small handle for automated checks and console poking; not used by the game itself.
-debug.setLang = setLang; debug.getLang = getLang;
+debug.setLang = setLang; debug.getLang = getLang; debug.voice = voice; debug.llm = llm; debug.talk = talk;
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   player, camera, scene, R, audio, wind,

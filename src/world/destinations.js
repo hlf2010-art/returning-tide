@@ -91,7 +91,7 @@ const XUAN = [
 const NAMES = { agent: ['中介', 'Agent'], yinuo: ['程以诺', 'Yinuo'], xuan: ['陆明轩', 'Mingxuan'], founder: ['周学长', 'Zhou'], engineer: ['工程师', 'Engineer'] };
 const WHO = { yinuo: 'yinuo', xuan: 'xuan' };
 
-export function createDestinations({ scene, people, hud, audio, getLife, save, player, travel }) {
+export function createDestinations({ scene, people, hud, audio, getLife, save, player, travel, voice = null }) {
   const groups = {}, lights = [], ppl = {};
   const el = (id) => document.getElementById(id);
   const std = (o) => new THREE.MeshStandardMaterial(o);
@@ -277,6 +277,7 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     const c = cur; if (!c) return;
     if (c.queue.length) {
       const [who, zh, en, opt] = c.queue.shift(); c.speaking = who; c.wait = lineSecs(T(zh, en)); show(who, T(zh, en));
+      if (voice) { const p = ppl[who]; voice.say({ zh, en, who, at: p ? [p.root.position.x, p.root.position.y + 1.6, p.root.position.z] : null, onEnd: () => { if (cur && cur.speaking === who) cur.wait = Math.min(cur.wait, 0.5); } }).then((h) => { if (h && h.duration && cur) cur.wait = Math.max(cur.wait, h.duration + 0.4); }); }
       if (opt && opt.drop && arm) arm.forceSlip = true;
       return;
     }
@@ -344,6 +345,8 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     lights, arrive, has: (id) => !!PLACES[id],
     get here() { return here; },
     get scene() { return cur; },
+    // once the scene's done, you can keep talking to them
+    talkables() { if (!here || (cur && !cur.done)) return []; return Object.entries(ppl).filter(([, p]) => groups[here].children.includes(p.root)).map(([k, p]) => ({ key: k, persona: k, x: p.root.position.x, y: p.root.position.y + 1.62, z: p.root.position.z, hold() {} })); },
     candidates() { return targets().map((t) => ({ ...t, cone: 0.6 })); },
     prompt(id) {
       if (id === 'dLift') return { target: T('电梯', 'Lift'), action: cur && !cur.done ? T('先走了（打车回外滩）', 'Leave now (a car back to the Bund)') : T('下楼，打车回外滩', 'Down, and a car back to the Bund') };

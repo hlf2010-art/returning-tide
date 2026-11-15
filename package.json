@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview --host",
-    "test": "node tests/collision.test.mjs && node tests/life.test.mjs && node tests/shopping.test.mjs && node tests/ride.test.mjs && node tests/sights.test.mjs && node tests/jazz.test.mjs && node tests/drive.test.mjs && node tests/carpurchase.test.mjs && node tests/delivery.test.mjs && node tests/errands.test.mjs && node tests/minimap.test.mjs && node tests/body.test.mjs && node tests/social.test.mjs && node tests/ridehail.test.mjs && node tests/smalltalk.test.mjs && node tests/weather.test.mjs && node tests/dialogue.test.mjs && node tests/mission.test.mjs && node tests/traffic.test.mjs && node tests/audio.test.mjs && node tests/targeting.test.mjs",
+    "test": "node tests/collision.test.mjs && node tests/life.test.mjs && node tests/shopping.test.mjs && node tests/ride.test.mjs && node tests/sights.test.mjs && node tests/jazz.test.mjs && node tests/drive.test.mjs && node tests/talk.test.mjs && node tests/carpurchase.test.mjs && node tests/delivery.test.mjs && node tests/errands.test.mjs && node tests/minimap.test.mjs && node tests/body.test.mjs && node tests/social.test.mjs && node tests/ridehail.test.mjs && node tests/smalltalk.test.mjs && node tests/weather.test.mjs && node tests/dialogue.test.mjs && node tests/mission.test.mjs && node tests/traffic.test.mjs && node tests/audio.test.mjs && node tests/targeting.test.mjs",
     "playtest": "node tools/playtest.mjs",
     "shots": "node tools/shot.mjs"
   },
@@ -16,9 +16,13 @@
     "@fontsource/ma-shan-zheng": "^5.3.1",
     "@fontsource/noto-sans-sc": "^5.3.1",
     "@fontsource/noto-serif-sc": "^5.3.1",
+    "@mlc-ai/web-llm": "^0.2.79",
     "three": "^0.187.0"
   },
   "devDependencies": {
+    "acorn": "^8.19.0",
+    "acorn-walk": "^8.3.5",
+    "simple-icons": "^13.21.0",
     "vite": "^8.3.8"
   }
 }

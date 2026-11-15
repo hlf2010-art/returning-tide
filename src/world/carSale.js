@@ -28,7 +28,7 @@ function plateTexture(text) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
-export function createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife, save, onMode }) {
+export function createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife, save, onMode, voice = null }) {
   const S = { vivian: null, present: false, talk: null, sitting: false, delivery: false, plates: [] };
   if (people) {
     const role = people.manifest.cast.vivian ? 'vivian' : 'p2';
@@ -45,44 +45,46 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
   }
   const hide = () => box && box.classList.remove('on');
   const VIV = () => T('Vivian', 'Vivian');
+  const B = (zh, en) => Object.assign(new String(ZH() ? zh : en), { zh, en });   // a line in both languages (the voice picks)
 
   // the conversation at the car: a few small scenes, each a line and up to four answers
   const scenes = {
     hello: () => ({
-      text: T('沈先生？我是Vivian。这台是我们的试驾车，Huracán LP610-4，5.2升V10自然吸气，您随便看。', "Mr Shen? I'm Vivian. This is our demo car, the Huracán LP610-4: 5.2-litre naturally aspirated V10. Have a good look."),
+      text: B('沈先生？我是Vivian。这台是我们的试驾车，Huracán LP610-4，5.2升V10自然吸气，您随便看。', "Mr Shen? I'm Vivian. This is our demo car, the Huracán LP610-4: 5.2-litre naturally aspirated V10. Have a good look."),
       choices: [[T('能坐进去看看吗？', 'Can I sit in it?'), 'sit'], [T('听听发动机？', "Can I hear the engine?"), 'engine'], [T('颜色和内饰有哪些？', 'What colours and interiors are there?'), 'colour'], [T('我再想想。', "I'll think about it."), 'bye']],
     }),
     engine: () => { audio && audio.cue && audio.cue('v10'); huracan.setLights(true); return {
-      text: T('（她探身进去按了启动键。V10先是一声吼，然后低低地怠速。路边好几个人回头。）', '(She leans in and presses start. The V10 barks, then settles into a low idle. Several people on the pavement turn round.)'),
+      text: B('（她探身进去按了启动键。V10先是一声吼，然后低低地怠速。路边好几个人回头。）', '(She leans in and presses start. The V10 barks, then settles into a low idle. Several people on the pavement turn round.)'),
       choices: [[T('能坐进去看看吗？', 'Can I sit in it?'), 'sit'], [T('颜色和内饰有哪些？', 'What colours and interiors are there?'), 'colour'], [T('价格呢？', 'And the price?'), 'price'], [T('我再想想。', "I'll think about it."), 'bye']],
     }; },
     colour: () => ({
-      text: T('车身色我推荐这四个，上海这边绿色的最少见。', 'For the body I would suggest one of these four. Green is the rarest in Shanghai.'),
+      text: B('车身色我推荐这四个，上海这边绿色的最少见。', 'For the body I would suggest one of these four. Green is the rarest in Shanghai.'),
       choices: COLOURS.map((c) => [T(c.zh, c.en), `paint:${c.id}`]),
     }),
     interior: () => ({
-      text: T('内饰呢？黑色Alcantara比较运动，赤陶棕的皮革在白天特别好看。', 'And inside? Black Alcantara is the sporty one; the terracotta leather looks wonderful in daylight.'),
+      text: B('内饰呢？黑色Alcantara比较运动，赤陶棕的皮革在白天特别好看。', 'And inside? Black Alcantara is the sporty one; the terracotta leather looks wonderful in daylight.'),
       choices: INTERIORS.map((c) => [T(c.zh, c.en), `trim:${c.id}`]),
     }),
     price: () => ({
-      text: T(`落地大概${(CAR.price / 10000).toFixed(0)}万。定金20万，今天交的话这一批的配额能帮您锁住，大概两周到店。`, `About ¥${(CAR.price / 1e6).toFixed(2)} million on the road. A ¥200,000 deposit today secures this allocation; it would arrive in about two weeks.`),
+      text: B(`落地大概${(CAR.price / 10000).toFixed(0)}万。定金20万，今天交的话这一批的配额能帮您锁住，大概两周到店。`, `About ¥${(CAR.price / 1e6).toFixed(2)} million on the road. A ¥200,000 deposit today secures this allocation; it would arrive in about two weeks.`),
       choices: [[T('今天就定。', "Let's do it today."), 'deposit'], [T('全款还是贷款划算？', 'Is it better to pay in full or finance?'), 'finance'], [T('我再想想。', "I'll think about it."), 'bye']],
     }),
     finance: () => { const q = quote('finance'); return {
-      text: T(`做金融的话首付三成，月供大概${q.monthly.toLocaleString('en-US')}，36期。很多客户这样做，现金流灵活一点。`, `With finance it's 30% down and about ¥${q.monthly.toLocaleString('en-US')} a month over 36 months. A lot of clients do that: it keeps cash free.`),
+      text: B(`做金融的话首付三成，月供大概${q.monthly.toLocaleString('en-US')}，36期。很多客户这样做，现金流灵活一点。`, `With finance it's 30% down and about ¥${q.monthly.toLocaleString('en-US')} a month over 36 months. A lot of clients do that: it keeps cash free.`),
       choices: [[T('今天先交定金。', "I'll pay the deposit today."), 'deposit'], [T('我再想想。', "I'll think about it."), 'bye']],
     }; },
     deposited: () => ({
-      text: T('好的！定金收到了。上牌和尾款的事我微信上跟您确认～', "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on WeChat."),
+      text: B('好的！定金收到了。上牌和尾款的事我微信上跟您确认～', "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on WeChat."),
       choices: [[T('好，谢谢。', 'Great, thanks.'), 'bye']],
     }),
-    short: () => ({ text: T('银行卡余额好像不够……没关系，您方便的时候再说。', "It looks like there isn't enough in the account... No problem, whenever suits you."), choices: [[T('好。', 'OK.'), 'bye']] }),
-    bye: () => ({ text: T('好的，有问题随时微信我。', 'Of course. Message me any time.'), choices: null, end: true }),
+    short: () => ({ text: B('银行卡余额好像不够……没关系，您方便的时候再说。', "It looks like there isn't enough in the account... No problem, whenever suits you."), choices: [[T('好。', 'OK.'), 'bye']] }),
+    bye: () => ({ text: B('好的，有问题随时微信我。', 'Of course. Message me any time.'), choices: null, end: true }),
   };
   let picked = { colour: null, interior: null };
   function go(name) {
     const sc = scenes[name](); S.talk = { name, sc };
-    show(VIV(), sc.text, sc.choices ? sc.choices.map((c) => c[0]) : null);
+    show(VIV(), String(sc.text), sc.choices ? sc.choices.map((c) => c[0]) : null);
+    if (voice && sc.text.zh) voice.say({ zh: sc.text.zh, en: sc.text.en, who: 'vivian', at: [VIVIAN_SPOT.x, LAYOUT.curbH + 1.6, VIVIAN_SPOT.z] });
     if (sc.end) setTimeout(() => { if (S.talk && S.talk.name === name) end(); }, 2600);
     if (S.vivian) S.vivian.play(sc.end ? 'idle' : 'talk1', 0.3);
   }
@@ -120,6 +122,7 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
 
   return {
     get present() { return S.present; },
+    talkables() { return S.present && S.vivian && !S.talk && !S.sitting ? [{ key: 'vivian', persona: 'vivian', x: S.vivian.root.position.x, y: LAYOUT.curbH + 1.62, z: S.vivian.root.position.z, hold() {} }] : []; },
     get sitting() { return S.sitting; },
     // the appointment (or the delivery): Vivian at the car
     appear(kind = 'viewing') {

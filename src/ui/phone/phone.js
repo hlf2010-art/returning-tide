@@ -5,7 +5,7 @@
 // Screens: lock -> home -> 微信 (chats, a chat), 钱包 (balances, ledger), 日历, 电话 (recent calls),
 // the Manner mini-program (order + pay), the pay sheet, calls (incoming / in progress).
 import './phone.css';
-import { stamp, clockText, markRead, unreadTotal, pay, balance, METHODS, preview } from '../../engine/life.js';
+import { stamp, clockText, markRead, unreadTotal, pay, balance, METHODS, preview, post } from '../../engine/life.js';
 import { reply, respondToInvite } from '../../world/agenda.js';
 import { PEOPLE, GROUP, ME } from '../../world/cast.js';
 import { shape } from '../../engine/delivery.js';
@@ -13,6 +13,9 @@ import { getLang, onLang } from '../i18n.js';
 import { enText } from '../../world/agendaEn.js';
 import { createShopApp } from './shopApp.js';
 import { createDidiApp } from './didiApp.js';
+import { systemPrompt } from '../../world/personas.js';
+import { appGlyph, payLogo, BRAND_COLOR, mark } from '../brands.js';
+import { spoken, isZh } from '../../engine/llm.js';
 
 // one language at a time: Z(zh, en) picks; X(text) translates what people wrote; nm(id) names them
 const Z = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -42,7 +45,8 @@ function previewOf(m) {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const person = (id) => PEOPLE[id] || { name: id === 'me' ? ME.name : id, short: id, color: '#777' };
-const avatar = (id, size = '') => { const p = person(id); return `<div class="av ${size}" style="background:${id === 'me' ? '#2d6cdf' : p.color}">${esc(initial(id))}</div>`; };
+const LOGO_AV = { jd: 'jd', taobao: 'taobao', didi: 'didi', manner: 'manner' };
+const avatar = (id, size = '') => { const p = person(id); if (LOGO_AV[id]) return `<div class="av logo ${size}" style="background:${BRAND_COLOR[LOGO_AV[id]]}">${appGlyph(LOGO_AV[id], 22)}</div>`; return `<div class="av ${size}" style="background:${id === 'me' ? '#2d6cdf' : p.color}">${esc(initial(id))}</div>`; };
 const initial = (id) => { const p = person(id); if (getLang() === 'en') return id === 'me' ? 'J' : (PEOPLE[id] ? shortEn(id, PEOPLE[id]) : '?')[0]; return (id === 'me' ? '白' : p.short || p.name).slice(0, 1); };
 const ago = (L, at) => { const d = stamp(L) - at; if (d < 1) return Z('刚刚', 'now'); if (d < 60) return Z(`${d}分钟前`, `${d} min ago`); return clockText(at); };
 const yuan = (n) => `¥${Math.abs(n).toLocaleString('zh-CN', { maximumFractionDigits: 2 })}`;
@@ -55,7 +59,7 @@ export const MANNER_MENU = [
   { id: 'osmanthus', name: '桂花拿铁', en: 'Osmanthus latte', price: 20, desc: '秋季限定', descEn: 'Autumn special' },
 ];
 
-export function createPhone({ getLife, calls, audio = null, onChange = null, onEvent = null, ride = null }) {
+export function createPhone({ getLife, calls, audio = null, onChange = null, onEvent = null, ride = null, voice = null, llm = null }) {
   const root = document.createElement('div'); root.id = 'phone';
   root.innerHTML = '<div class="body"><div class="screen"><div class="island"></div><div class="status"></div><div class="host"></div><div class="homebar"></div></div></div>';
   document.body.appendChild(root);
@@ -128,16 +132,17 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const unread = unreadTotal(l) - SHOP_APPS.reduce((n, k) => n + ((l.threads[k] && l.threads[k].unread) || 0), 0), shopUnread = (k) => (l.threads[k] && l.threads[k].unread) || 0;
     const app = (id, label, bg, glyph, badge = 0) => `<div class="app" data-act="app" data-id="${id}"><div class="ic" style="background:${bg}">${glyph}</div>${badge ? `<span class="badge">${badge}</span>` : ''}<span>${label}</span></div>`;
     return `<div class="view home"><div class="grid">
-      ${app('chats', Z('微信', 'WeChat'), 'linear-gradient(160deg,#2bd46b,#05a845)', '◔◔', unread)}
+      ${app('chats', Z('微信', 'WeChat'), BRAND_COLOR.wechat, appGlyph('wechat', 34), unread)}
       ${app('wallet', Z('钱包', 'Wallet'), 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}
       ${app('calendar', Z('日历', 'Calendar'), '#fff;color:#e33', `<span style="color:#e33;font-size:24px">${l.clock.day + 13}</span>`)}
       ${app('recents', Z('电话', 'Phone'), 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}
-      ${app('jd', Z('京东', 'JD'), 'linear-gradient(160deg,#f2453c,#c8160e)', '<span style="font-size:22px;font-weight:700">京</span>', shopUnread('jd'))}
-      ${app('taobao', Z('淘宝', 'Taobao'), 'linear-gradient(160deg,#ff7a2e,#ff4d00)', '<span style="font-size:22px;font-weight:700">淘</span>', shopUnread('taobao'))}
-      ${app('didi', Z('滴滴出行', 'DiDi'), 'linear-gradient(160deg,#ff9a3c,#ff6a00)', '<span style="font-size:22px;font-weight:700">滴</span>', shopUnread('didi'))}
-      ${app('manner', 'Manner', 'linear-gradient(160deg,#1b1b1b,#3a3a3a)', '<span style="font-size:13px;letter-spacing:0.5px">MNR</span>')}
+      ${app('jd', Z('京东', 'JD'), BRAND_COLOR.jd, appGlyph('jd'), shopUnread('jd'))}
+      ${app('taobao', Z('淘宝', 'Taobao'), BRAND_COLOR.taobao, appGlyph('taobao', 34), shopUnread('taobao'))}
+      ${app('didi', Z('滴滴出行', 'DiDi'), BRAND_COLOR.didi, appGlyph('didi'), shopUnread('didi'))}
+      ${app('manner', 'Manner', BRAND_COLOR.manner, appGlyph('manner'))}
+      ${app('alipayApp', Z('支付宝', 'Alipay'), BRAND_COLOR.alipay, appGlyph('alipay', 34))}
       </div>
-      <div class="dock">${app('chats', '', 'linear-gradient(160deg,#2bd46b,#05a845)', '◔◔', 0)}${app('recents', '', 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}${app('wallet', '', 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}${app('calendar', '', '#fff', `<span style="color:#e33;font-size:20px">${l.clock.day + 13}</span>`)}</div></div>`;
+      <div class="dock">${app('chats', '', BRAND_COLOR.wechat, appGlyph('wechat', 30), 0)}${app('recents', '', 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}${app('wallet', '', 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}${app('calendar', '', '#fff', `<span style="color:#e33;font-size:20px">${l.clock.day + 13}</span>`)}</div></div>`;
   }
   function chatsView(l) {
     const rows = l.order.map((id) => l.threads[id]).filter((t) => t && !SHOP_APPS.includes(t.id)).map((t) => {
@@ -177,11 +182,14 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     }).join('');
     const foot = pendingReplies
       ? `<div class="replies">${pendingReplies.replies.map((r, i) => `<button class="chip" data-act="reply" data-id="${pendingReplies.id}" data-i="${i}">${esc(X(r.text))}</button>`).join('')}</div>`
-      : `<div class="compose">${Z('需要回复时会出现选项', 'Replies appear when there\'s something to answer')}</div>`;
-    return `<div class="view chat"><div class="bar"><span class="back" data-act="back">‹</span>${esc(threadTitle(t))}${t.kind === 'group' ? `<span class="sub">(${t.members.length})</span>` : ''}</div><div class="msgs">${msgs}</div>${foot}</div>`;
+      : (t.kind === 'person' || t.kind === 'group') && FREE_CHAT.has(id) && llm
+        ? `<div class="compose free"><input class="say" data-thread="${esc(id)}" maxlength="200" placeholder="${esc(Z('发消息…（回车发送）', 'Message… (Enter to send)'))}" value="${esc(S.draft[id] || '')}"><button class="btn go" data-act="send" data-id="${esc(id)}">${Z('发送', 'Send')}</button></div>`
+        : `<div class="compose">${Z('需要回复时会出现选项', 'Replies appear when there\'s something to answer')}</div>`;
+    const typing = S.typing[id] ? `<span class="sub">${Z('对方正在输入…', 'typing…')}</span>` : '';
+    return `<div class="view chat"><div class="bar"><span class="back" data-act="back">‹</span>${esc(threadTitle(t))}${t.kind === 'group' ? `<span class="sub">(${t.members.length})</span>` : ''}${typing}</div><div class="msgs">${msgs}</div>${foot}</div>`;
   }
   function walletView(l) {
-    const acct = (k, label, bg) => `<div class="acct" style="background:${bg}"><div class="l">${label}</div><div class="v">${yuan(balance(l, k))}</div></div>`;
+    const acct = (k, label, bg) => `<div class="acct" style="background:${bg}"><div class="l">${payLogo(k, 16)} ${label}</div><div class="v">${yuan(balance(l, k))}</div></div>`;
     const memo = (e) => (getLang() === 'en' && e.memoEn ? e.memoEn : e.memo);
     const led = l.wallet.ledger.slice(-12).reverse().map((e) => `<div class="led"><span>${esc(e.to)}<br><small style="color:#999">${METHOD(e.method)} · ${clockText(e.at)} ${esc(memo(e))}</small></span><span class="a ${e.amount < 0 ? 'neg' : 'pos'}">${e.amount < 0 ? '−' : '+'}${yuan(e.amount)}</span></div>`).join('') || `<div class="led"><span style="color:#999">${Z('还没有交易', 'No transactions yet')}</span></div>`;
     return `<div class="view wallet"><div class="bar"><span class="back" data-act="back">‹</span>${Z('钱包', 'Wallet')}</div><div class="scroll">
@@ -208,7 +216,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const sh = S.sheet;
     if (sh.paying) return `<div class="sheet"><div class="face" style="border-color:#111"></div><div class="to">${Z('面容识别中…', 'Face ID…')}</div></div>`;
     return `<div class="sheet"><div class="to">${Z('付款给', 'Pay')} ${esc(sh.to)}</div><div class="amt">¥${sh.amount}</div><div class="to">${esc(Z(sh.memo, sh.memoEn || sh.memo))}</div>
-      <div class="meth" data-act="method"><span>${Z('付款方式', 'Pay with')}</span><span>${METHOD(sh.method)}（${yuan(balance(l, sh.method))}）›</span></div>
+      <div class="meth" data-act="method"><span>${Z('付款方式', 'Pay with')}</span><span>${payLogo(sh.method)} ${METHOD(sh.method)}（${yuan(balance(l, sh.method))}）›</span></div>
       ${sh.error ? `<div class="to" style="color:#e33;margin-bottom:8px">${esc(sh.error)}</div>` : ''}
       <button class="btn go" style="width:100%;padding:12px 0;font-size:15px" data-act="confirmPay">${Z('确认付款', 'Pay')}</button></div>`;
   }
@@ -229,6 +237,8 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
 
   // ---- voices (browser speech, phrase by phrase; subtitles always) ----
   function speak(text, who, done) {
+    // their own recorded voice down a phone line (engine/voice.js); the browser's speech only if that fails
+    if (voice) { voice.say({ zh: text, en: enText(text), who, phone: true, onEnd: done }); return; }
     const prof = (PEOPLE[who] && PEOPLE[who].voice) || { pitch: 1, rate: 1 };
     const synth = window.speechSynthesis, phrases = shape(text, prof);
     let i = 0;
@@ -275,13 +285,14 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     if (didiApp.act(act, id, el)) return;
     if (act === 'unlock') unlock();
     else if (act === 'back') back();
-    else if (act === 'app') { if (id === 'jd' || id === 'taobao') go('shop', { shop: id }); else go(id); }
+    else if (act === 'app') { if (id === 'jd' || id === 'taobao') go('shop', { shop: id }); else if (id === 'alipayApp') go('wallet'); else go(id); }
     else if (act === 'openThread' && id === 'didi') { const to = () => { S.stack = [{ s: 'home' }]; go('didi'); }; if (!S.unlocked) unlock(to); else to(); }
     else if (act === 'openThread' && SHOP_APPS.includes(id)) { const to = () => { S.stack = [{ s: 'home' }, { s: 'shop', shop: id }]; go('orders', { id }); }; if (!S.unlocked) unlock(to); else to(); }
     else if (act === 'openThread') { if (!S.unlocked) { unlock(() => { S.stack = [{ s: 'home' }, { s: 'chats' }]; go('chat', { id }); }); } else go('chat', { id }); }
     else if (act === 'reply') { const t = top(), c = reply(l, t.id, id, +el.dataset.i); render(); if (c && c.do && onEvent) onEvent({ type: 'reply-do', do: c.do, thread: t.id }); }
     else if (act === 'addContact') { if (onEvent) onEvent({ type: 'add-contact', id }); render(); }
     else if (act === 'invite') { respondToInvite(l, id, el.dataset.yes === '1'); render(); }
+    else if (act === 'send') sendFree(id);
     else if (act === 'transcribe') { const m = findMsg(l, id); if (m) { m.transcribed = true; render(); } }
     else if (act === 'playVoice') { const m = findMsg(l, id); if (m && !S.playing) { S.playing = m.id; render(); speak(m.text, m.from, () => { S.playing = null; render(); }); } }
     else if (act === 'mannerAdd') { const item = MANNER_MENU.find((m) => m.id === id); S.sheet = { to: 'Manner', amount: item.price, memo: item.name, memoEn: item.en, method: 'wechat', item }; render(); }
@@ -292,6 +303,46 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (act === 'hangup') { logCall(false); S.call = null; render(); if (window.speechSynthesis) window.speechSynthesis.cancel(); }
     else if (act === 'say') { const c = S.call, line = c.script.lines[c.i], ch = line.choices[+el.dataset.i]; c.said = ch.text; if (onEvent) onEvent({ type: 'call-choice', from: c.from, choice: ch }); c.i++; advanceCall(); }
   });
+  // ---- writing to a friend in your own words: they answer in character (engine/llm.js) ----
+  const FREE_CHAT = new Set(['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo', 'dad', 'vivian', 'wuhu']);
+  S.draft = {}; S.typing = {};
+  root.addEventListener('input', (e) => { if (e.target.classList && e.target.classList.contains('say')) S.draft[e.target.dataset.thread] = e.target.value; });
+  root.addEventListener('keydown', (e) => {
+    if (!(e.target.classList && e.target.classList.contains('say'))) return;
+    e.stopPropagation();                                                   // typing isn't walking
+    if (e.key === 'Enter') { e.preventDefault(); sendFree(e.target.dataset.thread); }
+    else if (e.key === 'Escape') { e.target.blur(); }
+  });
+  function sendFree(id) {
+    const text = (S.draft[id] || '').trim(); if (!text) return;
+    const l = L(); S.draft[id] = '';
+    post(l, id, { from: 'me', kind: 'text', text }, { notify: false });
+    render(); focusSay(id);
+    const t = l.threads[id];
+    // in the group, whoever's named answers (or one or two who'd have something to say)
+    const friends = ['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo'];
+    const named = friends.filter((f) => text.includes(PEOPLE[f].short) || text.includes(PEOPLE[f].name) || text.toLowerCase().includes((PEOPLE[f].en || '').split(' ').pop().toLowerCase()));
+    const who = t.kind === 'group' ? (named.length ? named.slice(0, 2) : [friends[Math.floor(Math.random() * friends.length)]]) : [id];
+    who.forEach((f, i) => setTimeout(() => answerAs(f, id), 900 + i * 2600));
+  }
+  async function answerAs(friend, threadId) {
+    const l = L(), t = l.threads[threadId], lang = isZh(t.messages.filter((m) => m.from === 'me').slice(-1)[0]?.text) ? 'zh' : 'en';
+    const now = clockText(stamp(l));
+    const facts = [l.flags.car ? 'He has just bought a yellow Lamborghini Huracán (everyone knows).' : '', l.flags.hotelKey ? 'He is staying at the Peace Hotel on the Bund, room 612.' : '',
+      ...l.invites.filter((i) => i.from === friend).map((i) => `Your invitation to him (${i.title}): ${i.kept ? 'he came' : i.status}.`)].filter(Boolean).join(' ');
+    const scene = `It is ${now}. You are not with him: you are wherever you would be at this hour (work, home, out). ${facts}`;
+    const sys = systemPrompt(friend, scene, { lang, texting: true }) + (t.kind === 'group' ? '\nThis is the friends\' group chat 金陵五虎+1; keep it short and in the group\'s joking tone.' : '');
+    const hist = t.messages.filter((m) => m.kind === 'text' || m.kind === 'voice').slice(-12).map((m) => ({ role: m.from === friend ? 'assistant' : 'user', content: m.from === 'me' || m.from === friend ? m.text : `${short(m.from)}: ${m.text}` }));
+    S.typing[threadId] = true; render(); focusSay(threadId);
+    const raw = await llm.chat([{ role: 'system', content: sys }, ...hist], { maxTokens: 90, ctx: { persona: friend, said: hist.at(-1)?.content || '' } });
+    S.typing[threadId] = false;
+    const reply = spoken(raw, 160) || (lang === 'zh' ? '嗯' : 'ok');
+    post(l, threadId, { from: friend, kind: 'text', text: reply });
+    render(); focusSay(threadId);
+  }
+  function focusSay(id) { const f = root.querySelector(`input.say[data-thread="${id}"]`); if (f && S.focusSay) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); } }
+  root.addEventListener('focusin', (e) => { if (e.target.classList && e.target.classList.contains('say')) S.focusSay = true; });
+  root.addEventListener('focusout', (e) => { if (e.target.classList && e.target.classList.contains('say')) S.focusSay = false; });
   const findMsg = (l, id) => Object.values(l.threads).flatMap((t) => t.messages).find((m) => m.id === id);
   function unlock(then) {
     if (S.unlocked) { if (then) then(); return; }

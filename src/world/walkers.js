@@ -70,8 +70,18 @@ export function createWalkers({ scene, people, count = 12, rnd = Math.random }) 
     _t.set(_e.x + fx * 0.3 - fz * 0.04, _e.y - 0.06, _e.z + fz * 0.3 + fx * 0.04); _p.set(-fz * 0.8, -1, fx * 0.8).normalize();
     twoBone(b[0], b[1], b[2], _t, _p);
   }
+  const PERSONA = { tourist: ['visitor', 'student', 'youngMan'], shopper: ['auntie', 'office'], guest: ['office', 'youngMan'], office: ['office', 'youngMan'], couple: ['student', 'youngMan'], buddy: ['student'] };
+  list.forEach((w, i) => { w.id = `walker${i}`; w.pick = i; });
   return {
     group,
+    // people you could stop and talk to: [{ key, persona, x, y, z, hold(on, pp) }]
+    talkables() {
+      return list.filter((w) => !w.done && w.person.root.visible).map((w) => {
+        const opts = PERSONA[w.kind] || ['office'];
+        return { key: w.id, persona: opts[w.pick % opts.length], x: w.x, y: w.y + 1.62, z: w.z,
+          hold(on, pp) { if (on) { w.act = 999; w.actKind = 'chat'; w.heading = Math.atan2(pp.x - w.x, pp.z - w.z); } else { w.act = 0.2; w.actKind = null; } } };
+      });
+    },
     update(dt, pp) {
       for (const w of list) {
         if (w.kind === 'buddy') continue;                                   // moved by its partner

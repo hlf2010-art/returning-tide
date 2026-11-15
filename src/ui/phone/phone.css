@@ -135,3 +135,22 @@
 #phone .order .track { display: flex; gap: 4px; margin: 10px 0 8px; } #phone .order .track i { flex: 1; height: 4px; border-radius: 2px; background: #e6e6ea; }
 #phone .order .track i.done { background: #18a058; } #phone .order .os { font-size: 12px; color: #666; line-height: 1.4; }
 #phone .things { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 16px; } #phone .thing { background: #fff; border-radius: 14px; padding: 6px 10px; font-size: 12px; }
+
+/* writing to a friend in your own words */
+.compose.free { display: flex; gap: 6px; padding: 8px; }
+.compose.free input.say { flex: 1; min-width: 0; font: 500 13px inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; outline: none; }
+.compose.free input.say:focus { border-color: #07c160; }
+.compose.free .btn { padding: 6px 12px; }
+.bar .sub { margin-left: 6px; font-size: 11px; color: #999; font-weight: 400; }
+
+/* real marks (ui/brands.js): app tiles, service avatars, how you pay */
+.app .ic svg { display: block; }
+.wm { font-weight: 800; color: #fff; letter-spacing: -0.02em; line-height: 1; }
+.wm.didi { font: italic 800 17px/1 -apple-system, "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.5px; }
+.wm.jd { font: 900 20px/1 -apple-system, "Helvetica Neue", Arial, sans-serif; letter-spacing: -1px; }
+.wm.manner { font: 700 9px/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: 1px; }
+.wm.cmb, .wm.up { font: 700 10px/1 "Noto Sans SC", sans-serif; }
+.av.logo { display: flex; align-items: center; justify-content: center; }
+.av.logo .wm.didi { font-size: 11px; } .av.logo .wm.jd { font-size: 13px; } .av.logo .wm.manner { font-size: 6px; letter-spacing: 0.5px; }
+.pl { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; vertical-align: middle; margin-right: 4px; }
+.pl svg { width: 70%; height: 70%; }

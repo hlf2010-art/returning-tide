@@ -1,0 +1,70 @@
+// Every scripted line a character says, with who says it, for tools/voice/generate.py to voice.
+// Reads the data modules (Lin and Su, the drivers, phone calls, bumps, the friends' scenes) and
+// parses the rest of src/ for what people say inline: say(who, zh, en), hud.bark({ speaker, text }),
+// [who, zh, en] script lines, T(zh, en) lines in Vivian's scenes. Template strings with numbers in
+// them are left to the runtime voice. node tools/voice/extract.mjs > tools/voice/lines.json
+import fs from 'fs';
+import path from 'path';
+import * as acorn from 'acorn';
+import * as walk from 'acorn-walk';
+import { T } from '../../src/world/text.js';
+import { DRIVERS, OUTBURSTS } from '../../src/world/drivers.js';
+import { DRIVER_EN } from '../../src/world/driversEn.js';
+import { BARKS } from '../../src/world/barks.js';
+import { CALLS } from '../../src/world/agenda.js';
+import { enText } from '../../src/world/agendaEn.js';
+
+const out = new Map();   // zh text -> { who, zh, en }
+const cjk = /[一-鿿]/;
+const add = (who, zh, en) => { if (!zh || !cjk.test(zh)) return; zh = zh.trim(); if (!out.has(zh)) out.set(zh, { who, zh, en: (en || '').trim() }); };
+
+// ---- data ----
+for (const ex of T.dialogue.exchanges) for (const l of ex.lines) add(l.speaker, l.text, l.en);
+for (const g of Object.values(T.dialogue.greetings || {}).flat()) if (g && g.text) add(g.speaker || 'lin', g.text, g.en);
+for (const l of Object.values(T.mission.lines || {}).flat()) if (l && l.text) add(l.speaker || 'lin', l.text, l.en);
+for (const d of DRIVERS) {
+  const walkLines = (o) => { if (!o) return; if (typeof o === 'string') add(`driver:${d.id}`, o, DRIVER_EN[o]); else if (Array.isArray(o)) o.forEach(walkLines); else if (typeof o === 'object') Object.values(o).forEach(walkLines); };
+  walkLines(d.lines); walkLines(d.topics); walkLines(d.openers); walkLines(d.talk);
+  walkLines(OUTBURSTS[d.id]);
+}
+for (const [kind, set] of Object.entries(BARKS)) for (const list of Object.values(set)) for (const b of list) {
+  if (b.lang === 'wuu') continue;                                   // Shanghainese: subtitles only
+  if (b.lang === 'en') add(`bump:${kind}`, b.zh, b.t); else add(`bump:${kind}`, b.t, b.en);
+}
+for (const c of Object.values(CALLS)) for (const l of c.lines) if (l.text && l.who !== 'me') add(l.who, l.text, l.en);
+
+// ---- inline lines in the source ----
+const FILE_SPEAKER = { 'carSale.js': 'vivian' }, LINE_FNS = new Set(['T', 'B']);
+const lit = (n) => (n && n.type === 'Literal' && typeof n.value === 'string' ? n.value : n && n.type === 'TemplateLiteral' && n.expressions.length === 0 ? n.quasis[0].value.cooked : null);
+const tCall = (n) => (n && n.type === 'CallExpression' && n.callee.type === 'Identifier' && LINE_FNS.has(n.callee.name) && n.arguments.length >= 2 ? [lit(n.arguments[0]), lit(n.arguments[1])] : null);
+const whoOf = (n) => { const t = tCall(n); if (t) return t[0]; const l = lit(n); if (l) return l; if (n && n.type === 'ObjectExpression') { const z = n.properties.find((p) => p.key && (p.key.name === 'zh' || p.key.value === 'zh')); return z ? lit(z.value) : null; } return null; };
+function files(dir) { return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(path.join(dir, e.name)) : e.name.endsWith('.js') ? [path.join(dir, e.name)] : [])); }
+for (const f of files('src')) {
+  const src = fs.readFileSync(f, 'utf8');
+  let ast; try { ast = acorn.parse(src, { ecmaVersion: 'latest', sourceType: 'module' }); } catch { continue; }
+  const base = path.basename(f);
+  walk.full(ast, (n) => {
+    if (n.type === 'CallExpression') {
+      const name = n.callee.type === 'Identifier' ? n.callee.name : n.callee.type === 'MemberExpression' && n.callee.property.name;
+      if (name === 'say' && n.arguments.length >= 3) add(whoOf(n.arguments[0]) || base, lit(n.arguments[1]), lit(n.arguments[2]));
+      if (name === 'bark' && n.arguments[0] && n.arguments[0].type === 'ObjectExpression') {
+        const p = (k) => n.arguments[0].properties.find((q) => q.key && q.key.name === k);
+        const sp = p('speaker'), tx = p('text');
+        if (tx && tx.value.type === 'ObjectExpression') { const g = (k) => { const q = tx.value.properties.find((x) => x.key && x.key.name === k); return q && lit(q.value); }; add(whoOf(sp && sp.value) || base, g('zh'), g('en')); }
+      }
+    }
+    if (n.type === 'ArrayExpression' && n.elements.length >= 3) {
+      const [a, b, c] = n.elements.map(lit);
+      if (a && /^[a-z]+$/.test(a) && b && cjk.test(b) && c && !cjk.test(c)) add(a, b, c);
+    }
+    if (n.type === 'ObjectExpression') {                               // a WeChat voice note: { from, kind: 'voice', text }
+      const g = (k) => { const q = n.properties.find((x) => x.key && x.key.name === k); return q && lit(q.value); };
+      if (g('kind') === 'voice' && g('from')) add(g('from'), g('text'), g('en'));
+    }
+    if (n.type === 'Property' && n.key && n.key.name === 'text' && FILE_SPEAKER[base]) { const t = tCall(n.value); if (t) add(FILE_SPEAKER[base], t[0], t[1]); }
+  });
+}
+const list = [...out.values()].map((l) => ({ ...l, en: l.en || (enText(l.zh) !== l.zh ? enText(l.zh) : '') }));
+process.stdout.write(JSON.stringify(list, null, 1));
+const by = {}; for (const l of list) by[l.who] = (by[l.who] || 0) + 1;
+console.error(`${list.length} lines`, by);

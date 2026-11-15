@@ -23,6 +23,7 @@ export const tyreLevel = (v) => Math.min(1, Math.pow(Math.max(0, v) / 12, 1.6));
 const MASTER_LEVEL = 0.8;
 
 export function createAudio() {
+  let voiceBus = null;
   let ctx = null, master = null, env = null, duck = null, sfx = null, pauseBus = null, limiter = null, meter = null;
   let muted = false, paused = false, pauseToken = 0, hornTimer = 35, ancF = null, ancG = null, anc = false, inside = 0;
   let buf = null, river = null, wind = null, city = null, rain = null, lastFoot = { pan: 0.12, f: 0 }, lastDuck = -1, lastRain = -1;
@@ -92,6 +93,7 @@ export function createAudio() {
     ancF = ctx.createBiquadFilter(); ancF.type = 'lowpass'; ancF.frequency.value = 20000; ancF.Q.value = 0.707; ancG = gainNode(1);
     env = gainNode(1); env.connect(ancF); ancF.connect(ancG); ancG.connect(duck);
     sfx = gainNode(1); sfx.connect(pauseBus);
+    voiceBus = gainNode(1); voiceBus.connect(pauseBus);                     // people talking (engine/voice.js): never ducked or muffled by ANC
 
     // wind off the river: two filtered noise layers with slow, unrelated gust cycles, drifting across the stereo field
     const windPan = ctx.createStereoPanner(); windPan.connect(env);
@@ -376,7 +378,8 @@ export function createAudio() {
     onMute(fn) { muteListeners.add(fn); return () => muteListeners.delete(fn); },
     getContext() { return ctx; },
     getMaster() { return master; },
-    getMusicBus() { return duck; },       // music in the world (the Jazz Bar's trio): ducked under speech, paused with the game
+    getMusicBus() { return duck; },
+    getVoiceBus() { return voiceBus; }, 
     get muted() { return muted; },
     get paused() { return paused; },
     suspend() { this.setPaused(true); }, resume() { this.setPaused(false); },

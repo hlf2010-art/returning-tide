@@ -20,7 +20,9 @@ const ANSWER_TIME = 7;                                   // s: no answer by then
 
 // arriveAt(dest, info): a place you can walk into takes over the arrival (world/destinations.js);
 // returns true if it did
-export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arriveAt = null, rnd = Math.random }) {
+export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arriveAt = null, voice = null, rnd = Math.random }) {
+  // the driver's voice: their own, recorded (engine/voice.js), from the front seat
+  const speakDriver = (zh) => { if (voice && R && R.driver) voice.say({ zh, en: driverEn(zh), who: `driver:${R.driver.id}`, gain: 1.1 }); };
   let R = null, awaiting = null, answerT = 0, sub = null, subT = 0, interlude = 0, card = null;
   const el = (id) => document.getElementById(id);
   const say = (zh) => (getLang() === 'zh' ? zh : driverEn(zh));
@@ -98,7 +100,7 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arrive
         if (e.type === 'brake' && R.talk) {
           const out = onRoad(R, e.kind, e.brake, TEMPER[R.driver.mood] ?? 0.3);
           if (audio && audio.cue) audio.cue('carhorn');
-          if (out) { const pool = OUTBURSTS[R.driver.id][out.kind]; awaiting = null; show(name(), say(pool[Math.min(pool.length - 1, out.severity - 1 + Math.floor(rnd() * 1.5)) % pool.length]), 3.2); }
+          if (out) { const pool = OUTBURSTS[R.driver.id][out.kind], zhLine = pool[Math.min(pool.length - 1, out.severity - 1 + Math.floor(rnd() * 1.5)) % pool.length]; awaiting = null; speakDriver(zhLine); show(name(), say(zhLine), 3.2); }
         }
         if (e.type === 'left-bund') { interlude = 0.001; el('ride-interlude') && el('ride-interlude').classList.add('on'); }
       }
@@ -109,7 +111,8 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arrive
       if (didi.car && didi.state === 'coming') R.etaMin = didi.distance() / 8 / 60 * 4;   // game minutes at ~8 m/s
       stepRide(L, R, dt, { carStopped: didi.state === 'waiting', boarded: this.inCar });
       for (const e of R.events.splice(0)) {
-        if (e.type === 'line') { const text = say(lineText(R, e.line)); show(name(), text, 5); if (rnd() < 0.35) didi.glance(1.2); setTimeout(() => { if (R && R.talk && R.talk.awaiting) offer(); }, Math.min(3200, 900 + text.length * 40)); }
+        if (e.type === 'line' && this.quiet) continue;                         // you're talking to them yourself (ui/talk.js)
+        if (e.type === 'line') { const zhLine = lineText(R, e.line), text = say(zhLine); speakDriver(zhLine); show(name(), text, 5); if (rnd() < 0.35) didi.glance(1.2); setTimeout(() => { if (R && R.talk && R.talk.awaiting) offer(); }, Math.min(3200, 900 + text.length * 40)); }
         if (e.type === 'cancelled') { didi.cancel(); }
       }
       if (awaiting) { answerT -= dt; if (answerT <= 0) choose(3); }

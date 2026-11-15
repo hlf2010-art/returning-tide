@@ -9,6 +9,7 @@
 // (same origin: centre of the footprint at ground level, nose toward +z).
 //
 // The taxis and dark sedan reuse the street's existing generic car.
+import { CAR_BADGE } from '../ui/brands.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildCar } from './street.js';
@@ -119,12 +120,24 @@ function plateMaterial(text) {
   const map = tex(c, { repeat: false });
   return std({ map, roughness: 0.4, emissive: 0xffffff, emissiveMap: map, emissiveIntensity: 0.25 });
 }
+// a maker's wordmark in chrome letters, for the tail
+const badgeCache = new Map();
+function badgeMaterial(word) {
+  if (badgeCache.has(word)) return badgeCache.get(word);
+  const c = document.createElement('canvas'); c.width = 64 * word.length + 64; c.height = 64; const x = c.getContext('2d');
+  x.font = `700 46px "Helvetica Neue", Arial, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
+  const g = x.createLinearGradient(0, 10, 0, 54); g.addColorStop(0, '#f4f6f8'); g.addColorStop(0.5, '#9aa2aa'); g.addColorStop(1, '#e6e9ec');
+  x.fillStyle = g; x.save(); x.translate(c.width / 2, 34); x.scale(1, 0.92); x.fillText(word.split('').join(String.fromCharCode(8202)), 0, 0); x.restore();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  const m = std({ map: t, transparent: true, metalness: 0.9, roughness: 0.2, alphaTest: 0.2 }); badgeCache.set(word, m); return m;
+}
 const trimShared = std({ color: 0x0d0e10, roughness: 0.55, side: THREE.DoubleSide });
 const chromeShared = std({ color: 0xc8ccd0, metalness: 1, roughness: 0.18 });
 const glassShared = std({ color: 0x0a0e13, roughness: 0.04, metalness: 0.9, side: THREE.DoubleSide });
 
 // The four named EVs: lofted lookalikes (carbody.js / carModels.js). Published dimensions, body
-// type, silhouette and light signature; NOT licensed models and no manufacturer logos.
+// type, silhouette and light signature; NOT licensed models. They carry their maker's name as the
+// real cars do, a chrome wordmark across the tail (ui/brands.js CAR_BADGE).
 function buildLookalike(spec, plateText) {
   const M = CARS[spec.model];
   const paintMat = std({ color: M.paint, roughness: 0.22, metalness: 0.6, side: THREE.DoubleSide });
@@ -142,6 +155,8 @@ function buildLookalike(spec, plateText) {
   for (const [mat, list] of byMat) group.add(new THREE.Mesh(mergeStatic(list, { uv: !!mat.map }), mat));
   const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.14), plateMaterial(plateText));
   plate.position.set(0, M.sill(0) + 0.22, -M.length / 2 - 0.02); plate.rotation.y = Math.PI; group.add(plate);
+  const word = CAR_BADGE[spec.model];
+  if (word) { const b = new THREE.Mesh(new THREE.PlaneGeometry(0.06 * word.length + 0.08, 0.06), badgeMaterial(word)); b.position.set(0, M.sill(0) + 0.5, -M.length / 2 - 0.03); b.rotation.y = Math.PI; group.add(b); }
   return { g: group, wheels: wl, wheelRadius: M.wheelD / 2, setBraking(b) { tailMat.color.copy(b ? TAIL_BRAKE : TAIL_RUN); brakeOnly.color.setRGB(b ? 4 : 0.05, b ? 0.1 : 0, b ? 0.05 : 0); } };
 }
 

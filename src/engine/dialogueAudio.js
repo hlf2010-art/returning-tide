@@ -37,6 +37,8 @@ export function createDialogueAudio({
   refDistance = 2.5,
   maxDistance = 18.0,
   clips = {},
+  clipFor = null,      // (line) => url of its recorded clip, or null (engine/voice.js)
+  speakLive = null,    // (line, onEnd) => a live voice for lines with no clip (new, generated ones)
 } = {}) {
   const synth = typeof window !== 'undefined' && 'speechSynthesis' in window ? window.speechSynthesis : null;
   let voices = { lin: null, su: null, zhCount: 0 };
@@ -251,13 +253,14 @@ export function createDialogueAudio({
     lastDist = dist;
     lastGain = gain;
 
-    const clipUrl = clips[line.id];
+    const clipUrl = (clipFor && clipFor(line)) || clips[line.id];
     if (clipUrl) {
       playRecordedClip(clipUrl, line, myToken, onEnd).then((ok) => {
         if (!ok && playToken === myToken) playWithSynthesis(line, dist, gain, myToken, onEnd);
       });
       return;
     }
+    if (speakLive && !audio.muted) { activeBackend = 'live'; speakLive(line, () => { if (playToken === myToken && onEnd) onEnd(); }); return; }
     playWithSynthesis(line, dist, gain, myToken, onEnd);
   }
 

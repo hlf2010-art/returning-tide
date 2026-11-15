@@ -27,18 +27,8 @@ export function createBumps({ hud, audio, onPlayerBump = null, rnd = Math.random
     log.push({ t, id: actor.id, persona: actor.persona, line, text: b.text, lang: b.lang });
     if (dist > HEAR) return;
     const who = WHO[actor.persona] || WHO.office;
-    hud.bark({ speaker: who, text: { zh: b.zh, en: b.en }, gloss: b.gloss, lang: b.lang, toPlayer: other === 'player' });
+    hud.bark({ speaker: who, text: { zh: b.zh, en: b.en }, gloss: b.gloss, lang: b.lang, toPlayer: other === 'player', who: `bump:${actor.persona}`, at: [actor.x, 1.6, actor.z] });
     lastBarkAt = t;
-    // a voice, if the browser has one free (the conversation's lines take precedence)
-    if (synth && b.lang !== 'wuu' && !synth.speaking && !synth.pending) {
-      try {
-        const u = new SpeechSynthesisUtterance(b.text); u.lang = LANG[b.lang] || 'zh-CN';
-        u.rate = actor.persona === 'auntie' || actor.persona === 'elder' ? 1.0 : 1.12;
-        u.pitch = { auntie: 1.15, office: 1.05, youngMan: 0.95, elder: 0.85, lin: 0.88, su: 1.12 }[actor.persona] || 1;
-        u.volume = Math.max(0.15, Math.min(1, 1.6 / Math.max(1, dist)));
-        synth.speak(u);
-      } catch { /* no voice: subtitles carry it */ }
-    }
   }
 
   // actors: [{ id, persona, x, z, vx, vz, r, apply(reaction, other) }], with the player as id 'player'

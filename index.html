@@ -12,7 +12,7 @@
 
   <div id="hud" class="hidden">
     <div id="reticle"></div>
-    <div id="prompt"><kbd>E</kbd><span id="prompt-target"></span><span id="prompt-text"></span></div>
+    <div id="prompt"><kbd id="prompt-key">E</kbd><span id="prompt-target"></span><span id="prompt-text"></span><span id="prompt-talk" style="display:none"><kbd>T</kbd><span></span></span></div>
     <div id="place"><div class="kicker"><span class="neon"></span><span data-t="placeSub"></span></div><div class="name" data-t="place"></div></div>
     <div id="toast"></div>
     <div id="thought"></div>
@@ -72,6 +72,10 @@
       <div class="row"><span data-t="language"></span><div class="seg" data-setting="lang"><button data-v="zh">中文</button><button data-v="en">English</button></div></div>
       <div class="row"><span data-t="subtitles"></span><div class="seg" data-setting="subs"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
       <div class="row"><span data-t="sound"></span><div class="seg" data-setting="sound"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
+      <div class="row"><span data-t="voices"></span><div class="seg" data-setting="voices"><button data-v="original" data-t="voicesOriginal"></button><button data-v="dubbed" data-t="voicesDubbed"></button></div></div>
+      <div class="row"><span data-t="ai"></span><div class="seg" data-setting="ai"><button data-v="auto" data-t="aiAuto"></button><button data-v="browser" data-t="aiBrowser"></button><button data-v="off" data-t="off"></button></div></div>
+      <div class="row ai-adv"><span data-t="aiServer"></span><input id="ai-server" spellcheck="false"><input id="ai-model" spellcheck="false"></div>
+      <div class="ai-status" id="ai-status"></div>
     </div>
   </div>
 

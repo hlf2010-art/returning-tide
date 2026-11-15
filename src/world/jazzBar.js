@@ -295,6 +295,12 @@ export function createJazzBar({ scene, people, hud, audio, getLife, save, player
     owns(id) { return targets.some((t) => t.id === id); },
     interact,
     get music() { return jz; },
+    talkPairs() {
+      const a = ppl.guest0, b = ppl.guest1; if (!a || !b) return [];
+      const at = (q) => () => { const v = q.p.bones.head.getWorldPosition(new THREE.Vector3()); return [v.x, v.y, v.z]; };
+      return [{ keys: ['a', 'b'], near: () => S.inBar, who: { a: { persona: 'office', card: 'a woman of about thirty on a second date at the Jazz Bar, funny, a little nervous', at: at(a) }, b: { persona: 'youngMan', card: 'her date, an engineer of about thirty, trying hard to seem relaxed', at: at(b) } } }];
+    },
+    talkables() { return ['host', 'bartender'].filter((k) => ppl[k] && group.visible).map((k) => { const r = ppl[k].p.root.position; return { key: k, persona: k, x: r.x, y: r.y + 1.62, z: r.z, hold() {} }; }); },
     get inBar() { return S.inBar; },
     update(dt, pp, cam) {
       const l = L0(), tod = stamp(l) % 1440;
