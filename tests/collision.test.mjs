@@ -1,12 +1,15 @@
 // Headless checks for movement, collision and boundaries (run: npm test)
-import { L, colliders, groundHeight } from '../src/world/layout.js';
+import { L, colliders, groundHeight, NJ, METRO_DEPTH } from '../src/world/layout.js';
 import { createBody, stepBody, resolve, WALK_SPEED, RUN_SPEED } from '../src/engine/movement.js';
 
 let failed = 0;
 const ok = (cond, msg) => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${msg}`); if (!cond) failed++; };
 const inside = (p, shrink = 0.02) => colliders.find((b) =>
   p.x > b.minX + shrink && p.x < b.maxX - shrink && p.z > b.minZ + shrink && p.z < b.maxZ - shrink);
-const inBounds = (p) => p.x > L.street.xEnd && p.x < L.deckEdgeX && p.z > L.zNorth && p.z < L.zSouth;
+// the Bund, Hankou Road, and (since phase 3) Nanjing Road out to Henan Road with its pavements a little way each side
+const inBounds = (p) => (p.x > L.street.xEnd && p.x < L.deckEdgeX && p.z > L.zNorth && p.z < L.zSouth)
+  || (p.x > NJ.xWest - 1 && p.x < L.facadeX && p.z > NJ.z0 - 0.5 && p.z < NJ.z1 + 0.5)
+  || (p.x > NJ.henan.x0 - 6 && p.x < NJ.henan.x1 + 6 && Math.abs(p.z - NJ.zc) < 11 + NJ.henan.walkTo + 1);
 
 function walk(body, dirX, dirZ, seconds, run = false) {
   const dt = 1 / 60;
@@ -88,8 +91,16 @@ function walk(body, dirX, dirZ, seconds, run = false) {
     if (b.y > 2.9) onDeck++;
   }
   ok(bad === 0, `fuzz walk: 144000 steps, ${bad} escapes/penetrations`);
-  ok(minY >= -0.001 && maxY <= L.deckY + 0.001, `height stays within [0, ${L.deckY}] (${minY.toFixed(2)}..${maxY.toFixed(2)})`);
-  ok(onDeck > 0, `fuzz walk reached the deck (${onDeck} steps there)`);
+  ok(minY >= -METRO_DEPTH - 0.001 && maxY <= L.deckY + 0.001, `height stays within [${-METRO_DEPTH} (the metro landings), ${L.deckY}] (${minY.toFixed(2)}..${maxY.toFixed(2)})`);
+  // the world is bigger now (Nanjing Road): a second drunk walk from the head of the stair, on the deck
+  const d = createBody(); d.x = 12; d.z = 0; d.y = L.deckY; let deck = 0, bad2 = 0;
+  for (let i = 0; i < 36000; i++) {
+    if (i % 90 === 0) dir = rnd() * Math.PI * 2;
+    stepBody(d, Math.cos(dir), Math.sin(dir), true, 1 / 60);
+    if (!inBounds(d) || inside(d)) bad2++;
+    if (d.y > 2.9) deck++;
+  }
+  ok(onDeck + deck > 0 && bad2 === 0, `fuzz walks reach the deck (${onDeck + deck} steps there), no escapes from the deck either`);
 }
 // 8. ground continuity along the stairs
 {
