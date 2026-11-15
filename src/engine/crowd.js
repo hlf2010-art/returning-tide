@@ -221,12 +221,23 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
       id: nextId++, kind, role, abroad, speed, v: 0, x: 0, z: 0, y: CURB, heading: 0, vx: 0, vz: 0,
       path: null, i: 0, off: (rnd() - 0.5) * 2, state: 'walk', act: null, wait: 0, stops: 0, phase: rnd(),
       group: null, slot: null, phone: kind === 'local' && rnd() < 0.45, persona: abroad ? 'visitor' : kind === 'elder' ? 'elder' : kind === 'local' ? (rnd() < 0.5 ? 'office' : 'youngMan') : (rnd() < 0.5 ? 'student' : 'youngMan'),
-      gone: false, hold: 0, scale: 0.95 + rnd() * 0.1, ...extra,
+      gone: false, hold: 0, scale: 0.95 + rnd() * 0.1, rank: rnd(), ...extra,
     };
     agents.push(a);
     return a;
   };
+  const deckEnds = ['P0', 'P15'].map((id) => ends.find((e) => e.id === ((net.ends && net.ends[id]) || id))).filter(Boolean);
   function trip(a, { midway = false } = {}) {
+    if (a.kind === 'jogger' && deckEnds.length === 2) {             // the length of the promenade and back off it
+      const k = rnd() < 0.5 ? 0 : 1, p = route(net, deckEnds[k].id, deckEnds[1 - k].id);
+      if (p && p.length > 1) {
+        a.path = p; a.i = 1; a.via = null; a.done = false; a.startAt = null;
+        const n0 = net.by[p[0]]; a.x = n0.x; a.z = n0.z;
+        if (midway) { const j = 1 + Math.floor(rnd() * (p.length - 1)), A = net.by[p[j - 1]], B = net.by[p[j]], f = rnd(); a.x = A.x + (B.x - A.x) * f; a.z = A.z + (B.z - A.z) * f; a.i = j; }
+        a.y = groundHeight(a.x, a.z, 9); a.state = 'walk'; a.wait = 0; a.gone = false;
+        return;
+      }
+    }
     const from = a.startAt || pickEnd(null); a.startAt = null;
     if (a.kind === 'commuter' && from.id.startsWith('BS:')) a.kind = 'local';
     let to = pickEnd(from.id);
@@ -267,7 +278,10 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
     if (k === 'couple') { const a = make('tourist'), b = make('tourist', { role: a.role === 'c1' ? 'p3' : a.role }); a.partner = b; b.partner = a; b.leader = a; b.speed = a.speed = 0.85; }
     else make(k);
   }
-  for (const a of agents) if (!a.leader && a.kind !== 'follower') trip(a, { midway: true });
+  // early-morning runners on the promenade (out only at dawn: setActive)
+  const nJog = Math.round(12 * Math.min(1, density));
+  for (let k = 0; k < nJog; k++) make('jogger', { speed: 2.5 + rnd() * 0.7, rank: 0, gone: true, hold: rnd() * 30, phone: false, persona: rnd() < 0.5 ? 'office' : 'youngMan' });
+  for (const a of agents) if (!a.leader && a.kind !== 'follower' && a.kind !== 'jogger') trip(a, { midway: true });
   // beside someone, but never inside a wall: fall back to their own spot
   const besides = (a, o, dx, dz) => { const x = o.x + dx, z = o.z + dz; if (!blocked(x, z) && !onRoad(x, z)) { a.x = x; a.z = z; } else { a.x = o.x; a.z = o.z; } a.y = o.y; };
   for (const t of tours) for (const f of t.members) besides(f, t.guide, -0.6 - rnd() * 0.8, (rnd() - 0.5) * 1.6);
@@ -280,6 +294,9 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
   function near(x, z, f) { const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const c = grid.get(`${cx + i},${cz + j}`); if (c) for (const o of c) f(o); } }
 
   const state = { pedAspect: 'dont', walkFor: 0, sig: { bund: { aspect: 'dont', walkFor: 0 }, henan: { aspect: 'dont', walkFor: 0 } } };
+  // the hour: what share of the crowd is out (each person has a rank), and whether it's the joggers' hour
+  const hour = { active: 1, dawn: false };
+  const awake = (a) => (a.kind === 'jogger' ? hour.dawn : a.rank <= hour.active);
   // a target point for this agent now: the next node, spread across the lane (keep right)
   function target(a) {
     const n = net.by[a.path[a.i]], p = net.by[a.path[a.i - 1]] || n;
@@ -318,6 +335,21 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
   }
   const crowd = {
     net, agents, tours, state,
+    // the hour (engine/timeOfDay.js): `share` of the crowd out, joggers at dawn. Those beyond their
+    // hour finish their walk and don't come back; instant (after a time skip): gone at once, and
+    // whoever's hour it is, out at once and already on their way
+    setActive(share, { dawn = false, instant = false } = {}) {
+      hour.active = share; hour.dawn = dawn;
+      if (!instant) return;
+      for (const a of agents) {
+        if (a.kind === 'follower' || a.leader) continue;
+        if (!awake(a)) { a.gone = true; a.hold = 1 + rnd() * 5; }
+        else if (a.gone) { a.gone = false; trip(a, { midway: true }); }
+      }
+      for (const t of tours) for (const f of t.members) if (!t.guide.gone) besides(f, t.guide, -0.6 - rnd() * 0.8, (rnd() - 0.5) * 1.6);
+      for (const a of agents) if (a.leader && !a.leader.gone) { a.gone = false; besides(a, a.leader, 0.6, 0.3); }
+    },
+    get active() { return hour.active; },
     // the signal at Hankou Road (traffic.controller.pedAspect) and how long the green man has been on
     setSignal(aspect, dt, id = 'bund') {
       const sg = state.sig[id] || (state.sig[id] = { aspect: 'dont', walkFor: 0 });
@@ -333,6 +365,8 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
         if (a.gone) {
           if (a.kind === 'follower' || a.leader) { if (!(a.group || {}).guide?.gone && !(a.leader || {}).gone) { a.gone = false; a.x = (a.leader || a.group.guide).x; a.z = (a.leader || a.group.guide).z; } continue; }
           a.hold -= dt; if (a.hold > 0) continue;
+          if (!awake(a)) { a.hold = 2 + rnd() * 4; continue; }                // not their hour
+          if (a.kind === 'jogger') { trip(a); continue; }
           const e = pickEnd(null);
           if (canSpawnAt && !canSpawnAt(net.by[e.id])) { a.hold = 0.5; continue; }
           a.startAt = e; trip(a);
@@ -432,8 +466,10 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
         // never into a wall, a planter, the railing, a building; never onto the road except crossing
         // (or following your guide / partner over the zebra while the green man is still on)
         const lead = a.kind === 'follower' ? a.group.guide : a.leader;
-        const zebra = (x, z) => (Math.abs(z - 1.2) < 2.2 && x > -28 && x < -4) || (Math.abs(z - NJ.zc - 1.5) < 2.2 && x > NJ.henan.x0 - 0.5 && x < NJ.henan.x1 + 0.5);
-        const mayCross = rescue || a.state === 'cross' || (lead && (lead.state === 'cross' || state.sig.bund.aspect === 'walk' || state.sig.henan.aspect === 'walk') && zebra(nx, nz));
+        // (each zebra has its own green man: Zhongshan Road's at Hankou Road, Henan Road's at Nanjing Road)
+        const zebra = (x, z) => (Math.abs(z - 1.2) < 2.2 && x > -28 && x < -4 ? 'bund' : Math.abs(z - NJ.zc - 1.5) < 2.2 && x > NJ.henan.x0 - 0.5 && x < NJ.henan.x1 + 0.5 ? 'henan' : null);
+        const zb = lead && zebra(nx, nz);
+        const mayCross = rescue || a.state === 'cross' || (zb && (lead.state === 'cross' || state.sig[zb].aspect === 'walk'));
         const bad = (x, z) => blocked(x, z) || (!mayCross && onRoad(x, z) && !onRoad(a.x, a.z));
         if (bad(nx, nz)) {
           if (!bad(nx, a.z)) nz = a.z;

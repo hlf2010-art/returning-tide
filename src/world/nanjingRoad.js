@@ -5,6 +5,7 @@
 // station (Exits 7 and 2: stairwells with Shanghai Metro's signs, stairs down to a lit landing).
 // The shops are generic (invented names in the street's style), not the real tenants; the buildings
 // are typical of the street, not surveyed one by one.
+import { asLight, glassByDay } from './dayNight.js';
 import * as THREE from 'three';
 import { L, NJ, METRO, METRO_DEPTH } from './layout.js';
 import { Batch, batchSet, flush } from './geo.js';
@@ -231,7 +232,7 @@ export function createNanjingRoad(M) {
       g.translate((x0 + x1) / 2, hh / 2, z + sgn * d / 2); far.push(g); z += sgn * (d + 0.3);
     }
   }
-  const farMat = new THREE.MeshBasicMaterial({ map: towerAtlas(31, 0.75) }); farMat.color.setScalar(0.85);
+  const farMat = glassByDay(new THREE.MeshBasicMaterial({ map: towerAtlas(31, 0.75) }), [0.44, 0.45, 0.47]); farMat.color.setScalar(0.85);
   group.add(far.mesh(farMat, 'henan-walls'));
   // ---- the west end and the cross streets: closed off (roadworks hoardings) ----
   const hoard = (x0, x1, z0, z1) => { P.hoard.box((x0 + x1) / 2, 0, (z0 + z1) / 2, Math.max(0.12, x1 - x0), 2.5, Math.max(0.12, z1 - z0)); };
@@ -246,10 +247,10 @@ export function createNanjingRoad(M) {
       if (METRO.some((m) => x > m.x0 - 1.5 && x < m.x1 + 1.5 && z < m.z1 + 1.5)) continue;
       P.steel.cyl(x, CH, z, 0.07, 0.11, 6.2, 8); P.steel.box(x, 6.1, z, 1.8, 0.08, 0.08);
       for (const dx of [-0.85, 0, 0.85]) lampGlass.add(new THREE.SphereGeometry(0.2, 12, 8), { x: x + dx, y: dx ? 5.85 : 6.55, z });
-      lights.push({ x, y: 6, z, color: new THREE.Color(1.0, 0.88, 0.72), intensity: 9, distance: 18 });
+      lights.push({ x, y: 6, z, color: new THREE.Color(1.0, 0.88, 0.72), intensity: 9, distance: 18, out: true });
     }
   }
-  const glow = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.3, 1.9) });
+  const glow = asLight(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.3, 1.9) }), 'lamps', 0.45);
   group.add(lampGlass.mesh(glow, 'nj-lamps'));
   // ---- the metro entrances ----
   const glassMat = new THREE.MeshStandardMaterial({ color: 0xa8c4cc, metalness: 0.1, roughness: 0.04, transparent: true, opacity: 0.28, side: THREE.DoubleSide });
@@ -299,13 +300,13 @@ export function createNanjingRoad(M) {
     m.sign = { x: topX, z: zc };
   }
   // LED screens
-  const scrTex = screenAtlas(), scrMat = new THREE.MeshBasicMaterial({ map: scrTex }); scrMat.color.setScalar(1.6);
+  const scrTex = screenAtlas(), scrMat = new THREE.MeshBasicMaterial({ map: scrTex }); scrMat.color.setScalar(1.6); asLight(scrMat, 'screens', 0.08);
   for (const s of screens) { const p = new THREE.Mesh(new THREE.PlaneGeometry(s.w, s.w * 0.5), scrMat); p.position.set(s.x, s.y, s.z); if (s.dir < 0) p.rotation.y = Math.PI; group.add(p); }
   // ---- materials ----
   flush(B, M, group, 'nj-');
-  const signMat = new THREE.MeshBasicMaterial({ map: atlas.texture }); signMat.color.setScalar(1.55);
-  const bladeMat = new THREE.MeshBasicMaterial({ map: atlas.texture, side: THREE.DoubleSide }); bladeMat.color.setScalar(1.7);
-  const shopMat = new THREE.MeshBasicMaterial({ map: shopTex }); shopMat.color.setScalar(0.95);
+  const signMat = new THREE.MeshBasicMaterial({ map: atlas.texture }); signMat.color.setScalar(1.55); asLight(signMat, 'signs', 0.5);   // unlit by day: painted signs
+  const bladeMat = new THREE.MeshBasicMaterial({ map: atlas.texture, side: THREE.DoubleSide }); bladeMat.color.setScalar(1.7); asLight(bladeMat, 'signs', 0.5);
+  const shopMat = new THREE.MeshBasicMaterial({ map: shopTex }); shopMat.color.setScalar(0.95); asLight(shopMat, 'shops', 0.32);   // closed: dark
   group.add(shops.mesh(shopMat, 'nj-shops'), signs.mesh(signMat, 'nj-signs'), blades.mesh(bladeMat, 'nj-blades'));
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });

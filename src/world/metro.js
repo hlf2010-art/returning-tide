@@ -3,13 +3,14 @@
 //   E   take Line 2 one stop under the river to Lujiazui (the IFC; ¥3 on the Metro QR code)
 //   E   (at the exit sign on the side wall) through the concourse and up the other exit
 // The trains and the station's insides aren't built yet: both go by the fade, as a lift or a DiDi does.
+// Trains run from about 5:30 am to about 11 pm (open(): the hour); outside those the gates are shut.
 import { METRO, METRO_DEPTH } from './layout.js';
 import { getLang } from '../ui/i18n.js';
 import { pay as lifePay } from '../engine/life.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 
-export function createMetro({ hud, audio, player, travel, getLife, save, arriveAt }) {
+export function createMetro({ hud, audio, player, travel, getLife, save, arriveAt, open = () => true }) {
   const S = { rides: 0, throughs: 0, here: null };
   const landing = (m) => ({ x: m.bottom + Math.sign(m.bottom - m.top) * 0.9, z: (m.z0 + m.z1) / 2 });
   const targets = METRO.map((m) => {
@@ -37,12 +38,14 @@ export function createMetro({ hud, audio, player, travel, getLife, save, arriveA
     },
     owns(id) { return id.startsWith('metro:'); },
     prompt(id) {
+      if (!open()) return { target: T('南京东路站 · 已停运', 'East Nanjing Rd · closed'), action: T('末班车已开走 · 首班车约5:30', 'Last train gone · first train ~5:30') };
       if (id.endsWith(':in')) return { target: T('南京东路站 · 2号线', 'East Nanjing Rd · Line 2'), action: T('坐一站到陆家嘴（¥3）', 'One stop to Lujiazui (¥3)') };
       const m = at(id), other = METRO.find((o) => o !== m);
       return { target: T('站厅', 'Concourse'), action: T(`从${other.exit}号口出站`, `Out by Exit ${other.exit}`) };
     },
     interact(id) {
       const m = at(id);
+      if (!open()) { hud.toast(T('闸机关着。末班车已经开走了，首班车早上五点半左右。', 'The gates are shut. The last train has gone; the first is at about 5:30 am.'), 3.6); return true; }
       if (id.endsWith(':in')) {
         S.rides++; pay();
         hud.toast(T('刷码进站 · Metro大都会 · ¥3', 'Through the gates · Metro QR · ¥3'), 2.6);

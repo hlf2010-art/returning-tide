@@ -720,6 +720,21 @@
   "en": "The bus is moving off, please hold on."
  },
  {
+  "who": "student",
+  "zh": "哎，灯暗下来了。",
+  "en": "Oh, the lights have gone down."
+ },
+ {
+  "who": "auntie",
+  "zh": "十点了，外滩的灯要换成夜里的了。",
+  "en": "Ten o'clock. The Bund's gone over to its night lights."
+ },
+ {
+  "who": "student",
+  "zh": "还好刚才拍到了。",
+  "en": "Good thing I got my photo just now."
+ },
+ {
   "who": "agent",
   "zh": "沈先生是吧？程小姐在里面等您。这套是顶层，三百二十平，整层就这一户。",
   "en": "Mr Shen? Ms Cheng's inside. Top floor, three hundred and twenty square metres, the only flat on the floor."

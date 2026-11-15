@@ -70,7 +70,7 @@ export function createBuses({ scene, traffic, vehicles, crowd = null, audio = nu
     const name = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.42), new THREE.MeshBasicMaterial({ map: tex(nc, { repeat: false }) }));
     name.material.color.setScalar(1.3); name.position.set(-back * 0.96, 2.4, 0); name.rotation.y = -back * Math.PI / 2; g.add(name);
     group.add(g);
-    lights.push({ x: base, y: 2.4, z: st.z, color: new THREE.Color(0.85, 0.92, 1.0), intensity: 3, distance: 7 });
+    lights.push({ x: base, y: 2.4, z: st.z, color: new THREE.Color(0.85, 0.92, 1.0), intensity: 3, distance: 7, out: true });
     st.door = { x: (st.dir > 0 ? L.westCurbX - 0.6 : L.eastCurbX + 0.6), z: st.z };
   });
   // which bus is doing what

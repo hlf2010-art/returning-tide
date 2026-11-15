@@ -1028,6 +1028,51 @@ near people are skinned and cost the most, so their number is what the detail le
 SSR and AO are off on Mac M4; auto resolution steps down if frames run long. If the Mac drops below
 60, try Low or set the resolution to 80%.
 
+## The story: quests, three acts, six endings (phase 4.1: `src/engine/quests.js`, `src/world/story.js`)
+
+A data-driven quest engine (tested in `tests/quests.test.mjs`): each quest is a list of steps with a
+`done` test on the life state, optional steps, a time to wait for, a place on the map and a way to
+fail. The main arc runs in three acts over six days: the first night back, Kai's robot arm (the
+makerspace), Dad's offer, and dinner with Dad at the Peace Hotel Jazz Bar on day 6 (his own avatar,
+a sat-down conversation in recorded voices, 1-4 to answer). What you chose, what you built and how he
+feels about you lead to one of six endings, shown on a card after the late-night lighting at ten.
+**J** opens the journal: quests with their steps, track one (its next step is on screen and on the
+minimap), wait until a quest's time, and the people in your life with how each feels about you.
+
+## The hour: dusk, night, the late-night lighting, dawn, day (phase 4.2: `src/engine/timeOfDay.js`)
+
+The clock (4 game seconds per real second) now drives the light. One pure function of the minute
+(`todState`, tested in `tests/timeOfDay.test.mjs`) gives every system its share; the game opens at
+5:42 pm in exactly the approved blue-hour look.
+
+- **The sun** follows the real almanac for Shanghai in mid-November (31.2° N): it rises about 6:25 in
+  the east over Pudong, is 40° up at noon in the south, sets about 4:55 behind the Bund. By day it is a
+  soft disc in hazy sky, lights the stone and casts the shadows (one shadow map that follows you; the
+  lamps' shadows stand down). November in Shanghai is often hazy: the day is pale, Pudong is grey glass.
+- **Dusk to night**: the afterglow fades by 6:30 pm into a city night sky (never black: a brown-orange
+  glow under the cloud). The street lamps come on as the light goes, the façade floods from about
+  5:10 pm. *Sources:* reports give 7 pm for the lights in summer (China Daily, 2022); in November it is
+  dark by 5:40, so the game lights them as the sky darkens.
+- **10 pm, the late-night lighting.** Since the 2018 upgrade the Bund and Lujiazui have a late-night
+  mode in which only the skyline's outlines stay lit (The Paper, 2025). The switch time is not
+  published that we could find, so **10 pm is the game's choice**: the floods dim to a faint wash, the
+  LED walls across the river go dark, the Pearl holds a dim glow, the outlines and rooftop names stay.
+  If you're outdoors you get a notice and people near you say so (recorded voices). After half past
+  midnight the floods are off; the lamps stay on all night.
+- **Nanjing Road**: shops 10 am to 10 pm (closed ones go dark), the neon until 11, the LED screens 7 am
+  to 11 pm. **The metro**: trains from about 5:30 am to about 11 pm; outside those the gates are shut.
+- **People and traffic by the hour**: the crowd is biggest from 6:30 to 9:30 pm, thins after ten and
+  is a handful at 3 am; traffic drops to about a third at night (each person and vehicle has a rank;
+  those beyond the hour's share finish their walk or drive and don't come back). After a time skip
+  (sleep, waiting) the change is immediate.
+- **Dawn (about 5:45 to 8:15)**: joggers run the length of the promenade, and a tai chi group of eight
+  practises on the deck facing the river, a teacher in front. The avatar set has no tai chi animation,
+  so the form (the opening, and cloud hands) is posed by hand with arm IK over the idle: recognisable,
+  not motion-captured.
+- Indoors (the hotel, the flat, the makerspace) keeps its own light; the sky's only reaches in a little.
+- Tools: `?hour=HH:MM` starts at that hour; measurement tools (`?q=`) keep the 5:42 pm look unless they
+  pass `?tod` or `?hour`. `node tools/todshots.mjs` shoots the same views through the day.
+
 ## What is here
 
 - Walk from Hankou Road out onto Zhongshan East 1st Road, up the stair, along the promenade.

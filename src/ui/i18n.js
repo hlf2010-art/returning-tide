@@ -59,6 +59,7 @@ export const S = {
   questNew: { zh: (t) => `新任务 · ${t}`, en: (t) => `New quest · ${t}` }, questDone: { zh: (t) => `完成 · ${t}`, en: (t) => `Done · ${t}` },
   questFailed: { zh: (t) => `错过了 · ${t}`, en: (t) => `Missed · ${t}` }, questNext: { zh: (t) => `下一步：${t}`, en: (t) => `Next: ${t}` },
   questWait: { zh: (c) => `等到 ${c}`, en: (c) => `Waiting until ${c}` },
+  lateNightLights: { zh: '晚上十点 · 外滩换成深夜灯光：泛光暗下来，对岸的大屏熄了，只留下轮廓。', en: '10 pm · The Bund goes over to its late-night lighting: the floodlights dim, the LED walls across the river go dark, the outlines stay lit.' },
   subtitles: { zh: '字幕', en: 'Subtitles' },
   sound: { zh: '声音', en: 'Sound' },
   on: { zh: '开', en: 'On' }, off: { zh: '关', en: 'Off' },

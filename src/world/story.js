@@ -7,7 +7,7 @@
 //   Act I   回来   the first night on the Bund
 //   Act II  两条路 the robot arm (Mingxuan, Zhou, the investor demo) and Dad's offer (talk to Ruoan)
 //   Act III 回潮   dinner with Dad at the Peace Hotel's Jazz Bar (day 6, 8 pm), then the river at
-//                  lights-out, and one of six endings (what you chose, what you'd done, how he feels)
+//                  the late-night lighting at ten, and one of six endings (what you chose, what you'd done, how he feels)
 import { post, invite, stamp, nudge, relation, emit } from '../engine/life.js';
 
 export const D = (day, h, m = 0) => day * 1440 + h * 60 + m;      // absolute minute
@@ -89,11 +89,11 @@ export const QUESTS = [
     ] },
   { id: 'tide', act: 3, main: true, giver: 'me',
     title: B('回潮', 'The returning tide'),
-    summary: B('晚上十点，外滩的灯会灭。在江边看着它们熄灭。', 'At ten the Bund\'s lights go out. Watch them go from the river.'),
+    summary: B('晚上十点，外滩会换成深夜灯光，只留下轮廓。在江边看着它暗下来。', 'At ten the Bund goes over to its late-night lighting, just the outlines. Watch it dim from the river.'),
     start: (L) => !!L.flags.dinnerChoice,
     steps: [
       { id: 'river', text: B('十点前回到江边', 'Be back by the river before ten'), target: PLACE.deckNorth, wait: (L) => { const d = Math.floor(stamp(L) / 1440); return D(d, 21, 50); }, done: (L, st, ctx) => onDeck(ctx) },
-      { id: 'lights', text: B('看灯熄灭', 'Watch the lights go out'), target: PLACE.deckNorth, done: (L, st, ctx) => onDeck(ctx) && (!!L.flags.lightsOutSeen || stamp(L) % 1440 >= 22 * 60) },
+      { id: 'lights', text: B('看灯光暗下来', 'Watch the lights dim'), target: PLACE.deckNorth, done: (L, st, ctx) => onDeck(ctx) && (!!L.flags.lightsOutSeen || stamp(L) % 1440 >= 22 * 60) },
     ],
     onComplete: (L) => { L.flags.ending = ending(L); emit(L, { type: 'ending', ending: L.flags.ending }); } },
 ];
@@ -181,14 +181,14 @@ export function ending(L) {
 export const ENDINGS = {
   together: { title: B('两岸', 'Both banks'), text: B('第二年春天，沈家的厂做出了第一批五十台机械臂。你一周在南京，一周在杨浦。爸爸学会了用微信发语音，第一条是：“图纸收到了。”',
     'The next spring your father\'s works turned out the first fifty arms. You spend a week in Nanjing, a week in Yangpu. Your father learns to send WeChat voice notes. The first one says: "Got the drawings."') },
-  stay: { title: B('留下', 'Staying'), text: B('灯灭的时候，爸爸发来三个字：“注意身体。”你在杨浦租下了阿凯隔壁的那间厂房。上海的冬天比你记得的冷。',
-    'As the lights go out, your father sends four words: "Look after your health." You rent the empty unit next to Kai\'s in Yangpu. Shanghai\'s winter is colder than you remember.') },
-  alone: { title: B('一个人', 'On your own'), text: B('爸爸一个月没有打电话。若安说他会想通的。你在杨浦的厂房里装好了第一张工作台，那天晚上外滩的灯照常熄灭。',
-    'Your father doesn\'t call for a month. Ruoan says he\'ll come round. You set up your first bench in the Yangpu unit, and that night the Bund\'s lights go out as they always do.') },
+  stay: { title: B('留下', 'Staying'), text: B('灯暗下来的时候，爸爸发来三个字：“注意身体。”你在杨浦租下了阿凯隔壁的那间厂房。上海的冬天比你记得的冷。',
+    'As the lights dim, your father sends four words: "Look after your health." You rent the empty unit next to Kai\'s in Yangpu. Shanghai\'s winter is colder than you remember.') },
+  alone: { title: B('一个人', 'On your own'), text: B('爸爸一个月没有打电话。若安说他会想通的。你在杨浦的厂房里装好了第一张工作台，那天晚上外滩的灯照常在十点暗下来。',
+    'Your father doesn\'t call for a month. Ruoan says he\'ll come round. You set up your first bench in the Yangpu unit, and that night the Bund\'s lights dim at ten as they always do.') },
   home: { title: B('回南京', 'Home'), text: B('走的那天，大家在虹桥送你。Momo 在候车厅的钢琴上弹了一首歌。南京的研发楼很安静。你把外滩的照片贴在了工位上。',
     'The day you leave, they all see you off at Hongqiao. Momo plays a song on the station piano. The R&D floor in Nanjing is quiet. You pin a photo of the Bund above your desk.') },
-  open: { title: B('潮未定', 'The tide hasn\'t turned'), text: B('灯灭了，江还在流。你还没想好，这也是一种答案。明天，外滩的灯会再亮。',
-    'The lights go out; the river keeps moving. You haven\'t decided, and that\'s an answer of a kind. Tomorrow the Bund\'s lights will come on again.') },
+  open: { title: B('潮未定', 'The tide hasn\'t turned'), text: B('灯暗了，江还在流。你还没想好，这也是一种答案。明天，外滩的灯会再亮。',
+    'The lights dim; the river keeps moving. You haven\'t decided, and that\'s an answer of a kind. Tomorrow the Bund\'s lights will come on again.') },
   apart: { title: B('错过', 'Missed'), text: B('他等了你四十分钟。回南京的高铁上，他发来一张照片：爵士吧里那张空着的椅子。',
     'He waited forty minutes. From the train back to Nanjing he sends a photo: the empty chair at the Jazz Bar.') },
 };

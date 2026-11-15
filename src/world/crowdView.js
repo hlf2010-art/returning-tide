@@ -119,16 +119,22 @@ function impostorMaterial(atlas, size) {
   });
 }
 
-// the light a figure stands in at night (rgb multiplier on the neutrally lit atlas)
+// the hour's part in it (setCrowdLight, from engine/timeOfDay.js)
+const LT = { day: 0, floods: 1, lamps: 1, shops: 1, night: 0 };
+export function setCrowdLight(s) { LT.day = s.daylight; LT.floods = s.floods; LT.lamps = s.lamps; LT.shops = s.shops; LT.night = s.night; }
+// the light a figure stands in (rgb multiplier on the neutrally lit atlas): at night the sky, the
+// floodlit façades, the lamps; by day the hazy daylight
 export function lightAt(x, z, y) {
-  let r = 0.2, g = 0.22, b = 0.33;                                          // blue night sky
-  if (x < -20) { const k = Math.min(1, (-20 - x) / 12); r += 0.62 * k; g += 0.42 * k; b += 0.18 * k; }   // floodlit façades
+  const dk = 1 - 0.3 * LT.night;
+  let r = 0.2 * dk, g = 0.22 * dk, b = 0.33 * dk;                           // blue night sky
+  if (x < -20) { const k = Math.min(1, (-20 - x) / 12) * LT.floods; r += 0.62 * k; g += 0.42 * k; b += 0.18 * k; }   // floodlit façades
   if (y > 2) {                                                              // the promenade lamps
     let dz = 1e9; for (const lz of deckLamps) dz = Math.min(dz, Math.abs(lz - z));
-    const d2 = dz * dz + (x - DECK_LAMP_X) ** 2, k = Math.exp(-d2 / 90);
-    r += 0.7 * k + 0.1; g += 0.58 * k + 0.08; b += 0.4 * k + 0.06;
-  } else if (x > L.eastCurbX - 1) { r += 0.22; g += 0.19; b += 0.15; }
-  if (x < -36 && Math.abs(z + 201) < 13) { r += 0.35; g += 0.25; b += 0.22; }   // Nanjing Road's shop light
+    const d2 = dz * dz + (x - DECK_LAMP_X) ** 2, k = Math.exp(-d2 / 90) * LT.lamps;
+    r += 0.7 * k + 0.1 * LT.lamps; g += 0.58 * k + 0.08 * LT.lamps; b += 0.4 * k + 0.06 * LT.lamps;
+  } else if (x > L.eastCurbX - 1) { r += 0.22 * LT.lamps; g += 0.19 * LT.lamps; b += 0.15 * LT.lamps; }
+  if (x < -36 && Math.abs(z + 201) < 13) { const k = Math.max(LT.shops, 0.3) * Math.max(LT.lamps, 0.4); r += 0.35 * k; g += 0.25 * k; b += 0.22 * k; }   // Nanjing Road's shop light
+  if (LT.day > 0) { const d = LT.day; r += (1.0 - r) * d; g += (0.99 - g) * d; b += (0.96 - b) * d; }
   return [r, g, b];
 }
 
@@ -225,7 +231,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         root.rotation.y += dh * Math.min(1, dt * 6);
         const moving = a.v > 0.2;
         const act = a.state === 'act' ? a.act : null;
-        b.person.play(moving ? 'walk' : act === 'look' || a.kind === 'guide' ? 'look' : 'idle', 0.35);
+        b.person.play(moving ? (a.kind === 'jogger' && a.v > 1.6 ? 'jog' : 'walk') : act === 'look' || a.kind === 'guide' ? 'look' : 'idle', 0.35);
         b.person.setGait(a.v);
         const phoneWalk = moving && a.phone;
         b.person.setPhoneHold(phoneWalk ? 1 : 0);

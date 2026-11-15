@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT } from './canvas.js';
 import { REFLECT_LAYER } from './sky.js';
+import { TOD, asLight, glassByDay } from './dayNight.js';
 
 const SHORE_X = 470;           // Pudong river wall
 export const PEARL = { x: 640, z: -42 };
@@ -101,13 +102,15 @@ function pearlPanels() {
 // Floodlit concrete: uplights at the podium and on the decks above each sphere throw light up the
 // columns, fading with height; a pink spill near the spheres; rounder-looking because the light falls
 // off toward each column's edges. World-space, so it works on the batched geometry.
+const PEARL_LIGHT = { value: 1 };     // the Pearl's own lighting: the colour show, a dimmer static glow late at night, off by day
 function floodlit(mat, { spheres, deckLights }) {
   mat.onBeforeCompile = (sh) => {
+    sh.uniforms.pearlLight = PEARL_LIGHT;
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWP = (modelMatrix * vec4(position, 1.0)).xyz;');
     const sph = spheres.map(([y, r]) => `spill += exp(-max(0.0, distance(vWP, vec3(${PEARL.x.toFixed(1)}, ${y.toFixed(1)}, ${PEARL.z.toFixed(1)})) - ${r.toFixed(1)}) / 9.0);`).join('\n');
     const decks = deckLights.map(([y, k]) => `up += ${k.toFixed(2)} * step(${y.toFixed(1)}, vWP.y) * exp(-(vWP.y - ${y.toFixed(1)}) / 38.0);`).join('\n');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;')
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; uniform float pearlLight;')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       {
         float up = 0.0, spill = 0.0;
@@ -115,7 +118,7 @@ function floodlit(mat, { spheres, deckLights }) {
         ${sph}
         float facing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
         float shade = 0.3 + 0.7 * pow(facing, 0.8);
-        totalEmissiveRadiance += (vec3(1.0, 0.93, 0.84) * up + vec3(1.0, 0.35, 0.8) * spill * 0.28) * shade * 0.85;
+        totalEmissiveRadiance += (vec3(1.0, 0.93, 0.84) * up + vec3(1.0, 0.35, 0.8) * spill * 0.28) * shade * 0.85 * pearlLight;
       }`);
   };
   return mat;
@@ -352,7 +355,7 @@ function bar(batch, a, b, t = 1.1) {
 // the animated media façade (the Bund-facing LED walls): slow colour fields and a travelling sheen,
 // drawn as an LED pixel grid so it never looks like a flat screen
 function mediaMaterial(kind = 0) {
-  return new THREE.ShaderMaterial({
+  const m = new THREE.ShaderMaterial({
     fog: true,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { time: { value: 0 }, kind: { value: kind } }]),
     vertexShader: /* glsl */ `
@@ -364,11 +367,12 @@ function mediaMaterial(kind = 0) {
         #include <fog_vertex>
       }`,
     fragmentShader: /* glsl */ `
-      uniform float time; uniform float kind; varying vec3 vW; varying vec3 vN;
+      uniform float time; uniform float kind; uniform float todOn, todDay, todAmb; varying vec3 vW; varying vec3 vN;
       #include <common>
       #include <fog_pars_fragment>
       void main() {
-        if (abs(vN.y) > 0.5) { gl_FragColor = vec4(0.01, 0.01, 0.02, 1.0); return; }
+        vec3 dull = vec3(0.36, 0.4, 0.46) * todDay * todAmb;           // switched off: dark glass, grey by day
+        if (abs(vN.y) > 0.5) { gl_FragColor = vec4(vec3(0.01, 0.01, 0.02) + dull * 0.7, 1.0); return; }
         vec2 p = vec2(abs(vN.x) > 0.5 ? vW.z : vW.x, vW.y);
         vec2 cell = floor(p / 1.5), f = fract(p / 1.5) - 0.5;
         float led = smoothstep(0.42, 0.18, length(f));
@@ -384,12 +388,14 @@ function mediaMaterial(kind = 0) {
           float s = fract(cell.y * 0.035 - t * 0.8 + 0.15 * sin(cell.x * 0.3 + t));
           col = mix(vec3(1.2, 0.55, 0.12), vec3(1.0, 0.18, 0.75), smoothstep(0.3, 0.7, s)) * (0.45 + 0.55 * smoothstep(0.0, 0.2, s) * smoothstep(1.0, 0.8, s));
         }
-        gl_FragColor = vec4(col * (0.15 + 0.85 * led) * 1.2, 1.0);
+        gl_FragColor = vec4(mix(vec3(0.02, 0.025, 0.035) + dull * (0.85 + 0.15 * led), col * (0.15 + 0.85 * led) * 1.2, todOn), 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
         #include <fog_fragment>
       }`,
   });
+  Object.assign(m.uniforms, { todOn: TOD.media, todDay: TOD.day, todAmb: TOD.amb });
+  return m;
 }
 // rooftop signs on Lujiazui towers, facing the Bund: the banks' own names in light
 function signTexture(lines, colour, w = 1024, h = 256) {
@@ -531,15 +537,28 @@ export function createSkyline() {
   group.add(accents.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(0.8, 1.0, 1.5) }), 'accents'));
 
   group.traverse((o) => { o.layers.enable(REFLECT_LAYER); o.matrixAutoUpdate = false; o.updateMatrix(); });
+  // by day: the window atlases become hazy glass (each tower its own tint), the lit trims and names
+  // dull fixtures, the far bank's lamps and the aircraft lights off; the LED walls are their own
+  const DAY_GLASS = { 'towers-a': [0.34, 0.42, 0.5], 'towers-b': [0.43, 0.42, 0.41], 'towers-gold': [0.46, 0.43, 0.37], 'towers-white': [0.5, 0.56, 0.62],
+    'towers-violet': [0.36, 0.38, 0.47], 'towers-green': [0.34, 0.43, 0.41], jinmao: [0.38, 0.39, 0.42], 'swfc-top': [0.46, 0.53, 0.6], globes: [0.62, 0.66, 0.72], shore: [0.3, 0.31, 0.29] };
+  asLight(led.material, 'media', 0.12);
+  group.traverse((o) => {
+    if (!o.material || o.material.userData.tod) return;
+    const m = o.material;
+    if (m.isMeshBasicMaterial && !m.transparent && m.blending !== THREE.AdditiveBlending && (m.map || DAY_GLASS[o.name])) glassByDay(m, DAY_GLASS[o.name] || [0.46, 0.53, 0.6]);
+    else if (m.isMeshBasicMaterial || m.isPointsMaterial) asLight(m, 'outline', 0.3);
+  });
 
   // the Pearl's lattice changes colour through the evening: pink, violet, deep blue, magenta (as in the
   // photos), each held a while and blended across a few seconds
   const palette = [new THREE.Color(1, 1, 1), new THREE.Color(0.78, 0.72, 1.45), new THREE.Color(0.32, 0.58, 1.9), new THREE.Color(1.25, 0.7, 1.1)];
   return {
     group,
+    // the hour: the Pearl's show runs with the LED walls; late at night it holds a dim glow
+    setTime(st) { PEARL_LIGHT.value = Math.max(st.media, 0.35 * st.outline); },
     update(t) {
       const k = t / 24, i = Math.floor(k) % palette.length, f = THREE.MathUtils.smoothstep(k - Math.floor(k), 0.75, 1);
-      pearlMat.emissive.lerpColors(palette[i], palette[(i + 1) % palette.length], f);
+      pearlMat.emissive.lerpColors(palette[i], palette[(i + 1) % palette.length], f).multiplyScalar(PEARL_LIGHT.value);
       for (const m of media) m.uniforms.time.value = t;
       ticker.offset.x = (t * 0.018) % 1;
     },

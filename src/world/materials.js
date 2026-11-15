@@ -24,6 +24,7 @@ const archFragment = /* glsl */ `
 uniform sampler2D map; uniform sampler2D emissiveMap; uniform sampler2D grainMap; uniform float grainAmount;
 uniform vec3 tint; uniform vec3 floodColor; uniform float floodGain; uniform float emissiveGain;
 uniform vec3 skyAmbient; uniform vec3 groundAmbient;
+uniform vec3 sunDir; uniform vec3 sunColor; uniform float todFlood, todWin, todDay;
 varying vec2 vUv; varying vec3 vN; varying float vFlood; varying vec3 vW;
 #include <common>
 #include <fog_pars_fragment>
@@ -50,8 +51,11 @@ void main() {
   float cone = exp(-cell * cell / (2.0 * spread * spread));
   float scallop = mix(0.6, 1.4, cone) * (1.0 - 0.3 * smoothstep(3.0, 30.0, h));
   vec3 fl = floodColor * mix(vec3(1.18, 1.06, 0.9), vec3(1.0), smoothstep(0.0, 9.0, h));
-  vec3 col = albedo * (amb + fl * (min(vFlood, 1.12) * floodGain * shape * scallop));
-  col += texture2D(emissiveMap, vUv).rgb * emissiveGain;
+  vec3 col = albedo * (amb + fl * (min(vFlood, 1.12) * floodGain * todFlood * shape * scallop));
+  // by day the sun (soft: November haze), no shadow of its own on the stone
+  col += albedo * sunColor * max(dot(n, sunDir), 0.0);
+  // lit windows: fewer late at night; by day only the odd lamp left on shows
+  col += texture2D(emissiveMap, vUv).rgb * emissiveGain * todWin * (1.0 - 0.85 * todDay);
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -63,6 +67,28 @@ black.needsUpdate = true;
 const white = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
 white.colorSpace = THREE.SRGBColorSpace; white.needsUpdate = true;
 
+// The light on the stone, shared by every arch material and set from the clock (setArchLight):
+// the blue hour's (the approved night look) by default
+export const ARCH_LIGHT = {
+  skyAmbient: { value: new THREE.Color(0.017, 0.027, 0.056) }, groundAmbient: { value: new THREE.Color(0.034, 0.027, 0.023) },
+  sunDir: { value: new THREE.Vector3(0, -1, 0) }, sunColor: { value: new THREE.Color(0, 0, 0) },
+  todFlood: { value: 1 }, todWin: { value: 1 }, todDay: { value: 0 },
+};
+const SKY_NIGHT = new THREE.Color(0.017, 0.027, 0.056), GROUND_NIGHT = new THREE.Color(0.034, 0.027, 0.023);
+const SKY_DEEP = new THREE.Color(0.011, 0.014, 0.026), GROUND_DEEP = new THREE.Color(0.03, 0.024, 0.02);
+const SKY_DAY = new THREE.Color(0.34, 0.35, 0.37), GROUND_DAY = new THREE.Color(0.25, 0.225, 0.19);
+const SUN = new THREE.Color(1.0, 0.9, 0.76);
+// from the hour (engine/timeOfDay.js todState)
+export function setArchLight(s) {
+  const A = ARCH_LIGHT;
+  A.skyAmbient.value.copy(SKY_NIGHT).lerp(SKY_DEEP, s.night).lerp(SKY_DAY, s.daylight);
+  A.groundAmbient.value.copy(GROUND_NIGHT).lerp(GROUND_DEEP, s.night).lerp(GROUND_DAY, s.daylight);
+  const up = Math.max(0, Math.min(1, s.sun.y / 0.25));
+  A.sunDir.value.set(s.sun.x, s.sun.y, s.sun.z);
+  A.sunColor.value.copy(SUN).multiplyScalar(0.95 * up * s.daylight).lerp(new THREE.Color(1.0, 0.62, 0.36).multiplyScalar(0.5 * s.daylight), 1 - up);
+  A.todFlood.value = s.floods; A.todWin.value = s.windows; A.todDay.value = s.daylight;
+}
+
 export function archMaterial({ map = white, emissiveMap = black, tint = 0xffffff, floodGain = 0.86, emissiveGain = 1.2 } = {}) {
   const m = new THREE.ShaderMaterial({
     vertexShader: archVertex, fragmentShader: archFragment, fog: true,
@@ -70,11 +96,11 @@ export function archMaterial({ map = white, emissiveMap = black, tint = 0xffffff
       map: { value: null }, emissiveMap: { value: null }, grainMap: { value: null }, grainAmount: { value: 0 },
       tint: { value: new THREE.Color(tint) }, floodColor: { value: FLOOD_COLOR.clone() },
       floodGain: { value: floodGain }, emissiveGain: { value: emissiveGain },
-      // night: little sky fill, so the floodlight's gold isn't washed out (photos: gold façades, dark sky)
-      skyAmbient: { value: new THREE.Color(0.017, 0.027, 0.056) },
-      groundAmbient: { value: new THREE.Color(0.034, 0.027, 0.023) },
     }]),
   });
+  // night: little sky fill, so the floodlight's gold isn't washed out (photos: gold façades, dark sky);
+  // shared, so the hour moves them all
+  Object.assign(m.uniforms, ARCH_LIGHT);
   m.uniforms.map.value = map; m.uniforms.emissiveMap.value = emissiveMap; m.uniforms.grainMap.value = white;   // (merge() would have cloned the textures)
   return m;
 }

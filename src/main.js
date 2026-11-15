@@ -16,7 +16,7 @@ import { L, npcs as npcLayout } from './world/layout.js';
 import { FONT, loadFonts } from './world/canvas.js';
 import { T, ALL_TEXT } from './world/text.js';
 import { createMaterials } from './world/materials.js';
-import { createSky, FOG_COLOR } from './world/sky.js';
+import { createSky, FOG_COLOR, fogColorAt } from './world/sky.js';
 import { createSkyline } from './world/skyline.js';
 import { createRiver } from './world/river.js';
 import { createBund } from './world/bund.js';
@@ -41,7 +41,11 @@ import { createMissionOne } from './missionOne.js';
 import { pickTarget, segmentHitsBox, BLOCKING_TAGS } from './engine/targeting.js';
 import { createWeather } from './engine/weather.js';
 import { createRain, RAIN_LAYER } from './world/rain.js';
-import { weatherUniforms, ssrMask } from './world/materials.js';
+import { weatherUniforms, ssrMask, setArchLight } from './world/materials.js';
+import { todState, passedLateNight } from './engine/timeOfDay.js';
+import { applyDayNight, autoLights } from './world/dayNight.js';
+import { setCrowdLight } from './world/crowdView.js';
+import { createDawn } from './world/dawn.js';
 import { underCover } from './world/layout.js';
 import { colliders } from './world/layout.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
@@ -74,7 +78,7 @@ import { createWalkers } from './world/walkers.js';
 import { createCrowd } from './engine/crowd.js';
 import { trafficSpecs, BUS_STOPS } from './world/trafficMix.js';
 import { createBuses } from './world/buses.js';
-import { GUIDE_LINES, BUS_LINES } from './world/crowdLines.js';
+import { GUIDE_LINES, BUS_LINES, LATE_LINES } from './world/crowdLines.js';
 import { createNanjingRoad } from './world/nanjingRoad.js';
 import { createHenanTraffic } from './world/henanTraffic.js';
 import { createMetro } from './world/metro.js';
@@ -236,7 +240,12 @@ async function boot() {
       o.castShadow = true; o.receiveShadow = true;
     });
   }
+  // the hour's part in the lights (world/dayNight.js): outdoors, whatever glows is a lamp unless it
+  // has a role of its own (skyline, Nanjing Road, the boats set theirs)
+  for (const g of [bund.group, promenade.group, street.group]) autoLights(g, 'lamps', 0.3);
   scene.updateMatrixWorld(true);
+  world0 = { sky, skyline, river, lighting };
+  applyHour(0, { force: true });
   captureEnvironment(R.renderer, scene);
   // what you buy: the courier at the kerb, parcels, the umbrella, headphones (world/belongings.js)
   const belongings = createBelongings({ scene, people, camera, hud, audio, getLife: () => life, save: () => saveLife() });
@@ -249,7 +258,7 @@ async function boot() {
   if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
-  world = { buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  world = { dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -265,7 +274,7 @@ async function boot() {
   // the friends in person after the first days (world/friendScenes.js): Ruoan at the AIA, Momo in 612, LiDAR scans
   world.friends = createFriendScenes({ scene, people, hud, audio, voice, getLife: () => life, save: () => saveLife(), player, interiors });
   // down the metro stairs: one stop to Lujiazui, or through to the other exit (world/metro.js)
-  world.metro = createMetro({ hud, audio, player, travel, getLife: () => life, save: () => saveLife(), arriveAt: (id, info) => world.dest.arrive(id, info) });
+  world.metro = createMetro({ hud, audio, player, travel, getLife: () => life, save: () => saveLife(), arriveAt: (id, info) => world.dest.arrive(id, info), open: () => hourState.metro });
   // the story: a sat-down conversation, and dinner with Dad (world/story.js, world/dinner.js)
   world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'] } });
   world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
@@ -728,6 +737,7 @@ const LIFE_KEY = 'bund-life-v1';
 let life = null;
 try { life = params.has('fresh') ? null : lifeLoad(localStorage.getItem(LIFE_KEY)); } catch { life = null; }
 if (!life) { life = createLife(); setupThreads(life); }
+if (params.has('hour')) { const [h, m] = params.get('hour').split(':').map(Number); if (h >= 0 && h < 24) { life.clock.minute = h * 60 + (m || 0); life.clock.sec = 0; } }
 const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); } catch { /* private mode: no saving */ } };
 let lifeSaveIn = 5, pendingCalls = [], cupFor = 0;
 const phone = createPhone({
@@ -922,7 +932,7 @@ function updateTraffic(dt) {
     // new people appear only where you won't see them pop in: far off, or behind you
     camera.getWorldDirection(_d);
     const canSpawnAt = (n) => { const dx = n.x - eye.x, dz = n.z - eye.z, d = Math.hypot(dx, dz); return d > 45 || (d > 14 && (dx * _d.x + dz * _d.z) / d < -0.2); };
-    const others = [...traffic.peds, ...npcLayout.list];
+    const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others()];
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : b, canSpawnAt, others });
     world.crowdView.update(dt, eye);
     // tour guides talk to their groups now and then (you hear them when you're near)
@@ -953,6 +963,60 @@ function updateTraffic(dt) {
     box.minZ = v.z - v.len / 2; box.maxZ = v.z + v.len / 2;
   });
 }
+
+// ---- the hour (engine/timeOfDay.js): one state from the clock, handed to everything it lights ----
+const PIN_HOUR = params.has('q') && !params.has('hour') && !params.has('tod');
+let envCaptures = 0, world0 = null, hourState = todState(17 * 60 + 42), hourAt = -1, hourTick = 0, envAt = null, envWait = 0, lastHourMin = null;
+const _hazeFog = new THREE.Color(), DAY_HAZE_FOG = new THREE.Color(0.64, 0.66, 0.68);
+// tools: ?hour=HH:MM sets today's clock at load (the screenshots of the day); debug.setHour too
+function applyHour(dt, { force = false } = {}) {
+  const w = world || world0; if (!w) return;
+  // measurement tools (?q=) keep the approved 5:42 pm look whatever the clock says, unless they ask
+  // for the hour (?hour= / ?tod)
+  const minute = PIN_HOUR ? 17 * 60 + 42 : life.clock.minute + life.clock.sec / 60;
+  hourTick -= dt;
+  const jump = lastHourMin != null && Math.abs(((minute - lastHourMin + 720) % 1440 + 1440) % 1440 - 720) > 20;   // slept, waited, a ride
+  if (!force && !jump && hourTick > 0) return;
+  hourTick = 0.25;
+  const prev = lastHourMin; lastHourMin = minute;
+  const s = hourState = todState(minute);
+  w.sky.setTime(s); w.skyline.setTime(s); w.river.setTime(s); setArchLight(s); applyDayNight(s); setCrowdLight(s);
+  const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
+  const inside = world && (world.upper.here || world.dest.here || world.makerspace.here) ? 1 : inR(PEACE) || inR(AIA) ? 0.8 : 0;
+  w.lighting.setTime(s, inside);
+  R.renderer.toneMappingExposure = s.exposure * (1 + 0.25 * inside * s.daylight);
+  R.bloom.strength = s.bloom;
+  if (world) {
+    if (world.crowd) world.crowd.setActive(s.crowd, { dawn: s.dawn, instant: jump || force });
+    traffic.setDensity(s.traffic); world.henan.traffic.setDensity(s.traffic);
+    if (prev != null && !jump && passedLateNight(prev, minute)) lateNight();
+  }
+  // the captured environment (what wet stone and glass reflect) follows the light, now and then
+  envWait -= Math.max(dt, 0.25);
+  const want = { d: s.daylight, n: s.night, f: s.floods, m: s.media };
+  if (!envAt) envAt = want;
+  else if (world && envWait <= 0 && (Math.abs(want.d - envAt.d) > 0.12 || Math.abs(want.n - envAt.n) > 0.3 || Math.abs(want.f - envAt.f) > 0.3 || Math.abs(want.m - envAt.m) > 0.5 || (jump && (want.d !== envAt.d || want.f !== envAt.f)))) {
+    envAt = want; envWait = 4; envCaptures++;
+    const old = scene.environment; scene.updateMatrixWorld(true); captureEnvironment(R.renderer, scene); if (old && old !== scene.environment) old.dispose();
+  }
+}
+// 10 pm: the Bund goes over to its late-night lighting. If you're out by the river you see it, and
+// so do the people round you
+function lateNight() {
+  const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
+  const out = !(world.upper.here || world.dest.here || world.makerspace.here || inR(PEACE) || inR(AIA));
+  if (!out) return;
+  life.flags.lightsOutSeen = true; saveLife();
+  hud.toast(tx('lateNightLights'), 5);
+  if (world.crowd && world.crowdView) {
+    const near = world.crowdView.nearAgents().filter((a) => Math.hypot(a.x - b.x, a.z - b.z) < 18).slice(0, 2);
+    near.forEach((a, i) => setTimeout(() => { const [who, zh, en] = LATE_LINES[(i + Math.floor(Math.random() * 2)) % LATE_LINES.length]; voice.say({ zh, en, who, at: [a.x, a.y + 1.6, a.z], gain: 0.9 }); }, 1200 + i * 2600));
+  }
+}
+debug.setHour = (h, m = 0) => {   // (tools: load with ?hour= or ?tod so the hour isn't pinned)
+  life.clock.minute = h * 60 + m; life.clock.sec = 0; applyHour(0, { force: true }); };
+debug.hour = () => hourState;
+debug.envInfo = () => ({ envAt, envWait, uuid: scene.environment && scene.environment.uuid, captures: envCaptures });
 
 let lastDraw = 0;
 function frame(now) {
@@ -996,6 +1060,7 @@ function frame(now) {
   else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
   { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
+  world.dawn.update(mode === 'pause' ? 0 : dt, { dawn: hourState.dawn, eye: camera.position });   // tai chi on the promenade at dawn
   const driving = mode === 'drive' || (mode === 'pause' && pausedFrom === 'drive');
   if (driving) world.driving.update(dt, mode === 'pause');
   else if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) world.jazz.seatCamera(camera);
@@ -1015,8 +1080,9 @@ function frame(now) {
   world.trees.update(weatherTime, wind.level, weather.rain, wind.dir);
   weatherUniforms.wetBoost.value = weather.wet;
   weatherUniforms.rainRipples.value = weather.rain; weatherUniforms.rippleTime.value = weatherTime;
-  scene.fog.density = FOG_DENSITY + HAZE_DENSITY * weather.haze;
-  scene.fog.color.lerpColors(FOG_COLOR, HAZE_FOG, weather.haze);
+  applyHour(dt);
+  scene.fog.density = FOG_DENSITY * hourState.fog + HAZE_DENSITY * weather.haze;
+  fogColorAt(hourState, scene.fog.color).lerp(_hazeFog.copy(HAZE_FOG).lerp(DAY_HAZE_FOG, hourState.daylight), weather.haze);
   audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye) || world.belongings.umbrellaUp);
   // the light shows (the Pearl's colours, LED façades, boats' strips, screens); debug.freezeShow holds them for tools
   const showT = debug.freezeShow ? 0 : t;

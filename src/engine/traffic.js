@@ -103,7 +103,10 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   let sights = [], obstacles = [];
   const stats = { redEntries: 0, blockedEntries: 0, yellowGo: 0, yellowStop: 0, minGap: Infinity, overlaps: 0, pedConflicts: 0, recycled: 0 };
 
-  const vehicles = vSpecs.map((sp) => {
+  // the hour (setDensity): share of the traffic on the road; each vehicle has a rank, and the first
+  // ones listed (the crossing's own) and the buses always run
+  let density = 1;
+  const vehicles = vSpecs.map((sp, i) => {
     const v0 = sp.v0 ?? 10.5 + rng() * 2.5;
     const veh = {
       id: sp.id, lane: lanes[sp.lane], len: sp.len, width: sp.width, bus: !!sp.bus, route: sp.route || null,
@@ -111,6 +114,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
       reaction: 0.55 + rng() * 0.6, waited: 0,
       s: sp.s, v: sp.v ?? 0, acc: 0, active: sp.active !== false, hold: 0,
       committed: false, braking: false, wheelDist: 0, x: 0, z: 0, yaw: 0, why: '',
+      rank: i < 7 || sp.bus ? 0 : ((i * 0.618034) % 1) * 0.98 + 0.02,
     };
     veh.lane.vehicles.push(veh);
     return veh;
@@ -288,6 +292,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
         if (veh.active) continue;
         veh.hold -= dt;
         if (veh.hold > 0) continue;
+        if (veh.rank > density) { veh.hold = 3 + rng() * 4; continue; }        // not on the road at this hour
         const rear = lane.vehicles.filter((o) => o.active).reduce((m, o) => Math.min(m, o.s - o.len), Infinity);
         if (rear < geom.entryS + 30) continue;
         veh.active = true; veh.s = geom.entryS; veh.v = veh.v0 * 0.85; veh.committed = false; veh.waited = 0;
@@ -492,6 +497,9 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     controller: ctl, vehicles, peds, lanes, stats, config: cfg, shop,
     // things worth stopping to look at: [{ id, x, z }]
     setSights(list) { sights = list || []; },
+    // the hour: share of the traffic out (those beyond it leave at the end of the road, come back later)
+    setDensity(f) { density = f; },
+    get density() { return density; },
     // fixed things in the way (a parked car as a few circles): [{ x, z, r }]
     setObstacles(list) { obstacles = list || []; },
     // more people who may be on the carriageway: () => [{ x, z, vx, vz, crossing }]

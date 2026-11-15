@@ -16,3 +16,9 @@ export const BUS_LINES = [
   ['buspa', '上车请往里走，下车请走后门。', 'Please move inside; please leave by the rear door.'],
   ['buspa', '车辆起步，请站稳扶好。', 'The bus is moving off, please hold on.'],
 ];
+// 10 pm, as the Bund goes over to its late-night lighting: people by the river notice
+export const LATE_LINES = [
+  ['student', '哎，灯暗下来了。', 'Oh, the lights have gone down.'],
+  ['auntie', '十点了，外滩的灯要换成夜里的了。', 'Ten o\'clock. The Bund\'s gone over to its night lights.'],
+  ['student', '还好刚才拍到了。', 'Good thing I got my photo just now.'],
+];

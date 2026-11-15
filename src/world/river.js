@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { L } from './layout.js';
 import { Batch } from './geo.js';
 import { REFLECT_LAYER } from './sky.js';
+import { TOD, asLight, glassByDay } from './dayNight.js';
 
 export function createRiver() {
   const group = new THREE.Group(); group.name = 'river';
@@ -15,7 +16,7 @@ export function createRiver() {
   const mat = new THREE.ShaderMaterial({
     fog: true,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
-      tReflect: { value: null }, texMatrix: { value: texMatrix }, time: { value: 0 },
+      tReflect: { value: null }, texMatrix: { value: texMatrix }, time: { value: 0 }, day: { value: 0 },
     }]),
     vertexShader: /* glsl */ `
       uniform mat4 texMatrix; varying vec4 vRefl; varying vec3 vWorld;
@@ -29,7 +30,7 @@ export function createRiver() {
         #include <fog_vertex>
       }`,
     fragmentShader: /* glsl */ `
-      uniform sampler2D tReflect; uniform float time;
+      uniform sampler2D tReflect; uniform float time, day;
       varying vec4 vRefl; varying vec3 vWorld;
       #include <common>
       #include <fog_pars_fragment>
@@ -64,10 +65,11 @@ export function createRiver() {
         refl += texture2D(tReflect, uv + wob).rgb * 0.4;
         refl += texture2D(tReflect, uv + wob * vec2(0.5, 2.1) + vec2(0.0, 0.012)).rgb * 0.3;
         refl += texture2D(tReflect, uv + wob * vec2(-0.6, 3.4) + vec2(0.0, 0.03)).rgb * 0.3;
-        vec3 deep = vec3(0.008, 0.02, 0.035);
-        vec3 col = mix(deep, refl, fres);
+        // the Huangpu's own colour: near black at night, a silty grey-brown by day
+        vec3 deep = mix(vec3(0.008, 0.02, 0.035), vec3(0.15, 0.145, 0.12), day);
+        vec3 col = mix(deep, refl, fres * mix(1.0, 0.8, day));
         // crests pick up a touch of sky
-        col += vec3(0.05, 0.08, 0.14) * smoothstep(1.25, 1.6, h0) * 0.35;
+        col += mix(vec3(0.05, 0.08, 0.14), vec3(0.5, 0.54, 0.58), day) * smoothstep(1.25, 1.6, h0) * 0.35;
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -85,8 +87,8 @@ export function createRiver() {
 
   // ---- river traffic: slow, lit, far enough away to stay simple ----
   const boats = [];
-  const hullMat = new THREE.MeshBasicMaterial({ color: 0x0b1018 });
-  const cabinMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.05, 0.8, 0.5) });
+  const hullMat = glassByDay(new THREE.MeshBasicMaterial({ color: 0x0b1018 }), [0.3, 0.31, 0.32]);
+  const cabinMat = asLight(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.05, 0.8, 0.5) }), 'lamps', 0.35);
   // Huangpu River cruise boats (浦江游览) at night: two or three decks of big warm windows, every edge
   // traced in LED strips that drift through colours, the top deck open with lights strung over it
   const lineMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 0.7, 1.2) });
@@ -97,7 +99,7 @@ export function createRiver() {
     for (let i = 0; i < 16; i++) { const g = x.createLinearGradient(0, 8, 0, 56); g.addColorStop(0, '#fff3d8'); g.addColorStop(1, i % 5 === 2 ? '#e7a96a' : '#f6cf96'); x.fillStyle = g; x.fillRect(i * 16 + 2, 8, 12, 46); }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; return t;
   })();
-  const windowMat = new THREE.MeshBasicMaterial({ map: winTex }); windowMat.color.setScalar(1.25);
+  const windowMat = new THREE.MeshBasicMaterial({ map: winTex }); windowMat.color.setScalar(1.25); asLight(windowMat, 'lamps', 0.45);
   function boat({ x, z, len, speed, kind, decks = 2, line = lineMat }) {
     const g = new THREE.Group(), hull = new Batch(), lights = new Batch(), trim = new Batch();
     if (kind === 'cruise') {
@@ -143,14 +145,16 @@ export function createRiver() {
     // show: the clock for the light shows (tools can hold it still)
     update(t, dt, show = t) {
       mat.uniforms.time.value = t;
-      lineMat.color.setHSL((0.9 + show * 0.012) % 1, 0.85, 0.62).multiplyScalar(2.2);    // the LED outlines drift through colours
-      lineMat2.color.setHSL((0.5 + show * 0.009) % 1, 0.85, 0.6).multiplyScalar(2.2);
+      const on = TOD.lamps.value, off = 0.3 * (1 - on) * TOD.amb.value;                 // (by day: white trim)
+      lineMat.color.setHSL((0.9 + show * 0.012) % 1, 0.85, 0.62).multiplyScalar(2.2 * on).addScalar(off);    // the LED outlines drift through colours
+      lineMat2.color.setHSL((0.5 + show * 0.009) % 1, 0.85, 0.6).multiplyScalar(2.2 * on).addScalar(off);
       for (const b of boats) {
         b.g.position.z += b.speed * dt;
         if (b.g.position.z > 700) b.g.position.z = -700; else if (b.g.position.z < -700) b.g.position.z = 700;
         b.g.position.y = L.waterY + Math.sin(t * 0.6 + b.speed) * 0.12;
       }
     },
+    setTime(st) { mat.uniforms.day.value = st.daylight; },
     // the reflection's resolution (graphics settings): width in pixels, half as tall
     setMirrorSize(w) { target.setSize(w, Math.round(w / 2)); },
     // Render the mirrored far scenery. Call once per frame before the main render.
