@@ -61,7 +61,7 @@ export function todState(minute) {
     crowd: curve(CROWD, t), traffic: curve(TRAFFIC, t),
     metro: t >= H(5, 30) && t < H(23),
     dawn: t >= H(5, 45) && t < H(8, 15),
-    exposure: 1.15 - 0.37 * daylight, bloom: 0.36 - 0.22 * daylight,
+    exposure: 1.15 - 0.37 * daylight, bloom: 0.24 - 0.14 * daylight,
     fog: 1 + 0.2 * daylight,
     sun: sunDir(t),
   };

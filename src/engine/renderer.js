@@ -53,7 +53,7 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null, gfx =
   const renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
   // bloom a little tighter than before: lamps glow, they don't fog the frame
-  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.36, 0.7, 0.94);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.24, 0.45, 1.0);
   let ssr = null, ssrEnabled = true;                  // created once reflectors are known (setReflectors)
   function usePasses() {
     const want = !!(ssr && ssrEnabled && Q().ssr);
@@ -131,8 +131,14 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null, gfx =
       // SSRPass ships a 16-bit depth texture: with a 0.1 m..4.5 km camera that has no precision left at
       // the Pudong skyline, and the towers' layered surfaces z-fight (white-hot facades). Use 32-bit float.
       ssr.beautyRenderTarget.depthTexture.type = THREE.FloatType;
-      ssr.thickness = 0.35; ssr.maxDistance = 60; ssr.opacity = 1; ssr.blur = true; ssr.infiniteThick = false;
-      ssr.ssrMaterial.fragmentShader = ssr.ssrMaterial.fragmentShader.replace('float op=opacity;', 'float op=opacity*metalness;');
+      // the mask sets how much each pixel reflects (puddles about half, damp stone a sheen); rays fade
+      // out by ~30 m, so nearby cars, people, lamps and the façades across the road show in the puddles
+      ssr.thickness = 0.35; ssr.maxDistance = 32; ssr.opacity = 1; ssr.blur = true; ssr.infiniteThick = false; ssr.fresnel = true; ssr.distanceAttenuation = true;
+      // the reflection's strength comes from the per-pixel mask (the "metalness" target). Both places the
+      // shader sets it: with distance attenuation on (the default) it's set a second time, and that one
+      // used to drop the mask, which made every wet surface a full mirror
+      ssr.ssrMaterial.fragmentShader = ssr.ssrMaterial.fragmentShader.replace('float op=opacity;', 'float op=opacity*metalness;').replace('op=opacity*attenuation;', 'op=opacity*metalness*attenuation;');
+      if (!/opacity\*metalness\*attenuation/.test(ssr.ssrMaterial.fragmentShader)) console.warn('SSR: the mask patch did not apply (three.js changed)');
       ssr.ssrMaterial.needsUpdate = true;
       // The mask pass only draws the ground (its own layer). Its green channel holds the ground's view
       // depth, so anything standing in front of a puddle (people, cars) masks the reflection out.

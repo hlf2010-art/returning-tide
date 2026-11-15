@@ -186,9 +186,9 @@ export function ssrMask(material) {
         float r = texture2D(rough, vUv).g;
         float exposed = 1.0;
         for (int i = 0; i < ${covers.length}; i++) { vec4 c = coverXZ[i]; if (vXZ.x > c.x && vXZ.x < c.y && vXZ.y > c.z && vXZ.y < c.w) exposed = 0.0; }
-        float puddle = smoothstep(0.32, 0.08, r);
-        float damp = (0.1 + 0.22 * wetBoost * exposed) * (1.0 - r);
-        float m = max(puddle * (0.75 + 0.25 * wetBoost), damp);
+        float puddle = smoothstep(0.3, 0.12, r);
+        float damp = (0.05 + 0.16 * wetBoost * exposed) * (1.0 - r);
+        float m = max(puddle * (0.55 + 0.25 * wetBoost), damp);
         gl_FragColor = vec4(m, vViewZ, 0.0, 1.0);                       // g: the ground's view depth
       }`,
   });
@@ -209,12 +209,13 @@ export function createMaterials() {
   M.glassDark = arch({ tint: 0x0b0e14, floodGain: 0.1 });
 
   const pave = pavingTextures(), walk = sidewalkTextures(), asph = asphaltTextures();
-  const wetDeck = wetnessTexture(401), wetRoad = wetnessTexture(402, { puddle: 0.5, dry: 0.5, wet: 0.06 });
-  wetDeck.repeat.set(1 / 6, 1 / 6); wetRoad.repeat.set(1 / 5, 1 / 5); // relative to each map's own metre scale
+  // after rain: damp everywhere, puddles only in the low spots (about one part in eight), not glass-smooth
+  const wetDeck = wetnessTexture(401, { puddle: 0.36, dry: 0.62, wet: 0.12 }), wetRoad = wetnessTexture(402, { puddle: 0.3, dry: 0.56, wet: 0.12 });
+  wetDeck.repeat.set(1 / 2.2, 1 / 2.2); wetRoad.repeat.set(1 / 1.7, 1 / 1.7); // relative to each map's own metre scale: puddles a metre or two across, not whole lanes
   const std = (o) => new THREE.MeshStandardMaterial(o);
   M.deck = puddles(std({ map: pave.map, normalMap: pave.normalMap, roughnessMap: wetDeck, roughness: 1, metalness: 0, envMapIntensity: 1.0 }));
-  M.sidewalk = puddles(std({ map: walk.map, normalMap: walk.normalMap, roughnessMap: wetnessTexture(403, { puddle: 0.44, dry: 0.7 }), roughness: 1, metalness: 0 }));
-  M.sidewalk.roughnessMap.repeat.set(1 / 9, 1 / 9);
+  M.sidewalk = puddles(std({ map: walk.map, normalMap: walk.normalMap, roughnessMap: wetnessTexture(403, { puddle: 0.32, dry: 0.7, wet: 0.12 }), roughness: 1, metalness: 0 }));
+  M.sidewalk.roughnessMap.repeat.set(1 / 3, 1 / 3);
   M.asphalt = puddles(std({ map: asph.map, normalMap: asph.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughnessMap: wetRoad, roughness: 1, metalness: 0 }));
   M.granite = std({ map: stone, color: 0x8d8a84, roughness: 0.55, metalness: 0 });
   M.iron = std({ color: 0x141a17, roughness: 0.42, metalness: 0.7 });
@@ -224,6 +225,6 @@ export function createMaterials() {
   M.hedge = std({ color: 0x1c2e1a, roughness: 0.95 });
   M.wood = std({ color: 0x5a4030, roughness: 0.6 });
   M.rubber = std({ color: 0x0b0b0c, roughness: 0.8 });
-  M.lampGlass = new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 2.3, 1.25), fog: false });
+  M.lampGlass = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.6, 0.9), fog: false });     // bright, without a bloom ball round every lamp
   return M;
 }

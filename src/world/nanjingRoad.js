@@ -262,7 +262,7 @@ export function createNanjingRoad(M) {
       lights.push({ x, y: 6, z, color: new THREE.Color(1.0, 0.88, 0.72), intensity: 9, distance: 18, out: true });
     }
   }
-  const glow = asLight(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.3, 1.9) }), 'lamps', 0.45);
+  const glow = asLight(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.9, 1.7, 1.4) }), 'lamps', 0.45);
   group.add(lampGlass.mesh(glow, 'nj-lamps'));
   // ---- the metro entrances ----
   const glassMat = new THREE.MeshStandardMaterial({ color: 0xa8c4cc, metalness: 0.1, roughness: 0.04, transparent: true, opacity: 0.28, side: THREE.DoubleSide });

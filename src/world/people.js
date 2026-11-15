@@ -102,6 +102,10 @@ export function createPerson(people, role) {
   if (phoneLayer) { phoneLayer.play(); phoneLayer.setEffectiveWeight(0); phoneLayer.time = phoneClip.duration * (0.15 + Math.random() * 0.6); }
   return {
     root, mixer, role, sex, speeds, anchors, bones, umbrellaHand: hand, child: !!kid, size: kid ? kid.k : 1,
+    // the actions themselves (base: whole body but the umbrella arm; arm: that arm), for posing a
+    // person at an exact moment of a clip (the crowd's impostor bake). (mixer.existingAction by name
+    // finds nothing here: the clips aren't attached to the model)
+    actions: { base, arm },
     get state() { return current; },
     play,
     // umbrella: 0..1 how far the umbrella arm has taken over

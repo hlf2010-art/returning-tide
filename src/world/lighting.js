@@ -62,9 +62,9 @@ export function createLighting(scene, lanterns, extra = []) {
 
   const hg = new THREE.BufferGeometry();
   hg.setAttribute('position', new THREE.Float32BufferAttribute(halos, 3));
-  const haloColor = new THREE.Color(1.0, 0.66, 0.36).multiplyScalar(0.5);
+  const haloColor = new THREE.Color(1.0, 0.66, 0.36).multiplyScalar(0.26);    // a soft glow at the lamp, not a ball of light
   const hp = new THREE.Points(hg, new THREE.PointsMaterial({
-    map: glowTexture(128), color: haloColor.clone(), size: 2.4, sizeAttenuation: true,
+    map: glowTexture(128), color: haloColor.clone(), size: 1.5, sizeAttenuation: true,
     transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: true,
   }));
   hp.name = 'halos'; hp.frustumCulled = false; group.add(hp);

@@ -78,7 +78,7 @@ function labelMaterial(text1, text2) {
   return std({ map, emissive: 0xffffff, emissiveMap: map, emissiveIntensity: 0.55, roughness: 0.6 });
 }
 // shared by every placeholder: vertex colours carry paint / glass / trim
-const shellMat = std({ vertexColors: true, roughness: 0.3, metalness: 0.5 });
+const shellMat = std({ vertexColors: true, roughness: 0.34, metalness: 0.12, envMapIntensity: 0.6 });
 const headMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.5, 2.7) });
 
 // Wheel: tyre + five-spoke rim in one geometry (vertex colours), so it costs one draw call.
@@ -133,14 +133,14 @@ function badgeMaterial(word) {
 }
 const trimShared = std({ color: 0x0d0e10, roughness: 0.55, side: THREE.DoubleSide });
 const chromeShared = std({ color: 0xc8ccd0, metalness: 1, roughness: 0.18 });
-const glassShared = std({ color: 0x0a0e13, roughness: 0.04, metalness: 0.9, side: THREE.DoubleSide });
+const glassShared = std({ color: 0x0a0e13, roughness: 0.06, metalness: 0.0, envMapIntensity: 0.7, side: THREE.DoubleSide });
 
 // The four named EVs: lofted lookalikes (carbody.js / carModels.js). Published dimensions, body
 // type, silhouette and light signature; NOT licensed models. They carry their maker's name as the
 // real cars do, a chrome wordmark across the tail (ui/brands.js CAR_BADGE).
 function buildLookalike(spec, plateText) {
   const M = CARS[spec.model];
-  const paintMat = std({ color: M.paint, roughness: 0.22, metalness: 0.6, side: THREE.DoubleSide });
+  const paintMat = std({ color: M.paint, roughness: 0.3, metalness: 0.15, envMapIntensity: 0.65, side: THREE.DoubleSide });   // paint under a clear coat, not chrome
   const tailMat = new THREE.MeshBasicMaterial({ color: TAIL_RUN.clone() });
   const brakeOnly = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.05, 0, 0) });
   const head = Object.assign(headMat.clone(), { userData: { chrome: chromeShared } });
@@ -187,8 +187,8 @@ function ledSign(text, w = 512, h = 96, small = '') {
   const m = new THREE.MeshBasicMaterial({ map: tex(c, { repeat: false }) }); m.color.setScalar(1.7);
   return m;
 }
-const busPaint = std({ color: 0xeef0f2, roughness: 0.35, metalness: 0.3 });
-const busSkirt = std({ color: 0x0f7d63, roughness: 0.45, metalness: 0.3 });
+const busPaint = std({ color: 0xeef0f2, roughness: 0.4, metalness: 0.05, envMapIntensity: 0.6 });
+const busSkirt = std({ color: 0x0f7d63, roughness: 0.45, metalness: 0.05, envMapIntensity: 0.6 });
 const busGlass = std({ color: 0x0c1014, roughness: 0.06, metalness: 0.7, emissive: new THREE.Color(0.42, 0.4, 0.34), emissiveIntensity: 1 });
 const busCabin = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.5, 1.3) });
 function buildBus(spec) {

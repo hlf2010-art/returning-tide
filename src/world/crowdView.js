@@ -56,7 +56,7 @@ export function bakeImpostors(renderer, people, roles) {
       const name = clips.some((c) => c.name === clip) ? clip : 'idle';
       views.forEach((p, k) => {
         p.mixer.stopAllAction();
-        for (const n of [name, `${name}:arm`]) { const a = p.mixer.existingAction(n); if (a) { a.reset(); a.setEffectiveWeight(1); a.play(); a.time = time; } }
+        for (const a of [p.actions.base[name], p.actions.arm[name]]) if (a) { a.reset(); a.setEffectiveWeight(1); a.play(); a.time = time; }
         p.mixer.update(0);
         p.root.rotation.set(0, k * Math.PI / 4, 0); p.root.position.set(0, 0, 0); p.root.updateMatrixWorld(true);
         p.bones.chest.getWorldPosition(hips);              // keep the body centred in its cell (walks can drift)
