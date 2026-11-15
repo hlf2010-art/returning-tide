@@ -146,7 +146,8 @@ for gripping clips); ~29 MB in `public/people/`. Walk / jog playback follows the
 foot sliding); an arm layer lets an umbrella be held while walking. If the files fail to load, the
 earlier hand-built figures are used. Casting is limited by the library: it has few East Asian
 avatars and no older East Asian man, so Old Lin is a younger avatar with greyed hair, and two
-passers-by read as foreign visitors.
+passers-by read as foreign visitors. Since phase 4.3 two of its children (Female_Child_01,
+Male_Child_01) walk with their families in the crowd.
 
 ## Weather: one light drizzle
 
@@ -1201,6 +1202,12 @@ src/engine/gfx.js      graphics settings: presets, GPU detection, frame cap (tes
 src/engine/crowd.js, src/world/crowdView.js   the evening crowd (tested) and its near people / impostor atlas
 src/world/trafficMix.js, buses.js   how much traffic, the bus stops; the buses and shelters
 src/world/nanjingRoad.js, henanTraffic.js, metro.js   Nanjing Road to Henan Road, its traffic, the metro exits
+src/engine/quests.js, src/world/story.js, src/ui/journal.js, sceneTalk.js, src/world/dinner.js   the story (quests tested)
+src/engine/timeOfDay.js, src/world/dayNight.js, dawn.js   the hour (tested), how it reaches materials, dawn on the promenade
+src/world/moments.js   street moments (side quests): the lost visitor, the couple's photo, the dropped phone
+src/world/dumpling.js, src/world/cruise.js, src/engine/cruiseRoute.js   the shengjian shop; the river cruise (route tested)
+src/ui/worldMap.js, saves.js, tips.js, src/engine/gamepad.js, bench.js   map, saves, tips, gamepad, benchmark (pad + bench tested)
+tools/voice/walla.py   the crowd's murmur loop (Kokoro voices, offline)
 src/ui/                HUD and stylesheet
 tests/                 node tests for movement, collision, boundaries, conversation and Mission One state (npm test)
 tools/                 headless screenshot / playtest / render-cost scripts (need Playwright installed globally:
@@ -1212,14 +1219,18 @@ tools/                 headless screenshot / playtest / render-cost scripts (nee
                        Momo's night), hailwalk (other people's DiDis), destwalk (by DiDi to IFC 32F and
                        back; the North Bund flat), drivewalk (the Huracán), didiwalk, carwalk,
                        talkwalk (talking to people, against a running model server), makerwalk (build the
-                       gimbal, photograph the Pearl), friendwalk (the days after: Ruoan, the LiDAR, Momo))
+                       gimbal, photograph the Pearl), friendwalk (the days after: Ruoan, the LiDAR, Momo),
+                       storywalk (the story to an ending), streetwalk (murmur, families, umbrellas, the three
+                       moments), placeswalk (a meal at the shengjian shop, a full cruise), basicswalk (map,
+                       gamepad, saves, tips, benchmark); todshots shoots the same views through the day)
 ```
 
 Everything is procedural (canvas textures, merged box/cylinder geometry, WebAudio synthesis; temporary Mandarin speech synthesis fallback for NPC lines).
 The only third-party assets are three.js and three open-licensed fonts from Fontsource
 (Noto Serif SC, Noto Sans SC, Ma Shan Zheng).
 
-Useful URL switches: `?fresh` (new life, ignore the save), `?q=0..5` pins the render quality step (0 = best), `?gfx=` / `?lod=` a preset / detail level, `?crowd=<density>` (0 = none), `?traffic=<factor>`, `?body=0` hides your own
+Useful URL switches: `?fresh` (new life, ignore the save), `?hour=HH:MM` (start at that hour), `?tod` / `?moments` / `?tips`
+(measurement tools keep the 5:42 pm look, no street moments and no tips unless asked), `?q=0..5` pins the render quality step (0 = best), `?gfx=` / `?lod=` a preset / detail level, `?crowd=<density>` (0 = none), `?traffic=<factor>`, `?body=0` hides your own
 body, `?shadows=0`, `?ssr=0`, `?wind=calm|breeze|windy|gale`, `?nolock` uses
 click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.
 

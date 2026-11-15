@@ -6,7 +6,18 @@
    - It needs **Node.js** (https://nodejs.org) or **Python 3**. On a Mac without either, macOS offers to install Python the first time.
    - On the Mac, if it says the file can't be opened, right-click it, choose **Open**, then **Open** again (it's not from the App Store).
    - Use Chrome or Edge for the best results; Safari works.
-3. Click **Begin**. Controls are in the pause menu and the main README.
+3. Click **Begin**. WASD walk, mouse look, E act, **M map**, **J journal**, **P phone**, T talk, Shift+M mute,
+   Esc pause. A gamepad works too (left stick walk, right stick look, A act, B back, Y phone, RB map).
+   Short tips appear the first time you need them; the full list is in the main README.
+
+## Saves
+Your game saves itself. **Esc → Saves** has three slots: copy your game into another slot, load a slot,
+and **export** a slot to a file (keep it safe, or move it to another computer) and import it back.
+
+## How fast it runs on your machine
+**Esc → Settings → Graphics → Benchmark** runs a 30-second route through the busiest hour and reports the
+average frame rate and the 1% low. Try the presets (Mac M4 on a Mac mini M4; High or Ultra on an RTX
+4080 SUPER) and keep the one that holds a steady frame rate.
 
 ## Optional: free conversation with a local AI (T to talk)
 - Install Ollama (https://ollama.com), run `ollama pull qwen2.5:7b` once, and leave Ollama running.
@@ -19,5 +30,5 @@ same voice model locally: see `source/tools/voice/server.py`, then Settings → 
 
 ## Developing
 `source/` is the full project. The people, voices, models and textures ship once, in `game/`: run
-`source/restore-assets.sh` (or copy `game/people`, `game/voice`, `game/models`, `game/textures` into
+`source/restore-assets.sh` (or copy `game/people`, `game/voice`, `game/models`, `game/textures`, `game/ambience` into
 `source/public/`) first. Then in `source/`: `npm install`, then `npm run dev` (or `npx vite build` for a new `game/`).

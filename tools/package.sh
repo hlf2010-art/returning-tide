@@ -10,11 +10,11 @@ cp -R dist "$STAGE/game"
 cp package/serve.py package/serve.mjs "package/Start (Mac).command" "package/Start (Windows).bat" package/README-RUN.md "$STAGE/"
 git archive --format=tar --prefix=source/ HEAD | tar -x -C "$STAGE"
 # the big binary assets are already in game/: don't ship them twice (source/ gets a script to copy them back)
-for d in people voice models textures; do rm -rf "$STAGE/source/public/$d"; done
+for d in people voice models textures ambience; do rm -rf "$STAGE/source/public/$d"; done
 cat > "$STAGE/source/restore-assets.sh" <<'SH'
 #!/bin/sh
-# copy the people, voices, models and textures from ../game back into public/ (they ship once, in game/)
-cd "$(dirname "$0")" && for d in people voice models textures; do cp -R "../game/$d" public/; done && echo "assets restored into public/"
+# copy the people, voices, models, textures and ambience from ../game back into public/ (they ship once, in game/)
+cd "$(dirname "$0")" && for d in people voice models textures ambience; do cp -R "../game/$d" public/; done && echo "assets restored into public/"
 SH
 chmod +x "$STAGE/source/restore-assets.sh"
 (cd "$(dirname "$STAGE")" && rm -f "$OUT/ReturningTide.zip" && zip -qr -X "$OUT/ReturningTide.zip" ReturningTide)
