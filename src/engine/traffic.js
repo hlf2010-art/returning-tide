@@ -183,16 +183,16 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
 
   function personInPath(veh, list, horizon = 60) {
     // nearest person ahead in (or about to step into) this vehicle's corridor -> s of obstacle
-    const half = veh.width / 2 + 0.7;
     let best = Infinity;
     for (const h of list) {
       if (!onCarriageway(h.x)) continue;
+      const half = veh.width / 2 + 0.7 + (h.wide || 0);                         // wide / reach: a car (yours) rather than a person
       let hit = false;
       for (const tt of [0, 0.75, 1.5]) if (Math.abs(h.x + h.vx * tt - veh.lane.x) < half) { hit = true; break; }
       if (!hit) continue;
       const s = h.z * veh.lane.dir;
-      if (s < veh.s - 0.6 || s - veh.s > horizon) continue;                     // beside or behind the bumper
-      best = Math.min(best, s - 0.45);
+      if (s + (h.reach || 0) < veh.s - 0.6 || s - veh.s > horizon) continue;                     // beside or behind the bumper
+      best = Math.min(best, s - 0.45 - (h.reach || 0));
     }
     return best;
   }

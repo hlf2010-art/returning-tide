@@ -29,7 +29,7 @@ export const sideStreets = [
   { id: 'jiujiang', z0: -131, z1: -117, roadHalfW: 3.4, xEnd: -56 },
   { id: 'nanjing', z0: -212, z1: -190, roadHalfW: 5, xEnd: -80 },
 ].map((s) => ({ ...s, zc: (s.z0 + s.z1) / 2 }));
-const inSideRoad = (x, z) => x < -28 && sideStreets.some((s) => Math.abs(z - s.zc) < s.roadHalfW && x > s.xEnd - 1);
+export const inSideRoad = (x, z) => x < -28 && sideStreets.some((s) => Math.abs(z - s.zc) < s.roadHalfW && x > s.xEnd - 1);
 
 // ---- prop placement (shared by visuals and colliders) ----
 export const deckLamps = [];          // z positions of promenade lamps (x = 24.6)
