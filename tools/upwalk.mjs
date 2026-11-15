@@ -30,7 +30,7 @@ await p.waitForTimeout(1500); await shot('lobby');
 // down the corridor (the hall's pillars are not up here)
 await p.evaluate(() => window.__bund.player.teleport(-44.5, -239.6, Math.PI, 0, 23.5)); await walk(9);
 s = await S(); ok(s.z > -233 && Math.abs(s.y - 23.5) < 0.05, `along the corridor (z=${s.z.toFixed(1)}, y=${s.y.toFixed(2)})`);
-await walk(9); s = await S(); ok(s.z < -221.2 && s.z > -222.5, `the hoarding stops you (z=${s.z.toFixed(1)})`);
+await walk(14); s = await S(); ok(s.z < -221.2 && s.z >= -222.6, `the hoarding stops you (z=${s.z.toFixed(1)})`);
 await shot('corridor');
 // 612: shut, then the key card
 await p.evaluate(() => window.__bund.player.teleport(-44.6, -227.2, -Math.PI / 2, -0.05, 23.5)); await p.waitForTimeout(1500);

@@ -60,10 +60,9 @@ await ev(() => { window.__pad.axes[1] = 0; window.__pad.axes[2] = 0; });
 await p.waitForTimeout(1500);                                                                // (a few slow frames)
 const g1 = await ev(() => ({ z: window.__bund.player.body.z, yaw: window.__bund.player.yaw, f: window.__bund.player.input.f }));
 ok(Math.hypot(g1.z - g0.z) > 0.5 && Math.abs(g1.yaw - g0.yaw) > 0.1 && !g1.f, `the left stick walks (${Math.abs(g1.z - g0.z).toFixed(1)} m), the right stick turns (${(g1.yaw - g0.yaw).toFixed(2)} rad), let go and you stop`);
-await ev(() => { window.__pad.buttons[3] = { pressed: true, value: 1 }; }); await p.waitForTimeout(1000); await ev(() => { window.__pad.buttons[3] = { pressed: false, value: 0 }; }); await p.waitForTimeout(1300);   // (held long enough for a slow software frame to see it)
-ok(await ev(() => window.__bund.phone.isOpen), 'Y: the phone comes out');
-await ev(() => { window.__pad.buttons[3] = { pressed: true, value: 1 }; }); await p.waitForTimeout(1000); await ev(() => { window.__pad.buttons[3] = { pressed: false, value: 0 }; }); await p.waitForTimeout(1300);   // (held long enough for a slow software frame to see it)
-ok(await ev(() => !window.__bund.phone.isOpen), 'Y again: put away');
+const pressY = async (want) => { await ev(() => { window.__pad.buttons[3] = { pressed: true, value: 1 }; }); const got = await until((w) => window.__bund.phone.isOpen === w, want, 15000); await ev(() => { window.__pad.buttons[3] = { pressed: false, value: 0 }; }); await p.waitForTimeout(800); return got; };   // (held until a slow software frame sees it)
+ok(await pressY(true), 'Y: the phone comes out');
+ok(await pressY(false), 'Y again: put away');
 
 // ---- saves ----
 await ev(() => { window.__bund.life.clock.day = 3; window.__bund.life.clock.minute = 15 * 60; });

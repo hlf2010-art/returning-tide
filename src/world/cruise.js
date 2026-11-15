@@ -70,7 +70,7 @@ function timetableTexture() {
   return tex(c, { repeat: false });
 }
 
-export function createCruise({ scene, people, player, hud, audio, voice, getLife, save, travel, skipTo, roles = [] }) {
+export function createCruise({ scene, people, player, hud, audio, voice, getLife, save, travel, skipTo, roles = [], clock = null }) {
   const L0 = () => getLife();
   const C = () => { const l = L0(); return l.flags.cruise || (l.flags.cruise = { rides: 0, ticket: null }); };
   const std = (o) => new THREE.MeshStandardMaterial(o);
@@ -207,7 +207,7 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
     boat.position.set(S.x, S.bob, S.z); boat.rotation.set(0, S.h, st.status === 'out' ? Math.sin(t * 0.6) * 0.008 : 0);
   }
   const pa = (key) => { const [who, zh, en] = CRUISE_LINES[key]; const [x, z] = toWorld(0, 14); voice.say({ zh, en, who, at: [x, Y + 4, z], gain: 1.1 }); };
-  const nowMin = () => { const l = L0(); return l.clock.minute + l.clock.sec / 60; };
+  const nowMin = () => { if (clock) return clock(); const l = L0(); return l.clock.minute + l.clock.sec / 60; };
   const ticketOk = () => { const c = C(); return c.ticket != null && (docked() ? c.ticket === S.st.next : false); };
 
   place(nowMin(), 0);

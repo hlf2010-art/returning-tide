@@ -93,7 +93,10 @@ const to = (await M()).lostTo;
 // walk there; he follows
 let x = v.x - 2.6;
 const dir = Math.sign(to.x - x);
-while (Math.abs(to.x - x) > 3) { x += dir * Math.min(4, Math.abs(to.x - x)); await tp(x, NJZ + 0.5, dir < 0 ? Math.PI / 2 : -Math.PI / 2); await p.waitForTimeout(1200); }
+while (Math.abs(to.x - x) > 3) {
+  x += dir * Math.min(4, Math.abs(to.x - x)); await tp(x, NJZ + 0.5, dir < 0 ? Math.PI / 2 : -Math.PI / 2);
+  await until((x) => { const c = window.__bund.world.moments.current; return !c || Math.abs(c.a.x - x) < 5; }, x, 30000);   // (he keeps up, whatever the frame rate)
+}
 await tp(to.x - dir * 2, to.z - 1.5); await p.waitForTimeout(500);
 ok(await until(() => (window.__bund.life.flags.moments || {}).lost === 'arrived', null, 90000), 'he followed you to the entrance');
 ok((await quest('m-lost')) === 'done', 'side quest done');
