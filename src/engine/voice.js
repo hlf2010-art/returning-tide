@@ -46,13 +46,14 @@ export function createVoice({ audio, getLang, camera = null }) {
   const S = { mode: get('bund.voices', 'original'), active: new Set(), clipHits: 0, serverHits: 0, synthHits: 0, last: null };
   fetch('./voice/manifest.json').then((r) => (r.ok ? r.json() : null)).then((m) => { manifest = m; }).catch(() => {});
   const serverUrl = () => get('bund.voiceServer', 'http://localhost:8790');
+  // the local voice server is opt-in (Settings): nothing is probed unless you turned it on
   async function checkServer() {
+    if (get('bund.voiceServerOn', '0') !== '1') return (server = false);
     if (Date.now() - serverChecked < 30000) return server;
     serverChecked = Date.now();
     try { const r = await fetch(`${serverUrl()}/health`, { signal: AbortSignal.timeout(800) }); server = r.ok; } catch { server = false; }
     return server;
   }
-  checkServer();
   function bus() {
     ctx = ctx || (audio.getContext && audio.getContext());
     return ctx && audio.getVoiceBus ? audio.getVoiceBus() : null;
@@ -112,6 +113,8 @@ export function createVoice({ audio, getLang, camera = null }) {
   return {
     get mode() { return S.mode; },
     setMode(m) { S.mode = m === 'dubbed' ? 'dubbed' : 'original'; set('bund.voices', S.mode); },
+    get serverOn() { return get('bund.voiceServerOn', '0') === '1'; },
+    setServer(on) { set('bund.voiceServerOn', on ? '1' : '0'); serverChecked = 0; if (on) checkServer(); },
     get stats() { return { clips: S.clipHits, server: S.serverHits, synth: S.synthHits, loaded: !!manifest, size: manifest ? Object.keys(manifest.clips).length : 0, last: S.last, serverUp: server }; },
     has(lang, text) { return !!(manifest && manifest.clips[voiceKey(lang, text)]); },
     clipUrl(lang, text) { const c = manifest && manifest.clips[voiceKey(lang, text)]; return c ? `./voice/${c[0]}` : null; },

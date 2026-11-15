@@ -525,7 +525,7 @@ Every scripted line in the game has a real recorded voice. That's 202 lines, eac
   - *Dubbed*: everyone speaks your language.
   - Subtitles are always in your language.
 - **Lines nobody could record ahead of time** (lines with numbers in them, what an AI conversation says) are handled in order:
-  1. the local voice server, if you run it (`tools/voice/server.py`: the same model and cast, live on your machine)
+  1. the local voice server, if you run it and turn it on in Settings → *Voices for new lines* (`tools/voice/server.py`: the same model and cast, live on your machine; nothing is probed unless you turn it on)
   2. otherwise the browser's own speech, picking its most natural voice: Edge's "Natural" voices, macOS's Premium or Enhanced voices, or Google voices
 - **To regenerate after changing lines:**
   - `node tools/voice/extract.mjs > tools/voice/lines.json` (finds every line and who says it)
@@ -554,6 +554,7 @@ Every scripted line in the game has a real recorded voice. That's 202 lines, eac
   - Ollama accepts pages served from localhost by default. If you serve the game from another address, set `OLLAMA_ORIGINS`.
 - **In the browser** runs [WebLLM](https://github.com/mlc-ai/web-llm) (Qwen2.5-1.5B) on WebGPU in the page. It downloads about 1 GB once and works on Chrome on Apple silicon.
 - **Off, or no model found:** short, polite canned replies in the right language. The game still works; it just isn't a conversation.
+- The game looks for a model the first time you talk to someone, then at every start once it has found one, so a game without a model never probes a port it doesn't need.
 
 **How the characters are kept in line.**
 - Each kind of person has a character card: who they are, how they talk, what they'd know.

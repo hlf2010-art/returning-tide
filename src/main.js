@@ -107,7 +107,7 @@ hud.voice = voice; hud.audio = audio;
 // talking to people in your own words (engine/llm.js, ui/talk.js): typed or spoken, Mandarin or English
 const llm = createLLM({ canned: (id, said, ctx) => cannedReply(id, said, { first: ctx.first, lang: /[\u4e00-\u9fff]/.test(said || '') || (!said && getLang() === 'zh') ? 'zh' : 'en' }) });
 const talk = createTalk({ llm, voice, getLife: () => life, save: () => saveLife() });
-llm.ready();
+llm.warm();
 
 let mode = 'boot';              // boot -> entry -> play <-> pause / inspect / dialogue / pouch
 let noLock = params.has('nolock');
@@ -452,7 +452,7 @@ document.getElementById('resume').addEventListener('click', () => { lock(); if (
 function syncSettings() {
   for (const seg of document.querySelectorAll('.seg[data-setting]')) {
     const c = llm.conf();
-    const cur = { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto' }[seg.dataset.setting];
+    const cur = { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.serverOn ? 'on' : 'off', ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto' }[seg.dataset.setting];
     for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
   }
   const c = llm.conf(), sv = document.getElementById('ai-server'), md = document.getElementById('ai-model');
@@ -472,6 +472,7 @@ document.addEventListener('click', (e) => {
     if (k === 'subs') subtitlesOn = v === 'on';
     if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
     if (k === 'voices') voice.setMode(v);
+    if (k === 'voiceServer') voice.setServer(v === 'on');
     if (k === 'ai') llm.configure({ ai: v === 'browser' ? 'browser' : v, aiBrowser: v === 'browser' ? 1 : 0 }).then(syncSettings);
     syncSettings(); return;
   }

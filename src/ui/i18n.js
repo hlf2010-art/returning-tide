@@ -43,6 +43,7 @@ export const S = {
   voices: { zh: '人物语音', en: 'Voices' }, voicesOriginal: { zh: '原声（普通话）', en: 'Original (Mandarin)' }, voicesDubbed: { zh: '配成我的语言', en: 'Dubbed (my language)' },
   ai: { zh: '自由对话 AI', en: 'Free conversation AI' }, aiAuto: { zh: '本地服务', en: 'Local server' }, aiBrowser: { zh: '浏览器内（下载约1GB）', en: 'In the browser (~1 GB download)' },
   aiServer: { zh: '服务地址 / 模型', en: 'Server / model' },
+  voiceServer: { zh: '临时台词的声音', en: 'Voices for new lines' }, voiceServerBrowser: { zh: '浏览器', en: 'Browser' }, voiceServerLocal: { zh: '本地语音服务', en: 'Local voice server' },
   settings: { zh: '设置', en: 'Settings' },
   language: { zh: '语言', en: 'Language' },
   subtitles: { zh: '字幕', en: 'Subtitles' },

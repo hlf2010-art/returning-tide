@@ -39,6 +39,7 @@ export function createLLM({ canned }) {
       if (!r.ok) return false;
       const j = await r.json().catch(() => ({}));
       const ids = (j.data || []).map((m) => m.id);
+      set('bund.aiSeen', '1');                                        // found once: look for it at start next time
       if (ids.length && !ids.includes(c.model)) S.serverModel = ids.find((id) => /qwen|glm|yi|deepseek|llama|mistral|gemma/i.test(id)) || ids[0];
       else S.serverModel = c.model;
       return true;
@@ -63,9 +64,11 @@ export function createLLM({ canned }) {
   }
   let detecting = null;
   const ready = () => (detecting ||= detect());
+  // at start: only if a model was found here before (no probing a port that's never been used)
+  const warm = () => (get('bund.aiSeen', '0') === '1' || conf().mode === 'browser' ? ready() : Promise.resolve(S.backend));
   return {
     get backend() { return S.backend; }, get status() { return S.status; }, get error() { return S.error; }, get progress() { return S.progress; },
-    conf, ready,
+    conf, ready, warm,
     configure(o) { for (const [k, v] of Object.entries(o)) set(`bund.${k}`, String(v)); detecting = null; S.engine = null; return ready(); },
     // messages: [{ role: 'system'|'user'|'assistant', content }]; onToken(textSoFar) while it streams.
     // ctx: { persona, said } for the canned replies
