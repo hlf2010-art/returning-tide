@@ -31,7 +31,8 @@ export function createLighting(scene, lanterns, extra = []) {
   const inRange = (z) => z > L.zNorth - 30 && z < L.zSouth + 30;
   const sources = [], halos = [], pools = [];
   // out: a street / promenade lamp, which goes off by day (indoor lights stay on)
-  const source = (x, y, z, intensity, distance, color = WARM, angle = 1.15, out = true) => sources.push({ x, y, z, intensity, distance, color, angle, out, d: 0, sw: 0 });
+  // on: () => bool, a light that's switched off at times (a shop after closing)
+  const source = (x, y, z, intensity, distance, color = WARM, angle = 1.15, out = true, on = null) => sources.push({ x, y, z, intensity, distance, color, angle, out, on, d: 0, sw: 0 });
   for (const z of deckLamps) {
     halos.push(DECK_LAMP_X, L.deckY + 4.3, z);
     if (inRange(z)) { source(DECK_LAMP_X - 0.3, L.deckY + 4.3, z, 17, 30); pools.push(DECK_LAMP_X - 1.2, L.deckY, z, 13); }
@@ -44,7 +45,7 @@ export function createLighting(scene, lanterns, extra = []) {
   }
   for (const l of lanterns) { halos.push(l.x, l.y - 0.38, l.z + l.n * 0.4); source(l.x, l.y - 0.45, l.z + l.n * 0.55, 20, 20, WARM, 1.35); }
   source(-69.2, 2.1, -L.street.halfW + 1.3, 9, 13, new THREE.Color(1.0, 0.85, 0.62), 1.4, false);   // shop window spill
-  for (const e of extra) source(e.x, e.y, e.z, e.intensity, e.distance, e.color || WARM, e.angle || 1.3, !!e.out);
+  for (const e of extra) source(e.x, e.y, e.z, e.intensity, e.distance, e.color || WARM, e.angle || 1.3, !!e.out, e.on || null);
   for (const x of [-112, -134, -156]) halos.push(x, 4, x % 4 ? 6 : -6);                // lamps beyond the hoarding
 
   const lights = [];
@@ -119,13 +120,13 @@ export function createLighting(scene, lanterns, extra = []) {
         const s = sources[i], l = lights[i];
         if (!s) { l.intensity = 0; continue; }
         const k = Math.min(1, Math.max(0, (edge - s.d) / (edge * 0.3)));
-        l.position.set(s.x, s.y, s.z); l.color.copy(s.color); l.distance = s.distance; l.intensity = s.intensity * k * (1 - s.sw) * (s.out ? T.lamps : 1);
+        l.position.set(s.x, s.y, s.z); l.color.copy(s.color); l.distance = s.distance; l.intensity = s.intensity * k * (1 - s.sw) * (s.out ? T.lamps : 1) * (s.on && !s.on() ? 0 : 1);
       }
       for (const sl of slots) {
         const l = sl.light, s = sl.src;
         if (!s || !l.castShadow) { l.intensity = 0; continue; }
         l.position.set(s.x, s.y, s.z); l.target.position.set(s.x, s.y - 10, s.z); l.target.updateMatrixWorld();
-        l.color.copy(s.color); l.distance = s.distance; l.angle = s.angle; l.intensity = s.intensity * sl.w * (s.out ? T.lamps : 1);
+        l.color.copy(s.color); l.distance = s.distance; l.angle = s.angle; l.intensity = s.intensity * sl.w * (s.out ? T.lamps : 1) * (s.on && !s.on() ? 0 : 1);
         l.shadow.camera.far = s.distance;
       }
     },

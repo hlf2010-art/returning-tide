@@ -7,7 +7,7 @@
 // are typical of the street, not surveyed one by one.
 import { asLight, glassByDay } from './dayNight.js';
 import * as THREE from 'three';
-import { L, NJ, METRO, METRO_DEPTH } from './layout.js';
+import { L, NJ, METRO, METRO_DEPTH, DUMPLING } from './layout.js';
 import { Batch, batchSet, flush } from './geo.js';
 import { tiers } from './bund.js';
 import { makeCanvas, tex, rng, FONT } from './canvas.js';
@@ -205,11 +205,23 @@ export function createNanjingRoad(M) {
   let seed = 11;
   const runs = [[-84, NJ.cross[0].x1], [NJ.cross[0].x0, NJ.cross[1].x1], [NJ.cross[1].x0, h.x1 + 5], [h.x0 - 5, NJ.xWest - 2]];
   const screens = [];
+  // the shengjian shop's building (world/dumpling.js does its ground floor): storeys above an open shopfront
+  function shopBuilding(xa, xb, zf) {
+    const fp = { x0: xa, x1: xb, z0: zf, z1: zf + 18 };
+    tiers(B, fp, 4.6, [
+      { h: 0.8, style: 'rustic', bay: 4, f0: 0.55, f1: 0.45, cornice: { out: 0.3, h: 0.45 } },
+      { h: 14.4, style: 'classic', floors: 4, bay: 3.3, f0: 0.5, f1: 0.28, cornice: { out: 0.55, h: 0.7 } },
+    ], 'NEW', 977, { N: 1, E: 0.55, W: 0.55 });
+    // the shop's back wall (the rest of the ground floor behind it is the building's)
+    tiers(B, { x0: xa, x1: xb, z0: DUMPLING.z1 + 0.3, z1: zf + 18 }, 0, [{ h: 4.6, style: 'rustic', bay: 4, f0: 0.55, f1: 0.45 }], 'N', 978, { N: 0.4 });
+  }
   for (const [ea, eb] of runs) for (const [zf, dir] of [[NJ.z0, 1], [NJ.z1, -1]]) {
     let x = Math.max(ea, eb);
     const end = Math.min(ea, eb);
     while (x - end > 6) {
-      const w = Math.min(x - end, 16 + r() * 22);
+      if (dir < 0 && Math.abs(x - DUMPLING.x1) < 0.01) { shopBuilding(DUMPLING.x0, DUMPLING.x1, zf); x = DUMPLING.x0; continue; }
+      let w = Math.min(x - end, 16 + r() * 22);
+      if (dir < 0 && x > DUMPLING.x1 && x - w < DUMPLING.x1 + 0.01) w = x - DUMPLING.x1;    // stop at the shop
       const hgt = building(x - w, x, zf, dir, seed++);
       if (r() < 0.12 && w > 18) screens.push({ x: x - w / 2, z: zf + dir * 0.2, dir, y: Math.min(hgt - 4, 14), w: Math.min(w * 0.6, 12) });
       x -= w;

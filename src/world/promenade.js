@@ -1,7 +1,7 @@
 // The raised waterfront promenade: granite deck, the broad stair up from the road,
 // river railing, lamps, benches, planters.
 import * as THREE from 'three';
-import { L, deckLamps, DECK_LAMP_X, benches, planterIslands, telescope } from './layout.js';
+import { L, deckLamps, DECK_LAMP_X, benches, planterIslands, telescope, PIER } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
 
 const Y = L.deckY, FAR = 430;
@@ -87,15 +87,22 @@ export function createPromenade(M) {
 
   // river railing: plinth, posts, rails, pickets
   const rx = L.deckEdgeX + 0.08;
-  B.granite.box(rx + 0.12, Y, 0, 0.5, 0.26, FAR * 2);
-  B.iron.box(rx, Y + 1.14, 0, 0.11, 0.06, FAR * 2);
-  B.iron.box(rx, Y + 1.04, 0, 0.05, 0.05, FAR * 2);
-  B.iron.box(rx, Y + 0.38, 0, 0.05, 0.05, FAR * 2);
+  // (open at the cruise pier's gate: PIER.z0..z1, with a granite pillar each side)
+  const gap = (z) => z > PIER.z0 - 0.05 && z < PIER.z1 + 0.05;
+  for (const [a, b] of [[-FAR, PIER.z0], [PIER.z1, FAR]]) {
+    const zc = (a + b) / 2, len = b - a;
+    B.granite.box(rx + 0.12, Y, zc, 0.5, 0.26, len);
+    B.iron.box(rx, Y + 1.14, zc, 0.11, 0.06, len);
+    B.iron.box(rx, Y + 1.04, zc, 0.05, 0.05, len);
+    B.iron.box(rx, Y + 0.38, zc, 0.05, 0.05, len);
+  }
   for (let z = -FAR; z <= FAR; z += 2.4) {
+    if (gap(z)) continue;
     B.iron.box(rx, Y + 0.26, z, 0.1, 0.96, 0.1);
     if (Math.abs(z) < 200) B.iron.add(new THREE.SphereGeometry(0.07, 8, 6), { x: rx, y: Y + 1.26, z });
   }
-  for (let z = -150; z <= 170; z += 0.16) B.iron.box(rx, Y + 0.4, z, 0.022, 0.64, 0.022);
+  for (let z = -150; z <= 170; z += 0.16) if (!gap(z)) B.iron.box(rx, Y + 0.4, z, 0.022, 0.64, 0.022);
+  for (const z of [PIER.z0 - 0.25, PIER.z1 + 0.25]) B.granite.box(rx + 0.05, Y, z, 0.6, 1.5, 0.6);
 
   // lamps along the river
   for (const z of deckLamps) lampGeometry(B, DECK_LAMP_X, Y, z);

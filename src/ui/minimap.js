@@ -3,7 +3,7 @@
 // canvas; each frame only rotates it under the player and adds the live marks (you, the objective,
 // people nearby). Shown and hidden by engine/minimapLogic.js; CSS does the fade.
 import { S, tr, onLang } from './i18n.js';
-import { L, colliders, crossing, planterIslands, streetTrees, stall, npcs as npcLayout, NJ, METRO } from '../world/layout.js';
+import { L, colliders, crossing, planterIslands, streetTrees, stall, npcs as npcLayout, NJ, METRO, PIER, DUMPLING } from '../world/layout.js';
 
 const PPM = 2.4;                                   // pixels per metre in the offscreen map
 const X0 = -560, X1 = 60, Z0 = -290, Z1 = 110;     // world bounds painted (out to Henan Road)
@@ -13,36 +13,40 @@ const C = {
   zebra: 'rgba(230,226,215,0.55)', tree: 'rgba(120,150,96,0.75)', text: 'rgba(236,230,216,0.78)',
 };
 
-function paint() {
-  const W = Math.round((X1 - X0) * PPM), H = Math.round((Z1 - Z0) * PPM);
+// the ground, painted once: bounds and scale (the full map screen, ui/worldMap.js, paints a wider one)
+export function paint(bounds = { X0, X1, Z0, Z1 }, P = PPM) {
+  const { X0: x0b, X1: x1b, Z0: z0b, Z1: z1b } = bounds;
+  const W = Math.round((x1b - x0b) * P), H = Math.round((z1b - z0b) * P);
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d');
-  const px = (x) => (x - X0) * PPM, pz = (z) => (z - Z0) * PPM;
-  const rect = (x0, x1, z0, z1, fill) => { g.fillStyle = fill; g.fillRect(px(x0), pz(z0), (x1 - x0) * PPM, (z1 - z0) * PPM); };
-  rect(X0, X1, Z0, Z1, C.pave);
-  rect(L.deckEdgeX, X1, Z0, Z1, C.water);
-  rect(L.wallX, L.deckEdgeX, Z0, Z1, C.deck);
-  rect(L.westCurbX, L.eastCurbX, Z0, Z1, C.road);                                   // Zhongshan East 1st Road
+  const px = (x) => (x - x0b) * P, pz = (z) => (z - z0b) * P;
+  const rect = (x0, x1, z0, z1, fill) => { g.fillStyle = fill; g.fillRect(px(x0), pz(z0), (x1 - x0) * P, (z1 - z0) * P); };
+  rect(x0b, x1b, z0b, z1b, C.pave);
+  rect(L.deckEdgeX, x1b, z0b, z1b, C.water);
+  rect(L.wallX, L.deckEdgeX, z0b, z1b, C.deck);
+  rect(L.westCurbX, L.eastCurbX, z0b, z1b, C.road);                                   // Zhongshan East 1st Road
   rect(L.street.xEnd, L.westCurbX, -L.street.roadHalfW, L.street.roadHalfW, C.road);   // Hankou Road
-  rect(NJ.henan.x0, NJ.henan.x1, Z0, Z1, C.road);                                    // Henan Road
+  rect(NJ.henan.x0, NJ.henan.x1, z0b, z1b, C.road);                                    // Henan Road
   for (const b of colliders) {
     if (!/customs|hsbc|north-block|portico|aia-block|peace-block|nj-north|nj-south/.test(b.tag)) continue;
-    rect(Math.max(X0, b.minX), Math.min(X1, b.maxX), Math.max(Z0, b.minZ), Math.min(Z1, b.maxZ), C.block);
+    rect(Math.max(x0b, b.minX), Math.min(x1b, b.maxX), Math.max(z0b, b.minZ), Math.min(z1b, b.maxZ), C.block);
     g.strokeStyle = C.blockEdge; g.lineWidth = 1;
-    g.strokeRect(px(Math.max(X0, b.minX)), pz(Math.max(Z0, b.minZ)), (Math.min(X1, b.maxX) - Math.max(X0, b.minX)) * PPM, (Math.min(Z1, b.maxZ) - Math.max(Z0, b.minZ)) * PPM);
+    g.strokeRect(px(Math.max(x0b, b.minX)), pz(Math.max(z0b, b.minZ)), (Math.min(x1b, b.maxX) - Math.max(x0b, b.minX)) * P, (Math.min(z1b, b.maxZ) - Math.max(z0b, b.minZ)) * P);
   }
   const cw = crossing.crosswalk;
-  if (cw) { g.fillStyle = C.zebra; for (let x = cw.x0; x < cw.x1; x += 1.1) g.fillRect(px(x), pz(cw.z0), 0.55 * PPM, (cw.z1 - cw.z0) * PPM); }
-  g.fillStyle = C.zebra; for (let x = NJ.henan.x0 + 0.4; x < NJ.henan.x1 - 0.4; x += 1.1) g.fillRect(px(x), pz(NJ.zc - 3.4), 0.55 * PPM, 6.8 * PPM);
+  if (cw) { g.fillStyle = C.zebra; for (let x = cw.x0; x < cw.x1; x += 1.1) g.fillRect(px(x), pz(cw.z0), 0.55 * P, (cw.z1 - cw.z0) * P); }
+  g.fillStyle = C.zebra; for (let x = NJ.henan.x0 + 0.4; x < NJ.henan.x1 - 0.4; x += 1.1) g.fillRect(px(x), pz(NJ.zc - 3.4), 0.55 * P, 6.8 * P);
   // the metro exits: Shanghai Metro red, the exit number
   for (const m of METRO) {
     rect(m.x0, m.x1, m.z0, m.z1, '#c8161e');
-    g.fillStyle = '#fff'; g.font = `700 ${Math.round(3.4 * PPM)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#fff'; g.font = `700 ${Math.round(3.4 * P)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(`M${m.exit}`, px((m.x0 + m.x1) / 2), pz((m.z0 + m.z1) / 2));
   }
   for (const p of planterIslands) rect(p.x0, p.x1, p.z0, p.z1, '#2f3a2f');
+  rect(PIER.x0, PIER.x1, PIER.z0, PIER.z1, C.deck);                                       // the cruise pier
+  rect(DUMPLING.x0, DUMPLING.x1, DUMPLING.z0, DUMPLING.z1, '#3a2a28');                    // the shengjian shop
   g.fillStyle = C.tree;
-  for (const t of [...streetTrees, ...planterIslands.map((p) => ({ x: (p.x0 + p.x1) / 2, z: (p.z0 + p.z1) / 2 }))]) { g.beginPath(); g.arc(px(t.x), pz(t.z), 2.2 * PPM, 0, Math.PI * 2); g.fill(); }
+  for (const t of [...streetTrees, ...planterIslands.map((p) => ({ x: (p.x0 + p.x1) / 2, z: (p.z0 + p.z1) / 2 }))]) { g.beginPath(); g.arc(px(t.x), pz(t.z), 2.2 * P, 0, Math.PI * 2); g.fill(); }
   return { c, px, pz };
 }
 

@@ -735,6 +735,41 @@
   "en": "Good thing I got my photo just now."
  },
  {
+  "who": "cruisepa",
+  "zh": "各位游客，本班游船即将开航，请抓紧时间登船。",
+  "en": "Ladies and gentlemen, this sailing leaves shortly. Please come aboard."
+ },
+ {
+  "who": "cruisepa",
+  "zh": "欢迎乘坐浦江游览，本次航程大约半小时，请在甲板上注意安全。",
+  "en": "Welcome aboard the Huangpu River cruise. We'll be out for about half an hour; please take care on deck."
+ },
+ {
+  "who": "cruisepa",
+  "zh": "左手边是外滩，一百多年前的银行和洋行，被称为万国建筑博览群。",
+  "en": "On your left, the Bund: banks and trading houses from a century ago, the city's \"museum of world architecture\"."
+ },
+ {
+  "who": "cruisepa",
+  "zh": "右手边就是陆家嘴：东方明珠、金茂大厦、环球金融中心和上海中心。",
+  "en": "On your right, Lujiazui: the Oriental Pearl, Jin Mao, the World Financial Center and the Shanghai Tower."
+ },
+ {
+  "who": "cruisepa",
+  "zh": "游船现在调头，沿浦东一侧返回。",
+  "en": "We're turning now, and coming back along the Pudong side."
+ },
+ {
+  "who": "cruisepa",
+  "zh": "再往前就是外滩码头了。",
+  "en": "The Bund pier is just ahead."
+ },
+ {
+  "who": "cruisepa",
+  "zh": "游船即将靠岸，请带好随身物品，注意脚下。",
+  "en": "We're coming in to the pier. Please take your belongings and mind your step."
+ },
+ {
   "who": "agent",
   "zh": "沈先生是吧？程小姐在里面等您。这套是顶层，三百二十平，整层就这一户。",
   "en": "Mr Shen? Ms Cheng's inside. Top floor, three hundred and twenty square metres, the only flat on the floor."
@@ -953,6 +988,31 @@
   "who": "xuan",
   "zh": "今晚庆功，必须来。",
   "en": "Celebration tonight. No excuses."
+ },
+ {
+  "who": "cashier",
+  "zh": "要点什么？",
+  "en": "What can I get you?"
+ },
+ {
+  "who": "cashier",
+  "zh": "扫这里就好。",
+  "en": "Just scan here."
+ },
+ {
+  "who": "cashier",
+  "zh": "稍等一下，马上就好。",
+  "en": "Won't be a moment."
+ },
+ {
+  "who": "cook",
+  "zh": "生煎好了！小心烫！",
+  "en": "Shengjian's up! Careful, they're hot!"
+ },
+ {
+  "who": "cashier",
+  "zh": "慢走啊！",
+  "en": "Take care now!"
  },
  {
   "who": "ruoan",

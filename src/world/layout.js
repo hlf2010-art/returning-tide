@@ -72,6 +72,16 @@ for (let z = -410; z <= 420; z += 36) roadLamps.push(z);
 export const ROAD_LAMP_WEST_OFFSET = 20;
 
 export const benches = [-24, 36, 60, 84].map((z) => ({ x: 21.4, z }));
+// The river cruise pier (world/cruise.js): a walkway out over the water at deck level, at the south end
+// of the promenade, the boat alongside its end. (The real Huangpu cruise piers are a little further
+// south, at Shiliupu; the game puts one within reach.)
+export const PIER = { z0: 62, z1: 68, x0: 26, x1: 38 };
+// A shengjian (pan-fried bun) shop on Nanjing Road East (world/dumpling.js): a walk-in ground floor in
+// the south frontage. The name is invented; the kind of place is everywhere in Shanghai.
+export const DUMPLING = { x0: -150, x1: -140, z0: -190, z1: -181 };
+// Moving platforms (the cruise boat): ground(x, z, y) -> the height to stand at, or null; keep(body)
+// keeps someone aboard inside its rails. Read by groundHeight and engine/movement.js.
+export const movers = [];
 export const planterIslands = [
   { x0: 11, x1: 14.2, z0: -50, z1: -38 },
   { x0: 11, x1: 14.2, z0: -30, z1: -18 },
@@ -162,7 +172,8 @@ export const crossing = {
 export const covers = [
   { id: 'shop-canopy', x0: -71.7, x1: -66.7, z0: -6.5, z1: -5.48, top: 3.75 },
   { id: 'customs-portico', x0: -34.0, x1: -31.0, z0: 18.0, z1: 36.0, top: 13.35 },
-  { id: 'peace-hall', x0: -60, x1: -35.4, z0: -244, z1: -212.6, top: 30 },     // the Peace Hotel's ground floor (world/interiors.js)
+  { id: 'peace-hall', x0: -60, x1: -35.4, z0: -244, z1: -212.6, top: 30 },
+  { id: 'dumpling', x0: -150, x1: -140, z0: -190, z1: -181, top: 4.4 },      // the shengjian shop (DUMPLING)     // the Peace Hotel's ground floor (world/interiors.js)
   { id: 'aia-lobby', x0: -47, x1: -34.6, z0: -152, z1: -139, top: 30 },        // the AIA lobby
   { id: 'northbund-flat', x0: 30, x1: 80, z0: -1380, z1: -1330, top: 400 },     // places a DiDi takes you (world/destinations.js)
   { id: 'ifc-32f', x0: 660, x1: 720, z0: 30, z1: 90, top: 400 },
@@ -201,7 +212,9 @@ box(L.wallX - 0.3, 4.0, L.zNorth - 1, -L.stair.halfW, 'wall');
 box(L.wallX - 0.3, 4.0, L.stair.halfW, L.zSouth + 1, 'wall');
 box(L.wallX, L.stair.x1, -L.stair.halfW - 0.35, -L.stair.halfW, 'wall');
 box(L.wallX, L.stair.x1, L.stair.halfW, L.stair.halfW + 0.35, 'wall');
-box(L.deckEdgeX - 0.12, L.deckEdgeX + 1, L.zNorth - 1, L.zSouth + 1, 'railing');
+box(L.deckEdgeX - 0.12, L.deckEdgeX + 1, L.zNorth - 1, PIER.z0, 'railing');          // (the pier's gate between)
+box(L.deckEdgeX - 0.12, L.deckEdgeX + 1, PIER.z1, L.zSouth + 1, 'railing');
+box(PIER.x0, PIER.x1 + 0.3, PIER.z0 - 0.3, PIER.z0, 'railing'); box(PIER.x0, PIER.x1 + 0.3, PIER.z1, PIER.z1 + 0.3, 'railing');   // the pier's own rails
 
 for (const z of deckLamps) if (z > L.zNorth && z < L.zSouth) around(DECK_LAMP_X, z, 0.28, 0.28, 'lamp');
 for (const z of roadLamps) {
@@ -224,7 +237,15 @@ for (const p of crossing.pedPoles) around(p.x, p.z, 0.1, 0.1, 'signal');
 
 {
   const segs = [[-84, NJ.cross[0].x1], [NJ.cross[0].x0, NJ.cross[1].x1], [NJ.cross[1].x0, NJ.henan.x1 + 5], [NJ.henan.x0 - 5, NJ.xWest - 2]];
-  for (const [a, b] of segs) { box(Math.min(a, b), Math.max(a, b), NJ.z0 - 22, NJ.z0, 'nj-north'); box(Math.min(a, b), Math.max(a, b), NJ.z1, NJ.z1 + 22, 'nj-south'); }
+  for (const [a, b] of segs) {
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    box(lo, hi, NJ.z0 - 22, NJ.z0, 'nj-north');
+    // the south frontage, open where the shengjian shop is: its walls instead
+    if (DUMPLING.x0 > lo && DUMPLING.x1 < hi) { box(lo, DUMPLING.x0, NJ.z1, NJ.z1 + 22, 'nj-south'); box(DUMPLING.x1, hi, NJ.z1, NJ.z1 + 22, 'nj-south'); }
+    else box(lo, hi, NJ.z1, NJ.z1 + 22, 'nj-south');
+  }
+  { const D = DUMPLING; box(D.x0 - 0.3, D.x0 + 0.15, D.z0, D.z1 + 0.3, 'wall'); box(D.x1 - 0.15, D.x1 + 0.3, D.z0, D.z1 + 0.3, 'wall'); box(D.x0, D.x1, D.z1, D.z1 + 0.3, 'wall');
+    box(D.x0, D.x0 + 3.6, D.z0 - 0.05, D.z0 + 0.25, 'shop'); box(D.x1 - 3.6, D.x1, D.z0 - 0.05, D.z0 + 0.25, 'shop'); }   // the shopfront glass, a door in the middle
   for (const c of NJ.cross) { box(c.x0, c.x1, NJ.z0 - 9, NJ.z0 - 8, 'boundary'); box(c.x0, c.x1, NJ.z1 + 8, NJ.z1 + 9, 'boundary'); }
   // Henan Road's pavements: open 30 m each way, then fenced; the far sides are buildings
   const h = NJ.henan, w = h.walkTo;
@@ -260,6 +281,7 @@ export function floorAt(x, z, y) {
   return best;
 }
 export function groundHeight(x, z, y) {
+  for (let i = 0; i < movers.length; i++) { const g = movers[i].ground(x, z, y); if (g != null) return g; }
   if (y > 2 && floors.length) { const f = floorAt(x, z, y); if (f) return f.y; }
   if (x < -480) { const m = metroGround(x, z); if (m != null) return m; if (inHenan(x, z)) return 0; }
   const st = L.stair;

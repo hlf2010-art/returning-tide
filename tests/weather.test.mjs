@@ -41,7 +41,7 @@ ok(i.rain === 1 && i.wet === 1 && i.haze === 1, 'instant set for testing');
 let threw = false; try { i.set('storm'); } catch { threw = true; }
 ok(threw, 'only clear and drizzle exist');
 // covered places: the shop canopy, the Customs portico, and indoors (the Peace Hotel hall, the AIA lobby)
-ok(covers.length === 7 && underCover(-69.2, -6.0, 1.8) && underCover(-32.5, 27, 5) && !underCover(-69.2, -6.0, 4.5), 'under the canopy / portico counts as covered (below the roof only)');
+ok(covers.length === 8 && underCover(-145, -185, 1.6) && underCover(-69.2, -6.0, 1.8) && underCover(-32.5, 27, 5) && !underCover(-69.2, -6.0, 4.5), 'under the canopy / portico / in the shengjian shop counts as covered (below the roof only)');
 ok(underCover(-48, -229, 1.7) && underCover(-40, -145, 1.7) && !underCover(-31, -229, 1.7), 'indoors is covered; the pavement outside is not');
 ok(!underCover(-69.2, -3.0, 1.8) && !underCover(22, 0, 4.7) && !underCover(-16, 0, 1.7), 'the road, pavement and promenade are open to the sky');
 ok(colliders.some((c) => c.tag === 'portico' && c.minX <= -34 && c.maxX >= -31.0), 'portico cover matches its collider footprint');

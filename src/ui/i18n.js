@@ -59,6 +59,13 @@ export const S = {
   questNew: { zh: (t) => `新任务 · ${t}`, en: (t) => `New quest · ${t}` }, questDone: { zh: (t) => `完成 · ${t}`, en: (t) => `Done · ${t}` },
   questFailed: { zh: (t) => `错过了 · ${t}`, en: (t) => `Missed · ${t}` }, questNext: { zh: (t) => `下一步：${t}`, en: (t) => `Next: ${t}` },
   questWait: { zh: (c) => `等到 ${c}`, en: (c) => `Waiting until ${c}` },
+  padOn: { zh: '手柄已连接 · A 互动 · B 返回 · Y 手机 · LB 日志 · RB 地图 · 菜单键 暂停', en: 'Controller connected · A interact · B back · Y phone · LB journal · RB map · Menu pause' },
+  padOff: { zh: '手柄已断开', en: 'Controller disconnected' },
+  saves: { zh: '存档', en: 'Saves' },
+  tipsSetting: { zh: '新手提示', en: 'Tips' },
+  benchmark: { zh: '性能测试', en: 'Benchmark' }, benchRun: { zh: '运行（约 30 秒）', en: 'Run (about 30 s)' },
+  waypoint: { zh: '路标', en: 'Waypoint' }, waypointHere: { zh: '到了。', en: 'You\'re there.' },
+  day: { zh: (n) => `第 ${n} 天`, en: (n) => `Day ${n}` },
   lateNightLights: { zh: '晚上十点 · 外滩换成深夜灯光：泛光暗下来，对岸的大屏熄了，只留下轮廓。', en: '10 pm · The Bund goes over to its late-night lighting: the floodlights dim, the LED walls across the river go dark, the outlines stay lit.' },
   subtitles: { zh: '字幕', en: 'Subtitles' },
   sound: { zh: '声音', en: 'Sound' },
@@ -71,7 +78,7 @@ export const S = {
   placeSub: { zh: '十一月 · 17:42', en: 'November · 17:42' }, month: { zh: '十一月', en: 'November' },
   keys: [
     ['WASD', { zh: '走', en: 'walk' }], ['Shift', { zh: '快走', en: 'hurry' }], ['Space', { zh: '跳', en: 'jump' }],
-    ['E', { zh: '互动', en: 'interact' }], ['Tab', { zh: '地图', en: 'map' }], ['P', { zh: '手机', en: 'phone' }], ['J', { zh: '日志', en: 'journal' }],
+    ['E', { zh: '互动', en: 'interact' }], ['M', { zh: '地图', en: 'map' }], ['P', { zh: '手机', en: 'phone' }], ['J', { zh: '日志', en: 'journal' }],
     ['Esc', { zh: '菜单', en: 'menu' }],
   ],
   // toasts

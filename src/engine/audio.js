@@ -30,7 +30,7 @@ export function createAudio() {
   const loops = [];                                          // every looping source ever started (for the duplicate check)
   // the crowd's murmur (tools/voice/walla.py: many people talking at once, recorded voices): fetched
   // and decoded as the page loads, so the loop is there the moment the graph is built
-  let murmurBuf = null, murmur = null, lastCrowd = -1;
+  let murmurBuf = null, murmur = null, lastCrowd = -1, boat = null, lastBoat = -1;
   if (typeof window !== 'undefined' && window.OfflineAudioContext && typeof fetch === 'function') {
     fetch('./ambience/murmur.mp3').then((r) => (r.ok ? r.arrayBuffer() : null))
       .then((ab) => ab && new window.OfflineAudioContext(1, 1, 24000).decodeAudioData(ab))
@@ -148,6 +148,10 @@ export function createAudio() {
     loop(white, rf, rb, rlp, rg);
     rg.connect(split, 0, 0); rg.connect(dly).connect(split, 0, 1); split.connect(env);
     rain = { g: rg, lp: rlp };
+    // aboard the river cruise: the diesel's low throb through the deck, and the wash along the hull
+    const bf = filt('lowpass', 95, 0.9), bg = gainNode(0); loop(buf, bf, bg, env); lfo(0.9, 0.04, bg.gain);
+    const wf3 = filt('bandpass', 650, 0.5), wg3 = gainNode(0); loop(white, wf3, wg3, env); lfo(0.21, 220, wf3.frequency);
+    boat = { bg, wg: wg3 };
     if (murmurBuf) buildMurmur();
   }
 
@@ -255,6 +259,11 @@ export function createAudio() {
       // a phone camera's shutter: two quick clicks of filtered noise
       burst(t, { type: 'highpass', f: 2600, q: 0.8, gain: 0.32 * level, attack: 0.001, decay: 0.03 });
       burst(t + 0.07, { type: 'bandpass', f: 1800, q: 1.2, gain: 0.24 * level, attack: 0.001, decay: 0.045 });
+    } else if (name === 'shiphorn') {
+      // a ship's horn: a long low chord, swelling and dying, as a boat pulls away
+      const g = gainNode(0), lp = filt('lowpass', 520, 0.7); lp.connect(g).connect(env || sfx);
+      for (const f of [98, 147, 196]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = Math.random() * 6 - 3; o.connect(lp); o.start(t); o.stop(t + 2.6); }
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.09 * level, t + 0.25); g.gain.setValueAtTime(0.09 * level, t + 1.9); g.gain.linearRampToValueAtTime(0, t + 2.5);
     } else if (name === 'chime') {
       // an achievement: three rising bell notes
       [1047, 1319, 1568].forEach((f, i) => ping(t + i * 0.11, f, 0.06 * level, 0.5));
@@ -383,6 +392,16 @@ export function createAudio() {
       const t = ctx.currentTime;
       rain.g.gain.setTargetAtTime(0.11 * level * level * (covered ? 0.55 : 1), t, 0.4);
       rain.lp.frequency.setTargetAtTime(covered ? 2600 : 9000, t, 0.4);
+    },
+    // aboard the cruise: on 0..1 (how far aboard), speed in m/s
+    setBoat(on, speed = 0) {
+      if (!ctx || !boat) return;
+      const v = Math.round(on * 20) / 20 + Math.round(speed * 2) * 10;
+      if (v === lastBoat) return;
+      lastBoat = v;
+      const t = ctx.currentTime;
+      boat.bg.gain.setTargetAtTime(on * (0.42 + 0.05 * speed), t, 0.6);
+      boat.wg.gain.setTargetAtTime(on * 0.05 * (0.25 + speed / 4), t, 0.6);
     },
     // the crowd round you: 0 nobody .. 1 the evening crush on the promenade
     setCrowd(level) {

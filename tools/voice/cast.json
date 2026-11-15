@@ -204,5 +204,18 @@
  "owner": {
   "zh": "zm_031",
   "en": "am_eric"
+ },
+ "cruisepa": {
+  "zh": "zf_088",
+  "en": "bf_emma",
+  "speed": 0.97
+ },
+ "cashier": {
+  "zh": "zf_048",
+  "en": "af_nicole"
+ },
+ "cook": {
+  "zh": "zm_041",
+  "en": "am_onyx"
  }
 }

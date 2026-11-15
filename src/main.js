@@ -34,6 +34,7 @@ import { createTalk } from './ui/talk.js';
 import { createAmbient } from './world/ambient.js';
 import { cannedReply, PERSONAS } from './world/personas.js';
 import { PEACE as PEACE_R, AIA as AIA_R } from './world/interiors.js';
+import { METRO as METRO_EXITS } from './world/layout.js';
 import { JAZZ } from './world/jazzBar.js';
 import { clockText as clockOf } from './engine/life.js';
 import { createPouch, HELD_LAYER } from './world/pouch.js';
@@ -47,6 +48,11 @@ import { applyDayNight, autoLights } from './world/dayNight.js';
 import { setCrowdLight } from './world/crowdView.js';
 import { createDawn } from './world/dawn.js';
 import { createMoments, MOMENT_QUESTS, MOMENT_NAMES } from './world/moments.js';
+import { createWorldMap } from './ui/worldMap.js';
+import { createGamepad } from './engine/gamepad.js';
+import { createSaves, currentSlot, slotKey } from './ui/saves.js';
+import { createCruise } from './world/cruise.js';
+import { createDumpling } from './world/dumpling.js';
 import { underCover } from './world/layout.js';
 import { colliders } from './world/layout.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
@@ -232,7 +238,12 @@ async function boot() {
   // the Yangpu makerspace: build things (world/makerspace.js, engine/maker.js)
   const makers = createMakerspace({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: buildMode });
   const jazz = createJazzBar({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: seatMode });
-  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...buses.lights, ...nanjing.lights, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
+  // places (phase 4.4): a shengjian shop on Nanjing Road (world/dumpling.js) and the river cruise from a
+  // pier on the promenade (world/cruise.js)
+  const dumpling = createDumpling({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), onMode: shopMode });
+  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); },
+    roles: people ? Object.keys(people.manifest.cast).filter((r) => !['lin', 'su', 'player', 'dad'].includes(r)) : [] });
+  const lighting = createLighting(scene, street.lanterns, [...dumpling.lights, { ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...buses.lights, ...nanjing.lights, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -260,7 +271,7 @@ async function boot() {
   if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
-  world = { dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  world = { cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -283,7 +294,7 @@ async function boot() {
   // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
   world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
     getHour: () => life.clock.minute, isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active, enabled: !!people && (!params.has('q') || params.has('moments')) });
-  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments];
+  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling];
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
     getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
@@ -417,6 +428,11 @@ function buildMode(m) {
   else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
 }
 // sat at a table in the Jazz Bar: look around, E to stand
+// at the shengjian shop's counter: the order card has the keys (world/dumpling.js); sitting is seat mode
+function shopMode(m) {
+  if (m === 'menu') { mode = 'menu'; player.enabled = false; player.lookOnly = false; player.clearInput(); target = null; hud.prompt(false); }
+  else seatMode(m === 'seat' ? 'seat' : 'play');
+}
 function seatMode(m) {
   if (m === 'seat') { mode = 'seat'; player.enabled = false; player.lookOnly = true; player.clearInput(); target = null; }
   else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
@@ -586,6 +602,7 @@ document.addEventListener('click', (e) => {
     syncSettings(); return;
   }
   if (e.target.closest('[data-open-settings]')) { document.getElementById('settings').classList.remove('hidden'); syncSettings(); return; }
+  if (e.target.closest('[data-open-saves]')) { saveLife(); saves.open(); return; }
   if (e.target.closest('[data-close-settings]') || e.target.id === 'settings') document.getElementById('settings').classList.add('hidden');
 });
 onLang(() => syncSettings());
@@ -612,7 +629,7 @@ const CHOICE_KEYS = { KeyW: -1, ArrowUp: -1, KeyS: 1, ArrowDown: 1 };
 window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
   const k = e.code;
-  if (k === 'KeyM') { hud.toast(tx(audio.toggleMute() ? 'soundOff' : 'soundOn'), 2.4); syncSettings(); return; }
+  if (k === 'KeyM' && e.shiftKey) { hud.toast(tx(audio.toggleMute() ? 'soundOff' : 'soundOn'), 2.4); syncSettings(); return; }   // (M alone is the map)
   if (k === 'KeyC' && (mode === 'play' || mode === 'dialogue')) {
     subtitlesOn = !subtitlesOn;
     hud.toast(tx(subtitlesOn ? 'subsOn' : 'subsOff'), 2.4); syncSettings();
@@ -648,13 +665,16 @@ window.addEventListener('keydown', (e) => {
   if (mode === 'sale' || mode === 'sale-seat') { if (world.carSale.key(k)) e.preventDefault(); return; }
   if (mode === 'build') { if (world.makerspace.key(k)) e.preventDefault(); return; }
   if (mode === 'photo') { if (world.photo.key(k)) e.preventDefault(); return; }
+  if (mode === 'menu') { world.dumpling.key(k); e.preventDefault(); return; }
   if (mode === 'seat') {
+    if (world.dumpling.seated) { if (world.dumpling.key(k)) e.preventDefault(); else if (k === 'Escape' && noLock) pause(); return; }
     if (world.sceneTalk.key(k)) { e.preventDefault(); return; }
     if (k === 'KeyE') { if (world.dinner.seated) { if (!world.dinner.canStand()) return; world.dinner.stood(); } world.jazz.stand(); }
     else if (k === 'Escape' && noLock) pause();
     return;
   }
   if (mode === 'journal') { if (k === 'KeyJ' || k === 'Escape') { journal.close(); e.preventDefault(); } return; }
+  if (mode === 'map') { if (k === 'KeyM' || k === 'Escape') worldMap.close(); else worldMap.key(k); e.preventDefault(); return; }
   if (mode === 'drive') { if (world.driving.key(k)) e.preventDefault(); else if (k === 'Escape' && noLock) pause(); return; }
   if (mode === 'ride') {
     if (k === 'KeyT' && world.rideFlow.inCar && world.rideFlow.ride && world.rideFlow.ride.driver && !talk.open) { const d = world.rideFlow.ride.driver; startTalk({ key: 'driver', persona: `driver:${d.id}`, x: camera.position.x, y: camera.position.y, z: camera.position.z }, { inRide: true }); e.preventDefault(); return; }
@@ -669,6 +689,7 @@ window.addEventListener('keydown', (e) => {
     if (world.dest.key(k)) return;
     if (k === 'KeyG') { world.photo.toggle(); e.preventDefault(); return; }
     if (k === 'KeyJ') { openJournal(); e.preventDefault(); return; }
+    if (k === 'KeyM') { openMap(); e.preventDefault(); return; }
     if (k === 'KeyT' && world.ambient.opener) { const o = world.ambient.opener; world.ambient.clearOpener(); startTalk(o.talkable, { opener: o.line }); e.preventDefault(); return; }
     if (k === 'KeyT' && talkTarget) { startTalk(talkTarget); e.preventDefault(); return; }
     if (k === 'KeyE') interact();
@@ -739,12 +760,17 @@ const PROMPTS = {
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
 let pedBoxes = [], crowdBoxes = [], bumps = null;
 // ---- the protagonist's life and phone (engine/life.js, world/agenda.js, ui/phone) ----
-const LIFE_KEY = 'bund-life-v1';
+const LIFE_KEY = slotKey(currentSlot());   // the slot you're playing (ui/saves.js); slot 1 is the original save
 let life = null;
 try { life = params.has('fresh') ? null : lifeLoad(localStorage.getItem(LIFE_KEY)); } catch { life = null; }
 if (!life) { life = createLife(); setupThreads(life); }
 if (params.has('hour')) { const [h, m] = params.get('hour').split(':').map(Number); if (h >= 0 && h < 24) { life.clock.minute = h * 60 + (m || 0); life.clock.sec = 0; } }
-const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); } catch { /* private mode: no saving */ } };
+let saves = null;
+const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); if (saves) saves.touched(); } catch { /* private mode: no saving */ } };
+// the pause menu's saves panel: three slots, copy / load / export / import
+saves = createSaves({ getLife: () => life, serialize: lifeSave, deserialize: lifeLoad,
+  describe: (L) => { const c = currentStep(L, QUESTS); const q = c ? QT(c.quest.title) : ''; return `${tx('day', L.clock.day)} · ${lifeClock(L.clock.minute)}${q ? ` · ${q}` : ''}`; },
+  onLoad: () => { location.reload(); } });
 let lifeSaveIn = 5, pendingCalls = [], cupFor = 0;
 const phone = createPhone({
   getLife: () => life, calls: CALLS, audio, voice, llm,
@@ -796,6 +822,21 @@ function updateStory() {
   const c = currentStep(life, QUESTS);
   hud.questObjective(c ? { ...(typeof c.step.text === 'function' ? c.step.text(life) : c.step.text), title: c.quest.title, hint: { zh: 'J 日志', en: 'J journal' } } : null);
   if (evs.length) { journal.refresh(); saveLife(); }
+}
+// a gamepad, if one's plugged in (engine/gamepad.js): sticks walk and look, buttons are keys; Menu pauses
+const pad = createGamepad({ player, getMode: () => mode, hud, t: tx,
+  onPause: () => { if (mode === 'pause') play(); else if (['play', 'ride', 'seat', 'drive'].includes(mode)) pause(); } });
+// the map (M): the mouse is yours while it's open
+const worldMap = createWorldMap({
+  getState: () => ({ x: player.body.x, z: player.body.z, yaw: player.yaw, blips: world ? mapBlips() : [], objective: world ? storyTarget() : null, waypoint, clock: `${tx('day', life.clock.day)} · ${lifeClock(life.clock.minute)}` }),
+  onClose: () => { if (mode === 'map') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } },
+  onWaypoint: (w) => { waypoint = w; },
+});
+function openMap() {
+  if (mode !== 'play') return;
+  mode = 'map'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
+  try { document.exitPointerLock(); } catch { /* not locked */ }
+  worldMap.open();
 }
 // the journal: the mouse is yours while it's open
 function openJournal() {
@@ -871,7 +912,10 @@ function mapObjective() {
   if (m.step === 'carry') return { x: npcLayout.list[0].x, z: npcLayout.list[0].z, label: tx('pLin') };
   return null;
 }
-function mapTarget() {
+// your own waypoint (set on the map) comes first, until you get there
+let waypoint = null;
+function mapTarget() { return waypoint ? { ...waypoint, label: waypoint.label ? QT(waypoint.label) : tx('waypoint') } : storyTarget(); }
+function storyTarget() {
   const r = world && world.rideFlow && world.rideFlow.ride;
   if (r && (r.phase === 'coming' || r.phase === 'waiting')) return { x: PICKUP.x, z: PICKUP.z, label: tx('mapDidi') };
   const q = life && currentStep(life, QUESTS), qt = q && q.target ? { x: q.target.x, z: q.target.z, label: QT(q.target.label) } : null;
@@ -881,18 +925,22 @@ function mapTarget() {
 // and (with the gimbal) the photo subjects you haven't got yet
 function mapBlips() {
   const tod = life.clock.minute, out = [
-    { x: mannerSpec.queue[0].x, z: mannerSpec.zWall, glyph: 'M', bg: '#111', fg: '#fff' },
-    { x: (PEACE_R.x0 + PEACE_R.x1) / 2, z: -211, glyph: '和', bg: '#2b2416', fg: '#e7b96a' },
-    { x: PICKUP.x, z: PICKUP.z, glyph: 'D', bg: '#ff7a00', fg: '#fff' },
+    { x: mannerSpec.queue[0].x, z: mannerSpec.zWall, glyph: 'M', bg: '#111', fg: '#fff', name: { zh: 'Manner 咖啡', en: 'Manner Coffee' } },
+    { x: (PEACE_R.x0 + PEACE_R.x1) / 2, z: -211, glyph: '和', bg: '#2b2416', fg: '#e7b96a', name: { zh: '和平饭店（你住这里）', en: 'Peace Hotel (where you\'re staying)' } },
+    { x: PICKUP.x, z: PICKUP.z, glyph: 'D', bg: '#ff7a00', fg: '#fff', name: { zh: '滴滴上车点', en: 'DiDi pick-up' } },
+    ...METRO_EXITS.map((m) => ({ x: m.top + Math.sign(m.top - m.bottom) * 1.5, z: (m.z0 + m.z1) / 2, glyph: String(m.exit), bg: '#c8161e', fg: '#fff', name: { zh: `南京东路站 ${m.exit} 号口`, en: `East Nanjing Rd station, Exit ${m.exit}` } })),
   ];
-  if (tod >= 19 * 60 || tod < 60) out.push({ x: (JAZZ.x0 + JAZZ.x1) / 2, z: JAZZ.z0, glyph: '♪', bg: '#3b1f3f', fg: '#f3c6ff' });
-  if (life.flags.car && world.huracan.loaded) { const g = world.huracan.group.position; out.push({ x: g.x, z: g.z, glyph: '▲', bg: '#e8b800', fg: '#111' }); }
+  if (tod >= 19 * 60 || tod < 60) out.push({ x: (JAZZ.x0 + JAZZ.x1) / 2, z: JAZZ.z0, glyph: '♪', bg: '#3b1f3f', fg: '#f3c6ff', name: { zh: '爵士吧', en: 'The Jazz Bar' } });
+  out.push(world.cruise.mapBlip(), world.dumpling.mapBlip());
+  if (life.flags.car && world.huracan.loaded) { const g = world.huracan.group.position; out.push({ x: g.x, z: g.z, glyph: '▲', bg: '#e8b800', fg: '#111', name: { zh: '你的车', en: 'Your car' } }); }
   const m = life.flags.maker;
   if (m && m.gadgets && m.gadgets.gimbal) for (const t of [{ id: 'customs', x: -45, z: 26 }, { id: 'peace', x: -43, z: -243 }, { id: 'linsu', x: 23.7, z: -15 }]) if (!m.shot[t.id]) out.push({ x: t.x, z: t.z, glyph: '◉', bg: '#1d3a8a', fg: '#fff' });
   return out;
 }
 function updateMap(dt) {
-  const b = player.body, obj = mapTarget(), zone = zoneAt(b.x, b.z, L);
+  const b = player.body;
+  if (waypoint && Math.hypot(waypoint.x - b.x, waypoint.z - b.z) < 6) { waypoint = null; hud.toast(tx('waypointHere'), 2.4); }
+  const obj = mapTarget(), zone = zoneAt(b.x, b.z, L);
   updateMinimap(mapState, dt, { mode, moving: player.speed > 0.6, objective: !!obj, zone, held: mapHeld });
   minimap.setShown(mapState.shown);
   document.getElementById('hud').classList.toggle('map-on', mapState.shown);
@@ -1025,6 +1073,7 @@ function lateNight() {
 debug.setHour = (h, m = 0) => {   // (tools: load with ?hour= or ?tod so the hour isn't pinned)
   life.clock.minute = h * 60 + m; life.clock.sec = 0; applyHour(0, { force: true }); };
 debug.hour = () => hourState;
+debug.worldMap = () => worldMap; debug.setWaypoint = (w) => { waypoint = w; }; debug.getWaypoint = () => waypoint;
 debug.envInfo = () => ({ envAt, envWait, uuid: scene.environment && scene.environment.uuid, captures: envCaptures });
 
 let lastDraw = 0;
@@ -1035,6 +1084,7 @@ function frame(now) {
     const iv = 1000 / gfx.fps; lastDraw = now - lastDraw > 2 * iv ? now : lastDraw + iv;   // on the beat, so 60 on a 144 Hz screen averages 60
   }
   const dt = Math.min(debug.dtMax || 0.05, Math.max(0, (now - last) / 1000)); last = now; t += dt;   // dtMax: tools only (slow software GL)
+  pad.update(dt);
   if (!world) return;
 
   if (mode === 'entry') {             // a slow breath of camera movement behind the title
@@ -1067,13 +1117,15 @@ function frame(now) {
   if (mode !== 'pause') world.ambient.update(dt, player.body, { talking: talk.open });
   if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
   else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
-  { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
+  { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : world.dumpling.inside ? 0.3 : 0); }
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
   world.dawn.update(mode === 'pause' ? 0 : dt, { dawn: hourState.dawn, eye: camera.position });   // tai chi on the promenade at dawn
   world.moments.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });
+  world.cruise.update(mode === 'pause' ? 0 : dt, player);                              // the boat moves, carrying whoever's aboard (before your own step)
+  world.dumpling.update(mode === 'pause' ? 0 : dt, player.body);
   const driving = mode === 'drive' || (mode === 'pause' && pausedFrom === 'drive');
   if (driving) world.driving.update(dt, mode === 'pause');
-  else if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) world.jazz.seatCamera(camera);
+  else if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) (world.dumpling.seated ? world.dumpling : world.jazz).seatCamera(camera);
   else if (!riding && mode !== 'sale-seat') player.update(mode === 'pause' ? 0 : dt);
   const seated = mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat') || driving;
   if (world.playerBody) { world.playerBody.setVisible(!riding && !seated); if (!riding && !seated) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
@@ -1152,7 +1204,7 @@ function frame(now) {
   } else talkTarget = null;
   const place = target && places.find((p) => p.owns(target.id));
   const talkName = talkTarget && PERSONAS[talkTarget.persona] ? (getLang() === 'zh' ? PERSONAS[talkTarget.persona].zh : PERSONAS[talkTarget.persona].en) : null;
-  if (mode === 'seat') { if (world.sceneTalk.active) hud.prompt(false); else hud.prompt(true, world.jazz.seatPrompt()); if ((questIn -= dt) <= 0) { questIn = 0.5; updateStory(); } }
+  if (mode === 'seat') { if (world.sceneTalk.active) hud.prompt(false); else hud.prompt(true, (world.dumpling.seated ? world.dumpling : world.jazz).seatPrompt()); if ((questIn -= dt) <= 0) { questIn = 0.5; updateStory(); } }
   else if (!target && talkName && mode === 'play') hud.prompt(true, { target: talkName, action: getLang() === 'zh' ? '聊天' : 'Talk', key: 'T' });
   else if (place) hud.prompt(true, { ...place.prompt(target.id), talk: talkName });
   else if (target && target.id === 'vivian') hud.prompt(true, world.carSale.prompt());

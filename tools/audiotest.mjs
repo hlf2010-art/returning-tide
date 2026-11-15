@@ -263,9 +263,9 @@ ok(c5.loops === c0.loops && c5.vehicleVoices === c0.vehicleVoices, `after 4 rest
 ok(c5.state === 'running' && c5.pause > 0.95, 'and the sound is back at full level');
 
 // 8. mute (M) silences, unmute restores
-await page.keyboard.press('KeyM'); await page.waitForTimeout(900);
+await page.keyboard.press('Shift+KeyM'); await page.waitForTimeout(900);
 const mu = await rec('muted', () => page.waitForTimeout(1200));
-await page.keyboard.press('KeyM'); await page.waitForTimeout(900);
+await page.keyboard.press('Shift+KeyM'); await page.waitForTimeout(900);
 ok(db(rms(mono(mu))) < -60, `M mutes the output (${db(rms(mono(mu))).toFixed(1)} dBFS)`);
 
 ok(errors.length === 0, `no console errors (${errors.slice(0, 3).join(' | ')})`);

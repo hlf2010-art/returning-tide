@@ -1100,6 +1100,32 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
   Each speaks in recorded voices. Off for measurement tools (`?q=`) unless `?moments`.
   `node tools/streetwalk.mjs` walks through all of it.
 
+## Places: a shengjian shop and the river cruise (phase 4.4)
+
+- **阿潮生煎 A-Chao Shengjian** (`src/world/dumpling.js`), on Nanjing Road East's south side, 66 m in
+  from the Bund: a walk-in ground floor in the street's frontage (white tile, steel counters, the menu
+  over the kitchen, two big iron pans of buns under wooden lids, red stools). The name is invented; the
+  kind of place is everywhere in Shanghai. Order at the counter (1-5 add, Enter pays by Alipay, Esc
+  cancels): 4 or 8 shengjian, beef vermicelli or curry beef soup, soy milk, at typical prices
+  (¥4-22). The cook lifts the lid and calls it; take the tray, sit at a free table. Seated: 1 bite a
+  small hole and sip the soup first (the way to do it), 2 pop one in whole (it's hot), 3 the soup; E
+  gets up. Open 6:30 am to 9:30 pm; otherwise the roller shutter is down. A cashier, a cook and a diner
+  (Rocketbox), recorded voices. What you ate is remembered (`life.flags.food`) for the story to use.
+- **The Huangpu river cruise** (`src/world/cruise.js`, `src/engine/cruiseRoute.js`, tested): a pier at
+  the south end of the promenade (a gate in the railing, a walkway out over the water at deck level)
+  and a sightseeing boat, *Huichao* (invented), alongside it. Hourly sailings 10 am to 9 pm; ¥120 by
+  phone at the gate (typical of a night cruise). Walk on; at the hour she sails, in the engine: north
+  along the Bund side past Lujiazui, round, back along the Pudong side, round and in, about 5 minutes
+  real (20 on the game clock). On the open top deck you can walk about: the boat carries you and turns
+  you with it, the rails keep you in. An announcer on the boat's speakers (recorded), a ship's horn,
+  the engine's throb and the wash, other passengers at the rails, strung lights and a warm deck light.
+  E at the wheelhouse door skips to the end. Where the boat is depends only on the clock, so waiting
+  (E at the gate when she's out) or skipping puts her in the right place.
+  *Honestly:* the real Huangpu cruise piers are a little further south, at Shiliupu; the game puts one
+  within reach. The route is shorter than a real cruise (they run 40-60 minutes up to the Yangpu
+  Bridge and back).
+  `node tools/placeswalk.mjs` orders a meal, eats it, and rides a full sailing.
+
 ## What is here
 
 - Walk from Hankou Road out onto Zhongshan East 1st Road, up the stair, along the promenade.

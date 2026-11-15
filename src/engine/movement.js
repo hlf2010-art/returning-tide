@@ -1,5 +1,5 @@
 // Pure movement + collision. No three.js, no DOM.
-import { L, colliders, groundHeight } from '../world/layout.js';
+import { L, colliders, groundHeight, movers } from '../world/layout.js';
 
 export const WALK_SPEED = 2.2;
 export const RUN_SPEED = 5.0;
@@ -71,6 +71,7 @@ export function stepBody(body, wishX, wishZ, run, dt, jump = false, cap = Infini
     const h = resolve(body);
     if (h) body.hit = h;
   }
+  for (const m of movers) if (m.keep) m.keep(body);              // aboard something moving: inside its rails
   // velocity reflects what actually happened, so sliding along walls feels right
   if (dt > 0) { body.vx = (body.x - px) / dt; body.vz = (body.z - pz) / dt; }
 

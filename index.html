@@ -63,6 +63,7 @@
       <h1 data-t="paused"></h1>
       <button id="resume" class="mbtn primary" data-t="resume"></button>
       <button class="mbtn" data-open-settings data-t="settings"></button>
+      <button class="mbtn" data-open-saves data-t="saves"></button>
     </div>
   </div>
 
@@ -83,6 +84,8 @@
         <div class="row"><span data-t="gBloom"></span><div class="seg" data-setting="g.bloom"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
         <div class="row"><span data-t="gMirror"></span><div class="seg" data-setting="g.mirror"><button data-v="512">512</button><button data-v="768">768</button><button data-v="1024">1K</button><button data-v="2048">2K</button></div></div>
         <div class="row"><span data-t="gAuto"></span><div class="seg" data-setting="g.auto"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
+        <div class="row"><span data-t="benchmark"></span><button class="mbtn" id="bench-run" data-t="benchRun"></button></div>
+        <div class="ai-status" id="bench-out"></div>
         <div class="ai-status" id="g-status"></div>
         <div class="ai-status" data-t="gHint"></div>
       </div>
@@ -90,6 +93,7 @@
       <div class="row"><span data-t="language"></span><div class="seg" data-setting="lang"><button data-v="zh">中文</button><button data-v="en">English</button></div></div>
       <div class="row"><span data-t="subtitles"></span><div class="seg" data-setting="subs"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
       <div class="row"><span data-t="sound"></span><div class="seg" data-setting="sound"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
+      <div class="row"><span data-t="tipsSetting"></span><div class="seg" data-setting="tips"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
       <div class="row"><span data-t="voices"></span><div class="seg" data-setting="voices"><button data-v="original" data-t="voicesOriginal"></button><button data-v="dubbed" data-t="voicesDubbed"></button></div></div>
       <div class="row"><span data-t="ai"></span><div class="seg" data-setting="ai"><button data-v="auto" data-t="aiAuto"></button><button data-v="browser" data-t="aiBrowser"></button><button data-v="off" data-t="off"></button></div></div>
       <div class="row"><span data-t="voiceServer"></span><div class="seg" data-setting="voiceServer"><button data-v="off" data-t="voiceServerBrowser"></button><button data-v="on" data-t="voiceServerLocal"></button></div></div>

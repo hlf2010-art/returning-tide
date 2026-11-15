@@ -110,7 +110,7 @@ if (lockedRun) {
   s = await S();
   ok(s.mode === 'play', `clicking the pause screen resumes (mode=${s.mode}, locked=${s.locked})`);
 }
-await page.keyboard.press('KeyM'); await page.waitForTimeout(900);
+await page.keyboard.press('Shift+KeyM'); await page.waitForTimeout(900);
 ok(await vis('toast'), 'M toggles sound with a notice');
 const audioRunning = await page.evaluate(() => window.__bund.audio.running);
 console.log(`INFO  WebAudio context running: ${audioRunning}`);
