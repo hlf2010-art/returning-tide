@@ -18,7 +18,7 @@ await walk(6);
 let s = await S(); ok(s.z < -62.5, `the Bund continues north past Hankou Road's old limit (z=${s.z.toFixed(1)})`);
 // 2. into the Peace Hotel through the revolving door on Nanjing Road
 await p.evaluate(() => window.__bund.player.teleport(-48, -207.5, 0, 0));
-await walk(4);
+await walk(6);                                  // (software GL runs ~4 fps: 4 s of real time was right at the edge)
 s = await S(); ok(s.z < -213.5 && s.x > -50.5 && s.x < -45.5, `through the revolving door into the hall (${s.x.toFixed(1)}, ${s.z.toFixed(1)})`);
 // 3. the front desk: a key card
 await p.evaluate(() => window.__bund.player.teleport(-55.4, -227.6, Math.PI / 2, -0.1)); await p.waitForTimeout(1500);
