@@ -54,6 +54,7 @@ import { createCarSale } from './world/carSale.js';
 import { createInteriors, PEACE, AIA } from './world/interiors.js';
 import { createHotelUpper } from './world/hotelUpper.js';
 import { createJazzBar } from './world/jazzBar.js';
+import { createHailers } from './world/hailers.js';
 import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
 import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
@@ -179,7 +180,7 @@ async function boot() {
   // buying it: Vivian, the consultant, at the car (world/carSale.js, engine/carPurchase.js)
   const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode });
   if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, walkers: createWalkers({ scene, people }) };
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   places = [interiors, upper, jazz];
   // bumping into people: their reactions, a passing remark, a jolt for you
   bumps = createBumps({ hud, audio, onPlayerBump: ({ closing }) => { player.head.dipV -= 0.1 + 0.05 * Math.min(4, closing); player.head.roll += (Math.random() - 0.5) * 0.04; } });
@@ -671,6 +672,7 @@ function frame(now) {
   world.rideFlow.update(mode === 'pause' ? 0 : dt);
   if (riding && world.didi.car) { player.body.x = world.didi.car.x; player.body.z = world.didi.car.z; }   // you (and your ears) are in the car
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
+  world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
   if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
   else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
   { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here ? 1 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
