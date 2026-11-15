@@ -25,7 +25,9 @@ export function bakeImpostors(renderer, people, roles) {
   const scene = new THREE.Scene();
   scene.add(new THREE.HemisphereLight(0xffffff, 0x6a6a6a, 1.6));
   const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(0.4, 1.2, 2); scene.add(key);
-  const cam = new THREE.OrthographicCamera(-FRAME_W / 2, FRAME_W / 2, FRAME_H, 0, -5, 5);
+  // one column of the atlas per render: the 8 views of a pose stacked one above the other (an
+  // orthographic camera, so stacking changes nothing), scissored to the column. 10 renders per avatar.
+  const cam = new THREE.OrthographicCamera(-FRAME_W / 2, FRAME_W / 2, FRAME_H * ROWS, 0, -5, 5);
   cam.position.set(0, 0, 2); cam.lookAt(0, 0, 0); cam.position.set(0, 0, 2);
   const prevTarget = renderer.getRenderTarget(), prevClear = renderer.getClearColor(new THREE.Color()), prevAlpha = renderer.getClearAlpha();
   const prevTone = renderer.toneMapping, prevAuto = renderer.autoClear, prevShadow = renderer.shadowMap.enabled;
@@ -34,36 +36,40 @@ export function bakeImpostors(renderer, people, roles) {
   rt.scissorTest = true;
   const hips = new THREE.Vector3();
   const cells = {};
+  const t0 = performance.now();
   roles.forEach((role, ri) => {
     const bx = ri % GRID, by = Math.floor(ri / GRID);
     cells[role] = [bx, by];
-    const p = createPerson(people, role);
-    p.root.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
-    scene.add(p.root);
-    const clips = people.clips[p.sex];
+    const views = [];
+    for (let k = 0; k < ROWS; k++) {
+      const p = createPerson(people, role);
+      p.root.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+      scene.add(p.root); views.push(p);
+    }
+    const clips = people.clips[views[0].sex];
     const walkDur = clips.find((c) => c.name === 'walk').duration;
     const poses = [];
     for (let f = 0; f < 8; f++) poses.push(['walk', walkDur * f / 8]);
     poses.push(['idle', 0.6], ['phone', (clips.find((c) => c.name === 'phone') || { duration: 2 }).duration * 0.4]);
     poses.forEach(([clip, time], col) => {
-      p.play(clip === 'phone' && !clips.some((c) => c.name === 'phone') ? 'idle' : clip, 0);
-      p.mixer.setTime(time);
-      p.root.position.set(0, 0, 0); p.root.rotation.set(0, 0, 0); p.root.updateMatrixWorld(true);
-      p.bones.chest.getWorldPosition(hips);                // keep the body centred in its cell (walks can drift)
-      for (let k = 0; k < ROWS; k++) {
-        p.root.rotation.y = k * Math.PI / 4;
-        p.root.position.set(0, 0, 0); p.root.updateMatrixWorld(true);
-        p.bones.chest.getWorldPosition(hips);
-        p.root.position.set(-hips.x, 0, -hips.z); p.root.updateMatrixWorld(true);
-        const x = (bx * COLS + col) * CW, y = (by * ROWS + k) * CH;
-        rt.viewport.set(x, y, CW, CH); rt.scissor.set(x, y, CW, CH);
-        renderer.setRenderTarget(rt);
-        renderer.render(scene, cam);
-      }
+      // pose each view directly (no cross-fades: they run on the mixer's clock, which this jumps about)
+      const name = clips.some((c) => c.name === clip) ? clip : 'idle';
+      views.forEach((p, k) => {
+        p.mixer.stopAllAction();
+        for (const n of [name, `${name}:arm`]) { const a = p.mixer.existingAction(n); if (a) { a.reset(); a.setEffectiveWeight(1); a.play(); a.time = time; } }
+        p.mixer.update(0);
+        p.root.rotation.set(0, k * Math.PI / 4, 0); p.root.position.set(0, 0, 0); p.root.updateMatrixWorld(true);
+        p.bones.chest.getWorldPosition(hips);              // keep the body centred in its cell (walks can drift)
+        p.root.position.set(-hips.x, k * FRAME_H, -hips.z); p.root.updateMatrixWorld(true);
+      });
+      const x = (bx * COLS + col) * CW, y = by * ROWS * CH;
+      rt.viewport.set(x, y, CW, CH * ROWS); rt.scissor.set(x, y, CW, CH * ROWS);
+      renderer.setRenderTarget(rt);
+      renderer.render(scene, cam);
     });
-    scene.remove(p.root);
-    p.root.traverse((o) => { if (o.isSkinnedMesh) o.skeleton.dispose(); });
+    for (const p of views) { scene.remove(p.root); p.root.traverse((o) => { if (o.isSkinnedMesh) o.skeleton.dispose(); }); }
   });
+  console.info(`crowd impostors: ${roles.length} avatars baked in ${Math.round(performance.now() - t0)} ms`);
   rt.scissorTest = false; rt.viewport.set(0, 0, W, H); rt.scissor.set(0, 0, W, H);
   renderer.setRenderTarget(prevTarget); renderer.setClearColor(prevClear, prevAlpha);
   renderer.toneMapping = prevTone; renderer.autoClear = prevAuto; renderer.shadowMap.enabled = prevShadow;
@@ -207,6 +213,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
           const a = crowd.agents[id], b = body(a.role);
           if (!b) { nearSet.delete(id); continue; }
           b.agent = a; live.set(id, b); b.person.root.visible = true; b.person.root.rotation.y = a.heading;
+          b.person.root.scale.setScalar(0.01 * (a.scale || 1));                     // the same height as their card
         }
       }
       // full people

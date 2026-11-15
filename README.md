@@ -965,7 +965,7 @@ traffic sizes on the next load (the panel offers the reload). The panel shows th
 pixels being drawn. `?gfx=low|mac|high|ultra` and `?lod=` override for a session.
 
 **The crowd** (`src/engine/crowd.js` simulation, pure and tested; `src/world/crowdView.js` drawing).
-About 210 people at medium detail (≈95 low, ≈335 high, ≈500 ultra): tourists from across China and
+About 380 people at medium detail (≈170 low, ≈610 high, ≈910 ultra): tourists from across China and
 abroad, locals on their way somewhere, older couples, people waiting for buses, and tour groups
 following a guide with a coloured flag (who talks to the group, voiced). They walk a network of lanes
 laid on the real walkable ground (the promenade's main and inner walks, both pavements of Zhongshan

@@ -665,6 +665,61 @@
   "en": "Of course. Message me any time."
  },
  {
+  "who": "guide",
+  "zh": "大家跟紧了啊，别走散了！",
+  "en": "Stay close, everyone, don't get separated!"
+ },
+ {
+  "who": "guide",
+  "zh": "对面就是陆家嘴，那个球就是东方明珠。",
+  "en": "Across the river is Lujiazui; the one with the spheres is the Oriental Pearl."
+ },
+ {
+  "who": "guide",
+  "zh": "我们在这里拍照十五分钟，然后在这里集合。",
+  "en": "Fifteen minutes here for photos, then we meet back right here."
+ },
+ {
+  "who": "guide",
+  "zh": "看我的小旗子啊，跟着小旗子走！",
+  "en": "Watch my little flag, follow the flag!"
+ },
+ {
+  "who": "guide",
+  "zh": "身后这一排老房子，一百年前都是银行和洋行。",
+  "en": "This row of old buildings behind you were all banks and trading houses a hundred years ago."
+ },
+ {
+  "who": "guide",
+  "zh": "注意安全，不要靠在栏杆上。",
+  "en": "Careful, please, don't lean on the railing."
+ },
+ {
+  "who": "guide",
+  "zh": "最高的那栋是上海中心，六百三十二米。",
+  "en": "The tallest one is the Shanghai Tower, six hundred and thirty-two metres."
+ },
+ {
+  "who": "guide",
+  "zh": "拍好了吗？我们往南京路走了啊。",
+  "en": "Got your photos? We're heading on to Nanjing Road."
+ },
+ {
+  "who": "buspa",
+  "zh": "车辆进站，请注意安全。",
+  "en": "Bus arriving, please take care."
+ },
+ {
+  "who": "buspa",
+  "zh": "上车请往里走，下车请走后门。",
+  "en": "Please move inside; please leave by the rear door."
+ },
+ {
+  "who": "buspa",
+  "zh": "车辆起步，请站稳扶好。",
+  "en": "The bus is moving off, please hold on."
+ },
+ {
   "who": "agent",
   "zh": "沈先生是吧？程小姐在里面等您。这套是顶层，三百二十平，整层就这一户。",
   "en": "Mr Shen? Ms Cheng's inside. Top floor, three hundred and twenty square metres, the only flat on the floor."

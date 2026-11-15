@@ -12,7 +12,7 @@ export const GUIDE_LINES = [
   ['guide', '拍好了吗？我们往南京路走了啊。', 'Got your photos? We\'re heading on to Nanjing Road.'],
 ];
 export const BUS_LINES = [
-  ['busPA', '车辆进站，请注意安全。', 'Bus arriving, please take care.'],
-  ['busPA', '上车请往里走，下车请走后门。', 'Please move inside; please leave by the rear door.'],
-  ['busPA', '车辆起步，请站稳扶好。', 'The bus is moving off, please hold on.'],
+  ['buspa', '车辆进站，请注意安全。', 'Bus arriving, please take care.'],
+  ['buspa', '上车请往里走，下车请走后门。', 'Please move inside; please leave by the rear door.'],
+  ['buspa', '车辆起步，请站稳扶好。', 'The bus is moving off, please hold on.'],
 ];

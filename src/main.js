@@ -247,10 +247,10 @@ async function boot() {
   world = { buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
-  if (people && params.get('crowd') !== '0') {
+  if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
     const roles = Object.keys(people.manifest.cast).filter((r) => !['lin', 'su', 'player'].includes(r));
     const det = gfxDetail({ ...gfx, lod: bootLod });
-    const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0.25 : det.crowd;
+    const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0 : det.crowd;   // tools: none unless asked
     world.crowd = createCrowd({ density, roles });
     world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, camera });
     traffic.setExtraPeople(() => world.crowd.onCarriageway());

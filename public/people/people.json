@@ -49,6 +49,54 @@
    "sex": "f",
    "file": "p5.glb",
    "bytes": 4518552
+  },
+  "c1": {
+   "avatar": "Female_Adult_07",
+   "sex": "f",
+   "file": "c1.glb",
+   "bytes": 3839304
+  },
+  "c2": {
+   "avatar": "Female_Adult_11",
+   "sex": "f",
+   "file": "c2.glb",
+   "bytes": 3731288
+  },
+  "c3": {
+   "avatar": "Female_Adult_14",
+   "sex": "f",
+   "file": "c3.glb",
+   "bytes": 4497488
+  },
+  "c4": {
+   "avatar": "Business_Female_04",
+   "sex": "f",
+   "file": "c4.glb",
+   "bytes": 3176660
+  },
+  "c5": {
+   "avatar": "Male_Adult_02",
+   "sex": "m",
+   "file": "c5.glb",
+   "bytes": 3369476
+  },
+  "c6": {
+   "avatar": "Male_Adult_12",
+   "sex": "m",
+   "file": "c6.glb",
+   "bytes": 2194904
+  },
+  "c7": {
+   "avatar": "Male_Adult_04",
+   "sex": "m",
+   "file": "c7.glb",
+   "bytes": 3660052
+  },
+  "c8": {
+   "avatar": "Female_Adult_04",
+   "sex": "f",
+   "file": "c8.glb",
+   "bytes": 3859252
   }
  },
  "clips": {

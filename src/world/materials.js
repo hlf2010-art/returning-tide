@@ -7,7 +7,7 @@ import { covers } from './layout.js';
 import { stoneTexture, fluteTexture, facadeAtlas, pavingTextures, sidewalkTextures, asphaltTextures, wetnessTexture } from './textures.js';
 
 // three's ACES curve carries a built-in 1/0.6 exposure, so these read ~2x brighter on screen
-export const FLOOD_COLOR = new THREE.Color(1.0, 0.56, 0.19);          // sodium-gold, as the Bund's façade lighting reads at night
+export const FLOOD_COLOR = new THREE.Color(1.0, 0.5, 0.13);           // deep sodium gold, as the Bund's façade lighting reads at night (the reference photos)
 
 const archVertex = /* glsl */ `
 attribute float flood;
@@ -63,15 +63,16 @@ black.needsUpdate = true;
 const white = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
 white.colorSpace = THREE.SRGBColorSpace; white.needsUpdate = true;
 
-export function archMaterial({ map = white, emissiveMap = black, tint = 0xffffff, floodGain = 0.74, emissiveGain = 1.2 } = {}) {
+export function archMaterial({ map = white, emissiveMap = black, tint = 0xffffff, floodGain = 0.86, emissiveGain = 1.2 } = {}) {
   const m = new THREE.ShaderMaterial({
     vertexShader: archVertex, fragmentShader: archFragment, fog: true,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
       map: { value: null }, emissiveMap: { value: null }, grainMap: { value: null }, grainAmount: { value: 0 },
       tint: { value: new THREE.Color(tint) }, floodColor: { value: FLOOD_COLOR.clone() },
       floodGain: { value: floodGain }, emissiveGain: { value: emissiveGain },
-      skyAmbient: { value: new THREE.Color(0.05, 0.08, 0.17) },
-      groundAmbient: { value: new THREE.Color(0.075, 0.06, 0.05) },
+      // night: little sky fill, so the floodlight's gold isn't washed out (photos: gold façades, dark sky)
+      skyAmbient: { value: new THREE.Color(0.017, 0.027, 0.056) },
+      groundAmbient: { value: new THREE.Color(0.034, 0.027, 0.023) },
     }]),
   });
   m.uniforms.map.value = map; m.uniforms.emissiveMap.value = emissiveMap; m.uniforms.grainMap.value = white;   // (merge() would have cloned the textures)
@@ -174,7 +175,7 @@ export function createMaterials() {
   M.stoneDark = arch({ map: stone, tint: 0x6b6862 });
   M.flute = arch({ map: fluteTexture() });
   for (const s of ['classic', 'arched', 'rustic', 'deco', 'brick']) M[s] = arch(facadeAtlas(s));
-  M.brick.uniforms.floodGain.value = 0.66;
+  M.brick.uniforms.floodGain.value = 0.76;
   M.roof = arch({ tint: 0x1b1d22, floodGain: 0.2 });
   M.copper = arch({ tint: 0x5cc49c, floodGain: 1.25 });        // verdigris roofs: the Peace Hotel's pyramid is lit green, its own floods
   M.copper.uniforms.floodColor.value.setRGB(0.5, 1.0, 0.78);

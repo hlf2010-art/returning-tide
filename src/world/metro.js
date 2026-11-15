@@ -16,7 +16,8 @@ export function createMetro({ hud, audio, player, travel, getLife, save, arriveA
     const l = landing(m);
     return [
       { id: `metro:${m.id}:in`, x: l.x + Math.sign(m.bottom - m.top) * 0.7, y: -METRO_DEPTH + 1.6, z: l.z, reach: 3.2, cone: 0.5 },
-      { id: `metro:${m.id}:thru`, x: l.x, y: -METRO_DEPTH + 2.1, z: m.z0 + 0.1, reach: 3.0, cone: 0.55 },
+      // the exit sign on the landing's side wall (world/nanjingRoad.js puts it here)
+      { id: `metro:${m.id}:thru`, x: (Math.min(m.bottom, m.top === m.x1 ? m.x0 : m.x1) + Math.max(m.bottom, m.top === m.x1 ? m.x0 : m.x1)) / 2 + (m.top === m.x1 ? 0.6 : -0.6), y: -METRO_DEPTH + 2.1, z: m.z0 + 0.1, reach: 3.0, cone: 0.55 },
     ];
   });
   const at = (id) => METRO.find((m) => id.startsWith(`metro:${m.id}`));

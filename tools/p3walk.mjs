@@ -27,6 +27,7 @@ g = await ev(() => JSON.parse(localStorage.getItem('bund.gfx')));
 ok(g.preset === 'custom' && g.fps === 30 && g.msaa === 4, 'changing the frame cap makes it Custom and keeps the rest of Ultra');
 ok(await ev(() => !document.querySelector('#settings .g-reload').hidden), 'a different detail level offers the reload for crowds and traffic');
 await ev(() => document.querySelector('.seg[data-setting="g.preset"] button[data-v="mac"]').click());
+await p.waitForTimeout(1500);                                               // (let the slow software renderer repaint before the screenshot)
 await p.screenshot({ path: `${out}/p3-settings.png` });
 await ev(() => document.querySelector('[data-close-settings]').click());
 // 2. the crowd and the traffic
@@ -66,7 +67,7 @@ ok(led && led.amount === -3 && /Metro/.test(led.to), 'the fare (¥3) is in the w
 // 5. through the concourse: from Exit 2 to Exit 7
 await ev(() => { window.__bund.world.dest.leave && window.__bund.world.dest.leave(); });
 await p.waitForTimeout(3000);
-await ev(() => window.__bund.player.teleport(-518.8, -210.6, 0, 0.1, -4.6));
+await ev(() => window.__bund.player.teleport(-517.6, -209.4, 0, 0.2, -4.6));            // on Exit 2's landing, facing the sign on the side wall
 await p.waitForTimeout(1200);
 const pr2 = await ev(() => { const e = document.getElementById('prompt'); return e.classList.contains('on') ? e.innerText.replace(/\n/g, ' ') : ''; });
 ok(/Exit 7/.test(pr2), `Exit 2's landing, the way through: "${pr2}"`);

@@ -51,20 +51,36 @@ function signAtlas(seed = 7) {
   }
   return { texture: tex(c, { repeat: false, aniso: 8 }), fascia, blades };
 }
-// shop interiors seen through the glass: 8 looks
+// shop interiors seen through the glass: 8 looks. Dim and warm at the back, the display lit at the
+// front, goods on shelves and rails, a person or two inside, the glass's mullions and a sheen across it.
 function shopAtlas() {
   const [c, x] = makeCanvas(1024, 256), r = rng(3);
   for (let k = 0; k < 8; k++) {
     const X = k * 128, warm = k % 3 !== 1;
-    const g = x.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, warm ? '#fff1d6' : '#f2f7ff'); g.addColorStop(1, warm ? '#c79a5e' : '#9fb3c9');
-    x.fillStyle = g; x.fillRect(X, 0, 128, 256);
-    for (let i = 0; i < 14; i++) {                                   // shelves, racks, people inside
-      x.fillStyle = `hsla(${Math.floor(r() * 360)},${30 + r() * 50}%,${25 + r() * 40}%,0.85)`;
-      const w = 8 + r() * 26, h = 10 + r() * 60; x.fillRect(X + r() * (128 - w), 256 - h - r() * 120, w, h);
+    x.save(); x.beginPath(); x.rect(X, 0, 128, 256); x.clip();
+    const back = x.createLinearGradient(0, 0, 0, 256);                       // the room: ceiling light, darker floor
+    back.addColorStop(0, warm ? '#6b4a2a' : '#4a5566'); back.addColorStop(0.18, warm ? '#c89a62' : '#a9b8c8');
+    back.addColorStop(0.6, warm ? '#7a5534' : '#5d6a7a'); back.addColorStop(1, warm ? '#2a1c12' : '#1e242c');
+    x.fillStyle = back; x.fillRect(X, 0, 128, 256);
+    x.fillStyle = warm ? 'rgba(255,236,200,0.85)' : 'rgba(235,245,255,0.85)';  // ceiling downlights
+    for (let i = 0; i < 4; i++) x.fillRect(X + 10 + i * 30, 14, 14, 3);
+    const kind = k % 4;
+    for (let i = 0; i < 6; i++) {                                           // shelves / rails of goods
+      const y = 70 + i * 26;
+      if (kind === 0) { x.fillStyle = 'rgba(30,22,16,0.7)'; x.fillRect(X + 6, y + 14, 116, 3); for (let j = 0; j < 9; j++) { x.fillStyle = `hsla(${(r() * 50 + (warm ? 10 : 190)) | 0},45%,${30 + r() * 35}%,0.95)`; x.fillRect(X + 8 + j * 12.5, y + 14 - (6 + r() * 9), 9, 6 + r() * 9); } }
+      else if (kind === 1 && i < 3) { x.strokeStyle = 'rgba(40,40,40,0.8)'; x.lineWidth = 2; x.beginPath(); x.moveTo(X + 8, y); x.lineTo(X + 120, y); x.stroke(); for (let j = 0; j < 8; j++) { x.fillStyle = `hsla(${(r() * 360) | 0},35%,${25 + r() * 30}%,0.95)`; x.fillRect(X + 10 + j * 14, y, 10, 22 + r() * 10); } }
+      else if (kind === 2 && i === 2) { for (let j = 0; j < 4; j++) { x.fillStyle = 'rgba(250,240,220,0.9)'; x.fillRect(X + 12 + j * 28, y + 30, 20, 4); x.fillStyle = `hsla(${(40 + r() * 20) | 0},70%,60%,0.95)`; x.beginPath(); x.arc(X + 22 + j * 28, y + 26, 5, 0, Math.PI * 2); x.fill(); } }
+      else if (kind === 3 && i === 1) { x.fillStyle = 'rgba(20,20,24,0.9)'; x.fillRect(X + 14, y, 100, 40); x.fillStyle = '#7fd4ff'; x.fillRect(X + 18, y + 4, 92, 30); }
     }
-    x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(X, 0, 128, 18);
-    x.fillStyle = 'rgba(20,20,20,0.9)'; x.fillRect(X, 0, 3, 256); x.fillRect(X + 125, 0, 3, 256);
+    for (let i = 0; i < 1 + (r() * 2 | 0); i++) {                            // someone inside
+      const px = X + 20 + r() * 88, ph = 70 + r() * 20;
+      x.fillStyle = 'rgba(25,18,14,0.85)'; x.beginPath(); x.ellipse(px, 256 - ph - 30, 7, 9, 0, 0, Math.PI * 2); x.fill(); x.fillRect(px - 9, 256 - ph - 20, 18, ph);
+    }
+    x.fillStyle = warm ? 'rgba(255,214,150,0.35)' : 'rgba(210,230,255,0.3)'; x.fillRect(X, 200, 128, 10);   // the lit display shelf
+    const sheen = x.createLinearGradient(X, 0, X + 128, 256); sheen.addColorStop(0, 'rgba(255,255,255,0.0)'); sheen.addColorStop(0.45, 'rgba(255,255,255,0.08)'); sheen.addColorStop(0.55, 'rgba(255,255,255,0.0)');
+    x.fillStyle = sheen; x.fillRect(X, 0, 128, 256);
+    x.fillStyle = 'rgba(12,12,14,0.95)'; x.fillRect(X, 0, 4, 256); x.fillRect(X + 124, 0, 4, 256); x.fillRect(X, 0, 128, 6); x.fillRect(X + 62, 0, 3, 256);   // mullions
+    x.restore();
   }
   return tex(c, { repeat: false, aniso: 4 });
 }
@@ -79,6 +95,18 @@ function screenAtlas() {
     x.font = `900 88px ${FONT.sans}`; x.fillText(t1, 256, i * 256 + 110); x.font = `700 34px ${FONT.sans}`; x.fillText(t2, 256, i * 256 + 190);
   });
   const t = tex(c, { repeat: false }); t.repeat.set(1, 0.25); return t;
+}
+// through the doors at the bottom: the concourse, its ceiling lights, the ticket gates, people
+function concourseTex() {
+  const [c, x] = makeCanvas(256, 256), r = rng(10);
+  const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, '#9aa3ab'); g.addColorStop(0.45, '#6f777f'); g.addColorStop(1, '#3a3e42');
+  x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+  x.fillStyle = 'rgba(255,255,255,0.95)'; for (let i = 0; i < 5; i++) x.fillRect(10 + i * 50, 30 + i * 2, 36, 4);       // ceiling strips
+  x.fillStyle = '#16181c'; x.fillRect(0, 120, 256, 26);                                                                    // the signs band
+  x.fillStyle = LINE_COLOR[2]; x.fillRect(16, 124, 18, 18); x.fillStyle = LINE_COLOR[10]; x.fillRect(40, 124, 18, 18);
+  for (let i = 0; i < 6; i++) { x.fillStyle = '#2a2e33'; x.fillRect(8 + i * 42, 182, 30, 40); x.fillStyle = '#4cd964'; x.fillRect(16 + i * 42, 188, 10, 6); }   // gates
+  for (let i = 0; i < 5; i++) { const px = 20 + r() * 216, h = 50 + r() * 16; x.fillStyle = 'rgba(30,30,34,0.85)'; x.beginPath(); x.ellipse(px, 236 - h, 5, 6, 0, 0, Math.PI * 2); x.fill(); x.fillRect(px - 6, 242 - h, 12, h - 8); }
+  return tex(c, { repeat: false });
 }
 // the metro sign: logo, station name, line badges, exit number
 function metroSign(exit) {
@@ -240,7 +268,8 @@ export function createNanjingRoad(M) {
     // walls of the well, below the street: white tile; the end wall carries the way in
     for (const z of [m.z0 - 0.06, m.z1 + 0.06]) walls.box((m.x0 + m.x1) / 2, -METRO_DEPTH, z, m.x1 - m.x0, METRO_DEPTH + CH, 0.12);
     const endX = m.top === m.x1 ? m.x0 - 0.06 : m.x1 + 0.06;
-    walls.box(endX, -METRO_DEPTH, zc, 0.12, METRO_DEPTH + 3.4, wz + 0.24);
+    walls.box(endX, -METRO_DEPTH, zc, 0.12, METRO_DEPTH + CH, wz + 0.24);
+    P.dark.box(endX, CH, zc, 0.14, 3.0, wz + 0.24);                                                   // above the street: a dark glass panel
     walls.box((m.x0 + m.x1) / 2, 3.1, zc, m.x1 - m.x0 + 0.6, 0.12, wz + 0.8);                         // canopy roof frame
     // glass balustrades (three sides) and the canopy's glass
     for (const z of [m.z0, m.z1]) { glassB.box((m.x0 + m.x1) / 2, CH, z, m.x1 - m.x0, 1.1, 0.03); P.steel.box((m.x0 + m.x1) / 2, CH + 1.1, z, m.x1 - m.x0, 0.05, 0.06); }
@@ -256,9 +285,9 @@ export function createNanjingRoad(M) {
     // at the bottom: the way in, lit
     const ls = new THREE.Mesh(new THREE.PlaneGeometry(wz - 0.2, (wz - 0.2) * 192 / 1024), new THREE.MeshBasicMaterial({ map: landingSign() }));
     ls.material.color.setScalar(1.3); ls.position.set(endX + (m.top === m.x1 ? 0.07 : -0.07), -METRO_DEPTH + 2.5, zc); ls.rotation.y = m.top === m.x1 ? Math.PI / 2 : -Math.PI / 2; group.add(ls);
-    const door = new THREE.Mesh(new THREE.PlaneGeometry(wz - 0.6, 2.2), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.45, 1.35) }));
+    const door = new THREE.Mesh(new THREE.PlaneGeometry(wz - 0.6, 2.2), new THREE.MeshBasicMaterial({ map: concourseTex() })); door.material.color.setScalar(0.95);
     door.position.set(endX + (m.top === m.x1 ? 0.075 : -0.075), -METRO_DEPTH + 1.1, zc); door.rotation.y = ls.rotation.y; group.add(door);
-    lights.push({ x: (lx0 + lx1) / 2, y: -METRO_DEPTH + 2.6, z: zc, color: new THREE.Color(0.95, 0.97, 1.0), intensity: 6, distance: 9 });
+    lights.push({ x: (lx0 + lx1) / 2, y: -METRO_DEPTH + 2.6, z: zc, color: new THREE.Color(0.95, 0.97, 1.0), intensity: 2.2, distance: 8 });
     lights.push({ x: (m.x0 + m.x1) / 2, y: 2.8, z: zc, color: new THREE.Color(0.92, 0.96, 1.0), intensity: 5, distance: 9 });
     // on the side wall: the way through the concourse to the other exit
     const other = METRO.find((o) => o !== m), [tc, tx] = makeCanvas(512, 128);
@@ -276,14 +305,15 @@ export function createNanjingRoad(M) {
   flush(B, M, group, 'nj-');
   const signMat = new THREE.MeshBasicMaterial({ map: atlas.texture }); signMat.color.setScalar(1.55);
   const bladeMat = new THREE.MeshBasicMaterial({ map: atlas.texture, side: THREE.DoubleSide }); bladeMat.color.setScalar(1.7);
-  const shopMat = new THREE.MeshBasicMaterial({ map: shopTex }); shopMat.color.setScalar(1.05);
+  const shopMat = new THREE.MeshBasicMaterial({ map: shopTex }); shopMat.color.setScalar(0.95);
   group.add(shops.mesh(shopMat, 'nj-shops'), signs.mesh(signMat, 'nj-signs'), blades.mesh(bladeMat, 'nj-blades'));
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
   group.add(P.paint.mesh(paint, 'henan-paint'), P.yellow.mesh(yellow, 'henan-yellow'));
   const steel = new THREE.MeshStandardMaterial({ color: 0x8a9096, metalness: 0.85, roughness: 0.35 });
   group.add(P.steel.mesh(steel, 'nj-steel'), P.hoard.mesh(new THREE.MeshStandardMaterial({ color: 0x2f6aa8, roughness: 0.7 }), 'nj-hoarding'));
-  group.add(P.tile.mesh(new THREE.MeshStandardMaterial({ color: 0xd9d6cf, roughness: 0.35 }), 'metro-landing'), walls.mesh(new THREE.MeshStandardMaterial({ color: 0xe8e8e4, roughness: 0.4 }), 'metro-walls'));
+  group.add(P.tile.mesh(new THREE.MeshStandardMaterial({ color: 0x8e8b86, roughness: 0.35 }), 'metro-landing'), walls.mesh(new THREE.MeshStandardMaterial({ color: 0xa9aba9, roughness: 0.45 }), 'metro-walls'));
+  group.add(P.dark.mesh(new THREE.MeshStandardMaterial({ color: 0x15181c, roughness: 0.15, metalness: 0.6 }), 'metro-panels'));
   group.add(glassB.mesh(glassMat, 'metro-glass'), strips.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.6, 1.7) }), 'metro-strips'));
   return {
     group, lights,

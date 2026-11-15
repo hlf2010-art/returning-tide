@@ -88,6 +88,16 @@ export function buildNet(extra = null) {
   }));
   link('N0_0', Wat(-213.5)); link('N0_2', Wat(-188.5));
   const last = NX.length - 1;
+  // shop windows on both sides: window-shopping, photographing the neon (people linger on Nanjing Road)
+  const shops = [];
+  for (let x = -46; x > -476; x -= 13) {
+    if (NJ.cross.some((c) => x > c.x0 - 2 && x < c.x1 + 2)) continue;
+    for (const [z, row] of [[NJ.z0 + 1.0, 0], [NJ.z1 - 1.0, 2]]) {
+      let best = 0; NX.forEach((nx, i) => { if (Math.abs(nx - x) < Math.abs(NX[best] - x) && by[`N${i}_${row}`]) best = i; });
+      if (!by[`N${best}_${row}`]) continue;
+      const id = `S${Math.round(-x)}_${row}`; node(id, x, z, 0.5); link(id, `N${best}_${row}`); shops.push(id);
+    }
+  }
   // Exit 7 (east of Henan Road): the top of the stairs, and the landing at the bottom
   const m7 = METRO[0], m2 = METRO[1];
   node('M7t', m7.top + 1.0, -209.5, 0.6); node('M7b', m7.bottom - 0.6, -209.5, 0.8); link('M7t', 'M7b');
@@ -110,7 +120,7 @@ export function buildNet(extra = null) {
   node('HSW0', h.x0 - 2.0, NJ.z1 + 1, 0.6); node('HSW1', h.x0 - 2.2, NJ.z1 + h.walkTo - 2, 0.6);
   link('HW', 'HSW0'); link('NW1', 'HSW0'); link('HSW0', 'HSW1');
   if (extra) extra({ node, link, by });
-  return { nodes, edges, by, rail, ends: { E0: Eat(-258), E15: Eat(92), W0: Wat(-258), W16: Wat(92) } };
+  return { nodes, edges, by, rail, shops, ends: { E0: Eat(-258), E15: Eat(92), W0: Wat(-258), W16: Wat(92) } };
 }
 
 // shortest path (node ids) by Dijkstra; zebra edges carry a small penalty (people avoid crossing for nothing)
@@ -132,11 +142,11 @@ export function route(net, from, to) {
 
 // where people come from and go to, and how many (weights)
 export const ENDS = [
-  { id: 'P0', w: 6, area: 'deck' }, { id: 'P15', w: 5, area: 'deck' }, { id: 'I0', w: 2, area: 'deck' }, { id: 'I15', w: 2, area: 'deck' },
+  { id: 'P0', w: 11, area: 'deck' }, { id: 'P15', w: 9, area: 'deck' }, { id: 'I0', w: 3, area: 'deck' }, { id: 'I15', w: 3, area: 'deck' },
   { id: 'E0', w: 2, area: 'east' }, { id: 'E15', w: 2, area: 'east' },
   { id: 'W0', w: 2, area: 'west' }, { id: 'W16', w: 2, area: 'west' },
   { id: 'HN4', w: 1, area: 'hankou' }, { id: 'HS4', w: 1, area: 'hankou' },
-  { id: 'M7b', w: 9, area: 'nanjing' }, { id: 'M2b', w: 6, area: 'nanjing' }, { id: 'NW4', w: 4, area: 'nanjing' },
+  { id: 'M7b', w: 12, area: 'nanjing' }, { id: 'M2b', w: 8, area: 'nanjing' }, { id: 'NW4', w: 5, area: 'nanjing' },
   { id: 'HNE2', w: 1.5, area: 'nanjing' }, { id: 'HSE1', w: 1.5, area: 'nanjing' }, { id: 'HNW2', w: 1.5, area: 'nanjing' }, { id: 'HSW1', w: 1.5, area: 'nanjing' },
 ];
 
@@ -201,7 +211,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
     return ends.find((e) => e.id !== not);
   };
   const agents = [];
-  const N = Math.round(210 * density), nGroups = groups ?? Math.max(1, Math.round(2.5 * density));
+  const N = Math.round(380 * density), nGroups = groups ?? Math.max(1, Math.round(2.5 * density));
   let nextId = 0;
   const make = (kind, extra = {}) => {
     const abroad = kind === 'tourist' && rnd() < 0.22;
@@ -225,6 +235,9 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
     let via = null;
     const deck = (id) => /^(P|I|R|ST)/.test(id);
     if ((a.kind === 'tourist' || a.kind === 'guide' || a.kind === 'lingerer') && rnd() < (a.kind === 'lingerer' ? 1 : 0.75)) via = pick(net.rail, rnd);
+    // ... or a shop window on Nanjing Road, if the trip touches it (locals too, now and then)
+    const nanjing = (id) => /^(N|M|NW|S)/.test(id);
+    if (net.shops && net.shops.length && (nanjing(from.id) || nanjing(to.id)) && a.kind !== 'guide' && rnd() < (a.kind === 'local' ? 0.3 : a.kind === 'lingerer' ? 0.6 : 0.55)) via = pick(net.shops, rnd);
     let p = via ? [...(route(net, from.id, via) || []), ...(route(net, via, to.id) || []).slice(1)] : route(net, from.id, to.id);
     if (!p || p.length < 2) p = route(net, from.id, pickEnd(from.id).id) || [from.id];
     a.path = p; a.i = 1; a.via = via; a.done = false;
@@ -248,7 +261,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
     for (let k = 0; k < size; k++) { const f = make('follower'); f.group = tour; f.slot = { back: 1.4 + (k % 4) * 0.9 + rnd() * 0.6, side: ((k % 3) - 1) * 0.9 + (rnd() - 0.5) * 0.6 }; tour.members.push(f); }
     tours.push(tour);
   }
-  const kinds = ['tourist', 'tourist', 'tourist', 'tourist', 'local', 'local', 'couple', 'elder', 'lingerer', 'tourist', 'commuter', 'tourist'];
+  const kinds = ['tourist', 'tourist', 'tourist', 'tourist', 'local', 'local', 'couple', 'elder', 'lingerer', 'lingerer', 'tourist', 'commuter', 'tourist', 'couple'];
   while (agents.length < N) {
     const k = pick(kinds, rnd);
     if (k === 'couple') { const a = make('tourist'), b = make('tourist', { role: a.role === 'c1' ? 'p3' : a.role }); a.partner = b; b.partner = a; b.leader = a; b.speed = a.speed = 0.85; }
@@ -278,6 +291,12 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
   }
   function arrive(a, n, dt) {
     // reached a node: an act at the railing, the zebra, or on to the next
+    if (n.id.startsWith('S') && a.via === n.id) {                     // at a shop window: facing it
+      a.via = null; a.state = 'act'; a.atRail = true; a.heading = n.z < NJ.zc ? Math.PI : 0;
+      a.act = rnd() < 0.3 ? 'photo' : rnd() < 0.4 ? 'phone' : 'look';
+      a.wait = a.kind === 'lingerer' ? 25 + rnd() * 50 : 5 + rnd() * 14;
+      return;
+    }
     if (n.id.startsWith('R') && a.via === n.id) {
       a.via = null; a.state = 'act'; a.heading = Math.PI / 2; a.atRail = true;
       const r = rnd();
@@ -364,6 +383,16 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           const last = a.i === a.path.length - 1;
           if (d < (last ? 2 : n.w > 0.65 ? 1.2 : 0.45) || passed) { if (a.state === 'cross') a.state = 'walk'; arrive(a, n, dt); if (a.state !== 'walk' && a.state !== 'cross') { tx = a.x; tz = a.z; speed = 0; } }
         }
+        // on a carriageway without crossing (pushed off the kerb in a crowd, a partner left behind):
+        // back to the nearest kerb at once
+        const ld = a.kind === 'follower' ? a.group.guide : a.leader;
+        let rescue = false;
+        if (a.state !== 'cross' && !(ld && ld.state === 'cross') && onRoad(a.x, a.z)) {
+          rescue = true; speed = 1.4; tz = a.z;
+          if (inHenan(a.x, a.z)) tx = a.x < NJ.henan.xc ? NJ.henan.x0 - 0.4 : NJ.henan.x1 + 0.4;
+          else if (a.x < L.westCurbX) tz = a.z < 0 ? -L.street.roadHalfW - 0.4 : L.street.roadHalfW + 0.4, tx = a.x;
+          else tx = a.x < (L.westCurbX + L.eastCurbX) / 2 ? L.westCurbX - 0.4 : L.eastCurbX + 0.4;
+        }
         // desired velocity toward the target
         let dx = tx - a.x, dz = tz - a.z; const d = Math.hypot(dx, dz);
         let vx = 0, vz = 0;
@@ -404,7 +433,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
         // (or following your guide / partner over the zebra while the green man is still on)
         const lead = a.kind === 'follower' ? a.group.guide : a.leader;
         const zebra = (x, z) => (Math.abs(z - 1.2) < 2.2 && x > -28 && x < -4) || (Math.abs(z - NJ.zc - 1.5) < 2.2 && x > NJ.henan.x0 - 0.5 && x < NJ.henan.x1 + 0.5);
-        const mayCross = a.state === 'cross' || (lead && (lead.state === 'cross' || state.sig.bund.aspect === 'walk' || state.sig.henan.aspect === 'walk') && zebra(nx, nz));
+        const mayCross = rescue || a.state === 'cross' || (lead && (lead.state === 'cross' || state.sig.bund.aspect === 'walk' || state.sig.henan.aspect === 'walk') && zebra(nx, nz));
         const bad = (x, z) => blocked(x, z) || (!mayCross && onRoad(x, z) && !onRoad(a.x, a.z));
         if (bad(nx, nz)) {
           if (!bad(nx, a.z)) nz = a.z;
