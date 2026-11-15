@@ -1,39 +1,175 @@
 {
  "_note": "Who speaks with which Kokoro voice (zh: Kokoro-82M-v1.1-zh, en: Kokoro-82M). Cast by measured pitch (tools/voice/probe.json): lower, slower voices for the older men.",
- "_default": { "zh": "zm_013", "en": "am_michael" },
- "lin": { "zh": "zm_098", "en": "bm_lewis", "speed": 0.92 },
- "bump:lin": { "zh": "zm_098", "en": "bm_lewis", "speed": 0.92 },
- "su": { "zh": "zf_046", "en": "bf_emma" },
- "bump:su": { "zh": "zf_046", "en": "bf_emma" },
- "dad": { "zh": "zm_029", "en": "am_onyx", "speed": 0.95 },
- "driver:shi-gu": { "zh": "zm_014", "en": "bm_fable", "speed": 1.05 },
- "driver:xiao-zhao": { "zh": "zm_062", "en": "am_liam", "speed": 1.08 },
- "driver:liu-jie": { "zh": "zf_019", "en": "af_sarah", "speed": 1.02 },
- "driver:ma-ge": { "zh": "zm_033", "en": "am_michael" },
- "driver:chen-mei": { "zh": "zm_031", "en": "am_echo", "speed": 0.96 },
- "bump:office": { "zh": "zf_032", "en": "af_nova", "speed": 1.05 },
- "bump:young": { "zh": "zm_010", "en": "am_adam", "speed": 1.08 },
- "bump:visitor": { "zh": "zm_096", "en": "am_puck" },
- "bump:elder": { "zh": "zm_034", "en": "bm_daniel", "speed": 0.9 },
- "student": { "zh": "zf_017", "en": "af_bella", "speed": 1.05 },
- "auntie": { "zh": "zf_079", "en": "af_nicole" },
- "店员": { "zh": "zf_088", "en": "af_jessica", "speed": 1.06 },
- "前台": { "zh": "zf_002", "en": "bf_isabella" },
- "礼宾部": { "zh": "zm_037", "en": "bm_daniel", "speed": 0.97 },
- "门童": { "zh": "zm_052", "en": "am_eric", "speed": 1.08 },
- "保安": { "zh": "zm_009", "en": "am_echo" },
- "门口服务员": { "zh": "zf_003", "en": "bf_alice" },
- "调酒师": { "zh": "zm_055", "en": "bm_fable", "speed": 0.98 },
- "门里": { "zh": "zm_066", "en": "am_puck" },
- "Momo": { "zh": "zm_016", "en": "am_fenrir", "speed": 1.12 },
- "momo": { "zh": "zm_016", "en": "am_fenrir", "speed": 1.12 },
- "xuan": { "zh": "zm_012", "en": "bm_george", "speed": 1.05 },
- "yinuo": { "zh": "zf_094", "en": "bf_lily", "speed": 0.96 },
- "zhixia": { "zh": "zf_027", "en": "af_kore", "speed": 1.08 },
- "ruoan": { "zh": "zf_022", "en": "af_river" },
- "vivian": { "zh": "zf_005", "en": "af_heart", "speed": 1.02 },
- "carPurchase.js": { "zh": "zf_005", "en": "af_heart", "speed": 1.02 },
- "founder": { "zh": "zm_045", "en": "am_eric" },
- "engineer": { "zh": "zf_070", "en": "af_sky", "speed": 1.05 },
- "agent": { "zh": "zm_095", "en": "am_santa", "speed": 1.12 }
+ "_default": {
+  "zh": "zm_013",
+  "en": "am_michael"
+ },
+ "lin": {
+  "zh": "zm_098",
+  "en": "bm_lewis",
+  "speed": 0.92
+ },
+ "bump:lin": {
+  "zh": "zm_098",
+  "en": "bm_lewis",
+  "speed": 0.92
+ },
+ "su": {
+  "zh": "zf_046",
+  "en": "bf_emma"
+ },
+ "bump:su": {
+  "zh": "zf_046",
+  "en": "bf_emma"
+ },
+ "dad": {
+  "zh": "zm_029",
+  "en": "am_onyx",
+  "speed": 0.95
+ },
+ "driver:shi-gu": {
+  "zh": "zm_014",
+  "en": "bm_fable",
+  "speed": 1.05
+ },
+ "driver:xiao-zhao": {
+  "zh": "zm_062",
+  "en": "am_liam",
+  "speed": 1.08
+ },
+ "driver:liu-jie": {
+  "zh": "zf_019",
+  "en": "af_sarah",
+  "speed": 1.02
+ },
+ "driver:ma-ge": {
+  "zh": "zm_033",
+  "en": "am_michael"
+ },
+ "driver:chen-mei": {
+  "zh": "zm_031",
+  "en": "am_echo",
+  "speed": 0.96
+ },
+ "bump:office": {
+  "zh": "zf_032",
+  "en": "af_nova",
+  "speed": 1.05
+ },
+ "bump:young": {
+  "zh": "zm_010",
+  "en": "am_adam",
+  "speed": 1.08
+ },
+ "bump:visitor": {
+  "zh": "zm_096",
+  "en": "am_puck"
+ },
+ "bump:elder": {
+  "zh": "zm_034",
+  "en": "bm_daniel",
+  "speed": 0.9
+ },
+ "student": {
+  "zh": "zf_017",
+  "en": "af_bella",
+  "speed": 1.05
+ },
+ "auntie": {
+  "zh": "zf_079",
+  "en": "af_nicole"
+ },
+ "店员": {
+  "zh": "zf_088",
+  "en": "af_jessica",
+  "speed": 1.06
+ },
+ "前台": {
+  "zh": "zf_002",
+  "en": "bf_isabella"
+ },
+ "礼宾部": {
+  "zh": "zm_037",
+  "en": "bm_daniel",
+  "speed": 0.97
+ },
+ "门童": {
+  "zh": "zm_052",
+  "en": "am_eric",
+  "speed": 1.08
+ },
+ "保安": {
+  "zh": "zm_009",
+  "en": "am_echo"
+ },
+ "门口服务员": {
+  "zh": "zf_003",
+  "en": "bf_alice"
+ },
+ "调酒师": {
+  "zh": "zm_055",
+  "en": "bm_fable",
+  "speed": 0.98
+ },
+ "门里": {
+  "zh": "zm_066",
+  "en": "am_puck"
+ },
+ "Momo": {
+  "zh": "zm_016",
+  "en": "am_fenrir",
+  "speed": 1.12
+ },
+ "momo": {
+  "zh": "zm_016",
+  "en": "am_fenrir",
+  "speed": 1.12
+ },
+ "xuan": {
+  "zh": "zm_012",
+  "en": "bm_george",
+  "speed": 1.05
+ },
+ "yinuo": {
+  "zh": "zf_094",
+  "en": "bf_lily",
+  "speed": 0.96
+ },
+ "zhixia": {
+  "zh": "zf_027",
+  "en": "af_kore",
+  "speed": 1.08
+ },
+ "ruoan": {
+  "zh": "zf_022",
+  "en": "af_river"
+ },
+ "vivian": {
+  "zh": "zf_005",
+  "en": "af_heart",
+  "speed": 1.02
+ },
+ "carPurchase.js": {
+  "zh": "zf_005",
+  "en": "af_heart",
+  "speed": 1.02
+ },
+ "founder": {
+  "zh": "zm_045",
+  "en": "am_eric"
+ },
+ "engineer": {
+  "zh": "zf_070",
+  "en": "af_sky",
+  "speed": 1.05
+ },
+ "agent": {
+  "zh": "zm_095",
+  "en": "am_santa",
+  "speed": 1.12
+ },
+ "maker": {
+  "zh": "zm_053",
+  "en": "am_liam"
+ }
 }

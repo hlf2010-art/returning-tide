@@ -130,7 +130,7 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arrive
       awaiting = null; hide();
       // asked there, about now: you go in (the evening plays out there, and you come back by car)
       const asked = d.invite && L.invites.find((i) => i.id === d.invite);
-      if (asked && Math.abs(stamp(L) - asked.at) <= 120 && asked.status !== 'declined' && arriveAt && arriveAt(d, { method: R.method, fare: res && res.amount })) {
+      if (((asked && Math.abs(stamp(L) - asked.at) <= 120 && asked.status !== 'declined') || d.walkIn) && arriveAt && arriveAt(d, { method: R.method, fare: res && res.amount })) {
         el('ride-interlude') && el('ride-interlude').classList.remove('on'); interlude = 0;
         didi.end(); R = null; if (save) save();
         return;

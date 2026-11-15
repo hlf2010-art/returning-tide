@@ -50,6 +50,14 @@ export function createHud() {
       el.classList.add('on');
       clearTimeout(this._barkTimer); this._barkTimer = setTimeout(() => el.classList.remove('on'), seconds * 1000);
     },
+    // a milestone: a banner across the top, once
+    achievement(text) {
+      let el = document.getElementById('achv'); if (!el) { el = document.createElement('div'); el.id = 'achv'; document.body.appendChild(el); }
+      el.innerHTML = `<small>${getLang() === 'zh' ? '成就解锁' : 'Achievement unlocked'}</small><b></b>`; el.querySelector('b').textContent = text;
+      el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+      clearTimeout(this._achvT); this._achvT = setTimeout(() => el.classList.remove('on'), 4200);
+      this.audio && this.audio.cue && this.audio.cue('chime', 0, 1);
+    },
     toast(text, seconds = 2.5) {
       const el = $('toast'); el.textContent = tr(text); el.classList.add('on');
       clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), seconds * 1000);

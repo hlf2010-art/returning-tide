@@ -1,0 +1,38 @@
+// Building things (src/engine/maker.js). npm test.
+import { createLife } from '../src/engine/life.js';
+import { maker, level, gainXp, buyPart, canBuild, startBuild, finishBuild, solderJoint, solderWindow, missing, photoStars, recordPhoto, sharePhoto, owns, PHOTO_TARGETS, BLUEPRINTS, LEVELS } from '../src/world/../engine/maker.js';
+let failed = 0;
+const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
+const L = createLife();
+ok(level(maker(L)) === 1 && canBuild(L, 'lidar').reason === 'level', 'a beginner can\'t build the LiDAR yet (Maker 2)');
+const c0 = canBuild(L, 'gimbal');
+ok(c0.reason === 'parts' && c0.missing.gimbalMotor === 3 && !c0.missing.pla, 'the gimbal needs parts (the space has the filament)');
+const w0 = L.wallet.wechat;
+for (const [k, n] of Object.entries(missing(L, 'gimbal'))) ok(buyPart(L, k, n).ok, `bought ${n} × ${k}`);
+ok(w0 - L.wallet.wechat === 45 + 29 + 68 * 3 + 59, `paid for them from WeChat Pay (¥${w0 - L.wallet.wechat})`);
+const s = startBuild(L, 'gimbal');
+ok(s.ok && maker(L).parts.gimbalMotor === 0, 'starting the build uses the parts');
+ok(solderJoint(0.5, 1) === 1 && solderJoint(0.5 + solderWindow(1) - 0.001, 1) >= 0.6 && solderJoint(0.95, 1) < 0.2, 'a joint is good in the middle of the window, poor outside it');
+ok(solderWindow(3) > solderWindow(1), 'Maker 3: a steadier hand (a wider window)');
+const r = finishBuild(L, s.build, 0.9);
+ok(owns(L, 'gimbal') && r.xp >= BLUEPRINTS.gimbal.xp * 0.9 && r.achievements.length === 2, `built: +${r.xp} XP, achievements: ${r.achievements.map((a) => a.en).join(', ')}`);
+ok(canBuild(L, 'gimbal').reason === 'built', 'one of each');
+// photographs
+ok(photoStars({ inFrame: true, offCentre: 0.1, size: 0.4, min: 0.25, steady: 1 }) === 3, 'centred, big enough, steady: three stars');
+ok(photoStars({ inFrame: true, offCentre: 0.6, size: 0.3, min: 0.25, steady: 1 }) === 2 && photoStars({ inFrame: true, offCentre: 0.1, size: 0.05, min: 0.25 }) === 0, 'off-centre: two; too small: none');
+ok(photoStars({ inFrame: true, offCentre: 0.1, size: 0.5, min: 0.25, occluded: true }) === 0, 'something in the way: none');
+const x0 = maker(L).xp;
+recordPhoto(L, { target: 'pearl', stars: 2 }); recordPhoto(L, { target: 'pearl', stars: 1 });
+ok(maker(L).xp - x0 === 50 && maker(L).shot.pearl === 2, 'XP for a better shot of a subject, not for a worse one');
+for (const t of ['customs', 'peace']) recordPhoto(L, { target: t, stars: 3 });
+ok(maker(L).achievements.includes('nightOwl'), 'three subjects: Night owl of the Bund');
+for (const t of PHOTO_TARGETS) recordPhoto(L, { target: t.id, stars: 1 });
+ok(maker(L).achievements.includes('allBund'), 'every subject: The whole Bund');
+ok(maker(L).photos.length <= 12, 'the camera roll keeps the last twelve');
+const f0 = maker(L).followers, sh = sharePhoto(L, maker(L).photos.at(-1));
+ok(sh && maker(L).followers > f0 && sharePhoto(L, maker(L).photos.at(-1)) === null, `sharing a photo: +${sh.followers} followers, once`);
+ok(LEVELS.every((v, i) => i === 0 || v > LEVELS[i - 1]), 'levels go up');
+const lvBefore = level(maker(L)); const g = gainXp(L, 2000);
+ok(g.levelUp > lvBefore, `enough XP: level up to Maker ${g.levelUp}`);
+console.log(failed ? `\n${failed} FAILED` : '\nall passed');
+process.exit(failed ? 1 : 0);

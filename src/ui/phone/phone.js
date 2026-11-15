@@ -15,6 +15,8 @@ import { createShopApp } from './shopApp.js';
 import { createDidiApp } from './didiApp.js';
 import { systemPrompt, withReminder, replyOk, cannedReply } from '../../world/personas.js';
 import { appGlyph, payLogo, BRAND_COLOR, mark } from '../brands.js';
+import { maker, level, nextLevelAt, LEVELS, BLUEPRINTS, PHOTO_TARGETS, ACHIEVEMENTS, sharePhoto } from '../../engine/maker.js';
+import { warmth } from '../../world/agenda.js';
 import { spoken, isZh } from '../../engine/llm.js';
 
 // one language at a time: Z(zh, en) picks; X(text) translates what people wrote; nm(id) names them
@@ -113,6 +115,8 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (t.s === 'wallet') html = walletView(l);
     else if (t.s === 'calendar') html = calendarView(l);
     else if (t.s === 'recents') html = recentsView(l);
+    else if (t.s === 'photos') html = photosView(l);
+    else if (t.s === 'sketch') html = sketchView(l);
     else if (t.s === 'manner') html = mannerView(l, t);
     else if (t.s === 'call') html = callView(l);
     else if (shopApp.views[t.s]) html = shopApp.views[t.s](l, t);
@@ -141,6 +145,8 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       ${app('didi', Z('滴滴出行', 'DiDi'), BRAND_COLOR.didi, appGlyph('didi'), shopUnread('didi'))}
       ${app('manner', 'Manner', BRAND_COLOR.manner, appGlyph('manner'))}
       ${app('alipayApp', Z('支付宝', 'Alipay'), BRAND_COLOR.alipay, appGlyph('alipay', 34))}
+      ${app('photos', Z('相册', 'Photos'), 'linear-gradient(160deg,#ffb347,#ff5e62 45%,#6a5acd)', '<span style="font-size:24px">✿</span>')}
+      ${app('sketch', Z('速写本', 'Sketchbook'), 'linear-gradient(160deg,#f6f1e4,#e2d6b8)', '<span style="font-size:22px;color:#1d3a8a">✎</span>')}
       </div>
       <div class="dock">${app('chats', '', BRAND_COLOR.wechat, appGlyph('wechat', 30), 0)}${app('recents', '', 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}${app('wallet', '', 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}${app('calendar', '', '#fff', `<span style="color:#e33;font-size:20px">${l.clock.day + 13}</span>`)}</div></div>`;
   }
@@ -187,6 +193,31 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
         : `<div class="compose">${Z('需要回复时会出现选项', 'Replies appear when there\'s something to answer')}</div>`;
     const typing = S.typing[id] ? `<span class="sub">${Z('对方正在输入…', 'typing…')}</span>` : '';
     return `<div class="view chat"><div class="bar"><span class="back" data-act="back">‹</span>${esc(threadTitle(t))}${t.kind === 'group' ? `<span class="sub">(${t.members.length})</span>` : ''}${typing}</div><div class="msgs">${msgs}</div>${foot}</div>`;
+  }
+  // the camera roll: what you shot with the gimbal; share one to Moments
+  function photosView(l) {
+    const m = maker(l), shots = m.photos.slice().reverse();
+    const grid = shots.length ? shots.map((p, i) => { const tg = PHOTO_TARGETS.find((x) => x.id === p.target); return `<div class="ph">${p.thumb ? `<img src="${p.thumb}">` : '<div class="noimg"></div>'}<div class="cap">${esc(tg ? Z(tg.zh, tg.en) : Z('随手一拍', 'Snapshot'))} ${'★'.repeat(p.stars || 0)}</div>${p.shared ? `<div class="sh">${Z('已分享', 'Shared')}</div>` : `<button class="btn go sm" data-act="sharePhoto" data-i="${m.photos.length - 1 - i}">${Z('分享到朋友圈', 'Share to Moments')}</button>`}</div>`; }).join('')
+      : `<div class="sys" style="padding:20px;text-align:center">${Z('还没有照片。做好云台后按 G 拍照。', 'No photos yet. Build the gimbal, then G to shoot.')}</div>`;
+    const list = PHOTO_TARGETS.map((t) => `<div class="ch ${m.shot[t.id] ? 'got' : ''}"><span>${esc(Z(t.zh, t.en))}</span><span>${m.shot[t.id] ? '★'.repeat(m.shot[t.id]) : '—'}</span></div>`).join('');
+    return `<div class="view photos"><div class="bar"><span class="back" data-act="back">‹</span>${Z('相册', 'Photos')}</div><div class="scroll"><div class="grid2">${grid}</div>
+      <div class="hd2">${Z('外滩夜拍', 'The Bund after dark')} · ${Object.keys(m.shot).length}/${PHOTO_TARGETS.length}</div>${list}</div></div>`;
+  }
+  // the sketchbook: what's on, how you're doing, what you've built, who you're close to
+  function sketchView(l) {
+    const m = maker(l), lv = level(m), nx = nextLevelAt(m), lo = LEVELS[lv - 1] || 0, pct = nx ? Math.round(((m.xp - lo) / (nx - lo)) * 100) : 100;
+    const now = stamp(l);
+    const goals = l.invites.filter((i) => (i.status === 'accepted' && !i.kept && i.at > now - 120) || i.status === 'pending').sort((a, b) => a.at - b.at)
+      .map((i) => `<div class="gl"><b>${esc(X(i.title))}</b><span>${clockText(i.at)} · ${esc(X(i.place))}${i.status === 'pending' ? ` · ${Z('待回复', 'answer pending')}` : ''}</span></div>`).join('') || `<div class="sys">${Z('暂时没有约', 'Nothing arranged')}</div>`;
+    const builds = Object.entries(BLUEPRINTS).map(([id, b]) => `<div class="bl ${m.gadgets[id] ? 'got' : ''}"><span>${esc(Z(b.zh, b.en))}</span><span>${m.gadgets[id] ? Z(`做好了 · ${Math.round(m.gadgets[id].quality * 100)}%`, `built · ${Math.round(m.gadgets[id].quality * 100)}%`) : Z(`创客 ${b.level}`, `Maker ${b.level}`)}</span></div>`).join('');
+    const rel = ['ruoan', 'xuan', 'momo', 'zhixia', 'yinuo', 'dad'].map((id) => { const w = Math.max(0, Math.min(100, 50 + warmth(l, id))); return `<div class="rl"><span>${esc(nm(id))}</span><i><u style="width:${w}%"></u></i></div>`; }).join('');
+    const ach = Object.entries(ACHIEVEMENTS).map(([id, a]) => `<span class="ac ${m.achievements.includes(id) ? 'got' : ''}">${esc(Z(a.zh, a.en))}</span>`).join('');
+    return `<div class="view sketch"><div class="bar"><span class="back" data-act="back">‹</span>${Z('速写本', 'Sketchbook')}</div><div class="scroll">
+      <div class="hd2">${Z('接下来', 'Coming up')}</div>${goals}
+      <div class="hd2">${Z('创客', 'Maker')} ${lv} · ${m.xp} XP</div><div class="xp"><u style="width:${pct}%"></u></div><div class="sys">${Z(`粉丝 ${m.followers.toLocaleString()}`, `${m.followers.toLocaleString()} followers`)}</div>
+      <div class="hd2">${Z('发明', 'Builds')}</div>${builds}
+      <div class="hd2">${Z('朋友', 'Friends')}</div>${rel}
+      <div class="hd2">${Z('成就', 'Achievements')} ${m.achievements.length}/${Object.keys(ACHIEVEMENTS).length}</div><div class="acs">${ach}</div></div></div>`;
   }
   function walletView(l) {
     const acct = (k, label, bg) => `<div class="acct" style="background:${bg}"><div class="l">${payLogo(k, 16)} ${label}</div><div class="v">${yuan(balance(l, k))}</div></div>`;
@@ -293,6 +324,16 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (act === 'addContact') { if (onEvent) onEvent({ type: 'add-contact', id }); render(); }
     else if (act === 'invite') { respondToInvite(l, id, el.dataset.yes === '1'); render(); }
     else if (act === 'send') sendFree(id);
+    else if (act === 'sharePhoto') {
+      const p = maker(l).photos[+el.dataset.i]; const r = p && sharePhoto(l, p);
+      if (r) {
+        const tg = PHOTO_TARGETS.find((x) => x.id === p.target);
+        const quips = ['白白这张可以啊🔥', '哪里拍的？我也要去', '构图满分', '求原图！', '可以，摄影师上线了'];
+        setTimeout(() => post(l, 'wuhu', { from: ['momo', 'ruoan', 'zhixia', 'xuan'][Math.floor(Math.random() * 4)], kind: 'text', text: `${quips[Math.floor(Math.random() * quips.length)]}${tg ? `（${tg.zh}）` : ''}` }), 4000);
+        if (onEvent) onEvent({ type: 'shared', followers: r.followers, achievement: r.achievement });
+      }
+      render();
+    }
     else if (act === 'transcribe') { const m = findMsg(l, id); if (m) { m.transcribed = true; render(); } }
     else if (act === 'playVoice') { const m = findMsg(l, id); if (m && !S.playing) { S.playing = m.id; render(); speak(m.text, m.from, () => { S.playing = null; render(); }); } }
     else if (act === 'mannerAdd') { const item = MANNER_MENU.find((m) => m.id === id); S.sheet = { to: 'Manner', amount: item.price, memo: item.name, memoEn: item.en, method: 'wechat', item }; render(); }

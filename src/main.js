@@ -65,6 +65,8 @@ import { createJazzBar } from './world/jazzBar.js';
 import { createHailers } from './world/hailers.js';
 import { createDestinations } from './world/destinations.js';
 import { createDriving } from './world/driving.js';
+import { createMakerspace, MAKERS } from './world/makerspace.js';
+import { createPhotoMode } from './world/photoMode.js';
 import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
 import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
@@ -100,7 +102,7 @@ const audio = createAudio();
 const hud = createHud();
 // people's voices: recorded clips per character (engine/voice.js); barks speak through the HUD
 const voice = createVoice({ audio, getLang, camera });
-hud.voice = voice;
+hud.voice = voice; hud.audio = audio;
 // talking to people in your own words (engine/llm.js, ui/talk.js): typed or spoken, Mandarin or English
 const llm = createLLM({ canned: (id, said, ctx) => cannedReply(id, said, { first: ctx.first, lang: /[\u4e00-\u9fff]/.test(said || '') || (!said && getLang() === 'zh') ? 'zh' : 'en' }) });
 const talk = createTalk({ llm, voice, getLife: () => life, save: () => saveLife() });
@@ -177,8 +179,10 @@ async function boot() {
   // the Jazz Bar off the hall: the trio, Momo's night (world/jazzBar.js)
   // places a DiDi takes you that you can walk into (the North Bund flat, IFC 32F)
   const dests = createDestinations({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, voice });
+  // the Yangpu makerspace: build things (world/makerspace.js, engine/maker.js)
+  const makers = createMakerspace({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: buildMode });
   const jazz = createJazzBar({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: seatMode });
-  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights]);
+  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -194,15 +198,18 @@ async function boot() {
   const belongings = createBelongings({ scene, people, camera, hud, audio, getLife: () => life, save: () => saveLife() });
   // DiDi: a car from the traffic comes to the kerb; you ride in it (world/didi.js, world/rideFlow.js)
   const didi = createDidi({ scene, people, traffic, vehicles, camera, player, renderer: R.renderer });
-  const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode, voice, arriveAt: (d, info) => world.dest.arrive(d.id, info) });
+  const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode, voice, arriveAt: (d, info) => world.dest.arrive(d.id, info) || world.makerspace.arrive(d.id, info) });
   document.querySelector('#ride-card .go').addEventListener('click', () => { if (!closeInfoCard()) rideFlow.closeCard(); });
   // buying it: Vivian, the consultant, at the car (world/carSale.js, engine/carPurchase.js)
   const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode, voice });
   if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
-  places = [interiors, upper, jazz, dests, driving];
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  places = [interiors, upper, jazz, dests, driving, makers];
+  // photo mode with the gimbal you built (world/photoMode.js): G
+  world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
+    getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
   // new conversations among the people around you, and now and then to you (world/ambient.js)
   world.ambient = createAmbient({ llm, voice, hud, getLife: () => life, sceneText: () => sceneText(),
     convExchanges: T.dialogue.exchanges,
@@ -284,7 +291,7 @@ function driveMode(m) {
 // where you are and what's going on, in a sentence or two, for whoever you're talking to
 function sceneText(extra = '') {
   const b = player.body, l = life, m = l.clock.minute, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
-  const where = world.dest && world.dest.here === 'lujiazui' ? 'the 32nd floor of IFC in Lujiazui, a robot-arm start-up\'s office, the Bund lit up across the river'
+  const where = world.makerspace && world.makerspace.here ? 'the Yangpu riverside makerspace in an old brick factory: benches, 3D printers humming, a CNC, a whiteboard of sketches' : world.dest && world.dest.here === 'lujiazui' ? 'the 32nd floor of IFC in Lujiazui, a robot-arm start-up\'s office, the Bund lit up across the river'
     : world.dest && world.dest.here === 'northbund' ? 'an empty top-floor show flat on the North Bund, 160 m up, the river and Lujiazui through the glass'
     : world.upper && world.upper.here ? 'the sixth floor of the Peace Hotel, by room 612'
     : b.y < 5 && b.x > JAZZ.x0 && b.x < JAZZ.x1 && b.z > JAZZ.z0 && b.z < JAZZ.z1 ? 'the Peace Hotel Jazz Bar: dim, panelled, a piano trio on the little stage'
@@ -314,8 +321,18 @@ function startTalk(t, { inRide = false, opener = null } = {}) {
 function talkables() {
   const out = [];
   for (const q of traffic ? traffic.peds : []) if (q.active !== false && q.visible !== false) out.push({ key: `ped:${q.id}`, persona: PERSONAS[q.persona] ? q.persona : 'office', x: q.x, y: (q.y ?? L.curbH) + 1.62, z: q.z, hold(on, pp) { if (on) { q.pause = 999; q.faceTo = [pp.x, pp.z]; q.faceFor = 999; } else { q.pause = 0.3; q.faceFor = 0; q.faceTo = null; } } });
-  for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale]) if (m && m.talkables) out.push(...m.talkables());
+  for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale, world.makerspace]) if (m && m.talkables) out.push(...m.talkables());
   return out;
+}
+// photo mode: you stand still and frame; the mouse still looks
+function photoMode(m) {
+  if (m === 'photo') { mode = 'photo'; player.enabled = false; player.lookOnly = true; player.clearInput(); hud.prompt(false); target = null; }
+  else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
+}
+// at the workbench: the build panel has the keys
+function buildMode(m) {
+  if (m === 'build') { mode = 'build'; player.enabled = false; player.lookOnly = false; player.clearInput(); hud.prompt(false); target = null; }
+  else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
 }
 // sat at a table in the Jazz Bar: look around, E to stand
 function seatMode(m) {
@@ -353,6 +370,7 @@ function pause() {
   if (mode === 'inspect') closeInspect();
   if (mode === 'dialogue') closeDialogue();
   if (mode === 'pouch') closePouch();
+  if (mode === 'photo') world.photo.toggle();                                        // pausing lowers the camera
   if (mode !== 'play' && mode !== 'ride' && mode !== 'seat' && mode !== 'drive') return;
   pausedFrom = mode;
   mode = 'pause'; player.enabled = false; audio.setPaused(true);
@@ -461,7 +479,7 @@ onLang(() => syncSettings());
 syncSettings();
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) { if (mode === 'pause') play(); }
-  else if (!noLock && (mode === 'play' || mode === 'ride' || mode === 'seat' || mode === 'drive' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch') && !(phone && phone.isOpen)) pause();   // the phone frees the mouse on purpose
+  else if (!noLock && (mode === 'play' || mode === 'ride' || mode === 'seat' || mode === 'drive' || mode === 'photo' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch') && !(phone && phone.isOpen)) pause();   // the phone frees the mouse on purpose
 });
 document.addEventListener('pointerlockerror', () => {
   // Pointer lock refused (embedded frame, or re-requested too soon after Esc)
@@ -515,6 +533,8 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (mode === 'sale' || mode === 'sale-seat') { if (world.carSale.key(k)) e.preventDefault(); return; }
+  if (mode === 'build') { if (world.makerspace.key(k)) e.preventDefault(); return; }
+  if (mode === 'photo') { if (world.photo.key(k)) e.preventDefault(); return; }
   if (mode === 'seat') { if (k === 'KeyE') world.jazz.stand(); else if (k === 'Escape' && noLock) pause(); return; }
   if (mode === 'drive') { if (world.driving.key(k)) e.preventDefault(); else if (k === 'Escape' && noLock) pause(); return; }
   if (mode === 'ride') {
@@ -527,6 +547,7 @@ window.addEventListener('keydown', (e) => {
     if ((k === 'KeyE' || k === 'Enter') && closeInfoCard()) return;
     if (world && world.belongings && world.belongings.key(k)) return;
     if (world.dest.key(k)) return;
+    if (k === 'KeyG') { world.photo.toggle(); e.preventDefault(); return; }
     if (k === 'KeyT' && world.ambient.opener) { const o = world.ambient.opener; world.ambient.clearOpener(); startTalk(o.talkable, { opener: o.line }); e.preventDefault(); return; }
     if (k === 'KeyT' && talkTarget) { startTalk(talkTarget); e.preventDefault(); return; }
     if (k === 'KeyE') interact();
@@ -611,6 +632,7 @@ const phone = createPhone({
   },
   onChange: (up) => { player.capScale = up ? 0.55 : 1; if (!up && mode === 'play' && !noLock) canvas.requestPointerLock?.(); },
   onEvent: (ev) => {
+    if (ev.type === 'shared') { hud.toast(getLang() === 'zh' ? `分享到朋友圈 · +${ev.followers} 粉丝` : `Shared to Moments · +${ev.followers} followers`, 3); if (ev.achievement) hud.achievement(getLang() === 'zh' ? ev.achievement.zh : ev.achievement.en); saveLife(); }
     if (ev.type === 'paid') {
       lifeReact(life, ev);
       life.flags.mannerOrder = { num: ev.num, item: ev.item, ready: lifeStamp(life) + ev.wait, done: false };
@@ -690,12 +712,26 @@ function mapTarget() {
   if (r && (r.phase === 'coming' || r.phase === 'waiting')) return { x: PICKUP.x, z: PICKUP.z, label: tx('mapDidi') };
   return mapObjective() || (world && world.belongings ? world.belongings.mapObjective() : null);
 }
+// the places that matter, on the map: coffee, your hotel, the Jazz Bar when it's open, DiDi, your car,
+// and (with the gimbal) the photo subjects you haven't got yet
+function mapBlips() {
+  const tod = life.clock.minute, out = [
+    { x: mannerSpec.queue[0].x, z: mannerSpec.zWall, glyph: 'M', bg: '#111', fg: '#fff' },
+    { x: (PEACE_R.x0 + PEACE_R.x1) / 2, z: -211, glyph: '和', bg: '#2b2416', fg: '#e7b96a' },
+    { x: PICKUP.x, z: PICKUP.z, glyph: 'D', bg: '#ff7a00', fg: '#fff' },
+  ];
+  if (tod >= 19 * 60 || tod < 60) out.push({ x: (JAZZ.x0 + JAZZ.x1) / 2, z: JAZZ.z0, glyph: '♪', bg: '#3b1f3f', fg: '#f3c6ff' });
+  if (life.flags.car && world.huracan.loaded) { const g = world.huracan.group.position; out.push({ x: g.x, z: g.z, glyph: '▲', bg: '#e8b800', fg: '#111' }); }
+  const m = life.flags.maker;
+  if (m && m.gadgets && m.gadgets.gimbal) for (const t of [{ id: 'customs', x: -45, z: 26 }, { id: 'peace', x: -43, z: -243 }, { id: 'linsu', x: 23.7, z: -15 }]) if (!m.shot[t.id]) out.push({ x: t.x, z: t.z, glyph: '◉', bg: '#1d3a8a', fg: '#fff' });
+  return out;
+}
 function updateMap(dt) {
   const b = player.body, obj = mapTarget(), zone = zoneAt(b.x, b.z, L);
   updateMinimap(mapState, dt, { mode, moving: player.speed > 0.6, objective: !!obj, zone, held: mapHeld });
   minimap.setShown(mapState.shown);
   document.getElementById('hud').classList.toggle('map-on', mapState.shown);
-  if (mapState.shown && (mapFrame++ % 2 === 0)) minimap.draw({ x: b.x, z: b.z, yaw: player.yaw, objective: obj, people: traffic ? traffic.peds : [], area: zone });
+  if (mapState.shown && (mapFrame++ % 2 === 0)) minimap.draw({ x: b.x, z: b.z, yaw: player.yaw, objective: obj, people: traffic ? traffic.peds : [], area: zone, blips: mapBlips() });
 }
 const REACT_FOR = { sorry: 1.6, fine: 1.2, scold: 2.8, tut: 1.4, look: 0.9 };
 function bumpActors() {
@@ -758,10 +794,12 @@ function frame(now) {
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
   world.dest.update(mode === 'pause' ? 0 : dt, player.body);
+  world.makerspace.update(mode === 'pause' ? 0 : dt, player.body);
+  world.photo.update(mode === 'pause' ? 0 : dt);
   if (mode !== 'pause') world.ambient.update(dt, player.body, { talking: talk.open });
   if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
   else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
-  { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
+  { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
   const driving = mode === 'drive' || (mode === 'pause' && pausedFrom === 'drive');
   if (driving) world.driving.update(dt, mode === 'pause');
@@ -886,6 +924,7 @@ function frame(now) {
   R.renderer.shadowMap.needsUpdate = true;
   R.frame(t);
   R.composer.render(dt);
+  world.photo.afterRender();                                                          // a photo is read off the frame just drawn
   R.tick();
 }
 R.renderer.setAnimationLoop(frame);

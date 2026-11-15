@@ -136,6 +136,7 @@ export const covers = [
   { id: 'aia-lobby', x0: -47, x1: -34.6, z0: -152, z1: -139, top: 30 },        // the AIA lobby
   { id: 'northbund-flat', x0: 30, x1: 80, z0: -1380, z1: -1330, top: 400 },     // places a DiDi takes you (world/destinations.js)
   { id: 'ifc-32f', x0: 660, x1: 720, z0: 30, z1: 90, top: 400 },
+  { id: 'yangpu-makers', x0: 290, x1: 335, z0: -2630, z1: -2590, top: 400 },
 ];   // (read at module load by materials.js and rain.js: everything with a roof is declared here)
 export const underCover = (x, z, y = 0) => covers.some((c) => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && y < c.top);
 

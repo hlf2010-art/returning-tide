@@ -232,6 +232,13 @@ export function createAudio() {
       burst(t, { buffer: buf, f: 1700, q: 0.9, gain: 0.5, attack: 0.04, decay: 0.32, sweepTo: 3300, rate: 2.2 });
       burst(t + 0.02, { buffer: buf, type: 'lowpass', f: 420, q: 0.7, gain: 0.34, attack: 0.01, decay: 0.12, rate: 1.4 });
       ping(t + 0.2, 2350, 0.05); ping(t + 0.27, 3050, 0.035);
+    } else if (name === 'shutter') {
+      // a phone camera's shutter: two quick clicks of filtered noise
+      burst(t, { type: 'highpass', f: 2600, q: 0.8, gain: 0.32 * level, attack: 0.001, decay: 0.03 });
+      burst(t + 0.07, { type: 'bandpass', f: 1800, q: 1.2, gain: 0.24 * level, attack: 0.001, decay: 0.045 });
+    } else if (name === 'chime') {
+      // an achievement: three rising bell notes
+      [1047, 1319, 1568].forEach((f, i) => ping(t + i * 0.11, f, 0.06 * level, 0.5));
     } else if (name === 'ping') {
       // a message: two soft notes, a fourth apart
       ping(t, 1318, 0.05 * level, 0.12); ping(t + 0.09, 1760, 0.04 * level, 0.16);

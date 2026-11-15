@@ -68,6 +68,13 @@ export function createMinimap(el) {
     g.fillStyle = 'rgba(236,230,216,0.55)';
     for (const p of s.people || []) { const [a, b] = toScreen(p.x, p.z); if (Math.hypot(a - R, b - R) < R - 4) { g.beginPath(); g.arc(a, b, 1.8, 0, Math.PI * 2); g.fill(); } }
     g.restore();
+    // places (blips): a small disc with a glyph, inside the rim only
+    for (const p of s.blips || []) {
+      const [a, b] = toScreen(p.x, p.z); if (Math.hypot(a - R, b - R) > R - 8) continue;
+      g.fillStyle = p.bg; g.beginPath(); g.arc(a, b, 6.5, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1; g.stroke();
+      g.fillStyle = p.fg; g.font = '700 8px "Noto Sans SC", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(p.glyph, a, b + 0.5); g.textBaseline = 'alphabetic';
+    }
     // objective: on the map if within range, else pinned to the rim pointing the way
     if (s.objective) {
       let [a, b] = toScreen(s.objective.x, s.objective.z);

@@ -377,3 +377,35 @@ html[lang="zh-CN"] #ride-card .place { font-family: var(--serif); font-weight: 9
 #settings .ai-adv { gap: 8px; }
 #settings .ai-adv input { flex: 1; min-width: 0; font: 500 12px var(--ui); color: #fff; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; padding: 6px 8px; }
 #settings .ai-status { margin-top: 10px; font: 500 11px/1.5 var(--ui); color: rgba(255,255,255,0.55); }
+
+/* the workbench (world/makerspace.js) */
+#build { position: fixed; right: clamp(16px, 4vw, 48px); top: 50%; transform: translate(12px, -50%); width: min(460px, 92vw); max-height: 80vh; overflow: auto; padding: 16px; border-radius: 14px; background: rgba(14, 14, 18, 0.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); color: #fff; font: 500 13px/1.45 var(--ui); opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s; z-index: 30; }
+#build.on { opacity: 1; transform: translate(0, -50%); pointer-events: auto; }
+#build .hd { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; } #build .hd b { font-size: 16px; } #build .lv { color: var(--gold); font-size: 12px; } #build .x { margin-left: auto; opacity: 0.5; cursor: pointer; font-size: 11px; }
+#build .tabs { display: flex; gap: 14px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); } #build .tabs span { padding: 6px 0; cursor: pointer; opacity: 0.55; } #build .tabs span.on { opacity: 1; border-bottom: 2px solid var(--gold); }
+#build .bp { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07); } #build .bp.done { opacity: 0.55; } #build .bp .n { font-weight: 700; font-size: 14px; } #build .bp .n small { margin-left: 8px; font-weight: 500; color: var(--gold); }
+#build .bp .u { color: rgba(255,255,255,0.65); margin: 4px 0 6px; } #build .ps { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; } #build .ps span { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,0.07); } #build .ps .ok { color: #7ee2a8; } #build .ps .no { color: #ff8a80; }
+#build button { font: 600 13px var(--ui); color: #111; background: var(--gold); border: 0; border-radius: 8px; padding: 7px 14px; cursor: pointer; } #build .why { color: rgba(255,255,255,0.5); font-size: 12px; }
+#build .pt { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.06); } #build .pt span:first-child { flex: 1; } #build .pt .h { opacity: 0.5; font-size: 11px; }
+#build .pk { padding: 6px 0; opacity: 0.45; } #build .pk.on { opacity: 1; } #build .pk b { color: var(--gold); margin-right: 8px; } #build .note { margin-top: 10px; font-size: 11px; color: rgba(255,255,255,0.5); }
+#build .solder .t { margin-bottom: 12px; } #build .solder .bar { position: relative; height: 22px; border-radius: 11px; background: rgba(255,255,255,0.08); overflow: hidden; }
+#build .solder .win { position: absolute; top: 0; bottom: 0; background: rgba(126, 226, 168, 0.35); } #build .solder .mk { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #fff; box-shadow: 0 0 10px #fff; }
+#build .solder .js { display: flex; gap: 8px; margin-top: 12px; } #build .solder .js i { width: 16px; height: 16px; border-radius: 50%; display: block; } #build .js .g { background: #7ee2a8; } #build .js .o { background: #f5c26b; } #build .js .b { background: #ff8a80; }
+/* achievement banner */
+#achv { position: fixed; top: 9vh; left: 50%; transform: translate(-50%, -16px); padding: 10px 22px 12px; border-radius: 12px; background: linear-gradient(135deg, rgba(36, 28, 12, 0.92), rgba(18, 14, 8, 0.92)); border: 1px solid rgba(231, 185, 106, 0.6); color: #fff; text-align: center; opacity: 0; pointer-events: none; transition: opacity 0.35s, transform 0.35s; z-index: 35; }
+#achv.on { opacity: 1; transform: translate(-50%, 0); } #achv small { display: block; font: 600 10px var(--ui); letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); } #achv b { font: 700 18px var(--ui); }
+
+/* photo mode's viewfinder (world/photoMode.js) */
+#viewfinder { position: fixed; inset: 6vh 6vw; pointer-events: none; opacity: 0; transition: opacity 0.25s; z-index: 25; }
+#viewfinder.on { opacity: 1; }
+#viewfinder .g { position: absolute; inset: 0; } #viewfinder .g i { position: absolute; background: rgba(255,255,255,0.18); }
+#viewfinder .g i:nth-child(1) { left: 33.3%; top: 0; bottom: 0; width: 1px; } #viewfinder .g i:nth-child(2) { left: 66.6%; top: 0; bottom: 0; width: 1px; }
+#viewfinder .g i:nth-child(3) { top: 33.3%; left: 0; right: 0; height: 1px; } #viewfinder .g i:nth-child(4) { top: 66.6%; left: 0; right: 0; height: 1px; }
+#viewfinder .c { position: absolute; width: 28px; height: 28px; border: 2px solid rgba(255,255,255,0.85); }
+#viewfinder .tl { left: 0; top: 0; border-right: 0; border-bottom: 0; } #viewfinder .tr { right: 0; top: 0; border-left: 0; border-bottom: 0; } #viewfinder .bl { left: 0; bottom: 0; border-right: 0; border-top: 0; } #viewfinder .br { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+#viewfinder .top { position: absolute; top: 10px; left: 40px; right: 40px; display: flex; justify-content: space-between; font: 600 12px var(--ui); letter-spacing: 0.1em; color: #fff; text-shadow: 0 1px 2px #000; }
+#viewfinder .rec { color: #7ee2a8; } #viewfinder .rec.shaky { color: #ff8a80; }
+#viewfinder .subj { position: absolute; left: 0; right: 0; bottom: 44px; text-align: center; font: 600 15px var(--ui); color: var(--gold); text-shadow: 0 1px 3px #000; }
+#viewfinder .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 11px var(--ui); color: rgba(255,255,255,0.6); }
+#viewfinder .flash { position: absolute; inset: -10vh -10vw; background: #fff; opacity: 0; } #viewfinder .flash.on { animation: vfflash 0.35s ease-out; }
+@keyframes vfflash { 0% { opacity: 0.85; } 100% { opacity: 0; } }

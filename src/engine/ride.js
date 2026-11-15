@@ -22,6 +22,7 @@ export const DESTINATIONS = [
   { id: 'jingan', zh: '静安 嘉里中心', en: "Jing'an Kerry Centre", km: 5.9, mins: 22 },
   { id: 'xintiandi', zh: '新天地', en: 'Xintiandi', km: 3.4, mins: 14 },
   { id: 'tianma', zh: '天马赛车场', en: 'Tianma Circuit', km: 41, mins: 55 },
+  { id: 'yangpu', zh: '杨浦滨江 · 创客空间', en: 'Yangpu riverside makerspace', km: 6.8, mins: 22, walkIn: true },
 ];
 export const dest = (id) => DESTINATIONS.find((d) => d.id === id);
 

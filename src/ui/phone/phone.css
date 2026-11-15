@@ -154,3 +154,16 @@
 .av.logo .wm.didi { font-size: 11px; } .av.logo .wm.jd { font-size: 13px; } .av.logo .wm.manner { font-size: 6px; letter-spacing: 0.5px; }
 .pl { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; vertical-align: middle; margin-right: 4px; }
 .pl svg { width: 70%; height: 70%; }
+
+/* Photos and the Sketchbook */
+.view.photos .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; }
+.view.photos .ph { background: #111; border-radius: 6px; overflow: hidden; font-size: 10px; color: #eee; }
+.view.photos .ph img, .view.photos .noimg { width: 100%; aspect-ratio: 16/9; display: block; object-fit: cover; background: #333; }
+.view.photos .cap { padding: 4px 6px 2px; } .view.photos .sh { padding: 2px 6px 6px; color: #07c160; } .view.photos .btn.sm { margin: 2px 6px 6px; padding: 3px 6px; font-size: 10px; }
+.hd2 { padding: 12px 12px 4px; font-weight: 700; font-size: 12px; color: #333; }
+.view.photos .ch, .view.sketch .bl { display: flex; justify-content: space-between; padding: 6px 12px; font-size: 12px; color: #888; border-bottom: 1px solid #eee; }
+.view.photos .ch.got, .view.sketch .bl.got { color: #111; }
+.view.sketch { background: #f8f5ec; } .view.sketch .gl { padding: 6px 12px; border-bottom: 1px solid #e8e1cf; font-size: 12px; } .view.sketch .gl b { display: block; } .view.sketch .gl span { color: #777; font-size: 11px; }
+.view.sketch .xp { margin: 4px 12px; height: 8px; border-radius: 4px; background: #e2d6b8; overflow: hidden; } .view.sketch .xp u, .view.sketch .rl u { display: block; height: 100%; background: #1d3a8a; }
+.view.sketch .rl { display: flex; align-items: center; gap: 8px; padding: 5px 12px; font-size: 12px; } .view.sketch .rl span { width: 70px; } .view.sketch .rl i { flex: 1; height: 6px; border-radius: 3px; background: #e2d6b8; overflow: hidden; }
+.view.sketch .acs { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 12px 20px; } .view.sketch .ac { font-size: 10px; padding: 3px 7px; border-radius: 10px; background: #e8e1cf; color: #aaa; } .view.sketch .ac.got { background: #1d3a8a; color: #fff; }
