@@ -18,4 +18,6 @@ Every written line already has its own recorded voice. For lines an AI conversat
 same voice model locally: see `source/tools/voice/server.py`, then Settings → Voices for new lines → Local voice server.
 
 ## Developing
-`source/` is the full project. In it: `npm install`, then `npm run dev` (or `npx vite build` for a new `game/`).
+`source/` is the full project. The people, voices, models and textures ship once, in `game/`: run
+`source/restore-assets.sh` (or copy `game/people`, `game/voice`, `game/models`, `game/textures` into
+`source/public/`) first. Then in `source/`: `npm install`, then `npm run dev` (or `npx vite build` for a new `game/`).
