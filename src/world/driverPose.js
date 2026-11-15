@@ -26,7 +26,7 @@ function aim(bone, child, to) {
 }
 
 // rotate a bone about a world axis
-function turn(bone, axis, angle) {
+export function turn(bone, axis, angle) {
   q1.setFromAxisAngle(axis, angle);
   bone.getWorldQuaternion(q2);
   bone.parent.getWorldQuaternion(q3).invert();
@@ -50,7 +50,8 @@ export function twoBone(a, b, c, target, pole) {
   aim(b, c, _t);
 }
 
-export function createSeatedPose(person) {
+// opts.recline: lean from the hips (+ back, - forward over a keyboard); opts.elbows: how far out
+export function createSeatedPose(person, { recline = 0.1, elbows = 0.6 } = {}) {
   const bone = (n) => person.root.getObjectByName(n);
   const B = {
     pelvis: bone('Bip01_Pelvis'), spine: bone('Bip01_Spine'), spine1: bone('Bip01_Spine1'),
@@ -72,7 +73,7 @@ export function createSeatedPose(person) {
     // car axes in world space
     fwd.set(0, 0, 1).transformDirection(frame.matrixWorld); right.set(-1, 0, 0).transformDirection(frame.matrixWorld);
     // a little recline from the hips
-    turn(B.spine, right, 0.1);
+    turn(B.spine, right, recline);
     // legs: feet to the pedals, knees forward and up
     for (const [s, i] of [['L', 0], ['R', 1]]) {
       const p = cabin.pedals[i].clone().applyMatrix4(frame.matrixWorld);
@@ -85,7 +86,7 @@ export function createSeatedPose(person) {
       const shoulder = B[s].upper.getWorldPosition(v2);
       const toward = v3.subVectors(grip, shoulder).normalize();
       grip.addScaledVector(toward, -0.075);
-      pole.set(0, -1, 0).addScaledVector(right, -side * 0.6).addScaledVector(fwd, -0.2).normalize();   // elbows down and out
+      pole.set(0, -1, 0).addScaledVector(right, -side * elbows).addScaledVector(fwd, -0.2).normalize();   // elbows down and out
       twoBone(B[s].upper, B[s].fore, B[s].hand, grip, pole);
     }
   };

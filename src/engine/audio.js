@@ -24,7 +24,7 @@ const MASTER_LEVEL = 0.8;
 
 export function createAudio() {
   let ctx = null, master = null, env = null, duck = null, sfx = null, pauseBus = null, limiter = null, meter = null;
-  let muted = false, paused = false, pauseToken = 0, hornTimer = 35, ancF = null, ancG = null, anc = false;
+  let muted = false, paused = false, pauseToken = 0, hornTimer = 35, ancF = null, ancG = null, anc = false, inside = 0;
   let buf = null, river = null, wind = null, city = null, rain = null, lastFoot = { pan: 0.12, f: 0 }, lastDuck = -1, lastRain = -1;
   const loops = [];                                          // every looping source ever started (for the duplicate check)
   const voices = new Map();                                  // vehicle id -> voice
@@ -338,11 +338,13 @@ export function createAudio() {
       wind.leaves.gain.setTargetAtTime(0.045 * Math.min(1.3, level) * nearTree, t, 0.5);
     },
     // weather: level 0..1; covered = standing under the canopy / portico (muffled, quieter)
-    setAnc(on) {
-      anc = !!on;
+    setAnc(on) { anc = !!on; this.applyMuffle(); },
+    // walls between you and the street: 0 out in it, 1 high up behind glass (the hotel room)
+    setInside(k) { k = Math.round(Math.max(0, Math.min(1, k)) * 20) / 20; if (k === inside) return; inside = k; this.applyMuffle(); },
+    applyMuffle() {
       if (!ctx || !ancF) return;
-      const t = ctx.currentTime;
-      ancF.frequency.setTargetAtTime(anc ? 520 : 20000, t, 0.25); ancG.gain.setTargetAtTime(anc ? 0.32 : 1, t, 0.25);
+      const t = ctx.currentTime, f = Math.min(anc ? 520 : 20000, 20000 * Math.pow(0.04, inside)), g = (anc ? 0.32 : 1) * (1 - 0.6 * inside);
+      ancF.frequency.setTargetAtTime(f, t, 0.25); ancG.gain.setTargetAtTime(g, t, 0.25);
     },
     get anc() { return anc; },
     setRain(level, covered = false) {
@@ -374,6 +376,7 @@ export function createAudio() {
     onMute(fn) { muteListeners.add(fn); return () => muteListeners.delete(fn); },
     getContext() { return ctx; },
     getMaster() { return master; },
+    getMusicBus() { return duck; },       // music in the world (the Jazz Bar's trio): ducked under speech, paused with the game
     get muted() { return muted; },
     get paused() { return paused; },
     suspend() { this.setPaused(true); }, resume() { this.setPaused(false); },

@@ -8,9 +8,9 @@
 //   - Art Deco: walnut wainscot, cream plaster, brass, frosted glass lights in the Lalique manner
 //   - the front desk (they know you: you told your father you're staying here) and the concierge,
 //     who holds what couriers left for you
-//   - the Jasmine Lounge along the Bund windows; the Jazz Bar's door (the Old Jazz Band, nightly)
-//   - the lift lobby: guests only, a guard on it; upper floors partly closed for renovation (the
-//     hotel really is being refitted in 2026)
+//   - the Jasmine Lounge along the Bund windows; the Jazz Bar's door (world/jazzBar.js)
+//   - the lift lobby: guests only, a guard on it; with your key card, up to the sixth floor and your
+//     room (world/hotelUpper.js), whose south end is hoarded off for a refit
 //   - a staff-only door that the staff will stop you trying, if they see you
 // THE AIA BUILDING (No.17, 1924), through the arched door on the Bund:
 //   - a granite lobby, the reception desk, a tenant directory, a visitor QR stand
@@ -26,7 +26,7 @@ import { L, colliders, addDynamicCollider } from './layout.js';
 import { createPerson } from './people.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
-import { stamp, nudge, post, skipTo } from '../engine/life.js';
+import { JAZZ } from './jazzBar.js';
 
 export const PEACE = { x0: -60, x1: -35.4, z0: -244, z1: -212.6, h: 5.6, door: [-50, -46], oct: { x: -48, z: -229, r: 6.2, top: 10.5 } };
 export const AIA = { x0: -47, x1: -34.6, z0: -152, z1: -139, h: 6.2, door: [-147.2, -143.8], gateX: -41.5, gates: [-147.3, -146.1, -144.9, -143.7] };
@@ -61,6 +61,8 @@ function carve() {
   for (const [a, b] of solid) if (b > a) colliders.push({ minX: A.gateX - 0.15, maxX: A.gateX + 0.15, minZ: a, maxZ: b, tag: 'gates' });
 }
 carve();
+// furniture, pillars and gates stand on the ground floor only (the upper storey is world/hotelUpper.js)
+for (const c of colliders) if (['desk', 'piano', 'pillar', 'gates'].includes(c.tag)) { c.y0 = 0; c.y1 = 8; }
 
 // ---- textures ----
 const loader = new THREE.TextureLoader();
@@ -98,7 +100,7 @@ const signTex = (lines, { bg = '#1a1510', fg = '#d9b46a', w = 512, h = 128 } = {
   lines.forEach(([t, size], i) => { x.font = `600 ${size}px "Noto Serif SC", serif`; x.fillText(t, w / 2, h * (i + 1) / (lines.length + 1)); });
 });
 
-export function createInteriors({ scene, people, hud, audio, getLife, save, player, onCard }) {
+export function createInteriors({ scene, people, hud, audio, getLife, save, player, onCard, onLift }) {
   const group = new THREE.Group(); group.name = 'interiors'; scene.add(group);
   const marble = new THREE.MeshStandardMaterial({ map: tx('marble_01_diff_1k.jpg', 3, true), normalMap: tx('marble_01_nor_gl_1k.jpg', 3, false), roughnessMap: tx('marble_01_rough_1k.jpg', 3, false), roughness: 0.6, color: 0xe8e2d6, envMapIntensity: 1.1 });
   const marbleDark = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, roughness: 0.25, color: 0x3d4a44, envMapIntensity: 1.3 });
@@ -144,7 +146,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   add(new THREE.PlaneGeometry(P.x1 - P.x0, P.z1 - P.z0), marble, pcx, Y0 + 0.004, pcz, 0, -Math.PI / 2);
   add(new THREE.PlaneGeometry(P.oct.r * 2.6, P.oct.r * 2.6), new THREE.MeshStandardMaterial({ map: floorInlay(), transparent: true, roughness: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), P.oct.x, Y0 + 0.008, P.oct.z, 0, -Math.PI / 2);
   // walls: south (Nanjing Rd, the door), east (the Bund, windows on the lounge), north (lifts), west (desk, staff door)
-  walls(P.x0, P.z1, P.x1, P.z1, P.h, pcx, pcz, [[P.door[0] - P.x0, P.door[1] - P.x0], [P.x1 - 4.6 - P.x0, P.x1 - 2.6 - P.x0]]);   // + the Jazz Bar door
+  walls(P.x0, P.z1, P.x1, P.z1, P.h, pcx, pcz, [[P.door[0] - P.x0, P.door[1] - P.x0]]);
   walls(P.x1, P.z1, P.x1, P.z0, P.h, pcx, pcz, [[16, 19], [22, 25], [27.5, 30.5]], 3.6);                 // windows onto the Bund (glazed below)
   walls(P.x1, P.z0, P.x0, P.z0, P.h, pcx, pcz);
   walls(P.x0, P.z0, P.x0, P.z1, P.h, pcx, pcz, [[20.4, 21.8]], 2.4);                                    // the staff door
@@ -194,7 +196,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   for (let x = P.x0 + 4; x < P.x1 - 3; x += 5) { sconce(x, P.z0 + 0.03, 0); }
   for (let z = P.z1 - 4; z > P.z0 + 3; z -= 5) sconce(P.x0 + 0.03, z, Math.PI / 2);
   // Art Deco detail: brass-capped walnut pilasters along the walls, a stepped cornice under the ceiling
-  for (let x = P.x0 + 2; x < P.x1 - 1; x += 4) for (const z of [P.z0 + 0.12, P.z1 - 0.12]) { if (z > -213 && x > P.door[0] - 1 && x < P.door[1] + 1) continue; box(0.34, P.h - 0.4, 0.14, walnut, x, Y0, z); box(0.4, 0.14, 0.18, brass, x, Y0 + P.h - 0.54, z); }
+  for (let x = P.x0 + 2; x < P.x1 - 1; x += 4) for (const z of [P.z0 + 0.12, P.z1 - 0.12]) { if (z > -213 && ((x > P.door[0] - 1 && x < P.door[1] + 1) || x > JAZZ.x0 - 0.5)) continue; box(0.34, P.h - 0.4, 0.14, walnut, x, Y0, z); box(0.4, 0.14, 0.18, brass, x, Y0 + P.h - 0.54, z); }
   for (const [ax, az, bx, bz] of [[P.x0, P.z0, P.x1, P.z0], [P.x0, P.z1, P.x1, P.z1]]) box(Math.abs(bx - ax), 0.22, 0.3, walnut, (ax + bx) / 2, Y0 + P.h - 0.26, az + (az < -230 ? 0.15 : -0.15));
   for (const x of [P.x0, P.x1]) box(0.3, 0.22, P.z1 - P.z0, walnut, x + (x < -50 ? 0.15 : -0.15), Y0 + P.h - 0.26, pcz);
   box(0.06, 0.05, P.z1 - P.z0, brass, P.x0 + 0.33, Y0 + P.h - 0.3, pcz); box(0.06, 0.05, P.z1 - P.z0, brass, P.x1 - 0.33, Y0 + P.h - 0.3, pcz);
@@ -225,10 +227,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     for (const [lx, lz] of [[-0.6, 0.2], [0.6, 0.2], [0, 1.9]]) add(new THREE.CylinderGeometry(0.05, 0.04, 0.68, 8), lacquer, -40.4 + lx, Y0 + 0.34, -242.6 + lz);
     box(1.4, 0.06, 0.22, new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.4 }), -40.4, Y0 + 0.72, -242.55);   // the keys
   }
-  // the Jazz Bar's door and its stand
-  box(2.0, 3.2, 0.1, walnut, P.x1 - 3.6, Y0, P.z1 - 0.06);
-  add(new THREE.PlaneGeometry(1.6, 0.4), new THREE.MeshBasicMaterial({ map: signTex([['爵士吧 · JAZZ BAR', 48]], { w: 640, h: 128 }) }), P.x1 - 3.6, Y0 + 3.5, P.z1 - 0.13, Math.PI);
-  add(new THREE.PlaneGeometry(0.6, 0.85), new THREE.MeshBasicMaterial({ map: signTex([['老年爵士乐队', 42], ['Old Jazz Band', 30], ['21:30', 46]], { bg: '#121212', fg: '#e8d29a', w: 360, h: 512 }) }), P.x1 - 5.4, Y0 + 1.2, P.z1 - 0.5, Math.PI);
+  // (the Jazz Bar, in the hall's south-east corner, is world/jazzBar.js)
   // the staff door
   box(0.1, 2.3, 1.3, dark, P.x0 + 0.06, Y0, P.z1 - 21.1);
   add(new THREE.PlaneGeometry(0.9, 0.22), new THREE.MeshBasicMaterial({ map: signTex([['员工通道  STAFF ONLY', 40]], { bg: '#2a2a2a', fg: '#ddd', w: 512, h: 120 }) }), P.x0 + 0.13, Y0 + 2.55, P.z1 - 21.1, Math.PI / 2);
@@ -272,7 +271,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.7), glass); const piv = new THREE.Group(); piv.position.set(A.gateX, Y0 + 0.55, z); piv.add(fl); fl.position.z = 0; fl.scale.set(1, 1, 1);
     const pane = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.7, 1.0), glass); piv.add(pane); group.add(piv);
     const light = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.04), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 1.6, 0.4) })); light.position.set(A.gateX - 0.61, Y0 + 1.02, z + 0.64); light.rotation.x = -Math.PI / 2; group.add(light);
-    const col = addDynamicCollider('gate'); Object.assign(col, { minX: A.gateX - 0.1, maxX: A.gateX + 0.1, minZ: z - 0.5, maxZ: z + 0.5 });
+    const col = addDynamicCollider('gate'); Object.assign(col, { y0: 0, y1: 8, minX: A.gateX - 0.1, maxX: A.gateX + 0.1, minZ: z - 0.5, maxZ: z + 0.5 });
     flaps.push({ z, piv, pane, light, col, open: 0, until: 0 });
   }
   for (const z of [-148.5, -145.5, -142.5]) box(1.4, 2.7, 0.08, new THREE.MeshStandardMaterial({ color: 0x8b9096, metalness: 1, roughness: 0.3 }), A.x0 + 0.06, Y0, z, Math.PI / 2);   // lift doors
@@ -291,8 +290,8 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   placePerson('concierge', 'p3', P.x0 + 0.7, -237.5, Math.PI / 2);
   placePerson('liftGuard', 'p4', -46, P.z0 + 1.6, 0);
   placePerson('doorman', 'p1', doorX + 2.6, -210.4, Math.PI);
-  placePerson('guestA', 'vivian', -43.2, -224.5, -2.4, 'talk1');
-  placePerson('guestB', 'p5', -44.4, -225.6, 0.8, 'talk2');
+  placePerson('guestA', 'vivian', -54.6, -221.0, -2.4, 'talk1');
+  placePerson('guestB', 'p5', -55.8, -222.1, 0.8, 'talk2');
   placePerson('aiaDesk', 'p2', -38.5, -139.35, Math.PI);
   placePerson('aiaGuard', 'p4', A.gateX + 0.9, -141.9, Math.PI + 0.9);
   const worker = placePerson('aiaWorker', 'p3', A.x1 + 3, -145.5, -Math.PI / 2, 'walk');
@@ -360,7 +359,6 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     { id: 'pReception', x: P.x0 + 3.6, y: Y0 + 1.4, z: -227.6, reach: 2.6 },
     { id: 'pConcierge', x: P.x0 + 3.3, y: Y0 + 1.4, z: -237.5, reach: 2.6 },
     { id: 'pLifts', x: -48, y: Y0 + 1.6, z: P.z0 + 0.2, reach: 3.2 },
-    { id: 'pJazz', x: P.x1 - 3.6, y: Y0 + 1.6, z: P.z1 - 0.1, reach: 2.6 },
     { id: 'pStaff', x: P.x0 + 0.1, y: Y0 + 1.3, z: P.z1 - 21.1, reach: 2.2 },
     { id: 'aDesk', x: -38.5, y: Y0 + 1.4, z: -140.7, reach: 2.6 },
     { id: 'aQR', x: -36, y: Y0 + 1.3, z: -150.4, reach: 2.0 },
@@ -369,7 +367,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   ];
   const PROMPT = {
     pReception: () => [T('前台', 'Front desk'), T('交谈', 'Talk')], pConcierge: () => [T('礼宾部', 'Concierge'), waitingAt(L0(), 'hotel').length ? T('取快递', 'Collect your parcels') : T('交谈', 'Talk')],
-    pLifts: () => [T('电梯', 'Lifts'), T('上楼', 'Go up')], pJazz: () => [T('爵士吧', 'Jazz Bar'), T('进去', 'Go in')], pStaff: () => [T('员工通道', 'Staff only'), T('推门', 'Try the door')],
+    pLifts: () => [T('电梯', 'Lifts'), T('上楼', 'Go up')], pStaff: () => [T('员工通道', 'Staff only'), T('推门', 'Try the door')],
     aDesk: () => [T('前台', 'Reception'), T('交谈', 'Talk')], aQR: () => [T('访客预约', 'Visitor sign-in'), T('扫码', 'Scan')], aLifts: () => [T('电梯', 'Lifts'), T('呼叫', 'Call')],
   };
   // the desk staff look up now and then; busy with a guest or the screen otherwise
@@ -385,15 +383,10 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       else say(T('礼宾部', 'Concierge'), '目前没有您的快递哦。需要叫车的话我帮您约。', "Nothing waiting for you at the moment. If you need a car, I can book one.", 3);
     } else if (id === 'pLifts') {
       if (!(S.key || l.flags.hotelKey)) say(T('保安', 'Security'), '先生，电梯需要刷房卡，住客才能上去。', 'Sorry, sir, the lifts need a room card. Guests only.', 3);
-      else { say(T('保安', 'Security'), '六楼在装修，今晚住客电梯只到五楼，您的房间临时调到了5楼的…前台会跟您说。', "Six's being refitted, sir. Tonight the guest lifts only go to five; the front desk will tell you about your room.", 4); }
-    } else if (id === 'pJazz') {
-      const inv = l.invites.find((i) => i.id === 'momo-gig'), now = stamp(l), tod = now % 1440;
-      if (inv && inv.status === 'accepted' && Math.abs(now - inv.at) <= 60 && !inv.kept) {
-        inv.kept = true; nudge(l, 'momo', 6, 'kept:momo-gig'); skipTo(l, now + 100);
-        post(l, 'wuhu', { from: 'momo', kind: 'text', text: '白白今天来了！！第二首就是为他弹的😎' });
-        onCard && onCard({ place: T('和平饭店 · 爵士吧', 'Peace Hotel · Jazz Bar'), line: T('Momo的三重奏，第二首他朝你点了点头。你待到了最后一首。', "Momo's trio. On the second number he nodded at you. You stayed until the last song."), fare: '', back: T('你从旋转门出来，南京路上还是人。', 'You come out through the revolving door; Nanjing Road is still busy.') });
-      } else if (tod >= 21 * 60 + 30 || tod < 60) say(T('门口服务员', 'Host'), '今晚满座了，先生，有预订吗？', "We're full tonight, sir. Do you have a reservation?", 3);
-      else say(T('门口服务员', 'Host'), '九点半开门，先生。', 'We open at half past nine, sir.', 2.6);
+      else {
+        if (!S.said.lift) { S.said.lift = true; say(T('保安', 'Security'), '沈先生，六楼南边在装修，您那间不受影响。', "Mr Shen. The south end of six is being refitted, sir; your room's not affected.", 3.4); }
+        onLift && onLift();
+      }
     } else if (id === 'pStaff') {
       if (staffSees()) say(T('前台', 'Front desk'), '先生，那边是员工通道哦。', "Sir, that's the staff corridor.", 2.6);
       else hud.toast(T('门锁着。刷卡的。', "Locked. It takes a staff card."), 2.6);

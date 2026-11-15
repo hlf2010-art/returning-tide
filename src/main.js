@@ -51,7 +51,10 @@ import { createManner } from './world/shops.js';
 import { createBelongings } from './world/belongings.js';
 import { createHuracan, HURACAN_SPOT } from './world/huracan.js';
 import { createCarSale } from './world/carSale.js';
-import { createInteriors } from './world/interiors.js';
+import { createInteriors, PEACE, AIA } from './world/interiors.js';
+import { createHotelUpper } from './world/hotelUpper.js';
+import { createJazzBar } from './world/jazzBar.js';
+import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
 import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
 import { usePhotoSurfaces } from './world/photoTextures.js';
@@ -150,8 +153,12 @@ async function boot() {
     traffic.setObstacles([-1.5, 0, 1.5].map((dx) => ({ x: HURACAN_SPOT.x + dx, z: HURACAN_SPOT.z, r: 1.15 })));   // and walk round it
   });
   // the Peace Hotel's ground floor and the AIA lobby (world/interiors.js); their lamps join the light pool
-  const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard });
-  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights]);
+  const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp() });
+  // up the lifts: the sixth floor and room 612 (world/hotelUpper.js)
+  const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });
+  // the Jazz Bar off the hall: the trio, Momo's night (world/jazzBar.js)
+  const jazz = createJazzBar({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: seatMode });
+  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights, ...upper.lights, ...jazz.lights]);
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -172,7 +179,8 @@ async function boot() {
   // buying it: Vivian, the consultant, at the car (world/carSale.js, engine/carPurchase.js)
   const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode });
   if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, walkers: createWalkers({ scene, people }) };
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, walkers: createWalkers({ scene, people }) };
+  places = [interiors, upper, jazz];
   // bumping into people: their reactions, a passing remark, a jolt for you
   bumps = createBumps({ hud, audio, onPlayerBump: ({ closing }) => { player.head.dipV -= 0.1 + 0.05 * Math.min(4, closing); player.head.roll += (Math.random() - 0.5) * 0.04; } });
   // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
@@ -225,11 +233,24 @@ function showInfoCard({ place, line, fare = '', back = '' }) {
   c.querySelector('.fare').textContent = fare; c.querySelector('.back').textContent = back; c.querySelector('.go').textContent = tx('rideContinue');
   c.classList.add('on'); c.dataset.info = '1';
 }
+// going somewhere through a fade (a lift, sleep): nothing to act on while the screen is dark
+const veil = createVeil();
+let places = [];   // modules with candidates / prompt / owns / interact (the hotel, its upper floor ...)
+function travel(during, opts) {
+  if (veil.busy) return;
+  const from = mode; mode = 'travel'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
+  veil.cover(during, opts).then(() => { if (mode === 'travel') { mode = from === 'travel' ? 'play' : from; player.enabled = mode === 'play'; player.clearInput(); } });
+}
 function closeInfoCard() { const c = document.getElementById('ride-card'); if (c && c.dataset.info) { c.classList.remove('on'); delete c.dataset.info; return true; } return false; }
 // talking with Vivian at the car (1-4), or sat in it (the car sale has the camera)
 function saleMode(m) {
   if (m === 'sale') { mode = 'sale'; player.enabled = false; player.lookOnly = false; player.clearInput(); hud.prompt(false); target = null; }
   else if (m === 'sale-seat') { mode = 'sale-seat'; player.enabled = false; player.lookOnly = true; }
+  else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
+}
+// sat at a table in the Jazz Bar: look around, E to stand
+function seatMode(m) {
+  if (m === 'seat') { mode = 'seat'; player.enabled = false; player.lookOnly = true; player.clearInput(); target = null; }
   else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
 }
 // in a DiDi: the car has the camera; you can look around and answer (1-4)
@@ -247,7 +268,8 @@ function rideMode(m) {
 }
 function play() {
   const back = pausedFrom === 'ride' && world && world.rideFlow && (world.rideFlow.inCar || world.rideFlow.card);
-  mode = back ? 'ride' : 'play'; player.enabled = !back; pausedFrom = 'play'; audio.resume();
+  const seat = pausedFrom === 'seat';
+  mode = back ? 'ride' : seat ? 'seat' : 'play'; player.enabled = !back && !seat; pausedFrom = 'play'; audio.resume();
   if (conversation) conversation.setPaused(false);
   hud.show('pause', false);
 }
@@ -262,7 +284,7 @@ function pause() {
   if (mode === 'inspect') closeInspect();
   if (mode === 'dialogue') closeDialogue();
   if (mode === 'pouch') closePouch();
-  if (mode !== 'play' && mode !== 'ride') return;
+  if (mode !== 'play' && mode !== 'ride' && mode !== 'seat') return;
   pausedFrom = mode;
   mode = 'pause'; player.enabled = false; audio.setPaused(true);
   if (conversation) conversation.setPaused(true);
@@ -359,7 +381,7 @@ onLang(() => syncSettings());
 syncSettings();
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) { if (mode === 'pause') play(); }
-  else if (!noLock && (mode === 'play' || mode === 'ride' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch') && !(phone && phone.isOpen)) pause();   // the phone frees the mouse on purpose
+  else if (!noLock && (mode === 'play' || mode === 'ride' || mode === 'seat' || mode === 'inspect' || mode === 'dialogue' || mode === 'pouch') && !(phone && phone.isOpen)) pause();   // the phone frees the mouse on purpose
 });
 document.addEventListener('pointerlockerror', () => {
   // Pointer lock refused (embedded frame, or re-requested too soon after Esc)
@@ -413,6 +435,7 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (mode === 'sale' || mode === 'sale-seat') { if (world.carSale.key(k)) e.preventDefault(); return; }
+  if (mode === 'seat') { if (k === 'KeyE') world.jazz.stand(); else if (k === 'Escape' && noLock) pause(); return; }
   if (mode === 'ride') {
     if (world.rideFlow.key(k)) { e.preventDefault(); return; }
     if (k === 'Escape' && noLock) pause();
@@ -443,7 +466,7 @@ function interact() {
   else if (target.id === 'notice') openInspect();
   else if (target.id === 'didi') world.rideFlow.board();
   else if (target.id === 'vivian') world.carSale.interact();
-  else if (world.interiors.owns(target.id)) world.interiors.interact(target.id);
+  else if (places.some((p) => p.owns(target.id))) places.find((p) => p.owns(target.id)).interact(target.id);
   else if (world.belongings.interact(target.id)) { /* the courier */ }
   else if (target.id === 'manner') {
     const mo = life.flags.mannerOrder;
@@ -648,10 +671,14 @@ function frame(now) {
   world.rideFlow.update(mode === 'pause' ? 0 : dt);
   if (riding && world.didi.car) { player.body.x = world.didi.car.x; player.body.z = world.didi.car.z; }   // you (and your ears) are in the car
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
-  if (player.body.z < -120) world.interiors.update(mode === 'pause' ? 0 : dt, player.body);
+  if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
+  else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
+  { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here ? 1 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
-  if (!riding && mode !== 'sale-seat') player.update(mode === 'pause' ? 0 : dt);
-  if (world.playerBody) { world.playerBody.setVisible(!riding); if (!riding) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
+  if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) world.jazz.seatCamera(camera);
+  else if (!riding && mode !== 'sale-seat') player.update(mode === 'pause' ? 0 : dt);
+  const seated = mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat');
+  if (world.playerBody) { world.playerBody.setVisible(!riding && !seated); if (!riding && !seated) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0
   if (mode !== 'pause') {
@@ -713,12 +740,14 @@ function frame(now) {
     ];
     if (mission1 && mission1.canPickUp()) cands.push({ id: 'pouch', x: pf.x, y: pf.y, z: pf.z, reach: 2.4, cone: 0.72 });
     cands.push(...world.belongings.candidates(), ...world.carSale.candidates());
-    if (player.body.z < -125) cands.push(...world.interiors.candidates());
+    if (player.body.z < -125) for (const p of places) cands.push(...p.candidates());
     if (world.rideFlow.canBoard()) { const d = world.didi.doorFocus(); if (d) cands.push({ id: 'didi', ...d, reach: 2.8, cone: 0.6 }); }
     cands.push({ id: 'manner', x: mannerSpec.queue[0].x + 0.2, y: L.curbH + 1.15, z: mannerSpec.zWall + mannerSpec.depth - 0.1, reach: 2.6, cone: 0.7 });
     target = pickTarget(camera.position, _d, cands, colliders);
   }
-  if (target && world.interiors.owns(target.id)) hud.prompt(true, world.interiors.prompt(target.id));
+  const place = target && places.find((p) => p.owns(target.id));
+  if (mode === 'seat') hud.prompt(true, world.jazz.seatPrompt());
+  else if (place) hud.prompt(true, place.prompt(target.id));
   else if (target && target.id === 'vivian') hud.prompt(true, world.carSale.prompt());
   else if (target && target.id === 'didi') hud.prompt(true, { target: tx('pDidi', world.rideFlow.ride.driver.plate), action: tx('pGetIn') });
   else if (target) hud.prompt(true, PROMPTS[target.id] ? PROMPTS[target.id]() : world.belongings.prompt(target.id));

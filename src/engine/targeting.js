@@ -3,7 +3,7 @@
 
 // Collider tags tall enough to hide something at chest / head height. Low things (railings,
 // benches, planters, parked cars, the stall cabinet) and thin posts don't block a glance.
-export const BLOCKING_TAGS = new Set(['customs', 'hsbc', 'north-block', 'portico', 'hsbc-centre', 'wall', 'lion', 'npc']);
+export const BLOCKING_TAGS = new Set(['customs', 'hsbc', 'north-block', 'portico', 'hsbc-centre', 'wall', 'lion', 'npc', 'door', 'hoarding']);
 
 // Does the XZ segment a->b cross the box? (slab test, ignoring the last `endTrim` metres)
 export function segmentHitsBox(ax, az, bx, bz, box, endTrim = 0.25) {
@@ -24,7 +24,7 @@ export function segmentHitsBox(ax, az, bx, bz, box, endTrim = 0.25) {
 /**
  * eye {x,y,z}, dir {x,y,z} (unit view direction)
  * candidates [{ id, x, y, z, reach, cone (cos of half-angle), ignore? (collider ids to skip) }]
- * colliders [{ minX, maxX, minZ, maxZ, tag, id? }]
+ * colliders [{ minX, maxX, minZ, maxZ, tag, id?, y0?, y1? }]
  * Returns { id, dist, cos } for the single best visible candidate, or null.
  */
 export function pickTarget(eye, dir, candidates, colliders = [], { blocks = (c) => BLOCKING_TAGS.has(c.tag) } = {}) {
@@ -38,6 +38,7 @@ export function pickTarget(eye, dir, candidates, colliders = [], { blocks = (c) 
     let hidden = false;
     for (const b of colliders) {
       if (!blocks(b) || (c.ignore && b.id && c.ignore.includes(b.id))) continue;
+      if (b.y1 !== undefined && (eye.y > b.y1 + 0.3 || eye.y < b.y0)) continue;   // furniture on another floor
       if (segmentHitsBox(eye.x, eye.z, c.x, c.z, b)) { hidden = true; break; }
     }
     if (hidden) continue;

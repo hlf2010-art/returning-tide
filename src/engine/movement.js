@@ -11,7 +11,7 @@ const RUN_UP = 0.3;             // acceleration factor above walking pace (~1 s 
 const AIR = 0.7;                // steering in the air
 const MAX_STEP = 0.12; // metres per collision sub-step
 const GRAVITY = 9.8;
-export const JUMP_SPEED = 3.3; // ~0.55 m hop: for feel, not for clearing barriers (colliders ignore height)
+export const JUMP_SPEED = 3.3; // ~0.55 m hop: for feel, not for clearing barriers (walls have no top)
 
 export function createBody() {
   return { x: L.spawn.x, z: L.spawn.z, y: groundHeight(L.spawn.x, L.spawn.z), vx: 0, vz: 0, vy: 0, air: false, landed: false, impact: 0, hit: null };
@@ -24,6 +24,7 @@ export function resolve(p, r = L.radius) {
     let moved = false;
     for (let i = 0; i < colliders.length; i++) {
       const b = colliders[i];
+      if (b.y1 !== undefined && p.y !== undefined && (p.y > b.y1 || p.y + 1.7 < b.y0)) continue;   // on another floor
       const cx = p.x < b.minX ? b.minX : p.x > b.maxX ? b.maxX : p.x;
       const cz = p.z < b.minZ ? b.minZ : p.z > b.maxZ ? b.maxZ : p.z;
       const dx = p.x - cx, dz = p.z - cz;
@@ -73,7 +74,7 @@ export function stepBody(body, wishX, wishZ, run, dt, jump = false, cap = Infini
   // velocity reflects what actually happened, so sliding along walls feels right
   if (dt > 0) { body.vx = (body.x - px) / dt; body.vz = (body.z - pz) / dt; }
 
-  const gy = groundHeight(body.x, body.z);
+  const gy = groundHeight(body.x, body.z, body.y);
   body.landed = false; body.impact = 0;
   if (!body.air && jump && dt > 0) { body.air = true; body.vy = JUMP_SPEED; }
   if (body.air) {

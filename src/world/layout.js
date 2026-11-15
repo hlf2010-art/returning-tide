@@ -138,6 +138,8 @@ export const covers = [
 export const underCover = (x, z, y = 0) => covers.some((c) => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && y < c.top);
 
 // ---- colliders: axis-aligned boxes in the XZ plane ----
+// Optional y0..y1: the box only stands between those heights (furniture on one floor doesn't block
+// the floor above it). Without them a box is a wall all the way up.
 export const colliders = [];
 function box(minX, maxX, minZ, maxZ, tag = 'solid') {
   colliders.push({ minX, maxX, minZ, maxZ, tag });
@@ -195,7 +197,18 @@ export function addDynamicCollider(tag) {
 }
 
 // ---- ground ----
-export function groundHeight(x, z) {
+// Floors above the street (the hotel's upper storey, rooms you are taken up to): regions at a height.
+// groundHeight(x, z, y) stands you on the highest one under you that you are already at (within a
+// step); without a y (or at street level) it is the street, so everything else is unaffected.
+export const floors = [];   // { id, x0, x1, z0, z1, y }
+export function addFloor(f) { floors.push(f); return f; }
+export function floorAt(x, z, y) {
+  let best = null;
+  for (const f of floors) if (x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && f.y <= y + 0.6 && (!best || f.y > best.y)) best = f;
+  return best;
+}
+export function groundHeight(x, z, y) {
+  if (y > 2 && floors.length) { const f = floorAt(x, z, y); if (f) return f.y; }
   const st = L.stair;
   if (x >= L.wallX) {
     if (Math.abs(z) < st.halfW && x < st.x1) return (L.deckY * (x - st.x0)) / (st.x1 - st.x0);
