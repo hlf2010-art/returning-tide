@@ -181,5 +181,15 @@
   "zh": "zf_036",
   "en": "bf_emma",
   "speed": 0.97
+ },
+ "guide": {
+  "zh": "zf_077",
+  "en": "af_nova",
+  "speed": 1.06
+ },
+ "busPA": {
+  "zh": "zf_007",
+  "en": "af_sarah",
+  "speed": 0.95
  }
 }

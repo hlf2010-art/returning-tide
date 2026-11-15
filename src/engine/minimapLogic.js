@@ -28,6 +28,9 @@ export function updateMinimap(s, dt, { mode = 'play', moving = false, objective 
 // Coarse named areas, for "you've arrived somewhere"
 export function zoneAt(x, z, L) {
   if (x >= L.wallX) return 'promenade';
+  if (x < -480 && x > -530 && z > -212 && z < -207 && x > -530) { if ((x > -494.5 && x < -483) || (x > -528 && x < -516.5)) return 'metro'; }
+  if (x < -496 && x > -514) return 'henan';
+  if (x < L.facadeX && z > -212.5 && z < -189.5) return 'nanjing';
   if (x < L.westCurbX - 6 && Math.abs(z) < L.street.halfW + 0.5) return 'hankou';
   if (x < L.facadeX + 2 && z > 17 && z < 36) return 'customs';
   return 'zhongshan';

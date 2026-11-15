@@ -38,6 +38,7 @@ function ground(B) {
   }
   // Jiujiang Road and Nanjing Road East: carriageway, pavements both sides, kerbs, a zebra at the mouth
   for (const st of sideStreets) {
+    if (st.pedestrian) continue;                                       // Nanjing Road: world/nanjingRoad.js paves it
     const x0 = st.xEnd - 1.5, rz0 = st.zc - st.roadHalfW, rz1 = st.zc + st.roadHalfW;
     B.asphalt.floor(x0, L.westCurbX, rz0, rz1, 0, 6);
     for (const [a, b] of [[st.z0, rz0], [rz1, st.z1]]) {
@@ -63,7 +64,7 @@ function ground(B) {
   // stop lines, right-hand traffic: southbound (west half) stops north of the zebra, northbound south of it
   B.paint.floor(-27.3, -16.4, -5.6, -5.2, y); B.paint.floor(-15.6, -4.7, 5.2, 5.6, y);
   for (let z = -3.4; z < 3.2; z += 0.9) B.paint.floor(-33.4, -30.2, z, z + 0.45, y);                   // zebra across Hankou Rd
-  for (const st of sideStreets) for (let z = st.zc - st.roadHalfW + 0.3; z < st.zc + st.roadHalfW - 0.3; z += 0.9) B.paint.floor(-33.4, -30.2, z, z + 0.45, y);
+  for (const st of sideStreets) if (!st.pedestrian) for (let z = st.zc - st.roadHalfW + 0.3; z < st.zc + st.roadHalfW - 0.3; z += 0.9) B.paint.floor(-33.4, -30.2, z, z + 0.45, y);
   // manholes
   for (const [x, z] of [[-20, 9], [-10.5, -22], [-62, 1.2], [-44, -1.5], [-14, 48]]) B.iron.cyl(x, 0.002, z, 0.36, 0.36, 0.012, 20);
 }
@@ -208,6 +209,7 @@ export function createStreet(M) {
   }
   // the side streets end at hoardings too (roadworks), a little way in
   for (const st of sideStreets) {
+    if (st.pedestrian) continue;
     const sx = st.xEnd - 0.5, w = st.z1 - st.z0;
     B.hoarding.box(sx, 0, st.zc, 0.12, 2.5, w);
     for (let z = st.z0; z <= st.z1; z += 1.85) B.steel.box(sx + 0.08, 0, z, 0.06, 2.6, 0.06);

@@ -106,7 +106,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   const vehicles = vSpecs.map((sp) => {
     const v0 = sp.v0 ?? 10.5 + rng() * 2.5;
     const veh = {
-      id: sp.id, lane: lanes[sp.lane], len: sp.len, width: sp.width,
+      id: sp.id, lane: lanes[sp.lane], len: sp.len, width: sp.width, bus: !!sp.bus, route: sp.route || null,
       v0, p: { a: 1.4 + rng() * 0.5, b: 2.4, s0: 2.2, T: 1.2 + rng() * 0.4 },
       reaction: 0.55 + rng() * 0.6, waited: 0,
       s: sp.s, v: sp.v ?? 0, acc: 0, active: sp.active !== false, hold: 0,
@@ -154,8 +154,10 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   const inCrosswalk = (x, z, m = 0) => x > cw.x0 - m && x < cw.x1 + m && z > cw.z0 - m && z < cw.z1 + m;
   const onCarriageway = (x) => x > road.x0 - 0.2 && x < road.x1 + 0.2;
 
+  let extraPeople = null;                                                       // the evening crowd (engine/crowd.js) where it meets the road
   function people(player) {
     const list = peds.map((p) => ({ x: p.x, z: p.z, vx: p.vx, vz: p.vz, crossing: p.crossing, ai: p }));
+    if (extraPeople) for (const q of extraPeople()) list.push({ ...q, ai: { crossing: q.crossing } });
     if (player) list.push({ x: player.x, z: player.z, vx: player.vx || 0, vz: player.vz || 0, crossing: false, player: true });
     return list;
   }
@@ -492,6 +494,8 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     setSights(list) { sights = list || []; },
     // fixed things in the way (a parked car as a few circles): [{ x, z, r }]
     setObstacles(list) { obstacles = list || []; },
+    // more people who may be on the carriageway: () => [{ x, z, vx, vz, crossing }]
+    setExtraPeople(fn) { extraPeople = fn; },
     // a car moves over into the next lane over `dur` seconds (a cut-in)
     changeLane(veh, toId, dur = 1.5) { if (!veh.laneChange && lanes[toId] && veh.lane !== lanes[toId]) veh.laneChange = { to: lanes[toId], t: 0, dur }; },
     update, vehiclePermission: (v, player) => vehiclePermission(v, people(player)), pedestrianPermission,

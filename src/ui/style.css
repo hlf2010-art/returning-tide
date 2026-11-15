@@ -376,6 +376,18 @@ html[lang="zh-CN"] #ride-card .place { font-family: var(--serif); font-weight: 9
 #talk .hint { margin-top: 8px; font: 500 11px var(--ui); color: rgba(255,255,255,0.45); letter-spacing: 0.04em; }
 #settings .ai-adv { gap: 8px; }
 #settings .ai-adv input { flex: 1; min-width: 0; font: 500 12px var(--ui); color: #fff; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; padding: 6px 8px; }
+#settings .panel { max-height: 88vh; overflow-y: auto; width: min(560px, 94vw); }
+#settings .tabs { display: flex; gap: 4px; margin: -4px 0 8px; }
+#settings .tabs button { appearance: none; border: 0; background: transparent; color: rgba(244,241,234,0.55); font: 700 11px var(--ui); letter-spacing: 0.2em; text-transform: uppercase; padding: 8px 12px; border-bottom: 2px solid transparent; cursor: pointer; }
+#settings .tabs button.on { color: var(--ink); border-bottom-color: var(--gold); }
+#settings .row .seg { flex-wrap: wrap; justify-content: flex-end; }
+#settings .seg button:disabled { cursor: default; opacity: 0.45; }
+#settings .seg button:disabled.on { opacity: 1; }
+#settings .slide { display: flex; align-items: center; gap: 10px; }
+#settings .slide input { width: 170px; accent-color: var(--gold); }
+#settings .slide output { font: 600 12px var(--ui); color: rgba(244,241,234,0.75); min-width: 104px; text-align: right; }
+#settings .mbtn.small { padding: 6px 12px; font-size: 11px; }
+#settings .g-reload span { color: var(--gold); font-size: 12px; }
 #settings .ai-status { margin-top: 10px; font: 500 11px/1.5 var(--ui); color: rgba(255,255,255,0.55); }
 
 /* the workbench (world/makerspace.js) */

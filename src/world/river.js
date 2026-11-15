@@ -87,21 +87,42 @@ export function createRiver() {
   const boats = [];
   const hullMat = new THREE.MeshBasicMaterial({ color: 0x0b1018 });
   const cabinMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.05, 0.8, 0.5) });
+  // Huangpu River cruise boats (浦江游览) at night: two or three decks of big warm windows, every edge
+  // traced in LED strips that drift through colours, the top deck open with lights strung over it
   const lineMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 0.7, 1.2) });
-  function boat({ x, z, len, speed, kind }) {
+  const lineMat2 = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.5, 1.4, 1.8) });
+  const winTex = (() => {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d');
+    x.fillStyle = '#1a1210'; x.fillRect(0, 0, 256, 64);
+    for (let i = 0; i < 16; i++) { const g = x.createLinearGradient(0, 8, 0, 56); g.addColorStop(0, '#fff3d8'); g.addColorStop(1, i % 5 === 2 ? '#e7a96a' : '#f6cf96'); x.fillStyle = g; x.fillRect(i * 16 + 2, 8, 12, 46); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; return t;
+  })();
+  const windowMat = new THREE.MeshBasicMaterial({ map: winTex }); windowMat.color.setScalar(1.25);
+  function boat({ x, z, len, speed, kind, decks = 2, line = lineMat }) {
     const g = new THREE.Group(), hull = new Batch(), lights = new Batch(), trim = new Batch();
     if (kind === 'cruise') {
-      hull.box(0, 0, 0, 9, 2.2, len);
-      lights.box(0, 2.2, -2, 7.6, 2.4, len * 0.74); lights.box(0, 4.6, -4, 6.4, 2.2, len * 0.5);
-      trim.box(0, 6.9, -4, 6.8, 0.25, len * 0.52); trim.box(0, 2.1, 0, 9.2, 0.25, len + 0.2);
-      for (const sx of [-1, 1]) trim.box(sx * 3.3, 6.9, -4 + len * 0.26, 0.2, 5, 0.2);
+      hull.box(0, 0, 0, 10, 2.4, len);
+      let y = 2.4;
+      for (let d = 0; d < decks; d++) {
+        const w = 9 - d * 0.8, l = len * (0.82 - d * 0.14), zc = -1.5 - d * 2;
+        lights.box(0, y, zc, w, 2.5, l);
+        trim.box(0, y + 2.5, zc, w + 0.3, 0.22, l + 0.3); trim.box(0, y - 0.05, zc, w + 0.5, 0.18, l + 0.5);
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) trim.box(sx * (w / 2 + 0.1), y, zc + sz * (l / 2 + 0.1), 0.18, 2.6, 0.18);
+        y += 2.7;
+      }
+      trim.box(0, 2.3, 0, 10.3, 0.22, len + 0.3);
+      for (const sx of [-1, 1]) trim.box(sx * 3.2, y, -len * 0.1, 0.12, 2.2, 0.12);       // the mast for the strung lights
     } else {
       hull.box(0, 0, 0, 12, 1.5, len); hull.box(0, 1.5, 4, 11, 1.4, len * 0.7);       // laden barge
       hull.box(0, 1.5, -len / 2 + 5, 7, 5, 7);
       lights.box(0, 4.6, -len / 2 + 5, 7.1, 1.2, 7.1);
       trim.box(0, 7, -len / 2 + 5, 0.3, 3, 0.3);
     }
-    g.add(hull.mesh(hullMat), lights.mesh(cabinMat), trim.mesh(kind === 'cruise' ? lineMat : cabinMat));
+    if (kind === 'cruise') {
+      // the cabins' sides: rows of windows (texture repeats along the length)
+      const cab = lights.mesh(windowMat); cab.geometry.attributes.uv && (() => { const uv = cab.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * len / 8); })();
+      g.add(hull.mesh(hullMat), cab, trim.mesh(line));
+    } else g.add(hull.mesh(hullMat), lights.mesh(cabinMat), trim.mesh(cabinMat));
     g.position.set(x, L.waterY, z);
     if (speed > 0) g.rotation.y = Math.PI;      // bow leads
     g.traverse((o) => { o.layers.enable(REFLECT_LAYER); o.matrixAutoUpdate = o === g; });
@@ -109,6 +130,8 @@ export function createRiver() {
     boats.push({ g, speed });
   }
   boat({ x: 210, z: 160, len: 46, speed: -2.6, kind: 'cruise' });
+  boat({ x: 280, z: -120, len: 58, speed: 2.0, kind: 'cruise', decks: 3, line: lineMat2 });
+  boat({ x: 360, z: 420, len: 40, speed: -1.7, kind: 'cruise', decks: 2, line: lineMat2 });
   boat({ x: 330, z: -260, len: 70, speed: 3.4, kind: 'barge' });
   boat({ x: 120, z: -420, len: 58, speed: 2.2, kind: 'barge' });
 
@@ -119,12 +142,16 @@ export function createRiver() {
     group, boats,
     update(t, dt) {
       mat.uniforms.time.value = t;
+      lineMat.color.setHSL((0.9 + t * 0.012) % 1, 0.85, 0.62).multiplyScalar(2.2);       // the LED outlines drift through colours
+      lineMat2.color.setHSL((0.5 + t * 0.009) % 1, 0.85, 0.6).multiplyScalar(2.2);
       for (const b of boats) {
         b.g.position.z += b.speed * dt;
         if (b.g.position.z > 700) b.g.position.z = -700; else if (b.g.position.z < -700) b.g.position.z = 700;
         b.g.position.y = L.waterY + Math.sin(t * 0.6 + b.speed) * 0.12;
       }
     },
+    // the reflection's resolution (graphics settings): width in pixels, half as tall
+    setMirrorSize(w) { target.setSize(w, Math.round(w / 2)); },
     // Render the mirrored far scenery. Call once per frame before the main render.
     renderReflection(renderer, scene, camera) {
       _cp.setFromMatrixPosition(camera.matrixWorld);

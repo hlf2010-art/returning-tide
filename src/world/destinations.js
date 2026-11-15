@@ -361,7 +361,7 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     return t;
   };
   return {
-    lights, arrive, has: (id) => !!PLACES[id],
+    lights, arrive, leave, has: (id) => !!PLACES[id],
     get here() { return here; },
     get scene() { return cur; },
     // once the scene's done, you can keep talking to them

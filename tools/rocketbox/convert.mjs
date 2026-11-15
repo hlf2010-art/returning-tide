@@ -24,6 +24,15 @@ export const CAST = [
   { role: 'p3', avatar: 'Male_Adult_10', sex: 'm' },
   { role: 'p4', avatar: 'Male_Adult_03', sex: 'm' },
   { role: 'player', avatar: 'Male_Adult_07', sex: 'm' },
+  // the evening crowd (phase 3): more faces, from more places, dressed for November
+  { role: 'c1', avatar: 'Female_Adult_07', sex: 'f' },
+  { role: 'c2', avatar: 'Female_Adult_11', sex: 'f' },
+  { role: 'c3', avatar: 'Female_Adult_14', sex: 'f' },
+  { role: 'c4', avatar: 'Business_Female_04', sex: 'f' },
+  { role: 'c5', avatar: 'Male_Adult_02', sex: 'm' },
+  { role: 'c6', avatar: 'Male_Adult_12', sex: 'm' },
+  { role: 'c7', avatar: 'Male_Adult_04', sex: 'm' },
+  { role: 'c8', avatar: 'Female_Adult_04', sex: 'f' },
   { role: 'p5', avatar: 'Business_Female_02', sex: 'f', greyHair: true },  // an older local woman (the library's oldest woman; hair greyed)                     // the player's own body (head hidden in first person)
 ];
 const CLIPS = {

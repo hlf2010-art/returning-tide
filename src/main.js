@@ -9,6 +9,7 @@ import '@fontsource/inter/600.css';
 import '@fontsource/inter/800.css';
 import * as THREE from 'three';
 import { createRenderer } from './engine/renderer.js';
+import { loadGfx, saveGfx, tweak as gfxTweak, detail as gfxDetail, shouldDraw, treeStep, resolve as gfxResolve } from './engine/gfx.js';
 import { createPlayer } from './engine/player.js';
 import { createAudio } from './engine/audio.js';
 import { L, npcs as npcLayout } from './world/layout.js';
@@ -70,6 +71,14 @@ import { createPhotoMode } from './world/photoMode.js';
 import { createFriendScenes } from './world/friendScenes.js';
 import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
+import { createCrowd } from './engine/crowd.js';
+import { trafficSpecs, BUS_STOPS } from './world/trafficMix.js';
+import { createBuses } from './world/buses.js';
+import { GUIDE_LINES, BUS_LINES } from './world/crowdLines.js';
+import { createNanjingRoad } from './world/nanjingRoad.js';
+import { createHenanTraffic } from './world/henanTraffic.js';
+import { createMetro } from './world/metro.js';
+import { createCrowdView } from './world/crowdView.js';
 import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
 import { usePhotoSurfaces } from './world/photoTextures.js';
 import { createDidi, PICKUP } from './world/didi.js';
@@ -97,7 +106,16 @@ THREE.ShaderChunk.fog_pars_fragment = THREE.ShaderChunk.fog_pars_fragment.replac
 THREE.ShaderChunk.fog_fragment = THREE.ShaderChunk.fog_fragment.replace('float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );',
   'float hd = fogDensity * mix(1.18, 0.9, smoothstep(0.0, 160.0, vFogY));\n\tfloat fogFactor = 1.0 - exp( - hd * hd * vFogDepth * vFogDepth );');
 const camera = new THREE.PerspectiveCamera(68, 1, 0.1, 4500);
-const R = createRenderer(canvas, scene, camera, { fixedLevel: params.has('q') ? Number(params.get('q')) : null });
+// graphics settings (engine/gfx.js): picked for this GPU the first time, then whatever you set.
+// ?q=<n> (tools) pins one quality step; ?gfx=<preset> / ?lod=<level> override for a session.
+const gpuName = (() => {
+  try { const gl = document.createElement('canvas').getContext('webgl2'); const e = gl && gl.getExtension('WEBGL_debug_renderer_info'); return gl ? String(gl.getParameter(e ? e.UNMASKED_RENDERER_WEBGL : gl.RENDERER)) : ''; } catch { return ''; }
+})();
+let gfx = loadGfx(gpuName);
+if (params.has('gfx')) gfx = gfxResolve({ preset: params.get('gfx') });
+if (params.has('lod')) gfx = { ...gfx, lod: gfxResolve({ ...gfx, preset: 'custom', lod: params.get('lod') }).lod };
+const bootLod = gfx.lod;                                         // crowd and traffic sizes are set when the world is built
+const R = createRenderer(canvas, scene, camera, { fixedLevel: params.has('q') ? Number(params.get('q')) : null, gfx });
 const player = createPlayer(camera, canvas);
 const audio = createAudio();
 const hud = createHud();
@@ -137,6 +155,7 @@ async function boot() {
   const M = createMaterials();
   usePhotoSurfaces(M, R.renderer).then((r) => { if (r) console.info('photo surfaces', r); });   // CC0 photographed stone and asphalt, swapped in when loaded
   const sky = createSky(), skyline = createSkyline(), river = createRiver();
+  river.setMirrorSize(gfx.mirror);
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
   // real people (Microsoft Rocketbox, MIT) when their files load; the hand-built figures otherwise
   let people = null;
@@ -148,15 +167,34 @@ async function boot() {
   const pouch = createPouch();
   const rain = createRain();
   // the signal-controlled crossing: one controller, through traffic, background pedestrians
-  traffic = createTraffic({ geom: crossing, vehicles: crossing.vehicles, peds: crossing.peds, shop: createShop({ queue: mannerSpec.queue, pickup: mannerSpec.pickup }) });
-  const vehicles = createVehicles(crossing.vehicles), signals = createSignals();
+  // how much traffic: the level of detail; tools (?q=) keep the crossing's own seven unless ?traffic=<factor>
+  const vehSpecs = params.has('traffic') ? trafficSpecs(Number(params.get('traffic'))) : params.has('q') ? crossing.vehicles : trafficSpecs(gfxDetail({ ...gfx, lod: bootLod }).traffic);
+  traffic = createTraffic({ geom: crossing, vehicles: vehSpecs, peds: crossing.peds, shop: createShop({ queue: mannerSpec.queue, pickup: mannerSpec.pickup }) });
+  const vehicles = createVehicles(vehSpecs), signals = createSignals();
+  // Nanjing Road East to Henan Road, the metro's Exits 7 and 2 (world/nanjingRoad.js), Henan Road's traffic
+  const nanjing = createNanjingRoad(M); scene.add(nanjing.group);
+  const henan = createHenanTraffic({ scene, factor: params.has('q') && !params.has('traffic') ? 0.35 : gfxDetail({ ...gfx, lod: bootLod }).traffic, addCollider: addDynamicCollider });
+  // the city buses and their stops (world/buses.js); they let the crowd's commuters on and off
+  // the bus's kerbside announcement as the doors open / as it pulls away, if you're near enough to hear
+  const announce = (v, what) => {
+    if (Math.hypot(v.x - player.body.x, v.z - player.body.z) > 30) return;
+    const [who, zh, en] = what === 'arrive' ? BUS_LINES[Math.random() < 0.6 ? 0 : 1] : BUS_LINES[2];
+    voice.say({ zh, en, who, at: [v.x, 2.2, v.z], gain: 0.8, lang: 'zh' });
+  };
+  const buses = createBuses({ scene, traffic, vehicles, audio, announce, crowd: { board: (...a) => (world && world.crowd ? world.crowd.board(...a) : 0), alight: (...a) => (world && world.crowd ? world.crowd.alight(...a) : 0) } });
+  for (const st of BUS_STOPS) {                                   // the shelters are solid: their back wall and the sign pole
+    const back = st.dir > 0 ? -1 : 1, bx = (st.dir > 0 ? L.westCurbX - 1.5 : L.eastCurbX + 1.5) + back * 0.75, b = addDynamicCollider('shelter');
+    b.minX = bx - 0.12; b.maxX = bx + 0.12; b.minZ = st.z - 3.75; b.maxZ = st.z + 3.75;
+    const px = (st.dir > 0 ? L.westCurbX - 1.5 : L.eastCurbX + 1.5) - back * 0.9, q = addDynamicCollider('shelter');
+    q.minX = px - 0.1; q.maxX = px + 0.1; q.minZ = st.z - 3.9; q.maxZ = st.z - 3.5;
+  }
   const pedestrians = people ? createRealPedestrians(traffic.peds, people) : createPedestrians(traffic.peds);
   const vehicleBoxes = traffic.vehicles.map(() => addDynamicCollider('vehicle'));
   // the crossing's pedestrians are solid to the player (they steer round you; you can still walk into them)
   pedBoxes = traffic.peds.map((p) => { const b = addDynamicCollider('npc'); b.id = p.id; return b; });
-  traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(crossing.vehicles[i].model); });   // petrol engines get an engine note
+  traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(vehSpecs[i].model); });   // petrol engines get an engine note
   scene.add(sky.mesh, skyline.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
-    vehicles.group, signals.group, pedestrians.group, rain.mesh);
+    vehicles.group, signals.group, pedestrians.group, rain.mesh, buses.group);
   // trees: London planes on Hankou Road (November: turning, some twigs already bare), camphor
   // laurels in the promenade planters
   const trees = createTrees([
@@ -183,7 +221,7 @@ async function boot() {
   // the Yangpu makerspace: build things (world/makerspace.js, engine/maker.js)
   const makers = createMakerspace({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: buildMode });
   const jazz = createJazzBar({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: seatMode });
-  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
+  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...buses.lights, ...nanjing.lights, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -206,10 +244,24 @@ async function boot() {
   if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  world = { buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
+  // tools (?q=) run a light one unless ?crowd=<density> says otherwise
+  if (people && params.get('crowd') !== '0') {
+    const roles = Object.keys(people.manifest.cast).filter((r) => !['lin', 'su', 'player'].includes(r));
+    const det = gfxDetail({ ...gfx, lod: bootLod });
+    const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0.25 : det.crowd;
+    world.crowd = createCrowd({ density, roles });
+    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, camera });
+    traffic.setExtraPeople(() => world.crowd.onCarriageway());
+    henan.traffic.setExtraPeople(() => world.crowd.onHenan());
+    crowdBoxes = Array.from({ length: (params.has('q') ? 5 : det.nearPeople) + 2 }, () => addDynamicCollider('npc'));
+  }
   // the friends in person after the first days (world/friendScenes.js): Ruoan at the AIA, Momo in 612, LiDAR scans
   world.friends = createFriendScenes({ scene, people, hud, audio, voice, getLife: () => life, save: () => saveLife(), player, interiors });
-  places = [interiors, upper, jazz, dests, driving, makers, world.friends];
+  // down the metro stairs: one stop to Lujiazui, or through to the other exit (world/metro.js)
+  world.metro = createMetro({ hud, audio, player, travel, getLife: () => life, save: () => saveLife(), arriveAt: (id, info) => world.dest.arrive(id, info) });
+  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro];
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
     getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
@@ -325,6 +377,11 @@ function talkables() {
   const out = [];
   for (const q of traffic ? traffic.peds : []) if (q.active !== false && q.visible !== false) out.push({ key: `ped:${q.id}`, persona: PERSONAS[q.persona] ? q.persona : 'office', x: q.x, y: (q.y ?? L.curbH) + 1.62, z: q.z, hold(on, pp) { if (on) { q.pause = 999; q.faceTo = [pp.x, pp.z]; q.faceFor = 999; } else { q.pause = 0.3; q.faceFor = 0; q.faceTo = null; } } });
   for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale, world.makerspace, world.friends]) if (m && m.talkables) out.push(...m.talkables());
+  if (world.crowdView) for (const a of world.crowdView.nearAgents()) {
+    if (a.kind === 'follower' || a.leader) continue;                       // the one in charge answers for a group or a couple
+    out.push({ key: `crowd:${a.id}`, persona: PERSONAS[a.persona] ? a.persona : 'visitor', x: a.x, y: a.y + 1.62 * (a.scale || 1), z: a.z,
+      hold(on, pp) { if (on) { a._saved = { state: a.state, act: a.act, wait: a.wait }; a.state = 'act'; a.act = 'look'; a.wait = 999; a.heading = Math.atan2(pp.x - a.x, pp.z - a.z); } else if (a._saved) { a.state = a._saved.state === 'act' ? 'act' : 'walk'; a.act = a._saved.act; a.wait = Math.min(a._saved.wait, 3); a._saved = null; } } });
+  }
   return out;
 }
 // photo mode: you stand still and frame; the mouse still looks
@@ -452,9 +509,12 @@ document.getElementById('resume').addEventListener('click', () => { lock(); if (
 function syncSettings() {
   for (const seg of document.querySelectorAll('.seg[data-setting]')) {
     const c = llm.conf();
-    const cur = { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.serverOn ? 'on' : 'off', ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto' }[seg.dataset.setting];
+    const k = seg.dataset.setting;
+    const cur = k.startsWith('g.') ? String(typeof gfx[k.slice(2)] === 'boolean' ? +gfx[k.slice(2)] : gfx[k.slice(2)])
+      : { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.serverOn ? 'on' : 'off', ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto' }[k];
     for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
   }
+  syncGfx();
   const c = llm.conf(), sv = document.getElementById('ai-server'), md = document.getElementById('ai-model');
   if (sv && document.activeElement !== sv) sv.value = c.server; if (md && document.activeElement !== md) md.value = c.model;
   const st = document.getElementById('ai-status'), vs = voice.stats;
@@ -462,12 +522,39 @@ function syncSettings() {
     ? `AI：${llm.backend === 'server' ? `已连接本地服务` : llm.backend === 'browser' ? '浏览器内模型' : llm.status.startsWith('loading') ? `加载中 ${Math.round(llm.progress * 100)}%` : '未连接（简单回应）'} · 语音：${vs.size} 句录好的人声${vs.serverUp ? ' + 本地语音服务' : ''}`
     : `AI: ${llm.backend === 'server' ? 'local server connected' : llm.backend === 'browser' ? 'model in the browser' : llm.status.startsWith('loading') ? `loading ${Math.round(llm.progress * 100)}%` : 'not connected (simple replies)'} · Voices: ${vs.size} recorded lines${vs.serverUp ? ' + local voice server' : ''}`;
 }
+// ---- graphics settings (the Graphics tab) ----
+function syncGfx() {
+  const sl = document.getElementById('g-scale'), out = document.getElementById('g-scale-v');
+  if (!sl) return;
+  if (document.activeElement !== sl) sl.value = Math.round(gfx.scale * 100);
+  const [w, h] = R.pixels; out.textContent = `${Math.round(gfx.scale * 100)}% · ${w}×${h}`;
+  document.querySelector('#settings .g-reload').hidden = gfx.lod === bootLod;
+  const st = document.getElementById('g-status');
+  if (st) st.textContent = tx('gStatus', (gpuName.replace(/^ANGLE \(|\)$/g, '').replace(/\s*\(0x[0-9a-f]+\)|Direct3D.*|ANGLE Metal Renderer: |, Unspecified Version/gi, '').split(',').slice(-1)[0] || '?').trim().slice(0, 40), Math.round(1000 / R.frameMs), R.frameMs.toFixed(1), w, h, R.drop);
+}
+function setGfx(key, value) {
+  gfx = gfxTweak(gfx, key, value);
+  saveGfx(gfx);
+  if (!params.has('q')) R.apply(gfx);
+  if (world) world.river.setMirrorSize(gfx.mirror);
+  syncSettings();
+}
+document.getElementById('g-scale')?.addEventListener('input', (e) => setGfx('scale', Number(e.target.value) / 100));
+document.getElementById('g-reload')?.addEventListener('click', () => location.reload());
+document.getElementById('set-tabs')?.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-tab]'); if (!b) return;
+  for (const x of document.querySelectorAll('#set-tabs button')) x.classList.toggle('on', x === b);
+  for (const body of document.querySelectorAll('#settings .tab-body')) body.hidden = body.dataset.body !== b.dataset.tab;
+  syncSettings();
+});
+setInterval(() => { if (!document.getElementById('settings').classList.contains('hidden')) syncGfx(); }, 500);
 for (const id of ['ai-server', 'ai-model']) document.getElementById(id)?.addEventListener('change', () => { llm.configure({ aiServer: document.getElementById('ai-server').value.trim(), aiModel: document.getElementById('ai-model').value.trim() }).then(syncSettings); });
 for (const id of ['ai-server', 'ai-model']) document.getElementById(id)?.addEventListener('keydown', (e) => e.stopPropagation());
 document.addEventListener('click', (e) => {
   const b = e.target.closest('.seg[data-setting] button');
   if (b) {
     const k = b.parentElement.dataset.setting, v = b.dataset.v;
+    if (k.startsWith('g.')) { if (!b.disabled) setGfx(k.slice(2), ['ao', 'ssr', 'bloom', 'auto'].includes(k.slice(2)) ? v === '1' : ['preset', 'lod'].includes(k.slice(2)) ? v : Number(v)); return; }
     if (k === 'lang') setLang(v);
     if (k === 'subs') subtitlesOn = v === 'on';
     if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
@@ -620,7 +707,7 @@ const PROMPTS = {
   },
 };
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
-let pedBoxes = [], bumps = null;
+let pedBoxes = [], crowdBoxes = [], bumps = null;
 // ---- the protagonist's life and phone (engine/life.js, world/agenda.js, ui/phone) ----
 const LIFE_KEY = 'bund-life-v1';
 let life = null;
@@ -752,6 +839,15 @@ function bumpActors() {
     for (const s of npcLayout.list) out.push({ id: s.id, persona: s.id, x: s.x, z: s.z, vx: 0, vz: 0, r: 0.4,
       apply(r, other) { world.npcs.react(s.id, r.kind, [other.x, other.z], t + (REACT_FOR[r.kind] || 1) + 0.6); } });
   }
+  // the evening crowd's nearby people: a look, a word, a step back
+  if (world.crowdView) for (const a of world.crowdView.nearAgents()) {
+    if (Math.abs(a.y - player.body.y) > 1.2) continue;
+    out.push({ id: `crowd:${a.id}`, persona: a.persona, x: a.x, z: a.z, vx: a.vx, vz: a.vz, r: 0.3, busy: a.phone,
+      apply(r, other) {
+        if (r.stagger) { const dx = a.x - other.x, dz = a.z - other.z, d = Math.hypot(dx, dz) || 1; a.vx += dx / d * 0.9; a.vz += dz / d * 0.9; }
+        if (r.kind !== 'look' && a.state === 'walk') { a._saved = { state: 'walk', act: null, wait: 0 }; a.state = 'act'; a.act = 'look'; a.wait = REACT_FOR[r.kind] || 1; a.heading = Math.atan2(other.x - a.x, other.z - a.z); }
+      } });
+  }
   const b = player.body;
   out.push({ id: 'player', x: b.x, z: b.z, vx: b.pvx || 0, vz: b.pvz || 0, r: 0.42 });
   return out;
@@ -761,7 +857,34 @@ function updateTraffic(dt) {
   _player.x = b.x; _player.z = b.z; _player.vx = b.vx; _player.vz = b.vz;
   // on the promenade deck the player is nowhere near the road
   traffic.update(dt, { player: world.driving && world.driving.driving ? world.driving.trafficBody() : b.y > 1 ? null : _player, rain: weather.rain });
-  world.vehicles.update(traffic.vehicles);
+  if (world.crowd) {
+    const cr = world.crowd, eye = camera.position;
+    cr.setSignal(traffic.controller.pedAspect, dt);
+    cr.setSignal(world.henan.traffic.controller.pedAspect, dt, 'henan');
+    // new people appear only where you won't see them pop in: far off, or behind you
+    camera.getWorldDirection(_d);
+    const canSpawnAt = (n) => { const dx = n.x - eye.x, dz = n.z - eye.z, d = Math.hypot(dx, dz); return d > 45 || (d > 14 && (dx * _d.x + dz * _d.z) / d < -0.2); };
+    const others = [...traffic.peds, ...npcLayout.list];
+    cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : b, canSpawnAt, others });
+    world.crowdView.update(dt, eye);
+    // tour guides talk to their groups now and then (you hear them when you're near)
+    for (const tour of cr.tours) {
+      const g = tour.guide; tour.said = (tour.said || 0) - dt;
+      if (g.gone || tour.said > 0) continue;
+      const d = Math.hypot(g.x - b.x, g.z - b.z);
+      if (d > 22) { tour.said = 3; continue; }
+      const pool = g.state === 'act' ? [1, 2, 4, 5, 6] : [0, 3, 7];
+      const [who, zh, en] = GUIDE_LINES[pool[Math.floor(Math.random() * pool.length)]];
+      voice.say({ zh, en, who, at: [g.x, g.y + 1.6, g.z], gain: 0.9, lang: 'zh' });
+      if (d < 9) hud.bark && hud.bark({ speaker: getLang() === 'zh' ? '导游' : 'Tour guide', text: getLang() === 'zh' ? zh : en, voice: false });
+      tour.said = 18 + Math.random() * 20;
+    }
+    const near = world.crowdView.nearAgents();
+    crowdBoxes.forEach((bx, i) => { const a = near[i]; if (!a || Math.abs(a.y - b.y) > 1.2) { bx.minX = bx.maxX = bx.minZ = bx.maxZ = 1e6; return; } bx.minX = a.x - 0.22; bx.maxX = a.x + 0.22; bx.minZ = a.z - 0.22; bx.maxZ = a.z + 0.22; bx.id = `crowd:${a.id}`; });
+  }
+  world.buses.update(dt);
+  world.henan.update(dt, { player: world.driving && world.driving.driving ? null : b, eye: camera.position, rain: weather.rain });
+  world.vehicles.update(traffic.vehicles, camera.position);
   world.pedestrians.update(traffic.peds, dt, camera.position);
   world.signals.update(traffic.controller);
   traffic.peds.forEach((p, i) => { const bx = pedBoxes[i]; if (bx) { bx.minX = p.x - 0.22; bx.maxX = p.x + 0.22; bx.minZ = p.z - 0.22; bx.maxZ = p.z + 0.22; } });
@@ -773,7 +896,13 @@ function updateTraffic(dt) {
   });
 }
 
+let lastDraw = 0;
 function frame(now) {
+  // the frame-rate cap (settings): skip this display refresh if it comes too soon
+  if (!params.has('q') && gfx.fps) {
+    if (!shouldDraw(now - lastDraw, gfx.fps)) return;
+    const iv = 1000 / gfx.fps; lastDraw = now - lastDraw > 2 * iv ? now : lastDraw + iv;   // on the beat, so 60 on a 144 Hz screen averages 60
+  }
   const dt = Math.min(debug.dtMax || 0.05, Math.max(0, (now - last) / 1000)); last = now; t += dt;   // dtMax: tools only (slow software GL)
   if (!world) return;
 
@@ -829,9 +958,9 @@ function frame(now) {
   scene.fog.density = FOG_DENSITY + HAZE_DENSITY * weather.haze;
   scene.fog.color.lerpColors(FOG_COLOR, HAZE_FOG, weather.haze);
   audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye) || world.belongings.umbrellaUp);
-  world.sky.update(t, weather.haze); world.skyline.update(t); world.river.update(t, dt); world.bund.update(t); world.street.update(t);
+  world.sky.update(t, weather.haze); world.skyline.update(t); world.river.update(t, dt); world.bund.update(t); world.street.update(t); world.nanjing.update(t);
   world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);
-  if (R.level !== treeLevel) { treeLevel = R.level; world.trees.setQuality(R.level); }
+  { const tl = params.has('q') ? R.level : treeStep(gfx, R.drop); if (tl !== treeLevel) { treeLevel = tl; world.trees.setQuality(tl); } }
   if (world.playerBody) world.playerBody.shadow.visible = world.lighting.shadowCount > 0;   // the shadow copy only matters with shadows
   world.lighting.update(camera.position, dt);
   // environment yields to NPC speech: fully while in conversation, by audibility otherwise
@@ -842,7 +971,7 @@ function frame(now) {
     let near = 0; for (const t of TREE_SPOTS) near = Math.max(near, 1 - Math.hypot(t.x - player.body.x, t.z - player.body.z) / 14);
     audio.setWind(wind.level, near);
   }
-  audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: traffic ? traffic.vehicles : null, speech });
+  audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: traffic ? (world.henan ? [...traffic.vehicles, ...world.henan.worldVehicles()] : traffic.vehicles) : null, speech });
   voice.update();                                                                  // where the listener is, for positional voices
   if (dialogueAudio) dialogueAudio.updateListener();
   if (conversation) conversation.update(mode === 'pause' ? 0 : dt);

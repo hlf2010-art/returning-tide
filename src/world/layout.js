@@ -25,11 +25,41 @@ export const L = {
 // Each is open from the Bund to a hoarding at xEnd; the carriageway is roadHalfW either side of zc.
 //   Jiujiang Road  between No.16 and No.17 (the AIA Building)
 //   Nanjing Road E between No.19 and No.20 (the Peace Hotel, whose main entrance is on it)
+// Nanjing Road East has been a pedestrian street all the way to the Bund since 2020: no carriageway,
+// paving wall to wall, out west past Henan Middle Road (world/nanjingRoad.js).
 export const sideStreets = [
   { id: 'jiujiang', z0: -131, z1: -117, roadHalfW: 3.4, xEnd: -56 },
-  { id: 'nanjing', z0: -212, z1: -190, roadHalfW: 5, xEnd: -80 },
+  { id: 'nanjing', z0: -212, z1: -190, roadHalfW: 5, xEnd: -548, pedestrian: true },
 ].map((s) => ({ ...s, zc: (s.z0 + s.z1) / 2 }));
-export const inSideRoad = (x, z) => x < -28 && sideStreets.some((s) => Math.abs(z - s.zc) < s.roadHalfW && x > s.xEnd - 1);
+export const inSideRoad = (x, z) => x < -28 && sideStreets.some((s) => !s.pedestrian && Math.abs(z - s.zc) < s.roadHalfW && x > s.xEnd - 1);
+
+// Nanjing Road East out to Henan Middle Road (real distances approximated: the pedestrian extension
+// runs about 500 m from the Bund to Henan Road). Cross streets (Sichuan, Jiangxi Middle Roads) are
+// closed off a few metres in, like the other side streets.
+export const NJ = {
+  z0: -212, z1: -190, zc: -201, xWest: -548,
+  henan: { x0: -513, x1: -497, xc: -505, walkTo: 30 },     // carriageway; its pavements are open 30 m each way
+  cross: [{ id: 'sichuan', x0: -296, x1: -284 }, { id: 'jiangxi', x0: -401, x1: -389 }],
+};
+export const inHenan = (x, z) => x > NJ.henan.x0 && x < NJ.henan.x1 && Math.abs(z - NJ.zc) < 420;
+// East Nanjing Road station (Lines 2 and 10), the two exits at Henan Road's north corners (Shanghai
+// Metro's own descriptions): Exit 7, east side of Henan Rd, north of Nanjing Rd (signed for Tianjin Road
+// and the Bund); Exit 2, west side of Henan Rd, north of Nanjing Rd (with a lift).
+// Each: a stairwell open at one end, stairs down to a landing 4.6 m below the street.
+export const METRO = [
+  { id: 'exit7', exit: 7, x0: -494.4, x1: -483.2, z0: -211.3, z1: -207.7, top: -483.2, bottom: -492.8, lift: false },
+  { id: 'exit2', exit: 2, x0: -527.8, x1: -516.6, z0: -211.3, z1: -207.7, top: -527.8, bottom: -518.2, lift: true },
+];
+export const METRO_DEPTH = 4.6;
+// y on a metro stair / landing at (x, z), or null if not in a stairwell
+export function metroGround(x, z) {
+  for (const m of METRO) {
+    if (x < m.x0 || x > m.x1 || z < m.z0 || z > m.z1) continue;
+    const f = (x - m.top) / (m.bottom - m.top);                       // 0 at the top step, 1 at the bottom
+    return f >= 1 ? -METRO_DEPTH : f <= 0 ? 0.15 : 0.15 - (0.15 + METRO_DEPTH) * f;
+  }
+  return null;
+}
 
 // ---- prop placement (shared by visuals and colliders) ----
 export const deckLamps = [];          // z positions of promenade lamps (x = 24.6)
@@ -192,6 +222,25 @@ for (const n of npcs.list) { around(n.x, n.z, 0.34, 0.34, 'npc'); colliders[coll
 for (const p of crossing.vehPoles) around(p.x, p.z, 0.2, 0.2, 'signal');
 for (const p of crossing.pedPoles) around(p.x, p.z, 0.1, 0.1, 'signal');
 
+{
+  const segs = [[-84, NJ.cross[0].x1], [NJ.cross[0].x0, NJ.cross[1].x1], [NJ.cross[1].x0, NJ.henan.x1 + 5], [NJ.henan.x0 - 5, NJ.xWest - 2]];
+  for (const [a, b] of segs) { box(Math.min(a, b), Math.max(a, b), NJ.z0 - 22, NJ.z0, 'nj-north'); box(Math.min(a, b), Math.max(a, b), NJ.z1, NJ.z1 + 22, 'nj-south'); }
+  for (const c of NJ.cross) { box(c.x0, c.x1, NJ.z0 - 9, NJ.z0 - 8, 'boundary'); box(c.x0, c.x1, NJ.z1 + 8, NJ.z1 + 9, 'boundary'); }
+  // Henan Road's pavements: open 30 m each way, then fenced; the far sides are buildings
+  const h = NJ.henan, w = h.walkTo;
+  box(h.x1, h.x1 + 5, NJ.z0 - w - 1, NJ.z0 - w, 'boundary'); box(h.x1, h.x1 + 5, NJ.z1 + w, NJ.z1 + w + 1, 'boundary');
+  box(h.x0 - 5, h.x0, NJ.z0 - w - 1, NJ.z0 - w, 'boundary'); box(h.x0 - 5, h.x0, NJ.z1 + w, NJ.z1 + w + 1, 'boundary');
+  box(h.x1 + 5, h.x1 + 6, NJ.z0 - w - 1, NJ.z0, 'nj-north'); box(h.x1 + 5, h.x1 + 6, NJ.z1, NJ.z1 + w + 1, 'nj-south');
+  box(h.x0 - 6, h.x0 - 5, NJ.z0 - w - 1, NJ.z0, 'nj-north'); box(h.x0 - 6, h.x0 - 5, NJ.z1, NJ.z1 + w + 1, 'nj-south');
+  // the carriageway itself stays open (you cross it on the zebra); its far ends are out of reach
+  box(h.x0, h.x1, NJ.z0 - w - 1, NJ.z0 - w, 'boundary'); box(h.x0, h.x1, NJ.z1 + w, NJ.z1 + w + 1, 'boundary');
+  for (const m of METRO) {
+    const open = m.top;                                               // the end you walk in at
+    box(m.x0, m.x1, m.z0 - 0.12, m.z0, 'metro'); box(m.x0, m.x1, m.z1, m.z1 + 0.12, 'metro');
+    if (open === m.x1) box(m.x0 - 0.12, m.x0, m.z0, m.z1, 'metro'); else box(m.x1, m.x1 + 0.12, m.z0, m.z1, 'metro');
+  }
+}
+
 // Moving things (vehicles) keep their boxes here too; traffic updates them in place each frame.
 export function addDynamicCollider(tag) {
   const b = { minX: 1e6, maxX: 1e6, minZ: 1e6, maxZ: 1e6, tag };   // parked far away until placed
@@ -212,6 +261,7 @@ export function floorAt(x, z, y) {
 }
 export function groundHeight(x, z, y) {
   if (y > 2 && floors.length) { const f = floorAt(x, z, y); if (f) return f.y; }
+  if (x < -480) { const m = metroGround(x, z); if (m != null) return m; if (inHenan(x, z)) return 0; }
   const st = L.stair;
   if (x >= L.wallX) {
     if (Math.abs(z) < st.halfW && x < st.x1) return (L.deckY * (x - st.x0)) / (st.x1 - st.x0);
@@ -228,6 +278,8 @@ export function groundHeight(x, z, y) {
 
 // Coarse "where am I" for footstep sounds etc.
 export function surfaceAt(x, z) {
+  if (x < -480 && metroGround(x, z) != null) return 'stairs';
+  if (inHenan(x, z)) return 'road';
   if (x >= L.wallX) return Math.abs(z) < L.stair.halfW && x < L.stair.x1 ? 'stairs' : 'deck';
   if (x < L.westCurbX && Math.abs(z) >= S.roadHalfW && !inSideRoad(x, z)) return 'pavement';
   if (x > L.eastCurbX) return 'pavement';

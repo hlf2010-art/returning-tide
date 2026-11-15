@@ -3,10 +3,10 @@
 // canvas; each frame only rotates it under the player and adds the live marks (you, the objective,
 // people nearby). Shown and hidden by engine/minimapLogic.js; CSS does the fade.
 import { S, tr, onLang } from './i18n.js';
-import { L, colliders, crossing, planterIslands, streetTrees, stall, npcs as npcLayout } from '../world/layout.js';
+import { L, colliders, crossing, planterIslands, streetTrees, stall, npcs as npcLayout, NJ, METRO } from '../world/layout.js';
 
 const PPM = 2.4;                                   // pixels per metre in the offscreen map
-const X0 = -170, X1 = 60, Z0 = -75, Z1 = 110;      // world bounds painted
+const X0 = -560, X1 = 60, Z0 = -290, Z1 = 110;     // world bounds painted (out to Henan Road)
 const SIZE = 168, R = SIZE / 2, VIEW = 0.62;       // display px; metres shown ~ R / (PPM * VIEW)
 const C = {
   water: '#0c1c2c', deck: '#272c34', road: '#15181d', pave: '#30343c', block: '#454a55', blockEdge: '#5b616d',
@@ -23,15 +23,23 @@ function paint() {
   rect(L.deckEdgeX, X1, Z0, Z1, C.water);
   rect(L.wallX, L.deckEdgeX, Z0, Z1, C.deck);
   rect(L.westCurbX, L.eastCurbX, Z0, Z1, C.road);                                   // Zhongshan East 1st Road
-  rect(X0, L.westCurbX, -L.street.roadHalfW, L.street.roadHalfW, C.road);           // Hankou Road
+  rect(L.street.xEnd, L.westCurbX, -L.street.roadHalfW, L.street.roadHalfW, C.road);   // Hankou Road
+  rect(NJ.henan.x0, NJ.henan.x1, Z0, Z1, C.road);                                    // Henan Road
   for (const b of colliders) {
-    if (!/customs|hsbc|north-block|portico/.test(b.tag)) continue;
+    if (!/customs|hsbc|north-block|portico|aia-block|peace-block|nj-north|nj-south/.test(b.tag)) continue;
     rect(Math.max(X0, b.minX), Math.min(X1, b.maxX), Math.max(Z0, b.minZ), Math.min(Z1, b.maxZ), C.block);
     g.strokeStyle = C.blockEdge; g.lineWidth = 1;
     g.strokeRect(px(Math.max(X0, b.minX)), pz(Math.max(Z0, b.minZ)), (Math.min(X1, b.maxX) - Math.max(X0, b.minX)) * PPM, (Math.min(Z1, b.maxZ) - Math.max(Z0, b.minZ)) * PPM);
   }
   const cw = crossing.crosswalk;
   if (cw) { g.fillStyle = C.zebra; for (let x = cw.x0; x < cw.x1; x += 1.1) g.fillRect(px(x), pz(cw.z0), 0.55 * PPM, (cw.z1 - cw.z0) * PPM); }
+  g.fillStyle = C.zebra; for (let x = NJ.henan.x0 + 0.4; x < NJ.henan.x1 - 0.4; x += 1.1) g.fillRect(px(x), pz(NJ.zc - 3.4), 0.55 * PPM, 6.8 * PPM);
+  // the metro exits: Shanghai Metro red, the exit number
+  for (const m of METRO) {
+    rect(m.x0, m.x1, m.z0, m.z1, '#c8161e');
+    g.fillStyle = '#fff'; g.font = `700 ${Math.round(3.4 * PPM)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(`M${m.exit}`, px((m.x0 + m.x1) / 2), pz((m.z0 + m.z1) / 2));
+  }
   for (const p of planterIslands) rect(p.x0, p.x1, p.z0, p.z1, '#2f3a2f');
   g.fillStyle = C.tree;
   for (const t of [...streetTrees, ...planterIslands.map((p) => ({ x: (p.x0 + p.x1) / 2, z: (p.z0 + p.z1) / 2 }))]) { g.beginPath(); g.arc(px(t.x), pz(t.z), 2.2 * PPM, 0, Math.PI * 2); g.fill(); }

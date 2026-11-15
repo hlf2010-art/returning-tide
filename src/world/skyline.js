@@ -203,12 +203,29 @@ function buildShanghaiTower(group, x, z) {
   const crown = new Batch();
   crown.cyl(x, 596, z, 15, 22, 34, 18, { open: true });
   group.add(crown.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 1.6, 2.2), side: THREE.DoubleSide }), 'st-crown'));
+  // a line of white LEDs up the notch as it twists round the tower (the photos: a sparkling spiral)
+  const pts = [];
+  for (let k = 0; k < 900; k++) {
+    const t = 0.015 + (k / 900) * 0.92, rad = 44 * (1 - 0.46 * Math.pow(t, 1.25)), a = t * 2.1 + 1.05;
+    const lobe = 1 + 0.16 * Math.cos(3 * 1.05) - 0.05;
+    pts.push(x + Math.cos(a) * rad * lobe * 1.02, t * H, z + Math.sin(a) * rad * lobe * 1.02);
+  }
+  const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  group.add(new THREE.Points(pg, new THREE.PointsMaterial({ color: new THREE.Color(2.6, 2.5, 2.3), size: 2.2, sizeAttenuation: false })));
+  // the crown's message band, facing the Bund, scrolling
+  const tk = tickerTexture('WELCOME TO SHANGHAI   ·   欢迎来到上海   ·   ');
+  const arc = 1.9, rad = 31.5, bandH = 22;
+  tk.repeat.set((arc * rad / bandH) * 128 / 2048, 1);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 1.03, bandH, 40, 1, true, -Math.PI / 2 - arc / 2, arc),
+    new THREE.MeshBasicMaterial({ map: tk, color: new THREE.Color(1.6, 1.6, 1.7), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  band.position.set(x, 548, z); group.add(band);
+  return tk;
 }
 
 function buildSWFC(group, x, z) {
   // 492 m "bottle opener": square base resolving to a single diagonal blade with a trapezoid opening
   const H = 492, b = 29, yCut = 432;
-  const mat = basic(stripeTexture(['#cfe0ff', '#a9c8ff'], 100, '#18294a'), 1.5);
+  const mat = basic(stripeTexture(['#cfe0ff', '#a9c8ff'], 100, '#101d38'), 1.15);
   const ring = (y) => {
     const t = y / H, s = 1 - t;                         // two corners close in, two stay out
     const q = b * 1.41 * (0.1 + 0.9 * s), p = b * 1.41 * (1 - 0.1 * t);
@@ -239,9 +256,14 @@ function buildSWFC(group, x, z) {
   top.box(x, H - 12, z, half * 2, 12, 9, { rotY: -ang });
   group.add(top.mesh(mat, 'swfc-top'));
   const edge = new Batch();
+  for (const ci of [0, 2]) for (let j = 0; j < levels.length - 1; j++) {
+    const a0 = ring(levels[j])[ci], a1 = ring(levels[j + 1])[ci];
+    bar(edge, new THREE.Vector3(x + a0[0] * 1.01, levels[j], z + a0[1] * 1.01), new THREE.Vector3(x + a1[0] * 1.01, levels[j + 1], z + a1[1] * 1.01), 1.3);
+  }
+  for (const sgn of [-1, 1]) bar(edge, new THREE.Vector3(x + Math.cos(ang) * sgn * half, yCut, z + Math.sin(ang) * sgn * half), new THREE.Vector3(x + Math.cos(ang) * sgn * half, H, z + Math.sin(ang) * sgn * half), 1.3);
   edge.box(x, H - 1, z, half * 2, 1.5, 10, { rotY: -ang });
   edge.box(x, yCut - 1, z, half * 2 - 14, 1.2, 10, { rotY: -ang });
-  group.add(edge.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 2.0, 2.6) }), 'swfc-edge'));
+  group.add(edge.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(0.55, 1.25, 3.0) }), 'swfc-edge'));
 }
 
 function buildJinMao(group, x, z) {
@@ -274,6 +296,134 @@ function ledTexture() {
   return tex(c, { repeat: false, aniso: 4 });
 }
 
+
+// ---- night façades from the reference photos (Lujiazui from the Bund at blue hour) ----
+// Many Lujiazui towers are not lit as windows at all but as architecture: every slab edge a gold
+// line (the "gold bars" towers), whole faces of violet or green LED mesh, cyan edge lines.
+// Texture space for these is in metres: 48 m across (16 bays of 3 m), 1024 m up (256 storeys of 4 m).
+function bandTexture({ line = '#ffcd78', glass = '#140d05', haze = 'rgba(255,170,70,0.10)', seed = 1, skip = 0.03 }) {
+  const [c, ctx] = makeCanvas(64, 1024), r = rng(seed);
+  ctx.fillStyle = glass; ctx.fillRect(0, 0, 64, 1024);
+  ctx.fillStyle = haze; ctx.fillRect(0, 0, 64, 1024);
+  for (let row = 0; row < 256; row++) {
+    const a = 0.7 + r() * 0.3;
+    ctx.globalAlpha = a; ctx.fillStyle = line;
+    for (let bay = 0; bay < 16; bay++) if (r() > skip) ctx.fillRect(bay * 4, row * 4, 4, 1.35);
+    ctx.globalAlpha = 0.12 + r() * 0.1; ctx.fillRect(0, row * 4 + 1.35, 64, 0.8);       // the glow under each line
+  }
+  ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  for (let x = 0; x < 64; x += 4) ctx.fillRect(x, 0, 0.6, 1024);                       // mullions
+  return tex(c, { aniso: 8 });
+}
+// a full-façade LED mesh: points on a fine grid, colour graded up the tower, a few brighter bands
+function meshTexture(bottom, top, { seed = 3, bands = 0.06, dark = '#06040c' } = {}) {
+  const [c, ctx] = makeCanvas(64, 1024), r = rng(seed);
+  ctx.fillStyle = dark; ctx.fillRect(0, 0, 64, 1024);
+  const g = ctx.createLinearGradient(0, 1024, 0, 0); g.addColorStop(0, bottom); g.addColorStop(1, top);
+  for (let row = 0; row < 256; row++) {
+    const band = r() < bands;
+    ctx.fillStyle = g; ctx.globalAlpha = band ? 1 : 0.55 + r() * 0.25;
+    for (let x = 0; x < 64; x += 2) ctx.fillRect(x + 0.4, row * 4 + 0.5, 1.2, band ? 3 : 2.2);
+  }
+  ctx.globalAlpha = 1;
+  return tex(c, { aniso: 8 });
+}
+// a box tower in façade metres (for band / mesh textures). Top and bottom go dark.
+function metreTower(batch, x, z, w, d, h, y0 = 0, r = Math.random) {
+  const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv;
+  const ou = Math.floor(r() * 16) / 16, ov = Math.floor(r() * 32) * 4 / 1024;
+  const dims = [d, d, 0, 0, w, w];
+  for (let f = 0; f < 6; f++) for (let i = 0; i < 4; i++) {
+    const k = f * 4 + i;
+    if (f === 2 || f === 3) uv.setXY(k, 0.03, 1 - 3 / 1024);                         // between two lines: dark
+    else uv.setXY(k, ou + (uv.getX(k) * dims[f]) / 48, ov + (y0 + uv.getY(k) * h) / 1024);
+  }
+  g.translate(x, y0 + h / 2, z);
+  batch.push(g);
+}
+// a thin lit bar from a to b (edge lines)
+function bar(batch, a, b, t = 1.1) {
+  const d = new THREE.Vector3().subVectors(b, a), len = d.length();
+  const g = new THREE.BoxGeometry(t, t, len);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.normalize()));
+  g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+  batch.push(g);
+}
+// the animated media façade (the Bund-facing LED walls): slow colour fields and a travelling sheen,
+// drawn as an LED pixel grid so it never looks like a flat screen
+function mediaMaterial(kind = 0) {
+  return new THREE.ShaderMaterial({
+    fog: true,
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { time: { value: 0 }, kind: { value: kind } }]),
+    vertexShader: /* glsl */ `
+      varying vec3 vW; varying vec3 vN;
+      #include <common>
+      #include <fog_pars_vertex>
+      void main() { vec4 wp = modelMatrix * vec4(position, 1.0); vW = wp.xyz; vN = normal;
+        vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform float time; uniform float kind; varying vec3 vW; varying vec3 vN;
+      #include <common>
+      #include <fog_pars_fragment>
+      void main() {
+        if (abs(vN.y) > 0.5) { gl_FragColor = vec4(0.01, 0.01, 0.02, 1.0); return; }
+        vec2 p = vec2(abs(vN.x) > 0.5 ? vW.z : vW.x, vW.y);
+        vec2 cell = floor(p / 1.5), f = fract(p / 1.5) - 0.5;
+        float led = smoothstep(0.42, 0.18, length(f));
+        float t = time * 0.12;
+        vec3 col;
+        if (kind < 0.5) {
+          // electric blue veins crawling over violet (the pavilion wall below the Pearl)
+          float v = sin(cell.x * 0.21 + sin(cell.y * 0.13 + t * 3.0) * 2.0 + t * 4.0) * sin(cell.y * 0.17 - t * 2.0);
+          float vein = smoothstep(0.82, 0.98, abs(v));
+          col = mix(vec3(0.05, 0.04, 0.22), vec3(0.25, 0.3, 1.0), 0.5 + 0.5 * sin(cell.y * 0.05 + t)) + vec3(0.7, 0.85, 1.6) * vein;
+        } else {
+          // gold and magenta stripes sweeping up the tower
+          float s = fract(cell.y * 0.035 - t * 0.8 + 0.15 * sin(cell.x * 0.3 + t));
+          col = mix(vec3(1.2, 0.55, 0.12), vec3(1.0, 0.18, 0.75), smoothstep(0.3, 0.7, s)) * (0.45 + 0.55 * smoothstep(0.0, 0.2, s) * smoothstep(1.0, 0.8, s));
+        }
+        gl_FragColor = vec4(col * (0.15 + 0.85 * led) * 1.2, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+        #include <fog_fragment>
+      }`,
+  });
+}
+// rooftop signs on Lujiazui towers, facing the Bund: the banks' own names in light
+function signTexture(lines, colour, w = 1024, h = 256) {
+  const [c, ctx] = makeCanvas(w, h);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = colour;
+  ctx.shadowColor = colour; ctx.shadowBlur = 14;
+  if (lines.length === 1) { ctx.font = `900 ${h * 0.72}px ${FONT.sans}`; ctx.fillText(lines[0], w / 2, h * 0.54); }
+  else { ctx.font = `900 ${h * 0.5}px ${FONT.sans}`; ctx.fillText(lines[0], w / 2, h * 0.33); ctx.font = `800 ${h * 0.3}px ${FONT.sans}`; ctx.fillText(lines[1], w / 2, h * 0.78); }
+  return tex(c, { repeat: false, aniso: 8 });
+}
+function sign(group, lines, colour, x, y, z, w, h, gain = 1.6) {
+  const m = new THREE.MeshBasicMaterial({ map: signTexture(lines, colour), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  m.color.setScalar(gain);
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+  mesh.position.set(x, y, z); mesh.rotation.y = -Math.PI / 2;                          // faces west, across the river
+  group.add(mesh);
+  return mesh;
+}
+// a scrolling LED message band (the Shanghai Tower's crown, the waterfront screens)
+function tickerTexture(text) {
+  const [c, ctx] = makeCanvas(2048, 128);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 2048, 128);
+  ctx.font = `800 92px ${FONT.sans}`; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+  const wd = ctx.measureText(text).width; let x = 0;
+  while (x < 2048) { ctx.fillText(text, x, 68); x += wd + 120; }
+  // LED pixels
+  const img = ctx.getImageData(0, 0, 2048, 128);
+  for (let y = 0; y < 128; y++) for (let xx = 0; xx < 2048; xx++) if ((xx % 6) > 3 || (y % 6) > 3) { const i = (y * 2048 + xx) * 4; img.data[i] *= 0.15; img.data[i + 1] *= 0.15; img.data[i + 2] *= 0.15; }
+  ctx.putImageData(img, 0, 0);
+  const t = tex(c, { aniso: 8 }); t.wrapT = THREE.ClampToEdgeWrapping;
+  return t;
+}
+
 export function createSkyline() {
   const group = new THREE.Group(); group.name = 'pudong';
   const r = rng(2026);
@@ -283,7 +433,7 @@ export function createSkyline() {
   const pearlMat = buildPearl(group);
   buildJinMao(group, 800, 205);
   buildSWFC(group, 935, 285);
-  buildShanghaiTower(group, 860, 395);
+  const ticker = buildShanghaiTower(group, 860, 395);
 
   // Riverfront row and the Lujiazui cluster behind it. Hand-placed anchors, then filler.
   const anchors = [
@@ -298,31 +448,62 @@ export function createSkyline() {
     [620, 620, 60, 44, 140], [540, 560, 70, 40, 80], [660, -420, 50, 50, 180],
     [540, -470, 70, 40, 100], [780, -520, 56, 56, 230], [600, -600, 60, 46, 150],
   ];
-  for (const [x, z, w, d, h] of anchors) {
-    const bt = r() < 0.5 ? A : B;
-    if (h > 140 && r() < 0.55) {                                         // setback crown
-      tower(bt, x, z, w, d, h * 0.86, r); tower(bt, x, z, w * 0.62, d * 0.62, h * 0.14, r, h * 0.86);
-      if (r() < 0.5) accents.box(x, h, z, w * 0.62 + 1, 1.4, d * 0.62 + 1);
-    } else {
-      tower(bt, x, z, w, d, h, r);
-      if (r() < 0.3) accents.box(x, h, z, w + 1, 1.4, d + 1);            // lit parapet
+  // how each is lit at night (from the reference photos): window grids, gold slab lines, cool white
+  // slab lines, violet or green LED mesh. Index-matched to `anchors`; the filler draws from a mix.
+  const looks = ['white', 'violet', 'win', 'win', 'gold', 'gold', 'gold', 'white', 'gold', 'violet', 'win', 'win',
+    'white', 'gold', 'green', 'white', 'media2', 'green', 'white', 'gold', 'violet', 'win', 'win', 'win', 'win', 'white', 'win'];
+  const M = {
+    gold: new Batch(), white: new Batch(), violet: new Batch(), green: new Batch(), media: new Batch(), media2: new Batch(),
+  };
+  const edges = { cyan: new Batch(), magenta: new Batch() };
+  const place = (look, x, z, w, d, h, crown) => {
+    const target = look === 'win' ? (r() < 0.5 ? A : B) : M[look];
+    const put = (xx, zz, ww, dd, hh, y0) => (look === 'win' ? tower(target, xx, zz, ww, dd, hh, r, y0) : metreTower(target, xx, zz, ww, dd, hh, y0, r));
+    if (crown) { put(x, z, w, d, h * 0.86, 0); put(x, z, w * 0.62, d * 0.62, h * 0.14, h * 0.86); }
+    else put(x, z, w, d, h, 0);
+    const top = crown ? h : h, cw = crown ? w * 0.62 : w, cd = crown ? d * 0.62 : d;
+    if (look === 'white' || (look === 'win' && r() < 0.3)) accents.box(x, top, z, cw + 1, 1.4, cd + 1);   // lit parapet
+    if (look === 'white' && r() < 0.6) {                                                                 // cyan corner lines
+      for (const [sx, sz] of [[-1, -1], [-1, 1]]) bar(edges.cyan, new THREE.Vector3(x + sx * (w / 2 + 0.3), 0, z + sz * (d / 2 + 0.3)), new THREE.Vector3(x + sx * (w / 2 + 0.3), crown ? h * 0.86 : h, z + sz * (d / 2 + 0.3)), 0.9);
     }
+    if (look === 'violet') for (const [sx, sz] of [[-1, -1], [-1, 1]]) bar(edges.magenta, new THREE.Vector3(x + sx * (w / 2 + 0.3), 0, z + sz * (d / 2 + 0.3)), new THREE.Vector3(x + sx * (w / 2 + 0.3), crown ? h * 0.86 : h, z + sz * (d / 2 + 0.3)), 0.8);
+  };
+  anchors.forEach(([x, z, w, d, h], i) => {
+    const crown = h > 140 && r() < 0.55 && !String(looks[i]).startsWith('media');
+    place(looks[i] || 'win', x, z, w, d, h, crown);
     if (r() < 0.35) dark.cyl(x, h, z, 0.5, 2, 30 + r() * 30, 6);       // mast
-  }
+  });
+  // the banks' names on their towers, as the photos show them (facing the Bund)
+  const roof = (i) => { const [x, z, w, , h] = anchors[i]; return { x: x - w / 2 - 0.6, y: h, z }; };
+  { const a = roof(8); sign(group, ['中国银行'], '#ffe2a8', a.x, a.y - 9, a.z, 40, 10); }
+  { const a = roof(6); sign(group, ['震旦'], '#ff2a22', a.x, a.y - 10, a.z, 30, 14, 2.2); }
+  { const a = roof(1); sign(group, ['DBS', '星展银行'], '#ffffff', a.x, a.y - 9, a.z, 36, 13); }
+  { const a = roof(3); sign(group, ['citi', '花旗银行'], '#cfe6ff', a.x, a.y - 9, a.z, 34, 13); }
   for (let i = 0; i < 46; i++) {
     const x = 520 + r() * 620, z = -900 + r() * 1800;
     if (Math.hypot(x - PEARL.x, z - PEARL.z) < 110) continue;
     if (x > 560 && x < 1010 && z > 130 && z < 470) continue;            // keep the supertall trio readable
-    const h = 50 + r() * r() * 170 + (x - 520) * 0.1, w = 26 + r() * 26;
-    tower(r() < 0.5 ? A : B, x, z, w, w * (0.7 + r() * 0.5), h, r);
+    const h = 50 + r() * r() * 170 + (x - 520) * 0.1, w = 26 + r() * 26, k = r();
+    place(k < 0.55 ? 'win' : k < 0.7 ? 'gold' : k < 0.85 ? 'white' : k < 0.93 ? 'violet' : 'green', x, z, w, w * (0.7 + r() * 0.5), h, false);
   }
+  // the media pavilion at the Pearl's foot: blue veins crawling over violet LED (photo: under the Pearl)
+  metreTower(M.media, 578, 6, 34, 46, 40, 0, r);
   // low riverside: tree line, river wall, the convention centre with its two globes
   dark.box(SHORE_X + 20, -3, 0, 60, 9, 2400);
   dark.box(SHORE_X + 30, 6, 0, 30, 9, 2400);
   tower(B, 560, -120, 40, 150, 34, r);
   const globes = new Batch();
   for (const gz of [-185, -55]) globes.add(new THREE.SphereGeometry(24, 20, 14), { x: 545, y: 30, z: gz });
-  group.add(globes.mesh(basic(towerAtlas(9, 0.1), 1.3), 'globes'));
+  {
+    const [gc, gx] = makeCanvas(512, 256);
+    gx.fillStyle = '#04241c'; gx.fillRect(0, 0, 512, 256);
+    const gg = gx.createLinearGradient(0, 256, 0, 0); gg.addColorStop(0, 'rgba(120,255,210,0.55)'); gg.addColorStop(1, 'rgba(60,200,170,0.15)');
+    gx.fillStyle = gg; gx.fillRect(0, 0, 512, 256);
+    gx.strokeStyle = 'rgba(190,255,235,0.95)'; gx.lineWidth = 2;
+    for (let u = 0; u <= 512; u += 512 / 24) { gx.beginPath(); gx.moveTo(u, 0); gx.lineTo(u, 256); gx.stroke(); }
+    for (let v = 0; v <= 256; v += 256 / 12) { gx.beginPath(); gx.moveTo(0, v); gx.lineTo(512, v); gx.stroke(); }
+    group.add(globes.mesh(basic(tex(gc, { aniso: 8 }), 1.15), 'globes'));
+  }
   // promenade lights along the far bank
   const pts = [];
   for (let z = -1100; z < 1100; z += 14) pts.push(SHORE_X + 2, 5.5, z + r() * 4);
@@ -334,15 +515,33 @@ export function createSkyline() {
   group.add(led);
 
   group.add(A.mesh(cool, 'towers-a'), B.mesh(warm, 'towers-b'));
+  const media = [mediaMaterial(0), mediaMaterial(1)];
+  const mats = {
+    gold: basic(bandTexture({ line: '#ffc35e', glass: '#170e04', seed: 11 }), 1.3),
+    white: basic(bandTexture({ line: '#dbe9ff', glass: '#08101f', haze: 'rgba(110,150,255,0.08)', seed: 12 }), 1.1),
+    violet: basic(meshTexture('#6a2cff', '#ff4ed6', { seed: 13 }), 1.25),
+    green: basic(meshTexture('#18c870', '#c4ff70', { seed: 14, bands: 0.1 }), 1.0),
+  };
+  for (const k of Object.keys(mats)) if (M[k].list.length) group.add(M[k].mesh(mats[k], `towers-${k}`));
+  // the tall one in the anchors list gets the gold-magenta sweep; the pavilion the blue veins
+  group.add(M.media.mesh(media[0], 'towers-media'), M.media2.mesh(media[1], 'towers-media2'));
+  group.add(edges.cyan.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(0.45, 1.3, 2.6) }), 'edges-cyan'));
+  group.add(edges.magenta.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 0.5, 2.0) }), 'edges-magenta'));
   group.add(dark.mesh(new THREE.MeshBasicMaterial({ color: 0x0a0f18 }), 'shore'));
   group.add(accents.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(0.8, 1.0, 1.5) }), 'accents'));
 
   group.traverse((o) => { o.layers.enable(REFLECT_LAYER); o.matrixAutoUpdate = false; o.updateMatrix(); });
 
-  // the lattice lighting breathes slowly between pink and violet
-  const c1 = new THREE.Color(1, 1, 1), c2 = new THREE.Color(0.72, 0.8, 1.35);
+  // the Pearl's lattice changes colour through the evening: pink, violet, deep blue, magenta (as in the
+  // photos), each held a while and blended across a few seconds
+  const palette = [new THREE.Color(1, 1, 1), new THREE.Color(0.78, 0.72, 1.45), new THREE.Color(0.32, 0.58, 1.9), new THREE.Color(1.25, 0.7, 1.1)];
   return {
     group,
-    update(t) { pearlMat.emissive.lerpColors(c1, c2, 0.5 + 0.5 * Math.sin(t * 0.25)); },
+    update(t) {
+      const k = t / 24, i = Math.floor(k) % palette.length, f = THREE.MathUtils.smoothstep(k - Math.floor(k), 0.75, 1);
+      pearlMat.emissive.lerpColors(palette[i], palette[(i + 1) % palette.length], f);
+      for (const m of media) m.uniforms.time.value = t;
+      ticker.offset.x = (t * 0.018) % 1;
+    },
   };
 }

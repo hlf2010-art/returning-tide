@@ -21,7 +21,19 @@ const LADDER = [
   { msaa: 0, scale: 0.8, shadows: 1 }, { msaa: 0, scale: 0.65, shadows: 0 }, { msaa: 0, scale: 0.5, shadows: 0 },
 ];
 
-export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}) {
+// With graphics settings (engine/gfx.js) the player's choices are the base, and when frames run long
+// (and 'auto' is on) the renderer steps down from there: MSAA first, then AO and SSR, then resolution.
+// `?q=<n>` (tools) still pins one LADDER step exactly.
+function effective(g, drop) {
+  const q = { msaa: g.msaa, scale: g.scale, ssr: g.ssr, shadows: g.shadows, ao: g.ao, bloom: g.bloom };
+  if (drop >= 1) q.msaa = 0;
+  if (drop >= 2) { q.ao = false; q.ssr = false; }
+  if (drop >= 3) { q.scale = Math.max(0.5, g.scale * 0.85 ** (drop - 2)); q.shadows = Math.min(q.shadows, drop >= 5 ? 0 : 1); }
+  return q;
+}
+const MAX_DROP = 7;
+
+export function createRenderer(canvas, scene, camera, { fixedLevel = null, gfx = null } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
@@ -34,7 +46,9 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}
 
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   let level = fixedLevel ?? (dpr > 1.2 ? 1 : 0);            // hi-dpi screens need less MSAA
-  const makeTarget = () => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: LADDER[level].msaa });
+  let G = gfx, drop = 0;                                     // settings, and how far auto has stepped down from them
+  const Q = () => (fixedLevel == null && G ? effective(G, drop) : { bloom: true, ...LADDER[level] });
+  const makeTarget = () => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Q().msaa });
   const composer = new EffectComposer(renderer, makeTarget());
   const renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
@@ -42,9 +56,9 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}
   const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.36, 0.7, 0.94);
   let ssr = null, ssrEnabled = true;                  // created once reflectors are known (setReflectors)
   function usePasses() {
-    const want = !!(ssr && ssrEnabled && LADDER[level].ssr);
+    const want = !!(ssr && ssrEnabled && Q().ssr);
     composer.passes[0] = want ? ssr : renderPass;
-    if (ssr) ssr.beautyRenderTarget.samples = LADDER[level].msaa;
+    if (ssr) ssr.beautyRenderTarget.samples = Q().msaa;
   }
   // ambient occlusion from a twin of the camera that leaves out layer 2 (rain streaks, the held pouch)
   const aoCam = camera.clone();
@@ -61,23 +75,24 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}
   composer.addPass(smaa);
   const grade = createGradePass();                    // vignette, a trace of lens fringing, film grain (engine/grade.js)
   composer.addPass(grade);
-  function useLevelPasses() { gtao.enabled = !!LADDER[level].ao; smaa.enabled = !LADDER[level].msaa; }
+  function useLevelPasses() { const q = Q(); gtao.enabled = !!q.ao; smaa.enabled = !q.msaa; bloom.enabled = q.bloom !== false; }
   useLevelPasses();
 
   function resize() {
-    const w = window.innerWidth, h = window.innerHeight, s = dpr * LADDER[level].scale;
+    const w = window.innerWidth, h = window.innerHeight, s = dpr * Q().scale;
     renderer.setPixelRatio(s); renderer.setSize(w, h, false);
     composer.setPixelRatio(s); composer.setSize(w, h);
     bloom.setSize(Math.round(w * s / 2), Math.round(h * s / 2));   // bloom from a half-size source: wide glow, a quarter of the cost
     gtao.setSize(Math.round(w * s), Math.round(h * s));
     camera.aspect = w / h; camera.updateProjectionMatrix();
   }
+  function rebuild() { composer.reset(makeTarget()); usePasses(); useLevelPasses(); resize(); }
   function setLevel(n) {
-    level = Math.max(0, Math.min(LADDER.length - 1, n));
-    composer.reset(makeTarget());
-    usePasses(); useLevelPasses();
-    resize();
+    if (G && fixedLevel == null) { drop = Math.max(0, Math.min(MAX_DROP, n)); level = drop; }
+    else level = Math.max(0, Math.min(LADDER.length - 1, n));
+    rebuild();
   }
+  if (G && fixedLevel == null) level = 0;
   window.addEventListener('resize', resize);
   resize();
 
@@ -90,11 +105,20 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}
     acc += real; frames++;
     if (acc < 2) return;
     ms = (acc / frames) * 1000; acc = 0; frames = 0;
-    slowWindows = ms > 25 ? slowWindows + 1 : 0;            // below ~40 fps, twice running
-    if (fixedLevel == null && slowWindows >= 2 && level < LADDER.length - 1) { slowWindows = 0; setLevel(level + 1); }
+    // below ~40 fps twice running (or well under the frame cap the player chose)
+    const budget = G && G.fps ? Math.max(25, 1000 / G.fps * 1.35) : 25;
+    slowWindows = ms > budget ? slowWindows + 1 : 0;
+    if (fixedLevel != null || slowWindows < 2) return;
+    slowWindows = 0;
+    if (G) { if (G.auto && drop < MAX_DROP) setLevel(drop + 1); }
+    else if (level < LADDER.length - 1) setLevel(level + 1);
   }
   return {
     renderer, composer, bloom, gtao, grade, resize, tick, setLevel,
+    // new graphics settings: applied at once (auto starts again from the top)
+    apply(g) { G = g; drop = 0; level = 0; slowWindows = 0; warmup = 3; rebuild(); },
+    get gfx() { return G; }, get drop() { return drop; }, get dpr() { return dpr; },
+    get pixels() { const s = dpr * Q().scale; return [Math.round(window.innerWidth * s), Math.round(window.innerHeight * s)]; },
     frame(t) { grade.uniforms.time.value = t; },
     get ssr() { return ssr; },
     get reflections() { return composer.passes[0] === ssr; },
@@ -129,6 +153,6 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null } = {}
       };
       usePasses(); resize();
     },
-    get frameMs() { return ms; }, get level() { return level; }, get quality() { return LADDER[level]; },
+    get frameMs() { return ms; }, get level() { return level; }, get quality() { return Q(); },
   };
 }

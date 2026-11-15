@@ -35,7 +35,7 @@ export function createHailers({ scene, people, traffic, vehicles, audio, rnd = M
   function sendCar(h) {
     const sp = h.sp, stopS = sp.dir > 0 ? sp.z + 2.4 : -sp.z + 2.4;
     const taken = busy();
-    const list = traffic.vehicles.map((v, i) => ({ v, i })).filter(({ v }) => v.active && v.lane.dir === sp.dir && !v.pickup && v !== taken && !v.hidden && stopS - v.s > 70 && stopS - v.s < 330);
+    const list = traffic.vehicles.map((v, i) => ({ v, i })).filter(({ v }) => v.active && !v.bus && v.lane.dir === sp.dir && !v.pickup && v !== taken && !v.hidden && stopS - v.s > 70 && stopS - v.s < 330);
     list.sort((a, b) => (a.v.lane.id.endsWith('2') ? 1 : 0) - (b.v.lane.id.endsWith('2') ? 1 : 0) || b.v.s - a.v.s);
     const pick = list[0]; if (!pick) return false;
     const veh = pick.v;

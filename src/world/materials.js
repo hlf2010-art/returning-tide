@@ -7,7 +7,7 @@ import { covers } from './layout.js';
 import { stoneTexture, fluteTexture, facadeAtlas, pavingTextures, sidewalkTextures, asphaltTextures, wetnessTexture } from './textures.js';
 
 // three's ACES curve carries a built-in 1/0.6 exposure, so these read ~2x brighter on screen
-export const FLOOD_COLOR = new THREE.Color(1.0, 0.52, 0.18);
+export const FLOOD_COLOR = new THREE.Color(1.0, 0.56, 0.19);          // sodium-gold, as the Bund's façade lighting reads at night
 
 const archVertex = /* glsl */ `
 attribute float flood;
@@ -63,7 +63,7 @@ black.needsUpdate = true;
 const white = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
 white.colorSpace = THREE.SRGBColorSpace; white.needsUpdate = true;
 
-export function archMaterial({ map = white, emissiveMap = black, tint = 0xffffff, floodGain = 0.6, emissiveGain = 1.2 } = {}) {
+export function archMaterial({ map = white, emissiveMap = black, tint = 0xffffff, floodGain = 0.74, emissiveGain = 1.2 } = {}) {
   const m = new THREE.ShaderMaterial({
     vertexShader: archVertex, fragmentShader: archFragment, fog: true,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
@@ -174,9 +174,10 @@ export function createMaterials() {
   M.stoneDark = arch({ map: stone, tint: 0x6b6862 });
   M.flute = arch({ map: fluteTexture() });
   for (const s of ['classic', 'arched', 'rustic', 'deco', 'brick']) M[s] = arch(facadeAtlas(s));
-  M.brick.uniforms.floodGain.value = 0.55;
+  M.brick.uniforms.floodGain.value = 0.66;
   M.roof = arch({ tint: 0x1b1d22, floodGain: 0.2 });
-  M.copper = arch({ tint: 0x58b090, floodGain: 0.75 });        // verdigris roofs
+  M.copper = arch({ tint: 0x5cc49c, floodGain: 1.25 });        // verdigris roofs: the Peace Hotel's pyramid is lit green, its own floods
+  M.copper.uniforms.floodColor.value.setRGB(0.5, 1.0, 0.78);
   M.bronze = arch({ tint: 0x3a2c1c, floodGain: 0.7 });
   M.glassDark = arch({ tint: 0x0b0e14, floodGain: 0.1 });
 

@@ -46,6 +46,16 @@ export const S = {
   voiceServer: { zh: '临时台词的声音', en: 'Voices for new lines' }, voiceServerBrowser: { zh: '浏览器', en: 'Browser' }, voiceServerLocal: { zh: '本地语音服务', en: 'Local voice server' },
   settings: { zh: '设置', en: 'Settings' },
   language: { zh: '语言', en: 'Language' },
+  tabGeneral: { zh: '通用', en: 'General' }, tabGraphics: { zh: '画面', en: 'Graphics' },
+  gPreset: { zh: '预设', en: 'Preset' }, gLow: { zh: '低', en: 'Low' }, gMac: { zh: 'Mac M4', en: 'Mac M4' }, gHigh: { zh: '高', en: 'High' }, gUltra: { zh: '极致', en: 'Ultra' }, gCustom: { zh: '自定义', en: 'Custom' },
+  gScale: { zh: '渲染分辨率', en: 'Render resolution' }, gFps: { zh: '帧率上限', en: 'Frame-rate cap' }, gNoCap: { zh: '不限', en: 'None' },
+  gLod: { zh: '细节与密度', en: 'Detail & density' }, gMedium: { zh: '中', en: 'Medium' },
+  gAA: { zh: '抗锯齿', en: 'Anti-aliasing' }, gShadows: { zh: '灯光阴影', en: 'Lamp shadows' }, gAO: { zh: '环境光遮蔽', en: 'Ambient occlusion' },
+  gSSR: { zh: '湿地面反射', en: 'Wet-ground reflections' }, gBloom: { zh: '光晕', en: 'Bloom' }, gMirror: { zh: '江面倒影', en: 'River reflection' },
+  gAuto: { zh: '自动降分辨率', en: 'Auto resolution' },
+  gReload: { zh: '人流与车流在重新载入后改变', en: 'Crowds and traffic change after a reload' }, gReloadNow: { zh: '重新载入', en: 'Reload' },
+  gHint: { zh: '首次运行按显卡自动选择；Mac mini M4 建议 “Mac M4”，RTX 4080 级别建议 “极致”。', en: 'Chosen for your GPU on first run. Mac mini M4: “Mac M4”. RTX 4080 class: “Ultra”.' },
+  gStatus: { zh: (gpu, fps, ms, w, h, d) => `显卡：${gpu} · ${fps} fps（${ms} ms）· 画面 ${w}×${h}${d ? ` · 已自动降低 ${d} 级` : ''}`, en: (gpu, fps, ms, w, h, d) => `GPU: ${gpu} · ${fps} fps (${ms} ms) · drawing ${w}×${h}${d ? ` · auto stepped down ${d}` : ''}` },
   subtitles: { zh: '字幕', en: 'Subtitles' },
   sound: { zh: '声音', en: 'Sound' },
   on: { zh: '开', en: 'On' }, off: { zh: '关', en: 'Off' },
@@ -95,7 +105,7 @@ export const S = {
   pDidi: { zh: (p) => `滴滴 ${p}`, en: (p) => `DiDi ${p}` }, pGetIn: { zh: '上车', en: 'Get in' }, mapDidi: { zh: '你的车', en: 'Your ride' },
   rideHint: { zh: '1–4 回话 · 鼠标环顾', en: '1–4 to answer · mouse to look around' },
   // map areas
-  areas: { hankou: { zh: '汉口路', en: 'Hankou Road' }, zhongshan: { zh: '中山东一路', en: 'Zhongshan Road (E-1)' }, promenade: { zh: '外滩观景平台', en: 'The Promenade' }, customs: { zh: '海关大楼', en: 'Customs House' } },
+  areas: { hankou: { zh: '汉口路', en: 'Hankou Road' }, zhongshan: { zh: '中山东一路', en: 'Zhongshan Road (E-1)' }, promenade: { zh: '外滩观景平台', en: 'The Promenade' }, customs: { zh: '海关大楼', en: 'Customs House' }, nanjing: { zh: '南京东路步行街', en: 'Nanjing Road East' }, henan: { zh: '河南中路', en: 'Henan Road (M)' }, metro: { zh: '南京东路站', en: 'East Nanjing Rd Station' } },
 };
 
 // a key from S (functions are called with args)

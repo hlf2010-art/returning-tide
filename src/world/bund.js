@@ -10,7 +10,7 @@ import { towerAtlas } from './skyline.js';
 const FX = L.facadeX;
 const NAMES = ['stone', 'stoneDark', 'flute', 'classic', 'arched', 'rustic', 'deco', 'brick', 'roof', 'copper', 'bronze', 'glassDark'];
 
-function facade(B, style, ax, az, bx, bz, y0, y1, { bay = 4, floors = 1, f0 = 1, f1 = 0.6, seed = 0 } = {}) {
+export function facade(B, style, ax, az, bx, bz, y0, y1, { bay = 4, floors = 1, f0 = 1, f1 = 0.6, seed = 0 } = {}) {
   const len = Math.hypot(bx - ax, bz - az);
   if (style === 'stone' || style === 'stoneDark') {
     B[style].wall(ax, az, bx, bz, y0, y1, [0, y0 / 2, len / 2, y1 / 2], [f0, f1]);
@@ -23,7 +23,7 @@ function facade(B, style, ax, az, bx, bz, y0, y1, { bay = 4, floors = 1, f0 = 1,
 
 // Stack of storeys on a rectangular footprint {x0 (west), x1 (east), z0 (north), z1 (south)}.
 // faceGain lets a face sit in shadow (side streets are lamp-lit, not floodlit).
-function tiers(B, fp, y0, list, faces = 'ENS', seed = 0, faceGain = {}) {
+export function tiers(B, fp, y0, list, faces = 'ENS', seed = 0, faceGain = {}) {
   let y = y0;
   for (const t of list) {
     const i = t.inset || 0;

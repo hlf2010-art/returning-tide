@@ -54,12 +54,12 @@ function countdown(w, h) {
   return mesh;
 }
 
-export function createSignals() {
+export function createSignals(geom = crossing) {
   const group = new THREE.Group(); group.name = 'crossing-signals';
   const vehHeads = [], pedHeads = [];
   const poles = [], housings = [];                                              // static: merged into two meshes below
 
-  for (const p of crossing.vehPoles) {
+  for (const p of geom.vehPoles) {
     const H = 6.0, armY = 5.7, dir = Math.sign(p.armTo - p.x);
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.15, H, 12), poleMat);
     pole.position.set(p.x, L.curbH + H / 2, p.z); poles.push(pole);
@@ -90,7 +90,7 @@ export function createSignals() {
   }
 
   const redFig = figure(false, '#ff2a1c'), greenFig = figure(true, '#22ff8a');
-  for (const p of crossing.pedPoles) {
+  for (const p of geom.pedPoles) {
     const H = 3.2;
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, H, 10), poleMat);
     pole.position.set(p.x, L.curbH + H / 2, p.z); poles.push(pole);

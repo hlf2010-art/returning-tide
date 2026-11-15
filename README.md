@@ -950,6 +950,77 @@ Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings ar
 `tools/audiotest.mjs` records the game's real output (an AudioWorklet after the limiter) while
 playing, writes each scenario as a WAV, and measures it.
 
+## The living Bund: crowds, traffic, buses, Nanjing Road and the metro (phase 3)
+
+**Graphics settings** (`src/engine/gfx.js`; Settings → Graphics). Presets: Low, **Mac M4** (Mac mini M4
+class: 90% resolution, 60 fps cap, SMAA, one lamp shadow, no AO / wet reflections, medium density),
+High, **Ultra** (RTX 4080 class: 125% resolution, no cap, MSAA 4×, AO, wet reflections, 2K river
+reflection, the densest crowds and traffic). Chosen from the GPU the browser reports on first run;
+change any one thing and it becomes Custom; saved per browser. Individually: render resolution
+(50–150%), frame-rate cap (30 / 60 / 120 / none, held on the beat so 60 on a 120 Hz screen averages
+60), level of detail and density, anti-aliasing, lamp shadows, ambient occlusion, wet-ground
+reflections, bloom, river reflection resolution, and auto resolution (steps down by itself when frames
+run long: MSAA, then AO and reflections, then resolution). Rendering settings apply at once; crowd and
+traffic sizes on the next load (the panel offers the reload). The panel shows the GPU, live fps and the
+pixels being drawn. `?gfx=low|mac|high|ultra` and `?lod=` override for a session.
+
+**The crowd** (`src/engine/crowd.js` simulation, pure and tested; `src/world/crowdView.js` drawing).
+About 210 people at medium detail (≈95 low, ≈335 high, ≈500 ultra): tourists from across China and
+abroad, locals on their way somewhere, older couples, people waiting for buses, and tour groups
+following a guide with a coloured flag (who talks to the group, voiced). They walk a network of lanes
+laid on the real walkable ground (the promenade's main and inner walks, both pavements of Zhongshan
+Road, Hankou Road, the stair, Nanjing Road out to Henan Road, the metro stairs), keep to the right, give
+each other room, step round you and the street furniture, never into a wall or onto the road except on
+a zebra on the green man (the signal holds while stragglers finish crossing; cars yield to them).
+Tourists stop at the river railing to photograph Pudong or take a selfie; tour groups gather there
+round the guide. Most people arrive up the metro stairs at Henan Road or from the ends of the
+promenade, and new people only appear where you can't see them appear. The nearest 8–40 (by detail
+level) are full Rocketbox people with motion-captured walks, phones raised for photos, the guide's flag
+in hand and real shadows; you can bump into them and talk to them (T). Everyone further away is an
+impostor: each avatar is photographed at load from 8 sides in 8 steps of its walk, plus standing and
+phone poses, into one atlas, and drawn as camera-facing cards lit by where they stand (the gold off the
+façades, the promenade lamps, the night sky), with soft contact shadows. One draw call for all of them.
+
+**Traffic and buses** (`src/world/trafficMix.js`, `src/world/buses.js`). About 22 vehicles on
+Zhongshan Road at medium (13 low, 37 ultra): taxis, private cars in the colours Shanghai actually
+drives, the four new-energy lookalikes, and city buses on routes 33, 55 and 65. Cars keep moving and
+stop only for the signal and for people. Buses indicate and pull in at the real stops on this stretch,
+中山东一路汉口路(外滩) and 中山东一路南京东路(外滩), in both directions (exact kerb positions placed by eye),
+open their doors with a kerbside announcement, let commuters off and on, close up, wait for a gap and
+pull out. The stops have shelters, lit advert panels and route boards (the Nanjing Road stop lists the
+night lines 305, 307, 317). The bus is a generic 12 m electric single-decker, not any operator's livery.
+
+**Nanjing Road East and the metro** (`src/world/nanjingRoad.js`, `src/world/henanTraffic.js`,
+`src/world/metro.js`). Nanjing Road is now what it has been since 2020: a pedestrian street paved
+wall to wall from the Bund about 500 m west to Henan Middle Road, lined with stone and art-deco
+blocks, lit shopfronts, the vertical neon blade signs the street is known for, LED screens and lamp
+posts (shop names are invented in the street's style, not the real tenants). Sichuan and Jiangxi
+Middle Roads cross it (closed off a few metres in); Henan Middle Road crosses at a signalised zebra with
+its own traffic. At Henan Road's north corners are East Nanjing Road station's **Exit 7** (east side,
+signed for Tianjin Road and the Bund) and **Exit 2** (west side), placed from Shanghai Metro's own
+descriptions of the exits: stairwells under glass canopies with the Shanghai Metro mark, the station
+name in Chinese and English, the Line 2 and Line 10 colours (Wikipedia's palette) and the exit number.
+Walk down the stairs to the lit landing: **E** at the entrance takes Line 2 one stop under the river to
+Lujiazui (¥3 on Alipay; out to the IFC), **E** at the exit sign goes through the concourse and up the
+other exit. The station's insides and the trains aren't built: both go by the fade.
+
+**Night look, from the reference photos.** Lujiazui is lit as it is at night: towers lit as
+architecture rather than windows (gold slab lines, cool white slab lines, violet and green LED mesh),
+cyan and magenta edge lines, the World Financial Center's blue edges, a sparkling line of LEDs up the
+Shanghai Tower's twist and a scrolling "WELCOME TO SHANGHAI / 欢迎来到上海" band at its crown, an
+animated LED pavilion at the Pearl's foot, the banks' own names lit on their roofs (中国银行, 震旦, DBS 星展银行,
+citi 花旗银行), the convention centre's globes as teal glass lattices, and the Pearl changing colour
+through the evening (pink, violet, deep blue, magenta). The Bund's floodlighting is a deeper sodium
+gold and the Peace Hotel's pyramid is lit green on its own floods. The river carries more cruise boats:
+two or three decks of warm windows traced in LED strips drifting through colours.
+
+**Performance, honestly.** Measured only here, on software rendering (SwiftShader, no GPU), where
+these numbers say nothing about a real machine. Not measured on the Mac mini M4 or the RTX 4080 SUPER.
+The presets are set from what the costs are expected to be: the far crowd is one instanced draw;
+near people are skinned and cost the most, so their number is what the detail level mainly limits;
+SSR and AO are off on Mac M4; auto resolution steps down if frames run long. If the Mac drops below
+60, try Low or set the resolution to 80%.
+
 ## What is here
 
 - Walk from Hankou Road out onto Zhongshan East 1st Road, up the stair, along the promenade.
@@ -986,6 +1057,10 @@ src/engine/llm.js, src/world/personas.js, src/ui/talk.js, src/world/ambient.js  
 src/ui/brands.js       real brand marks (Simple Icons) and wordmarks
 src/engine/maker.js, src/world/makerspace.js, src/world/photoMode.js   building gadgets, the makerspace, photo mode (maker.js tested)
 src/world/friendScenes.js   Ruoan at the AIA, Momo in 612, LiDAR scans
+src/engine/gfx.js      graphics settings: presets, GPU detection, frame cap (tested)
+src/engine/crowd.js, src/world/crowdView.js   the evening crowd (tested) and its near people / impostor atlas
+src/world/trafficMix.js, buses.js   how much traffic, the bus stops; the buses and shelters
+src/world/nanjingRoad.js, henanTraffic.js, metro.js   Nanjing Road to Henan Road, its traffic, the metro exits
 src/ui/                HUD and stylesheet
 tests/                 node tests for movement, collision, boundaries, conversation and Mission One state (npm test)
 tools/                 headless screenshot / playtest / render-cost scripts (need Playwright installed globally:
@@ -1004,7 +1079,7 @@ Everything is procedural (canvas textures, merged box/cylinder geometry, WebAudi
 The only third-party assets are three.js and three open-licensed fonts from Fontsource
 (Noto Serif SC, Noto Sans SC, Ma Shan Zheng).
 
-Useful URL switches: `?fresh` (new life, ignore the save), `?q=0..5` pins the render quality step (0 = best), `?body=0` hides your own
+Useful URL switches: `?fresh` (new life, ignore the save), `?q=0..5` pins the render quality step (0 = best), `?gfx=` / `?lod=` a preset / detail level, `?crowd=<density>` (0 = none), `?traffic=<factor>`, `?body=0` hides your own
 body, `?shadows=0`, `?ssr=0`, `?wind=calm|breeze|windy|gale`, `?nolock` uses
 click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.
 

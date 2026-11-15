@@ -69,6 +69,24 @@
   <div id="settings" class="hidden" role="dialog" aria-modal="true">
     <div class="panel">
       <div class="ph"><span data-t="settings"></span><button class="x" data-close-settings aria-label="close">✕</button></div>
+      <div class="tabs" id="set-tabs"><button data-tab="general" class="on" data-t="tabGeneral"></button><button data-tab="graphics" data-t="tabGraphics"></button></div>
+      <div class="tab-body" data-body="graphics" hidden>
+        <div class="row"><span data-t="gPreset"></span><div class="seg" data-setting="g.preset"><button data-v="low" data-t="gLow"></button><button data-v="mac" data-t="gMac"></button><button data-v="high" data-t="gHigh"></button><button data-v="ultra" data-t="gUltra"></button><button data-v="custom" data-t="gCustom" disabled></button></div></div>
+        <div class="row"><span data-t="gScale"></span><div class="slide"><input type="range" id="g-scale" min="50" max="150" step="5"><output id="g-scale-v"></output></div></div>
+        <div class="row"><span data-t="gFps"></span><div class="seg" data-setting="g.fps"><button data-v="30">30</button><button data-v="60">60</button><button data-v="120">120</button><button data-v="0" data-t="gNoCap"></button></div></div>
+        <div class="row"><span data-t="gLod"></span><div class="seg" data-setting="g.lod"><button data-v="low" data-t="gLow"></button><button data-v="medium" data-t="gMedium"></button><button data-v="high" data-t="gHigh"></button><button data-v="ultra" data-t="gUltra"></button></div></div>
+        <div class="row g-reload" hidden><span data-t="gReload"></span><button class="mbtn small" id="g-reload" data-t="gReloadNow"></button></div>
+        <div class="row"><span data-t="gAA"></span><div class="seg" data-setting="g.msaa"><button data-v="0">SMAA</button><button data-v="2">MSAA 2×</button><button data-v="4">MSAA 4×</button></div></div>
+        <div class="row"><span data-t="gShadows"></span><div class="seg" data-setting="g.shadows"><button data-v="0" data-t="off"></button><button data-v="1">1</button><button data-v="2">2</button></div></div>
+        <div class="row"><span data-t="gAO"></span><div class="seg" data-setting="g.ao"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
+        <div class="row"><span data-t="gSSR"></span><div class="seg" data-setting="g.ssr"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
+        <div class="row"><span data-t="gBloom"></span><div class="seg" data-setting="g.bloom"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
+        <div class="row"><span data-t="gMirror"></span><div class="seg" data-setting="g.mirror"><button data-v="512">512</button><button data-v="768">768</button><button data-v="1024">1K</button><button data-v="2048">2K</button></div></div>
+        <div class="row"><span data-t="gAuto"></span><div class="seg" data-setting="g.auto"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
+        <div class="ai-status" id="g-status"></div>
+        <div class="ai-status" data-t="gHint"></div>
+      </div>
+      <div class="tab-body" data-body="general">
       <div class="row"><span data-t="language"></span><div class="seg" data-setting="lang"><button data-v="zh">中文</button><button data-v="en">English</button></div></div>
       <div class="row"><span data-t="subtitles"></span><div class="seg" data-setting="subs"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
       <div class="row"><span data-t="sound"></span><div class="seg" data-setting="sound"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
@@ -77,6 +95,7 @@
       <div class="row"><span data-t="voiceServer"></span><div class="seg" data-setting="voiceServer"><button data-v="off" data-t="voiceServerBrowser"></button><button data-v="on" data-t="voiceServerLocal"></button></div></div>
       <div class="row ai-adv"><span data-t="aiServer"></span><input id="ai-server" spellcheck="false"><input id="ai-model" spellcheck="false"></div>
       <div class="ai-status" id="ai-status"></div>
+      </div>
     </div>
   </div>
 

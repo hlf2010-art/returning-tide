@@ -162,12 +162,81 @@ function buildLookalike(spec, plateText) {
 
 function buildGeneric(spec) {
   const taxi = spec.model === 'taxi';
-  const c = buildCar(taxi ? 0x0c8f8a : 0x101216, taxi, { moving: true, wheelMesh: wheelPivot(0.66) });
+  const c = buildCar(taxi ? 0x0c8f8a : spec.paint ?? 0x101216, taxi, { moving: true, wheelMesh: wheelPivot(0.66) });
   c.tailMat.color.copy(TAIL_RUN);
   // the parked model has no lit headlamps; moving cars at dusk need them
   const lamps = [-1, 1].map((s) => { const h = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 0.03)); h.position.set(s * 0.62, 0.62, 2.35); return h; });
   c.g.add(new THREE.Mesh(mergeStatic(lamps), headMat));
   return { g: c.g, wheels: c.wheels, wheelRadius: 0.33, setBraking(b) { c.tailMat.color.copy(b ? TAIL_BRAKE : TAIL_RUN); } };
+}
+
+// A Shanghai city bus: a 12 m low-floor electric single-decker (the type that runs the Bund routes),
+// white with a green skirt, tinted glass with the cabin lit behind it, amber LED route signs front,
+// side and rear, batteries in a roof pod. Doors on the kerb side (front and middle) slide open at stops.
+// Built from boxes; the livery is generic, not any one operator's.
+function ledSign(text, w = 512, h = 96, small = '') {
+  const [c, ctx] = makeCanvas(w, h);
+  ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#ffae2a'; ctx.textBaseline = 'middle';
+  ctx.font = `900 ${h * 0.78}px ${FONT.sans}`; ctx.textAlign = small ? 'left' : 'center';
+  ctx.fillText(text, small ? h * 0.25 : w / 2, h * 0.54);
+  if (small) { ctx.font = `700 ${h * 0.38}px ${FONT.sans}`; ctx.textAlign = 'right'; ctx.fillText(small, w - h * 0.2, h * 0.54); }
+  const img = ctx.getImageData(0, 0, w, h);                                   // LED dots
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (x % 4 === 3 || y % 4 === 3) { const i = (y * w + x) * 4; img.data[i] *= 0.2; img.data[i + 1] *= 0.2; img.data[i + 2] *= 0.2; }
+  ctx.putImageData(img, 0, 0);
+  const m = new THREE.MeshBasicMaterial({ map: tex(c, { repeat: false }) }); m.color.setScalar(1.7);
+  return m;
+}
+const busPaint = std({ color: 0xeef0f2, roughness: 0.35, metalness: 0.3 });
+const busSkirt = std({ color: 0x0f7d63, roughness: 0.45, metalness: 0.3 });
+const busGlass = std({ color: 0x0c1014, roughness: 0.06, metalness: 0.7, emissive: new THREE.Color(0.42, 0.4, 0.34), emissiveIntensity: 1 });
+const busCabin = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.5, 1.3) });
+function buildBus(spec) {
+  const g = new THREE.Group(), Ln = spec.len, W = spec.width, H = spec.height, hl = Ln / 2, hw = W / 2;
+  const box = (mat, x, y, z, w, h, d) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y + h / 2, z); return m; };
+  const statics = { paint: [], skirt: [], glass: [], trim: [] };
+  statics.skirt.push(box(busSkirt, 0, 0.32, 0, W, 0.55, Ln));                     // lower body
+  statics.paint.push(box(busPaint, 0, 0.87, 0, W, 0.28, Ln));                     // waist
+  statics.glass.push(box(busGlass, 0, 1.15, 0, W - 0.02, 1.35, Ln - 0.3));          // the window band, all round
+  statics.paint.push(box(busPaint, 0, 2.5, 0, W, 0.5, Ln));                       // cant rail and roof
+  statics.paint.push(box(busPaint, 0, 3.0, -0.6, W - 0.5, 0.2, 7.5));               // battery pod
+  for (let z = -hl + 1.1; z < hl - 1.6; z += 1.45) for (const sx of [-1, 1]) statics.trim.push(box(trimShared, sx * (hw + 0.005), 1.15, z, 0.02, 1.35, 0.09));   // window pillars
+  statics.trim.push(box(trimShared, 0, 0.18, hl - 0.15, W, 0.32, 0.3), box(trimShared, 0, 0.18, -hl + 0.15, W, 0.32, 0.3));      // bumpers
+  statics.glass.push(box(busGlass, 0, 0.95, hl + 0.01, W - 0.12, 1.75, 0.04));    // windscreen
+  const parts = new THREE.Group();
+  for (const [k, list] of Object.entries(statics)) { const mat = { paint: busPaint, skirt: busSkirt, glass: busGlass, trim: trimShared }[k]; parts.add(new THREE.Mesh(mergeStatic(list), mat)); }
+  g.add(parts);
+  // signs: front destination, side by the front door, rear number
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.3, 0.32), ledSign(`${spec.route || '55'}路`)); front.position.set(0, 2.78, hl + 0.04); g.add(front);
+  const side = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.3), ledSign(`${spec.route || '55'}`, 512, 96, '路')); side.position.set(-hw - 0.02, 2.2, hl - 2.4); side.rotation.y = -Math.PI / 2; g.add(side);
+  const rear = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.36), ledSign(`${spec.route || '55'}`)); rear.position.set(0, 2.6, -hl - 0.03); rear.rotation.y = Math.PI; g.add(rear);
+  // lamps
+  const lamps = [-1, 1].map((sx) => { const h = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, 0.04)); h.position.set(sx * (hw - 0.3), 0.62, hl + 0.02); return h; });
+  g.add(new THREE.Mesh(mergeStatic(lamps), headMat));
+  const tailMat = new THREE.MeshBasicMaterial({ color: TAIL_RUN.clone() });
+  const tails = [-1, 1].map((sx) => { const h = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 0.04)); h.position.set(sx * (hw - 0.12), 0.75, -hl - 0.02); return h; });
+  g.add(new THREE.Mesh(mergeStatic(tails), tailMat));
+  // doors (kerb side = the bus's right = -x): glass leaves that slide open, the lit step inside
+  const doorMat = std({ color: 0x0d1115, roughness: 0.1, metalness: 0.6, emissive: new THREE.Color(0.25, 0.24, 0.2) });
+  const doors = [], doorZ = [hl - 1.1, -0.35];
+  for (const dz of doorZ) {
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 2.0), busCabin); glow.position.set(-hw + 0.06, 1.25, dz); glow.rotation.y = -Math.PI / 2; g.add(glow);
+    for (const sz of [-1, 1]) { const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.1, 0.6), doorMat); leaf.position.set(-hw - 0.01, 1.3, dz + sz * 0.3); g.add(leaf); doors.push({ leaf, z: dz + sz * 0.3, sz }); }
+  }
+  // the indicator on the kerb side, for pulling in and out
+  const blinkMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 0.08, 0) });
+  for (const z of [hl - 0.1, -hl + 0.1]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.1), blinkMat); b.position.set(-hw + 0.02, 0.95, z); g.add(b); }
+  const wl = [];
+  for (const z of [hl - 2.45, hl - 2.45 - spec.wheelbase]) for (const sx of [-1, 1]) { const w = wheelPivot(1.0)(); w.position.set(sx * (hw - 0.28), 0.5, z); if (sx < 0) w.rotation.y = Math.PI; g.add(w); wl.push(w); }
+  let open = 0;
+  return {
+    g, wheels: wl, wheelRadius: 0.5,
+    setBraking(b) { tailMat.color.copy(b ? TAIL_BRAKE : TAIL_RUN); },
+    // 0..1 doors open; blink: indicator on
+    setDoors(k) { open = k; for (const d of doors) { d.leaf.position.x = -hw - 0.01 - 0.08 * Math.min(1, k * 3); d.leaf.position.z = d.z + d.sz * 0.52 * k; } },
+    setBlink(on) { blinkMat.color.setRGB(on ? 3.2 : 0.2, on ? 1.4 : 0.08, 0); },
+    get doorsOpen() { return open; },
+  };
 }
 
 export const PLACEHOLDER_MODELS = Object.keys(MODELS);
@@ -176,20 +245,20 @@ export function createVehicles(specs) {
   const group = new THREE.Group(); group.name = 'traffic-vehicles';
   wheels = createInstancer('traffic-wheels');
   const list = specs.map((spec, i) => {
-    const v = CARS[spec.model] ? buildLookalike(spec, T.plates[i % T.plates.length]) : buildGeneric(spec);
+    const v = CARS[spec.model] ? buildLookalike(spec, T.plates[i % T.plates.length]) : spec.model === 'bus' ? buildBus(spec) : buildGeneric(spec);
     v.g.name = `vehicle-${spec.id}`;
     group.add(v.g);
-    return { ...v, id: spec.id, model: spec.model, lookalike: !!CARS[spec.model], braking: null };
+    return { ...v, id: spec.id, model: spec.model, lookalike: !!CARS[spec.model], bus: spec.model === 'bus', braking: null };
   });
   wheels.build(); group.add(wheels.group);
   const instancer = wheels;
   return {
     group, list,
     // sim: traffic.vehicles (same order as specs)
-    update(sim) {
+    update(sim, eye = null) {
       for (let i = 0; i < list.length; i++) {
         const v = list[i], s = sim[i];
-        v.g.visible = s.active && !s.hidden;                                  // hidden: you're inside it (world/didi.js draws the cabin)
+        v.g.visible = s.active && !s.hidden && !(eye && Math.abs(s.z - eye.z) > 340);   // hidden: you're inside it (world/didi.js draws the cabin)
         for (const w of v.wheels) w.visibleOwner = s.active && !s.hidden;
         if (!s.active) continue;
         v.g.position.set(s.x, 0, s.z); v.g.rotation.y = s.yaw;
