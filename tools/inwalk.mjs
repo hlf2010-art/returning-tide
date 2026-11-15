@@ -12,13 +12,15 @@ await p.evaluate(() => { window.__bund.dtMax = 0.2; });
 const S = () => p.evaluate(() => { const b = window.__bund.player.body; return { x: b.x, z: b.z, y: b.y }; });
 const prompt = () => p.evaluate(() => { const e = document.getElementById('prompt'); return e.classList.contains('on') ? e.innerText.replace(/\n/g, ' ') : ''; });
 const walk = async (secs) => { await p.keyboard.down('KeyW'); await p.waitForTimeout(secs * 1000); await p.keyboard.up('KeyW'); await p.waitForTimeout(400); };
+// walk until there (or out of time): software GL's frame rate varies, so a fixed wall-clock walk covers varying ground
+const walkUntil = async (cond, maxSecs = 20) => { await p.keyboard.down('KeyW'); const t0 = Date.now(); while (Date.now() - t0 < maxSecs * 1000) { if (await p.evaluate(cond)) break; await p.waitForTimeout(250); } await p.keyboard.up('KeyW'); await p.waitForTimeout(400); };
 // 1. walk north along the Bund pavement past where the barrier used to be
 await p.evaluate(() => window.__bund.player.teleport(-31, -57, 0, 0));
-await walk(6);
+await walkUntil(() => window.__bund.player.body.z < -63.5);
 let s = await S(); ok(s.z < -62.5, `the Bund continues north past Hankou Road's old limit (z=${s.z.toFixed(1)})`);
 // 2. into the Peace Hotel through the revolving door on Nanjing Road
 await p.evaluate(() => window.__bund.player.teleport(-48, -207.5, 0, 0));
-await walk(6);                                  // (software GL runs ~4 fps: 4 s of real time was right at the edge)
+await walkUntil(() => window.__bund.player.body.z < -215);
 s = await S(); ok(s.z < -213.5 && s.x > -50.5 && s.x < -45.5, `through the revolving door into the hall (${s.x.toFixed(1)}, ${s.z.toFixed(1)})`);
 // 3. the front desk: a key card
 await p.evaluate(() => window.__bund.player.teleport(-55.4, -227.6, Math.PI / 2, -0.1)); await p.waitForTimeout(1500);

@@ -36,6 +36,8 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | T | talk to whoever you're looking at, in your own words (see *Talking to people*); in a DiDi, to the driver |
 | Enter · Tab · Esc | in a conversation: send what you typed · speak instead (Mandarin or English; the 中/EN button picks) · leave |
 | G | photo mode, once you've built the night gimbal (wheel or [ ] zoom, Space or click to shoot, G or Esc to lower) |
+| E (at the bottom of the metro stairs) | at the entrance: Line 2 one stop to Lujiazui (¥3); at the exit sign: through the concourse and out of the other exit |
+| Settings → Graphics | presets (Low / Mac M4 / High / Ultra), resolution, frame cap, detail and density, effects |
 | C | subtitles on / off |
 | M | sound on / off (mutes ambience, footsteps, cues and voices) |
 | Esc | back out of an open conversation / close-up / notice; otherwise pause (Resume / Settings). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
@@ -967,18 +969,21 @@ pixels being drawn. `?gfx=low|mac|high|ultra` and `?lod=` override for a session
 **The crowd** (`src/engine/crowd.js` simulation, pure and tested; `src/world/crowdView.js` drawing).
 About 380 people at medium detail (≈170 low, ≈610 high, ≈910 ultra): tourists from across China and
 abroad, locals on their way somewhere, older couples, people waiting for buses, and tour groups
-following a guide with a coloured flag (who talks to the group, voiced). They walk a network of lanes
+following a guide with a coloured flag (who talks to the group now and then: eight voiced lines), from
+16 Rocketbox people in all (13 of them in the crowd: Chinese, East Asian, European and African visitors,
+dressed for November). They walk a network of lanes
 laid on the real walkable ground (the promenade's main and inner walks, both pavements of Zhongshan
 Road, Hankou Road, the stair, Nanjing Road out to Henan Road, the metro stairs), keep to the right, give
 each other room, step round you and the street furniture, never into a wall or onto the road except on
 a zebra on the green man (the signal holds while stragglers finish crossing; cars yield to them).
 Tourists stop at the river railing to photograph Pudong or take a selfie; tour groups gather there
-round the guide. Most people arrive up the metro stairs at Henan Road or from the ends of the
+round the guide; on Nanjing Road people stop at the shop windows and photograph the neon. Most people arrive up the metro stairs at Henan Road or from the ends of the
 promenade, and new people only appear where you can't see them appear. The nearest 8–40 (by detail
 level) are full Rocketbox people with motion-captured walks, phones raised for photos, the guide's flag
 in hand and real shadows; you can bump into them and talk to them (T). Everyone further away is an
 impostor: each avatar is photographed at load from 8 sides in 8 steps of its walk, plus standing and
-phone poses, into one atlas, and drawn as camera-facing cards lit by where they stand (the gold off the
+phone poses, into one atlas (130 small renders at load: well under a second on a real GPU, about 30 s
+in software rendering), and drawn as camera-facing cards lit by where they stand (the gold off the
 façades, the promenade lamps, the night sky), with soft contact shadows. One draw call for all of them.
 
 **Traffic and buses** (`src/world/trafficMix.js`, `src/world/buses.js`). About 22 vehicles on
@@ -986,15 +991,16 @@ Zhongshan Road at medium (13 low, 37 ultra): taxis, private cars in the colours 
 drives, the four new-energy lookalikes, and city buses on routes 33, 55 and 65. Cars keep moving and
 stop only for the signal and for people. Buses indicate and pull in at the real stops on this stretch,
 中山东一路汉口路(外滩) and 中山东一路南京东路(外滩), in both directions (exact kerb positions placed by eye),
-open their doors with a kerbside announcement, let commuters off and on, close up, wait for a gap and
-pull out. The stops have shelters, lit advert panels and route boards (the Nanjing Road stop lists the
+open their doors with a kerbside announcement (voiced: 车辆进站，请注意安全…), let commuters off and on,
+close up, wait for a gap and pull out. The stops have shelters, lit advert panels and route boards (the Nanjing Road stop lists the
 night lines 305, 307, 317). The bus is a generic 12 m electric single-decker, not any operator's livery.
 
 **Nanjing Road East and the metro** (`src/world/nanjingRoad.js`, `src/world/henanTraffic.js`,
 `src/world/metro.js`). Nanjing Road is now what it has been since 2020: a pedestrian street paved
 wall to wall from the Bund about 500 m west to Henan Middle Road, lined with stone and art-deco
-blocks, lit shopfronts, the vertical neon blade signs the street is known for, LED screens and lamp
-posts (shop names are invented in the street's style, not the real tenants). Sichuan and Jiangxi
+blocks, shop windows lit from inside (goods, rails, people browsing), the vertical neon blade signs the
+street is known for, LED screens and lamp posts (shop names are invented in the street's style, not the
+real tenants). The minimap now covers it all, with the metro exits marked. Sichuan and Jiangxi
 Middle Roads cross it (closed off a few metres in); Henan Middle Road crosses at a signalised zebra with
 its own traffic. At Henan Road's north corners are East Nanjing Road station's **Exit 7** (east side,
 signed for Tianjin Road and the Bund) and **Exit 2** (west side), placed from Shanghai Metro's own
@@ -1011,7 +1017,8 @@ Shanghai Tower's twist and a scrolling "WELCOME TO SHANGHAI / 欢迎来到上海
 animated LED pavilion at the Pearl's foot, the banks' own names lit on their roofs (中国银行, 震旦, DBS 星展银行,
 citi 花旗银行), the convention centre's globes as teal glass lattices, and the Pearl changing colour
 through the evening (pink, violet, deep blue, magenta). The Bund's floodlighting is a deeper sodium
-gold and the Peace Hotel's pyramid is lit green on its own floods. The river carries more cruise boats:
+gold with far less blue sky-fill on the stone (the photos: gold façades under a dark sky), and the Peace
+Hotel's pyramid is lit green on its own floods. The river carries more cruise boats:
 two or three decks of warm windows traced in LED strips drifting through colours.
 
 **Performance, honestly.** Measured only here, on software rendering (SwiftShader, no GPU), where
@@ -1086,7 +1093,7 @@ click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.
 
 ## Credits
 
-- People: Microsoft Rocketbox avatars (MIT).
+- People: Microsoft Rocketbox avatars (MIT), 16 of them: Old Lin, Ms. Su, you, and 13 passers-by and visitors (8 added for the evening crowd: Female_Adult_04, 07, 11, 14, Business_Female_04, Male_Adult_02, 04, 12).
 - Photographed surfaces: Poly Haven (CC0), https://polyhaven.com
 - **"Lamborghini Huracan LP-6104 2014"** by MdMahib, CC-BY-4.0:
   https://sketchfab.com/3d-models/lamborghini-huracan-lp-6104-2014-4b7b162bcb4f48849f30b1c25b3102a3
@@ -1095,6 +1102,7 @@ click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.
   Treat it as fine for a private build only.
 - Manner and Starbucks cup props: made for this project (`docs/props/`).
 - Voices: **Kokoro-82M** by hexgrad (Apache-2.0), v1.1-zh for Mandarin and v1.0 for English: https://huggingface.co/hexgrad/Kokoro-82M. The clips in `public/voice/` were generated with it.
-- Brand marks: **Simple Icons** (CC0 data), https://simpleicons.org. The trademarks belong to their owners.
+- Brand marks: **Simple Icons** (CC0 data), https://simpleicons.org, including the Shanghai Metro mark on the station signs. The trademarks belong to their owners.
+- Shanghai Metro line colours (Line 2 #82BF25, Line 10 lilac): Wikipedia's Shanghai Metro palette, not an official specification. Exit positions from Shanghai Metro's own descriptions of East Nanjing Road station's exits (as quoted by Chinese Wikipedia and Baidu Baike).
 - In-browser model (optional): **WebLLM** (Apache-2.0) running Qwen2.5-1.5B-Instruct (Apache-2.0), downloaded by your browser when you turn it on. No model is bundled.
 - Checked with, not shipped: llama.cpp / llama-cpp-python running Qwen2.5 1.5B and 3B (conversation tests), and faster-whisper running Whisper small (voice intelligibility).

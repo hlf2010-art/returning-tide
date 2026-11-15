@@ -259,7 +259,7 @@ for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.wa
 await ev(() => window.__bund.audio.start());                                     // a second Begin must be harmless
 await page.waitForTimeout(800);
 const c5 = await census();
-ok(c5.loops === c0.loops && c5.vehicleVoices === 7, `after 4 restarts, 4 pause/resume cycles and a repeated start: ${c5.loops} loops, ${c5.vehicleVoices} vehicle voices (unchanged)`);
+ok(c5.loops === c0.loops && c5.vehicleVoices === c0.vehicleVoices, `after 4 restarts, 4 pause/resume cycles and a repeated start: ${c5.loops} loops, ${c5.vehicleVoices} vehicle voices (unchanged)`);   // (Zhongshan Road's and Henan Road's cars)
 ok(c5.state === 'running' && c5.pause > 0.95, 'and the sound is back at full level');
 
 // 8. mute (M) silences, unmute restores

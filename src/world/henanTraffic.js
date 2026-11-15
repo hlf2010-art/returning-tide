@@ -38,6 +38,7 @@ export function createHenanTraffic({ scene, factor = 1, addCollider }) {
   const specs = henanSpecs(factor);
   const traffic = createTraffic({ geom: HENAN_GEOM, vehicles: specs, peds: [] });
   const vehicles = createVehicles(specs), signals = createSignals(HENAN_GEOM);
+  signals.group.name = 'henan-signals'; vehicles.group.name = 'henan-vehicles';   // (the Bund crossing's keep their own names)
   // drawn in the world: the junction's frame shifted south-north into place
   const frame = new THREE.Group(); frame.position.z = NJ.zc; frame.name = 'henan-traffic';
   frame.add(vehicles.group, signals.group); scene.add(frame);
@@ -62,7 +63,7 @@ export function createHenanTraffic({ scene, factor = 1, addCollider }) {
         b.minX = v.x - v.width / 2; b.maxX = v.x + v.width / 2; b.minZ = v.z + NJ.zc - v.len / 2; b.maxZ = v.z + NJ.zc + v.len / 2;
       });
     },
-    // for the engine sounds: the cars in world coordinates
-    worldVehicles() { return traffic.vehicles.map((v) => ({ ...v, z: v.z + NJ.zc })); },
+    // for the engine sounds: the cars in world coordinates, heard only when you're near Henan Road
+    worldVehicles(near = true) { return traffic.vehicles.map((v) => ({ ...v, z: v.z + NJ.zc, active: v.active && near })); },
   };
 }

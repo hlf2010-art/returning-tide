@@ -958,7 +958,9 @@ function frame(now) {
   scene.fog.density = FOG_DENSITY + HAZE_DENSITY * weather.haze;
   scene.fog.color.lerpColors(FOG_COLOR, HAZE_FOG, weather.haze);
   audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye) || world.belongings.umbrellaUp);
-  world.sky.update(t, weather.haze); world.skyline.update(t); world.river.update(t, dt); world.bund.update(t); world.street.update(t); world.nanjing.update(t);
+  // the light shows (the Pearl's colours, LED façades, boats' strips, screens); debug.freezeShow holds them for tools
+  const showT = debug.freezeShow ? 0 : t;
+  world.sky.update(t, weather.haze); world.skyline.update(showT); world.river.update(t, dt, showT); world.bund.update(t); world.street.update(t); world.nanjing.update(showT);
   world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);
   { const tl = params.has('q') ? R.level : treeStep(gfx, R.drop); if (tl !== treeLevel) { treeLevel = tl; world.trees.setQuality(tl); } }
   if (world.playerBody) world.playerBody.shadow.visible = world.lighting.shadowCount > 0;   // the shadow copy only matters with shadows
@@ -971,7 +973,7 @@ function frame(now) {
     let near = 0; for (const t of TREE_SPOTS) near = Math.max(near, 1 - Math.hypot(t.x - player.body.x, t.z - player.body.z) / 14);
     audio.setWind(wind.level, near);
   }
-  audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: traffic ? (world.henan ? [...traffic.vehicles, ...world.henan.worldVehicles()] : traffic.vehicles) : null, speech });
+  audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: traffic ? (world.henan ? [...traffic.vehicles, ...world.henan.worldVehicles(player.body.x < -380)] : traffic.vehicles) : null, speech });
   voice.update();                                                                  // where the listener is, for positional voices
   if (dialogueAudio) dialogueAudio.updateListener();
   if (conversation) conversation.update(mode === 'pause' ? 0 : dt);

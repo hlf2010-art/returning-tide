@@ -140,10 +140,11 @@ export function createRiver() {
 
   return {
     group, boats,
-    update(t, dt) {
+    // show: the clock for the light shows (tools can hold it still)
+    update(t, dt, show = t) {
       mat.uniforms.time.value = t;
-      lineMat.color.setHSL((0.9 + t * 0.012) % 1, 0.85, 0.62).multiplyScalar(2.2);       // the LED outlines drift through colours
-      lineMat2.color.setHSL((0.5 + t * 0.009) % 1, 0.85, 0.6).multiplyScalar(2.2);
+      lineMat.color.setHSL((0.9 + show * 0.012) % 1, 0.85, 0.62).multiplyScalar(2.2);    // the LED outlines drift through colours
+      lineMat2.color.setHSL((0.5 + show * 0.009) % 1, 0.85, 0.6).multiplyScalar(2.2);
       for (const b of boats) {
         b.g.position.z += b.speed * dt;
         if (b.g.position.z > 700) b.g.position.z = -700; else if (b.g.position.z < -700) b.g.position.z = 700;

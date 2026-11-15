@@ -15,6 +15,8 @@ const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(url + '?q=3&nolock&dev', { waitUntil: 'load' });
+await page.waitForFunction(() => window.__bund, null, { timeout: 180000 });
+await page.evaluate(() => { window.__bund.freezeShow = true; });   // hold the light shows still (the Pearl's colours, LED façades): this compares looks
 await page.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', null, { timeout: 240000 });
 await page.click('#begin'); await page.waitForTimeout(2500);
 const ev = (f, a) => page.evaluate(f, a);
