@@ -169,6 +169,25 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   const blobs = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.9, 0.9).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), N);
   blobs.frustumCulled = false; blobs.count = 0; blobs.name = 'crowd-blobs'; group.add(blobs);
   const _m = new THREE.Matrix4();
+  // umbrellas in the drizzle: most people have one (each decides at their own point as it gets
+  // heavier, and folds it when it stops); the far figures get a canopy over the card
+  const UMB_COLORS = ['#1b1b1f', '#1f2a44', '#6e1d29', '#d8d1c2', '#5a5f66', '#2f4a36', '#a8812e', '#1b1b1f', '#3b2f4f', '#b9c2c8'].map((c) => new THREE.Color(c));
+  const hash = (i, k) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
+  const uOpen = new Float32Array(N);
+  const canopyGeo = new THREE.ConeGeometry(0.5, 0.26, 12, 1, true); canopyGeo.translate(0, -0.13, 0);
+  const canopyMat = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0, side: THREE.DoubleSide });
+  const canopies = new THREE.InstancedMesh(canopyGeo, canopyMat, N); canopies.frustumCulled = false; canopies.count = 0; canopies.name = 'crowd-umbrellas';
+  for (let i = 0; i < N; i++) canopies.setColorAt(i, UMB_COLORS[0]);
+  group.add(canopies);
+  const _um = new THREE.Matrix4(), _uq = new THREE.Quaternion(), _us = new THREE.Vector3(), _up = new THREE.Vector3(), _ue = new THREE.Euler();
+  let rain = 0;
+  function umbrellaFor(a, dt) {
+    const carries = !a.child && a.kind !== 'jogger' && hash(a.id, 1) < 0.62;
+    const th = 0.14 + hash(a.id, 2) * 0.4;
+    const want = carries && (rain > th || (uOpen[a.id] > 0.5 && rain > th - 0.1)) ? 1 : 0;
+    uOpen[a.id] += Math.sign(want - uOpen[a.id]) * Math.min(Math.abs(want - uOpen[a.id]), dt / 1.4);
+    return uOpen[a.id];
+  }
 
   // the near people: skinned, from per-avatar pools
   const pools = {}, live = new Map();            // agent id -> body
@@ -184,7 +203,12 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     person.root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const phone = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.15, 0.009), phoneMat); phone.visible = false;
     group.add(person.root, phone);
-    const b = { person, phone, agent: null, flag: null };
+    const umb = new THREE.Group(); umb.visible = false;
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.72, 6), phoneMat); shaft.position.y = 0.36;
+    const cmat = new THREE.MeshStandardMaterial({ roughness: 0.45, side: THREE.DoubleSide });
+    const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.3, 14, 1, true), cmat); canopy.position.y = 0.7; canopy.castShadow = true;
+    umb.add(shaft, canopy); group.add(umb);
+    const b = { person, phone, agent: null, flag: null, umb, canopy };
     pool.push(b);
     return b;
   }
@@ -205,7 +229,8 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     // who's near enough to be a full person (and to talk to, bump into)
     nearAgents() { return [...live.keys()].map((id) => crowd.agents[id]).filter(Boolean); },
     bodyOf(a) { return live.get(a.id) || null; },
-    update(dt, eye) {
+    update(dt, eye, opts = {}) {
+      rain = opts.rain || 0;
       // every quarter second: the nearest few become full people (with some hysteresis)
       rankT -= dt;
       if (rankT <= 0) {
@@ -214,7 +239,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         for (const a of crowd.agents) if (!a.gone) { const d = Math.hypot(a.x - eye.x, a.z - eye.z, (a.y - eye.y) * 2); if (d < 44) cand.push([d - (nearSet.has(a.id) ? 4 : 0), a]); }
         cand.sort((p, q) => p[0] - q[0]);
         nearSet = new Set(cand.slice(0, nearCount).map(([, a]) => a.id));
-        for (const [id, b] of live) if (!nearSet.has(id)) { b.agent = null; b.person.root.visible = false; b.phone.visible = false; live.delete(id); }
+        for (const [id, b] of live) if (!nearSet.has(id)) { b.agent = null; b.person.root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); }
         for (const id of nearSet) if (!live.has(id)) {
           const a = crowd.agents[id], b = body(a.role);
           if (!b) { nearSet.delete(id); continue; }
@@ -225,7 +250,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
       // full people
       for (const [id, b] of live) {
         const a = crowd.agents[id], root = b.person.root;
-        if (a.gone) { b.agent = null; root.visible = false; b.phone.visible = false; live.delete(id); nearSet.delete(id); continue; }
+        if (a.gone) { b.agent = null; root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); nearSet.delete(id); continue; }
         root.position.set(a.x, a.y, a.z);
         let dh = a.heading - root.rotation.y; while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2;
         root.rotation.y += dh * Math.min(1, dt * 6);
@@ -235,8 +260,17 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         b.person.setGait(a.v);
         const phoneWalk = moving && a.phone;
         b.person.setPhoneHold(phoneWalk ? 1 : 0);
+        const u = umbrellaFor(a, dt);
+        b.person.setUmbrella(u);
         b.person.update(dt, Math.hypot(eye.x - a.x, eye.z - a.z) < 3.5 ? [eye.x, eye.z] : null);
-        const photo = act === 'photo' || act === 'selfie';
+        b.umb.visible = u > 0.02;
+        if (b.umb.visible) {
+          b.canopy.material.color.copy(UMB_COLORS[Math.floor(hash(a.id, 3) * UMB_COLORS.length)]);
+          b.umb.position.copy(b.person.anchors.umbrella.position);
+          b.umb.quaternion.setFromEuler(_ue.set(0.06, root.rotation.y, 0, 'YXZ'));
+          b.canopy.scale.set(0.15 + 0.85 * u, 0.5 + 0.5 * u, 0.15 + 0.85 * u);
+        }
+        const photo = u < 0.3 && (act === 'photo' || act === 'selfie');
         if (act === 'photo') raise(b, a.x + 50, a.z);
         if (act === 'selfie') raise(b, a.x - 50, a.z, 0.18);
         b.phone.visible = photo || phoneWalk;
@@ -251,7 +285,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         f.rotation.y = g.heading + Math.PI / 2 + Math.sin(performance.now() / 600 + i) * 0.25;
       });
       // the far crowd
-      let n = 0;
+      let n = 0, nu = 0;
       for (const a of crowd.agents) {
         if (a.gone || live.has(a.id)) continue;
         const dx = a.x - eye.x, dz = a.z - eye.z;
@@ -262,8 +296,18 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         iCell.setXYZW(n, c[0], c[1], pose, a.scale || 1);
         const [r, g, bl] = lightAt(a.x, a.z, a.y); iTint.setXYZ(n, r, g, bl);
         _m.makeTranslation(a.x, a.y + 0.02, a.z); blobs.setMatrixAt(n, _m);
+        // an umbrella over the card: up in the raised hand, held a little forward
+        const u = umbrellaFor(a, dt);
+        if (u > 0.02) {
+          const h = (a.child ? 1.35 : 2.02) * (a.scale || 1);
+          _up.set(a.x + Math.sin(a.heading) * 0.08, a.y + h, a.z + Math.cos(a.heading) * 0.08);
+          _us.set(0.15 + 0.85 * u, 0.5 + 0.5 * u, 0.15 + 0.85 * u);
+          _um.compose(_up, _uq.setFromEuler(_ue.set(0.06, a.heading, 0, 'YXZ')), _us); canopies.setMatrixAt(nu, _um);
+          canopies.setColorAt(nu, UMB_COLORS[Math.floor(hash(a.id, 3) * UMB_COLORS.length)]); nu++;
+        }
         n++;
       }
+      canopies.count = nu; if (nu) { canopies.instanceMatrix.needsUpdate = true; canopies.instanceColor.needsUpdate = true; }
       geo.instanceCount = n; blobs.count = n;
       iPos.needsUpdate = iCell.needsUpdate = iTint.needsUpdate = true; blobs.instanceMatrix.needsUpdate = true;
       iPos.clearUpdateRanges(); iCell.clearUpdateRanges(); iTint.clearUpdateRanges();

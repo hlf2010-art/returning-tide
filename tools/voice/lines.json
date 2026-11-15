@@ -1080,6 +1080,106 @@
   "en": "Hey, Shen! Your bench is waiting. Parts are on the shelf by the door."
  },
  {
+  "who": "tourist",
+  "zh": "不好意思……请问，地铁二号线，南京东路站，怎么走？",
+  "en": "Excuse me, sorry. Line 2, East Nanjing Road station, which way is it?"
+ },
+ {
+  "who": "tourist",
+  "zh": "我的地图一直在转圈。",
+  "en": "My map keeps spinning round."
+ },
+ {
+  "who": "tourist",
+  "zh": "你好！请问南京路步行街往哪边走？",
+  "en": "Hi! Which way is the Nanjing Road shopping street?"
+ },
+ {
+  "who": "tourist",
+  "zh": "太好了，谢谢你！",
+  "en": "Brilliant, thank you!"
+ },
+ {
+  "who": "tourist",
+  "zh": "没关系，还是谢谢你。",
+  "en": "No worries, thanks anyway."
+ },
+ {
+  "who": "tourist",
+  "zh": "好的，我跟着你。",
+  "en": "Great, I'll follow you."
+ },
+ {
+  "who": "tourist",
+  "zh": "就是这里！太感谢了，祝你玩得开心！",
+  "en": "This is it! Thank you so much. Have a lovely evening!"
+ },
+ {
+  "who": "tourist",
+  "zh": "等等我！",
+  "en": "Wait for me!"
+ },
+ {
+  "who": "tourist",
+  "zh": "你好，请问……",
+  "en": "Hello, excuse me…"
+ },
+ {
+  "who": "couple",
+  "zh": "你好！能帮我们拍张照吗？要把东方明珠拍进去！",
+  "en": "Hi! Could you take a photo of us? With the Pearl in it!"
+ },
+ {
+  "who": "couple",
+  "zh": "哇，拍得真好！谢谢你！",
+  "en": "Oh, that's lovely! Thank you!"
+ },
+ {
+  "who": "couple",
+  "zh": "能把东方明珠也拍进去吗？",
+  "en": "Could you get the Pearl in too?"
+ },
+ {
+  "who": "couple",
+  "zh": "诶，我们的头被切掉了……再来一张？",
+  "en": "Oh, you've cut our heads off. One more?"
+ },
+ {
+  "who": "couple",
+  "zh": "可以再近一点吗？",
+  "en": "Could you come a bit closer?"
+ },
+ {
+  "who": "couple",
+  "zh": "没关系，就这样吧，谢谢！",
+  "en": "That's fine, it'll do. Thanks!"
+ },
+ {
+  "who": "couple",
+  "zh": "好吧，没事，谢谢。",
+  "en": "Oh, okay. Thanks anyway."
+ },
+ {
+  "who": "owner",
+  "zh": "诶？这是我的手机！我还以为丢了！",
+  "en": "Hey, that's my phone! I thought I'd lost it!"
+ },
+ {
+  "who": "owner",
+  "zh": "太谢谢你了。我请你喝杯咖啡吧？",
+  "en": "Thank you so much. Let me buy you a coffee?"
+ },
+ {
+  "who": "owner",
+  "zh": "我转给你了，拿着拿着。",
+  "en": "There, I've sent it. Go on, take it."
+ },
+ {
+  "who": "owner",
+  "zh": "好人啊，谢谢谢谢！",
+  "en": "You're a good one. Thanks, really!"
+ },
+ {
   "who": "dad",
   "zh": "坐。菜我点好了，都是你小时候爱吃的。",
   "en": "Sit down. I've ordered. The things you liked as a boy."

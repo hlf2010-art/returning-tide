@@ -20,7 +20,11 @@ export async function loadPeople(base = './people/') {
   const loader = new GLTFLoader();
   const avatars = {}, clips = {};
   await Promise.all([
-    ...Object.entries(manifest.cast).map(async ([role, c]) => { avatars[role] = (await loader.loadAsync(base + c.file)).scene; }),
+    ...Object.entries(manifest.cast).map(async ([role, c]) => {
+      avatars[role] = (await loader.loadAsync(base + c.file)).scene;
+      // the children's rig is the same Biped, named Bip02: rename it so the shared clips bind to it
+      if (c.child) avatars[role].traverse((o) => { if (o.name.startsWith('Bip02')) o.name = o.name.replace('Bip02', 'Bip01'); });
+    }),
     ...Object.entries(manifest.clips).map(async ([sex, c]) => { clips[sex] = (await loader.loadAsync(base + c.file)).animations; }),
   ]);
   // which hand each skeleton's umbrella clip raises (measured, not assumed)
@@ -39,15 +43,34 @@ export async function loadPeople(base = './people/') {
 // walking with a phone: the texting clip's right arm, neck and head, layered over the walk
 const PHONE_LAYER = /^Bip01_(R_(Clavicle|UpperArm|Forearm|Hand|Finger)|Neck|Head)/;
 
+// A child plays the adults' clips: rotations carry over by bone name; the root's own movement (sway,
+// bob, hip height) is scaled to the child's size, and strides are shorter, so steps come quicker.
+function childClips(people, role) {
+  const cache = people._kids || (people._kids = {});
+  if (cache[role]) return cache[role];
+  const sex = people.manifest.cast[role].sex;
+  const adult = Object.keys(people.manifest.cast).find((r) => people.manifest.cast[r].sex === sex && !people.manifest.cast[r].child);
+  const hip = (r) => { const b = people.avatars[r].getObjectByName('Bip01'); return b ? Math.abs(b.position.y) || 1 : 1; };
+  const k = Math.max(0.4, Math.min(1, hip(role) / hip(adult)));
+  const clips = people.clips[sex].map((c) => new THREE.AnimationClip(c.name, c.duration, c.tracks.map((t) => {
+    if (t.name !== 'Bip01.position') return t;
+    const v = Float32Array.from(t.values, (x) => x * k);
+    return new t.constructor(t.name, t.times, v);
+  })));
+  const base = people.manifest.clips[sex].speeds, speeds = Object.fromEntries(Object.entries(base).map(([n, v]) => [n, v * k]));
+  return (cache[role] = { clips, speeds, k });
+}
+
 export function createPerson(people, role) {
-  const cast = people.manifest.cast[role], sex = cast.sex, speeds = people.manifest.clips[sex].speeds;
+  const cast = people.manifest.cast[role], sex = cast.sex, kid = cast.child ? childClips(people, role) : null;
+  const speeds = kid ? kid.speeds : people.manifest.clips[sex].speeds, CLIPS = kid ? kid.clips : people.clips[sex];
   const root = SkeletonUtils.clone(people.avatars[role]);
   root.scale.setScalar(0.01);                                         // centimetres -> metres
   root.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; } });   // skinned bounds don't follow the pose
   const mixer = new THREE.AnimationMixer(root);
   const hand = people.umbrellaHand[sex], armRe = ARM(hand);
   const base = {}, arm = {};
-  for (const clip of people.clips[sex]) {
+  for (const clip of CLIPS) {
     // every clip split in two: the body without the umbrella arm, and that arm alone
     const body = new THREE.AnimationClip(`${clip.name}`, clip.duration, clip.tracks.filter((t) => !armRe.test(boneOf(t))));
     const armOnly = new THREE.AnimationClip(`${clip.name}:arm`, clip.duration, clip.tracks.filter((t) => armRe.test(boneOf(t))));
@@ -74,11 +97,11 @@ export function createPerson(people, role) {
   const anchors = { chest: new THREE.Object3D(), head: new THREE.Object3D(), umbrella: new THREE.Object3D(), phone: new THREE.Object3D() };
   const _q = new THREE.Quaternion(), _e = new THREE.Euler(), _hq = new THREE.Quaternion(), _hp = new THREE.Quaternion(), _hv = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
   let headYaw = 0;
-  const phoneClip = people.clips[sex].find((c) => c.name === 'phone');
+  const phoneClip = CLIPS.find((c) => c.name === 'phone');
   const phoneLayer = phoneClip ? mixer.clipAction(new THREE.AnimationClip('phone:hold', phoneClip.duration, phoneClip.tracks.filter((t) => PHONE_LAYER.test(boneOf(t))))) : null;
   if (phoneLayer) { phoneLayer.play(); phoneLayer.setEffectiveWeight(0); phoneLayer.time = phoneClip.duration * (0.15 + Math.random() * 0.6); }
   return {
-    root, mixer, role, sex, speeds, anchors, bones, umbrellaHand: hand,
+    root, mixer, role, sex, speeds, anchors, bones, umbrellaHand: hand, child: !!kid, size: kid ? kid.k : 1,
     get state() { return current; },
     play,
     // umbrella: 0..1 how far the umbrella arm has taken over

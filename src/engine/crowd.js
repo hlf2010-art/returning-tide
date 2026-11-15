@@ -195,10 +195,13 @@ const ROLE_POOL = {
   elder: ['p5', 'p4'],
 };
 const pick = (a, rnd) => a[Math.floor(rnd() * a.length)];
+// which of the avatars are women (tools/rocketbox/convert.mjs CAST): for pairing couples
+const FEMALE = new Set(['su', 'p2', 'p5', 'c1', 'c2', 'c3', 'c4', 'c8', 'k1']);
 
 export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, roles = null, areaWeights = null, groups = null } = {}) {
   const have = roles ? new Set(roles) : null;
-  const rolesFor = (k) => { const a = ROLE_POOL[k].filter((r) => !have || have.has(r)); return a.length ? a : (roles || ['p1']); };
+  const grown = roles ? roles.filter((r) => !/^k\d/.test(r)) : null;
+  const rolesFor = (k) => { const a = ROLE_POOL[k].filter((r) => !have || have.has(r)); return a.length ? a : (grown && grown.length ? grown : ['p1']); };
   const obs = obstacles();
   const ends = ENDS.map((e) => ({ ...e, id: (net.ends && net.ends[e.id]) || e.id })).filter((e) => net.by[e.id]);
   const stops = BUS_STOPS.map((st) => `BS:${st.id}`).filter((id) => net.by[id]);
@@ -272,11 +275,20 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
     for (let k = 0; k < size; k++) { const f = make('follower'); f.group = tour; f.slot = { back: 1.4 + (k % 4) * 0.9 + rnd() * 0.6, side: ((k % 3) - 1) * 0.9 + (rnd() - 0.5) * 0.6 }; tour.members.push(f); }
     tours.push(tour);
   }
-  const kinds = ['tourist', 'tourist', 'tourist', 'tourist', 'local', 'local', 'couple', 'elder', 'lingerer', 'lingerer', 'tourist', 'commuter', 'tourist', 'couple'];
+  const kinds = ['tourist', 'tourist', 'tourist', 'tourist', 'local', 'local', 'couple', 'elder', 'lingerer', 'lingerer', 'tourist', 'commuter', 'tourist', 'couple', 'family'];
+  // children (in families only): roles flagged as children, if the avatar set has any
+  const kids = (roles || []).filter((r) => /^k\d/.test(r));
   while (agents.length < N) {
     const k = pick(kinds, rnd);
-    if (k === 'couple') { const a = make('tourist'), b = make('tourist', { role: a.role === 'c1' ? 'p3' : a.role }); a.partner = b; b.partner = a; b.leader = a; b.speed = a.speed = 0.85; }
-    else make(k);
+    if (k === 'couple' || k === 'family') {
+      // a couple are two different people: a man and a woman where the set allows (never the same avatar twice)
+      const a = make('tourist'), want = FEMALE.has(a.role) ? (r) => !FEMALE.has(r) : (r) => FEMALE.has(r);
+      const pool = [...rolesFor(a.abroad ? 'abroad' : 'domestic'), ...rolesFor('domestic')].filter((r) => r !== a.role);
+      const other = pool.filter(want), mate = pick(other.length ? other : pool.length ? pool : [a.role], rnd);
+      const b = make('tourist', { role: mate, abroad: a.abroad }); a.partner = b; b.partner = a; b.leader = a; b.speed = a.speed = 0.85;
+      // a family out on the Bund: the child walks on the other side of a parent, a little slower overall
+      if (k === 'family' && kids.length) { const c = make('tourist', { role: pick(kids, rnd), child: true, leader: a, side: -0.8, scale: 1, phone: false }); a.kid = c; a.speed = b.speed = c.speed = 0.78; }
+    } else make(k);
   }
   // early-morning runners on the promenade (out only at dawn: setActive)
   const nJog = Math.round(12 * Math.min(1, density));
@@ -388,8 +400,8 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           const d = Math.hypot(tx - a.x, tz - a.z); speed = onRoad(a.x, a.z) ? 1.5 : d > 2 ? g.speed * 1.35 : d > 0.4 ? g.speed : 0;
           if (d > 9 && !onRoad(g.x, g.z)) besides(a, g, -Math.sin(g.heading) * 1.5, -Math.cos(g.heading) * 1.5);
         } else if (a.leader) {
-          const l = a.leader; a.state = l.state; a.act = l.act;
-          tx = l.x + Math.cos(l.heading) * 0.62; tz = l.z - Math.sin(l.heading) * 0.62;
+          const l = a.leader, sd = a.side || 1; a.state = l.state; a.act = a.child && (l.act === 'photo' || l.act === 'selfie') ? 'look' : l.act;
+          tx = l.x + Math.cos(l.heading) * 0.62 * sd; tz = l.z - Math.sin(l.heading) * 0.62 * sd;
           if (l.state === 'act') a.heading = l.heading;
           const d = Math.hypot(tx - a.x, tz - a.z); speed = onRoad(a.x, a.z) ? 1.5 : d > 1.2 ? l.speed * 1.3 : d > 0.15 ? l.speed : 0;
           if (d > 7) besides(a, l, tx - l.x, tz - l.z);
@@ -437,7 +449,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
         near(a.x, a.z, (o) => {
           if (o === a || o.gone) return;
           const ox = a.x - o.x, oz = a.z - o.z, od = Math.hypot(ox, oz);
-          const mine = o === a.partner || (a.group && o.group === a.group);
+          const mine = o === a.partner || o === a.leader || o.leader === a || (a.leader && o.leader === a.leader) || (a.group && o.group === a.group);
           const rr = mine ? 0.55 : 0.85;
           if (od < rr && od > 1e-4) { const k = (rr - od) / rr * 1.6; sx += ox / od * k; sz += oz / od * k; }
           // someone coming the other way, ahead: ease to the right

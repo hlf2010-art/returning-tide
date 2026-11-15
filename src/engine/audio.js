@@ -28,6 +28,24 @@ export function createAudio() {
   let muted = false, paused = false, pauseToken = 0, hornTimer = 35, ancF = null, ancG = null, anc = false, inside = 0;
   let buf = null, river = null, wind = null, city = null, rain = null, lastFoot = { pan: 0.12, f: 0 }, lastDuck = -1, lastRain = -1;
   const loops = [];                                          // every looping source ever started (for the duplicate check)
+  // the crowd's murmur (tools/voice/walla.py: many people talking at once, recorded voices): fetched
+  // and decoded as the page loads, so the loop is there the moment the graph is built
+  let murmurBuf = null, murmur = null, lastCrowd = -1;
+  if (typeof window !== 'undefined' && window.OfflineAudioContext && typeof fetch === 'function') {
+    fetch('./ambience/murmur.mp3').then((r) => (r.ok ? r.arrayBuffer() : null))
+      .then((ab) => ab && new window.OfflineAudioContext(1, 1, 24000).decodeAudioData(ab))
+      .then((b) => { if (b) { murmurBuf = b; if (ctx && !murmur) buildMurmur(); } }).catch(() => {});
+  }
+  // two copies, offset and a hair apart in speed, one per ear: wide, and the loop never lines up with itself
+  function buildMurmur() {
+    const g = gainNode(0), lp = filt('lowpass', 6000, 0.5), split = ctx.createChannelMerger(2);
+    for (let k = 0; k < 2; k++) {
+      const s = ctx.createBufferSource(); s.buffer = murmurBuf; s.loop = true; s.playbackRate.value = k ? 0.985 : 1;
+      s.connect(split, 0, k); s.start(0, k * murmurBuf.duration * 0.47 + Math.random() * 3); loops.push(s);
+    }
+    split.connect(lp).connect(g).connect(env);
+    murmur = { g, lp };
+  }
   const voices = new Map();                                  // vehicle id -> voice
   const stats = { startCalls: 0, cues: { collect: 0, tear: 0 }, steps: { stone: 0, asphalt: 0 }, landings: 0, horns: 0 };
 
@@ -130,6 +148,7 @@ export function createAudio() {
     loop(white, rf, rb, rlp, rg);
     rg.connect(split, 0, 0); rg.connect(dly).connect(split, 0, 1); split.connect(env);
     rain = { g: rg, lp: rlp };
+    if (murmurBuf) buildMurmur();
   }
 
   // one voice per through-traffic vehicle: tyre roar (+ engine for the petrol taxis / sedan)
@@ -365,6 +384,17 @@ export function createAudio() {
       rain.g.gain.setTargetAtTime(0.11 * level * level * (covered ? 0.55 : 1), t, 0.4);
       rain.lp.frequency.setTargetAtTime(covered ? 2600 : 9000, t, 0.4);
     },
+    // the crowd round you: 0 nobody .. 1 the evening crush on the promenade
+    setCrowd(level) {
+      if (!ctx || !murmur) return;
+      const v = Math.round(Math.max(0, Math.min(1.2, level)) * 40) / 40;
+      if (v === lastCrowd) return;
+      lastCrowd = v;
+      const t = ctx.currentTime;
+      murmur.g.gain.setTargetAtTime(0.5 * Math.pow(v, 1.3), t, 0.9);
+      murmur.lp.frequency.setTargetAtTime(2200 + 4500 * Math.min(1, v), t, 0.9);   // a few people far off: duller
+    },
+    get crowdLevel() { return murmur ? murmur.g.gain.value : 0; },
     setPaused(p) {
       paused = !!p;
       if (!ctx) return;

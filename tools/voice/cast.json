@@ -191,5 +191,18 @@
   "zh": "zf_007",
   "en": "af_sarah",
   "speed": 0.95
+ },
+ "tourist": {
+  "zh": "zm_096",
+  "en": "am_puck"
+ },
+ "couple": {
+  "zh": "zf_022",
+  "en": "af_sky",
+  "speed": 1.04
+ },
+ "owner": {
+  "zh": "zm_031",
+  "en": "am_eric"
  }
 }

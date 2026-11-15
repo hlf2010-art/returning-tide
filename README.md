@@ -1073,6 +1073,33 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
 - Tools: `?hour=HH:MM` starts at that hour; measurement tools (`?q=`) keep the 5:42 pm look unless they
   pass `?tod` or `?hour`. `node tools/todshots.mjs` shoots the same views through the day.
 
+## The living street: murmur, families, umbrellas, street moments (phase 4.3)
+
+- **The crowd's murmur** (`tools/voice/walla.py`, `public/ambience/murmur.mp3`): a 34-second seamless
+  loop made offline from Kokoro voices, 14 people (mostly Mandarin, a few English-speaking visitors,
+  every one a different voice) saying everyday things at 5-20 m, farther ones quieter and duller, so no
+  sentence stands out. Two copies play a hair apart in speed, one per ear. Its level follows how many
+  people are round you and how near (the promenade at 8 pm is loud; Nanjing Road at 3 am is nearly
+  silent); it goes through the same muffling indoors and ducks under speech like the rest of the bed.
+- **Families**: some walkers are two parents and a child, the child on the other side of a parent.
+  The children are Rocketbox's own child avatars (Female_Child_01, Male_Child_01, MIT); their rig is
+  the same Biped under another name, so the adults' motion capture drives them, the hips' movement
+  scaled to their size and their strides quicker. Couples are now two different people.
+- **Umbrellas**: in the drizzle about six in ten people put one up, each at their own point as it gets
+  heavier, and fold it when it stops: near people hold a real one (the umbrella-arm clip over their
+  walk), far ones get a canopy over their card. Colours from black and navy to clear-ish grey.
+- **Street moments** (`src/world/moments.js`): now and then, at the hours they'd happen, never in the
+  middle of something else, at most one at a time and each once a day:
+  - *A lost visitor* on Nanjing Road looking for Line 2: walk him to the nearer station entrance (he
+    follows; a side quest), or tell him the way; on the Bund, someone asks for the shopping street.
+  - *Take our photo*: a couple at the railing hand you their phone. You frame it yourself (Space or a
+    click): both of them in, not too far, the Pearl behind; they tell you if you cut their heads off,
+    and you see the shot they got.
+  - *A dropped phone*: someone hurrying past drops theirs. Pick it up, find them (the marker), give it
+    back; they may send you the price of a coffee on WeChat (in-game money).
+  Each speaks in recorded voices. Off for measurement tools (`?q=`) unless `?moments`.
+  `node tools/streetwalk.mjs` walks through all of it.
+
 ## What is here
 
 - Walk from Hankou Road out onto Zhongshan East 1st Road, up the stair, along the promenade.

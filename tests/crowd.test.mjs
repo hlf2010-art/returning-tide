@@ -55,4 +55,23 @@ ok(mix.filter((v) => v.bus).every((v) => ['sb2', 'nb2'].includes(v.lane)), 'buse
 ok(trafficSpecs(1.7, rnd).length > trafficSpecs(0.6, rnd).length, 'more traffic at higher detail');
 ok(BUS_STOPS.every((s) => (s.dir > 0 ? stopS(s) - 12 <= s.z + 6 : true)) && BUS_STOPS.length === 4, 'four stops: Hankou Road and Nanjing Road, both directions');
 ok(crossing.vehicles.every((v) => mix.find((m) => m.id === v.id)), "the crossing's own seven are all still there");
+// families: with child avatars in the set, some walkers are two parents and a child, who stays by them
+{
+  let sd = 3; const r2 = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+  const f = createCrowd({ density: 0.6, rnd: r2, roles: ['p1', 'p2', 'p3', 'c1', 'k1', 'k2'] });
+  const kids = f.agents.filter((a) => a.child);
+  ok(kids.length >= 3 && kids.every((k) => /^k/.test(k.role) && k.leader && k.leader.partner), `${kids.length} children, each with two parents`);
+  ok(f.agents.filter((a) => !a.child).every((a) => !/^k/.test(a.role)), 'no child walks about on their own');
+  const pairs = f.agents.filter((a) => a.partner && !a.leader);
+  ok(pairs.length > 5 && pairs.every((a) => a.partner.role !== a.role), `${pairs.length} couples, none of them the same avatar twice`);
+  let far = 0, n = 0, together = true;
+  for (let i = 0; i < 30 * 60; i++) {
+    f.update(1 / 30, {});
+    for (const k of kids) {
+      if (k.gone !== k.leader.gone) together = false;
+      if (!k.gone && k.leader.state === 'walk') { n++; if (Math.hypot(k.x - k.leader.x, k.z - k.leader.z) > 2.5) far++; }
+    }
+  }
+  ok(together && far / Math.max(1, n) < 0.03, `children keep within 2.5 m of their parent (${(100 * far / Math.max(1, n)).toFixed(1)}% of moments apart) and leave with them`);
+}
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);

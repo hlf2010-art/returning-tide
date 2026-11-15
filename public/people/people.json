@@ -103,6 +103,20 @@
    "sex": "m",
    "file": "dad.glb",
    "bytes": 2060672
+  },
+  "k1": {
+   "avatar": "Female_Child_01",
+   "sex": "f",
+   "file": "k1.glb",
+   "bytes": 2324352,
+   "child": true
+  },
+  "k2": {
+   "avatar": "Male_Child_01",
+   "sex": "m",
+   "file": "k2.glb",
+   "bytes": 2231444,
+   "child": true
   }
  },
  "clips": {

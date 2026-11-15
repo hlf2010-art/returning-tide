@@ -46,6 +46,7 @@ import { todState, passedLateNight } from './engine/timeOfDay.js';
 import { applyDayNight, autoLights } from './world/dayNight.js';
 import { setCrowdLight } from './world/crowdView.js';
 import { createDawn } from './world/dawn.js';
+import { createMoments, MOMENT_QUESTS, MOMENT_NAMES } from './world/moments.js';
 import { underCover } from './world/layout.js';
 import { colliders } from './world/layout.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
@@ -83,7 +84,8 @@ import { createNanjingRoad } from './world/nanjingRoad.js';
 import { createHenanTraffic } from './world/henanTraffic.js';
 import { createMetro } from './world/metro.js';
 import { updateQuests, currentStep } from './engine/quests.js';
-import { QUESTS, runStoryBeats, storyContext, ENDINGS } from './world/story.js';
+import { QUESTS as STORY_QUESTS, runStoryBeats, storyContext, ENDINGS } from './world/story.js';
+const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS];   // the story's, and the street moments' (world/moments.js)
 import { createSceneTalk } from './ui/sceneTalk.js';
 import { createDinner } from './world/dinner.js';
 import { createJournal } from './ui/journal.js';
@@ -276,9 +278,12 @@ async function boot() {
   // down the metro stairs: one stop to Lujiazui, or through to the other exit (world/metro.js)
   world.metro = createMetro({ hud, audio, player, travel, getLife: () => life, save: () => saveLife(), arriveAt: (id, info) => world.dest.arrive(id, info), open: () => hourState.metro });
   // the story: a sat-down conversation, and dinner with Dad (world/story.js, world/dinner.js)
-  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'] } });
+  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], ...MOMENT_NAMES } });
   world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
-  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner];
+  // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
+  world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
+    getHour: () => life.clock.minute, isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active, enabled: !!people && (!params.has('q') || params.has('moments')) });
+  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments];
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
     getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
@@ -658,6 +663,7 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (mode === 'play') {
+    if (world.moments.key(k)) { e.preventDefault(); return; }   // a street moment: answers (1-4), the shutter
     if ((k === 'KeyE' || k === 'Enter') && closeInfoCard()) return;
     if (world && world.belongings && world.belongings.key(k)) return;
     if (world.dest.key(k)) return;
@@ -932,9 +938,12 @@ function updateTraffic(dt) {
     // new people appear only where you won't see them pop in: far off, or behind you
     camera.getWorldDirection(_d);
     const canSpawnAt = (n) => { const dx = n.x - eye.x, dz = n.z - eye.z, d = Math.hypot(dx, dz); return d > 45 || (d > 14 && (dx * _d.x + dz * _d.z) / d < -0.2); };
-    const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others()];
+    const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others(), ...world.moments.others()];
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : b, canSpawnAt, others });
-    world.crowdView.update(dt, eye);
+    world.crowdView.update(dt, eye, { rain: weather.rain });
+    // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
+    crowdHear -= dt;
+    if (crowdHear <= 0) { crowdHear = 0.5; let k = 0; for (const a of cr.agents) if (!a.gone) { const d = Math.hypot(a.x - b.x, a.z - b.z, (a.y - b.y) * 1.5); if (d < 24) k += 1 - d / 24; } audio.setCrowd(k / 12); }
     // tour guides talk to their groups now and then (you hear them when you're near)
     for (const tour of cr.tours) {
       const g = tour.guide; tour.said = (tour.said || 0) - dt;
@@ -966,7 +975,7 @@ function updateTraffic(dt) {
 
 // ---- the hour (engine/timeOfDay.js): one state from the clock, handed to everything it lights ----
 const PIN_HOUR = params.has('q') && !params.has('hour') && !params.has('tod');
-let envCaptures = 0, world0 = null, hourState = todState(17 * 60 + 42), hourAt = -1, hourTick = 0, envAt = null, envWait = 0, lastHourMin = null;
+let crowdHear = 0, envCaptures = 0, world0 = null, hourState = todState(17 * 60 + 42), hourAt = -1, hourTick = 0, envAt = null, envWait = 0, lastHourMin = null;
 const _hazeFog = new THREE.Color(), DAY_HAZE_FOG = new THREE.Color(0.64, 0.66, 0.68);
 // tools: ?hour=HH:MM sets today's clock at load (the screenshots of the day); debug.setHour too
 function applyHour(dt, { force = false } = {}) {
@@ -1061,6 +1070,7 @@ function frame(now) {
   { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
   world.dawn.update(mode === 'pause' ? 0 : dt, { dawn: hourState.dawn, eye: camera.position });   // tai chi on the promenade at dawn
+  world.moments.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });
   const driving = mode === 'drive' || (mode === 'pause' && pausedFrom === 'drive');
   if (driving) world.driving.update(dt, mode === 'pause');
   else if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) world.jazz.seatCamera(camera);
@@ -1188,6 +1198,7 @@ function frame(now) {
   R.frame(t);
   R.composer.render(dt);
   world.photo.afterRender();                                                          // a photo is read off the frame just drawn
+  world.moments.afterRender();
   R.tick();
 }
 R.renderer.setAnimationLoop(frame);

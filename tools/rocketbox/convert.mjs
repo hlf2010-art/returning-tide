@@ -34,6 +34,9 @@ export const CAST = [
   { role: 'c6', avatar: 'Male_Adult_12', sex: 'm' },
   { role: 'c7', avatar: 'Male_Adult_04', sex: 'm' },
   { role: 'c8', avatar: 'Female_Adult_04', sex: 'f' },
+  // children, for families in the crowd (phase 4.3): the adult clips drive them, hips at their own height
+  { role: 'k1', avatar: 'Female_Child_01', sex: 'f', child: true },
+  { role: 'k2', avatar: 'Male_Child_01', sex: 'm', child: true },
   { role: 'p5', avatar: 'Business_Female_02', sex: 'f', greyHair: true },  // an older local woman (the library's oldest woman; hair greyed)                     // the player's own body (head hidden in first person)
 ];
 const CLIPS = {
@@ -175,7 +178,7 @@ for (const c of CAST) {
   const b64 = await page.evaluate(([f, g]) => window.convertAvatar(f, g), [c.avatar, !!c.greyHair]);
   const buf = Buffer.from(b64, 'base64');
   writeFileSync(join(out, `${c.role}.glb`), buf);
-  manifest.cast[c.role] = { avatar: c.avatar, sex: c.sex, file: `${c.role}.glb`, bytes: buf.length };
+  manifest.cast[c.role] = { avatar: c.avatar, sex: c.sex, file: `${c.role}.glb`, bytes: buf.length, ...(c.child ? { child: true } : {}) };
   console.log(`${c.role}: ${c.avatar} -> ${(buf.length / 1e6).toFixed(2)} MB`);
 }
 const sets = [['m', 'Business_Male_02', CLIPS.m], ['f', 'Business_Female_03', CLIPS.f], ['player', 'Male_Adult_07', PLAYER_CLIPS]]
