@@ -153,6 +153,7 @@ await ev(async () => {
   await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })));
   const node = new AudioWorkletNode(ctx, 'cap2'); const sink = ctx.createGain(); sink.gain.value = 0;
   a.output.connect(node); node.connect(sink).connect(ctx.destination);
+  window.__capNode = node;
   window.__cap2 = { on: false, chunks: [] }; node.port.onmessage = (e) => { if (window.__cap2.on) window.__cap2.chunks.push(e.data); };
 });
 const hiss = (ms) => ev((ms) => new Promise((res) => {
@@ -176,10 +177,13 @@ await page.keyboard.press('F7'); await ff(200);
 await ev(() => window.__bund.player.teleport(21.4, -15, -Math.PI / 2, 0)); await frames(4);
 await page.waitForFunction(() => { const c = window.__bund.conversation; return c.state === 'exchange-pause' && c.pauseRemaining > 2.4; }, null, { timeout: 300000 });
 await page.waitForTimeout(1800);
+// people's recorded voices now play through the mix too (engine/voice.js): measure the environment
+// bus after the duck, which is what has to step back
+await ev(() => { const a = window.__bund.audio; a.output.disconnect(window.__capNode); a.getMusicBus().connect(window.__capNode); });
 const q = await hiss(700);
 await page.waitForFunction(() => window.__bund.conversation.isSpeaking, null, { timeout: 300000 }); await page.waitForTimeout(1800);
 const sp = await hiss(700);
-info(`beside the NPCs in drizzle: between exchanges ${q.rms.toFixed(1)} dBFS, during a line ${sp.rms.toFixed(1)} dBFS`);
+info(`beside the NPCs in drizzle, environment bus: between exchanges ${q.rms.toFixed(1)} dBFS, during a line ${sp.rms.toFixed(1)} dBFS`);
 ok(sp.rms - q.rms < -3.5, 'rain and ambience still step back while they speak');
 
 // --- back to clear: exact restoration ---

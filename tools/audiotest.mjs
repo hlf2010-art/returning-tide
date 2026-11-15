@@ -48,6 +48,7 @@ await ev(async () => {
   const node = new AudioWorkletNode(ctx, 'cap', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit' });
   const sink = ctx.createGain(); sink.gain.value = 0;
   a.output.connect(node); node.connect(sink).connect(ctx.destination);
+  window.__capNode = node;
   window.__cap = { on: false, chunks: [], marks: [] };
   node.port.onmessage = (e) => { if (window.__cap.on) window.__cap.chunks.push(e.data); };
 });
@@ -194,7 +195,11 @@ ok(cs.peak > -30 && cs.peak < -3 && ts.peak > -30 && ts.peak < -3, 'both cues cl
 ok(ts.on >= cs.on + 4, 'the seal break is granular (many transients); the pickup is a smooth slide (few)');
 await page.keyboard.press('KeyE'); await page.waitForTimeout(500);
 
-// 5. ducking under NPC speech: near Old Lin and Ms. Su, line up output level with whether someone is talking
+// 5. ducking under NPC speech: near Old Lin and Ms. Su, line up output level with whether someone is talking.
+// People's recorded voices play through the mix now (engine/voice.js), so this section listens to the
+// environment bus after the duck (what has to step back), then goes back to the full output.
+const tap = (bus) => ev((bus) => { const a = window.__bund.audio, n = window.__capNode; try { a.output.disconnect(n); } catch { /* not connected */ } try { a.getMusicBus().disconnect(n); } catch { /* not connected */ } (bus === 'env' ? a.getMusicBus() : a.output).connect(n); }, bus);
+await tap('env');
 await tp(21.4, -15.0, -Math.PI / 2, 0); await page.waitForTimeout(1000);
 const duckRec = await rec('duck-near-npcs', async () => {
   for (let i = 0; i < 90; i++) { await ev(() => { const b = window.__bund, c = b.audio.getContext(); window.__cap.marks.push({ label: b.conversation.isSpeaking ? 1 : 0, frame: Math.round(c.currentTime * c.sampleRate) }); }); await page.waitForTimeout(160); }
@@ -224,6 +229,7 @@ const sState = await ev(() => window.__bund.conversation.isSpeaking);
   info(`at the railing beside them: between exchanges ${q.toFixed(1)} dBFS (${qState}), during a line ${sp.toFixed(1)} dBFS (speaking=${sState}): ${(sp - q).toFixed(1)} dB`);
   ok(qState === 'exchange-pause' && sState && sp - q < -3.5 && sp - q > -10.5, 'environment drops ~4-10 dB while they speak (design -7 dB, river swell +-2), never to silence');
 }
+await tap('out');
 const preDlg = await census();
 await page.keyboard.press('KeyE'); await page.waitForTimeout(1500);
 const dlg = await census();
