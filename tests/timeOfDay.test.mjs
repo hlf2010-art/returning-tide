@@ -54,11 +54,12 @@ ok(c.count() > all * 0.85 && c.agents.filter((a) => a.kind === 'jogger' && !a.go
 
 // the traffic honours its share (the crossing's own seven and the buses always run)
 const specs = trafficSpecs(1);
-const tr = createTraffic({ geom: crossing, vehicles: specs, peds: [] });
+let ts = 17; const trnd = () => { ts = (ts * 16807) % 2147483647; return ts / 2147483647; };
+const tr = createTraffic({ geom: crossing, vehicles: specs, peds: [], rng: trnd });
 tr.setDensity(0.3);
 for (let i = 0; i < 20 * 300; i++) tr.update(0.05, {});
-const active = tr.vehicles.filter((v) => v.active).length;
-ok(active < specs.length * 0.6 && active >= 7, `at 3 am: ${active} of ${specs.length} vehicles on the road`);
+const active = tr.vehicles.filter((v) => v.active).length, always = tr.vehicles.filter((v) => v.rank === 0).length, others = specs.length - always;
+ok(active >= 7 && active <= always + Math.ceil(others * 0.3) + 1, `at 3 am: ${active} of ${specs.length} vehicles on the road (${always} always run: the crossing's seven and the buses)`);
 tr.setDensity(1);
 for (let i = 0; i < 20 * 300; i++) tr.update(0.05, {});
 ok(tr.vehicles.filter((v) => v.active).length > specs.length * 0.75, `by day: ${tr.vehicles.filter((v) => v.active).length} on the road`);
