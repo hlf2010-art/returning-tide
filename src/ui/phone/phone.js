@@ -6,6 +6,7 @@
 // the Manner mini-program (order + pay), the pay sheet, calls (incoming / in progress).
 import './phone.css';
 import { stamp, clockText, markRead, unreadTotal, pay, balance, METHODS, preview, post } from '../../engine/life.js';
+import { storyContext } from '../../world/story.js';
 import { reply, respondToInvite } from '../../world/agenda.js';
 import { PEOPLE, GROUP, ME } from '../../world/cast.js';
 import { shape } from '../../engine/delivery.js';
@@ -192,7 +193,11 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
         ? `<div class="compose free"><input class="say" data-thread="${esc(id)}" maxlength="200" placeholder="${esc(Z('发消息…（回车发送）', 'Message… (Enter to send)'))}" value="${esc(S.draft[id] || '')}"><button class="btn go" data-act="send" data-id="${esc(id)}">${Z('发送', 'Send')}</button></div>`
         : `<div class="compose">${Z('需要回复时会出现选项', 'Replies appear when there\'s something to answer')}</div>`;
     const typing = S.typing[id] ? `<span class="sub">${Z('对方正在输入…', 'typing…')}</span>` : '';
-    return `<div class="view chat"><div class="bar"><span class="back" data-act="back">‹</span>${esc(threadTitle(t))}${t.kind === 'group' ? `<span class="sub">(${t.members.length})</span>` : ''}${typing}</div><div class="msgs">${msgs}</div>${foot}</div>`;
+    // how they feel about you (life relation): a small gauge by the name of a friend or Dad
+    const friend = t.kind === 'person' && ['ruoan', 'xuan', 'momo', 'zhixia', 'yinuo', 'dad'].includes(id);
+    const aff = friend ? Math.round((l.relations[id] || { affinity: 50 }).affinity) : null;
+    const gauge = friend ? `<span class="aff" title="${Z('关系', 'How they feel')}: ${aff}" style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:10px;opacity:0.75">♥<i style="display:inline-block;width:34px;height:4px;border-radius:2px;background:rgba(127,127,127,0.35);overflow:hidden"><u style="display:block;height:100%;width:${Math.max(4, Math.min(100, aff))}%;background:#e7b96a"></u></i></span>` : '';
+    return `<div class="view chat"><div class="bar"><span class="back" data-act="back">‹</span>${esc(threadTitle(t))}${t.kind === 'group' ? `<span class="sub">(${t.members.length})</span>` : ''}${gauge}${typing}</div><div class="msgs">${msgs}</div>${foot}</div>`;
   }
   // the camera roll: what you shot with the gimbal; share one to Moments
   function photosView(l) {
@@ -290,7 +295,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   function ring(scriptId) {
     if (S.call) return false;
     const script = calls[scriptId]; if (!script) return false;
-    S.call = { from: script.from, script, i: 0, secs: 0, state: 'ringing', ringFor: 0 };
+    S.call = { from: script.from, script, scriptId, i: 0, secs: 0, state: 'ringing', ringFor: 0 };
     // it rings in your pocket: a banner and the ringtone; P brings the phone up to answer
     const p = person(script.from);
     banner.innerHTML = `<div class="av" style="background:${p.color}">${esc(initial(script.from))}</div><div><div class="t">${esc(nm(script.from))}</div><div class="p">${Z('微信语音通话', 'Incoming voice call')}</div></div><div class="k">${Z('P 接听', 'P to answer')}</div>`;
@@ -299,7 +304,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     if (audio && audio.cue) audio.cue('ring');
     return true;
   }
-  function logCall(missed) { const l = L(); (l.flags.calls ||= []).push({ from: S.call.from, at: stamp(l), missed }); }
+  function logCall(missed) { const l = L(); (l.flags.calls ||= []).push({ from: S.call.from, script: S.call.scriptId || null, at: stamp(l), missed }); }
   function advanceCall() {
     const c = S.call; if (!c) return;
     const line = c.script.lines[c.i];
@@ -358,6 +363,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const text = (S.draft[id] || '').trim(); if (!text) return;
     const l = L(); S.draft[id] = '';
     post(l, id, { from: 'me', kind: 'text', text }, { notify: false });
+    { const sp = ((l.flags.spoke ||= {})[id] ||= []); sp.push(stamp(l)); while (sp.length > 40) sp.shift(); }   // for the quests (engine/quests.js)
     render(); focusSay(id);
     const t = l.threads[id];
     // in the group, whoever's named answers (or one or two who'd have something to say)
@@ -371,7 +377,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const now = clockText(stamp(l));
     const facts = [l.flags.car ? 'He has just bought a yellow Lamborghini Huracán (everyone knows).' : '', l.flags.hotelKey ? 'He is staying at the Peace Hotel on the Bund, room 612.' : '',
       ...l.invites.filter((i) => i.from === friend).map((i) => `Your invitation to him (${i.title}): ${i.kept ? 'he came' : i.status}.`)].filter(Boolean).join(' ');
-    const scene = `It is ${now}. You are not with him: you are wherever you would be at this hour (work, home, out). ${facts}`;
+    const scene = `It is ${now}. You are not with him: you are wherever you would be at this hour (work, home, out). ${facts} ${storyContext(l, friend)}`;
     const sys = systemPrompt(friend, scene, { lang, texting: true }) + (t.kind === 'group' ? '\nThis is the friends\' group chat 金陵五虎+1; keep it short and in the group\'s joking tone.' : '');
     const hist = t.messages.filter((m) => m.kind === 'text' || m.kind === 'voice').slice(-12).map((m) => ({ role: m.from === friend ? 'assistant' : 'user', content: m.from === 'me' || m.from === friend ? m.text : `${short(m.from)}: ${m.text}` }));
     S.typing[threadId] = true; render(); focusSay(threadId);

@@ -25,6 +25,7 @@ export const CAST = [
   { role: 'p4', avatar: 'Male_Adult_03', sex: 'm' },
   { role: 'player', avatar: 'Male_Adult_07', sex: 'm' },
   // the evening crowd (phase 3): more faces, from more places, dressed for November
+  { role: 'dad', avatar: 'Business_Male_07', sex: 'm' },                      // Jibai's father, 55 (the library's older businessman)
   { role: 'c1', avatar: 'Female_Adult_07', sex: 'f' },
   { role: 'c2', avatar: 'Female_Adult_11', sex: 'f' },
   { role: 'c3', avatar: 'Female_Adult_14', sex: 'f' },

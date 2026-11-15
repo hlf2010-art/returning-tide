@@ -67,6 +67,7 @@ export function createTalk({ llm, voice, getLife, save }) {
     S.turns++;
     // what was said is remembered with them (the last few lines)
     const l = getLife(); const mem = ((l.flags.talked ||= {})[S.id] ||= []);
+    if (said) { const sp = ((l.flags.spoke ||= {})[S.id] ||= []); sp.push(l.clock.day * 1440 + l.clock.minute); while (sp.length > 40) sp.shift(); }   // for the quests
     if (said) mem.push(`他：${said}`.slice(0, 80)); mem.push(`我：${reply}`.slice(0, 80)); while (mem.length > 8) mem.shift(); save && save();
     S.busy = false; el.classList.remove('busy');
   }

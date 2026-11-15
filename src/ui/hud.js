@@ -5,6 +5,7 @@ const $ = (id) => document.getElementById(id);
 
 export function createHud() {
   let toastTimer = 0, thoughtTimer = 0, cardTimer = 0, lastSubKey = '', lastObjKey = '', lastStep = null, isReady = false;
+  let missionStep = null, questStep = null;
   applyStatic();
   let placeTime = null;
   const placeSub = () => { if (placeTime) document.querySelector('#place [data-t="placeSub"], #place .kicker span:last-child').textContent = `${t('month')} · ${placeTime}`; };
@@ -51,9 +52,9 @@ export function createHud() {
       clearTimeout(this._barkTimer); this._barkTimer = setTimeout(() => el.classList.remove('on'), seconds * 1000);
     },
     // a milestone: a banner across the top, once
-    achievement(text) {
+    achievement(text, kicker = null) {
       let el = document.getElementById('achv'); if (!el) { el = document.createElement('div'); el.id = 'achv'; document.body.appendChild(el); }
-      el.innerHTML = `<small>${getLang() === 'zh' ? '成就解锁' : 'Achievement unlocked'}</small><b></b>`; el.querySelector('b').textContent = text;
+      el.innerHTML = `<small></small><b></b>`; el.querySelector('small').textContent = kicker || (getLang() === 'zh' ? '成就解锁' : 'Achievement unlocked'); el.querySelector('b').textContent = text;
       el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
       clearTimeout(this._achvT); this._achvT = setTimeout(() => el.classList.remove('on'), 4200);
       this.audio && this.audio.cue && this.audio.cue('chime', 0, 1);
@@ -94,7 +95,11 @@ export function createHud() {
       }
     },
     // Mission One objective panel. step: { zh, en, hint } or null to hide.
-    objective(step) {
+    // the tracked quest's next step: shown whenever Mission One isn't showing its own
+    questObjective(step) { questStep = step; if (!missionStep) this.objective(null, true); },
+    objective(step, fromQuest = false) {
+      if (!fromQuest) missionStep = step;
+      step = missionStep || questStep || null;
       lastStep = step;
       const key = step ? `${getLang()}|${step.zh}|${step.en}|${step.hint || ''}` : '';
       if (key === lastObjKey) return;
@@ -102,6 +107,8 @@ export function createHud() {
       lastObjKey = key;
       el.classList.toggle('hidden', !step);
       if (!step) return;
+      const head = $('objective').querySelector('.m-head');
+      if (head) { const quest = step === questStep && !missionStep; head.querySelector('.m-num').textContent = quest ? (getLang() === 'zh' ? '任务' : 'Quest') : t('m1Num'); head.querySelector('.m-title').textContent = quest ? tr(step.title || { zh: '', en: '' }) : t('m1Title'); }
       $('m-step').textContent = tr(step);
       const h = $('m-hint'); h.classList.toggle('hidden', !step.hint); h.innerHTML = tr(step.hint) || '';
       if (wasOn) { el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }   // new step: brief flash

@@ -97,6 +97,12 @@
    "sex": "f",
    "file": "c8.glb",
    "bytes": 3859252
+  },
+  "dad": {
+   "avatar": "Business_Male_07",
+   "sex": "m",
+   "file": "dad.glb",
+   "bytes": 2060672
   }
  },
  "clips": {

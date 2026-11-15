@@ -421,3 +421,49 @@ html[lang="zh-CN"] #ride-card .place { font-family: var(--serif); font-weight: 9
 #viewfinder .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 11px var(--ui); color: rgba(255,255,255,0.6); }
 #viewfinder .flash { position: absolute; inset: -10vh -10vw; background: #fff; opacity: 0; } #viewfinder .flash.on { animation: vfflash 0.35s ease-out; }
 @keyframes vfflash { 0% { opacity: 0.85; } 100% { opacity: 0; } }
+
+/* ---- journal (J) and the ending card ---- */
+#journal { position: fixed; inset: 0; z-index: 28; display: grid; place-items: center; background: rgba(3,5,10,0.55); backdrop-filter: blur(6px); font-family: var(--ui); }
+#journal.hidden { display: none; }
+#journal .panel { width: min(860px, 94vw); max-height: 86vh; overflow: auto; padding: 20px 24px 14px; border-radius: 10px; background: rgba(16,18,26,0.94); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 30px 80px rgba(0,0,0,0.5); color: var(--ink); }
+#journal .ph { display: flex; align-items: center; gap: 14px; font: 700 13px var(--ui); letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold); padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+#journal .ph .clock { margin-left: auto; letter-spacing: 0.08em; color: rgba(244,241,234,0.6); font-weight: 600; }
+#journal .x { appearance: none; border: 0; background: none; color: rgba(244,241,234,0.7); font-size: 16px; cursor: pointer; }
+#journal .tabs { display: flex; gap: 4px; margin: 10px 0 12px; }
+#journal .tabs button { appearance: none; border: 0; background: transparent; color: rgba(244,241,234,0.55); font: 700 11px var(--ui); letter-spacing: 0.2em; text-transform: uppercase; padding: 8px 12px; border-bottom: 2px solid transparent; cursor: pointer; }
+#journal .tabs button.on { color: var(--ink); border-bottom-color: var(--gold); }
+#journal .cols { display: grid; grid-template-columns: minmax(200px, 0.8fr) 1.4fr; gap: 18px; }
+#journal .list { display: grid; gap: 6px; align-content: start; }
+#journal .q { appearance: none; text-align: left; display: grid; gap: 2px; padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: var(--ink); cursor: pointer; font: 500 14px var(--ui); }
+#journal .q.sel { border-color: var(--gold); background: rgba(231,185,106,0.08); }
+#journal .q.done, #journal .q.failed { opacity: 0.6; }
+#journal .q .kind { font: 700 10px var(--ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+#journal .q .st { font-size: 11px; color: rgba(244,241,234,0.55); }
+#journal .detail { min-width: 0; }
+#journal .detail .act { font: 700 10px var(--ui); letter-spacing: 0.2em; text-transform: uppercase; color: rgba(244,241,234,0.5); }
+#journal .detail h2 { font: 700 22px var(--ui); margin: 4px 0 6px; }
+#journal .detail .sum { color: rgba(244,241,234,0.75); margin: 0 0 12px; line-height: 1.55; }
+#journal .steps { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+#journal .steps li { color: rgba(244,241,234,0.85); line-height: 1.45; }
+#journal .steps li.done { color: rgba(244,241,234,0.45); text-decoration: line-through; }
+#journal .steps li.skipped { color: rgba(244,241,234,0.35); }
+#journal .steps li.current { color: #fff; font-weight: 600; }
+#journal .steps li.current::marker { color: var(--gold); }
+#journal .steps i { font-style: normal; font-size: 11px; color: rgba(244,241,234,0.45); }
+#journal .acts { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+#journal .acts button { appearance: none; border: 1px solid rgba(231,185,106,0.6); background: rgba(231,185,106,0.12); color: var(--ink); border-radius: 6px; padding: 7px 14px; font: 600 12px var(--ui); cursor: pointer; }
+#journal .people { display: grid; gap: 10px; }
+#journal .pp { display: grid; grid-template-columns: 120px 1fr 80px; align-items: center; gap: 12px; }
+#journal .pn { font-weight: 600; }
+#journal .bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); overflow: hidden; }
+#journal .bar i { display: block; height: 100%; background: linear-gradient(90deg, #8f6a2c, var(--gold)); }
+#journal .pw { font-size: 12px; color: rgba(244,241,234,0.65); }
+#journal .hint, #journal .empty { color: rgba(244,241,234,0.5); font-size: 12px; }
+#journal .foot { margin-top: 14px; font: 600 11px var(--ui); letter-spacing: 0.12em; color: rgba(244,241,234,0.4); }
+@media (max-width: 680px) { #journal .cols { grid-template-columns: 1fr; } #journal .pp { grid-template-columns: 90px 1fr 60px; } }
+#ending-card { position: fixed; inset: 0; z-index: 40; display: none; place-items: center; background: radial-gradient(ellipse at center, rgba(8,10,16,0.82), rgba(2,3,6,0.96)); font-family: var(--ui); }
+#ending-card.on { display: grid; animation: rise 1.2s ease forwards; }
+#ending-card .in { max-width: min(620px, 88vw); text-align: center; display: grid; gap: 14px; justify-items: center; }
+#ending-card .k { font: 700 12px var(--ui); letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); }
+#ending-card h1 { font: 900 clamp(34px, 6vw, 56px) "Noto Serif SC", serif; color: #f4efe4; margin: 0; }
+#ending-card p { font: 400 16px/1.8 var(--ui); color: rgba(244,241,234,0.82); margin: 0 0 8px; }
