@@ -134,6 +134,8 @@ export const covers = [
   { id: 'customs-portico', x0: -34.0, x1: -31.0, z0: 18.0, z1: 36.0, top: 13.35 },
   { id: 'peace-hall', x0: -60, x1: -35.4, z0: -244, z1: -212.6, top: 30 },     // the Peace Hotel's ground floor (world/interiors.js)
   { id: 'aia-lobby', x0: -47, x1: -34.6, z0: -152, z1: -139, top: 30 },        // the AIA lobby
+  { id: 'northbund-flat', x0: 30, x1: 80, z0: -1380, z1: -1330, top: 400 },     // places a DiDi takes you (world/destinations.js)
+  { id: 'ifc-32f', x0: 660, x1: 720, z0: 30, z1: 90, top: 400 },
 ];   // (read at module load by materials.js and rain.js: everything with a roof is declared here)
 export const underCover = (x, z, y = 0) => covers.some((c) => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && y < c.top);
 

@@ -55,6 +55,7 @@ import { createInteriors, PEACE, AIA } from './world/interiors.js';
 import { createHotelUpper } from './world/hotelUpper.js';
 import { createJazzBar } from './world/jazzBar.js';
 import { createHailers } from './world/hailers.js';
+import { createDestinations } from './world/destinations.js';
 import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
 import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
@@ -158,8 +159,10 @@ async function boot() {
   // up the lifts: the sixth floor and room 612 (world/hotelUpper.js)
   const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });
   // the Jazz Bar off the hall: the trio, Momo's night (world/jazzBar.js)
+  // places a DiDi takes you that you can walk into (the North Bund flat, IFC 32F)
+  const dests = createDestinations({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });
   const jazz = createJazzBar({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: seatMode });
-  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights, ...upper.lights, ...jazz.lights]);
+  const lighting = createLighting(scene, street.lanterns, [{ ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights]);
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -175,13 +178,13 @@ async function boot() {
   const belongings = createBelongings({ scene, people, camera, hud, audio, getLife: () => life, save: () => saveLife() });
   // DiDi: a car from the traffic comes to the kerb; you ride in it (world/didi.js, world/rideFlow.js)
   const didi = createDidi({ scene, people, traffic, vehicles, camera, player, renderer: R.renderer });
-  const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode });
+  const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode, arriveAt: (d, info) => world.dest.arrive(d.id, info) });
   document.querySelector('#ride-card .go').addEventListener('click', () => { if (!closeInfoCard()) rideFlow.closeCard(); });
   // buying it: Vivian, the consultant, at the car (world/carSale.js, engine/carPurchase.js)
   const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode });
   if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
-  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
-  places = [interiors, upper, jazz];
+  world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  places = [interiors, upper, jazz, dests];
   // bumping into people: their reactions, a passing remark, a jolt for you
   bumps = createBumps({ hud, audio, onPlayerBump: ({ closing }) => { player.head.dipV -= 0.1 + 0.05 * Math.min(4, closing); player.head.roll += (Math.random() - 0.5) * 0.04; } });
   // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
@@ -240,7 +243,7 @@ let places = [];   // modules with candidates / prompt / owns / interact (the ho
 function travel(during, opts) {
   if (veil.busy) return;
   const from = mode; mode = 'travel'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
-  veil.cover(during, opts).then(() => { if (mode === 'travel') { mode = from === 'travel' ? 'play' : from; player.enabled = mode === 'play'; player.clearInput(); } });
+  veil.cover(during, opts).then(() => { if (mode === 'travel') { mode = opts && opts.to ? opts.to : from === 'travel' ? 'play' : from; player.enabled = mode === 'play'; if (mode === 'play') player.lookOnly = false; player.clearInput(); } });
 }
 function closeInfoCard() { const c = document.getElementById('ride-card'); if (c && c.dataset.info) { c.classList.remove('on'); delete c.dataset.info; return true; } return false; }
 // talking with Vivian at the car (1-4), or sat in it (the car sale has the camera)
@@ -445,6 +448,7 @@ window.addEventListener('keydown', (e) => {
   if (mode === 'play') {
     if ((k === 'KeyE' || k === 'Enter') && closeInfoCard()) return;
     if (world && world.belongings && world.belongings.key(k)) return;
+    if (world.dest.key(k)) return;
     if (k === 'KeyE') interact();
     else if (k === 'Escape' && noLock) pause();
   }
@@ -673,9 +677,10 @@ function frame(now) {
   if (riding && world.didi.car) { player.body.x = world.didi.car.x; player.body.z = world.didi.car.z; }   // you (and your ears) are in the car
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
+  world.dest.update(mode === 'pause' ? 0 : dt, player.body);
   if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
   else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
-  { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here ? 1 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
+  { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : inR(PEACE) || inR(AIA) ? 0.4 : 0); }
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
   if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) world.jazz.seatCamera(camera);
   else if (!riding && mode !== 'sale-seat') player.update(mode === 'pause' ? 0 : dt);
@@ -742,7 +747,7 @@ function frame(now) {
     ];
     if (mission1 && mission1.canPickUp()) cands.push({ id: 'pouch', x: pf.x, y: pf.y, z: pf.z, reach: 2.4, cone: 0.72 });
     cands.push(...world.belongings.candidates(), ...world.carSale.candidates());
-    if (player.body.z < -125) for (const p of places) cands.push(...p.candidates());
+    for (const p of places) cands.push(...p.candidates());
     if (world.rideFlow.canBoard()) { const d = world.didi.doorFocus(); if (d) cands.push({ id: 'didi', ...d, reach: 2.8, cone: 0.6 }); }
     cands.push({ id: 'manner', x: mannerSpec.queue[0].x + 0.2, y: L.curbH + 1.15, z: mannerSpec.zWall + mannerSpec.depth - 0.1, reach: 2.6, cone: 0.7 });
     target = pickTarget(camera.position, _d, cands, colliders);

@@ -18,7 +18,9 @@ import { enText } from './agendaEn.js';
 const REPLY_KEYS = ['engage', 'short', 'change', 'ignore'];
 const ANSWER_TIME = 7;                                   // s: no answer by then is an answer
 
-export function createRideFlow({ getLife, didi, hud, audio, onMode, save, rnd = Math.random }) {
+// arriveAt(dest, info): a place you can walk into takes over the arrival (world/destinations.js);
+// returns true if it did
+export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arriveAt = null, rnd = Math.random }) {
   let R = null, awaiting = null, answerT = 0, sub = null, subT = 0, interlude = 0, card = null;
   const el = (id) => document.getElementById(id);
   const say = (zh) => (getLang() === 'zh' ? zh : driverEn(zh));
@@ -123,6 +125,13 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, rnd = 
       const L = getLife(), d = dest(R.to);
       const res = arrive(L, R);
       awaiting = null; hide();
+      // asked there, about now: you go in (the evening plays out there, and you come back by car)
+      const asked = d.invite && L.invites.find((i) => i.id === d.invite);
+      if (asked && Math.abs(stamp(L) - asked.at) <= 120 && asked.status !== 'declined' && arriveAt && arriveAt(d, { method: R.method, fare: res && res.amount })) {
+        el('ride-interlude') && el('ride-interlude').classList.remove('on'); interlude = 0;
+        didi.end(); R = null; if (save) save();
+        return;
+      }
       // what came of it: an invitation for this place, kept if you came at about the right time
       let kept = null;
       const inv = d.invite && L.invites.find((i) => i.id === d.invite);

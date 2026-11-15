@@ -39,14 +39,14 @@ export function towerAtlas(seed, warmth) {
   return tex(c, { aniso: 4 });
 }
 
-function basic(map, gain = 1) {
+export function basic(map, gain = 1) {
   const m = new THREE.MeshBasicMaterial({ map });
   m.color.setScalar(gain);
   return m;
 }
 
 // Box tower with window UVs at 3 m x 4 m per cell. Top/bottom faces go dark.
-function tower(batch, x, z, w, d, h, r, y0 = 0) {
+export function tower(batch, x, z, w, d, h, r, y0 = 0) {
   const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv;
   const ou = Math.floor(r() * 64) / 64, ov = Math.floor(r() * 64) / 64;
   const dims = [d, d, 0, 0, w, w];
