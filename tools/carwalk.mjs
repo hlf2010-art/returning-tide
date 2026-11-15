@@ -1,6 +1,6 @@
 import { createRequire } from 'module';
 const { chromium } = createRequire(import.meta.url)('playwright');
-const [lang = 'en', base = '${process.env.URL || 'http://localhost:5173/'}'] = process.argv.slice(2);
+const [lang = 'en', base = process.env.URL || 'http://localhost:5173/'] = process.argv.slice(2);
 const dir = (process.env.OUT || '.') + '/';
 const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const p = await b.newPage({ viewport: { width: 960, height: 540 } });

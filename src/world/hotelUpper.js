@@ -266,7 +266,8 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
     { id: 'uDoorOut', x: C.x1 - 0.05, y: F + 1.1, z: (R.door[0] + R.door[1]) / 2, reach: 2.0 },
     { id: 'uDoorIn', x: R.x0 + 0.1, y: F + 1.1, z: (R.door[0] + R.door[1]) / 2, reach: 2.0 },
     { id: 'uBed', x: -38.6, y: F + 0.7, z: R.z0 + 1.3, reach: 2.6 },
-    { id: 'uWindow', x: R.x1 - 0.3, y: F + 1.6, z: -229.5, reach: 2.6 },
+    { id: 'uWindow', x: R.x1 - 0.2, y: F + 1.6, z: -231.4, reach: 2.6 },          // each of the two windows
+    { id: 'uWindowB', x: R.x1 - 0.2, y: F + 1.6, z: -227.6, reach: 2.6 },
     { id: 'uBath', x: -41.6, y: F + 1.2, z: bz1 + 0.05, reach: 1.9 },
     { id: 'uHoard', x: ccx, y: F + 1.5, z: C.z1 - 0.1, reach: 2.6 },
     { id: 'u610', x: C.x1 - 0.05, y: F + 1.2, z: -236.6, reach: 1.6 },
@@ -277,6 +278,7 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
     uDoorIn: () => [T('房门', 'Door'), S.door > 0.5 ? T('关门', 'Close') : T('开门', 'Open')],
     uBed: () => { const tod = stamp(L0()) % 1440; return [T('床', 'Bed'), tod >= 21 * 60 || tod < 5 * 60 ? T('睡到早上', 'Sleep till morning') : T('躺一会儿', 'Lie down a while')]; },
     uWindow: () => [T('窗外', 'The window'), T('看看', 'Look out')],
+    uWindowB: () => [T('窗外', 'The window'), T('看看', 'Look out')],
     uBath: () => [T('卫生间', 'Bathroom'), T('洗把脸', 'Wash your face')],
     uHoard: () => [T('围挡', 'Hoarding'), T('看告示', 'Read the notice')],
     u610: () => [T('610 房', 'Room 610'), T('敲门', 'Knock')],
@@ -297,7 +299,7 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
       const until = night ? (tod >= 21 * 60 ? now - tod + 1440 + 7 * 60 + 30 : now - tod + 7 * 60 + 30) : now + 40;
       travel(async () => { skipTo(l, until); if (player.stamina) { player.stamina.energy = 1; player.stamina.winded = 0; } save && save(); },
         { line: night ? T(`一夜好眠 · ${clockText(until)}`, `A good night's sleep · ${clockText(until)}`) : T(`躺了一会儿 · ${clockText(until)}`, `You lie down a while · ${clockText(until)}`), hold: night ? 1600 : 900 });
-    } else if (id === 'uWindow') {
+    } else if (id === 'uWindow' || id === 'uWindowB') {
       const lines = [
         ['江对面，东方明珠和陆家嘴的灯都亮着。楼下是外滩的人，一直到江边。', 'Across the river, the Pearl Tower and Lujiazui all lit. Below, people along the Bund all the way to the water.'],
         ['一艘游船慢慢地从北边开过来，灯一层一层的。', 'A cruise boat comes slowly down from the north, lit deck by deck.'],

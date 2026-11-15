@@ -29,7 +29,10 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | P | your phone (Esc: back) |
 | U | open / close your umbrella (once you've bought one and have it with you) |
 | H | noise cancelling on / off (once you have the headphones with you) |
-| 1–4 | in a DiDi: answer the driver (engage / short answer / change the subject / say nothing) |
+| 1–4 | in a DiDi: answer the driver (engage / short answer / change the subject / say nothing); at a friend's place, answer them the same way |
+| E (sat at a table) | stand up again (the Jazz Bar) |
+| W / S, A / D, Space | at the wheel of your Huracán: throttle / brake (hold S once stopped to reverse), steer, handbrake |
+| V · H · E | at the wheel: chase camera or the driver's seat · horn · get out (once stopped; it stays parked there) |
 | C | subtitles on / off |
 | M | sound on / off (mutes ambience, footsteps, cues and voices) |
 | Esc | back out of an open conversation / close-up / notice; otherwise pause (Resume / Settings). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
@@ -359,13 +362,21 @@ silent. Their lines come up as subtitles in your language.
 - On the way someone may step out looking at their phone, or a car may cut in. The car brakes
   hard, the horn goes, and the driver says what they think of it.
 
-**Arriving.** Past the north end of the Bund the drive continues as passing light. Then a card
-shows where you are, what it cost, and whether you kept an invitation there (on time means within
-two hours: your friend is glad, and your relationship improves). The evening there passes, and a
-DiDi brings you back to the Bund.
+**Arriving.** Past the north end of the Bund the drive continues as passing light. Then:
+- **If a friend asked you there, about now** (within two hours of the time), you walk in: Xuan's
+  robot-arm review on IFC's 32nd floor, or Yinuo's viewing of a top-floor flat on the North Bund
+  (see *Places a DiDi takes you* below).
+- **Otherwise** a card shows where you are and what it cost; the evening there passes, and a DiDi
+  brings you back to the Bund.
+
+**Other people get DiDis too** (`src/world/hailers.js`, `src/engine/rideHail.js`). At two kerbs, the
+west one by the AIA Building and the river side north of Hankou Road, someone comes out and waits
+with their phone. A real car from the traffic is sent to them (the same pull-in yours uses). As it
+comes up they look for it, check the plate and wave; it stops with its hazards on; they walk to the
+rear door and get in, and it pulls away. A little later someone else comes out.
 
 **What isn't there yet:**
-- Those destinations aren't built, so the visit is told by the card rather than played.
+- Jing'an, Xintiandi and Tianma are still told by the card, not built.
 - The drivers' voices are subtitles only.
 
 ## The northern Bund: Jiujiang Road, the AIA Building, Nanjing Road, the Peace Hotel
@@ -401,12 +412,63 @@ Peace Hotel (`L.zNorth` −262).
 - **The concierge** hands over whatever couriers left at the desk (the JD/Taobao orders sent to the
   hotel).
 - **The Jasmine Lounge** runs along the Bund windows (round marble tables, a grand piano).
-- **The Jazz Bar's door** has the Old Jazz Band's 21:30 stand beside it. If you accepted Momo's
-  invitation and turn up on time, you're in for his trio: a card, the evening passes, and he's glad.
-- **The lift lobby** is guests only, with a guard. With your key, he tells you the sixth floor is
-  being refitted (the hotel really is being renovated in 2026).
+- **The Jazz Bar** is through a brass-framed door in the hall's south-east corner (see below).
+- **The lift lobby** is guests only, with a guard. With your key card the lift takes you up to the
+  sixth floor and your room (see below).
 - **A staff-only door.** The desk staff tell you off if they're looking up when you try it; otherwise
   it's simply locked.
+
+### Up the lifts: the sixth floor and room 612 (`src/world/hotelUpper.js`)
+
+The floor is at its real height inside the building: the exterior's storeys put 6F at about 23.5 m.
+- **The lift lobby**: two brass lifts, a console with flowers.
+- **The corridor** runs south along the Bund side, with a patterned carpet runner, Art Deco sconces,
+  old photographs of the hotel and numbered doors. Its southern half is hoarded off for a refit
+  (knock on 610 and someone tells you they didn't order room service).
+- **Room 612**: your key card opens it (the reader goes green and the door swings in, then closes
+  behind you). Inside:
+  - a king bed with a stepped walnut headboard and a welcome card on the pillow
+  - bedside lamps, a desk under the television, a wardrobe
+  - an armchair at one of two tall windows: the road and the promenade below, the river, Pudong
+    lit up across it
+  - the bathroom (wash your face)
+- **The bed**: at night, sleep until 07:30; by day, lie down for forty minutes.
+- **The lift** takes you back down to the hall. Every move is a short fade.
+
+Floors above the street are new (`floors` in `src/world/layout.js`), and colliders can stand on one
+storey only (`y0` / `y1`). So the hall's pillars don't block your room.
+
+### The Jazz Bar (`src/world/jazzBar.js`, `src/engine/jazzScore.js`, `src/engine/jazzPlayer.js`)
+
+Off the hall at the corner of the Bund and Nanjing Road, as the real one is: a low, dark, panelled
+room with a small stage before a red curtain, a bar along the street wall with lit bottles, and
+little marble tables with red lamps and guests at them.
+- **Open 19:00–01:00; the band plays 20:00–00:30.** Before seven the door is shut.
+- **The band is the game's own** (the real Old Jazz Band are real people; this isn't them): a
+  piano trio.
+  - The pianist and drummer sit at their instruments, posed every frame with two-bone IK.
+  - The bassist stands at an upright bass.
+  - Their hands follow what is actually being played:
+    - the pianist's left hand on the comping chords, his right on the line, each at the right place
+      on the keyboard
+    - the drummer's stick on the ride cymbal, his brush on the snare
+    - the bassist plucking each note, his left hand moving up and down the neck
+- **The music is written and played live, with no recordings.**
+  - `jazzScore.js` writes each tune from a set of chord changes (standard progressions, nobody's
+    melody):
+    - a walking bass with chromatic approach notes
+    - the swung ride pattern, the hi-hat on two and four, brushes comping
+    - rootless piano voicings
+    - a head built from a two-bar motif, then swung solo choruses that breathe in phrases
+  - `jazzPlayer.js` plays it through Web Audio:
+    - a synthesised piano, a plucked upright bass and noise-based drums
+    - a short room reverb, and applause between tunes
+  - In the hall you hear it muffled through the door.
+- **Momo's night** (if you accepted his invitation): tell the door his name and you're shown to the
+  table he kept by the stage (E to sit, mouse to look around). On the second number he dedicates it
+  to you, just back from San Francisco. Stay to the end of it and you were there: he's glad, and says
+  so in the group chat.
+- **A whisky sour** at the bar costs ¥128 from your phone's wallet and passes twenty minutes.
 
 ### Inside the AIA Building
 
@@ -444,6 +506,37 @@ it:
 
 They slow down and step aside for you. They're simulated and drawn only within about 80 m of you,
 and a new one starts out of sight whenever one finishes.
+
+## Places a DiDi takes you (`src/world/destinations.js`)
+
+When a friend has asked you somewhere and you get there at about the right time, the ride ends with
+you walking in. Each place is at its real height, with its own scene: lines as subtitles and, when
+you're asked something, four answers (1–4, or say nothing). What you say changes how they feel about
+you and is remembered. Leave by the lift and a DiDi brings you back to the Bund: time passes, and
+the fare comes out of your wallet.
+
+- **IFC, 32nd floor, Lujiazui** (Xuan's invitation). About 134 m up, in the tower south-east of the
+  Pearl Tower, a robot-arm start-up's office: an open-plan floor with desks, a whiteboard and the
+  prototype on its bench.
+  - The arm runs a pick-and-place cycle and drops its part on the fast wrist turn. Watch it; **E**
+    at the bench counts the drops.
+  - Xuan introduces his senior, the founder, who explains: forty picks a minute, a customer demo
+    at the end of the month.
+  - What you say matters. Spot that it's acceleration and fingertip compliance, not grip, and they
+    fit softer pads; after that it stops dropping parts. Ask whether the customer needs forty a
+    minute, and the contract turns out to say thirty.
+  - Then Xuan asks whether you're interested.
+  - The west windows look back across the river at the Bund you came from: the same modelled
+    street, lit.
+- **A top-floor flat on the North Bund** (Yinuo's invitation). 160 m up, an empty show flat her
+  family wants her to buy, with glass on two sides: the river running south between Hongkou and
+  Pudong, and Lujiazui beyond.
+  - The agent talks too much.
+  - Yinuo asks what you see in it apart from the view, and then whether she should buy it.
+  - The North Bund's streets are a distant set of lit blocks, built only for this view.
+
+The geography is approximate: the flat is put about 1.1 km north of the Peace Hotel, and IFC is
+nearer the Pearl Tower than it really is.
 
 ## Cars on the street
 
@@ -487,8 +580,29 @@ A journey, not a checkout, and the way it really works at this end of the Shangh
 All in-game money; every stage is node-tested (`tests/carpurchase.test.mjs`).
 
 **What isn't there yet:**
-- Driving it.
 - Vivian's own avatar: she uses the library's business-suited woman.
+
+## Driving it (`src/engine/drive.js`, `src/engine/carAudio.js`, `src/world/driving.js`)
+
+Once it's been delivered, the prompt at the driver's door (the left; it's left-hand drive) is
+**Drive**.
+- **The car** (`drive.js`, node-tested) is a kinematic bicycle model with the LP 610-4's numbers:
+  - 0–100 km/h in about 3.1 s; about 1 g of braking; held to 162 km/h here
+  - steering lock that eases off with speed; a handbrake that lets the rear step out a little
+  - a seven-speed gearbox for the revs
+- **The V10** (`carAudio.js`) is synthesised from its firing note (rpm ÷ 12): two detuned saws and a
+  sub through a waveshaper, intake roar rising with the revs, a crackle on the overrun when you lift
+  at high revs, and the tyres complaining when they slip.
+- **Two views:** a chase camera that drops back a little with speed (the default), or **V** for the
+  driver's seat in the model's own cabin, where the mouse looks round.
+- **Where you can drive:** the roads that are here, which are Hankou Road, Zhongshan Road the length
+  of the Bund, and Jiujiang and Nanjing Roads as far as they're built. The kerbs hold you off the
+  pavement.
+- **Other cars and people stop you.** You can bump into a car, but you never drive through anyone.
+- **The traffic sees a car,** and queues behind you. People step round it and look at it.
+- **E** (once you've stopped) gets you out. It stays parked where you left it, and that's saved.
+
+The speed and gear show at the bottom right.
 
 ## People notice a nice car (`src/engine/sights.js`)
 
@@ -695,7 +809,7 @@ step up in wind moves everything further, rain weighs and knocks the leaves.
   brighter and whiter low down, fading upward.
 - **Bloom** slightly tighter (strength 0.36, threshold 0.94).
 
-## Sound (procedural, no files, no music)
+## Sound (procedural, no files)
 
 Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings are bundled.
 
@@ -713,6 +827,12 @@ Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings ar
 - Pause fades out then suspends; resume fades in. **M** still mutes everything. A gentle limiter
   sits on the output. Starting, pausing and Mission One restarts never add loops.
 - Rain: one loop, driven by the weather (see above).
+- **Indoors** the street is muffled (the hall, the AIA lobby), more so high up behind glass (your
+  room, the destinations).
+- **The Jazz Bar's trio**, written and played live (see *The Jazz Bar*): the only music, and it's in
+  the world. You hear it from the stage when you're in the room, muffled through the door in the
+  hall.
+- **The Huracán's V10** while you drive it (see *Driving it*).
 
 `tools/audiotest.mjs` records the game's real output (an AudioWorklet after the limiter) while
 playing, writes each scenario as a WAV, and measures it.
@@ -742,12 +862,22 @@ src/world/signals.js   mast-arm vehicle heads, pedestrian heads, countdowns
 src/world/pedestrians.js, instancer.js   background walkers; instancing / merging to keep draw calls down
 src/world/playerBody.js, src/engine/headMotion.js, src/engine/stamina.js   first-person body, head motion, stamina
 src/world/trees.js, src/world/wind.js     procedural plane / camphor trees and their wind
+src/world/hotelUpper.js, jazzBar.js   the Peace Hotel's sixth floor and room 612; the Jazz Bar
+src/engine/jazzScore.js, jazzPlayer.js   the trio's tunes (pure, tested) and their Web Audio playback
+src/world/hailers.js   other people getting DiDis at two kerbs (engine/rideHail.js runs the wait)
+src/world/destinations.js   IFC 32F and the North Bund flat: the scenes, the views, the ride back
+src/engine/drive.js, carAudio.js, src/world/driving.js   driving the Huracán: the car (tested), its V10, the controls
+src/ui/veil.js         the fade for going somewhere (a lift, sleep, a ride back)
 src/ui/                HUD and stylesheet
 tests/                 node tests for movement, collision, boundaries, conversation and Mission One state (npm test)
 tools/                 headless screenshot / playtest / render-cost scripts (need Playwright installed globally:
                        NODE_PATH=$(npm root -g) node tools/playtest.mjs;
                        tools/looptest.mjs plays the whole interaction loop, both outcomes, with real key presses;
-                       tools/langtest.mjs checks the language setting)
+                       tools/langtest.mjs checks the language setting;
+                       walkthroughs, each against a running build (URL=, OUT= for screenshots):
+                       inwalk (the hotel and the AIA), upwalk (6F and room 612), jazzwalk (the bar,
+                       Momo's night), hailwalk (other people's DiDis), destwalk (by DiDi to IFC 32F and
+                       back; the North Bund flat), drivewalk (the Huracán), didiwalk, carwalk)
 ```
 
 Everything is procedural (canvas textures, merged box/cylinder geometry, WebAudio synthesis; temporary Mandarin speech synthesis fallback for NPC lines).
