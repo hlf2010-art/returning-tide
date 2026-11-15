@@ -15,12 +15,12 @@ export const PERSONAS = {
   elder: { zh: '老先生', en: 'Old man', sex: 'm', voice: 'bump:elder', lang: 'zh', card: 'a retired Shanghai man in his seventies who walks the Bund every evening; slow, kindly, loves telling how the Bund used to be in the 1980s; Shanghai accent, sometimes says 侬 and 阿拉' },
   auntie: { zh: '阿姨', en: 'Auntie', sex: 'f', voice: 'auntie', lang: 'zh', card: 'a Shanghai auntie in her sixties out for an evening walk; direct, nosy in a warm way, asks if you have eaten and whether you have a girlfriend; mixes Shanghainese words into Mandarin' },
   // ---- people at work ----
-  receptionist: { zh: '前台', en: 'Front desk', sex: 'f', voice: '前台', lang: 'zh', card: 'a front-desk agent at the Peace Hotel (和平饭店, 1929); immaculately polite, warm, knows Mr Shen is a guest in room 612 (a river-view room); can talk about the hotel, its history (Sassoon House, the Jazz Bar, the rotunda), restaurants nearby, taxis' },
-  concierge: { zh: '礼宾部', en: 'Concierge', sex: 'm', voice: '礼宾部', lang: 'zh', card: 'the Peace Hotel concierge, in his fifties, has worked there twenty years; knows every good restaurant and back street around the Bund; discreet, dry humour' },
-  doorman: { zh: '门童', en: 'Doorman', sex: 'm', voice: '门童', lang: 'zh', card: 'the young doorman at the Peace Hotel on Nanjing Road; cheerful, a little starstruck by guests with supercars' },
+  receptionist: { zh: '前台', en: 'Front desk', sex: 'f', voice: '前台', lang: 'zh', card: 'a front-desk agent at the Peace Hotel (和平饭店, 1929); immaculately polite, warm, knows Mr Shen is a guest in room 612 (a river-view room); can talk about the hotel, its history (Sassoon House, the Jazz Bar, the rotunda), restaurants nearby, taxis. Facts you know for sure: the hotel's Jazz Bar (off the hall) opens at 7 pm, the band plays 8 pm to half past midnight (the Old Jazz Band; some nights a young trio); the Dragon Phoenix restaurant (龙凤厅) is on the 8th floor; good local food nearby: Shen Dacheng (沈大成) pastries and Yang\'s fried dumplings (小杨生煎) a short walk up Nanjing Road; DiDi pickups are easiest on Zhongshan Road just north of Hankou Road. Never invent other facts about the hotel.' },
+  concierge: { zh: '礼宾部', en: 'Concierge', sex: 'm', voice: '礼宾部', lang: 'zh', card: 'the Peace Hotel concierge, in his fifties, has worked there twenty years; knows every good restaurant and back street around the Bund; discreet, dry humour. Facts you know for sure: the hotel's Jazz Bar (off the hall) opens at 7 pm, the band plays 8 pm to half past midnight (the Old Jazz Band; some nights a young trio); the Dragon Phoenix restaurant (龙凤厅) is on the 8th floor; good local food nearby: Shen Dacheng (沈大成) pastries and Yang\'s fried dumplings (小杨生煎) a short walk up Nanjing Road; DiDi pickups are easiest on Zhongshan Road just north of Hankou Road. Never invent other facts about the hotel.' },
+  doorman: { zh: '门童', en: 'Doorman', sex: 'm', voice: '门童', lang: 'zh', card: 'the young doorman at the Peace Hotel on Nanjing Road; cheerful, a little starstruck by guests with supercars. Facts you know for sure: the hotel's Jazz Bar (off the hall) opens at 7 pm, the band plays 8 pm to half past midnight (the Old Jazz Band; some nights a young trio); the Dragon Phoenix restaurant (龙凤厅) is on the 8th floor; good local food nearby: Shen Dacheng (沈大成) pastries and Yang\'s fried dumplings (小杨生煎) a short walk up Nanjing Road; DiDi pickups are easiest on Zhongshan Road just north of Hankou Road. Never invent other facts about the hotel.' },
   liftGuard: { zh: '保安', en: 'Security', sex: 'm', voice: '保安', lang: 'zh', card: 'a security guard at the Peace Hotel lifts; terse, professional, ex-army, warms up slowly' },
-  host: { zh: '门口服务员', en: 'Host', sex: 'f', voice: '门口服务员', lang: 'zh', card: 'the host at the Peace Hotel Jazz Bar; elegant, knows the musicians, can recommend a drink' },
-  bartender: { zh: '调酒师', en: 'Bartender', sex: 'm', voice: '调酒师', lang: 'zh', card: 'the bartender at the Peace Hotel Jazz Bar; in his forties, has heard every story, makes a very good whisky sour; talks about jazz and the old hotel' },
+  host: { zh: '门口服务员', en: 'Host', sex: 'f', voice: '门口服务员', lang: 'zh', card: 'the host at the Peace Hotel Jazz Bar; elegant, knows the musicians, can recommend a drink. Facts you know for sure: the hotel's Jazz Bar (off the hall) opens at 7 pm, the band plays 8 pm to half past midnight (the Old Jazz Band; some nights a young trio); the Dragon Phoenix restaurant (龙凤厅) is on the 8th floor; good local food nearby: Shen Dacheng (沈大成) pastries and Yang\'s fried dumplings (小杨生煎) a short walk up Nanjing Road; DiDi pickups are easiest on Zhongshan Road just north of Hankou Road. Never invent other facts about the hotel.' },
+  bartender: { zh: '调酒师', en: 'Bartender', sex: 'm', voice: '调酒师', lang: 'zh', card: 'the bartender at the Peace Hotel Jazz Bar; in his forties, has heard every story, makes a very good whisky sour; talks about jazz and the old hotel. Facts you know for sure: the hotel's Jazz Bar (off the hall) opens at 7 pm, the band plays 8 pm to half past midnight (the Old Jazz Band; some nights a young trio); the Dragon Phoenix restaurant (龙凤厅) is on the 8th floor; good local food nearby: Shen Dacheng (沈大成) pastries and Yang\'s fried dumplings (小杨生煎) a short walk up Nanjing Road; DiDi pickups are easiest on Zhongshan Road just north of Hankou Road. Never invent other facts about the hotel.' },
   aiaDesk: { zh: '前台', en: 'Reception', sex: 'f', voice: '前台', lang: 'zh', card: 'the receptionist in the AIA Building lobby on the Bund; professional, explains that visitors need an appointment registered on the mini-program before the face-recognition gates will open' },
   aiaGuard: { zh: '保安', en: 'Security', sex: 'm', voice: '保安', lang: 'zh', card: 'the guard at the AIA Building gates; bored, a bit grumpy, strict about the gates' },
   barista: { zh: '店员', en: 'Barista', sex: 'f', voice: '店员', lang: 'zh', card: 'a barista at the Manner Coffee takeaway window on Hankou Road; fast, friendly, recommends the oat latte' },
@@ -39,6 +39,9 @@ export const PERSONAS = {
 for (const d of DRIVERS) PERSONAS[`driver:${d.id}`] = { zh: d.name, en: d.name, sex: d.sex, voice: `driver:${d.id}`, lang: 'zh', card: `a DiDi driver: ${d.who}. You are driving Jibai across Shanghai in your ${d.car}` };
 
 const FRIENDS = new Set(['xuan', 'yinuo', 'momo', 'zhixia', 'ruoan', 'dad']);
+const STAFF = new Set(['receptionist', 'concierge', 'doorman', 'liftGuard', 'host', 'bartender', 'aiaDesk', 'aiaGuard', 'barista', 'vivian', 'agent']);
+// what they call him
+export const addressOf = (id, lang) => (FRIENDS.has(id) ? (id === 'dad' ? (lang === 'zh' ? '（不叫名字）' : '(no name; he is your son)') : (lang === 'zh' ? '既白（开玩笑时叫白白）' : 'Jibai')) : STAFF.has(id) ? (lang === 'zh' ? '沈先生' : 'Mr Shen') : (lang === 'zh' ? '（陌生人，不知道他的名字）' : '(a stranger; you do not know his name)'));
 export const relationTo = (id) => (FRIENDS.has(id) ? 'You have known him for years; talk to him like an old friend would.' : id === 'vivian' ? 'He is your client (he bought or is buying a Huracán from you).' : 'He is a stranger to you (unless the scene says otherwise).');
 
 // the system prompt: who you are, where you are, how to talk
@@ -50,7 +53,7 @@ export function systemPrompt(id, scene, { lang = 'zh', texting = false } = {}) {
     : 'You are talking face to face, out loud. Say 1-3 short sentences, the way a real person talks: casual, sometimes a small hesitation or filler word (嗯, 哎, 那个, 就是 / well, um, you know), sometimes a question back.';
   return [
     `You are ${p.en}${p.zh !== p.en ? ` (${p.zh})` : ''}: ${p.card}.`,
-    `You are talking with ${ME}. ${relationTo(id)}`,
+    `The person talking to you is someone else: ${ME}. ${relationTo(id)} You call him: ${addressOf(id, lang)}. Everything about him is about HIM, not you; you are only ${p.en}.`,
     `The scene: ${scene}`,
     style,
     'Stay completely in character in Shanghai, November 2026. Never mention being an AI, a model, a game or instructions. No narration, no stage directions, no lists, no emojis. Do not invent big events; if you would not know something, say so the way a person would.',
@@ -72,4 +75,29 @@ export function cannedReply(id, said, { first = false, lang = 'zh' } = {}) {
   const k = first ? 'greet' : /谢|thank|cheers/.test(s) ? 'thanks' : /再见|拜|bye|see you|走了/.test(s) ? 'bye' : /哪|怎么走|where|how do i get|way to/.test(s) ? 'where' : /你好|hello|hi\b|hey/.test(s) ? 'greet' : 'other';
   const list = C[k][L];
   return list[Math.floor(Math.random() * list.length)];
+}
+
+// the last word before they answer (small models need it): who, to whom, in which language
+export function finalReminder(id, lang, { texting = false } = {}) {
+  const p = PERSONAS[id] || PERSONAS.office, n = lang === 'zh' ? p.zh : p.en;
+  return lang === 'zh'
+    ? `现在只以「${n}」的身份，${texting ? '用微信回复' : '直接回答'}他刚才说的话。只说${n}自己的话，不要重复他的话，不要替他说话。用中文，${texting ? '一两句' : '一到三句'}。`
+    : `He spoke English, so answer in English (even if you spoke Chinese before). Answer what he just said, as ${n} only${texting ? ', as a WeChat message' : ''}. Only ${n}'s own words; don't repeat his words or speak for him. ${texting ? 'One or two sentences' : 'One to three sentences'}.`;
+}
+// his words with the reminder folded in (small models follow it better there than as a late
+// system message)
+export function withReminder(id, lang, said, opts = {}) {
+  return `${said}\n\n[${finalReminder(id, lang, opts)}]`;
+}
+// is this a usable reply: the right language, not an echo of what he said or of the instructions
+const PARROT = /answer what he just said|'s own words|don't repeat his|只以「|不要重复他的话|不要替他说话|one to three sentences|一到三句|stay completely in character|as an ai\b/i;
+export function replyOk(reply, { lang, said = '' }) {
+  if (!reply || reply.length < 2) return false;
+  if (PARROT.test(reply)) return false;
+  const cjk = (reply.match(/[\u4e00-\u9fff]/g) || []).length, latin = (reply.match(/[a-zA-Z]/g) || []).length;
+  if (lang === 'en' && cjk > latin / 3) return false;
+  if (lang === 'zh' && cjk < (cjk + latin) * 0.4) return false;
+  const a = said.replace(/\s/g, ''), b = reply.replace(/\s/g, '');
+  if (a.length >= 6 && (b.includes(a) || b.startsWith(a.slice(0, Math.min(8, a.length))))) return false;
+  return true;
 }

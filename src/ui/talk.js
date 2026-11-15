@@ -4,7 +4,7 @@
 //   Enter    send what you typed                  Tab   speak (again to stop; it sends when you pause)
 //   Esc      leave the conversation               中/EN which language you speak in
 // Voice input is the browser's speech recognition (Chrome, Edge, Safari); without it you type.
-import { systemPrompt, cannedReply, PERSONAS } from '../world/personas.js';
+import { systemPrompt, cannedReply, PERSONAS, finalReminder, replyOk, withReminder } from '../world/personas.js';
 import { spoken, isZh } from '../engine/llm.js';
 import { getLang } from './i18n.js';
 
@@ -35,8 +35,9 @@ export function createTalk({ llm, voice, getLife, save }) {
     S.busy = true; el.classList.add('busy');
     const lang = said ? (isZh(said) ? 'zh' : 'en') : (S.persona.lang === 'en' ? 'en' : getLang() === 'zh' || S.persona.lang === 'zh' ? 'zh' : 'en');
     const sys = systemPrompt(S.id, S.scene(), { lang });
-    const msgs = [{ role: 'system', content: sys }, ...S.history.slice(-10)];
-    if (!said) msgs.push({ role: 'user', content: lang === 'zh' ? '（他走到你面前，看着你，像是想说话。你先开口，打个招呼。）' : '(He walks up to you and looks like he wants to talk. You speak first: a greeting.)' });
+    const msgs = [{ role: 'system', content: sys }, ...S.history.slice(-8)];
+    if (!said) msgs.push({ role: 'user', content: withReminder(S.id, lang, lang === 'zh' ? '（他走到你面前，像是想说话。你先开口，打个招呼。）' : '(He walks up to you and looks like he wants to talk. You speak first: a short greeting.)') });
+    else msgs.push({ role: 'user', content: withReminder(S.id, lang, said) });
     const span = line(name(), '…', 'them');
     let spokenUpTo = 0;
     const flush = (text, final) => {
@@ -48,7 +49,17 @@ export function createTalk({ llm, voice, getLife, save }) {
       if (upTo > spokenUpTo) { const chunk = s.slice(spokenUpTo, upTo).trim(); spokenUpTo = upTo; if (chunk) { S.queue.push(chunk); speakNext(); } }
       return s;
     };
-    const raw = await llm.chat(msgs, { onToken: (t) => flush(t, false), maxTokens: 140, ctx: { persona: S.id, said, first: !said } });
+    // the reply is checked (right language, not an echo of what he said); a second try, then a short canned answer
+    let raw = await llm.chat(msgs, { onToken: (t) => { if (!S.retrying) flush(t, false); }, maxTokens: 140, ctx: { persona: S.id, said, first: !said } });
+    if (llm.backend !== 'canned' && !replyOk(spoken(raw, 400), { lang, said })) {
+      console.info('talk: rejected', JSON.stringify(spoken(raw, 400)));
+      S.retrying = true; S.queue = []; voice.stopAll(); spokenUpTo = 0; span.textContent = '…';
+      // the second try without the earlier turns: nothing pulling it back into the other language
+      const retry = [msgs[0], { role: 'user', content: withReminder(S.id, lang, said || (lang === 'zh' ? '（打个招呼。）' : '(Say hello.)')) + (lang === 'zh' ? ' [必须用中文。]' : ' [Answer in English.]') }];
+      raw = await llm.chat(retry, { maxTokens: 120, temperature: 0.6, ctx: { persona: S.id, said } });
+      S.retrying = false;
+      if (!replyOk(spoken(raw, 400), { lang, said })) raw = cannedReply(S.id, said, { first: !said, lang });
+    }
     let reply = flush(raw, true);
     if (!reply) { reply = cannedReply(S.id, said, { first: !said, lang }); span.textContent = reply; S.queue.push(reply); speakNext(); }
     if (said) S.history.push({ role: 'user', content: said });

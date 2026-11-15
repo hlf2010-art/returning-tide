@@ -13,7 +13,7 @@ import { getLang, onLang } from '../i18n.js';
 import { enText } from '../../world/agendaEn.js';
 import { createShopApp } from './shopApp.js';
 import { createDidiApp } from './didiApp.js';
-import { systemPrompt } from '../../world/personas.js';
+import { systemPrompt, withReminder, replyOk, cannedReply } from '../../world/personas.js';
 import { appGlyph, payLogo, BRAND_COLOR, mark } from '../brands.js';
 import { spoken, isZh } from '../../engine/llm.js';
 
@@ -334,9 +334,11 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const sys = systemPrompt(friend, scene, { lang, texting: true }) + (t.kind === 'group' ? '\nThis is the friends\' group chat 金陵五虎+1; keep it short and in the group\'s joking tone.' : '');
     const hist = t.messages.filter((m) => m.kind === 'text' || m.kind === 'voice').slice(-12).map((m) => ({ role: m.from === friend ? 'assistant' : 'user', content: m.from === 'me' || m.from === friend ? m.text : `${short(m.from)}: ${m.text}` }));
     S.typing[threadId] = true; render(); focusSay(threadId);
-    const raw = await llm.chat([{ role: 'system', content: sys }, ...hist], { maxTokens: 90, ctx: { persona: friend, said: hist.at(-1)?.content || '' } });
+    const said = hist.at(-1)?.content || '', msgs = [{ role: 'system', content: sys }, ...hist.slice(0, -1), { role: 'user', content: withReminder(friend, lang, said, { texting: true }) }];
+    let raw = await llm.chat(msgs, { maxTokens: 90, ctx: { persona: friend, said } });
+    if (llm.backend !== 'canned' && !replyOk(spoken(raw, 160), { lang, said })) { console.info('wechat: rejected', JSON.stringify(spoken(raw, 160))); } if (llm.backend !== 'canned' && !replyOk(spoken(raw, 160), { lang, said })) raw = await llm.chat([msgs[0], msgs[msgs.length - 1]], { maxTokens: 80, temperature: 0.6, ctx: { persona: friend, said } });
     S.typing[threadId] = false;
-    const reply = spoken(raw, 160) || (lang === 'zh' ? '嗯' : 'ok');
+    const reply = replyOk(spoken(raw, 160), { lang, said }) ? spoken(raw, 160) : cannedReply(friend, said, { lang });
     post(l, threadId, { from: friend, kind: 'text', text: reply });
     render(); focusSay(threadId);
   }

@@ -6,7 +6,7 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 const dir = (process.env.OUT || '.') + '/';
 const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
 const p = await b.newPage({ viewport: { width: 960, height: 540 } });
-const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => { if (m.type() === 'error' && !/favicon|ERR_CONNECTION_REFUSED|8790/.test(m.text())) errs.push(m.text().slice(0, 200)); });
+const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => { if (/rejected|llm: failed/.test(m.text())) console.log('INFO ', m.text().slice(0, 240)); }); p.on('console', (m) => { if (m.type() === 'error' && !/favicon|ERR_CONNECTION_REFUSED|8790/.test(m.text())) errs.push(m.text().slice(0, 200)); });
 let failed = 0; const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
 await p.goto(`${process.env.URL || 'http://localhost:4173/'}?q=5&nolock&life=0&fresh&lang=zh`, { waitUntil: 'load' });
 await p.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', null, { timeout: 180000 });
@@ -17,7 +17,7 @@ ok(backend === 'server', `the model server is found (${backend})`);
 const prompt = () => p.evaluate(() => document.getElementById('prompt').classList.contains('on') ? document.getElementById('prompt').innerText.replace(/\n/g, ' ') : '');
 const waitReply = async (n) => { await p.waitForFunction((n) => { const s = document.querySelectorAll('#talk .them span'); return s.length >= n && !document.getElementById('talk').classList.contains('busy') && s[s.length - 1].textContent.length > 1; }, n, { timeout: 240000 }); return p.evaluate(() => { const s = document.querySelectorAll('#talk .them span'); return s[s.length - 1].textContent; }); };
 // 1. the front desk at the Peace Hotel, with your key card question
-await p.evaluate(() => window.__bund.player.teleport(-56.6, -227.6, Math.PI / 2, -0.12)); await p.waitForTimeout(2500);
+await p.evaluate(() => window.__bund.player.teleport(-55.9, -227.6, Math.PI / 2, -0.08)); await p.waitForTimeout(2500);
 let pr = await prompt(); ok(/T|聊天/.test(pr), `at the front desk: "${pr}"`);
 await p.keyboard.press('KeyT'); await p.waitForTimeout(800);
 ok(await p.evaluate(() => window.__bund.mode === 'talk'), 'T: talking');

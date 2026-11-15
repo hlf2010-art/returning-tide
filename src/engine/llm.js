@@ -21,6 +21,7 @@ export function spoken(text, max = 260) {
     .replace(/^\s*[\w一-鿿· ]{1,16}[:：]\s*/, '')            // "Name: ..." prefixes
     .replace(/[*_#`>]+/g, '')                                       // markdown
     .replace(/[（(][^)）]{0,40}[)）]/g, '')                          // (stage directions)
+    .replace(/[[【][^\]】]{0,60}[\]】]/g, '')                         // [notes to itself]
     .replace(/\p{Extended_Pictographic}/gu, '')
     .replace(/\s+/g, ' ').trim();
   if (/as an ai|language model|作为(一个)?(AI|人工智能|语言模型)/i.test(s)) s = '';
@@ -76,7 +77,7 @@ export function createLLM({ canned }) {
           const r = await fetch(`${c.server}/chat/completions`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ model: S.serverModel || c.model, messages, max_tokens: maxTokens, temperature, top_p: 0.92, stream: !!onToken, presence_penalty: 0.4 }),
-            signal: AbortSignal.timeout(60000),
+            signal: AbortSignal.timeout(120000),                         // a local model on a slow machine takes its time
           });
           if (!r.ok) throw new Error(`server ${r.status}`);
           if (!onToken) { const j = await r.json(); return j.choices[0].message.content; }
@@ -98,7 +99,7 @@ export function createLLM({ canned }) {
           for await (const ch of chunks) { const t = ch.choices[0]?.delta?.content; if (t) { out += t; onToken(out); } }
           return out;
         }
-      } catch (e) { S.error = String(e.message || e); console.warn('llm:', S.error); }
+      } catch (e) { S.error = String(e.message || e); console.info('llm: failed,', S.error); }
       const t = canned(ctx.persona, ctx.said || '', ctx);
       if (onToken) onToken(t);
       return t;

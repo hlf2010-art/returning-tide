@@ -37,7 +37,7 @@ import { JAZZ } from './world/jazzBar.js';
 import { clockText as clockOf } from './engine/life.js';
 import { createPouch, HELD_LAYER } from './world/pouch.js';
 import { createMissionOne } from './missionOne.js';
-import { pickTarget } from './engine/targeting.js';
+import { pickTarget, segmentHitsBox, BLOCKING_TAGS } from './engine/targeting.js';
 import { createWeather } from './engine/weather.js';
 import { createRain, RAIN_LAYER } from './world/rain.js';
 import { weatherUniforms, ssrMask } from './world/materials.js';
@@ -835,7 +835,7 @@ function frame(now) {
     if (world.rideFlow.canBoard()) { const d = world.didi.doorFocus(); if (d) cands.push({ id: 'didi', ...d, reach: 2.8, cone: 0.6 }); }
     cands.push({ id: 'manner', x: mannerSpec.queue[0].x + 0.2, y: L.curbH + 1.15, z: mannerSpec.zWall + mannerSpec.depth - 0.1, reach: 2.6, cone: 0.7 });
     target = pickTarget(camera.position, _d, cands, colliders);
-    const tl = talkables(), tc = tl.map((q, i) => ({ id: String(i), x: q.x, y: q.y, z: q.z, reach: 2.8, cone: 0.82 }));
+    const tl = talkables(), tc = tl.map((q, i) => ({ id: String(i), x: q.x, y: q.y, z: q.z, reach: 4.0, cone: 0.82 }));
     const tp = pickTarget(camera.position, _d, tc, colliders);
     talkTarget = tp ? tl[Number(tp.id)] : null;
   } else talkTarget = null;
@@ -895,7 +895,8 @@ debug.setLang = setLang; debug.getLang = getLang; debug.voice = voice; debug.llm
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   player, camera, scene, R, audio, wind,
-  get mode() { return mode; }, get target() { return target; },
+  get mode() { return mode; }, get target() { return target; }, get talkTarget() { return talkTarget; }, talkables: () => talkables(),
+  talkProbe: () => talkables().map((q) => { const c = camera.position, v = { x: q.x - c.x, y: q.y - c.y, z: q.z - c.z }, d = Math.hypot(v.x, v.y, v.z); camera.getWorldDirection(_d); return { key: q.key, d: +d.toFixed(2), vy: +v.y.toFixed(2), cos: +((v.x * _d.x + v.y * _d.y + v.z * _d.z) / d).toFixed(3), block: colliders.filter((b) => BLOCKING_TAGS.has(b.tag) && segmentHitsBox(c.x, c.z, q.x, q.z, b)).map((b) => b.tag) }; }).filter((r) => r.d < 6),
   get nearClue() { return !!target && target.id === 'notice'; }, get nearNpc() { return !!target && target.id === 'lin'; },
   get clueRead() { return clueRead; }, get subtitlesOn() { return subtitlesOn; },
   get conversation() { return conversation; }, get dialogueAudio() { return dialogueAudio; },
