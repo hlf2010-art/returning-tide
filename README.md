@@ -33,6 +33,9 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | E (sat at a table) | stand up again (the Jazz Bar) |
 | W / S, A / D, Space | at the wheel of your Huracán: throttle / brake (hold S once stopped to reverse), steer, handbrake |
 | V · H · E | at the wheel: chase camera or the driver's seat · horn · get out (once stopped; it stays parked there) |
+| T | talk to whoever you're looking at, in your own words (see *Talking to people*); in a DiDi, to the driver |
+| Enter · Tab · Esc | in a conversation: send what you typed · speak instead (Mandarin or English; the 中/EN button picks) · leave |
+| G | photo mode, once you've built the night gimbal (wheel or [ ] zoom, Space or click to shoot, G or Esc to lower) |
 | C | subtitles on / off |
 | M | sound on / off (mutes ambience, footsteps, cues and voices) |
 | Esc | back out of an open conversation / close-up / notice; otherwise pause (Resume / Settings). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
@@ -507,6 +510,115 @@ it:
 They slow down and step aside for you. They're simulated and drawn only within about 80 m of you,
 and a new one starts out of sight whenever one finishes.
 
+## People's voices (`src/engine/voice.js`, `tools/voice/`)
+
+Every scripted line in the game has a real recorded voice. That's 202 lines, each in Mandarin and English: Old Lin and Ms Su, the DiDi drivers, passers-by, hotel staff, Vivian, your friends, Kai, your parents on the phone.
+- **The voices are made offline** with [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), an open neural speech model (Apache-2.0). The v1.1-zh model voices Mandarin and the v1.0 model voices English.
+- **Each character has their own voice.** Since nobody here could listen to 150 candidates, the casting was done by measuring each voice's pitch and pace on a test sentence (`tools/voice/probe.json`). Lower, slower voices went to the older men. The cast is in `tools/voice/cast.json`.
+- **They're checked by another model.** An independent speech recogniser (Whisper small) transcribed a random sample of the clips back:
+  - Mandarin: median character error about 5%
+  - English: median word error 0%, mean about 4%
+  - The weakest clips are short exclamations (哦——, 诶——) and the odd homophone.
+- **In the game,** the clips are positional, so they fade with distance and come from the speaker's side. Phone calls sound like a phone line.
+- **Original or dubbed** (Settings → Voices):
+  - *Original*: everyone speaks Mandarin, and the tourists speak English.
+  - *Dubbed*: everyone speaks your language.
+  - Subtitles are always in your language.
+- **Lines nobody could record ahead of time** (lines with numbers in them, what an AI conversation says) are handled in order:
+  1. the local voice server, if you run it (`tools/voice/server.py`: the same model and cast, live on your machine)
+  2. otherwise the browser's own speech, picking its most natural voice: Edge's "Natural" voices, macOS's Premium or Enhanced voices, or Google voices
+- **To regenerate after changing lines:**
+  - `node tools/voice/extract.mjs > tools/voice/lines.json` (finds every line and who says it)
+  - `python tools/voice/generate.py` (voices only what's new)
+- The 404 clips are 9 MB of MP3 in `public/voice/`.
+
+## Talking to people in your own words (`src/engine/llm.js`, `src/world/personas.js`, `src/ui/talk.js`)
+
+**Who you can talk to.** Look at someone and press **T**: passers-by, the hotel staff, the bartender, the AIA's reception and guard, your DiDi driver (from the back seat), Kai at the makerspace, and your friends once their scene is over.
+- They stop and turn to you.
+- **Type** (Enter) or **speak** (Tab) in Mandarin or English. They answer in character, in the language you used, out loud in their own voice, sentence by sentence as the reply arrives.
+- They remember the last few things you said to them.
+
+**WeChat.** You can also write to your friends (and Vivian, your dad, the group chat) in your own words, and they text back in character.
+
+**Who talks among themselves.**
+- Old Lin and Ms Su get new exchanges added to their rotation.
+- The two guests in the Peace Hotel's hall and the couple at the Jazz Bar make conversation.
+- Now and then someone near you says something to you (a tourist wants a photo, an auntie has an opinion). **T** answers them.
+
+**The model is free and runs on your own machine. Nothing is sent to a paid service.** Settings → Free conversation AI:
+- **Local server** (the default) is any OpenAI-compatible endpoint. With [Ollama](https://ollama.com) on the Mac mini:
+  - Run `ollama pull qwen2.5:7b` once, then leave Ollama running.
+  - The game finds it at `http://localhost:11434/v1`. The server address and model are editable in Settings.
+  - A 7B model in Q4 takes about 5 GB of the 16 GB.
+  - Ollama accepts pages served from localhost by default. If you serve the game from another address, set `OLLAMA_ORIGINS`.
+- **In the browser** runs [WebLLM](https://github.com/mlc-ai/web-llm) (Qwen2.5-1.5B) on WebGPU in the page. It downloads about 1 GB once and works on Chrome on Apple silicon.
+- **Off, or no model found:** short, polite canned replies in the right language. The game still works; it just isn't a conversation.
+
+**How the characters are kept in line.**
+- Each kind of person has a character card: who they are, how they talk, what they'd know.
+- The scene (time, place, weather, what you're carrying) is added each time.
+- Staff are given real facts so they don't invent the Jazz Bar's hours.
+- Every reply is checked: right language, not an echo of what you said, not the instructions parroted back. A bad reply gets one retry without the earlier turns, then a canned answer.
+
+**Tested here** against llama.cpp's server with Qwen2.5 1.5B and 3B:
+- The 3B model holds a sensible Mandarin conversation: the front desk calls you 沈先生, says the Jazz Bar opens at seven, and offers to hold a table.
+- English questions after a Mandarin conversation needed the retry.
+- 1.5B is usable but confused.
+- **Use 7B on your Mac.**
+
+**Voice input** is the browser's speech recognition (Chrome, Edge, Safari). It couldn't be tested here (no microphone), and without it you type.
+
+## Real brands (`src/ui/brands.js`)
+
+Real brand marks appear where the thing really is that brand:
+- **On the phone:** WeChat, Alipay and Taobao app icons; the WeChat Pay, Alipay and Visa marks on the pay sheet and wallet.
+- **On the cars:** the maker's name across the tail of the lookalike NIO, Li Auto, AITO and Luxeed. The bodies are still approximations.
+- **Where they already were:** Lamborghini's own badges on the Huracán model you supplied, and the Starbucks and Manner cups you made.
+
+The vector marks come from [Simple Icons](https://simpleicons.org) (CC0 data; the trademarks belong to their owners). DiDi, JD, Manner, UnionPay and China Merchants Bank aren't in that set, so they appear as their own name in their own colours rather than an invented symbol. This is fine for a private build; publishing the game would need the brand owners' permission.
+
+## Building things: the Yangpu makerspace (`src/engine/maker.js`, `src/world/makerspace.js`)
+
+Jibai designs and builds. He rents a bench in a converted factory on the Yangpu riverside: take a DiDi to *Yangpu riverside makerspace*, which you can always walk into.
+- **The space:** brick and steel, hanging lamps, benches, two 3D printers (the print heads move), a CNC, a laser cutter, a pegboard of tools, a whiteboard of sketches, and Kai, who runs the place (T to talk).
+- **The parts shelf** sells ESP32 boards, IMUs, gimbal motors, batteries, GPS and CAN modules, a multi-zone ToF sensor and servos, paid with WeChat Pay. Zhixia sends her own parts for the telemetry logger.
+- **The bench** shows the blueprints, what each needs and the Maker level it takes. Building one goes:
+  1. 3D-print the housing (forty minutes pass)
+  2. solder six joints: press Space as a marker crosses a window, faster each joint
+  3. tune it
+  The joints decide the quality.
+- **Blueprints:**
+  - **Night gimbal** (Maker 1) unlocks photo mode.
+  - **Pocket LiDAR** (Maker 2) scans architectural detail.
+  - **Race telemetry logger** (Maker 2) is Zhixia's.
+- **Maker XP** comes from building, from photos and from fixing other people's machines (Xuan's arm). Levels unlock harder blueprints and perks; at Maker 3 the soldering window widens.
+- **Achievements** show as a banner, for example *First build*, *Clean joints*, *Night owl of the Bund*, *The whole Bund*, *Fixed someone else's machine* and *The Bund, in points*.
+
+**Photo mode (G, with the gimbal).**
+- **The viewfinder** has a thirds grid, the focal length (24–135 mm equivalent) and a stabiliser light that turns red if you swing too fast.
+- **The challenge, the Bund after dark:** the Oriental Pearl, Shanghai Tower, the Customs House clock, the Peace Hotel's green roof, Old Lin and Ms Su, the Jazz Bar trio, a cruise boat, and your Huracán.
+- **Scoring:** each shot is scored for the subject, how centred and how big it is, and how steady you were, up to three stars. A better shot of a subject earns XP.
+- **Shots** go to the phone's **Photos** app as thumbnails. Share one to Moments for followers, and a friend will comment.
+
+**The LiDAR** puts a *Scan* prompt at the AIA lobby's coffered ceiling, the Peace Hotel's stained-glass rotunda and the Customs House clock. A sweep of laser points settles over the spot, and the point cloud is saved.
+
+**Your phone keeps track:**
+- **Sketchbook:** what's coming up (your invitations), your Maker level and XP, followers, what you've built, how close you are to each friend, and achievements.
+- **The minimap** marks Manner, the hotel, the DiDi pickup, the Jazz Bar (when it's open), your parked car, and the photo subjects you still need.
+
+## The friends, after the first days (`src/world/agenda.js`, `src/world/friendScenes.js`)
+
+Their lives keep moving on the phone, on the calendar, and in person. Every message has its English.
+- **Ruoan** surveys the Peace Hotel's roof, then asks you to the AIA Building at 19:00 on day 4. She's at the gates with her site badge: go through with her and the guard nods you past, and she shows you the coffered ceiling she's restoring.
+  - Scan it with the Pocket LiDAR and you've saved her team two weeks of measuring. She'll want to borrow it.
+  - Without the LiDAR, she wishes someone had one.
+- **Zhixia** wants a race-telemetry logger for her car (CAN bus, GPS, g-forces). Say yes and her parts arrive at the makerspace. Build it and she invites you to a track day at Tianma, told by the card: her lap time depends on how well you built it. If you own the Huracán, she drives it too.
+- **Momo** gets locked out on night two. Let him crash and he's asleep in your armchair in 612 when you get back (E to wake him, T to talk). He borrows your charger. Later he posts your car to his followers, and so do yours, by thousands.
+- **Xuan:** if you said you'd advise his senior's team, it's the arm's demo day at IFC. A second scene there: the arm doesn't drop a thing, an investor wants to know who you are, and dinner with him is set up for later.
+- **Yinuo** tells you what she decided about the flat, which depends on what you said. Then she asks you to fly over the Bund with her by helicopter at night (the card, and what she said on the way down).
+- **Home:** Mum's voice note (she's seen the car; your father doesn't know), and Dad's call about the empty R&D floor he's keeping for you.
+
 ## Places a DiDi takes you (`src/world/destinations.js`)
 
 When a friend has asked you somewhere and you get there at about the right time, the ride ends with
@@ -868,6 +980,11 @@ src/world/hailers.js   other people getting DiDis at two kerbs (engine/rideHail.
 src/world/destinations.js   IFC 32F and the North Bund flat: the scenes, the views, the ride back
 src/engine/drive.js, carAudio.js, src/world/driving.js   driving the Huracán: the car (tested), its V10, the controls
 src/ui/veil.js         the fade for going somewhere (a lift, sleep, a ride back)
+src/engine/voice.js, tools/voice/   recorded voices per character (Kokoro-82M, offline), the live voice server
+src/engine/llm.js, src/world/personas.js, src/ui/talk.js, src/world/ambient.js   free conversation with local models
+src/ui/brands.js       real brand marks (Simple Icons) and wordmarks
+src/engine/maker.js, src/world/makerspace.js, src/world/photoMode.js   building gadgets, the makerspace, photo mode (maker.js tested)
+src/world/friendScenes.js   Ruoan at the AIA, Momo in 612, LiDAR scans
 src/ui/                HUD and stylesheet
 tests/                 node tests for movement, collision, boundaries, conversation and Mission One state (npm test)
 tools/                 headless screenshot / playtest / render-cost scripts (need Playwright installed globally:
@@ -877,7 +994,9 @@ tools/                 headless screenshot / playtest / render-cost scripts (nee
                        walkthroughs, each against a running build (URL=, OUT= for screenshots):
                        inwalk (the hotel and the AIA), upwalk (6F and room 612), jazzwalk (the bar,
                        Momo's night), hailwalk (other people's DiDis), destwalk (by DiDi to IFC 32F and
-                       back; the North Bund flat), drivewalk (the Huracán), didiwalk, carwalk)
+                       back; the North Bund flat), drivewalk (the Huracán), didiwalk, carwalk,
+                       talkwalk (talking to people, against a running model server), makerwalk (build the
+                       gimbal, photograph the Pearl), friendwalk (the days after: Ruoan, the LiDAR, Momo))
 ```
 
 Everything is procedural (canvas textures, merged box/cylinder geometry, WebAudio synthesis; temporary Mandarin speech synthesis fallback for NPC lines).
@@ -899,3 +1018,7 @@ click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.
   extracted from a commercial mobile game, so the uploader's right to license it is uncertain.
   Treat it as fine for a private build only.
 - Manner and Starbucks cup props: made for this project (`docs/props/`).
+- Voices: **Kokoro-82M** by hexgrad (Apache-2.0), v1.1-zh for Mandarin and v1.0 for English: https://huggingface.co/hexgrad/Kokoro-82M. The clips in `public/voice/` were generated with it.
+- Brand marks: **Simple Icons** (CC0 data), https://simpleicons.org. The trademarks belong to their owners.
+- In-browser model (optional): **WebLLM** (Apache-2.0) running Qwen2.5-1.5B-Instruct (Apache-2.0), downloaded by your browser when you turn it on. No model is bundled.
+- Checked with, not shipped: llama.cpp / llama-cpp-python running Qwen2.5 1.5B and 3B (conversation tests), and faster-whisper running Whisper small (voice intelligibility).
