@@ -39,7 +39,10 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | E (at the bottom of the metro stairs) | at the entrance: Line 2 one stop to Lujiazui (¥3); at the exit sign: through the concourse and out of the other exit |
 | Settings → Graphics | presets (Low / Mac M4 / High / Ultra), resolution, frame cap, detail and density, effects |
 | C | subtitles on / off |
-| M | sound on / off (mutes ambience, footsteps, cues and voices) |
+| M | the map (click a place for a waypoint) · **Shift+M** sound on / off |
+| J | the journal: quests, their steps, waiting until a quest's time, the people in your life |
+| Gamepad | left stick walk, right stick look, A act, B back, X jump, Y phone, LB journal, RB map, d-pad 1-4, Menu pause |
+| Esc → Saves | three save slots: copy, load, export to a file, import |
 | Esc | back out of an open conversation / close-up / notice; otherwise pause (Resume / Settings). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
 
 ## Mission One — 错交 “The Wrong Handoff” (3–5 min)
@@ -939,7 +942,7 @@ Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings ar
   and breaking the seal (a crack, an accelerating granular rip, the flap falling open).
 - **Speech first**: while an NPC talks the environment eases down by up to 7 dB (about a second
   to settle; it never goes silent). Recorded voice clips and TTS are not ducked.
-- Pause fades out then suspends; resume fades in. **M** still mutes everything. A gentle limiter
+- Pause fades out then suspends; resume fades in. **Shift+M** still mutes everything. A gentle limiter
   sits on the output. Starting, pausing and Mission One restarts never add loops.
 - Rain: one loop, driven by the weather (see above).
 - **Indoors** the street is muffled (the hall, the AIA lobby), more so high up behind glass (your
@@ -1125,6 +1128,38 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
   within reach. The route is shorter than a real cruise (they run 40-60 minutes up to the Yangpu
   Bridge and back).
   `node tools/placeswalk.mjs` orders a meal, eats it, and rides a full sailing.
+
+## Player basics: map, gamepad, saves, tips, benchmark (phase 4.5)
+
+- **The map (M)** (`src/ui/worldMap.js`): the whole walkable city north-up on one screen, painted from
+  the same layout data as the minimap and the colliders: the Bund and its promenade, Nanjing Road to
+  Henan Road, the river, the Pudong bank. Every place with its name (coffee, your hotel, DiDi, the
+  metro's exits, the shengjian shop, the cruise pier, the Jazz Bar when it's open, your car), your
+  quest's next step, you. Wheel or +/- zooms, drag or arrows pan, C centres on you. Click a place (or
+  anywhere) to set a waypoint: it shows on the minimap with the distance until you get there.
+  **Mute moved to Shift+M** (M is the map, as players expect); the settings toggle is unchanged.
+- **Gamepad** (`src/engine/gamepad.js`, tested): any controller with the browser's standard mapping.
+  The left stick walks (a full push or L3 / RT hurries), the right stick looks. A acts (E; it begins on
+  the title screen and pays at the shop counter), B goes back (Esc), X jumps, Y the phone, LB the
+  journal, RB or View the map, LT talks, R3 the photo mode, the d-pad answers 1-4, Menu pauses. The
+  buttons are turned into the keys the game already knows, so every screen works the same.
+- **Saves** (`src/ui/saves.js`, the pause menu): three slots. Your life saves itself to the slot you're
+  playing (slot 1 is the old save, so nothing is lost); copy it to another slot, load a slot (the game
+  restarts in it), export a slot to a .json file, import one into any slot (anything that isn't a save
+  from this game is refused). All in this browser's local storage, as before; exporting is the way to
+  keep a save safe or move it to another machine.
+- **First-play tips** (`src/ui/tips.js`): short tips, each once, one at a time, only when you're free:
+  walking and acting, the journal, the phone, the map, talking, the hours, street moments, the cruise,
+  the shop, sitting down. Settings → General → Tips turns them off (on again shows them from the start).
+- **Benchmark** (Settings → Graphics → Benchmark, `src/engine/bench.js`, tested): a fixed 30-second
+  camera route at 8 pm (the full crowd, every light on) down Hankou Road, over the crossing, up onto
+  the promenade looking at Lujiazui, north along the river and round onto Nanjing Road, with your
+  settings as they are (the automatic step-down is held off while it measures). It reports the
+  average frame rate and the 1% low (the average of the slowest 1% of frames), with the resolution,
+  the preset, any frame cap and the GPU. Your place and the clock are put back afterwards.
+  *Honestly:* run here only on software rendering (about 4 fps, which says nothing about a real
+  machine); the numbers for the Mac mini M4 and the RTX 4080 SUPER are yours to measure with it.
+  `node tools/basicswalk.mjs` walks through all of this.
 
 ## What is here
 

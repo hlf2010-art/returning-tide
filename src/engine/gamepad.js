@@ -41,7 +41,8 @@ export function stickLook(x, y, dt) {
 
 export function createGamepad({ player, getMode, onPause, hud, t }) {
   let prev = {}, prevMove = null, connected = false;
-  const send = (type, code) => window.dispatchEvent(new KeyboardEvent(type === 'down' ? 'keydown' : 'keyup', { code, key: code, bubbles: true }));
+  // (sent to the document: it bubbles up to the window, so listeners on either hear it)
+  const send = (type, code) => document.dispatchEvent(new KeyboardEvent(type === 'down' ? 'keydown' : 'keyup', { code, key: code, bubbles: true }));
   window.addEventListener('gamepadconnected', (e) => {
     if (e.gamepad.mapping !== 'standard' && e.gamepad.buttons.length < 16) return;
     connected = true; hud && hud.toast(t('padOn'), 5);

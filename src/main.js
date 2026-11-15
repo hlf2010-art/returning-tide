@@ -51,6 +51,8 @@ import { createMoments, MOMENT_QUESTS, MOMENT_NAMES } from './world/moments.js';
 import { createWorldMap } from './ui/worldMap.js';
 import { createGamepad } from './engine/gamepad.js';
 import { createSaves, currentSlot, slotKey } from './ui/saves.js';
+import { createTips } from './ui/tips.js';
+import { BENCH_SECONDS, BENCH_WARMUP, BENCH_HOUR, benchAt, benchStats } from './engine/bench.js';
 import { createCruise } from './world/cruise.js';
 import { createDumpling } from './world/dumpling.js';
 import { underCover } from './world/layout.js';
@@ -544,12 +546,15 @@ function devMission(start) {
 document.getElementById('begin').addEventListener('click', begin);
 document.getElementById('resume').addEventListener('click', () => { lock(); if (noLock) play(); });
 // ---- settings: language, subtitles, sound (title screen and pause menu) ----
+// first-play tips (ui/tips.js): once each, when you're free; off for measurement tools unless ?tips
+const tips = createTips({ isFree: () => mode === 'play' && !(phone && phone.isOpen) && !talk.open && !(world && world.sceneTalk.active) });
+if (params.has('q') && !params.has('tips')) tips.setOn(false, false);
 function syncSettings() {
   for (const seg of document.querySelectorAll('.seg[data-setting]')) {
     const c = llm.conf();
     const k = seg.dataset.setting;
     const cur = k.startsWith('g.') ? String(typeof gfx[k.slice(2)] === 'boolean' ? +gfx[k.slice(2)] : gfx[k.slice(2)])
-      : { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.serverOn ? 'on' : 'off', ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto' }[k];
+      : { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.serverOn ? 'on' : 'off', ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
     for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
   }
   syncGfx();
@@ -597,6 +602,7 @@ document.addEventListener('click', (e) => {
     if (k === 'subs') subtitlesOn = v === 'on';
     if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
     if (k === 'voices') voice.setMode(v);
+    if (k === 'tips') tips.setOn(v === 'on');
     if (k === 'voiceServer') voice.setServer(v === 'on');
     if (k === 'ai') llm.configure({ ai: v === 'browser' ? 'browser' : v, aiBrowser: v === 'browser' ? 1 : 0 }).then(syncSettings);
     syncSettings(); return;
@@ -823,6 +829,68 @@ function updateStory() {
   hud.questObjective(c ? { ...(typeof c.step.text === 'function' ? c.step.text(life) : c.step.text), title: c.quest.title, hint: { zh: 'J 日志', en: 'J journal' } } : null);
   if (evs.length) { journal.refresh(); saveLife(); }
 }
+// (first-play tips: created with the settings, above)
+let playTime = 0, hourJumped = false;
+function updateTips(dt) {
+  if (!world) return;
+  if (mode === 'play') playTime += dt;
+  const b = player.body;
+  if (playTime > 2) tips.show('move');
+  if (playTime > 15 && life.quests && Object.keys(life.quests.list).length) tips.show('journal');
+  if (playTime > 40) tips.show('phone');
+  if (playTime > 75) tips.show('map');
+  if (playTime > 120) tips.show('talk');
+  if (hourJumped) tips.show('hour');
+  if (world.moments.active) tips.show('moment');
+  if (Math.hypot(b.x - 24, b.z - 65) < 12) tips.show('cruise');
+  if (b.x < -137 && b.x > -153 && b.z > -197 && b.z < -181) tips.show('shop');
+  if (mode === 'seat' && world.dumpling.seated) tips.show('seat');
+  tips.update(dt);
+}
+// the benchmark (Settings → Graphics; engine/bench.js): a fixed route at 8 pm with your settings,
+// frame times measured for 30 s after a short warm-up; your place and the clock put back after
+let bench = null;
+function startBench() {
+  if (!world || bench) return;
+  document.getElementById('settings').classList.add('hidden'); hud.show('pause', false);
+  const b = player.body;
+  bench = { t: 0, ms: [], last: performance.now(), from: mode, saved: { x: b.x, z: b.z, y: b.y, yaw: player.yaw, pitch: player.pitch, minute: life.clock.minute, sec: life.clock.sec } };
+  mode = 'bench'; player.enabled = false; player.clearInput(); hud.prompt(false);
+  document.getElementById('hud').style.visibility = 'hidden';
+  life.clock.minute = BENCH_HOUR[0] * 60 + BENCH_HOUR[1]; life.clock.sec = 0; applyHour(0, { force: true });
+}
+function benchFrame(now) {
+  const ms = now - bench.last; bench.last = now; bench.t += ms / 1000;
+  if (bench.t > BENCH_WARMUP && ms < 1000) bench.ms.push(ms);
+  const { pos, look } = benchAt(bench.t / (BENCH_SECONDS + BENCH_WARMUP));
+  camera.position.set(pos[0], pos[1], pos[2]); camera.lookAt(look[0], look[1], look[2]);
+  player.body.x = pos[0]; player.body.z = pos[2];                                         // (what follows you follows the camera)
+  if (bench.t >= BENCH_SECONDS + BENCH_WARMUP) finishBench();
+}
+function finishBench() {
+  const st = benchStats(bench.ms), sv = bench.saved;
+  life.clock.minute = sv.minute; life.clock.sec = sv.sec; player.teleport(sv.x, sv.z, sv.yaw, sv.pitch, sv.y); applyHour(0, { force: true });
+  document.getElementById('hud').style.visibility = '';
+  mode = bench.from === 'pause' ? 'pause' : 'play'; bench = null;
+  if (mode === 'pause') hud.show('pause', true); else player.enabled = true;
+  let gpu = '';
+  try { const gl = R.renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); gpu = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : ''; } catch { /* */ }
+  const [w, h] = R.pixels, res = st ? { avg: +st.avgFps.toFixed(1), low1: +st.low1.toFixed(1), frames: st.frames, w, h, preset: gfx.preset, cap: gfx.fps || 0, gpu, at: Date.now() } : null;
+  try { localStorage.setItem('bund-bench', JSON.stringify(res)); } catch { /* */ }
+  showBench(res);
+  document.getElementById('settings').classList.remove('hidden'); syncSettings();
+  debug.lastBench = res;
+}
+function showBench(r) {
+  const el = document.getElementById('bench-out'); if (!el) return;
+  if (!r) { el.textContent = ''; return; }
+  el.textContent = getLang() === 'zh'
+    ? `平均 ${r.avg} fps · 1% 低帧 ${r.low1} fps · ${r.w}×${r.h} · ${r.preset}${r.cap ? ` · 限 ${r.cap} fps` : ''}${r.gpu ? ` · ${r.gpu}` : ''}`
+    : `Average ${r.avg} fps · 1% low ${r.low1} fps · ${r.w}×${r.h} · ${r.preset}${r.cap ? ` · capped at ${r.cap}` : ''}${r.gpu ? ` · ${r.gpu}` : ''}`;
+}
+document.getElementById('bench-run')?.addEventListener('click', () => startBench());
+try { const r = JSON.parse(localStorage.getItem('bund-bench') || 'null'); if (r) setTimeout(() => showBench(r), 0); } catch { /* */ }
+debug.startBench = () => startBench(); debug.benchRunning = () => !!bench;
 // a gamepad, if one's plugged in (engine/gamepad.js): sticks walk and look, buttons are keys; Menu pauses
 const pad = createGamepad({ player, getMode: () => mode, hud, t: tx,
   onPause: () => { if (mode === 'pause') play(); else if (['play', 'ride', 'seat', 'drive'].includes(mode)) pause(); } });
@@ -1036,6 +1104,7 @@ function applyHour(dt, { force = false } = {}) {
   if (!force && !jump && hourTick > 0) return;
   hourTick = 0.25;
   const prev = lastHourMin; lastHourMin = minute;
+  if (jump && world) hourJumped = true;
   const s = hourState = todState(minute);
   w.sky.setTime(s); w.skyline.setTime(s); w.river.setTime(s); setArchLight(s); applyDayNight(s); setCrowdLight(s);
   const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
@@ -1086,6 +1155,7 @@ function frame(now) {
   const dt = Math.min(debug.dtMax || 0.05, Math.max(0, (now - last) / 1000)); last = now; t += dt;   // dtMax: tools only (slow software GL)
   pad.update(dt);
   if (!world) return;
+  if (mode === 'bench') benchFrame(now);
 
   if (mode === 'entry') {             // a slow breath of camera movement behind the title
     player.yaw = L.spawn.yaw + Math.sin(t * 0.13) * 0.035;
@@ -1126,7 +1196,7 @@ function frame(now) {
   const driving = mode === 'drive' || (mode === 'pause' && pausedFrom === 'drive');
   if (driving) world.driving.update(dt, mode === 'pause');
   else if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) (world.dumpling.seated ? world.dumpling : world.jazz).seatCamera(camera);
-  else if (!riding && mode !== 'sale-seat') player.update(mode === 'pause' ? 0 : dt);
+  else if (!riding && mode !== 'sale-seat' && mode !== 'bench') player.update(mode === 'pause' ? 0 : dt);
   const seated = mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat') || driving;
   if (world.playerBody) { world.playerBody.setVisible(!riding && !seated); if (!riding && !seated) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
 
@@ -1251,7 +1321,8 @@ function frame(now) {
   R.composer.render(dt);
   world.photo.afterRender();                                                          // a photo is read off the frame just drawn
   world.moments.afterRender();
-  R.tick();
+  if (mode !== 'bench') R.tick();                                                    // (the benchmark measures your settings as they are)
+  updateTips(dt);
 }
 R.renderer.setAnimationLoop(frame);
 

@@ -26,7 +26,8 @@ export function createTips({ isFree }) {
   const remember = () => { try { localStorage.setItem(KEY, JSON.stringify(seen)); } catch { /* */ } };
   const api = {
     get on() { return on; },
-    setOn(v) { on = !!v; try { localStorage.setItem(ON, on ? '1' : '0'); } catch { /* */ } if (on) { seen = {}; remember(); } else { queue.length = 0; el.classList.remove('on'); left = 0; } },
+    // persist: false for a session-only switch (measurement tools)
+    setOn(v, persist = true) { on = !!v; if (persist) { try { localStorage.setItem(ON, on ? '1' : '0'); } catch { /* */ } if (on) { seen = {}; remember(); } } if (!on) { queue.length = 0; el.classList.remove('on'); left = 0; } },
     // once ever: queued until you're free
     show(id) { if (!on || seen[id] || queue.includes(id) || !TIPS[id]) return; queue.push(id); },
     seen: (id) => !!seen[id],
