@@ -18,10 +18,11 @@ export const RIDE_RULES = { freeWait: 5, cancelAt: 8, noShowFee: 8, matchSecs: [
 // where you can go: real places, real-ish road distances from the Bund at Hankou Road
 export const DESTINATIONS = [
   { id: 'northbund', zh: '北外滩 白玉兰广场', en: 'North Bund, Sinar Mas Plaza', km: 2.6, mins: 11, invite: 'yinuo-flat' },
-  { id: 'lujiazui', zh: '陆家嘴 国金中心', en: 'Lujiazui, IFC', km: 4.8, mins: 16, invite: 'xuan-arm' },
+  { id: 'lujiazui', zh: '陆家嘴 国金中心', en: 'Lujiazui, IFC', km: 4.8, mins: 16, invite: ['xuan-arm', 'xuan-demo'] },
   { id: 'jingan', zh: '静安 嘉里中心', en: "Jing'an Kerry Centre", km: 5.9, mins: 22 },
   { id: 'xintiandi', zh: '新天地', en: 'Xintiandi', km: 3.4, mins: 14 },
-  { id: 'tianma', zh: '天马赛车场', en: 'Tianma Circuit', km: 41, mins: 55 },
+  { id: 'tianma', zh: '天马赛车场', en: 'Tianma Circuit', km: 41, mins: 55, invite: 'zhixia-track' },
+  { id: 'heliport', zh: '浦东 · 直升机停机坪', en: 'Pudong heliport', km: 9.5, mins: 24, invite: 'yinuo-heli' },
   { id: 'yangpu', zh: '杨浦滨江 · 创客空间', en: 'Yangpu riverside makerspace', km: 6.8, mins: 22, walkIn: true },
 ];
 export const dest = (id) => DESTINATIONS.find((d) => d.id === id);

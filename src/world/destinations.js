@@ -23,6 +23,7 @@ import { stamp, skipTo, pay, post, nudge } from '../engine/life.js';
 import { fare, dest } from '../engine/ride.js';
 import { PICKUP } from './didi.js';
 import { Batch } from './geo.js';
+import { gainXp, achieve } from '../engine/maker.js';
 import { towerAtlas, tower, basic } from './skyline.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -88,7 +89,21 @@ const XUAN = [
   ] },
   ['xuan', '晚上一起吃饭？……算了，你先回去倒时差。', "Dinner tonight? ...Actually no. Go home and sleep off the jet lag."],
 ];
-const NAMES = { agent: ['中介', 'Agent'], yinuo: ['程以诺', 'Yinuo'], xuan: ['陆明轩', 'Mingxuan'], founder: ['周学长', 'Zhou'], engineer: ['工程师', 'Engineer'] };
+// demo day (if you said you'd advise): the arm runs clean in front of the customer and an investor
+const XUAN_DEMO = [
+  ['xuan', '来了！今天你也是主角。', 'You made it! You\'re part of the show today.'],
+  ['founder', '王总，这位就是沈既白，指垫的主意是他出的。', 'Mr Wang, this is Shen Jibai. The pads were his idea.'],
+  ['investor', '三十个件，一个没掉。年轻人，你是做硬件的？', 'Thirty parts, not one dropped. Young man, you do hardware?'],
+  { ask: [
+    { zh: '学工业设计的，在旧金山做过一个外骨骼手套。', en: 'Industrial design. In San Francisco I built an exoskeleton glove.', d: 3, flag: 'pitch', then: [['investor', '那个专利我看过。有空聊聊，我请。', 'I\'ve read that patent. Let\'s talk sometime, my treat.']] },
+    { zh: '我只是提了个建议。', en: 'I only made a suggestion.', d: 1, then: [['investor', '好的建议值钱。', 'Good suggestions are worth money.']] },
+    { zh: '是他们团队做得好。', en: 'The team did the work.', d: 2, flag: 'modest', then: [['founder', '他太谦虚了。', 'He\'s being modest.']] },
+    { zh: '（点点头，不说话）', en: '(Nod. Say nothing.)', d: 0, then: [['investor', '话不多，我喜欢。', 'Not a talker. I like that.']] },
+  ] },
+  ['xuan', '今晚庆功，必须来。', 'Celebration tonight. No excuses.'],
+];
+const SCRIPTS = { 'yinuo-flat': () => YINUO, 'xuan-arm': () => XUAN, 'xuan-demo': () => XUAN_DEMO };
+const NAMES = { investor: ['王总', 'Mr Wang'], agent: ['中介', 'Agent'], yinuo: ['程以诺', 'Yinuo'], xuan: ['陆明轩', 'Mingxuan'], founder: ['周学长', 'Zhou'], engineer: ['工程师', 'Engineer'] };
 const WHO = { yinuo: 'yinuo', xuan: 'xuan' };
 
 export function createDestinations({ scene, people, hud, audio, getLife, save, player, travel, voice = null }) {
@@ -213,6 +228,7 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     person('xuan', 'p4', 674.6, F, 49.4, -2.2, g);
     person('founder', 'p3', 672.4, F, 49.0, Math.PI, g);
     person('engineer', 'p2', 683.2, F, 48.4, Math.PI * 0.9, g);
+    const inv = person('investor', 'lin', 675.4, F, 50.6, -2.6, g); if (inv) inv.root.visible = false;
     g.visible = false;
   }
   // two-link reach for the arm: shoulder pitch, elbow pitch, wrist pitch so the gripper points down at
@@ -295,15 +311,16 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     if (a.d) nudge(l, who, a.d, `${c.id}:${a.flag || i}`);
     if (a.flag) (l.flags[`${c.id}Said`] ||= []).push(a.flag);
     if (a.flag === 'fix' && arm) setTimeout(() => { arm.fixed = true; }, 25000);
+    if (a.flag === 'fix') { const r = gainXp(l, 60, 'fix:arm'); const ach = achieve(l, 'fixer'); setTimeout(() => { hud.toast(T(`+${r.xp} 创客经验`, `+${r.xp} Maker XP`), 2.5); if (ach) hud.achievement && hud.achievement(T(ach.zh, ach.en)); }, 1500); }
     if (i !== 3) { show(null, T(a.zh, a.en)); c.wait = lineSecs(T(a.zh, a.en)); c.speaking = null; }
     else { c.wait = 1.2; hide(); }
     c.queue.push(...a.then);
     save && save(); return true;
   }
   function finishScene() {
-    const l = getLife(), inv = l.invites.find((x) => x.id === cur.P.invite);
+    const l = getLife(), inv = l.invites.find((x) => x.id === cur.invite);
     if (inv && !inv.kept) { inv.status = 'accepted'; inv.kept = true; nudge(l, inv.from, 3, `kept:${inv.id}`); }
-    const from = cur.P === PLACES.northbund ? 'yinuo' : 'xuan', follow = from === 'yinuo' ? '今天谢谢。' : '今天多亏你了，资料晚上发你。';
+    const from = cur.P === PLACES.northbund ? 'yinuo' : 'xuan', follow = from === 'yinuo' ? '今天谢谢。' : cur.invite === 'xuan-demo' ? '王总说下周约你吃饭，这次真要穿正式点了😂' : '今天多亏你了，资料晚上发你。';
     setTimeout(() => post(getLife(), inv ? inv.thread || inv.from : from, { from, kind: 'text', text: follow }), 40000);
     hud.toast(T('乘电梯下楼，打车回外滩', 'Take the lift down and a car back to the Bund'), 4);
     save && save();
@@ -316,8 +333,10 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     if (id === 'northbund' && !groups.northbund) buildNorthBund();
     if (id === 'lujiazui' && !groups.lujiazui) buildIfc();
     here = id; groups[id].visible = true;
-    cur = { id, P, script: id === 'northbund' ? YINUO : XUAN, i: 0, queue: [], wait: 2.5, ask: null, answerT: 0, done: false, method: info.method || 'wechat' };
-    if (arm) { arm.t = 0; arm.fixed = false; placeOnTray(); }
+    const inv = info.invite || P.invite;
+    cur = { id, P, invite: inv, script: (SCRIPTS[inv] || SCRIPTS[P.invite])(), i: 0, queue: [], wait: 2.5, ask: null, answerT: 0, done: false, method: info.method || 'wechat' };
+    if (arm) { arm.t = 0; arm.fixed = inv === 'xuan-demo'; placeOnTray(); }
+    if (ppl.investor) ppl.investor.root.visible = inv === 'xuan-demo';
     travel(async () => { player.teleport(P.spawn.x, P.spawn.z, P.spawn.yaw, 0, P.y); }, { line: T(id === 'northbund' ? '北外滩 · 顶层' : '陆家嘴 · 国金中心 32 层', id === 'northbund' ? 'North Bund · the top floor' : 'Lujiazui · IFC, 32nd floor'), hold: 900, to: 'play' });
     return true;
   }

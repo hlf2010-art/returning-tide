@@ -23,7 +23,7 @@ export function segmentHitsBox(ax, az, bx, bz, box, endTrim = 0.25) {
 
 /**
  * eye {x,y,z}, dir {x,y,z} (unit view direction)
- * candidates [{ id, x, y, z, reach, cone (cos of half-angle), ignore? (collider ids to skip) }]
+ * candidates [{ id, x, y, z, reach, cone (cos of half-angle), ignore? (collider ids to skip), anyHeight? }]
  * colliders [{ minX, maxX, minZ, maxZ, tag, id?, y0?, y1? }]
  * Returns { id, dist, cos } for the single best visible candidate, or null.
  */
@@ -32,7 +32,7 @@ export function pickTarget(eye, dir, candidates, colliders = [], { blocks = (c) 
   for (const c of candidates) {
     const vx = c.x - eye.x, vy = c.y - eye.y, vz = c.z - eye.z, dist = Math.hypot(vx, vy, vz);
     if (dist > c.reach || dist < 1e-6) continue;
-    if (Math.abs(vy) > 2.4) continue;                                             // a different level (deck vs street)
+    if (!c.anyHeight && Math.abs(vy) > 2.4) continue;                             // a different level (deck vs street); anyHeight: things you look up at
     const cos = (vx * dir.x + vy * dir.y + vz * dir.z) / dist;
     if (cos < c.cone) continue;
     let hidden = false;

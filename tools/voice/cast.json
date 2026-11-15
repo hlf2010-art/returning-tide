@@ -171,5 +171,15 @@
  "maker": {
   "zh": "zm_053",
   "en": "am_liam"
+ },
+ "investor": {
+  "zh": "zm_089",
+  "en": "am_onyx",
+  "speed": 0.96
+ },
+ "mum": {
+  "zh": "zf_036",
+  "en": "bf_emma",
+  "speed": 0.97
  }
 }

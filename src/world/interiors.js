@@ -331,7 +331,8 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       g.update(dt, S.guardPhone ? null : [pp.x, pp.z]);
       // through the gate line without a badge: seen (unless he's on his phone) -> walked back
       S.caught = Math.max(0, S.caught - dt);
-      if (pp.x < A.gateX - 0.3 && pp.x > A.x0 && pp.z > A.z0 && pp.z < A.z1 && !S.passedAia) {
+      if (pp.x > A.x1 + 2) S.escorted = false;                              // left the building: an escort's over
+      if (pp.x < A.gateX - 0.3 && pp.x > A.x0 && pp.z > A.z0 && pp.z < A.z1 && !S.passedAia && !S.escorted) {
         const d = Math.hypot(pp.x - g.root.position.x, pp.z - g.root.position.z);
         if (!S.guardPhone && d < 9 && S.caught <= 0) {
           S.caught = 4; say(T('保安', 'Security'), '先生，先生！请刷卡，没有预约不能进去。', 'Sir! Sir, you need to badge in. No entry without an appointment.', 3.2);
@@ -406,6 +407,9 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     prompt(id) { const p = PROMPT[id] || (id.startsWith('aGate') ? () => [T('闸机', 'Gate'), T('刷脸', 'Face scan')] : null); if (!p) return null; const [target, action] = p(); return { target, action }; },
     owns(id) { return targets.some((t) => t.id === id); },
     interact,
+    // someone with a badge takes you through (Ruoan): a gate opens and the guard lets you be
+    escort(lane = 1, secs = 7) { const f = flaps.find((q) => q.z === A.gates[lane]); if (f) f.until = secs; S.escorted = true; if (audio && audio.cue) audio.cue('ping', 0, 0.3); },
+    get escorted() { return !!S.escorted; },
     // the two guests talking in the hall (world/ambient.js gives them new things to say)
     talkPairs() {
       const a = ppl.guestA, b = ppl.guestB; if (!a || !b) return [];

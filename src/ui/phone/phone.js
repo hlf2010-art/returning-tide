@@ -329,7 +329,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       if (r) {
         const tg = PHOTO_TARGETS.find((x) => x.id === p.target);
         const quips = ['白白这张可以啊🔥', '哪里拍的？我也要去', '构图满分', '求原图！', '可以，摄影师上线了'];
-        setTimeout(() => post(l, 'wuhu', { from: ['momo', 'ruoan', 'zhixia', 'xuan'][Math.floor(Math.random() * 4)], kind: 'text', text: `${quips[Math.floor(Math.random() * quips.length)]}${tg ? `（${tg.zh}）` : ''}` }), 4000);
+        setTimeout(() => post(l, 'wuhu', { from: ['momo', 'ruoan', 'zhixia', 'xuan'][Math.floor(Math.random() * 4)], kind: 'text', text: quips[Math.floor(Math.random() * quips.length)] }), 4000);
         if (onEvent) onEvent({ type: 'shared', followers: r.followers, achievement: r.achievement });
       }
       render();

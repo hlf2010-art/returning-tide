@@ -551,6 +551,26 @@
  },
  {
   "who": "dad",
+  "zh": "在忙吗？",
+  "en": "Busy?"
+ },
+ {
+  "who": "dad",
+  "zh": "厂里新上了一条线，做电驱的壳体。研发那层楼空着，我给你留着。",
+  "en": "We've put in a new line at the factory, e-drive housings. The R&D floor is empty. I'm keeping it for you."
+ },
+ {
+  "who": "dad",
+  "zh": "……你自己的事，你自己想清楚。钱够不够？",
+  "en": "...Your life, you think it through. Do you have enough money?"
+ },
+ {
+  "who": "dad",
+  "zh": "嗯。你妈让你按时吃饭。挂了。",
+  "en": "Mm. Your mother says eat properly. Bye."
+ },
+ {
+  "who": "dad",
   "zh": "到上海了？",
   "en": "You're in Shanghai?"
  },
@@ -593,6 +613,21 @@
   "who": "zhixia",
   "zh": "喂，沈既白，听说你那个手套专利的钱到账了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？",
   "en": "Hey, Shen Jibai, heard the money for your glove patent came through? ...Don't play dumb, Ruoan told me. Come to Tianma this weekend, I'll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?"
+ },
+ {
+  "who": "zhixia",
+  "zh": "白白，帮个忙。我想给赛车做个数据记录仪：CAN总线读转速和刹车压力，GPS记圈速，再加个陀螺仪看G值。你会做吧？零件我出，送到你那个创客空间。",
+  "en": "Baibai, a favour. I want a data logger for my race car: revs and brake pressure off the CAN bus, GPS for lap times, a gyro for the g-forces. You can build that, right? I'll pay for the parts and send them to your makerspace."
+ },
+ {
+  "who": "mum",
+  "zh": "白白，妈妈看到你朋友圈了，那个车……你爸还不知道。你自己注意安全，按时吃饭。",
+  "en": "Baibai, Mum saw your Moments. That car... your father doesn't know yet. Be careful, and eat properly."
+ },
+ {
+  "who": "mum",
+  "zh": "白白，到上海好几天了，吃得惯吗？有空给你爸打个电话，他嘴上不说，天天问我你怎么样。",
+  "en": "Baibai, you've been in Shanghai a few days now. Are you eating properly? Call your father when you can. He won't say it, but he asks me about you every day."
  },
  {
   "who": "vivian",
@@ -810,6 +845,76 @@
   "en": "Dinner tonight? ...Actually no. Go home and sleep off the jet lag."
  },
  {
+  "who": "xuan",
+  "zh": "来了！今天你也是主角。",
+  "en": "You made it! You're part of the show today."
+ },
+ {
+  "who": "founder",
+  "zh": "王总，这位就是沈既白，指垫的主意是他出的。",
+  "en": "Mr Wang, this is Shen Jibai. The pads were his idea."
+ },
+ {
+  "who": "investor",
+  "zh": "三十个件，一个没掉。年轻人，你是做硬件的？",
+  "en": "Thirty parts, not one dropped. Young man, you do hardware?"
+ },
+ {
+  "who": "investor",
+  "zh": "那个专利我看过。有空聊聊，我请。",
+  "en": "I've read that patent. Let's talk sometime, my treat."
+ },
+ {
+  "who": "investor",
+  "zh": "好的建议值钱。",
+  "en": "Good suggestions are worth money."
+ },
+ {
+  "who": "founder",
+  "zh": "他太谦虚了。",
+  "en": "He's being modest."
+ },
+ {
+  "who": "investor",
+  "zh": "话不多，我喜欢。",
+  "en": "Not a talker. I like that."
+ },
+ {
+  "who": "xuan",
+  "zh": "今晚庆功，必须来。",
+  "en": "Celebration tonight. No excuses."
+ },
+ {
+  "who": "ruoan",
+  "zh": "……你知道这省了我们多少事吗？两周的测绘。下次请你吃饭，我请。",
+  "en": "...Do you know how much work that just saved us? Two weeks of measuring. Dinner's on me next time."
+ },
+ {
+  "who": "ruoan",
+  "zh": "每一格都是手工做的，九十多年了。……要是有台便携的激光雷达就好了，我们量了三个礼拜。",
+  "en": "Every one of those coffers was made by hand, ninety-odd years ago. ...If only we had a portable LiDAR. We've been measuring for three weeks."
+ },
+ {
+  "who": "ruoan",
+  "zh": "跟紧我。保安认识我。",
+  "en": "Stay close. The guard knows me."
+ },
+ {
+  "who": "momo",
+  "zh": "……嗯？几点了……你这椅子比我床还舒服。我就再睡十分钟，十分钟……",
+  "en": "...Hm? What time is it... this chair is comfier than my bed. Ten more minutes. Ten..."
+ },
+ {
+  "who": "momo",
+  "zh": "白白……谢了。真的。",
+  "en": "Baibai... thanks. Really."
+ },
+ {
+  "who": "ruoan",
+  "zh": "来啦。准时，难得。",
+  "en": "You came. On time, for once."
+ },
+ {
   "who": "门里",
   "zh": "……谁啊？我们没叫客房服务。",
   "en": "...Who is it? We didn't order room service."
@@ -888,5 +993,20 @@
   "who": "门口服务员",
   "zh": "晚上好，一位吗？这边请。",
   "en": "Good evening. Just one? This way, please."
+ },
+ {
+  "who": "maker",
+  "zh": "可以啊小沈，焊点很漂亮。",
+  "en": "Nice one. Those joints are clean."
+ },
+ {
+  "who": "maker",
+  "zh": "能用就行，下次手再稳一点。",
+  "en": "It works. Steadier hand next time."
+ },
+ {
+  "who": "maker",
+  "zh": "小沈来啦！你的工作台给你留着，零件在门口那个架子上。",
+  "en": "Hey, Shen! Your bench is waiting. Parts are on the shelf by the door."
  }
 ]

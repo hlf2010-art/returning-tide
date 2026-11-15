@@ -45,6 +45,7 @@ export const ACHIEVEMENTS = {
   regular: { zh: '爵士吧常客', en: 'Jazz Bar regular' },
   driver: { zh: '提车上路', en: 'On the road' },
   famous: { zh: '一万粉丝', en: '10,000 followers' },
+  scanner: { zh: '把外滩扫进电脑', en: 'The Bund, in points' },
 };
 
 export function maker(L) {

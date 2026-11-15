@@ -67,6 +67,7 @@ import { createDestinations } from './world/destinations.js';
 import { createDriving } from './world/driving.js';
 import { createMakerspace, MAKERS } from './world/makerspace.js';
 import { createPhotoMode } from './world/photoMode.js';
+import { createFriendScenes } from './world/friendScenes.js';
 import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
 import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
@@ -206,7 +207,9 @@ async function boot() {
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
   world = { sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
-  places = [interiors, upper, jazz, dests, driving, makers];
+  // the friends in person after the first days (world/friendScenes.js): Ruoan at the AIA, Momo in 612, LiDAR scans
+  world.friends = createFriendScenes({ scene, people, hud, audio, voice, getLife: () => life, save: () => saveLife(), player, interiors });
+  places = [interiors, upper, jazz, dests, driving, makers, world.friends];
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
     getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
@@ -321,7 +324,7 @@ function startTalk(t, { inRide = false, opener = null } = {}) {
 function talkables() {
   const out = [];
   for (const q of traffic ? traffic.peds : []) if (q.active !== false && q.visible !== false) out.push({ key: `ped:${q.id}`, persona: PERSONAS[q.persona] ? q.persona : 'office', x: q.x, y: (q.y ?? L.curbH) + 1.62, z: q.z, hold(on, pp) { if (on) { q.pause = 999; q.faceTo = [pp.x, pp.z]; q.faceFor = 999; } else { q.pause = 0.3; q.faceFor = 0; q.faceTo = null; } } });
-  for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale, world.makerspace]) if (m && m.talkables) out.push(...m.talkables());
+  for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale, world.makerspace, world.friends]) if (m && m.talkables) out.push(...m.talkables());
   return out;
 }
 // photo mode: you stand still and frame; the mouse still looks
@@ -795,6 +798,8 @@ function frame(now) {
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
   world.dest.update(mode === 'pause' ? 0 : dt, player.body);
   world.makerspace.update(mode === 'pause' ? 0 : dt, player.body);
+  world.friends.update(mode === 'pause' ? 0 : dt, player.body);
+  if (life.flags.pendingAchievement) { const a = life.flags.pendingAchievement; delete life.flags.pendingAchievement; hud.achievement(getLang() === 'zh' ? a.zh : a.en); }
   world.photo.update(mode === 'pause' ? 0 : dt);
   if (mode !== 'pause') world.ambient.update(dt, player.body, { talking: talk.open });
   if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }

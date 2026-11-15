@@ -46,11 +46,16 @@ for (const f of files('src')) {
   walk.full(ast, (n) => {
     if (n.type === 'CallExpression') {
       const name = n.callee.type === 'Identifier' ? n.callee.name : n.callee.type === 'MemberExpression' && n.callee.property.name;
-      if (name === 'say' && n.arguments.length >= 3) add(whoOf(n.arguments[0]) || base, lit(n.arguments[1]), lit(n.arguments[2]));
+      if (name === 'say' && n.arguments.length >= 3) {
+        // say(who, zh, en) or say(label, whoKey, zh, en): the first Chinese literal is the line
+        const args = n.arguments.map(lit), i = args.findIndex((x) => x && cjk.test(x) && x.length > 2 && !/^[\u4e00-\u9fff]{1,5}$/.test(x));
+        if (i >= 1) add(i >= 2 && args[i - 1] && /^[a-z]+$/.test(args[i - 1]) ? args[i - 1] : whoOf(n.arguments[0]) || base, args[i], args[i + 1]);
+      }
       if (name === 'bark' && n.arguments[0] && n.arguments[0].type === 'ObjectExpression') {
         const p = (k) => n.arguments[0].properties.find((q) => q.key && q.key.name === k);
         const sp = p('speaker'), tx = p('text');
-        if (tx && tx.value.type === 'ObjectExpression') { const g = (k) => { const q = tx.value.properties.find((x) => x.key && x.key.name === k); return q && lit(q.value); }; add(whoOf(sp && sp.value) || base, g('zh'), g('en')); }
+        const wk = p('who'); if (tx && tx.value.type === 'ObjectExpression') { const g = (k) => { const q = tx.value.properties.find((x) => x.key && x.key.name === k); return q && lit(q.value); }; add((wk && lit(wk.value)) || whoOf(sp && sp.value) || base, g('zh'), g('en')); }
+        if (tx && tx.value.type === 'ConditionalExpression') for (const br of [tx.value.consequent, tx.value.alternate]) if (br.type === 'ObjectExpression') { const g = (k) => { const q = br.properties.find((x) => x.key && x.key.name === k); return q && lit(q.value); }; add((wk && lit(wk.value)) || whoOf(sp && sp.value) || base, g('zh'), g('en')); }
       }
     }
     if (n.type === 'ArrayExpression' && n.elements.length >= 3) {
@@ -59,7 +64,7 @@ for (const f of files('src')) {
     }
     if (n.type === 'ObjectExpression') {                               // a WeChat voice note: { from, kind: 'voice', text }
       const g = (k) => { const q = n.properties.find((x) => x.key && x.key.name === k); return q && lit(q.value); };
-      if (g('kind') === 'voice' && g('from')) add(g('from'), g('text'), g('en'));
+      if (g('kind') === 'voice' && g('from')) { add(g('from'), g('text'), g('en')); const tq = n.properties.find((x) => x.key && x.key.name === 'text'); if (tq && tq.value.type === 'ConditionalExpression') { add(g('from'), lit(tq.value.consequent)); add(g('from'), lit(tq.value.alternate)); } }
     }
     if (n.type === 'Property' && n.key && n.key.name === 'text' && FILE_SPEAKER[base]) { const t = tCall(n.value); if (t) add(FILE_SPEAKER[base], t[0], t[1]); }
   });

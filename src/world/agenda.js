@@ -2,6 +2,7 @@
 // reactions to what you do. Content (spoken WeChat Mandarin) plus small rules; the bookkeeping is
 // engine/life.js. Each beat fires once. Replies the player can tap are offered per message.
 import { post, invite, thread, stamp, nudge, relation, emit, answerInvite } from '../engine/life.js';
+import { maker, addParts, gainFollowers } from '../engine/maker.js';
 import { GROUP, PEOPLE } from './cast.js';
 
 const D = (day, h, m = 0) => day * 1440 + h * 60 + m;           // absolute minute
@@ -51,6 +52,70 @@ const BEATS = [
   } },
 ];
 
+// ---- the days after: each friend's own thread (when: a time on the calendar; if: only if) ----
+const said = (L, key, flag) => (L.flags[`${key}Said`] || []).includes(flag);
+BEATS.push(
+  // Ruoan: on the job inside the Bund's old buildings; she gets you past the AIA's gates
+  { id: 'r2', when: D(2, 10, 30), run: (L) => post(L, 'ruoan', { from: 'ruoan', kind: 'text', text: '今天在和平饭店顶层测绘，屋顶的铜皮比图纸上老三十年。你那个612住得惯吗？', replies: [
+    { text: '住得惯，窗外就是江。', delta: 1, follow: '那是我们去年修的窗框。不客气。' },
+    { text: '你在楼上？我下来请你喝咖啡。', delta: 3, follow: '今天没空。改天，你欠我一杯。' },
+  ] }) },
+  { id: 'r3', when: D(3, 19, 0), run: (L) => {
+    post(L, 'ruoan', { from: 'ruoan', kind: 'text', text: '明晚来友邦大楼？我们在修大堂的天花，我带你进闸机里面看看，平时谁都进不去。' });
+    invite(L, { id: 'ruoan-aia', from: 'ruoan', thread: 'ruoan', title: '友邦大楼 · 大堂天花', place: '友邦大楼（外滩17号）', at: D(4, 19, 0), deadline: D(4, 17, 0),
+      text: '明晚七点，友邦大楼大堂，我在闸机那儿等你。', onAccept: 4, onDecline: -2, onMiss: -3, yesText: '好，七点见', noText: '明晚不行' });
+  } },
+  // Zhixia: a race-telemetry logger for her car; the parts come to the makerspace; then Tianma
+  { id: 'z2', when: D(2, 21, 0), run: (L) => post(L, 'zhixia', { from: 'zhixia', kind: 'voice', text: '白白，帮个忙。我想给赛车做个数据记录仪：CAN总线读转速和刹车压力，GPS记圈速，再加个陀螺仪看G值。你会做吧？零件我出，送到你那个创客空间。', replies: [
+    { text: '会。零件寄过来吧。', delta: 4, flag: 'telemetryYes', follow: '就知道你行。闪送已经在路上了，杨浦那个空间对吧？' },
+    { text: '最近有点忙……', delta: -2, follow: '行吧，大忙人。' },
+  ] }) },
+  { id: 'z3', when: D(2, 22, 0), if: (L) => L.flags.telemetryYes, run: (L) => { addParts(L, { esp32: 1, gps: 1, imu: 1, canbus: 1 }); post(L, 'zhixia', { from: 'zhixia', kind: 'text', text: '零件到了，阿凯签收的。图纸在你工作台上（要创客2级才看得懂，哈哈）。' }); } },
+  { id: 'z4', when: D(3, 9, 0), if: (L) => maker(L).gadgets.telemetry, run: (L) => {
+    post(L, 'zhixia', { from: 'zhixia', kind: 'text', text: '记录仪我装上了！数据太干净了。这周六天马跑一天，你来，开你的车。' });
+    invite(L, { id: 'zhixia-track', from: 'zhixia', thread: 'zhixia', title: '天马赛车场 · 赛道日', place: '天马赛车场', at: D(6, 10, 0), deadline: D(5, 22, 0), text: '周六早上十点，天马。', onAccept: 5, onDecline: -3, onMiss: -4, yesText: '去！', noText: '这周不行' });
+  } },
+  { id: 'z4b', when: D(5, 9, 0), if: (L) => L.flags.telemetryYes && maker(L).gadgets.telemetry && !L.fired.z4, run: (L) => {
+    post(L, 'zhixia', { from: 'zhixia', kind: 'text', text: '记录仪我装上了！这周六天马，你来。' });
+    invite(L, { id: 'zhixia-track', from: 'zhixia', thread: 'zhixia', title: '天马赛车场 · 赛道日', place: '天马赛车场', at: D(6, 10, 0), deadline: D(5, 22, 0), text: '周六早上十点，天马。', onAccept: 5, onDecline: -3, onMiss: -4, yesText: '去！', noText: '这周不行' });
+  } },
+  // Momo: no bed tonight; and the video of your car
+  { id: 'm2', when: D(2, 23, 30), run: (L) => post(L, 'momo', { from: 'momo', kind: 'text', text: '白白！！你房间几号？我今晚被房东锁门外了……就睡一晚沙发，明早就走，发誓', replies: [
+    { text: '612，上来吧。前台我打招呼。', delta: 5, flag: 'momoCrash', follow: '你是我亲哥！！马上到' },
+    { text: '自己找个酒店。', delta: -4, follow: '……行，冷漠的资本家' },
+  ] }) },
+  { id: 'm3', when: D(3, 10, 0), if: (L) => L.flags.momoCrash, run: (L) => post(L, 'momo', { from: 'momo', kind: 'text', text: '谢了兄弟🙏 你的充电器我先借走了，下次还你（大概）' }) },
+  { id: 'm4', when: D(4, 12, 0), if: (L) => !!L.flags.car, run: (L) => {
+    const a = gainFollowers(L, 3200);
+    post(L, 'wuhu', { from: 'momo', kind: 'text', text: '我发了个视频：白白的车在外滩，配了我的钢琴。一晚上80万播放🔥 你多了好几千粉丝，不用谢' });
+    if (a) L.flags.pendingAchievement = a;
+  } },
+  // Xuan: the demo, if you said you'd advise
+  { id: 'x2', when: D(3, 10, 0), if: (L) => said(L, 'lujiazui', 'advisor'), run: (L) => {
+    post(L, 'xuan', { from: 'xuan', kind: 'text', text: '学长说换了指垫以后一个都没掉！周五客户和投资人都来看演示，你来压个场？' });
+    invite(L, { id: 'xuan-demo', from: 'xuan', thread: 'xuan', title: '机械臂演示日', place: '陆家嘴 IFC 二期 32F', at: D(5, 15, 0), deadline: D(5, 12, 0), text: '周五下午三点，IFC 32楼。', onAccept: 5, onDecline: -2, onMiss: -5, yesText: '去', noText: '周五有事' });
+  } },
+  { id: 'x2b', when: D(3, 10, 0), if: (L) => !said(L, 'lujiazui', 'advisor') && L.invites.some((i) => i.id === 'xuan-arm' && i.kept), run: (L) => post(L, 'xuan', { from: 'xuan', kind: 'text', text: '上次谢了。学长说你那句话点醒他了。顾问的事你再想想？' }) },
+  { id: 'x3', when: D(6, 20, 0), run: (L) => post(L, 'xuan', { from: 'xuan', kind: 'text', text: '有个做硬件的投资人想认识你，说看了你的手套专利。下周一起吃个饭？', replies: [
+    { text: '可以，你约。', delta: 2, flag: 'investorMeet', follow: '好，我订个地方。别穿你那件工装外套。' },
+    { text: '先不用，我想自己先做点东西。', delta: 0, follow: '有骨气。那等你做出来。' },
+  ] }) },
+  // Yinuo: what she decided; a flight over the Bund
+  { id: 'y2', when: D(3, 22, 0), if: (L) => L.invites.some((i) => i.id === 'yinuo-flat' && i.kept), run: (L) => {
+    const s2 = L.flags.northbundSaid || [];
+    const text = s2.includes('own') ? '我跟家里说了，不买。我想先自己找个小地方住。……他们不太高兴。' : s2.includes('buy') ? '签了。家里很高兴。' : s2.includes('rent') ? '我在看武康路的老公寓了。程家的人租房子，我妈差点没晕过去。' : '我自己定了。';
+    post(L, 'yinuo', { from: 'yinuo', kind: 'text', text });
+  } },
+  { id: 'y3', when: D(5, 21, 0), run: (L) => {
+    post(L, 'yinuo', { from: 'yinuo', kind: 'text', text: '家里订了直升机，明晚飞外滩。我不想一个人去。' });
+    invite(L, { id: 'yinuo-heli', from: 'yinuo', thread: 'yinuo', title: '夜航 · 外滩上空', place: '浦东直升机停机坪', at: D(6, 20, 0), deadline: D(6, 12, 0), text: '明晚八点，浦东停机坪。', onAccept: 5, onDecline: -2, onMiss: -4, yesText: '我陪你', noText: '明晚不行' });
+  } },
+  // home: Mum's voice note; Dad wants to know the plan
+  { id: 'mu1', when: D(3, 8, 30), run: (L) => { thread(L, 'mum', { title: '妈', members: ['me', 'mum'], kind: 'person' });
+    post(L, 'mum', { from: 'mum', kind: 'voice', text: L.flags.car ? '白白，妈妈看到你朋友圈了，那个车……你爸还不知道。你自己注意安全，按时吃饭。' : '白白，到上海好几天了，吃得惯吗？有空给你爸打个电话，他嘴上不说，天天问我你怎么样。' }); } },
+  { id: 'd2', when: D(4, 20, 0), run: (L) => emit(L, { type: 'call', from: 'dad', script: 'dad-plans' }) },
+);
+
 // background chatter: who might say what, now and then (no story weight)
 const CHATTER = [
   ['momo', '[视频] 今天排练的，这段solo我自己都想哭'], ['xuan', '开会开到现在，饭都没吃'], ['zhixia', '测试台又炸了一个电芯，没人受伤，就是心疼钱'],
@@ -60,7 +125,11 @@ const CHATTER = [
 
 export function runAgenda(L, rnd = Math.random) {
   const t0 = L.flags.t0 ?? stamp(L), since = stamp(L) - t0;
-  for (const b of BEATS) if (!L.fired[b.id] && since >= b.at) { L.fired[b.id] = stamp(L); b.run(L); }
+  for (const b of BEATS) {
+    if (L.fired[b.id]) continue;
+    const due = b.when != null ? stamp(L) >= b.when && (!b.until || stamp(L) <= b.until) : since >= b.at;
+    if (due && (!b.if || b.if(L))) { L.fired[b.id] = stamp(L); b.run(L); }
+  }
   // chatter: one line every ~25-45 game minutes once the beats have started
   if (since > 20) {
     L.flags.nextChat ??= stamp(L) + 25 + Math.floor(rnd() * 20);
@@ -122,6 +191,15 @@ export const warmth = (L, id) => relation(L, id).affinity;
 
 // phone calls: scripted lines with optional replies
 export const CALLS = {
+  'dad-plans': { from: 'dad', lines: [
+    { who: 'dad', text: '在忙吗？' },
+    { who: 'me', choices: [{ text: '不忙，爸。', delta: 1 }, { text: '有点忙，你说。', delta: 0 }] },
+    { who: 'dad', text: '厂里新上了一条线，做电驱的壳体。研发那层楼空着，我给你留着。' },
+    { who: 'me', choices: [{ text: '我想在上海先做自己的工作室。', delta: -1, flag: 'toldDadStudio' }, { text: '过阵子回去看看。', delta: 2 }, { text: '我还在想。', delta: 0 }] },
+    { who: 'dad', text: '……你自己的事，你自己想清楚。钱够不够？' },
+    { who: 'me', choices: [{ text: '够。', delta: 1 }, { text: '专利的钱还在。', delta: 0 }] },
+    { who: 'dad', text: '嗯。你妈让你按时吃饭。挂了。' },
+  ] },
   'dad-arrival': { from: 'dad', lines: [
     { who: 'dad', text: '到上海了？' },
     { who: 'me', choices: [{ text: '到了，在外滩。', delta: 1 }, { text: '嗯，到了。', delta: 0 }] },

@@ -37,7 +37,7 @@ const tick = (L, R, secs, world) => { for (let i = 0; i < secs * 10; i++) { adva
   const r = arrive(L, R);
   ok(r && r.paid && balance(L, 'wechat') < w0 && R.phase === 'arrived', `arrived and paid ¥${r.amount}`);
   ok(L.flags.rides.length === 1 && L.flags.ride === null, 'the ride is in your history; nothing pending');
-  ok(drain(L).some((e) => e.type === 'arrived' && e.to === 'lujiazui' && e.invite === 'xuan-arm'), 'the world hears you arrived (and which invitation that place belongs to)');
+  ok(drain(L).some((e) => e.type === 'arrived' && e.to === 'lujiazui' && [].concat(e.invite).includes('xuan-arm')), 'the world hears you arrived (and which invitation that place belongs to)');
 }
 {
   // you never come down: reminder, then the driver cancels and the app charges the fee
