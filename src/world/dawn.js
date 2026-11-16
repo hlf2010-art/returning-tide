@@ -81,7 +81,7 @@ export function createDawn({ scene, people, addCollider = null }) {
       clock += dt;
       const far = eye && Math.hypot(eye.x - SPOT.x, eye.z - SPOT.z) > 120;
       for (const m of members) {
-        m.p.update(far ? 0 : dt);
+        m.p.update(dt);                                                   // (far: the idle runs, the form isn't posed)
         if (!far) pose(m, clock - m.lag);
       }
     },

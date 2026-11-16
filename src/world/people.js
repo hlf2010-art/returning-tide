@@ -82,9 +82,16 @@ export function createPerson(people, role) {
     if (!base[name]) name = 'idle';
     if (current === name) return;
     const next = base[name], nextArm = arm[name];
-    next.reset().setEffectiveWeight(1).fadeIn(fade).play();
+    // (an instant switch is a plain swap: a zero-length fade evaluated at a zero time step weighs every
+    // action at nothing, and the skeleton drops to its bind pose: arms out, legs straight)
+    if (fade > 0) {
+      next.reset().setEffectiveWeight(1).fadeIn(fade).play();
+      if (current) { base[current].fadeOut(fade); if (arm[current] !== umbArm) arm[current].fadeOut(fade); }
+    } else {
+      next.reset().setEffectiveWeight(1).play();
+      if (current) { base[current].stop(); if (arm[current] !== umbArm) arm[current].stop(); }
+    }
     nextArm.reset().setEffectiveWeight(1).play();
-    if (current) { base[current].fadeOut(fade); if (arm[current] !== umbArm) arm[current].fadeOut(fade); }
     current = name;
   }
   // stagger so the six people never move in lockstep
@@ -129,7 +136,7 @@ export function createPerson(people, role) {
     },
     // look: world [x, z] to turn the head (and a little of the neck) toward, or null
     update(dt, look = null) {
-      mixer.update(dt);
+      if (dt > 0) mixer.update(dt);                                       // (nothing moves in no time; see play)
       root.updateMatrixWorld(true);
       let want = 0;
       if (look) {
