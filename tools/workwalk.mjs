@@ -17,7 +17,7 @@ const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errors = [];
 p.on('console', (m) => { if (m.type() === 'error' && !/ERR_CONNECTION_REFUSED|8790|11434/.test(m.text())) errors.push(m.text().slice(0, 200)); });
 p.on('pageerror', (e) => errors.push(e.message));
-await p.goto(`${url}?q=4&nolock&fresh&lang=${lang}&hour=17:40&crowd=0.5`, { waitUntil: 'load' });
+await p.goto(`${url}?q=4&nolock&fresh&legacy&lang=${lang}&hour=17:40&crowd=0.5`, { waitUntil: 'load' });
 await p.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', null, { timeout: 300000 });
 const ev = (f, a) => p.evaluate(f, a);
 await ev(() => { window.__bund.start(); window.__bund.dtMax = 0.2; const s = document.createElement('style'); s.textContent = '#minimap,#dev,#tip{display:none!important}'; document.head.appendChild(s); });

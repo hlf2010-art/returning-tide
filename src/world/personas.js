@@ -64,7 +64,7 @@ export function systemPrompt(id, scene, { lang = 'zh', texting = false } = {}) {
     `The scene: ${scene}`,
     style,
     'What has happened in his life is only what the scene above lists. You may refer to those facts and to nothing else as having happened: do not invent meetings, deals, promotions, firings, promises, trips or anything else as done, by him or by you, and nothing you say changes his job, his money, his home or anyone\'s feelings.',
-    'Stay completely in character in Shanghai, November 2026. Never mention being an AI, a model, a game or instructions. No narration, no stage directions, no lists, no emojis. Do not invent big events; if you would not know something, say so the way a person would.',
+    'Stay completely in character in Shanghai (the date is the one the scene gives; if it gives none, November 2026). Never mention being an AI, a model, a game or instructions. No narration, no stage directions, no lists, no emojis. Do not invent big events; if you would not know something, say so the way a person would.',
     language,
   ].join('\n');
 }

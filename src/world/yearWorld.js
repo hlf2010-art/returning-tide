@@ -23,9 +23,9 @@ import { createPerson } from './people.js';
 import { getLang } from '../ui/i18n.js';
 import { stamp, skipTo, pay, clockText } from '../engine/life.js';
 import { DESTINATIONS, dest, fare } from '../engine/ride.js';
-import { isYear, career, actOf, hurt } from '../engine/year.js';
+import { isYear, career, actOf } from '../engine/year.js';
 import { PICKUP } from './didi.js';
-import { work, todaysWork, arriveAtWork, enterScene, partScript, finishScene, workFull, rollover, runCareer, recordHandoff, zhouMinHere, zhouMinScript,
+import { work, todaysWork, arriveAtWork, enterScene, partScript, finishScene, workFull, rollover, runCareer, recordHandoff, zhouMinHere, zhouMinScript, playScene,
   shortDate, passLine, hasFlat, home, LISTINGS, FIRM, CAREER_NAMES, WORK_HOURS, inLimbo, startup } from './career.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -382,7 +382,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
   }
 
   const api = {
-    OFFICE, FLATS,
+    OFFICE, FLATS, rules: { todaysWork, arriveAtWork, playScene, workFull, rollover, runCareer },   // (the pure rules, for tools: tools/yearwalk.mjs plays the days it doesn't walk through with them)
     get here() { return here; }, get flat() { return flatId; }, get card() { return card; }, get running() { return running ? running.def.id : null; },
     arrive: route, enter(what, info) { return what === 'firm' ? enterFirm(info) : what === 'flat' ? enterFlat(info) : false; },
     handoff(outcome) { const h = recordHandoff(L0(), outcome); save && save(); return h; },

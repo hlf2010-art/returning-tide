@@ -17,6 +17,7 @@ const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 const P = (b) => (b ? (getLang() === 'zh' ? b.zh : b.en) : '');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 import { finalDay } from '../engine/year.js';
+import { shortDate } from '../world/career.js';
 const DINNER = (L) => finalDay(L) * 1440 + 20 * 60;
 const hoursText = (h) => T(`${h % 1 ? h.toFixed(1) : h} 小时`, `${h % 1 ? h.toFixed(1) : h} ${h === 1 ? 'hour' : 'hours'}`);
 const whoName = (id) => P(REG[id] ? REG[id].name : PERSONA_NAME[id] || PERSONA_NAME.office);
@@ -39,7 +40,7 @@ export function pageHtml(L, eve) {
   const pg = studio(L).pages[eve]; if (!pg) return '';
   const names = (ids, tx) => ids.map((i) => P(tx[i].name || tx[i])).join(T('；', '; '));
   const q = quoteOf(pg.line, L);
-  return `<div class="page"><h4>${T(`第 ${eve} 天 · 第 ${pg.rev} 版`, `Day ${eve} · version ${pg.rev}`)}</h4>
+  return `<div class="page"><h4>${shortDate(L, getLang(), eve)}${T(` · 第 ${pg.rev} 版`, ` · version ${pg.rev}`)}</h4>
     ${pg.hands ? `<p>${T(`借给了 ${pg.hands} 个人。`, `Lent to ${pg.hands} ${pg.hands === 1 ? 'person' : 'people'}.`)}${pg.liked ? T(`其中 ${pg.liked} 个什么都没挑。`, ` ${pg.liked} of them found nothing to complain of.`) : ''}</p>` : `<p>${T('今天没有拿出去。', "It didn't leave your pocket today.")}</p>`}
     ${pg.heard.length ? `<p>${T('新听到的：', 'New today: ')}${esc(names(pg.heard, ISSUE_TEXT))}${T('。', '.')}</p>` : ''}
     ${pg.fixes.length ? `<p>${T('改了：', 'Changed: ')}${esc(names(pg.fixes, FIX_TEXT))}${T('。', '.')}</p>` : ''}
@@ -115,7 +116,7 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
   }
   function listTab(L) {
     const St = studio(L), s = summary(L);
-    const rows = St.list.map((e) => `<div class="ls"><b>${esc(whoName(e.who))}</b><span>${T(`第 ${e.eve} 天`, `day ${e.eve}`)} · ${T(`${e.units || 1} 台`, `${e.units || 1} ${(e.units || 1) === 1 ? 'unit' : 'units'}`)}${e.deposit ? ` · ${T(`定金 ¥${e.deposit}`, `deposit ¥${e.deposit}`)}` : ''}</span></div>`).join('');
+    const rows = St.list.map((e) => `<div class="ls"><b>${esc(whoName(e.who))}</b><span>${shortDate(L, getLang(), e.eve)} · ${T(`${e.units || 1} 台`, `${e.units || 1} ${(e.units || 1) === 1 ? 'unit' : 'units'}`)}${e.deposit ? ` · ${T(`定金 ¥${e.deposit}`, `deposit ¥${e.deposit}`)}` : ''}</span></div>`).join('');
     const price = `<div class="hd">${T('卖多少', 'What you\'d charge')}</div><div class="pl">${PRICES.map((p) => (can() ? `<button class="tg${St.price === p ? ' on' : ''}" data-price="${p}">¥${p}</button>` : `<span class="tg${St.price === p ? ' on' : ''}">¥${p}</span>`)).join('')}</div>
       <p class="hint">${T(`零件 ¥${s.bom}（做五十台的量，大约 ¥${s.batch}）。${s.margin < 0 ? `现在卖一台亏 ¥${-s.margin}。` : `一台能剩 ¥${s.margin}。`}${s.tooDear ? `有 ${s.tooDear} 个人喜欢，但嫌贵。` : ''}`, `Parts ¥${s.bom} (about ¥${s.batch} at fifty sets). ${s.margin < 0 ? `At this price each one loses ¥${-s.margin}.` : `Each one leaves ¥${s.margin}.`}${s.tooDear ? ` ${s.tooDear} ${s.tooDear === 1 ? 'person' : 'people'} liked it but not the price.` : ''}`)}</p>`;
     return `${rows ? `<div class="hd">${T(`想要的人 · ${s.list} 人 ${s.units} 台${s.deposits ? ` · 定金 ¥${s.deposits}` : ''}`, `Who wants one · ${s.list} ${s.list === 1 ? 'name' : 'names'}, ${s.units} ${s.units === 1 ? 'unit' : 'units'}${s.deposits ? ` · deposits ¥${s.deposits}` : ''}`)}</div>${rows}` : `<p class="hint">${T('名单还是空的。一个人挑不出毛病、价钱也合适的时候，会问你哪里买。', "The list is empty. When someone finds nothing to complain of, and the price suits them, they'll ask where to buy one.")}</p>`}${price}
@@ -160,7 +161,7 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
     if (b.dataset.act === 'write') {
       const w = writePage(L, { line: S.line, plan: [...S.plan] }); if (!w.ok) return;
       S.line = null; S.plan.clear(); save && save(); audio && audio.cue && audio.cue('ping', 0, 0.3);
-      hud && hud.toast(T(`写下了第 ${w.eve} 天这一页 · +${w.xp} 创客经验${w.levelUp ? ` · 升到创客 ${w.levelUp}` : ''}`, `Day ${w.eve} written up · +${w.xp} Maker XP${w.levelUp ? ` · Maker ${w.levelUp}` : ''}`), 4);
+      hud && hud.toast(T(`写下了${shortDate(L, 'zh', w.eve)}这一页 · +${w.xp} 创客经验${w.levelUp ? ` · 升到创客 ${w.levelUp}` : ''}`, `${shortDate(L, 'en', w.eve)} written up · +${w.xp} Maker XP${w.levelUp ? ` · Maker ${w.levelUp}` : ''}`), 4);
       if (w.page.heard.length) S.tab = 'issues';
       render(); return;
     }
