@@ -48,21 +48,24 @@ async function playScene(picks = [], { watch = 2, shots = {} } = {}) {
     else await p.waitForTimeout(400);
   }
 }
-const chat = async (id) => { await ev((id) => { const ph = window.__bund.phone; ph.open(); }, id); await p.waitForTimeout(900); if (await p.$('#phone [data-act="unlock"]')) { await p.click('#phone [data-act="unlock"]'); await p.waitForTimeout(1200); }
-  await ev((id) => window.__bund.phone.open('chat', { id }), id); await p.waitForTimeout(700); return ev(() => document.querySelector('#phone .host').innerText); };
+const dom = (sel) => ev((sel) => { const e = document.querySelector(sel); if (e) e.click(); return !!e; }, sel);
+const chat = async (id) => { await ev(() => window.__bund.phone.open()); await p.waitForTimeout(900);
+  if (await dom('#phone [data-act="decline"]')) await p.waitForTimeout(600);                         // (Dad rings on the first evening: not now)
+  if (await dom('#phone [data-act="unlock"]')) await p.waitForFunction(() => !document.querySelector('#phone [data-act="unlock"]'), null, { timeout: 30000 });
+  await ev((id) => window.__bund.phone.open('chat', { id }), id); await p.waitForTimeout(800); return ev(() => document.querySelector('#phone .host').innerText); };
 const closePhone = async () => { await ev(() => window.__bund.phone.close()); await p.waitForTimeout(400); };
 
 // ---- day 1: Zhiwei writes; the reply chips ----
-await setClock(1, 18, 9); await p.waitForFunction(() => !!window.__bund.life.threads.zhiwei, null, { timeout: 120000 });
+await setClock(1, 18, 10); await p.waitForFunction(() => !!window.__bund.life.threads.zhiwei, null, { timeout: 120000 });
 let txt = await chat('zhiwei');
 ok((zh ? /我是许知微/ : /Xu Zhiwei\. I'm the PM/).test(txt) && (zh ? /收到，今晚看完/ : /I'll read it tonight/).test(txt), 'day 1, ten past six: his project manager writes, with two ways to answer');
 await shot('phone-zhiwei');
-await p.click('#phone .replies .chip'); await p.waitForTimeout(600);
+await dom('#phone .replies .chip'); await p.waitForTimeout(600);
 await closePhone();
 await p.waitForFunction(() => (window.__bund.life.flags.hearts.zhiwei || {}).trust === 22, null, { timeout: 60000 });
 ok((await H('zhiwei')).stage === 'known', 'he answers; it counts');
 // ---- she brings his pass to the lobby ----
-await setClock(1, 20, 19); await p.waitForFunction(() => (window.__bund.life.flags.hearts._.fired || {}).z2 > 0, null, { timeout: 120000 });
+await setClock(1, 20, 20); await p.waitForFunction(() => (window.__bund.life.flags.hearts._.fired || {}).z2 > 0, null, { timeout: 120000 });
 await stand('peaceLobby', [1, 1.2], 2.0); await actor('zhiwei'); await p.waitForTimeout(2500);
 let pr = await prompt();
 ok(/laptop bag|电脑包/.test(pr), `in the Peace Hotel lobby: "${pr}"`);
@@ -108,7 +111,7 @@ await p.waitForFunction(() => window.__bund.life.invites.some((i) => i.id === 'h
 txt = await chat('nanxing');
 ok((zh ? /挡风/ : /block the wind/).test(txt) && (zh ? /接受/ : /Accept/).test(txt), "Nanxing's invitation is on the phone");
 await shot('phone-nanxing-invite');
-await p.click('#phone [data-act="invite"][data-yes="1"]'); await p.waitForTimeout(700); await closePhone();
+await dom('#phone [data-act="invite"][data-yes="1"]'); await p.waitForTimeout(700); await closePhone();
 await setClock(2, 21, 42);
 await stand('railCustoms', [-1, 0.2], 2.0, 3); await actor('nanxing'); await p.waitForTimeout(2500);
 pr = await prompt(); ok(/Nanxing|南星/.test(pr), `opposite the Customs House at 9:42: "${pr}"`);
@@ -122,7 +125,7 @@ await shot('nanxing-after-ten');
 // ---- day 3: the Jazz Bar, across the table; upstairs; the morning ----
 await ev(() => window.__bund.player.teleport(-70, 0.6, -Math.PI / 2, 0));
 await setClock(3, 16, 0); await p.waitForFunction(() => window.__bund.life.invites.some((i) => i.id === 'h-n-jazz'), null, { timeout: 120000 });
-await chat('nanxing'); await p.click('#phone [data-act="invite"][data-yes="1"]'); await p.waitForTimeout(700); await closePhone();
+await chat('nanxing'); await dom('#phone [data-act="invite"][data-yes="1"]'); await p.waitForTimeout(700); await closePhone();
 await setClock(3, 21, 32);
 await ev(() => window.__bund.player.teleport(-43.6, -221.6, -2.2, 0.02)); await actor('nanxing'); await p.waitForTimeout(3500);
 pr = await prompt(); ok(/Sit down|坐下/.test(pr), `she is at the table by the stage: "${pr}"`);
@@ -150,7 +153,7 @@ await shot('gunian-manner');
 await p.keyboard.press('KeyE'); await playScene([1, 0], { watch: 2 });
 ok((await H('gunian')).stage === 'close', 'the tape and the coffee: close');
 await setClock(4, 20, 31); await p.waitForFunction(() => window.__bund.life.invites.some((i) => i.id === 'h-g-cruise'), null, { timeout: 120000 });
-await chat('gunian'); await shot('phone-gunian'); await p.click('#phone [data-act="invite"][data-yes="1"]'); await p.waitForTimeout(700); await closePhone();
+await chat('gunian'); await shot('phone-gunian'); await dom('#phone [data-act="invite"][data-yes="1"]'); await p.waitForTimeout(700); await closePhone();
 await setClock(5, 15, 58);
 await stand('pier', [-1, -0.4], 2.0, 3); await actor('gunian'); await p.waitForTimeout(2500);
 const w0 = await ev(() => window.__bund.life.wallet.wechat);
@@ -182,7 +185,7 @@ if (talking) {
 // asking to see her, from the phone
 txt = await chat('nanxing');
 ok((zh ? /约她见面/ : /Ask to see her/).test(txt) && (zh ? /在约会/ : /Seeing each other/i).test(txt), 'her chat shows how things stand, and a way to ask to see her');
-await p.click('#phone [data-act="heartAsk"]'); await p.waitForTimeout(800);
+await dom('#phone [data-act="heartAsk"]'); await p.waitForTimeout(800); await ev(() => { window.__bund.life.clock.minute += 2; });
 await p.waitForFunction(() => window.__bund.life.threads.nanxing.messages.at(-1).from === 'nanxing', null, { timeout: 60000 });
 txt = await ev(() => document.querySelector('#phone .host').innerText); await p.waitForTimeout(400);
 ok((zh ? /这两天有空吗/ : /I'd like to see you/).test(txt), `he asks; she answers: "${await ev(() => window.__bund.life.threads.nanxing.messages.at(-1).text)}"`);

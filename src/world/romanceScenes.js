@@ -189,7 +189,7 @@ export function createRomanceScenes({ scene, people, player, hud, audio = null, 
     talkables() { return Object.values(actors).filter((a) => heart(L0(), a.who).stage !== 'stranger' && !(S.cur && S.cur.who === a.who)).map((a) => { const h = headOf(a); return { key: `heart:${a.who}`, persona: a.who, x: h.x, y: h.y, z: h.z, hold() {} }; }); },
     candidates() {
       if (!enabled || S.cur || !isFree()) return [];
-      return Object.values(actors).filter((a) => a.scene || !S.hello[a.who]).map((a) => { const h = headOf(a); return { id: `rs:${a.who}`, x: h.x, y: h.y - 0.1, z: h.z, reach: a.seat ? 4.2 : 3.4, cone: 0.62 }; });
+      return Object.values(actors).filter((a) => a.scene || !S.hello[a.who]).map((a) => { const h = headOf(a); return { id: `rs:${a.who}`, x: h.x, y: h.y - 0.1, z: h.z, reach: a.seat ? 4.2 : 3.4, cone: 0.62, ignore: [`heart:${a.who}`] }; });
     },
     owns(id) { return typeof id === 'string' && id.startsWith('rs:'); },
     prompt(id) {
