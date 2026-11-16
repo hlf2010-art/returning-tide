@@ -157,7 +157,7 @@ const RAIL = { x: 23.5, z: 22, label: B('江边（天黑以后）', 'The river r
 const DIDI = { x: -3.2, z: -18.5, label: B('打车点', 'DiDi pickup') };
 const HOTEL = { x: -48, z: -209.5, label: B('和平饭店 · 612 的书桌', 'Peace Hotel · the desk in 612') };
 export const WORK_QUESTS = [
-  { id: 'own-work', act: 2, giver: 'me',
+  { id: 'own-work', act: 1, giver: 'me',
     title: B('一件自己的东西', 'Something of your own'),
     summary: (L) => { const s = summary(L); return s.grade === 0 ? B('机械臂是别人的。你自己的那台云台，图纸还贴在阿凯的白板上。', "The robot arm is someone else's. Your own gimbal is still a sketch on Kai's whiteboard.")
       : B(`夜行云台，第 ${s.rev} 版。白天改，天黑了拿到外滩给人用，夜里记下来。和爸爸吃饭那天，做到哪一版就是哪一版。`, `The night gimbal, version ${s.rev}. Revise it by day, put it in people's hands on the Bund after dark, write it up at night. Whatever version it has reached by the dinner with Dad is the one he'll see.`); },

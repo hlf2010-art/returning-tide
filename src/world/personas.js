@@ -5,6 +5,7 @@
 // speak to them in the other language.
 import { DRIVERS } from './drivers.js';
 
+import { CAREER_PERSONAS } from './careerStory.js';
 const ME = 'Ji Bai (纪白; old friends call him 白白 "Baibai" to annoy him), 27, from Nanjing; UC Berkeley cognitive science (HCI, AI, product), a few years in Silicon Valley tech, just moved to Shanghai to work at an international technology consulting firm in Lujiazui on enterprise AI products; builds things in his spare time; his father runs a manufacturing business in Nanjing and expects him to take it over; comfortable but hates being "the rich kid"';
 export const PERSONAS = {
   // ---- the street ----
@@ -43,6 +44,7 @@ export const PERSONAS = {
 // the DiDi drivers, from their own descriptions
 for (const d of DRIVERS) PERSONAS[`driver:${d.id}`] = { zh: d.name, en: d.name, sex: d.sex, voice: `driver:${d.id}`, lang: 'zh', card: `a DiDi driver: ${d.who}. You are driving Ji Bai across Shanghai in your ${d.car}` };
 
+Object.assign(PERSONAS, CAREER_PERSONAS);   // colleagues, clients, the watch-repairer's daughter (world/careerStory.js)
 const FRIENDS = new Set(['xuan', 'yinuo', 'momo', 'zhixia', 'ruoan', 'dad']);
 const STAFF = new Set(['receptionist', 'concierge', 'doorman', 'liftGuard', 'host', 'bartender', 'aiaDesk', 'aiaGuard', 'barista', 'vivian', 'agent']);
 // what they call him
@@ -61,6 +63,7 @@ export function systemPrompt(id, scene, { lang = 'zh', texting = false } = {}) {
     `The person talking to you is someone else: ${ME}. ${relationTo(id)} You call him: ${addressOf(id, lang)}. Everything about him is about HIM, not you; you are only ${p.en}.`,
     `The scene: ${scene}`,
     style,
+    'What has happened in his life is only what the scene above lists. You may refer to those facts and to nothing else as having happened: do not invent meetings, deals, promotions, firings, promises, trips or anything else as done, by him or by you, and nothing you say changes his job, his money, his home or anyone\'s feelings.',
     'Stay completely in character in Shanghai, November 2026. Never mention being an AI, a model, a game or instructions. No narration, no stage directions, no lists, no emojis. Do not invent big events; if you would not know something, say so the way a person would.',
     language,
   ].join('\n');
