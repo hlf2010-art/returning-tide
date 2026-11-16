@@ -4,13 +4,19 @@
 // Ji Bai is back from the Bay Area with his savings and no plan he'll say out loud. His father
 // wants him home in Nanjing to run R&D at the family's machining works. His friends pull him the
 // other way: Mingxuan has a robot-arm team that needs him, Kai's makerspace has a bench for him.
-//   Act I   回来   the first night on the Bund
-//   Act II  两条路 the robot arm (Mingxuan, Zhou, the investor demo) and Dad's offer (talk to Ruoan)
-//   Act III 回潮   dinner with Dad at the Peace Hotel's Jazz Bar (day 6, 8 pm), then the river at
-//                  the late-night lighting at ten, and one of six endings (what you chose, what you'd done, how he feels)
+// A new game is a year in five acts (engine/year.js); a game begun before the year existed keeps
+// its six days. The quests here are numbered by the five acts either way:
+//   Act I   新的开始  the first night on the Bund, Momo's set, the robot arm (Mingxuan, Zhou, the
+//                     investor demo), Dad's offer; and, in a year, the first week at the firm
+//   Act II-IV         the working year (world/careerStory.js: Donglan, the turning point, the road he takes)
+//   Act V   最后的晚餐 dinner with Dad at the Peace Hotel's Jazz Bar (8 pm on the last day: Saturday
+//                     13 November 2027, or day 6), then the river at the late-night lighting at ten,
+//                     and one of six endings (what you chose, what you'd done, how he feels)
 import { post, invite, stamp, nudge, relation, emit } from '../engine/life.js';
 import { dinnerWork, dinnerAfter, workContext } from './work.js';
 import { finalDay, isYear, lifeContext } from '../engine/year.js';
+import { dayName } from './career.js';
+import { YEAR_QUESTS, yearDinner, yearEnding, yearEpilogue, careerContext, COLLEAGUES } from './careerStory.js';
 
 export const D = (day, h, m = 0) => day * 1440 + h * 60 + m;      // absolute minute
 // the day of the dinner: the last day of the year (engine/year.js), or day 6 in a game begun before the year existed
@@ -24,6 +30,7 @@ export const spokeSince = (L, who, since = 0) => ((L.flags.spoke || {})[who] || 
 const onDeck = (ctx) => !!ctx && !!ctx.player && ctx.player.x > 6 && ctx.player.y > 2;
 const atRail = (ctx) => !!ctx && !!ctx.player && ctx.player.x > 22.5 && ctx.player.y > 2;
 const B = (zh, en) => ({ zh, en });
+const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
 // where things are, for the markers
 export const PLACE = {
@@ -35,7 +42,7 @@ export const PLACE = {
 };
 
 // ---- the quests ----
-export const QUESTS = [
+const BASE_QUESTS = [
   // ======== Act I ========
   { id: 'first-night', act: 1, main: true, giver: 'me',
     title: B('外滩的第一晚', 'First night on the Bund'),
@@ -56,19 +63,19 @@ export const QUESTS = [
       { id: 'yes', text: B('在微信上答应他', 'Say yes on WeChat'), done: (L) => (inv(L, 'momo-gig') || {}).status === 'accepted' },
       { id: 'there', text: (L) => B('九点半前到爵士吧', 'Be at the Jazz Bar by 9:30 pm'), target: PLACE.jazz, wait: (L) => (inv(L, 'momo-gig') || { at: 0 }).at - 20, done: (L) => kept(L, 'momo-gig') },
     ] },
-  // ======== Act II ========
-  { id: 'robot-arm', act: 2, main: true, giver: 'xuan',
+  // (the robot arm and Dad's offer: the first week's two pulls, still open when the year moves on)
+  { id: 'robot-arm', act: 1, main: true, giver: 'xuan',
     title: B('机械臂', 'The robot arm'),
     summary: (L) => (L.flags.demoDone ? B('演示成功了。王总想投。', 'The demo went well. Mr Wang wants in.') : B('明轩学长的团队做协作机械臂，原型卡住了，产品经理也跑了。', 'Mingxuan\'s friend Zhou runs a robot-arm start-up. The prototype is stuck and their product lead has quit.')),
     start: (L) => !!inv(L, 'xuan-arm'),
     steps: [
       { id: 'yes', optional: true, text: B('答应明轩，去看原型', 'Tell Mingxuan you\'ll look at the prototype'), done: (L) => (inv(L, 'xuan-arm') || {}).status === 'accepted' || kept(L, 'xuan-arm'), fail: (L) => ['declined', 'missed'].includes((inv(L, 'xuan-arm') || {}).status) },
-      { id: 'review', optional: true, text: B('第二天下午三点，陆家嘴 IFC 32 楼（滴滴或地铁 2 号线）', 'Day 2, 3 pm: IFC 32F in Lujiazui (DiDi, or Line 2 from East Nanjing Road)'), target: PLACE.didi, wait: (L) => (inv(L, 'xuan-arm') || { at: D(2, 15) }).at - 30, done: (L) => kept(L, 'xuan-arm'), fail: (L) => lapsed(L, 'xuan-arm', ((inv(L, 'xuan-arm') || {}).at || D(2, 15)) + 150) },
+      { id: 'review', optional: true, text: (L) => B(`${dayName(L, 2).zh}下午三点，陆家嘴 IFC 32 楼（滴滴或地铁 2 号线）`, `${cap(dayName(L, 2).en)}, 3 pm: IFC 32F in Lujiazui (DiDi, or Line 2 from East Nanjing Road)`), target: PLACE.didi, wait: (L) => (inv(L, 'xuan-arm') || { at: D(2, 15) }).at - 30, done: (L) => kept(L, 'xuan-arm'), fail: (L) => lapsed(L, 'xuan-arm', ((inv(L, 'xuan-arm') || {}).at || D(2, 15)) + 150) },
       { id: 'build', optional: true, text: B('去杨浦创客空间，把你的手艺练起来（做一件设备）', 'At the Yangpu makerspace, get your hands back in: build a gadget'), target: PLACE.didi, done: (L) => !!(L.flags.maker && L.flags.maker.gadgets && Object.keys(L.flags.maker.gadgets).length), fail: (L) => stamp(L) > D(5, 15) },
-      { id: 'demo', optional: true, text: B('第五天下午三点，投资人演示（IFC 32 楼）', 'Day 5, 3 pm: the investor demo (IFC 32F)'), target: PLACE.didi, wait: () => D(5, 14, 30), done: (L) => kept(L, 'xuan-demo'), fail: (L) => lapsed(L, 'xuan-demo', D(5, 17, 30)) },
+      { id: 'demo', optional: true, text: (L) => B(`${dayName(L, 5).zh}下午三点，投资人演示（IFC 32 楼）`, `${cap(dayName(L, 5).en)}, 3 pm: the investor demo (IFC 32F)`), target: PLACE.didi, wait: () => D(5, 14, 30), done: (L) => kept(L, 'xuan-demo'), fail: (L) => lapsed(L, 'xuan-demo', D(5, 17, 30)) },
     ],
     onComplete: (L) => { L.flags.demoDone = kept(L, 'xuan-demo'); } },
-  { id: 'dads-offer', act: 2, main: true, giver: 'dad',
+  { id: 'dads-offer', act: 1, main: true, giver: 'dad',
     title: B('父亲的提议', 'Dad\'s offer'),
     summary: B('爸爸在南京的厂要上新线，研发那层楼给你留着。', 'Dad\'s works in Nanjing is putting in a new line. He\'s keeping the R&D floor for you.'),
     start: (L) => stamp(L) >= D(2, 19) || tookCall(L, 'dad-plans'),
@@ -79,19 +86,19 @@ export const QUESTS = [
       { id: 'coming', text: B('爸爸要来上海', 'Dad is coming to Shanghai'), done: (L) => !!inv(L, 'dad-dinner') },
     ],
     onComplete: () => {} },
-  // ======== Act III ========
-  { id: 'dinner', act: 3, main: true, giver: 'dad',
+  // ======== Act V ========
+  { id: 'dinner', act: 5, main: true, giver: 'dad',
     title: B('和爸爸吃饭', 'Dinner with Dad'),
-    summary: B('第六天晚上八点，和平饭店爵士吧。他订了位。', 'Day 6, 8 pm, the Peace Hotel Jazz Bar. He\'s booked a table.'),
+    summary: (L) => B(`${dayName(L, finalDay(L)).zh}晚上八点，和平饭店爵士吧。他订了位。`, `${cap(dayName(L, finalDay(L)).en)}, 8 pm, the Peace Hotel Jazz Bar. He's booked a table.`),
     start: (L) => !!inv(L, 'dad-dinner'),
     fail: (L) => !L.flags.dinnerStarted && stamp(L) > FD(L, 20, 45),
     onFail: (L) => { L.flags.dinnerChoice = 'missed'; post(L, 'dad', { from: 'dad', kind: 'text', text: '我等了你四十分钟。走了。' }); nudge(L, 'dad', -15, 'dinner:missed'); },
     steps: [
       { id: 'reply', text: B('回爸爸的消息', 'Answer Dad\'s message'), done: (L) => answered(L, 'dad-dinner') },
-      { id: 'there', text: B('第六天晚上八点前到和平饭店爵士吧', 'Be at the Peace Hotel Jazz Bar by 8 pm on day 6'), target: PLACE.jazz, wait: (L) => FD(L, 19, 40), done: (L) => !!L.flags.dinnerStarted },
+      { id: 'there', text: (L) => B(`${dayName(L, finalDay(L)).zh}晚上八点前到和平饭店爵士吧`, `Be at the Peace Hotel Jazz Bar by 8 pm on ${dayName(L, finalDay(L)).en}`), target: PLACE.jazz, wait: (L) => FD(L, 19, 40), done: (L) => !!L.flags.dinnerStarted },
       { id: 'talk', text: B('和他谈', 'Talk to him'), target: PLACE.jazz, done: (L) => !!L.flags.dinnerChoice },
     ] },
-  { id: 'tide', act: 3, main: true, giver: 'me',
+  { id: 'tide', act: 5, main: true, giver: 'me',
     title: B('回潮', 'The returning tide'),
     summary: B('晚上十点，外滩会换成深夜灯光，只留下轮廓。在江边看着它暗下来。', 'At ten the Bund goes over to its late-night lighting, just the outlines. Watch it dim from the river.'),
     start: (L) => !!L.flags.dinnerChoice,
@@ -101,15 +108,18 @@ export const QUESTS = [
     ],
     onComplete: (L) => { L.flags.ending = ending(L); emit(L, { type: 'ending', ending: L.flags.ending }); } },
 ];
+// the year's own quests (Acts I-IV at work, somewhere to live, the watch-repairer) begin only in a year game,
+// except the watch-repairer's, which any game with Mission One behind it shows as a side story
+export const QUESTS = [...BASE_QUESTS, ...YEAR_QUESTS];
 
 // ---- story beats the quests need (run alongside world/agenda.js) ----
 export const STORY_BEATS = [
   // Dad tells you he's coming: after you've talked it over with Ruoan, or on the evening of day 5 regardless
   { id: 'dad-coming', when: (L) => { const q = (L.quests || { list: {} }).list['dads-offer']; return !!q && q.status === 'active' && (isYear(L) ? stamp(L) >= D(finalDay(L) - 1, 19) : (q.skipped.includes('ruoan') || spokeSince(L, 'ruoan', q.started) >= 2 || stamp(L) >= D(5, 19))); },
     run: (L) => {
-      post(L, 'dad', { from: 'dad', kind: 'text', text: '我后天到上海，嘉定有个供应商要见。' });
+      post(L, 'dad', { from: 'dad', kind: 'text', text: isYear(L) ? '下个月十三号我到上海，嘉定有个供应商要见。' : '我后天到上海，嘉定有个供应商要见。' });
       invite(L, { id: 'dad-dinner', from: 'dad', thread: 'dad', title: '和爸爸吃饭', place: '和平饭店 · 爵士吧', at: FD(L, 20, 0), deadline: FD(L, 18, 0),
-        text: '周六晚上八点，你住的那个和平饭店，楼下那个爵士吧。我订了位。', onAccept: 4, onDecline: -6, onMiss: -8,
+        text: isYear(L) ? '十一月十三号，周六，晚上八点。和平饭店楼下那个爵士吧。我订了位。' : '周六晚上八点，你住的那个和平饭店，楼下那个爵士吧。我订了位。', onAccept: 4, onDecline: -6, onMiss: -8,
         yesText: '好，爸，我一定到。', noText: '那天……我可能有事。' });
     } },
   // whatever you said, he's coming anyway
@@ -125,14 +135,15 @@ export function runStoryBeats(L) {
 export function storyContext(L, who) {
   const q = (L.quests || { list: {} }).list, out = [];
   const act = q.tide ? 3 : q['dads-offer'] || q['robot-arm'] ? 2 : 1;
-  if (['ruoan', 'xuan', 'momo', 'yinuo', 'zhixia', 'dad', 'maker', 'founder'].includes(who)) {
+  if (['ruoan', 'xuan', 'momo', 'yinuo', 'zhixia', 'dad', 'maker', 'founder', ...COLLEAGUES].includes(who)) {
     out.push('Ji Bai (纪白, the person talking to you) is 27, from Nanjing; UC Berkeley cognitive science (HCI, AI, product), then a few years in Silicon Valley tech; he has just moved to Shanghai to join an international technology consulting firm in Lujiazui, working on enterprise AI products.');
     if (act >= 2) out.push('His father has offered him the R&D floor at the family\'s precision-machining works in Nanjing and wants him home; Ji Bai hasn\'t decided.');
     if (q['robot-arm']) out.push(L.flags.demoDone ? 'The robot-arm start-up (Zhou\'s, introduced by Mingxuan) did well in its investor demo, partly thanks to Ji Bai.' : 'Mingxuan has pulled him into Zhou\'s robot-arm start-up, which needs a product lead.');
-    if (inv(L, 'dad-dinner')) out.push('His father is coming to Shanghai and has booked dinner at the Peace Hotel Jazz Bar on Saturday at 8 pm.');
+    if (inv(L, 'dad-dinner') && !L.flags.dinnerChoice) out.push('His father is coming to Shanghai and has booked dinner at the Peace Hotel Jazz Bar on Saturday at 8 pm.');
     if (L.flags.dinnerChoice) out.push(`At that dinner Ji Bai ${({ stay: 'told his father he is staying in Shanghai to build his own company', home: 'agreed to go home to Nanjing', together: 'proposed that the family works manufacture the robot arm, working between both cities', silent: 'could not give his father an answer', missed: 'never turned up' })[L.flags.dinnerChoice] || 'talked with his father'}.`);
     const w = workContext(L); if (w) out.push(w);
     const y = lifeContext(L); if (y) out.push(y);
+    const cc = careerContext(L, who); if (cc) out.push(cc);                 // what has really happened this year, as far as this person would know it
     if (who === 'ruoan' && act >= 2) out.push('You (Ruoan) know him best of anyone; you think he should stop pleasing everyone and say what he wants, but you won\'t tell him what to choose.');
     if (who === 'dad') out.push('You are his father: proud, few words, you won\'t say you miss him.');
   }
@@ -141,6 +152,7 @@ export function storyContext(L, who) {
 
 // ---- Act III: the dinner. [who, zh, en] lines; { ask: [...] } answers with d (Dad's feelings), set, then ----
 export function dinnerScript(L) {
+  if (isYear(L)) return yearDinner(L);                                      // a year on: he knows what you did for a living, how it went, where you live (world/careerStory.js)
   const demo = !!L.flags.demoDone, told = !!(L.flags.toldDadStudio || L.flags.toldDadPlans);
   return [
     ['dad', '坐。菜我点好了，都是你小时候爱吃的。', 'Sit down. I\'ve ordered. The things you liked as a boy.'],
@@ -205,3 +217,12 @@ export const ENDINGS = {
   apart: { title: B('错过', 'Missed'), text: B('他等了你四十分钟。回南京的高铁上，他发来一张照片：爵士吧里那张空着的椅子。',
     'He waited forty minutes. From the train back to Nanjing he sends a photo: the empty chair at the Jazz Bar.') },
 };
+
+// the ending as the card shows it: in a year game the text is told without the old week's furniture
+export function endingOf(L, id) { const e = ENDINGS[id]; if (!e) return null; const t = yearEnding(L, id); return t ? { title: e.title, text: t } : e; }
+// what the card adds afterwards: the road he took this year (world/careerStory.js), then the thing he made (world/work.js epilogue, passed in)
+export function afterword(L, id, made = null) {
+  const y = yearEpilogue(L, id), parts = [y, made].filter(Boolean);
+  if (!parts.length) return null;
+  return B(parts.map((p) => p.zh).join(''), parts.map((p) => p.en).join(' '));
+}

@@ -49,6 +49,8 @@ export function createSceneTalk({ voice = null, getLife, save, names = {} }) {
   return {
     get active() { return !!cur; },
     get asking() { return !!(cur && cur.ask); },
+    get speaking() { return cur ? cur.speaking || null : null; },   // who is talking now (for whoever animates them)
+    names,                                                          // who's who: other modules add their people (Object.assign)
     // with: whose feelings the answers move; at(who) -> [x, y, z] for positional voices
     play(script, { with: who = null, at = null, onDone = null } = {}) { cur = { script, i: 0, queue: [], wait: 1.2, ask: null, with: who, at, onDone, set: null }; },
     key(code) { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(code); return i >= 0 ? answer(i) : false; },

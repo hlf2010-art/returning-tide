@@ -15,6 +15,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { colliders, addFloor, addDynamicCollider } from './layout.js';
 import { getLang } from '../ui/i18n.js';
 import { stamp, skipTo, clockText } from '../engine/life.js';
+import { isYear } from '../engine/year.js';
+import { passLine, hasFlat } from './career.js';
 
 export const SIX = {
   y: 23.5, h: 3.3,
@@ -25,6 +27,7 @@ export const SIX = {
   arrive: { x: -49.4, z: -242.4, yaw: -2.3 },          // out of the lift, facing down the corridor
 };
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
+const bedFrom = (l) => (isYear(l) ? 18 * 60 + 30 : 21 * 60);      // in a year game he can turn in once the working day is over
 const F = SIX.y, H = SIX.h;
 
 // ---- the plan: one floor region, walls as colliders that stand only on this storey ----
@@ -276,7 +279,7 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
     uLift: () => [T('电梯', 'Lifts'), T('下楼到大堂', 'Down to the lobby')],
     uDoorOut: () => [T('612 房', 'Room 612'), S.door > 0.5 ? T('关门', 'Close') : T('刷房卡', 'Key card')],
     uDoorIn: () => [T('房门', 'Door'), S.door > 0.5 ? T('关门', 'Close') : T('开门', 'Open')],
-    uBed: () => { const tod = stamp(L0()) % 1440; return [T('床', 'Bed'), tod >= 21 * 60 || tod < 5 * 60 ? T('睡到早上', 'Sleep till morning') : T('躺一会儿', 'Lie down a while')]; },
+    uBed: () => { const tod = stamp(L0()) % 1440; return [T('床', 'Bed'), tod >= bedFrom(L0()) || tod < 5 * 60 ? T('睡到早上', 'Sleep till morning') : T('躺一会儿', 'Lie down a while')]; },
     uWindow: () => [T('窗外', 'The window'), T('看看', 'Look out')],
     uWindowB: () => [T('窗外', 'The window'), T('看看', 'Look out')],
     uBath: () => [T('卫生间', 'Bathroom'), T('洗把脸', 'Wash your face')],
@@ -291,14 +294,16 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
       audio && audio.cue && audio.cue('ping', 1.3, 0.5);
     } else if (id === 'uDoorOut') {
       if (S.door > 0.5) setDoor(false);
+      else if (hasFlat(l)) { hud.toast(T('房卡失效了：你已经退房，搬去了租的房子（滴滴 → “我的住处”）。', 'The card no longer works: you have checked out and moved to the flat you rent (DiDi → "My flat").'), 4); audio && audio.cue && audio.cue('bump', 0, 0.3); }
       else if (!l.flags.hotelKey) { hud.toast(T('需要房卡（在前台取）', 'It needs a key card (from the front desk)'), 2.6); audio && audio.cue && audio.cue('bump', 0, 0.3); }
       else { readerLed.material.color.setRGB(0.2, 1.6, 0.4); audio && audio.cue && audio.cue('ping', 0, 0.3); setDoor(true); if (!S.said.room) { S.said.room = true; l.flags.room612 = true; save && save(); } }
     } else if (id === 'uDoorIn') setDoor(S.door < 0.5);
     else if (id === 'uBed') {
-      const now = stamp(l), tod = now % 1440, night = tod >= 21 * 60 || tod < 5 * 60;
-      const until = night ? (tod >= 21 * 60 ? now - tod + 1440 + 7 * 60 + 30 : now - tod + 7 * 60 + 30) : now + 40;
+      const now = stamp(l), tod = now % 1440, night = tod >= bedFrom(l) || tod < 5 * 60;
+      const until = night ? (tod >= 5 * 60 ? now - tod + 1440 + 7 * 60 + 30 : now - tod + 7 * 60 + 30) : now + 40;
+      const gap = night ? passLine(l, until, getLang()) : '';                           // a year game: weeks can pass in this night (world/career.js)
       travel(async () => { skipTo(l, until); if (player.stamina) { player.stamina.energy = 1; player.stamina.winded = 0; } save && save(); },
-        { line: night ? T(`一夜好眠 · ${clockText(until)}`, `A good night's sleep · ${clockText(until)}`) : T(`躺了一会儿 · ${clockText(until)}`, `You lie down a while · ${clockText(until)}`), hold: night ? 1600 : 900 });
+        { line: gap || (night ? T(`一夜好眠 · ${clockText(until)}`, `A good night's sleep · ${clockText(until)}`) : T(`躺了一会儿 · ${clockText(until)}`, `You lie down a while · ${clockText(until)}`)), hold: gap ? 2400 : night ? 1600 : 900 });
     } else if (id === 'uWindow' || id === 'uWindowB') {
       const lines = [
         ['江对面，东方明珠和陆家嘴的灯都亮着。楼下是外滩的人，一直到江边。', 'Across the river, the Pearl Tower and Lujiazui all lit. Below, people along the Bund all the way to the water.'],

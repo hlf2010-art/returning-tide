@@ -25,5 +25,16 @@ export const PEOPLE = {
   zhe:    { name: '阿哲', short: '阿哲', en: 'Zhe', role: 'livestreams the Bund at night', color: '#9a5a8a', voice: { pitch: 1.0, rate: 1.15 }, sex: 'm' },
   mum:    { name: '妈', short: '妈', en: 'Mum (Zhou Lan)', role: 'cardiologist, Gulou Hospital, Nanjing', color: '#b56576', voice: { pitch: 1.05, rate: 0.98 }, sex: 'f' },
 };
+// the working year (world/career.js): colleagues, a client, the agent, the watch-repairer's daughter
+Object.assign(PEOPLE, {
+  taoke:    { name: '陶可', short: '陶可', en: 'Tao Ke', role: 'analyst, Marlowe Finch', color: '#6a8fb5', voice: { pitch: 1.1, rate: 1.08 }, sex: 'f' },
+  shaofeng: { name: '邵峰', short: '邵峰', en: 'Shao Feng', role: 'senior consultant, Marlowe Finch', color: '#5a6a8a', voice: { pitch: 0.98, rate: 1.1 }, sex: 'm' },
+  partner:  { name: '贺维安', short: 'Raymond', en: 'Raymond He', role: 'partner, Marlowe Finch', color: '#3d4a5c', voice: { pitch: 0.88, rate: 0.96 }, sex: 'm' },
+  hr:       { name: '迈芬 HR', short: 'HR', en: 'Marlowe Finch HR', role: 'human resources', color: '#7a7a7a', voice: { pitch: 1, rate: 1 } },
+  gu:       { name: '顾磊', short: '顾磊', en: 'Gu Lei', role: 'claims systems, Donglan; later Yushen', color: '#4f7a7a', voice: { pitch: 0.92, rate: 1.0 }, sex: 'm' },
+  feng:     { name: '冯玉兰', short: '冯总', en: 'Feng Yulan', role: 'VP operations, Donglan Insurance', color: '#8a4a5a', voice: { pitch: 1.0, rate: 1.02 }, sex: 'f' },
+  agent:    { name: '中介小吴', short: '小吴', en: 'Wu (letting agent)', role: 'letting agent', color: '#a07a3a', voice: { pitch: 1.05, rate: 1.15 }, sex: 'm' },
+  zhoumin:  { name: '周敏', short: '周敏', en: 'Zhou Min', role: "the watch-repairer's daughter", color: '#7a5a8a', voice: { pitch: 1.06, rate: 0.98 }, sex: 'f' },
+});
 export const FRIENDS = ['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo'];
 export const GROUP = { id: 'wuhu', title: '金陵五虎+1', members: ['me', ...FRIENDS] };

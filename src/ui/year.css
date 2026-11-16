@@ -1,0 +1,25 @@
+/* The year on screen (world/yearWorld.js, ui/journal.js): the date chip, the scene card for days
+   played as a conversation, the journal's "year" page. */
+#year-chip { position: fixed; top: 20px; right: 20px; padding: 5px 12px; border-radius: 999px; background: rgba(8, 10, 14, 0.42); color: #e9e2d2;
+  font: 500 12px/1.4 var(--ui, "Inter", "Noto Sans SC", sans-serif); letter-spacing: 0.06em; opacity: 0; transition: opacity 0.6s; pointer-events: none; z-index: 6; white-space: nowrap; }
+#year-chip.on { opacity: 0.92; }
+#year-card { position: fixed; inset: 0; z-index: 30; display: none; align-items: flex-start; justify-content: center; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 30%, #1b222c 0%, #0b0d11 70%); }
+#year-card.on { display: flex; pointer-events: auto; }
+#year-card .in { margin-top: 13vh; width: min(760px, 88vw); text-align: center; color: #e9e2d2; }
+#year-card .k { font: 600 12px var(--ui, sans-serif); letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold, #c9a24a); }
+#year-card h1 { margin: 14px 0 6px; font: 500 clamp(20px, 2.4vw, 30px)/1.3 var(--serif, "Noto Serif SC", serif); }
+#year-card h2 { margin: 0 0 18px; font: 500 clamp(15px, 1.5vw, 19px)/1.4 var(--ui, sans-serif); color: #b9c2cc; }
+#year-card .note { font: 400 12.5px/1.6 var(--ui, sans-serif); color: #7d8792; }
+#year-card .acts { margin-top: 30vh; }
+body.year-card #ride-sub { z-index: 36; }
+body.year-card #objective, body.year-card #minimap, body.year-card #prompt { visibility: hidden; }
+/* journal: the year page */
+#journal .yr { padding: 18px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 28px; overflow: auto; }
+#journal .yr h3 { grid-column: 1 / -1; margin: 10px 0 2px; font: 600 12px var(--ui, sans-serif); letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold, #c9a24a); }
+#journal .yr .row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07); font: 400 13.5px/1.5 var(--ui, sans-serif); }
+#journal .yr .row b { font-weight: 600; text-align: right; }
+#journal .yr .bar { display: inline-block; width: 110px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); vertical-align: middle; margin-right: 8px; }
+#journal .yr .bar i { display: block; height: 100%; border-radius: 3px; background: var(--gold, #c9a24a); }
+#journal .yr p { grid-column: 1 / -1; margin: 8px 0 0; font: 400 12.5px/1.6 var(--ui, sans-serif); color: #9aa3ad; }
+#journal .q .kind.side-story { color: #9fc0d8; }

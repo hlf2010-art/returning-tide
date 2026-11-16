@@ -6,6 +6,8 @@
 // the Manner mini-program (order + pay), the pay sheet, calls (incoming / in progress).
 import './phone.css';
 import { stamp, clockText, markRead, unreadTotal, pay, balance, METHODS, preview, post } from '../../engine/life.js';
+import { isYear, dateOf } from '../../engine/year.js';
+import { shortDate, elapsed } from '../../world/career.js';
 import { storyContext } from '../../world/story.js';
 import { reply, respondToInvite } from '../../world/agenda.js';
 import { PEOPLE, GROUP, ME } from '../../world/cast.js';
@@ -128,7 +130,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   }
 
   function lockView(l) {
-    const d = new Date(2026, 10, 14 + (l.clock.day - 1));
+    const yd = isYear(l) ? dateOf(l) : null, d = yd ? new Date(yd.y, yd.m - 1, yd.d) : new Date(2026, 10, 14 + (l.clock.day - 1));   // a year game stands on real dates (engine/year.js)
     const notes = l.notifications.slice(-5).reverse().map((n) => `<div class="note" data-act="openThread" data-id="${esc(n.thread)}">${avatar(n.from)}<div><div class="t">${SHOP_APPS.includes(n.from) ? esc(nm(n.from)) : `${Z('微信', 'WeChat')} · ${esc(nm(n.from))}`}</div><div class="p">${esc(X(n.text))}</div></div></div>`).join('');
     const date = Z(`${d.getMonth() + 1}月${d.getDate()}日 星期${WEEK[d.getDay()]}`, `${DAYS_EN[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`);
     return `<div class="view lock"><div class="date">${date}</div><div class="time">${clockText(l.clock.minute)}</div>
@@ -140,7 +142,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     return `<div class="view home"><div class="grid">
       ${app('chats', Z('微信', 'WeChat'), BRAND_COLOR.wechat, appGlyph('wechat', 34), unread)}
       ${app('wallet', Z('钱包', 'Wallet'), 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}
-      ${app('calendar', Z('日历', 'Calendar'), '#fff;color:#e33', `<span style="color:#e33;font-size:24px">${l.clock.day + 13}</span>`)}
+      ${app('calendar', Z('日历', 'Calendar'), '#fff;color:#e33', `<span style="color:#e33;font-size:24px">${isYear(l) ? dateOf(l).d : l.clock.day + 13}</span>`)}
       ${app('recents', Z('电话', 'Phone'), 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}
       ${app('jd', Z('京东', 'JD'), BRAND_COLOR.jd, appGlyph('jd'), shopUnread('jd'))}
       ${app('taobao', Z('淘宝', 'Taobao'), BRAND_COLOR.taobao, appGlyph('taobao', 34), shopUnread('taobao'))}
@@ -150,7 +152,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       ${app('photos', Z('相册', 'Photos'), 'linear-gradient(160deg,#ffb347,#ff5e62 45%,#6a5acd)', '<span style="font-size:24px">✿</span>')}
       ${app('sketch', Z('速写本', 'Sketchbook'), 'linear-gradient(160deg,#f6f1e4,#e2d6b8)', '<span style="font-size:22px;color:#1d3a8a">✎</span>')}
       </div>
-      <div class="dock">${app('chats', '', BRAND_COLOR.wechat, appGlyph('wechat', 30), 0)}${app('recents', '', 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}${app('wallet', '', 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}${app('calendar', '', '#fff', `<span style="color:#e33;font-size:20px">${l.clock.day + 13}</span>`)}</div></div>`;
+      <div class="dock">${app('chats', '', BRAND_COLOR.wechat, appGlyph('wechat', 30), 0)}${app('recents', '', 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}${app('wallet', '', 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}${app('calendar', '', '#fff', `<span style="color:#e33;font-size:20px">${isYear(l) ? dateOf(l).d : l.clock.day + 13}</span>`)}</div></div>`;
   }
   function chatsView(l) {
     const rows = l.order.map((id) => l.threads[id]).filter((t) => t && !SHOP_APPS.includes(t.id)).map((t) => {
@@ -175,8 +177,8 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
         bub = `<div class="bub voice ${S.playing === m.id ? 'playing' : ''}" data-act="playVoice" data-id="${m.id}"><span>▶</span><span class="wave">${bars}</span><span>${secs}″</span></div>${m.transcribed ? `<div class="trans">${esc(X(m.text))}</div>` : `<div class="sys" data-act="transcribe" data-id="${m.id}" style="cursor:pointer;align-self:flex-start">${Z('转文字', 'Transcribe')}</div>`}`;
       } else if (m.kind === 'invite') {
         const inv = l.invites.find((i) => i.id === m.meta.invite) || {};
-        const dayDiff = Math.floor(m.meta.at / 1440) - l.clock.day;
-        const when = m.meta.at != null ? `${dayDiff === 1 ? Z('明天 ', 'Tomorrow ') : dayDiff === 2 ? Z('后天 ', 'In two days, ') : ''}${clockText(m.meta.at)}` : '';
+        const dayDiff = m.meta.at != null ? elapsed(l, l.clock.day, Math.floor(m.meta.at / 1440)) : 0;                 // real days (weeks can lie between playable days)
+        const when = m.meta.at != null ? `${dayDiff === 1 ? Z('明天 ', 'Tomorrow ') : dayDiff === 2 ? Z('后天 ', 'In two days, ') : dayDiff > 2 && isYear(l) ? `${shortDate(l, getLang(), Math.floor(m.meta.at / 1440))} ` : ''}${clockText(m.meta.at)}` : '';
         bub = `<div class="card"><div class="k">${Z('邀请', 'Invitation')}</div><div class="ti">${esc(X(m.meta.title))}</div><div class="pl">${esc(when)} · ${esc(X(m.meta.place))}</div>${m.text ? `<div style="margin-top:6px">${esc(X(m.text))}</div>` : ''}
           ${inv.status === 'pending' ? `<div class="act"><button class="btn go" data-act="invite" data-id="${esc(inv.id)}" data-yes="1">${Z('接受', 'Accept')}</button><button class="btn no" data-act="invite" data-id="${esc(inv.id)}" data-yes="0">${Z('婉拒', 'Decline')}</button></div>` : `<div class="st ${inv.status === 'accepted' ? '' : 'no'}">${{ accepted: Z('已接受', 'Accepted'), declined: Z('已婉拒', 'Declined'), missed: Z('已过期', 'Missed') }[inv.status] || ''}</div>`}</div>`;
       } else if (m.kind === 'card') {                                          // a WeChat contact card
@@ -237,7 +239,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       <div class="ledger">${led}</div><div class="sys" style="text-align:center;padding:4px 0 20px">${Z('游戏内虚拟资金', 'In-game money only')}</div></div></div>`;
   }
   function calendarView(l) {
-    const dayName = (at) => { const dd = Math.floor(at / 1440) - l.clock.day; return dd <= 0 ? Z('今天', 'Today') : dd === 1 ? Z('明天', 'Tomorrow') : Z('后天', 'In two days'); };
+    const dayName = (at) => { const dd = elapsed(l, l.clock.day, Math.floor(at / 1440)); return dd <= 0 ? Z('今天', 'Today') : dd === 1 ? Z('明天', 'Tomorrow') : dd > 2 && isYear(l) ? shortDate(l, getLang(), Math.floor(at / 1440)) : Z('后天', 'In two days'); };
     const items = l.calendar.slice().sort((a, b) => a.at - b.at).map((c) => `<div class="row">${avatar(c.with)}<div class="mid"><div class="n">${esc(X(c.title))}</div><div class="pv">${dayName(c.at)} ${clockText(c.at)} · ${esc(X(c.place))}</div></div></div>`).join('');
     const pend = l.invites.filter((i) => i.status === 'pending').map((i) => `<div class="row" data-act="openThread" data-id="${esc(i.thread || i.from)}"><div class="av" style="background:#ccc">?</div><div class="mid"><div class="n">${esc(X(i.title))}</div><div class="pv">${Z('待回复', 'Waiting for your answer')} · ${esc(short(i.from))}</div></div></div>`).join('');
     return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>${Z('日历', 'Calendar')}</div><div class="scroll">${items || `<div class="row"><div class="mid"><div class="pv">${Z('暂无安排', 'Nothing planned')}</div></div></div>`}${pend}</div></div>`;

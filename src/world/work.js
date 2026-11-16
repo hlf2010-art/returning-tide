@@ -12,7 +12,7 @@
 // All written in Chinese first, the way these people would say it, with English alongside.
 import { post, thread, stamp } from '../engine/life.js';
 import { gainFollowers } from '../engine/maker.js';
-import { finalDay } from '../engine/year.js';
+import { finalDay, isYear } from '../engine/year.js';
 import { studio, hasProduct, rev, specs, summary, isOpen, hear, addToList, machined, eveningOf, todays, tonight, REGULARS, FIXES, HEAVY_AT } from '../engine/studio.js';
 
 const B = (zh, en) => ({ zh, en });
@@ -157,7 +157,7 @@ const RAIL = { x: 23.5, z: 22, label: B('江边（天黑以后）', 'The river r
 const DIDI = { x: -3.2, z: -18.5, label: B('打车点', 'DiDi pickup') };
 const HOTEL = { x: -48, z: -209.5, label: B('和平饭店 · 612 的书桌', 'Peace Hotel · the desk in 612') };
 export const WORK_QUESTS = [
-  { id: 'own-work', act: 2, giver: 'me',
+  { id: 'own-work', act: 1, giver: 'me',
     title: B('一件自己的东西', 'Something of your own'),
     summary: (L) => { const s = summary(L); return s.grade === 0 ? B('机械臂是别人的。你自己的那台云台，图纸还贴在阿凯的白板上。', "The robot arm is someone else's. Your own gimbal is still a sketch on Kai's whiteboard.")
       : B(`夜行云台，第 ${s.rev} 版。白天改，天黑了拿到外滩给人用，夜里记下来。和爸爸吃饭那天，做到哪一版就是哪一版。`, `The night gimbal, version ${s.rev}. Revise it by day, put it in people's hands on the Bund after dark, write it up at night. Whatever version it has reached by the dinner with Dad is the one he'll see.`); },
@@ -309,6 +309,7 @@ export function dinnerWork(L) {
   else if (s.grade === 3) { if (s.list) say('dad', '改了几版，有人用，有人要。……像回事了。', "Several versions. People using it, people wanting it. ...It's starting to look like something.");
     else say('dad', '改了几版，有人用过，毛病一条一条在改。……像回事了。', "Several versions, people have had it in their hands, the faults coming out one at a time. ...It's starting to look like something."); d += 1; }
   else if (s.grade === 2) say('dad', '才开了个头。开了头，就别放下。', "It's a beginning. Now you've begun, don't put it down.");
+  else if (isYear(L)) say('dad', '一年，一台样件。', 'One year. One sample.');
   else say('dad', '一个星期，一台样件。', 'One week. One sample.');
   d = Math.max(-2, Math.min(8, d));
   return [

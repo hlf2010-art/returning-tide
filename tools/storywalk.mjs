@@ -11,7 +11,7 @@ const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errors = [];
 p.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 p.on('pageerror', (e) => errors.push(e.message));
-await p.goto(`${url}?q=4&nolock&fresh&lang=en`, { waitUntil: 'load' });
+await p.goto(`${url}?q=4&nolock&fresh&legacy&lang=en`, { waitUntil: 'load' });
 await p.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', null, { timeout: 300000 });
 const ev = (f, a) => p.evaluate(f, a);
 await ev(() => { window.__bund.start(); window.__bund.dtMax = 0.25; const s = document.createElement('style'); s.textContent = '#minimap,#dev{display:none!important}'; document.head.appendChild(s); });

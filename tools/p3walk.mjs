@@ -11,7 +11,7 @@ const errors = [];
 p.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 p.on('pageerror', (e) => errors.push(e.message));
 // a lighter crowd and the full traffic (software rendering is slow); real presets are checked through the panel
-await p.goto(`${url}?q=4&nolock&life=0&fresh&lang=en&crowd=0.5&traffic=1`, { waitUntil: 'load' });
+await p.goto(`${url}?q=4&nolock&life=0&fresh&legacy&lang=en&crowd=0.5&traffic=1`, { waitUntil: 'load' });
 await p.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', null, { timeout: 300000 });
 const ev = (f, a) => p.evaluate(f, a);
 // 1. graphics settings: the tab, a preset, a custom change
