@@ -9,6 +9,7 @@
 //   Act III 回潮   dinner with Dad at the Peace Hotel's Jazz Bar (day 6, 8 pm), then the river at
 //                  the late-night lighting at ten, and one of six endings (what you chose, what you'd done, how he feels)
 import { post, invite, stamp, nudge, relation, emit } from '../engine/life.js';
+import { dinnerWork, dinnerAfter, workContext } from './work.js';
 
 export const D = (day, h, m = 0) => day * 1440 + h * 60 + m;      // absolute minute
 const kept = (L, id) => !!(L.invites.find((i) => i.id === id) || {}).kept;
@@ -127,6 +128,7 @@ export function storyContext(L, who) {
     if (q['robot-arm']) out.push(L.flags.demoDone ? 'The robot-arm start-up (Zhou\'s, introduced by Mingxuan) did well in its investor demo, partly thanks to Jibai.' : 'Mingxuan has pulled him into Zhou\'s robot-arm start-up, which needs a product lead.');
     if (inv(L, 'dad-dinner')) out.push('His father is coming to Shanghai and has booked dinner at the Peace Hotel Jazz Bar on Saturday at 8 pm.');
     if (L.flags.dinnerChoice) out.push(`At that dinner Jibai ${({ stay: 'told his father he is staying in Shanghai to build his own company', home: 'agreed to go home to Nanjing', together: 'proposed that the family works manufacture the robot arm, working between both cities', silent: 'could not give his father an answer', missed: 'never turned up' })[L.flags.dinnerChoice] || 'talked with his father'}.`);
+    const w = workContext(L); if (w) out.push(w);
     if (who === 'ruoan' && act >= 2) out.push('You (Ruoan) know him best of anyone; you think he should stop pleasing everyone and say what he wants, but you won\'t tell him what to choose.');
     if (who === 'dad') out.push('You are his father: proud, few words, you won\'t say you miss him.');
   }
@@ -135,8 +137,7 @@ export function storyContext(L, who) {
 
 // ---- Act III: the dinner. [who, zh, en] lines; { ask: [...] } answers with d (Dad's feelings), set, then ----
 export function dinnerScript(L) {
-  const demo = !!L.flags.demoDone, dad = relation(L, 'dad').affinity, told = !!(L.flags.toldDadStudio || L.flags.toldDadPlans);
-  const canTogether = demo && dad >= 55;
+  const demo = !!L.flags.demoDone, told = !!(L.flags.toldDadStudio || L.flags.toldDadPlans);
   return [
     ['dad', '坐。菜我点好了，都是你小时候爱吃的。', 'Sit down. I\'ve ordered. The things you liked as a boy.'],
     { ask: [
@@ -154,17 +155,25 @@ export function dinnerScript(L) {
       { zh: '爸，你厂里的精度，正是我们缺的。', en: 'Dad, the precision your works has is exactly what we\'re missing.', d: 3, flag: 'pitchedDad', then: [['dad', '……哦？说说看。', '...Oh? Go on.']] },
       { zh: '（喝口茶）', en: '(Drink some tea.)', d: 0, then: [] },
     ] },
+    // what you've made, if you've made something (world/work.js): on the table, or left in your pocket
+    ...dinnerWork(L),
     ['dad', told ? '你上次说想做自己的工作室。我想了很久。' : '厂里那层楼，我还给你留着。新线明年开，研发总得有人管。', told ? 'Last time you said you wanted your own studio. I\'ve thought about it a long while.' : 'That floor at the works is still yours. The new line starts next year. Someone has to run R&D.'],
     ['dad', '我五十五了。不想再一个人撑着。', 'I\'m fifty-five. I don\'t want to carry it on my own any more.'],
-    { ask: [
-      { zh: '我想留在上海，做我自己的公司。', en: 'I want to stay in Shanghai and build my own company.', d: -2, set: 'stay',
-        then: dad >= 58 ? [['dad', '……那就做好。别让人看笑话。钱不够，跟我说。', '...Then do it properly. Don\'t let anyone laugh at you. If money\'s short, tell me.']] : [['dad', '……随你。', '...Suit yourself.']] },
-      { zh: '好。我跟你回南京。', en: 'All right. I\'ll come home to Nanjing.', d: 6, set: 'home', then: [['dad', '……好。你妈会高兴的。', '...Good. Your mother will be happy.']] },
-      { zh: '让厂里来做我们的机械臂。我两边跑。', en: 'Let the works build our robot arm. I\'ll work between the two cities.', d: canTogether ? 4 : -2, set: canTogether ? 'together' : 'stay',
-        then: canTogether ? [['dad', '……把方案发给我。下周带他们来厂里看看。', '...Send me the proposal. Bring them to the works next week.']]
-          : [['dad', '你拿什么让我信？先把你自己的事做成再说。', 'What have you got to make me believe it? Get your own thing working first.']] },
-      { zh: '（沉默）', en: '(Silence.)', d: -1, set: 'silent', then: [['dad', '你还是没想好。没关系。想好了，告诉我。', 'You still haven\'t decided. That\'s all right. When you have, tell me.']] },
-    ] },
+    // the answer. Read when the conversation reaches it, so how he takes it follows everything said
+    // (and shown) at the table before it, as the ending does
+    { get ask() {
+      const dad = relation(L, 'dad').affinity, canTogether = demo && dad >= 55, warm = dad >= 58;
+      const stay = dinnerAfter(L, 'stay', warm), home = dinnerAfter(L, 'home', true), tog = dinnerAfter(L, canTogether ? 'together' : 'refused', true);
+      return [
+        { zh: '我想留在上海，做我自己的公司。', en: 'I want to stay in Shanghai and build my own company.', d: -2, set: 'stay', flag: stay.flag,
+          then: [...(warm ? [['dad', '……那就做好。别让人看笑话。钱不够，跟我说。', '...Then do it properly. Don\'t let anyone laugh at you. If money\'s short, tell me.']] : [['dad', '……随你。', '...Suit yourself.']]), ...stay.then] },
+        { zh: '好。我跟你回南京。', en: 'All right. I\'ll come home to Nanjing.', d: 6, set: 'home', flag: home.flag, then: [['dad', '……好。你妈会高兴的。', '...Good. Your mother will be happy.'], ...home.then] },
+        { zh: '让厂里来做我们的机械臂。我两边跑。', en: 'Let the works build our robot arm. I\'ll work between the two cities.', d: canTogether ? 4 : -2, set: canTogether ? 'together' : 'stay', flag: tog.flag,
+          then: canTogether ? [['dad', '……把方案发给我。下周带他们来厂里看看。', '...Send me the proposal. Bring them to the works next week.'], ...tog.then]
+            : tog.replace ? tog.then : [['dad', '你拿什么让我信？先把你自己的事做成再说。', 'What have you got to make me believe it? Get your own thing working first.']] },
+        { zh: '（沉默）', en: '(Silence.)', d: -1, set: 'silent', then: [['dad', '你还是没想好。没关系。想好了，告诉我。', 'You still haven\'t decided. That\'s all right. When you have, tell me.']] },
+      ];
+    } },
     ['dad', '吃吧，菜要凉了。', 'Eat. The food\'s getting cold.'],
   ];
 }

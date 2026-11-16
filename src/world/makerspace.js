@@ -42,7 +42,7 @@ const boardTex = () => canvasTex(1024, 512, (x, w, h) => {
 });
 const signTex = (lines, { bg = '#0b0b0d', fg = '#ff5a36', w = 1024, h = 256 } = {}) => canvasTex(w, h, (x) => { x.fillStyle = bg; x.fillRect(0, 0, w, h); x.textAlign = 'center'; x.textBaseline = 'middle'; lines.forEach(([t, s, c], i) => { x.font = `700 ${s}px "Noto Sans SC", sans-serif`; x.shadowColor = c || fg; x.shadowBlur = 18; x.fillStyle = c || fg; x.fillText(t, w / 2, h * (i + 1) / (lines.length + 1)); }); });
 
-export function createMakerspace({ scene, people, hud, audio, getLife, save, player, travel, onMode }) {
+export function createMakerspace({ scene, people, hud, audio, getLife, save, player, travel, onMode, onWork = null }) {
   const group = new THREE.Group(); group.name = 'makerspace'; group.visible = false; scene.add(group);
   const std = (o) => new THREE.MeshStandardMaterial(o);
   const add = (geo, mat, x, y, z, ry = 0, rx = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); m.receiveShadow = true; m.castShadow = !mat.transparent; group.add(m); return m; };
@@ -125,7 +125,7 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
   function render() {
     const l = L0(), m = maker(l), lv = level(m), nx = nextLevelAt(m);
     const head = `<div class="hd"><b>${T('工作台', 'Workbench')}</b><span class="lv">${T('创客', 'Maker')} ${lv} · ${m.xp}${nx ? ` / ${nx}` : ''} XP</span><span class="x" data-b="close">Esc</span></div>
-      <div class="tabs"><span data-b="tab:plans" class="${S.tab === 'plans' ? 'on' : ''}">${T('图纸', 'Blueprints')}</span><span data-b="tab:parts" class="${S.tab === 'parts' ? 'on' : ''}">${T('零件', 'Parts')}</span><span data-b="tab:perks" class="${S.tab === 'perks' ? 'on' : ''}">${T('成长', 'Perks')}</span></div>`;
+      <div class="tabs"><span data-b="tab:plans" class="${S.tab === 'plans' ? 'on' : ''}">${T('图纸', 'Blueprints')}</span><span data-b="tab:parts" class="${S.tab === 'parts' ? 'on' : ''}">${T('零件', 'Parts')}</span><span data-b="tab:perks" class="${S.tab === 'perks' ? 'on' : ''}">${T('成长', 'Perks')}</span>${m.gadgets.gimbal && onWork ? `<span data-b="work" class="wk">${T(`夜行云台 · 第 ${m.gadgets.gimbal.version || 1} 版 · 改版 →`, `Night gimbal · v${m.gadgets.gimbal.version || 1} · revise →`)}</span>` : ''}</div>`;
     if (S.step === 'solder') {
       const n = S.joints.length;
       el.innerHTML = `${head}<div class="solder"><div class="t">${T(`焊第 ${n + 1} / 6 个焊点：标记进入绿色区域时按 空格`, `Joint ${n + 1} of 6: press Space as the marker crosses the green`)}</div>
@@ -148,6 +148,7 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
   el.addEventListener('click', (e) => {
     const b = e.target.closest('[data-b]'); if (!b) return; const [a, v] = b.dataset.b.split(':'); const l = L0();
     if (a === 'close') close();
+    else if (a === 'work') { close(); if (!S.open && onWork) onWork(); }                 // the notebook, at the bench (ui/workbook.js)
     else if (a === 'tab') { S.tab = v; render(); }
     else if (a === 'buy') { const r = buyPart(l, v, 1); if (!r.ok) hud.toast(T('余额不足', 'Not enough in WeChat Pay'), 2); else { audio && audio.cue && audio.cue('ping', 0, 0.3); save && save(); } render(); }
     else if (a === 'build') build(v);
@@ -168,11 +169,13 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
     S.speed = 0.9 + S.joints.length * 0.12;
     if (S.joints.length < 6) { render(); return; }
     const quality = S.joints.reduce((a, b) => a + b, 0) / S.joints.length, l = L0();
+    S.lastBuilt = S.building.id;
     const r = finishBuild(l, S.building, quality); S.step = null; S.building = null; save && save();
     finished.visible = true; pieces.visible = false;
     hud.toast(T(`做好了！质量 ${Math.round(quality * 100)}% · +${r.xp} 创客经验${r.levelUp ? ` · 升到创客 ${r.levelUp}` : ''}`, `Built! Quality ${Math.round(quality * 100)}% · +${r.xp} Maker XP${r.levelUp ? ` · Maker ${r.levelUp}` : ''}`), 4.5);
     for (const a of r.achievements) setTimeout(() => hud.achievement && hud.achievement(T(a.zh, a.en)), 1500);
     if (kai) setTimeout(() => hud.bark({ speaker: { zh: '阿凯', en: 'Kai' }, text: quality > 0.8 ? { zh: '可以啊小沈，焊点很漂亮。', en: 'Nice one. Those joints are clean.' } : { zh: '能用就行，下次手再稳一点。', en: 'It works. Steadier hand next time.' }, who: 'maker', seconds: 3 }), 900);
+    if (S.lastBuilt === 'gimbal') setTimeout(() => hud.toast(T('天黑以后，把它拿到外滩，借给江边拍照的人试试（N 翻开本子）。', 'After dark, take it down to the Bund and lend it to people taking photos by the river (N opens your notebook).'), 6), 5200);
     render(); setTimeout(() => close(), 2500);
   }
   function leave() {

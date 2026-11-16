@@ -539,3 +539,63 @@ html[lang="zh-CN"] #ride-card .place { font-family: var(--serif); font-weight: 9
 #entrance-labels .ent i { display: inline-grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: #e7b96a; color: #15110a; font: 800 12px var(--ui); font-style: normal; }
 #entrance-labels .ent span { font-weight: 500; color: rgba(243,234,216,0.7); }
 #entrance-labels .ent span::before { content: '· '; }
+
+/* the notebook (ui/workbook.js): the night gimbal's week. Also the journal's Work tab and the ending's afterword */
+#workbook { position: fixed; inset: 0; z-index: 28; display: grid; place-items: center; background: rgba(3,5,10,0.55); backdrop-filter: blur(6px); font-family: var(--ui); }
+#workbook.hidden { display: none; }
+#workbook .panel { width: min(760px, 94vw); max-height: 88vh; overflow: auto; padding: 20px 24px 14px; border-radius: 10px; background: rgba(16,18,26,0.95); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 30px 80px rgba(0,0,0,0.5); color: var(--ink); font-size: 14px; line-height: 1.55; }
+#workbook .ph { display: flex; align-items: center; gap: 14px; font: 700 13px var(--ui); letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+#workbook .ph .wh { margin-left: auto; letter-spacing: 0.08em; color: rgba(244,241,234,0.55); font-weight: 600; text-transform: none; }
+#workbook .x { appearance: none; border: 0; background: none; color: rgba(244,241,234,0.7); font-size: 16px; cursor: pointer; }
+#workbook .specs, .wb-sum .specs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 2px; }
+#workbook .sp, .wb-sum .sp { font: 600 12px var(--ui); padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.16); color: rgba(244,241,234,0.85); font-variant-numeric: tabular-nums; }
+#workbook .sp.bad, .wb-sum .sp.bad { border-color: rgba(255,143,128,0.55); color: #ffb3a6; }
+#workbook .tabs { display: flex; gap: 4px; margin: 10px 0 12px; }
+#workbook .tabs button { appearance: none; border: 0; border-bottom: 2px solid transparent; background: transparent; color: rgba(244,241,234,0.55); font: 700 11px var(--ui); letter-spacing: 0.2em; text-transform: uppercase; padding: 8px 12px; cursor: pointer; }
+#workbook .tabs button.on { color: var(--ink); border-bottom-color: var(--gold); }
+#workbook .tabs em { font-style: normal; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--gold); color: #15110a; letter-spacing: 0; }
+#workbook .cd, .wb-sum .cd { color: var(--gold); font-weight: 600; margin: 4px 0 12px; }
+#workbook .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 6px; }
+#workbook .row3 > div, .wb-sum .nums > div { padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); font-size: 12px; color: rgba(244,241,234,0.7); }
+#workbook .row3 b, .wb-sum .nums b { display: block; font: 700 22px var(--ui); color: #fff; font-variant-numeric: tabular-nums; }
+#workbook .row3 small { display: block; color: rgba(244,241,234,0.45); }
+#workbook .hd { font: 700 10px var(--ui); letter-spacing: 0.2em; text-transform: uppercase; color: rgba(244,241,234,0.5); margin: 16px 0 8px; }
+#workbook .rg { display: grid; grid-template-columns: 70px 1fr auto; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+#workbook .rg span { color: rgba(244,241,234,0.75); font-size: 13px; } #workbook .rg i { font-style: normal; font-size: 12px; color: var(--gold); }
+#workbook .qs { display: grid; gap: 6px; }
+#workbook .qt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.07); cursor: default; }
+#workbook .qt input { margin-top: 4px; accent-color: #e9b96f; cursor: pointer; } #workbook .qt.on { border-color: var(--gold); background: rgba(231,185,106,0.08); }
+#workbook .qt.on span { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 4px; }
+#workbook cite, .wb-sum cite { display: block; font-style: normal; font-size: 11px; color: rgba(244,241,234,0.5); margin-top: 2px; }
+#workbook .pl { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
+#workbook .tg { appearance: none; font: 600 12px var(--ui); color: var(--ink); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+#workbook span.tg { cursor: default; } #workbook .tg.on { background: var(--gold); color: #15110a; border-color: transparent; }
+#workbook .go { appearance: none; font: 700 13px var(--ui); color: #15110a; background: var(--gold); border: 0; border-radius: 8px; padding: 9px 18px; cursor: pointer; }
+#workbook .go:hover { background: var(--gold-2); }
+#workbook .hint, .wb-sum .hint, .wb-sum .empty { color: rgba(244,241,234,0.55); font-size: 12.5px; margin: 8px 0; }
+#workbook .note { color: #ffb3a6; font-size: 12.5px; margin: 8px 0 0; }
+#workbook .iss { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07); } #workbook .iss.ok { opacity: 0.6; }
+#workbook .ih { display: flex; align-items: baseline; gap: 10px; } #workbook .ih b { font-size: 15px; } #workbook .ih span { font-size: 11px; color: var(--gold); }
+#workbook .iss.open .ih b::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff8f80; margin-right: 8px; vertical-align: middle; }
+#workbook .iss p { margin: 3px 0 6px; color: rgba(244,241,234,0.72); font-size: 13px; } #workbook .iss p i { font-style: normal; color: rgba(244,241,234,0.45); font-size: 12px; }
+#workbook .fx { display: flex; gap: 10px; align-items: center; padding: 4px 0; } #workbook .fx.no { color: rgba(244,241,234,0.5); font-size: 12.5px; } #workbook .fx.done { color: rgba(244,241,234,0.5); }
+#workbook .fx .tg { width: 28px; height: 28px; padding: 0; border-radius: 6px; flex: none; } #workbook .fx .mk { width: 28px; text-align: center; flex: none; color: #7ee2a8; }
+#workbook .fx .fn small { display: block; color: rgba(244,241,234,0.5); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+#workbook .make { position: sticky; bottom: 0; display: flex; align-items: center; gap: 14px; justify-content: space-between; margin-top: 12px; padding: 12px 0 2px; background: rgb(16,18,26); border-top: 1px solid rgba(255,255,255,0.08); color: rgba(244,241,234,0.7); font-size: 12.5px; }
+#workbook .page, .wb-sum .page { margin: 10px 0; padding: 14px 18px; border-radius: 4px; background: #efe6cf; color: #2a251b; font: 500 14px/1.6 var(--serif); box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+#workbook .page h4, .wb-sum .page h4 { margin: 0 0 6px; font: 700 11px var(--ui); letter-spacing: 0.16em; text-transform: uppercase; color: #8a6a2c; }
+#workbook .page p, .wb-sum .page p { margin: 2px 0; } #workbook .page .plan, .wb-sum .page .plan { color: #1d3a8a; }
+#workbook .page blockquote, .wb-sum .page blockquote { margin: 8px 0; padding: 0 0 0 12px; border-left: 3px solid #b3261e; text-decoration: underline; text-decoration-color: rgba(179,38,30,0.55); text-underline-offset: 4px; }
+#workbook .page cite, .wb-sum .page cite { color: #6b5d43; text-decoration: none; display: inline-block; width: 100%; }
+#workbook .ls { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); } #workbook .ls span { color: rgba(244,241,234,0.65); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+#workbook .foot { margin-top: 14px; font: 600 11px var(--ui); letter-spacing: 0.12em; color: rgba(244,241,234,0.4); }
+#workbook .solder { padding: 18px 0; } #workbook .solder .t { margin-bottom: 12px; } #workbook .solder .bar { position: relative; height: 22px; border-radius: 11px; background: rgba(255,255,255,0.08); overflow: hidden; }
+#workbook .solder .win { position: absolute; top: 0; bottom: 0; background: rgba(126, 226, 168, 0.35); } #workbook .solder .mk { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #fff; border-radius: 2px; }
+#workbook .solder .js { display: flex; gap: 8px; margin-top: 12px; } #workbook .solder .js i { width: 16px; height: 16px; border-radius: 50%; display: block; } #workbook .js .g { background: #7ee2a8; } #workbook .js .o { background: #e7b96a; } #workbook .js .b { background: #d0584a; }
+.wb-sum h2 { font: 700 22px var(--ui); margin: 4px 0 2px; }
+.wb-sum .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0; }
+.wb-sum .iss { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.wb-sum .is { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.14); } .wb-sum .is.open { border-color: rgba(255,143,128,0.55); color: #ffb3a6; } .wb-sum .is.ok { color: rgba(244,241,234,0.5); text-decoration: line-through; }
+#ending-card .after { color: rgba(244,241,234,0.72); font-size: 0.95em; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.14); }
+#build .tabs .wk { margin-left: auto; opacity: 1; color: var(--gold); font-weight: 600; }
+@media (max-width: 680px) { #workbook .row3 { grid-template-columns: 1fr; } .wb-sum .nums { grid-template-columns: repeat(2, 1fr); } }

@@ -16,6 +16,9 @@ export const TIPS = {
   cruise: ['浦江游览每个整点开船（10 点到 21 点）。在闸口买票。', 'The river cruise sails on the hour, 10 am to 9 pm. Buy a ticket at the gate.'],
   shop: ['阿潮生煎：在柜台点单，等叫号，端了托盘找位子坐。', 'A-Chao Shengjian: order at the counter, wait for your number, take the tray to a seat.'],
   seat: ['坐着的时候：1–4 回答或选择，E 起身。', 'Sitting down: 1-4 to answer or choose, E to get up.'],
+  lend: ['天黑了，云台在你口袋里。看着江边正在拍照的人按 E，借给他试试。', "It's dark, and the gimbal's in your pocket. Look at someone taking a photo by the river and press E to lend it."],
+  page: ['听到的问题要写下来才改得了：和平饭店 612 的书桌，或杨浦的工作台。N 随时翻开本子看。', 'What you hear can only be fixed once it\'s written down: the desk in room 612, or your bench in Yangpu. N opens the notebook to read, anywhere.'],
+  revise: ['本子的“问题”页：选最多两处改，做出下一版。硬件要去工作台，固件在书桌就行。', 'The notebook\'s Issues page: pick up to two changes and make the next version. Hardware needs the bench; firmware can be done at the desk.'],
 };
 
 export function createTips({ isFree }) {

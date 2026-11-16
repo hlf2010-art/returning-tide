@@ -9,6 +9,8 @@ import { L as LAYOUT } from './layout.js';
 import { stamp } from '../engine/life.js';
 import { D, dinnerScript } from './story.js';
 import { getLang } from '../ui/i18n.js';
+import { createGimbalProp } from './props/gimbal.js';
+import { studio } from '../engine/studio.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 const Y0 = LAYOUT.curbH;
@@ -25,6 +27,8 @@ export function createDinner({ scene, people, player, getLife, save, sceneTalk, 
   const cabin = { hip: new THREE.Vector3(0, 0.47, 0.0), pedals: [new THREE.Vector3(-0.13, 0.05, 0.42), new THREE.Vector3(0.14, 0.05, 0.46)],
     rimPoint(a, out) { return out.copy(frame.localToWorld(new THREE.Vector3(a * 0.2, 0.79, 0.34))); } };
   const S = { seated: false, done: false, gone: false };
+  // what you made, on the table between you, once you've put it there (world/work.js)
+  const onTable = createGimbalProp({ phone: false }); onTable.group.position.set(-41.42, Y0 + 0.745 + 0.06, -219.88); onTable.group.rotation.y = 0.9; onTable.group.visible = false; scene.add(onTable.group);
   const L0 = () => getLife();
   // is he here? day 6 from 7:30 pm, while the dinner quest wants you, until you've left after talking
   function here() {
@@ -60,6 +64,9 @@ export function createDinner({ scene, people, player, getLife, save, sceneTalk, 
     update(dt, pp) {
       const on = here();
       frame.visible = on && !!dad;
+      const shown = on && !!L0().flags.showedWork;
+      if (shown && !onTable.group.visible) onTable.setState(studio(L0()).fixes);
+      onTable.group.visible = shown;
       if (on && pp && S.done && !S.seated && Math.hypot(pp.x - CHAIR.x, pp.z - CHAIR.z) > 14) { S.leftBar = true; S.gone = true; frame.visible = false; }
       if (!frame.visible || !dad) return;
       dad.root.position.set(0, 0, 0);

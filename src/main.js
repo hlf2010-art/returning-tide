@@ -94,7 +94,12 @@ import { createHenanTraffic } from './world/henanTraffic.js';
 import { createMetro } from './world/metro.js';
 import { updateQuests, currentStep } from './engine/quests.js';
 import { QUESTS as STORY_QUESTS, runStoryBeats, storyContext, ENDINGS } from './world/story.js';
-const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS];   // the story's, and the street moments' (world/moments.js)
+import { WORK_QUESTS, runWork, epilogue as workEpilogue, REG as WORK_REG } from './world/work.js';
+import { hasProduct, isDusk, studio as workState, summary as workSummary, goesLeft, unwritten as workUnwritten, REGULARS as WORK_REGULARS } from './engine/studio.js';
+import { createFieldTest, SPOTS as WORK_SPOTS } from './world/fieldTest.js';
+import { createWorkDesk } from './world/workDesk.js';
+import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
+const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the story's, the street moments' (world/moments.js), and the gimbal's week (world/work.js)
 import { createSceneTalk } from './ui/sceneTalk.js';
 import { createDinner } from './world/dinner.js';
 import { createJournal } from './ui/journal.js';
@@ -239,7 +244,7 @@ async function boot() {
   // places a DiDi takes you that you can walk into (the North Bund flat, IFC 32F)
   const dests = createDestinations({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, voice });
   // the Yangpu makerspace: build things (world/makerspace.js, engine/maker.js)
-  const makers = createMakerspace({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: buildMode });
+  const makers = createMakerspace({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: buildMode, onWork: () => openWork('bench') });
   const jazz = createJazzBar({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: seatMode });
   // places (phase 4.4): a shengjian shop on Nanjing Road (world/dumpling.js) and the river cruise from a
   // pier on the promenade (world/cruise.js)
@@ -300,7 +305,11 @@ async function boot() {
   // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
   world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
     getHour: () => life.clock.minute, isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active, enabled: !!people && (!params.has('q') || params.has('moments')) });
-  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling];
+  // something of your own (engine/studio.js): lending the gimbal on the promenade at dusk, the desk in 612
+  world.fieldTest = createFieldTest({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), getCrowdView: () => world.crowdView, getRain: () => weather.rain,
+    isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active, enabled: !!people });
+  world.workDesk = createWorkDesk({ scene, player, getLife: () => life, onOpen: () => openWork('desk') });
+  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk];
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
     getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
@@ -415,7 +424,7 @@ function startTalk(t, { inRide = false, opener = null } = {}) {
 function talkables() {
   const out = [];
   for (const q of traffic ? traffic.peds : []) if (q.active !== false && q.visible !== false) out.push({ key: `ped:${q.id}`, persona: PERSONAS[q.persona] ? q.persona : 'office', x: q.x, y: (q.y ?? L.curbH) + 1.62, z: q.z, hold(on, pp) { if (on) { q.pause = 999; q.faceTo = [pp.x, pp.z]; q.faceFor = 999; } else { q.pause = 0.3; q.faceFor = 0; q.faceTo = null; } } });
-  for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale, world.makerspace, world.friends]) if (m && m.talkables) out.push(...m.talkables());
+  for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale, world.makerspace, world.friends, world.fieldTest]) if (m && m.talkables) out.push(...m.talkables());
   if (world.crowdView) for (const a of world.crowdView.nearAgents()) {
     if (a.kind === 'follower' || a.leader) continue;                       // the one in charge answers for a group or a couple
     out.push({ key: `crowd:${a.id}`, persona: PERSONAS[a.persona] ? a.persona : 'visitor', x: a.x, y: a.y + 1.62 * (a.scale || 1), z: a.z,
@@ -468,6 +477,15 @@ function begin() {
   audio.start(); lock(); play(); hud.begin(lifeClock(life.clock.minute));
   if (devControls) hud.show('dev', true);
   if (conversation && conversation.state === 'idle') conversation.start();
+  // coming back to it: where your own thing stands (not for measurement tools)
+  if (hasProduct(life) && !params.has('q')) setTimeout(() => { if (mode === 'play') hud.toast(workReminder(), 6); }, 7000);
+}
+// one line on the gimbal's week: the version, the evenings left, who's waiting
+function workReminder() {
+  const s = workSummary(life), st = workState(life), left = 6 - life.clock.day, zhUI = getLang() === 'zh';
+  const waiting = Object.entries(st.people).filter(([, p]) => p.promised != null).map(([id]) => (zhUI ? WORK_REG[id].name.zh : WORK_REG[id].name.en));
+  const dinner = life.flags.dinnerChoice || left < 0 ? '' : zhUI ? (left === 0 ? ' · 今晚和爸爸吃饭' : ` · 离和爸爸吃饭还有 ${left} 个晚上`) : (left === 0 ? ' · dinner with Dad tonight' : ` · ${left} ${left === 1 ? 'evening' : 'evenings'} until the dinner with Dad`);
+  return zhUI ? `夜行云台 · 第 ${s.rev} 版${dinner}${waiting.length ? ` · ${waiting.join('、')}等着试改过的` : ''} · N 翻开本子` : `Night gimbal · version ${s.rev}${dinner}${waiting.length ? ` · ${waiting.join(' and ')} ${waiting.length === 1 ? 'is' : 'are'} waiting to try the changed one` : ''} · N for your notebook`;
 }
 function pause() {
   // pausing cancels an open interaction (it can be re-entered afterwards)
@@ -684,6 +702,7 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (mode === 'journal') { if (k === 'KeyJ' || k === 'Escape') { journal.close(); e.preventDefault(); } return; }
+  if (mode === 'work') { workbook.key(k); e.preventDefault(); return; }                 // the notebook has the keys
   if (mode === 'map') { if (k === 'KeyM' || k === 'Escape') worldMap.close(); else worldMap.key(k); e.preventDefault(); return; }
   if (mode === 'drive') { if (world.driving.key(k)) e.preventDefault(); else if (k === 'Escape' && noLock) pause(); return; }
   if (mode === 'ride') {
@@ -699,6 +718,7 @@ window.addEventListener('keydown', (e) => {
     if (world.dest.key(k)) return;
     if (k === 'KeyG') { world.photo.toggle(); e.preventDefault(); return; }
     if (k === 'KeyJ') { openJournal(); e.preventDefault(); return; }
+    if (k === 'KeyN') { openWork('read'); e.preventDefault(); return; }               // your notebook, to read (you write at a desk)
     if (k === 'KeyM') { openMap(); e.preventDefault(); return; }
     if (k === 'KeyT' && world.ambient.opener) { const o = world.ambient.opener; world.ambient.clearOpener(); startTalk(o.talkable, { opener: o.line }); e.preventDefault(); return; }
     if (k === 'KeyT' && talkTarget) { startTalk(talkTarget); e.preventDefault(); return; }
@@ -781,7 +801,7 @@ const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); i
 saves = createSaves({ getLife: () => life, serialize: lifeSave, deserialize: lifeLoad,
   describe: (L) => { const c = currentStep(L, QUESTS); const q = c ? QT(c.quest.title) : ''; return `${tx('day', L.clock.day)} · ${lifeClock(L.clock.minute)}${q ? ` · ${q}` : ''}`; },
   onLoad: () => { location.reload(); } });
-let lifeSaveIn = 5, pendingCalls = [], cupFor = 0;
+let lifeSaveIn = 5, pendingCalls = [], cupFor = 0, wasDusk = null;
 const phone = createPhone({
   getLife: () => life, calls: CALLS, audio, voice, llm,
   ride: {
@@ -849,6 +869,11 @@ function updateTips(dt) {
   if (Math.hypot(b.x - 24, b.z - 65) < 12) tips.show('cruise');
   if (b.x < -137 && b.x > -153 && b.z > -197 && b.z < -181) tips.show('shop');
   if (mode === 'seat' && world.dumpling.seated) tips.show('seat');
+  if (!(tips.seen('lend') && tips.seen('page') && tips.seen('revise')) && hasProduct(life)) {   // the gimbal's week, a step at a time (until each has been shown)
+    if (b.y > 2 && b.x > 3 && isDusk(life.clock.minute)) tips.show('lend');
+    if (workUnwritten(life).length) tips.show('page');
+    if (workSummary(life).pages && workSummary(life).rev < 2) tips.show('revise');
+  }
   tips.update(dt);
 }
 // the benchmark (Settings → Graphics; engine/bench.js): a fixed route at 8 pm with your settings,
@@ -917,8 +942,18 @@ function openJournal() {
   try { document.exitPointerLock(); } catch { /* not locked */ }
   journal.open();
 }
+// the notebook (ui/workbook.js): the mouse is yours while it's open; making a version takes its hours through a fade
+const workbook = createWorkbook({ getLife: () => life, save: () => saveLife(), hud, audio,
+  onClose: () => { if (mode === 'work') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } },
+  pass: (minutes, line, after) => travel(async () => { lifeSkipTo(life, lifeStamp(life) + minutes); saveLife(); questIn = 0; after(); }, { line, hold: 1100 }) });
+function openWork(where = 'read', tab = null) {
+  if (mode !== 'play') return;
+  mode = 'work'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
+  try { document.exitPointerLock(); } catch { /* not locked */ }
+  workbook.open(where, tab);
+}
 const journal = createJournal({
-  getLife: () => life, defs: QUESTS,
+  getLife: () => life, defs: QUESTS, work: (L) => workSummaryHtml(L),
   onClose: () => { if (mode === 'journal') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } },
   onWait: (at) => travel(() => { lifeSkipTo(life, at); saveLife(); questIn = 0; }, { line: tx('questWait', lifeClock(at % 1440)), hold: 900 }),
 });
@@ -928,12 +963,12 @@ function showEnding(id) {
   const from = mode; mode = 'ending'; player.enabled = false; player.clearInput();
   try { document.exitPointerLock(); } catch { /* not locked */ }
   audio.cue && audio.cue('chime', 0, 0.6);
-  journal.ending(e, () => { mode = from === 'ending' ? 'play' : 'play'; player.enabled = true; player.clearInput(); lock(); saveLife(); });
+  journal.ending(e, () => { mode = from === 'ending' ? 'play' : 'play'; player.enabled = true; player.clearInput(); lock(); saveLife(); }, workEpilogue(life, id));
 }
 function updateLife(dt) {
   if (mode !== 'play' && mode !== 'ride' && mode !== 'sale' && mode !== 'sale-seat' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
   lifeAdvance(life, dt);
-  if (params.get('life') !== '0') { runAgenda(life); deliverFollowUps(life); }   // ?life=0: nobody gets in touch (measurement tools)
+  if (params.get('life') !== '0') { runAgenda(life); runWork(life); deliverFollowUps(life); }   // ?life=0: nobody gets in touch (measurement tools)
   for (const inv of lifeLapse(life)) lifeReact(life, { type: 'invite', id: inv.id, status: 'missed', from: inv.from, thread: inv.thread });
   const events = lifeDrain(life);
   for (const ev of events) if (ev.type === 'call') pendingCalls.push(ev);
@@ -948,6 +983,8 @@ function updateLife(dt) {
     lifePost(life, 'manner', { from: 'manner', kind: 'text', text: `您的${mo.item.name}已做好，取餐号 ${mo.num}，请到窗口取餐` });
   }
   for (const ev of events) if (ev.type === 'ending') showEnding(ev.ending);
+  // the floodlights come on: if you've something to show people, now is when they're out
+  { const dusk = isDusk(life.clock.minute); if (dusk && wasDusk === false && mode === 'play' && hasProduct(life) && !params.has('q')) hud.toast(getLang() === 'zh' ? '泛光灯亮了，江边拍照的人多起来了。云台在你口袋里。' : 'The floodlights are on and the railing is filling with people taking photos. The gimbal is in your pocket.', 6); wasDusk = dusk; }
   if ((questIn -= dt) <= 0) { questIn = 0.5; updateStory(); }
   if (cupFor > 0) cupFor = Math.max(0, cupFor - dt);
   phone.update(dt);
@@ -1005,6 +1042,7 @@ function mapBlips() {
   ];
   if (tod >= 19 * 60 || tod < 60) out.push({ x: (JAZZ.x0 + JAZZ.x1) / 2, z: JAZZ.z0, glyph: '♪', bg: '#3b1f3f', fg: '#f3c6ff', name: { zh: '爵士吧', en: 'The Jazz Bar' } });
   out.push(world.cruise.mapBlip(), world.dumpling.mapBlip());
+  if (hasProduct(life)) for (const [id, R] of Object.entries(WORK_REGULARS)) { const st = workState(life), sp = WORK_SPOTS[id]; if ((st.people[id] || (st.heardOf || {})[id]) && tod >= R.from && tod < R.to) out.push({ x: sp.x, z: sp.z, glyph: getLang() === 'zh' ? WORK_REG[id].name.zh.slice(-1) : WORK_REG[id].name.en.split(' ').pop()[0], bg: '#20303a', fg: '#bfe6d2', name: WORK_REG[id].name }); }
   if (life.flags.car && world.huracan.loaded) { const g = world.huracan.group.position; out.push({ x: g.x, z: g.z, glyph: '▲', bg: '#e8b800', fg: '#111', name: { zh: '你的车', en: 'Your car' } }); }
   const m = life.flags.maker;
   if (m && m.gadgets && m.gadgets.gimbal) for (const t of [{ id: 'customs', x: -45, z: 26 }, { id: 'peace', x: -43, z: -243 }, { id: 'linsu', x: 23.7, z: -15 }]) if (!m.shot[t.id]) out.push({ x: t.x, z: t.z, glyph: '◉', bg: '#1d3a8a', fg: '#fff' });
@@ -1060,7 +1098,7 @@ function updateTraffic(dt) {
     // new people appear only where you won't see them pop in: far off, or behind you
     camera.getWorldDirection(_d);
     const canSpawnAt = (n) => { const dx = n.x - eye.x, dz = n.z - eye.z, d = Math.hypot(dx, dz); return d > 45 || (d > 14 && (dx * _d.x + dz * _d.z) / d < -0.2); };
-    const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others(), ...world.moments.others()];
+    const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others(), ...world.moments.others(), ...world.fieldTest.others()];
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : b, canSpawnAt, others });
     world.crowdView.update(dt, eye, { rain: weather.rain });
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
@@ -1188,6 +1226,7 @@ function frame(now) {
   world.dinner.update(mode === 'pause' ? 0 : dt, player.body);
   world.makerspace.update(mode === 'pause' ? 0 : dt, player.body);
   world.friends.update(mode === 'pause' ? 0 : dt, player.body);
+  world.fieldTest.update(mode === 'pause' ? 0 : dt, player.body); world.workDesk.update(); workbook.update(dt);   // the gimbal's evening
   if (life.flags.pendingAchievement) { const a = life.flags.pendingAchievement; delete life.flags.pendingAchievement; hud.achievement(getLang() === 'zh' ? a.zh : a.en); }
   world.photo.update(mode === 'pause' ? 0 : dt);
   if (mode !== 'pause') world.ambient.update(dt, player.body, { talking: talk.open });
@@ -1335,6 +1374,7 @@ function frame(now) {
 R.renderer.setAnimationLoop(frame);
 
 // Small handle for automated checks and console poking; not used by the game itself.
+debug.workbook = workbook; debug.openWork = (w, t) => openWork(w, t); debug.goesLeft = () => goesLeft(life);
 debug.setLang = setLang; debug.getLang = getLang; debug.voice = voice; debug.llm = llm; debug.talk = talk; debug.journal = journal; debug.QUESTS = QUESTS; debug.updateStory = () => updateStory();
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({

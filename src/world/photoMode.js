@@ -15,6 +15,8 @@ const FOV0 = 68;
 const mmOf = (fov) => Math.round(24 * Math.tan((FOV0 * Math.PI) / 360) / Math.tan((fov * Math.PI) / 360));
 
 export function createPhotoMode({ camera, renderer, player, hud, audio, getLife, save, getDynamic, onMode }) {
+  // the gimbal as you've revised it (engine/studio.js): with the attitude filter retuned it holds a faster pan
+  const tuned = () => ((getLife().flags.studio || { fixes: [] }).fixes.some((f) => f.id === 'filter') ? 1.5 : 1);
   const el = document.createElement('div'); el.id = 'viewfinder';
   el.innerHTML = `<div class="g"><i></i><i></i><i></i><i></i></div><div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div>
     <div class="top"><span class="rec">● STAB</span><span class="mm"></span></div><div class="subj"></div><div class="flash"></div>
@@ -42,7 +44,7 @@ export function createPhotoMode({ camera, renderer, player, hud, audio, getLife,
       top.set(t.x, t.y + t.h / 2, t.z).project(camera); bot.set(t.x, t.y - t.h / 2, t.z).project(camera);
       const inFrame = Math.abs(v.x) < 0.92 && Math.abs(v.y) < 0.92, size = Math.abs(top.y - bot.y) / 2, offCentre = Math.hypot(v.x, v.y);
       const occluded = d < 220 && colliders.some((b) => BLOCKING_TAGS.has(b.tag) && b.y1 === undefined && segmentHitsBox(camera.position.x, camera.position.z, t.x, t.z, b));
-      const steady = Math.max(0, 1 - S.yawRate / 0.6);
+      const steady = Math.max(0, 1 - S.yawRate / (0.6 * tuned()));
       const stars = photoStars({ inFrame, offCentre, size, min: t.min, steady, occluded });
       if (stars && (!best || stars > best.stars || (stars === best.stars && offCentre < best.offCentre))) best = { t, stars, offCentre };
     }
@@ -95,7 +97,7 @@ export function createPhotoMode({ camera, renderer, player, hud, audio, getLife,
       S.yawRate += (rate - S.yawRate) * Math.min(1, dt * 6); S.lastYaw = player.yaw; S.lastPitch = player.pitch;
       S.best = evaluate();
       el.querySelector('.mm').textContent = `${mmOf(camera.fov)} mm`;
-      el.querySelector('.rec').classList.toggle('shaky', S.yawRate > 0.6);
+      el.querySelector('.rec').classList.toggle('shaky', S.yawRate > 0.6 * tuned());
       el.querySelector('.subj').textContent = S.best ? `${T(S.best.t.zh, S.best.t.en)}  ${'★'.repeat(S.best.stars)}${'☆'.repeat(3 - S.best.stars)}` : '';
     },
     afterRender() { if (S.pending) capture(); },

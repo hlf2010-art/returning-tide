@@ -19,6 +19,7 @@ import { appGlyph, payLogo, BRAND_COLOR, mark } from '../brands.js';
 import { maker, level, nextLevelAt, LEVELS, BLUEPRINTS, PHOTO_TARGETS, ACHIEVEMENTS, sharePhoto } from '../../engine/maker.js';
 import { warmth } from '../../world/agenda.js';
 import { spoken, isZh } from '../../engine/llm.js';
+import { summary as workSummary, unwritten as workUnwritten } from '../../engine/studio.js';
 
 // one language at a time: Z(zh, en) picks; X(text) translates what people wrote; nm(id) names them
 const Z = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -215,12 +216,14 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const goals = l.invites.filter((i) => (i.status === 'accepted' && !i.kept && i.at > now - 120) || i.status === 'pending').sort((a, b) => a.at - b.at)
       .map((i) => `<div class="gl"><b>${esc(X(i.title))}</b><span>${clockText(i.at)} · ${esc(X(i.place))}${i.status === 'pending' ? ` · ${Z('待回复', 'answer pending')}` : ''}</span></div>`).join('') || `<div class="sys">${Z('暂时没有约', 'Nothing arranged')}</div>`;
     const builds = Object.entries(BLUEPRINTS).map(([id, b]) => `<div class="bl ${m.gadgets[id] ? 'got' : ''}"><span>${esc(Z(b.zh, b.en))}</span><span>${m.gadgets[id] ? Z(`做好了 · ${Math.round(m.gadgets[id].quality * 100)}%`, `built · ${Math.round(m.gadgets[id].quality * 100)}%`) : Z(`创客 ${b.level}`, `Maker ${b.level}`)}</span></div>`).join('');
+    const ws = workSummary(l), wu = ws.grade ? workUnwritten(l).length : 0;
+    const work = ws.grade ? `<div class="bl got"><span>${Z(`夜行云台 · 第 ${ws.rev} 版`, `Night gimbal · version ${ws.rev}`)}</span><span>${Z(`${ws.hands} 人用过 · 名单 ${ws.list}`, `${ws.hands} tried it · ${ws.list} on the list`)}</span></div><div class="sys">${Z(`${ws.grams} 克 · ${ws.minutes} 分钟 · 还有 ${ws.open.length} 个问题${wu ? ` · ${wu} 条没写下来` : ''}（N 翻开本子）`, `${ws.grams} g · ${ws.minutes} min · ${ws.open.length} ${ws.open.length === 1 ? 'issue' : 'issues'} open${wu ? ` · ${wu} not written up` : ''} (N opens the notebook)`)}</div>` : '';
     const rel = ['ruoan', 'xuan', 'momo', 'zhixia', 'yinuo', 'dad'].map((id) => { const w = Math.max(0, Math.min(100, 50 + warmth(l, id))); return `<div class="rl"><span>${esc(nm(id))}</span><i><u style="width:${w}%"></u></i></div>`; }).join('');
     const ach = Object.entries(ACHIEVEMENTS).map(([id, a]) => `<span class="ac ${m.achievements.includes(id) ? 'got' : ''}">${esc(Z(a.zh, a.en))}</span>`).join('');
     return `<div class="view sketch"><div class="bar"><span class="back" data-act="back">‹</span>${Z('速写本', 'Sketchbook')}</div><div class="scroll">
       <div class="hd2">${Z('接下来', 'Coming up')}</div>${goals}
       <div class="hd2">${Z('创客', 'Maker')} ${lv} · ${m.xp} XP</div><div class="xp"><u style="width:${pct}%"></u></div><div class="sys">${Z(`粉丝 ${m.followers.toLocaleString()}`, `${m.followers.toLocaleString()} followers`)}</div>
-      <div class="hd2">${Z('发明', 'Builds')}</div>${builds}
+      <div class="hd2">${Z('发明', 'Builds')}</div>${builds}${work}
       <div class="hd2">${Z('朋友', 'Friends')}</div>${rel}
       <div class="hd2">${Z('成就', 'Achievements')} ${m.achievements.length}/${Object.keys(ACHIEVEMENTS).length}</div><div class="acs">${ach}</div></div></div>`;
   }

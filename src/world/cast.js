@@ -19,6 +19,10 @@ export const PEOPLE = {
   jd:     { name: '京东', short: '京东', en: 'JD', role: 'shop', color: '#e1251b', voice: { pitch: 1, rate: 1 } },
   taobao: { name: '淘宝', short: '淘宝', en: 'Taobao', role: 'shop', color: '#ff5000', voice: { pitch: 1, rate: 1 } },
   dad:    { name: '爸', short: '爸', en: 'Dad (Shen Jianguo)', role: 'machining firm, Nanjing', color: '#6b6b6b', voice: { pitch: 0.82, rate: 0.92 }, sex: 'm' },
+  kai:    { name: '阿凯', short: '阿凯', en: 'Kai', role: 'runs the Yangpu makerspace', color: '#4f7a6a', voice: { pitch: 0.95, rate: 1.05 }, sex: 'm' },
+  chen:   { name: '老陈', short: '老陈', en: 'Old Chen', role: 'retired lathe hand; photographs the Customs clock', color: '#7a6a55', voice: { pitch: 0.85, rate: 0.92 }, sex: 'm' },
+  ye:     { name: '小叶', short: '小叶', en: 'Xiao Ye', role: 'portrait photographer on the Bund', color: '#5a8a9a', voice: { pitch: 1.08, rate: 1.08 }, sex: 'f' },
+  zhe:    { name: '阿哲', short: '阿哲', en: 'Zhe', role: 'livestreams the Bund at night', color: '#9a5a8a', voice: { pitch: 1.0, rate: 1.15 }, sex: 'm' },
   mum:    { name: '妈', short: '妈', en: 'Mum (Zhou Lan)', role: 'cardiologist, Gulou Hospital, Nanjing', color: '#b56576', voice: { pitch: 1.05, rate: 0.98 }, sex: 'f' },
 };
 export const FRIENDS = ['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo'];

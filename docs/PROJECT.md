@@ -86,7 +86,7 @@ Where the game departs from reality, it says so. For example, the real cruise pi
   - Or a local Ollama-compatible server. For development: llama-cpp-python serving qwen2.5-3b on :11434 under the alias `qwen2.5:7b`.
 - **Voices:** Kokoro (Python 3.12 venv), pre-rendered offline with `tools/voice/`.
 - **Tests:**
-  - About 31 unit suites in Node: `npm test`.
+  - About 32 unit suites in Node: `npm test`.
   - Playwright walk-throughs in `tools/*walk.mjs` and `tools/*test.mjs`. These run in headless Chromium with SwiftShader, which is slow, so they need generous timeouts.
   - The `?q=` URL flag puts the game in measurement mode and pins the hour to 17:42, unless you also pass `&hour=` or `&tod`.
 - **Packaging:** `OUT=<dir> bash tools/package.sh` produces `ReturningTide.zip` (about 117 MB). It includes Mac/Windows launchers and a tiny static server.
@@ -107,6 +107,7 @@ Where the game departs from reality, it says so. For example, the real cruise pi
 | 4.4 Places | Shengjian shop, river cruise | Done |
 | 4.5 Player basics | Map (M), gamepad, three save slots, tips, benchmark | Done |
 | Bug-fix round | See §8 | Done, except the open issues in §9 |
+| 5 Something of your own | The night gimbal's week: revise by day, lend it at dusk, write it up at night; three regulars; the dinner reads what you built; an afterword on each ending | Done (see §8a and §9) |
 
 ## 8. Completed (latest bug-fix round)
 
@@ -127,6 +128,16 @@ Where the game departs from reality, it says so. For example, the real cruise pi
   - People blocked at planter corners sidestep around them.
   - In the node simulation, people stuck for more than 8 s dropped from 10 to 3.
 
+## 8a. Completed (phase 5: something of your own)
+
+Goal: give the days between story beats a purpose, make the evenings worth coming back to, and make the dinner with Dad weigh what the player actually built.
+
+- **Rules** (`src/engine/studio.js`, pure): versions, nine issues found only in the field, ten fixes with costs in hours, yuan, grams and battery minutes, the battery's goes per evening, the regulars' memory and promises, the nightly page, the waiting list and price.
+- **Words** (`src/world/work.js`): every issue, fix, remark and message in Chinese and English; Dad's reading at the dinner; an afterword for each of the six endings; the side quest `own-work`.
+- **In the world**: lending on the promenade (`src/world/fieldTest.js`), the desk in 612 (`src/world/workDesk.js`), the notebook (`src/ui/workbook.js`, N), a *revise* entry on the bench panel, a Work tab in the journal, the gimbal on the dinner table.
+- **Saves**: same format (`v: 1`); new state under `flags.studio`; a gimbal built earlier is version 1; nothing changes for a save with no gimbal.
+- **Tests**: `tests/studio.test.mjs` (in `npm test`), `tools/workwalk.mjs` (English and Chinese).
+
 ## 9. Failed attempts, ongoing issues, known risks
 
 - **3 followers still stuck** in `scratchpad/stuck.mjs`, around x≈−30, z≈2.6. Their `next` is null and they are trailing a group leader. Not yet investigated.
@@ -136,6 +147,8 @@ Where the game departs from reality, it says so. For example, the real cruise pi
 - **The preview server dies** when the worker restarts. Restart it with nohup.
 - **talkwalk needs the local LLM server running.** It fails otherwise.
 - **No download URL can be produced.** The zip is delivered only as a file attachment.
+- **Phase 5 has no recorded voices.** The new lines (the regulars, passers-by with the gimbal, Dad's reading at the dinner) show as subtitles only unless the player picks a voice for new lines; they have not been rendered with Kokoro.
+- **Phase 5 has not been playtested by a person, or measured on a Mac M4.** See the hand-back report for what was measured instead.
 - **Fidelity caveats** are documented in the README: invented business names, the pier location, the 22:00 late-night switch time.
 
 ## 10. Constraints
@@ -161,10 +174,10 @@ Where the game departs from reality, it says so. For example, the real cruise pi
 
 - `src/main.js`: wiring.
 - `src/engine/`: pure logic, mostly unit-tested.
-  - `crowd.js`, `quests.js`, `timeOfDay.js`, `voice.js`, `stamina.js`, `llm.js`, `drive.js`.
+  - `crowd.js`, `quests.js`, `timeOfDay.js`, `voice.js`, `stamina.js`, `llm.js`, `drive.js`, `studio.js`.
 - `src/world/`: scene content.
-  - `people.js`, `crowdView.js`, `story.js`, `entrances.js`, `cruise.js`, `dawn.js`, `bumps.js`, `materials.js`, `lighting.js`, `interiors.js`.
-- `src/ui/`: HUD, phone, i18n, talk.
+  - `people.js`, `crowdView.js`, `story.js`, `entrances.js`, `cruise.js`, `dawn.js`, `bumps.js`, `materials.js`, `lighting.js`, `interiors.js`, `work.js`, `fieldTest.js`, `workDesk.js`.
+- `src/ui/`: HUD, phone, i18n, talk, the notebook (`workbook.js`).
 - `tests/*.test.mjs`: unit tests (`npm test`).
 - `tools/*.mjs`: Playwright walk-throughs.
 - `tools/package.sh`: builds the package.

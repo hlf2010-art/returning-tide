@@ -11,7 +11,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const ACTS = { 1: ['第一幕 · 回来', 'Act I · Back'], 2: ['第二幕 · 两条路', 'Act II · Two roads'], 3: ['第三幕 · 回潮', 'Act III · The returning tide'] };
 const WHO = ['dad', 'ruoan', 'xuan', 'momo', 'zhixia', 'yinuo'];
 
-export function createJournal({ getLife, defs, onWait, onClose }) {
+export function createJournal({ getLife, defs, onWait, onClose, work = null }) {
   const root = document.createElement('div'); root.id = 'journal'; root.className = 'hidden'; root.setAttribute('role', 'dialog');
   document.body.appendChild(root);
   const card = document.createElement('div'); card.id = 'ending-card'; document.body.appendChild(card);
@@ -40,8 +40,8 @@ export function createJournal({ getLife, defs, onWait, onClose }) {
     }).join('');
     root.innerHTML = `<div class="panel">
       <div class="ph"><span>${T('日志', 'Journal')}</span><span class="clock">${T(`第 ${L.clock.day} 天`, `Day ${L.clock.day}`)} · ${clockText(L.clock.minute)}</span><button class="x" data-act="close" aria-label="close">✕</button></div>
-      <div class="tabs"><button data-tab="quests" class="${S.tab === 'quests' ? 'on' : ''}">${T('任务', 'Quests')}</button><button data-tab="people" class="${S.tab === 'people' ? 'on' : ''}">${T('人', 'People')}</button></div>
-      ${S.tab === 'quests' ? `<div class="cols"><div class="list">${list}</div><div class="detail">${detail}</div></div>` : `<div class="people">${people}<p class="hint">${T('你的选择、说的话、有没有赴约，都会改变他们对你的感觉。', 'What you choose, what you say, and whether you turn up all change how they feel about you.')}</p></div>`}
+      <div class="tabs"><button data-tab="quests" class="${S.tab === 'quests' ? 'on' : ''}">${T('任务', 'Quests')}</button><button data-tab="people" class="${S.tab === 'people' ? 'on' : ''}">${T('人', 'People')}</button>${work ? `<button data-tab="work" class="${S.tab === 'work' ? 'on' : ''}">${T('作品', 'Work')}</button>` : ''}</div>
+      ${S.tab === 'quests' ? `<div class="cols"><div class="list">${list}</div><div class="detail">${detail}</div></div>` : S.tab === 'work' && work ? work(L) : `<div class="people">${people}<p class="hint">${T('你的选择、说的话、有没有赴约，都会改变他们对你的感觉。', 'What you choose, what you say, and whether you turn up all change how they feel about you.')}</p></div>`}
       <div class="foot">${T('J 关闭', 'J to close')}</div></div>`;
   }
   root.addEventListener('click', (e) => {
@@ -59,8 +59,9 @@ export function createJournal({ getLife, defs, onWait, onClose }) {
     toggle() { if (S.open) api.close(); else api.open(); },
     refresh() { if (S.open) render(); },
     // the ending: a card over the frozen frame, then the world goes on
-    ending(e, onDone) {
-      card.innerHTML = `<div class="in"><div class="k">${T('结局', 'Ending')}</div><h1>${esc(T(e.title.zh, e.title.en))}</h1><p>${esc(T(e.text.zh, e.text.en))}</p>
+    // after: what the ending adds about what you built (world/work.js), if anything
+    ending(e, onDone, after = null) {
+      card.innerHTML = `<div class="in"><div class="k">${T('结局', 'Ending')}</div><h1>${esc(T(e.title.zh, e.title.en))}</h1><p>${esc(T(e.text.zh, e.text.en))}</p>${after ? `<p class="after">${esc(T(after.zh, after.en))}</p>` : ''}
         <button class="mbtn primary" data-act="on">${T('继续在外滩走走', 'Keep walking the Bund')}</button></div>`;
       card.classList.add('on');
       card.querySelector('button').addEventListener('click', () => { card.classList.remove('on'); onDone && onDone(); }, { once: true });

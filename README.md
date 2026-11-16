@@ -40,7 +40,9 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | Settings → Graphics | presets (Low / Mac M4 / High / Ultra), resolution, frame cap, detail and density, effects |
 | C | subtitles on / off |
 | M | the map (click a place for a waypoint) · **Shift+M** sound on / off |
-| J | the journal: quests, their steps, waiting until a quest's time, the people in your life |
+| J | the journal: quests, their steps, waiting until a quest's time, the people in your life, and (the Work tab) where your own gimbal stands |
+| N | your notebook, to read anywhere (you write in it at a desk: E at the desk in room 612, or at your bench in Yangpu); 1-4 turn its pages, Esc closes |
+| E (looking at someone taking a photo, after dark) | lend them the night gimbal, once you've built it |
 | Gamepad | left stick walk, right stick look, A act, B back, X jump, Y phone, LB journal, RB map, d-pad 1-4, Menu pause |
 | Esc → Saves | three save slots: copy, load, export to a file, import |
 | Esc | back out of an open conversation / close-up / notice; otherwise pause (Resume / Settings). With pointer lock the browser takes Esc: it releases the mouse and the game pauses, which also cancels any open interaction |
@@ -1049,6 +1051,64 @@ feels about you lead to one of six endings, shown on a card after the late-night
 **J** opens the journal: quests with their steps, track one (its next step is on screen and on the
 minimap), wait until a quest's time, and the people in your life with how each feels about you.
 
+## Something of your own: the night gimbal's week (phase 5: `src/engine/studio.js`, `src/world/work.js`, `src/world/fieldTest.js`, `src/ui/workbook.js`)
+
+Between the story's appointments there used to be little to do. Now there is one thing, and it is
+Jibai's: the night gimbal he can already build at the makerspace is version 1 of a product, and the
+six days before the dinner with Dad are what he has to make it into something people want.
+
+**The loop, one evening at a time**
+
+- **By day, revise it.** Hardware at the bench in Yangpu (the bench panel has a *revise* entry);
+  firmware at any desk. Two changes at a sitting at most ("or you won't know which one did the
+  work"), each with a cost in hours, yuan, grams and battery minutes. A new cell means three joints
+  to solder. Each sitting makes the next version.
+- **At dusk, put it in people's hands.** After the floodlights come on (17:10) look at someone taking
+  a photo at the railing and press **E** to lend it. A go takes eight minutes of the evening and
+  twenty-four of the battery (version 1 has three goes in it). What bothers them is an *issue* you
+  didn't know about: nine exist, none is listed in advance, and the maker can't see them himself.
+  By daylight nobody can tell the difference, because a phone is steady enough by day.
+- **At night, write it up.** At the desk in room 612 (or the bench): underline the one remark worth
+  keeping, choose what tomorrow is for. Only what has been written down can be fixed.
+
+**Three people are there every evening** and remember you: Old Chen (老陈), a retired lathe hand who
+photographs the Customs House clock on the hour, 17:15 to 19:45; Xiao Ye (小叶), who shoots visitors'
+portraits for a living, 18:30 to 21:45, facing the Pearl; Zhe (阿哲), who livestreams his walk,
+20:00 to 22:40, at the Nanjing Road end. Each tells you where to find the next. They say what's
+wrong, ask you to bring it back changed, and notice what you changed ("Lighter. ...You hollowed the
+arm?"). Hand one the same version twice and you get nowhere; come back a day late and you hear
+about it. When nothing bothers someone and the price suits them, their name goes on your list;
+Xiao Ye insists on a deposit (in-game money). The morning after, they write.
+
+**The numbers pull against each other.** Hollowed out, with every other fix and USB-C, it comes in
+at 349 g, just under what tired hands will hold (350 g), but then it won't run a working evening;
+with the 1200 mAh cell it runs all night and is too heavy for Old Chen again. The aluminium arm that
+would settle it needs a machine shop.
+
+**The dinner weighs what you built.** If you have the gimbal, there is one more question at the
+table: put it on the table, or leave it in your pocket. Dad is a machinist. He reads the object
+(how many times it has been reworked, the printed pin, the plastic arm), then your notebook (the
+line you underlined, and who said it), then the sums (who wants one, what it sells for, what the
+parts cost, what they would cost at fifty sets). How he feels moves by what is actually there: from
+−1 ("a thing nobody has used: at the works we call that a sample") to +8. The last question and its
+four answers are unchanged, and so are the six endings and how they are chosen; but his answer to
+"I'm staying" is now read when the conversation gets there, after everything said and shown, and
+with real work on the table he asks for the drawing of the arm. Each ending card adds a few lines
+about what became of the gimbal; a day and a half later the arm arrives from Nanjing (−38 g).
+
+**Friends:** Kai writes when the bench is free; Momo borrows it for a gig video; Mingxuan asks what
+an investor would; Zhixia spots the bearing seat; Mum says Dad has been asking.
+
+**Where it lives.** `life.flags.studio` (created the first time it's needed), inside the same v1
+save; a gimbal built before this existed is version 1. The side quest is `own-work`, a new id.
+Nothing changes for a save with no gimbal. `tests/studio.test.mjs` plays the week in node (the
+rules, both languages present for every line, the dinner's reading, the afterwords, an old save);
+`tools/workwalk.mjs` plays it in the game.
+
+**Fidelity notes.** The three regulars and their hours are invented. The floodlight time is the
+game's own (see *The hour*). The gimbal's weights, battery life and part prices are plausible
+hobby-scale figures, not measurements of a real product.
+
 ## The hour: dusk, night, the late-night lighting, dawn, day (phase 4.2: `src/engine/timeOfDay.js`)
 
 The clock (4 game seconds per real second) now drives the light. One pure function of the minute
@@ -1185,6 +1245,7 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
 
 ```
 src/main.js            boot, mode switching (entry / play / inspect / dialogue / pause), frame loop
+src/engine/studio.js, src/world/work.js   the night gimbal's week: rules (pure, node-tested) and words; world/fieldTest.js lends it on the promenade, ui/workbook.js is the notebook, world/workDesk.js the desk in 612
 src/engine/            renderer + quality ladder, player input, movement + collision, audio, conversation + dialogueAudio
 src/world/layout.js    every position, collider, NPC placement and ground-height function (single source of truth)
 src/world/*.js         one module per part of the scene: sky, skyline, river, bund, promenade, street, lighting, clue, npcs
