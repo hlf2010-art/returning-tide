@@ -271,7 +271,7 @@ export function rollover(L) {
   for (const e of L.wallet.ledger.slice(led0)) if (EMPLOYER_ZH[e.to]) e.to = EMPLOYER_ZH[e.to];
   // the start-up's month: what it spends, what it's owed
   const s = Y.career.startup;
-  if (s && Y.career.track === 'startup' && months > 0) {
+  if (s && Y.career.track === 'startup' && months > 0 && s.funded) {   // (nothing to spend before the company exists)
     const cost = burn(L) * months; s.cash -= cost; out.paid.push({ type: 'burn', amount: cost });
     if (s.owed && !s.slow) { s.cash += s.owed; out.paid.push({ type: 'revenue', amount: s.owed }); s.owed = 0; }
     if (s.cash < 0) {
