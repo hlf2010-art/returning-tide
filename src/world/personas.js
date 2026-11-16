@@ -4,6 +4,7 @@
 // voice: the cast key for their voice (tools/voice/cast.json); lang: what they speak unless you
 // speak to them in the other language.
 import { DRIVERS } from './drivers.js';
+import { CAST as HEARTS } from './romance.js';
 
 import { CAREER_PERSONAS } from './careerStory.js';
 const ME = 'Ji Bai (纪白; old friends call him 白白 "Baibai" to annoy him), 27, from Nanjing; UC Berkeley cognitive science (HCI, AI, product), a few years in Silicon Valley tech, just moved to Shanghai to work at an international technology consulting firm in Lujiazui on enterprise AI products; builds things in his spare time; his father runs a manufacturing business in Nanjing and expects him to take it over; comfortable but hates being "the rich kid"';
@@ -43,13 +44,16 @@ export const PERSONAS = {
 };
 // the DiDi drivers, from their own descriptions
 for (const d of DRIVERS) PERSONAS[`driver:${d.id}`] = { zh: d.name, en: d.name, sex: d.sex, voice: `driver:${d.id}`, lang: 'zh', card: `a DiDi driver: ${d.who}. You are driving Ji Bai across Shanghai in your ${d.car}` };
+// the five he might come to love (world/romance.js): who they are. How they know him, and how things
+// stand, is never in the card: it is added from the validated state each time (romancePrompt)
+for (const h of Object.values(HEARTS)) PERSONAS[h.id] = { zh: h.name.zh, en: h.name.en, sex: h.sex, voice: h.id, lang: 'zh', card: h.card };
 
 Object.assign(PERSONAS, CAREER_PERSONAS);   // colleagues, clients, the watch-repairer's daughter (world/careerStory.js)
 const FRIENDS = new Set(['xuan', 'yinuo', 'momo', 'zhixia', 'ruoan', 'dad']);
 const STAFF = new Set(['receptionist', 'concierge', 'doorman', 'liftGuard', 'host', 'bartender', 'aiaDesk', 'aiaGuard', 'barista', 'vivian', 'agent']);
 // what they call him
-export const addressOf = (id, lang) => (FRIENDS.has(id) ? (id === 'dad' ? (lang === 'zh' ? '（不叫名字）' : '(no name; he is your son)') : (lang === 'zh' ? '纪白（开玩笑时叫白白）' : 'Ji Bai')) : STAFF.has(id) ? (lang === 'zh' ? '纪先生' : 'Mr Ji') : (lang === 'zh' ? '（陌生人，不知道他的名字）' : '(a stranger; you do not know his name)'));
-export const relationTo = (id) => (FRIENDS.has(id) ? 'You have known him for years; talk to him like an old friend would.' : id === 'vivian' ? 'He is your client (he bought or is buying a Huracán from you).' : 'He is a stranger to you (unless the scene says otherwise).');
+export const addressOf = (id, lang) => (HEARTS[id] ? (lang === 'zh' ? `${HEARTS[id].address.zh}（如果下面说你们还不认识，就不知道他的名字）` : `${HEARTS[id].address.en} (if it says below that you have not met, you do not know his name)`) : FRIENDS.has(id) ? (id === 'dad' ? (lang === 'zh' ? '（不叫名字）' : '(no name; he is your son)') : (lang === 'zh' ? '纪白（开玩笑时叫白白）' : 'Ji Bai')) : STAFF.has(id) ? (lang === 'zh' ? '纪先生' : 'Mr Ji') : (lang === 'zh' ? '（陌生人，不知道他的名字）' : '(a stranger; you do not know his name)'));
+export const relationTo = (id) => (HEARTS[id] ? 'How you know him, and exactly where things stand between you, is set out below: go by that and by nothing else.' : FRIENDS.has(id) ? 'You have known him for years; talk to him like an old friend would.' : id === 'vivian' ? 'He is your client (he bought or is buying a Huracán from you).' : 'He is a stranger to you (unless the scene says otherwise).');
 
 // the system prompt: who you are, where you are, how to talk
 export function systemPrompt(id, scene, { lang = 'zh', texting = false } = {}) {

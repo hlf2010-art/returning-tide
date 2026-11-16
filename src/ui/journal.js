@@ -10,6 +10,8 @@ import { getLang } from './i18n.js';
 import './year.css';
 import { ACTS as YEAR_ACTS, isYear, career, rep, year, dateText, actOf } from '../engine/year.js';
 import { shortDate, home, hasFlat, LISTINGS, startup, burn, runway, work, todaysWork, handoff, FIRM, inLimbo } from '../world/career.js';
+import { ROMANCE } from '../engine/hearts.js';
+import { romanceStanding, romanceEpilogue } from '../world/romance.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -75,10 +77,15 @@ export function createJournal({ getLife, defs, onWait, onClose, work = null }) {
       const word = a >= 75 ? T('很亲近', 'close') : a >= 58 ? T('不错', 'warm') : a >= 42 ? T('一般', 'all right') : a >= 25 ? T('有点冷', 'cool') : T('很冷淡', 'cold');
       return `<div class="pp"><span class="pn">${esc(p.name || id)}</span><span class="bar"><i style="width:${Math.max(2, Math.min(100, a))}%"></i></span><span class="pw">${word}</span></div>`;
     }).join('');
+    // the five he might come to love (world/romance.js): only those he's met; how each stands, and where she is now
+    const met = ROMANCE.map((id) => romanceStanding(L, id)).filter((s) => s.met);
+    const hearts = !met.length ? '' : `<h3 class="hh-t">${T('走近的人', 'Closer')}</h3>${met.map((s) => `<div class="hh${s.over ? ' over' : ''}"><div class="hn"><b>${esc(T(s.name.zh, s.name.en))}</b><span class="hs">${esc(T(s.stage.zh, s.stage.en))}</span></div>
+      <div class="hr">${esc(T(s.role.zh, s.role.en))}</div>${s.line ? `<div class="hl">${esc(T(s.line.zh, s.line.en))}</div>` : ''}${s.now ? `<div class="hw">${T('现在：', 'Now: ')}${esc(T(s.now.zh, s.now.en))}</div>` : ''}
+      ${s.over ? '' : `<div class="hb"><span>${T('吸引', 'Attraction')}</span><span class="bar"><i style="width:${Math.max(2, s.attraction)}%"></i></span><span>${T('信任', 'Trust')}</span><span class="bar"><i style="width:${Math.max(2, s.trust)}%"></i></span></div>`}</div>`).join('')}`;
     root.innerHTML = `<div class="panel">
       <div class="ph"><span>${T('日志', 'Journal')}</span><span class="clock">${isYear(L) ? dateText(L, getLang()) : T(`第 ${L.clock.day} 天`, `Day ${L.clock.day}`)} · ${clockText(L.clock.minute)}</span><button class="x" data-act="close" aria-label="close">✕</button></div>
       <div class="tabs"><button data-tab="quests" class="${S.tab === 'quests' ? 'on' : ''}">${T('任务', 'Quests')}</button><button data-tab="people" class="${S.tab === 'people' ? 'on' : ''}">${T('人', 'People')}</button>${work ? `<button data-tab="work" class="${S.tab === 'work' ? 'on' : ''}">${T('作品', 'Work')}</button>` : ''}${isYear(L) ? `<button data-tab="year" class="${S.tab === 'year' ? 'on' : ''}">${T('这一年', 'The year')}</button>` : ''}</div>
-      ${S.tab === 'year' && isYear(L) ? yearHtml(L) : S.tab === 'quests' ? `<div class="cols"><div class="list">${list}</div><div class="detail">${detail}</div></div>` : S.tab === 'work' && work ? work(L) : `<div class="people">${people}<p class="hint">${T('你的选择、说的话、有没有赴约，都会改变他们对你的感觉。', 'What you choose, what you say, and whether you turn up all change how they feel about you.')}</p></div>`}
+      ${S.tab === 'year' && isYear(L) ? yearHtml(L) : S.tab === 'quests' ? `<div class="cols"><div class="list">${list}</div><div class="detail">${detail}</div></div>` : S.tab === 'work' && work ? work(L) : `<div class="people">${people}${hearts}<p class="hint">${T('你的选择、说的话、有没有赴约，都会改变他们对你的感觉。', 'What you choose, what you say, and whether you turn up all change how they feel about you.')}</p></div>`}
       <div class="foot">${T('J 关闭', 'J to close')}</div></div>`;
   }
   root.addEventListener('click', (e) => {
@@ -98,7 +105,8 @@ export function createJournal({ getLife, defs, onWait, onClose, work = null }) {
     // the ending: a card over the frozen frame, then the world goes on
     // after: what the ending adds about what you built (world/work.js), if anything
     ending(e, onDone, after = null) {
-      card.innerHTML = `<div class="in"><div class="k">${T('结局', 'Ending')}</div><h1>${esc(T(e.title.zh, e.title.en))}</h1><p>${esc(T(e.text.zh, e.text.en))}</p>${after ? `<p class="after">${esc(T(after.zh, after.en))}</p>` : ''}
+      const rom = romanceEpilogue(getLife());                               // and about whoever he's with, or lost (world/romance.js)
+      card.innerHTML = `<div class="in"><div class="k">${T('结局', 'Ending')}</div><h1>${esc(T(e.title.zh, e.title.en))}</h1><p>${esc(T(e.text.zh, e.text.en))}</p>${after ? `<p class="after">${esc(T(after.zh, after.en))}</p>` : ''}${rom ? `<p class="after">${esc(T(rom.zh, rom.en))}</p>` : ''}
         <button class="mbtn primary" data-act="on">${T('继续在外滩走走', 'Keep walking the Bund')}</button></div>`;
       card.classList.add('on');
       card.querySelector('button').addEventListener('click', () => { card.classList.remove('on'); onDone && onDone(); }, { once: true });

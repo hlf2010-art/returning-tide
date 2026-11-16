@@ -100,6 +100,8 @@ import { createFieldTest, SPOTS as WORK_SPOTS } from './world/fieldTest.js';
 import { createWorkDesk } from './world/workDesk.js';
 import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
 import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText } from './engine/year.js';
+import { runRomance, romanceCallChoice, guardTalk, ROMANCE_CALLS } from './world/romance.js';   // the five he might come to love (engine/hearts.js)
+import { createRomanceScenes } from './world/romanceScenes.js';
 const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the story's, the street moments' (world/moments.js), and the gimbal's week (world/work.js)
 import { createSceneTalk } from './ui/sceneTalk.js';
 import { createYearWorld } from './world/yearWorld.js';   // the working year in the world: the firm's floor, the flat, the calendar on screen
@@ -154,6 +156,8 @@ hud.voice = voice; hud.audio = audio;
 const llm = createLLM({ canned: (id, said, ctx) => cannedReply(id, said, { first: ctx.first, lang: /[\u4e00-\u9fff]/.test(said || '') || (!said && getLang() === 'zh') ? 'zh' : 'en' }) });
 const talk = createTalk({ llm, voice, getLife: () => life, save: () => saveLife() });
 llm.warm();
+const HEARTS_ON = !params.has('q') || params.has('hearts');   // measurement tools: none of the five writes or turns up unless asked
+guardTalk(llm, () => life, getLang);   // when one of the five is being played, the model is told the validated state and nothing else (world/romance.js)
 
 let mode = 'boot';              // boot -> entry -> play <-> pause / inspect / dialogue / pouch
 let noLock = params.has('nolock');
@@ -317,6 +321,10 @@ async function boot() {
     freeze: (on) => { player.enabled = !on && mode === 'play'; if (on) { player.clearInput(); hud.prompt(false); } }, onWork: () => openWork('desk') });
   places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk];
   places.push(world.year);
+  // the five he might come to love, where their own days put them (world/romanceScenes.js): off for measurement tools unless ?hearts
+  world.hearts = createRomanceScenes({ scene, people, player, hud, audio, sceneTalk: world.sceneTalk, travel, jazz, dinner: world.dinner, getLife: () => life, save: () => saveLife(),
+    isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active && !world.fieldTest.busy, enabled: !!people && HEARTS_ON });
+  places.push(world.hearts);
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
     getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
@@ -435,6 +443,7 @@ function talkables() {
   for (const q of traffic ? traffic.peds : []) if (q.active !== false && q.visible !== false) out.push({ key: `ped:${q.id}`, persona: PERSONAS[q.persona] ? q.persona : 'office', x: q.x, y: (q.y ?? L.curbH) + 1.62, z: q.z, hold(on, pp) { if (on) { q.pause = 999; q.faceTo = [pp.x, pp.z]; q.faceFor = 999; } else { q.pause = 0.3; q.faceFor = 0; q.faceTo = null; } } });
   for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale, world.makerspace, world.friends, world.fieldTest]) if (m && m.talkables) out.push(...m.talkables());
   if (world.year) out.push(...world.year.talkables());                       // colleagues, once the day's meeting is over
+  if (world.hearts) out.push(...world.hearts.talkables());
   if (world.crowdView) for (const a of world.crowdView.nearAgents()) {
     if (a.kind === 'follower' || a.leader) continue;                       // the one in charge answers for a group or a couple
     out.push({ key: `crowd:${a.id}`, persona: PERSONAS[a.persona] ? a.persona : 'visitor', x: a.x, y: a.y + 1.62 * (a.scale || 1), z: a.z,
@@ -723,6 +732,7 @@ window.addEventListener('keydown', (e) => {
   }
   if (mode === 'play') {
     if (world.moments.key(k)) { e.preventDefault(); return; }   // a street moment: answers (1-4), the shutter
+    if (world.hearts.key(k)) { e.preventDefault(); return; }    // one of the five, talking: answers (1-4)
     if ((k === 'KeyE' || k === 'Enter') && closeInfoCard()) return;
     if (world && world.belongings && world.belongings.key(k)) return;
     if (world.dest.key(k)) return;
@@ -836,9 +846,11 @@ const phone = createPhone({
       }
     }
     if (ev.type === 'call-choice' && ev.choice) { if (ev.choice.delta) lifeNudge(life, ev.from, ev.choice.delta, 'call'); if (ev.choice.flag) life.flags[ev.choice.flag] = true; }
+    if (ev.type === 'call-choice' && ev.choice) romanceCallChoice(life, ev.from, ev.choice);
     saveLife();
   },
 });
+Object.assign(CALLS, ROMANCE_CALLS);   // their calls ring through the same phone (world/romance.js)
 window.addEventListener('keydown', (e) => {
   if (mode !== 'play') return;
   if (phone.key(e)) { e.stopImmediatePropagation(); return; }
@@ -980,6 +992,7 @@ function updateLife(dt) {
   if (mode !== 'play' && mode !== 'ride' && mode !== 'sale' && mode !== 'sale-seat' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
   lifeAdvance(life, dt);
   if (params.get('life') !== '0') { runAgenda(life); runWork(life); deliverFollowUps(life); }   // ?life=0: nobody gets in touch (measurement tools)
+  if (params.get('life') !== '0' && HEARTS_ON) runRomance(life);
   for (const inv of lifeLapse(life)) lifeReact(life, { type: 'invite', id: inv.id, status: 'missed', from: inv.from, thread: inv.thread });
   const events = lifeDrain(life);
   for (const ev of events) if (ev.type === 'call') pendingCalls.push(ev);
@@ -1055,6 +1068,7 @@ function mapBlips() {
   if (tod >= 19 * 60 || tod < 60) out.push({ x: (JAZZ.x0 + JAZZ.x1) / 2, z: JAZZ.z0, glyph: '♪', bg: '#3b1f3f', fg: '#f3c6ff', name: { zh: '爵士吧', en: 'The Jazz Bar' } });
   out.push(world.cruise.mapBlip(), world.dumpling.mapBlip());
   if (hasProduct(life)) for (const [id, R] of Object.entries(WORK_REGULARS)) { const st = workState(life), sp = WORK_SPOTS[id]; if ((st.people[id] || (st.heardOf || {})[id]) && tod >= R.from && tod < R.to) out.push({ x: sp.x, z: sp.z, glyph: getLang() === 'zh' ? WORK_REG[id].name.zh.slice(-1) : WORK_REG[id].name.en.split(' ').pop()[0], bg: '#20303a', fg: '#bfe6d2', name: WORK_REG[id].name }); }
+  if (world.hearts) out.push(...world.hearts.mapBlips());
   if (life.flags.car && world.huracan.loaded) { const g = world.huracan.group.position; out.push({ x: g.x, z: g.z, glyph: '▲', bg: '#e8b800', fg: '#111', name: { zh: '你的车', en: 'Your car' } }); }
   const m = life.flags.maker;
   if (m && m.gadgets && m.gadgets.gimbal) for (const t of [{ id: 'customs', x: -45, z: 26 }, { id: 'peace', x: -43, z: -243 }, { id: 'linsu', x: 23.7, z: -15 }]) if (!m.shot[t.id]) out.push({ x: t.x, z: t.z, glyph: '◉', bg: '#1d3a8a', fg: '#fff' });
@@ -1111,6 +1125,7 @@ function updateTraffic(dt) {
     camera.getWorldDirection(_d);
     const canSpawnAt = (n) => { const dx = n.x - eye.x, dz = n.z - eye.z, d = Math.hypot(dx, dz); return d > 45 || (d > 14 && (dx * _d.x + dz * _d.z) / d < -0.2); };
     const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others(), ...world.moments.others(), ...world.fieldTest.others()];
+    others.push(...world.hearts.others());
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : b, canSpawnAt, others });
     world.crowdView.update(dt, eye, { rain: weather.rain });
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
@@ -1240,6 +1255,7 @@ function frame(now) {
   world.makerspace.update(mode === 'pause' ? 0 : dt, player.body);
   world.friends.update(mode === 'pause' ? 0 : dt, player.body);
   world.fieldTest.update(mode === 'pause' ? 0 : dt, player.body); world.workDesk.update(); workbook.update(dt);   // the gimbal's evening
+  world.hearts.update(mode === 'pause' ? 0 : dt, player.body);
   if (life.flags.pendingAchievement) { const a = life.flags.pendingAchievement; delete life.flags.pendingAchievement; hud.achievement(getLang() === 'zh' ? a.zh : a.en); }
   world.photo.update(mode === 'pause' ? 0 : dt);
   if (mode !== 'pause') world.ambient.update(dt, player.body, { talking: talk.open });

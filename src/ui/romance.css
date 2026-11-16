@@ -1,0 +1,21 @@
+/* The five he might come to love: the journal's People tab, and their chats on the phone
+   (world/romanceScenes.js imports this). */
+#journal .people .hh-t { margin: 18px 0 8px; font: 600 11px var(--ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); opacity: 0.85; }
+#journal .people .hh { padding: 10px 12px; margin: 0 0 8px; border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 10px; background: rgba(255, 255, 255, 0.03); }
+#journal .people .hh.over { opacity: 0.55; }
+#journal .people .hh .hn { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+#journal .people .hh .hn b { font: 600 15px var(--ui); color: #fff; }
+#journal .people .hh .hs { font: 600 11px var(--ui); letter-spacing: 0.08em; color: #f3c6d4; background: rgba(192, 80, 122, 0.22); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+#journal .people .hh.over .hs { color: #c9c9c9; background: rgba(255, 255, 255, 0.09); }
+#journal .people .hh .hr { font: 400 12px var(--ui); color: rgba(255, 255, 255, 0.55); margin-top: 2px; }
+#journal .people .hh .hl { font: 400 13px/1.5 var(--ui); color: rgba(255, 255, 255, 0.86); margin-top: 7px; }
+#journal .people .hh .hw { font: 400 12px/1.5 var(--ui); color: rgba(255, 255, 255, 0.5); margin-top: 4px; }
+#journal .people .hh .hb { display: grid; grid-template-columns: auto 1fr auto 1fr; align-items: center; gap: 8px; margin-top: 9px; font: 500 10px var(--ui); letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.5); }
+#journal .people .hh .hb .bar { display: block; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+#journal .people .hh .hb .bar i { display: block; height: 100%; background: #d98aa6; border-radius: 2px; }
+#journal .people { overflow-y: auto; }
+
+#phone .chat .bar .htag { display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 600; color: #b03a63; background: rgba(192, 80, 122, 0.14); border-radius: 999px; padding: 1px 8px; vertical-align: middle; }
+#phone .chat .bar .htag.over { color: #777; background: rgba(0, 0, 0, 0.07); }
+#phone .chat .replies.hask { padding-bottom: 0; }
+#phone .chat .replies.hask .chip { border-style: dashed; }

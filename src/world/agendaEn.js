@@ -3,6 +3,7 @@
 // write them; the phone shows this translation when the interface is in English.
 import { EN_WORK } from './work.js';
 import { EN_CAREER } from './career.js';
+import { EN_HEARTS } from './romance.js';
 export const EN = {
   // the days after (world/agenda.js BEATS, round two)
   '王总说下周约你吃饭，这次真要穿正式点了😂': "Mr Wang wants dinner with you next week. Dress properly this time 😂",
@@ -161,6 +162,7 @@ export function enText(text) {
   if (EN[text]) return EN[text];
   if (EN_WORK[text]) return EN_WORK[text];                       // the gimbal's week (world/work.js)
   if (EN_CAREER[text]) return EN_CAREER[text];                   // the working year, the flat, the watch-repairer (world/career.js)
+  if (EN_HEARTS[text]) return EN_HEARTS[text];                   // the five he might come to love (world/romance.js)
   const m = /^您的(.+)已做好，取餐号 (\d+)/.exec(text);
   if (m) return `Your ${(DRINKS[m[1]] || 'order').toLowerCase()} is ready. Order No. ${m[2]}, collect at the window`;
   // DiDi's app
