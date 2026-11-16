@@ -558,7 +558,7 @@ function syncSettings() {
     const c = llm.conf();
     const k = seg.dataset.setting;
     const cur = k.startsWith('g.') ? String(typeof gfx[k.slice(2)] === 'boolean' ? +gfx[k.slice(2)] : gfx[k.slice(2)])
-      : { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.serverOn ? 'on' : 'off', ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
+      : { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.newLines === 'server' ? 'server' : voice.newLines, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
     for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
   }
   syncGfx();
@@ -607,7 +607,7 @@ document.addEventListener('click', (e) => {
     if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
     if (k === 'voices') voice.setMode(v);
     if (k === 'tips') tips.setOn(v === 'on');
-    if (k === 'voiceServer') voice.setServer(v === 'on');
+    if (k === 'voiceServer') voice.setNewLines(v);
     if (k === 'ai') llm.configure({ ai: v === 'browser' ? 'browser' : v, aiBrowser: v === 'browser' ? 1 : 0 }).then(syncSettings);
     syncSettings(); return;
   }

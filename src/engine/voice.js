@@ -99,6 +99,12 @@ export function createVoice({ audio, getLang, camera = null }) {
     if (l.positionX) { l.positionX.setTargetAtTime(p.x, t, 0.05); l.positionY.setTargetAtTime(p.y, t, 0.05); l.positionZ.setTargetAtTime(p.z, t, 0.05); l.forwardX.setTargetAtTime(f.x, t, 0.05); l.forwardY.setTargetAtTime(0, t, 0.05); l.forwardZ.setTargetAtTime(f.z, t, 0.05); l.upX.value = 0; l.upY.value = 1; l.upZ.value = 0; }
     else { l.setPosition(p.x, p.y, p.z); l.setOrientation(f.x, 0, f.z, 0, 1, 0); }
   }
+  // no voice for this line: the subtitle carries it; keep the conversation's timing as if spoken
+  function silent(text, lang, { onEnd }) {
+    const duration = Math.max(1.2, text.length / (lang === 'zh' ? 4.5 : 14));
+    const t = setTimeout(() => onEnd && onEnd(), duration * 1000);
+    return { duration, stop: () => clearTimeout(t), silent: true };
+  }
   // the browser's own speech, as natural as it has (last resort)
   function synthSay(text, lang, { sex, onEnd, gain = 1 }) {
     const syn = typeof window !== 'undefined' && window.speechSynthesis; if (!syn) { onEnd && setTimeout(onEnd, 1500); return null; }
@@ -114,6 +120,10 @@ export function createVoice({ audio, getLang, camera = null }) {
     get mode() { return S.mode; },
     setMode(m) { S.mode = m === 'dubbed' ? 'dubbed' : 'original'; set('bund.voices', S.mode); },
     get serverOn() { return get('bund.voiceServerOn', '0') === '1'; },
+    // lines with no recording (AI conversation, lines with numbers): 'off' subtitles only (the default),
+    // 'browser' the browser's own speech (robotic), or the local voice server (serverOn)
+    get newLines() { return this.serverOn ? 'server' : get('bund.synthOn', '0') === '1' ? 'browser' : 'off'; },
+    setNewLines(v) { set('bund.synthOn', v === 'browser' ? '1' : '0'); this.setServer(v === 'server'); },
     setServer(on) { set('bund.voiceServerOn', on ? '1' : '0'); serverChecked = 0; if (on) checkServer(); },
     get stats() { return { clips: S.clipHits, server: S.serverHits, synth: S.synthHits, loaded: !!manifest, size: manifest ? Object.keys(manifest.clips).length : 0, last: S.last, serverUp: server }; },
     has(lang, text) { return !!(manifest && manifest.clips[voiceKey(lang, text)]); },
@@ -125,10 +135,11 @@ export function createVoice({ audio, getLang, camera = null }) {
     // noSynth: an incidental line (a passer-by's "sorry"): the recorded voice or nothing, never the
     // browser's robotic last resort
     async say(o) {
+      if (get('bund.synthOn', '0') !== '1') o = { ...o, noSynth: true };   // the browser voice only if chosen
       const lang = o.lang || langFor(o.who, o.zh, o.en), text = (lang === 'zh' ? o.zh : o.en) || o.zh || o.en;
       if (!text) { o.onEnd && o.onEnd(); return null; }
       S.last = { lang, text: text.slice(0, 40), who: o.who };
-      if (!bus()) return o.noSynth ? (o.onEnd && o.onEnd(), null) : synthSay(text, lang, o);
+      if (!bus()) return o.noSynth ? silent(text, lang, o) : synthSay(text, lang, o);
       const url = this.clipUrl(lang, text);
       try {
         if (url) { const b = await buffer(url); S.clipHits++; return play(b, o); }
@@ -137,7 +148,7 @@ export function createVoice({ audio, getLang, camera = null }) {
           if (r.ok) { const b = await ctx.decodeAudioData(await r.arrayBuffer()); S.serverHits++; return play(b, o); }
         }
       } catch (e) { console.warn('voice:', e.message || e); }
-      if (o.noSynth) { o.onEnd && o.onEnd(); return null; }
+      if (o.noSynth) return silent(text, lang, o);
       return synthSay(text, lang, o);
     },
   };

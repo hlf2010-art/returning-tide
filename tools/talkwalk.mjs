@@ -47,6 +47,7 @@ await p.keyboard.press('Escape'); await p.keyboard.press('Escape'); await p.keyb
 // 3. recorded voices: a scripted line plays from its clip
 const vs = await p.evaluate(async () => { const v = window.__bund.voice; await new Promise((r) => setTimeout(r, 500)); await v.say({ zh: '沈先生，晚上好，欢迎回来。这是您的房卡，612，江景房。', en: "Good evening, Mr Shen, welcome back. Here's your key card: 612, a river-view room.", who: '前台' }); return v.stats; });
 ok(vs.loaded && vs.size > 300 && vs.clips >= 1, `scripted lines play from recorded voices (${vs.size} clips; ${vs.clips} played; last: ${JSON.stringify(vs.last)})`);
+const vstat = await p.evaluate(() => window.__bund.voice.stats); console.log(`INFO  voice: ${vstat.clips} recorded, ${vstat.server} server, ${vstat.synth} browser-synth`); ok(vstat.synth === 0, "no robotic browser voice unless chosen");
 ok(errs.length === 0, `no errors (${errs.slice(0, 3).join(' | ')})`);
 console.log(failed ? `${failed} FAILED` : 'all passed');
 await b.close();
