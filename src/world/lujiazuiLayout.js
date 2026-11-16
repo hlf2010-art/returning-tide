@@ -108,8 +108,8 @@ export const BUILDINGS = [
   polBox('north-tower', 22, 140, 24, 24, 190),
   polBox('boc', 80, 150, 23, 23, 226, { name: { zh: '中银大厦', en: 'Bank of China Tower' } }),
   apBox('bocom', 195, -86, 22, 28, 230),
-  apBox('row-1', 325, -47, 28, 17, 150), apBox('row-2', 405, -47, 28, 17, 172), apBox('row-3', 490, -47, 28, 17, 120),
-  apBox('south-1', 330, 76, 30, 30, 200), apBox('south-2', 440, 80, 30, 30, 160),
+  apBox('row-1', 325, -47, 28, 17, 96), apBox('row-2', 405, -47, 28, 17, 120), apBox('row-3', 490, -47, 28, 17, 84),
+  apBox('south-1', 330, 76, 30, 30, 150), apBox('south-2', 440, 80, 30, 30, 120),
 ];
 
 // ---- the Central Green ----

@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { siApple } from 'simple-icons';
 import { Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT, glowTexture } from './canvas.js';
-import { asLight, glassByDay } from './dayNight.js';
+import { asLight, TOD } from './dayNight.js';
 import { markCanvas } from '../ui/brands.js';
 import { LINE_COLOR } from './nanjingRoad.js';
 import {
@@ -73,16 +73,18 @@ export const LJZ_TEXT = '陆家嘴站 Lujiazui 号口 Exit 进站 Entrance 号�
 export function ljzMaterials(M) {
   const grassMap = noise(71, [58, 92, 44], 26, 256, 60); grassMap.repeat.set(1 / 3, 1 / 3);
   const pathMap = noise(72, [176, 170, 158], 16);
+  // pavement: pale granite setts, 60 cm, as Lujiazui's are (the Bund's own paving is darker stone)
+  const paveMap = (() => { const t = noise(73, [150, 149, 144], 18), c = t.image, x = c.getContext('2d'); x.strokeStyle = 'rgba(70,70,68,0.55)'; x.lineWidth = 1.5; for (let i = 0; i <= 256; i += 64) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 256); x.moveTo(0, i); x.lineTo(256, i); x.stroke(); } t.needsUpdate = true; return t; })();
   const m = {
-    road: M.asphalt, pave: M.sidewalk, granite: M.granite,
+    road: M.asphalt, pave: std({ map: paveMap, roughness: 0.82, side: THREE.FrontSide }), granite: M.granite,
     grass: std({ map: grassMap, roughness: 0.95, side: THREE.FrontSide }), path: std({ map: pathMap, roughness: 0.8, side: THREE.FrontSide }),
     paint: std({ color: 0xdedcd4, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
     yellow: std({ color: 0xcfa21c, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
     deck: std({ map: pathMap, color: 0xcfcac0, roughness: 0.7 }), fascia: std({ color: 0xd9dcdf, roughness: 0.35, metalness: 0.55 }), under: std({ color: 0x8e9296, roughness: 0.8 }),
     concrete: std({ color: 0xa9aaa8, roughness: 0.75 }), steel: std({ color: 0xb4babf, roughness: 0.28, metalness: 0.9 }), dark: std({ color: 0x1b1e22, roughness: 0.4, metalness: 0.6 }),
     glass: std({ color: 0xa9c6cc, roughness: 0.04, metalness: 0.15, transparent: true, opacity: 0.22, depthWrite: false, envMapIntensity: 1.6 }),
-    appleGlass: new THREE.MeshPhysicalMaterial({ color: 0xcfe6e6, roughness: 0.02, metalness: 0.1, transparent: true, opacity: 0.13, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 2.2, clearcoat: 1, clearcoatRoughness: 0.02 }),
-    stone: std({ map: pathMap, color: 0xe2ddd0, roughness: 0.6 }), stoneWarm: std({ map: pathMap, color: 0xcbb898, roughness: 0.65 }), white: std({ color: 0xf1f0ec, roughness: 0.7 }),
+    appleGlass: new THREE.MeshPhysicalMaterial({ color: 0xcfe6e6, emissive: 0x1c2a2c, roughness: 0.02, metalness: 0.1, transparent: true, opacity: 0.17, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 2.2, clearcoat: 1, clearcoatRoughness: 0.02 }),
+    stone: std({ map: pathMap, color: 0xe2ddd0, roughness: 0.6 }), stoneWarm: std({ color: 0xd9cdb6, roughness: 0.7 }), white: std({ color: 0xf1f0ec, roughness: 0.7 }),
     wood: std({ color: 0xb48a58, roughness: 0.55 }), hedge: std({ color: 0x25401f, roughness: 0.95 }), water: std({ color: 0x24403f, roughness: 0.08, metalness: 0.2, envMapIntensity: 1.4 }),
     tile: std({ color: 0xbfc2c0, roughness: 0.4 }), rubber: std({ color: 0x141416, roughness: 0.7 }), membrane: std({ color: 0xf6f5f0, roughness: 0.85, emissive: 0x30302c }),
     flowerRed: std({ color: 0xb8262c, roughness: 0.9 }), flowerYellow: std({ color: 0xd9a514, roughness: 0.9 }), flowerViolet: std({ color: 0x6c3f9a, roughness: 0.9 }),
@@ -261,13 +263,28 @@ function curtainAtlas(seed, { glass = '#0f1f2e', warm = 0.4, fin = 'rgba(190,210
   for (let f = 0; f < 24; f++) {
     let run = 0, col = '#000';
     for (let b = 0; b < 16; b++) {
-      if (run <= 0 && r() < occ) { run = 1 + Math.floor(r() * 5); const t = r(), k = 0.45 + r() * 0.5; const cc = t < warm ? [255, 214, 160] : [205, 228, 255]; col = `rgb(${cc.map((v) => (v * k) | 0).join(',')})`; }
+      if (run <= 0 && r() < occ * 0.6) { run = 1 + Math.floor(r() * 4); const t = r(), k = 0.3 + r() * 0.5; const cc = t < warm ? [255, 214, 160] : [205, 228, 255]; col = `rgb(${cc.map((v) => (v * k) | 0).join(',')})`; }
       if (run > 0) { run--; x.fillStyle = col; x.fillRect(b * 16 + 1, f * fh + 6, 14, fh - 14); }
     }
     x.fillStyle = 'rgba(8,12,18,0.85)'; x.fillRect(0, f * fh, 256, 5);
   }
   x.fillStyle = fin; for (let b = 0; b < 16; b++) x.fillRect(b * 16, 0, 1.6, 1024);
   return tex(c, { aniso: 8 });
+}
+// the curtain wall's material: by night the atlas (lit rooms, fewer late); by day pale glass in which the
+// floors and the lit rooms only just read (dayNight.js glassByDay, with far less contrast: these are seen close)
+function curtainMat(map, day, gain = 1, contrast = 0.3, side = THREE.FrontSide) {
+  const m = new THREE.MeshBasicMaterial({ map, side }); m.color.setScalar(gain); m.userData.tod = 'glass';
+  const glass = { value: new THREE.Color(...day) };
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, { todDay: TOD.day, todWin: TOD.windows, todAmb: TOD.amb, todGlass: glass });
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float todDay, todWin, todAmb; uniform vec3 todGlass;')
+      .replace('#include <map_fragment>', `#include <map_fragment>
+      { float l = clamp(dot(diffuseColor.rgb, vec3(0.3, 0.55, 0.15)), 0.0, 1.0);
+        diffuseColor.rgb = mix(diffuseColor.rgb * mix(0.35, 1.0, todWin), todGlass * todAmb * (0.86 + ${contrast.toFixed(2)} * sqrt(l)), todDay); }`);
+  };
+  m.customProgramCacheKey = () => `ljz-curtain-${contrast}`;
+  return m;
 }
 // a box tower (any heading) with curtain-wall UVs in metres; its top face dark
 function curtainBox(batch, B, y0, h, r) {
@@ -299,11 +316,11 @@ export function buildIfc(g, m, lights) {
   }
   // its way in from the court side: glass doors under a canopy, the mall's name over them
   { const [x, z] = PP(-Pd.hx - 0.4, 0), [fx, fz] = [-Pd.c, -Pd.s]; obox(st, x + fx * 2.2, 5.2, z + fz * 2.2, fx, fz, 5.2, 0.22, 16); gl.wall(...PP(-Pd.hx - 0.25, -5), ...PP(-Pd.hx - 0.25, 5), CH, 4.6);
-    g.add(sign(['ifc mall', '国金中心商场'], { w: 15, h: 3.2, x: x + fx * 0.2, y: 9.2, z: z + fz * 0.2, ry: Math.atan2(fx, fz), color: '#f4ead2', bg: null, ch: 'signs' })); }
+    g.add(sign(['ifc mall', '国金中心商场'], { w: 24, h: 6.5, x: x + fx * 0.2, y: 12, z: z + fz * 0.2, ry: Math.atan2(fx, fz), color: '#f4ead2', bg: null, ch: 'signs' })); }
   // the north tower's lobby on Century Avenue: a tall glass front, a canopy, revolving doors, the address stone
   const T = IFC.north, L = LJZ.ifcLobbyDoor, [ux, uz] = dirOf(AVE);
   { const [x0, z0] = [L.x - ux * 13, L.z - uz * 13], [x1, z1] = [L.x + ux * 13, L.z + uz * 13];
-    lob.wall(x0 + L.nx * 0.12, z0 + L.nz * 0.12, x1 + L.nx * 0.12, z1 + L.nz * 0.12, CH, 11, [0, 0, 1, 1]);
+    lob.wall(x0 + L.nx * 0.12, z0 + L.nz * 0.12, x1 + L.nx * 0.12, z1 + L.nz * 0.12, CH, 8.8, [0, 0, 2, 1]);
     obox(st, L.x + L.nx * 2.8, 4.6, L.z + L.nz * 2.8, ux, uz, 16, 0.3, 5.6); for (const s of [-7, 7]) st.cyl(L.x + ux * s + L.nx * 5, CH, L.z + uz * s + L.nz * 5, 0.14, 0.14, 4.45, 12);
     for (const s of [-2.4, 2.4]) { const dm = new Tris(); dm.drum({ x: L.x + ux * s + L.nx * 0.9, z: L.z + uz * s + L.nz * 0.9 }, 1.25, 0, 360, CH, 2.9, 16); gl.p.push(...dm.p); gl.n.push(...dm.n); gl.u.push(...dm.u); st.cyl(L.x + ux * s + L.nx * 0.9, 2.9, L.z + uz * s + L.nz * 0.9, 1.32, 1.32, 0.16, 20); }
     obox(stone, L.x - ux * 11 + L.nx * 6.5, CH, L.z - uz * 11 + L.nz * 6.5, ux, uz, 3.6, 1.5, 0.5);
@@ -311,7 +328,7 @@ export function buildIfc(g, m, lights) {
     lights.push({ x: L.x + L.nx * 2.6, y: 4.2, z: L.z + L.nz * 2.6, intensity: 26, distance: 16, color: new THREE.Color(1.0, 0.9, 0.74) });
     addCircle(L.x + ux * 7 + L.nx * 5, L.z + uz * 7 + L.nz * 5, 0.2); addCircle(L.x - ux * 7 + L.nx * 5, L.z - uz * 7 + L.nz * 5, 0.2);
     addBox(L.x - ux * 11 + L.nx * 6.5, L.z - uz * 11 + L.nz * 6.5, AVE_ROT, 1.8, 0.3, { id: 'stone', y1: 2 }); }
-  const towerMat = glassByDay(new THREE.MeshBasicMaterial({ map: atlas, side: THREE.DoubleSide }), [0.4, 0.5, 0.58]); towerMat.color.setScalar(0.95);
+  const towerMat = curtainMat(atlas, [0.5, 0.63, 0.7], 0.95, 0.22, THREE.DoubleSide);
   const lobbyMat = new THREE.MeshBasicMaterial({ map: lobbyTex(), side: THREE.DoubleSide }); lobbyMat.color.setScalar(0.9); lobbyMat.userData.todSkip = true;
   const shopMat = asLight(new THREE.MeshBasicMaterial({ map: shopfronts(), side: THREE.DoubleSide }), 'shops', 0.3);
   const tw = glassB.mesh(towerMat, 'ljz-ifc-towers'), cr = crown.mesh(towerMat, 'ljz-ifc-crowns'), sm = stone.mesh(m.stoneWarm, 'ljz-ifc-podium'), stm = st.mesh(m.steel, 'ljz-ifc-steel');
@@ -323,11 +340,11 @@ function lobbyTex() {
   const [c, x] = makeCanvas(1024, 512), gd = x.createLinearGradient(0, 0, 0, 512);
   gd.addColorStop(0, '#f1dfb8'); gd.addColorStop(0.5, '#c7a877'); gd.addColorStop(1, '#4a3a28'); x.fillStyle = gd; x.fillRect(0, 0, 1024, 512);
   x.fillStyle = 'rgba(255,246,220,0.9)'; for (let i = 0; i < 9; i++) x.fillRect(40 + i * 112, 40, 60, 5);
-  x.fillStyle = '#3b2f22'; x.fillRect(380, 300, 264, 120);                                    // the reception desk
-  x.fillStyle = 'rgba(255,240,205,0.85)'; x.fillRect(380, 296, 264, 6);
-  for (const px of [150, 250, 760, 880]) { x.fillStyle = 'rgba(28,22,18,0.85)'; x.beginPath(); x.ellipse(px, 300, 9, 11, 0, 0, 7); x.fill(); x.fillRect(px - 11, 312, 22, 120); }
+  x.fillStyle = '#3b2f22'; x.fillRect(420, 428, 184, 64);                                    // the reception desk
+  x.fillStyle = 'rgba(255,240,205,0.85)'; x.fillRect(420, 424, 184, 5);
+  for (const px of [150, 250, 760, 880]) { x.fillStyle = 'rgba(28,22,18,0.85)'; x.beginPath(); x.ellipse(px, 398, 5, 7, 0, 0, 7); x.fill(); x.fillRect(px - 7, 406, 14, 86); }
   x.fillStyle = 'rgba(20,22,26,0.9)'; for (let i = 0; i <= 12; i++) x.fillRect(i * 85.3 - 2, 0, 4, 512); x.fillRect(0, 250, 1024, 4); x.fillRect(0, 0, 1024, 6);
-  return tex(c, { repeat: false, aniso: 8 });
+  return tex(c, { aniso: 8 });
 }
 
 // a sign: lines of text on a plate (or cut-out letters when bg is null), lit on a channel of the hour
@@ -413,11 +430,11 @@ export function buildTrees(g, spots) {
   const trunk = new Batch(), P = [], N = [], U = [], r = rng(404);
   for (const t of spots) {
     const h = t.h || 7 + r() * 3, cr = t.r || h * 0.36, y0 = t.y ?? CH, cy = y0 + h * 0.68;
-    trunk.cyl(t.x, y0, t.z, 0.12, 0.2, h * 0.55, 7);
-    const n = t.cards || 26;
+    trunk.cyl(t.x, y0, t.z, 0.08, 0.15, h * 0.55, 7);
+    const n = t.cards || 34;
     for (let i = 0; i < n; i++) {
       const u = r() * 2 - 1, th = r() * 6.283, rr = Math.cbrt(0.25 + 0.75 * r()), s = Math.sqrt(1 - u * u), ox = s * Math.cos(th) * cr * rr, oy = u * cr * 0.72 * rr, oz = s * Math.sin(th) * cr * rr;
-      const size = cr * (0.62 + r() * 0.3), ya = r() * 6.283, tilt = (r() - 0.5) * 1.0, ax = Math.cos(ya), az = Math.sin(ya);
+      const size = cr * (0.46 + r() * 0.26), ya = r() * 6.283, tilt = (r() - 0.5) * 1.0, ax = Math.cos(ya), az = Math.sin(ya);
       const nl = Math.hypot(ox, oy + cr * 0.5, oz) || 1, nx = ox / nl, ny = (oy + cr * 0.5) / nl, nz = oz / nl;
       const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [t.x + ox + ax * a * size - az * Math.sin(tilt) * b * size, cy + oy + Math.cos(tilt) * b * size * 0.8, t.z + oz + az * a * size + ax * Math.sin(tilt) * b * size]);
       for (const k of [0, 1, 2, 0, 2, 3]) { P.push(...corners[k]); N.push(nx, ny, nz); U.push(k === 0 || k === 3 ? 0 : 1, k < 2 ? 0 : 1); }
@@ -532,7 +549,7 @@ export function buildSurroundings(g, m, lights, trees) {
   for (let i = 0; i < 46; i++) { const b = 276 + r() * 71, rr = 102 + r() * 150, [x, z] = polar(b, rr); if (kindAt(x, z) === KIND.grass && Math.hypot(x - 640, z + 42) > 68) trees.push({ x, z, h: 8 + r() * 5, solid: false }); }
   // the Pearl's fence along its park (a low rail on a stone kerb)
   for (let b = 274; b < 349; b += 1.5) { const [x0, z0] = polar(b, 98.6), [x1, z1] = polar(b + 1.5, 98.6), d = dirOf(b + 90.75); obox(st, (x0 + x1) / 2, CH + 1.0, (z0 + z1) / 2, d[0], d[1], 2.7, 0.05, 0.05); st.box(x0, CH, z0, 0.06, 1.0, 0.06); }
-  const mat = (seed, opt, day, gain = 0.95) => { const mm = glassByDay(new THREE.MeshBasicMaterial({ map: curtainAtlas(seed, opt) }), day); mm.color.setScalar(gain); return mm; };
+  const mat = (seed, opt, day, gain = 0.95) => curtainMat(curtainAtlas(seed, opt), day, gain, 0.3);
   const meshes = [cool.mesh(mat(41, { glass: '#0e1b2a', warm: 0.25, occ: 0.24 }, [0.4, 0.47, 0.54]), 'ljz-towers-cool'), warm.mesh(mat(42, { glass: '#17140f', warm: 0.75, occ: 0.26, fin: 'rgba(220,200,170,0.45)' }, [0.47, 0.45, 0.42]), 'ljz-towers-warm'),
     gold.mesh(mat(43, { glass: '#241a0a', warm: 0.95, occ: 0.4, fin: 'rgba(255,205,120,0.6)' }, [0.5, 0.44, 0.33], 1.05), 'ljz-towers-gold')];
   for (const o of meshes) { o.castShadow = true; g.add(o); }
@@ -546,7 +563,7 @@ export function buildStreet(g, m, lights) {
   // street lamps: a tall post, an arm over the carriageway
   const lamp = (x, z, toX, toZ) => { const l = Math.hypot(toX, toZ) || 1, dx = toX / l, dz = toZ / l; st.cyl(x, CH, z, 0.09, 0.14, 9.4, 10); obox(st, x + dx * 1.3, 9.4, z + dz * 1.3, dx, dz, 2.8, 0.1, 0.12); lights.lamp(x + dx * 2.5, 9.3, z + dz * 2.5, 0.34, { intensity: 150, distance: 50, pool: 24, px: x + dx * 3, pz: z + dz * 3, color: [1.0, 0.86, 0.66] }); addCircle(x, z, 0.16, { y1: 3 }); };
   for (let a = 78; a < 556; a += 32) { if (a > 226 && a < 262) continue; for (const s of [-1, 1]) { const [x, z] = fromAP(a + (s > 0 ? 16 : 0), s * 17.2); if (Math.hypot(x - LJZ.kerbPickup.x, z - LJZ.kerbPickup.z) > 5) lamp(x, z, -s * nx, -s * nz); } }
-  for (let b = 0; b < 360; b += 20) { const [x, z] = polar(b, 64); if (carriage(x, z) || carriage(...polar(b, 58)) || Math.hypot(x - APPLE.x, z - APPLE.z) < 26 || RAMPS.some((R) => Math.abs(((b - R.b + 540) % 360) - 180) < 7)) continue; const d = dirOf(b + 180); lamp(x, z, d[0], d[1]); }
+  for (let b = 0; b < 360; b += 20) { const [x, z] = polar(b, 64); if (carriage(x, z) || carriage(...polar(b, 58)) || Math.hypot(x - APPLE.x, z - APPLE.z) < 26 || RAMPS.some((R) => Math.abs(((b - R.b + 540) % 360) - 180) < (R.kind === 'spur' ? 14 : 7))) continue; const d = dirOf(b + 180); lamp(x, z, d[0], d[1]); }
   for (const A of ARMS) { if (A.id === 'century') continue; for (let al = 78; al < 124; al += 30) for (const s of [-1, 1]) { const x = C.x + A.dx * al + A.px * s * (A.hw + 1.2), z = C.z + A.dz * al + A.pz * s * (A.hw + 1.2); if (inDistrict(x, z) && !carriage(x, z)) lamp(x, z, -s * A.px, -s * A.pz); } }
   // the court and IFC's forecourt: low bollard lights
   for (let b = 20; b <= 340; b += 32) { const [x, z] = applePt(b, APPLE.rail + 1.6); if (!inDistrict(x, z) || carriage(x, z)) continue; st.cyl(x, CH, z, 0.07, 0.07, 0.9, 8); lights.lamp(x, CH + 0.95, z, 0.14, { intensity: 7, distance: 9, pool: 6 }); addCircle(x, z, 0.12, { y1: 2 }); }

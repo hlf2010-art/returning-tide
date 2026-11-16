@@ -36,6 +36,8 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   loadFonts([[`800 40px ${FONT.sans}`, LJZ_TEXT], [`900 40px ${FONT.sans}`, LJZ_TEXT], [`600 40px ${FONT.sans}`, LJZ_TEXT], [`700 40px ${FONT.sans}`, LJZ_TEXT], [`800 40px ${FONT.serif}`, '陆家嘴中心绿地']]);
   let built = false, active = false, traffic = null, folk = null, heads = null, ent = null, carBoxes = [], stats = null, clock = 0, pending = null;
 
+  const KEEP = new Set(['player', 'sky', 'pudong', 'river', 'bund', 'promenade', 'lighting', 'entrances', 'rain']);
+  let stowed = [];
   function build() {
     if (built) return; built = true;
     const t0 = performance.now(), m = ljzMaterials(M), kit = lampKit(m), trees = [];
@@ -74,6 +76,10 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   function show(on) {
     if (on === active) return; active = on; root.visible = on;
     if (skyline && skyline.setNear) skyline.setNear(on, { jinmao: LJZ.towers.jinmao, swfc: LJZ.towers.swfc, tower: LJZ.towers.shanghaiTower });
+    // the Bund's own life (its interiors, traffic, people, trees: some 1,500 meshes) is 700 m away across the
+    // river: not drawn while you're here. Its façades, the promenade, the river and the sky stay.
+    if (on) { stowed = scene.children.filter((o) => o.visible && o !== root && !KEEP.has(o.name) && !o.isLight && !o.isCamera); for (const o of stowed) o.visible = false; }
+    else { for (const o of stowed) o.visible = true; stowed = []; }
     if (!on) { for (const b of carBoxes) b.minX = b.maxX = b.minZ = b.maxZ = 1e6; if (ent) ent.update(0.2, { eye: camera.position, active: false }); }
   }
 
