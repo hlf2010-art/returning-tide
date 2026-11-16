@@ -85,7 +85,7 @@ export const AFTER_MOVE = {
     ['girl', '你没事吧？他推了你两下。', 'Are you all right? He pushed you twice.'],
   ],
   shove: [['drunk', '你敢推我？！', 'You push ME?!']],
-  strike: [],
+  strike: [], help: [],
   guard: [['drunk', '我今天非教教你不可！', "I'm going to teach you something tonight!"]],
   snap: [['drunk', '报警？手机给我放下！', 'Police? Put that phone down!']],          // you called 110 with his hands already on you
   security: [

@@ -56,7 +56,7 @@ function fist(G, s, k) {
   const A = G[s];
   if (k < 0.03 || !A.fingers[0][0] || !A.fingers[3][0]) return;
   _ax.subVectors(A.fingers[3][0].getWorldPosition(_c), A.fingers[0][0].getWorldPosition(_a)).normalize();
-  const sg = s === 'L' ? 1 : -1;
+  const sg = s === 'L' ? -1 : 1;
   for (const f of A.fingers) { if (f[0]) turn(f[0], _ax, 1.2 * k * sg); if (f[1]) turn(f[1], _ax, 1.5 * k * sg); if (f[2]) turn(f[2], _ax, 1.0 * k * sg); }
   if (A.thumb[0]) turn(A.thumb[0], _ax, 0.3 * k * sg); if (A.thumb[1]) turn(A.thumb[1], _ax, 0.6 * k * sg);
 }

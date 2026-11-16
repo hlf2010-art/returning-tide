@@ -327,7 +327,7 @@ export function injuryLevel(R) {
 export function policeCome(R) {
   if (R.called) return true;
   if (!R.blows) return false;
-  return R.outcome === 'down' || R.outcome === 'separated' || R.how === 'dropped' || (R.cheap || 0) > 0 || (R.landed || 0) + (R.heavy || 0) + (R.took || 0) >= 6;
+  return R.outcome === 'down' || R.outcome === 'separated' || R.how === 'dropped' || (R.cheap || 0) > 0 || (R.landed || 0) + (R.heavy || 0) + (R.took || 0) >= 7;
 }
 // what they decide. statement: what you tell them: 'straight' | 'shade' (he started it, you only defended
 // yourself) | 'little'. A phone was filming (R.filmed), so shading it only works when it's true.
