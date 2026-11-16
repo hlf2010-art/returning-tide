@@ -1,9 +1,9 @@
 // Who's who. The protagonist and the five friends he grew up with in Nanjing: data for the phone,
 // the agenda and (later) their bodies in the world. Full profiles in docs/characters.md.
 export const ME = {
-  id: 'me', name: '沈既白', en: 'Shen Jibai', nick: '既白', age: 23,
-  line: '南京人，旧金山读完工业设计和数字工程，刚回国。会造东西。',
-  lineEn: 'From Nanjing; just back from San Francisco (industrial design + digital engineering). Builds things.',
+  id: 'me', name: '纪白', en: 'Ji Bai', nick: '纪白', age: 27,
+  line: '南京人，伯克利认知科学（人机交互、AI、产品），在硅谷做过几年，刚回国，在陆家嘴一家外资科技咨询公司做企业 AI 产品。',
+  lineEn: 'From Nanjing; UC Berkeley cognitive science (HCI, AI, product); a few years in Silicon Valley; now at an international technology consulting firm in Lujiazui, on enterprise AI products.',
 };
 
 // voice: browser-speech profile (pitch / rate); avatar colour for the phone
@@ -18,7 +18,7 @@ export const PEOPLE = {
   didi:   { name: '滴滴出行', short: '滴滴', en: 'DiDi', role: 'app', color: '#ff7a00', voice: { pitch: 1, rate: 1 } },
   jd:     { name: '京东', short: '京东', en: 'JD', role: 'shop', color: '#e1251b', voice: { pitch: 1, rate: 1 } },
   taobao: { name: '淘宝', short: '淘宝', en: 'Taobao', role: 'shop', color: '#ff5000', voice: { pitch: 1, rate: 1 } },
-  dad:    { name: '爸', short: '爸', en: 'Dad (Shen Jianguo)', role: 'machining firm, Nanjing', color: '#6b6b6b', voice: { pitch: 0.82, rate: 0.92 }, sex: 'm' },
+  dad:    { name: '爸', short: '爸', en: 'Dad (Ji Jianguo)', role: 'machining firm, Nanjing', color: '#6b6b6b', voice: { pitch: 0.82, rate: 0.92 }, sex: 'm' },
   kai:    { name: '阿凯', short: '阿凯', en: 'Kai', role: 'runs the Yangpu makerspace', color: '#4f7a6a', voice: { pitch: 0.95, rate: 1.05 }, sex: 'm' },
   chen:   { name: '老陈', short: '老陈', en: 'Old Chen', role: 'retired lathe hand; photographs the Customs clock', color: '#7a6a55', voice: { pitch: 0.85, rate: 0.92 }, sex: 'm' },
   ye:     { name: '小叶', short: '小叶', en: 'Xiao Ye', role: 'portrait photographer on the Bund', color: '#5a8a9a', voice: { pitch: 1.08, rate: 1.08 }, sex: 'f' },

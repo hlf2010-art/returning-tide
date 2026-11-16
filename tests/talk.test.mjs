@@ -25,7 +25,7 @@ ok(/谢|客气|没事|应该/.test(cannedReply('office', '谢谢你', { lang: 'z
 // a small model's mistakes are caught: wrong language, an echo, him talking
 ok(!replyOk('我刚从国外回来。', { lang: 'en', said: 'Is there somewhere to eat?' }) && replyOk('Sure, try the dumpling place on Jiujiang Road.', { lang: 'en', said: 'Is there somewhere to eat?' }), 'asked in English, a Mandarin reply is rejected');
 ok(!replyOk('明轩，周末有空吃饭吗？最近天气挺好的', { lang: 'zh', said: '明轩，周末有空吃饭吗？' }) && replyOk('周六可以，你定地方。', { lang: 'zh', said: '明轩，周末有空吃饭吗？' }), 'an echo of what he said is rejected');
-ok(addressOf('receptionist', 'zh') === '沈先生' && /既白/.test(addressOf('xuan', 'zh')) && /stranger/.test(addressOf('visitor', 'en')), 'staff call him Mr Shen, friends Jibai, strangers nothing');
+ok(addressOf('receptionist', 'zh') === '纪先生' && /纪白/.test(addressOf('xuan', 'zh')) && /stranger/.test(addressOf('visitor', 'en')), 'staff call him Mr Ji, friends Ji Bai, strangers nothing');
 ok(/只以「前台」的身份/.test(finalReminder('receptionist', 'zh')) && /as Front desk only/.test(finalReminder('receptionist', 'en')), 'a final reminder: who, and in which language');
 // generated exchanges between two people
 const ex = parseExchange('Sure! ```json\n[{"speaker":"su","zh":"今天风大。","en":"Windy today."},{"speaker":"lin","zh":"是啊。","en":"It is."},{"speaker":"x","zh":"?","en":"?"}]\n```', ['su', 'lin']);

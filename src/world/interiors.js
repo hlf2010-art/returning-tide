@@ -351,7 +351,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     // the revolving door turns as you go through
     const inDoor = Math.abs(pp.x - doorX) < 1.4 && Math.abs(pp.z - -212.2) < 1.6;
     S.drumSpin += ((inDoor ? 1.6 : 0) - S.drumSpin) * Math.min(1, dt * 2); vanes.rotation.y += S.drumSpin * dt;
-    if (inDoor && !S.doormanSaid && ppl.doorman) { S.doormanSaid = true; say(T('门童', 'Doorman'), '晚上好，沈先生。', 'Good evening, Mr Shen.', 2.2); }
+    if (inDoor && !S.doormanSaid && ppl.doorman) { S.doormanSaid = true; say(T('门童', 'Doorman'), '晚上好，纪先生。', 'Good evening, Mr Ji.', 2.2); }
     if (!inDoor && pp.z > -209) S.doormanSaid = false;
   }
 
@@ -376,16 +376,16 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   function interact(id) {
     const l = L0();
     if (id === 'pReception') {
-      if (!S.key) { S.key = true; l.flags.hotelKey = true; say(T('前台', 'Front desk'), '沈先生，晚上好，欢迎回来。这是您的房卡，612，江景房。', "Good evening, Mr Shen, welcome back. Here's your key card: 612, a river-view room.", 3.6); hud.toast(T('拿到房卡 612', 'Key card for room 612'), 3); }
+      if (!S.key) { S.key = true; l.flags.hotelKey = true; say(T('前台', 'Front desk'), '纪先生，晚上好，欢迎回来。这是您的房卡，612，江景房。', "Good evening, Mr Ji, welcome back. Here's your key card: 612, a river-view room.", 3.6); hud.toast(T('拿到房卡 612', 'Key card for room 612'), 3); }
       else say(T('前台', 'Front desk'), '爵士吧九点半开始，今晚是老年爵士乐队，要帮您留位吗？', 'The Jazz Bar starts at half past nine. The Old Jazz Band tonight. Shall I hold a table for you?', 3.6);
     } else if (id === 'pConcierge') {
       const items = waitingAt(l, 'hotel');
-      if (items.length) { for (const it of items) it.where = 'me'; say(T('礼宾部', 'Concierge'), `沈先生，您的快递，一共${items.length}件，都在这儿。`, `Mr Shen, your parcels: ${items.length}, all here.`, 3); hud.toast(T(`取回：${items.map((i) => i.name).join('、')}`, `Collected: ${items.map((i) => i.en).join(', ')}`), 3.6); save && save(); }
+      if (items.length) { for (const it of items) it.where = 'me'; say(T('礼宾部', 'Concierge'), `纪先生，您的快递，一共${items.length}件，都在这儿。`, `Mr Ji, your parcels: ${items.length}, all here.`, 3); hud.toast(T(`取回：${items.map((i) => i.name).join('、')}`, `Collected: ${items.map((i) => i.en).join(', ')}`), 3.6); save && save(); }
       else say(T('礼宾部', 'Concierge'), '目前没有您的快递哦。需要叫车的话我帮您约。', "Nothing waiting for you at the moment. If you need a car, I can book one.", 3);
     } else if (id === 'pLifts') {
       if (!(S.key || l.flags.hotelKey)) say(T('保安', 'Security'), '先生，电梯需要刷房卡，住客才能上去。', 'Sorry, sir, the lifts need a room card. Guests only.', 3);
       else {
-        if (!S.said.lift) { S.said.lift = true; say(T('保安', 'Security'), '沈先生，六楼南边在装修，您那间不受影响。', "Mr Shen. The south end of six is being refitted, sir; your room's not affected.", 3.4); }
+        if (!S.said.lift) { S.said.lift = true; say(T('保安', 'Security'), '纪先生，六楼南边在装修，您那间不受影响。', "Mr Ji. The south end of six is being refitted, sir; your room's not affected.", 3.4); }
         onLift && onLift();
       }
     } else if (id === 'pStaff') {

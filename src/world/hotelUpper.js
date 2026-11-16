@@ -224,7 +224,7 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
     box(2.2, 1.3, 0.08, walnut, bxc, F, R.z0 + 0.06); box(1.4, 0.22, 0.08, walnut, bxc, F + 1.3, R.z0 + 0.06); box(0.7, 0.16, 0.08, walnut, bxc, F + 1.52, R.z0 + 0.06);
     for (const dx of [-0.35, 0, 0.35]) box(0.02, 1.0, 0.02, brass, bxc + dx, F + 0.42, R.z0 + 0.11);
     // a welcome card on the pillow
-    add(new THREE.PlaneGeometry(0.16, 0.11), new THREE.MeshStandardMaterial({ map: signTex([['欢迎回来', 100], ['沈先生', 80]], { bg: '#f7f3ea', fg: '#6b5428', w: 512, h: 340 }), roughness: 0.8 }), bxc + 0.1, F + 0.73, R.z0 + 1.0, 0.2, -Math.PI / 2);
+    add(new THREE.PlaneGeometry(0.16, 0.11), new THREE.MeshStandardMaterial({ map: signTex([['欢迎回来', 100], ['纪先生', 80]], { bg: '#f7f3ea', fg: '#6b5428', w: 512, h: 340 }), roughness: 0.8 }), bxc + 0.1, F + 0.73, R.z0 + 1.0, 0.2, -Math.PI / 2);
     // nightstands, lamps
     for (const nx of [-40.0, -37.22]) {
       rbox(0.55, 0.56, 0.48, 0.02, walnut, nx, F, R.z0 + 0.3);

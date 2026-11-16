@@ -99,6 +99,7 @@ import { hasProduct, isDusk, studio as workState, summary as workSummary, goesLe
 import { createFieldTest, SPOTS as WORK_SPOTS } from './world/fieldTest.js';
 import { createWorkDesk } from './world/workDesk.js';
 import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
+import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText } from './engine/year.js';
 const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the story's, the street moments' (world/moments.js), and the gimbal's week (world/work.js)
 import { createSceneTalk } from './ui/sceneTalk.js';
 import { createDinner } from './world/dinner.js';
@@ -482,7 +483,7 @@ function begin() {
 }
 // one line on the gimbal's week: the version, the evenings left, who's waiting
 function workReminder() {
-  const s = workSummary(life), st = workState(life), left = 6 - life.clock.day, zhUI = getLang() === 'zh';
+  const s = workSummary(life), st = workState(life), left = finalDay(life) - life.clock.day, zhUI = getLang() === 'zh';
   const waiting = Object.entries(st.people).filter(([, p]) => p.promised != null).map(([id]) => (zhUI ? WORK_REG[id].name.zh : WORK_REG[id].name.en));
   const dinner = life.flags.dinnerChoice || left < 0 ? '' : zhUI ? (left === 0 ? ' · 今晚和爸爸吃饭' : ` · 离和爸爸吃饭还有 ${left} 个晚上`) : (left === 0 ? ' · dinner with Dad tonight' : ` · ${left} ${left === 1 ? 'evening' : 'evenings'} until the dinner with Dad`);
   return zhUI ? `夜行云台 · 第 ${s.rev} 版${dinner}${waiting.length ? ` · ${waiting.join('、')}等着试改过的` : ''} · N 翻开本子` : `Night gimbal · version ${s.rev}${dinner}${waiting.length ? ` · ${waiting.join(' and ')} ${waiting.length === 1 ? 'is' : 'are'} waiting to try the changed one` : ''} · N for your notebook`;
@@ -793,7 +794,7 @@ let pedBoxes = [], crowdBoxes = [], bumps = null;
 const LIFE_KEY = slotKey(currentSlot());   // the slot you're playing (ui/saves.js); slot 1 is the original save
 let life = null;
 try { life = params.has('fresh') ? null : lifeLoad(localStorage.getItem(LIFE_KEY)); } catch { life = null; }
-if (!life) { life = createLife(); setupThreads(life); }
+if (!life) { life = createLife(); setupThreads(life); initYear(life); }   // a new game is a year long (engine/year.js); older saves keep their six days
 if (params.has('hour')) { const [h, m] = params.get('hour').split(':').map(Number); if (h >= 0 && h < 24) { life.clock.minute = h * 60 + (m || 0); life.clock.sec = 0; } }
 let saves = null;
 const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); if (saves) saves.touched(); } catch { /* private mode: no saving */ } };

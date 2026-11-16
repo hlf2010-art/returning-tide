@@ -45,7 +45,7 @@ for (const P of Object.values(PLACES)) {
 
 // ---- the scenes: [who, zh, en] lines; { ask: [...4 answers] } where each answer has its reply ----
 const YINUO = [
-  ['agent', '沈先生是吧？程小姐在里面等您。这套是顶层，三百二十平，整层就这一户。', "Mr Shen? Ms Cheng's inside. Top floor, three hundred and twenty square metres, the only flat on the floor."],
+  ['agent', '纪先生是吧？程小姐在里面等您。这套是顶层，三百二十平，整层就这一户。', "Mr Ji? Ms Cheng's inside. Top floor, three hundred and twenty square metres, the only flat on the floor."],
   ['yinuo', '来了。', 'You came.'],
   ['yinuo', '家里想让我在上海有个落脚的地方。他们看中的是这个景。', "My family want me to have somewhere in Shanghai. It's the view they're buying."],
   ['yinuo', '你是学设计的。除了景，这房子还有什么？', 'You studied design. Apart from the view, what is there to this place?'],
@@ -70,7 +70,7 @@ const YINUO = [
 ];
 const XUAN = [
   ['xuan', '白白！来来来。这是周学长，我们学校机械系的，现在做协作机械臂。', "Baibai! Come in. This is Zhou, a senior from our university, mechanical engineering. Cobots now."],
-  ['founder', '你好你好。明轩说你在旧金山做过硬件。', 'Hi, hi. Mingxuan says you did hardware in San Francisco.'],
+  ['founder', '你好你好。明轩说你在湾区做过产品。', 'Hi, hi. Mingxuan says you built products in the Bay Area.'],
   ['founder', '问题是这样：速度上到每分钟四十次，夹爪就开始掉件。电机、控制都查过了。客户月底要看演示。', "Here's the thing. Once we're up to forty picks a minute, the gripper starts dropping parts. We've been through the motors and the control loop. The customer wants a demo at the end of the month."],
   ['founder', '你看，就是这样。', 'Watch. There it goes.', { drop: true }],
   { ask: [
@@ -92,10 +92,10 @@ const XUAN = [
 // demo day (if you said you'd advise): the arm runs clean in front of the customer and an investor
 const XUAN_DEMO = [
   ['xuan', '来了！今天你也是主角。', 'You made it! You\'re part of the show today.'],
-  ['founder', '王总，这位就是沈既白，指垫的主意是他出的。', 'Mr Wang, this is Shen Jibai. The pads were his idea.'],
+  ['founder', '王总，这位就是纪白，指垫的主意是他出的。', 'Mr Wang, this is Ji Bai. The pads were his idea.'],
   ['investor', '三十个件，一个没掉。年轻人，你是做硬件的？', 'Thirty parts, not one dropped. Young man, you do hardware?'],
   { ask: [
-    { zh: '学工业设计的，在旧金山做过一个外骨骼手套。', en: 'Industrial design. In San Francisco I built an exoskeleton glove.', d: 3, flag: 'pitch', then: [['investor', '那个专利我看过。有空聊聊，我请。', 'I\'ve read that patent. Let\'s talk sometime, my treat.']] },
+    { zh: '学认知科学的，在湾区做了几年 AI 产品。', en: 'Cognitive science. I spent a few years on AI products in the Bay Area.', d: 3, flag: 'pitch', then: [['investor', '你们那个产品我用过。有空聊聊，我请。', 'I\'ve used that product of yours. Let\'s talk sometime, my treat.']] },
     { zh: '我只是提了个建议。', en: 'I only made a suggestion.', d: 1, then: [['investor', '好的建议值钱。', 'Good suggestions are worth money.']] },
     { zh: '是他们团队做得好。', en: 'The team did the work.', d: 2, flag: 'modest', then: [['founder', '他太谦虚了。', 'He\'s being modest.']] },
     { zh: '（点点头，不说话）', en: '(Nod. Say nothing.)', d: 0, then: [['investor', '话不多，我喜欢。', 'Not a talker. I like that.']] },

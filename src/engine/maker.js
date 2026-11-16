@@ -1,4 +1,4 @@
-// Jibai builds things: pure (no three.js, no DOM), node-tested (tests/maker.test.mjs).
+// Ji Bai builds things: pure (no three.js, no DOM), node-tested (tests/maker.test.mjs).
 //   blueprints   what he can make, the parts each needs and the Maker level it takes
 //   parts        bought on JD / Taobao (delivered like any order) or off the makerspace's shelf
 //   building     at the bench in the Yangpu makerspace: print the housing, solder the board (a

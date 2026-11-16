@@ -8,6 +8,7 @@ import { createSeatedPose, turn } from './driverPose.js';
 import { L as LAYOUT } from './layout.js';
 import { stamp } from '../engine/life.js';
 import { D, dinnerScript } from './story.js';
+import { finalDay } from '../engine/year.js';
 import { getLang } from '../ui/i18n.js';
 import { createGimbalProp } from './props/gimbal.js';
 import { studio } from '../engine/studio.js';
@@ -35,7 +36,7 @@ export function createDinner({ scene, people, player, getLife, save, sceneTalk, 
     const l = L0(), q = (l.quests || { list: {} }).list.dinner, now = stamp(l);
     if (!q || S.gone) return false;
     if (q.status === 'failed') return false;
-    return now >= D(6, 19, 30) && now <= D(6, 23, 0) && (q.status === 'active' || (q.status === 'done' && !S.leftBar));
+    return now >= D(finalDay(l), 19, 30) && now <= D(finalDay(l), 23, 0) && (q.status === 'active' || (q.status === 'done' && !S.leftBar));
   }
   const headPos = () => { const v = new THREE.Vector3(); if (dad && dad.bones.head) dad.bones.head.getWorldPosition(v); else v.set(CHAIR.x, Y0 + 1.25, CHAIR.z); return v; };
   function sit() {

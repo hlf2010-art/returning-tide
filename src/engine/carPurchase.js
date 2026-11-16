@@ -1,4 +1,4 @@
-// Buying a car the way it actually happens for someone like Shen Jibai in Shanghai: pure, node-tested.
+// Buying a car the way it actually happens for someone like Ji Bai in Shanghai: pure, node-tested.
 // Not a shop: a lead from a friend, a sales consultant on WeChat, a demo car brought to you (上门试驾,
 // white-glove test drives are normal at this end of the market), a spec, a deposit, the money, the plate
 // problem, delivery. Money is in-game money (engine/life.js), never anything real.
@@ -12,7 +12,7 @@
 //               the car was bought:
 //                 auction  the Shanghai private-plate auction (沪牌). Without a Shanghai hukou you
 //                          need a Shanghai residence permit and 36 months of continuous Shanghai
-//                          social insurance or tax to bid; Shen Jibai, a week back from San
+//                          social insurance or tax to bid; Ji Bai, a week back from San
 //                          Francisco with a Nanjing hukou, has neither, so it's refused
 //                 nanjing  a 苏A plate in Nanjing, where his hukou is: the dealer's agent does the
 //                          out-of-town registration while the car runs on temporary plates; blue
@@ -58,8 +58,8 @@ export function lead(L) {
 export function contact(L, at) {
   const b = P(L); if (b.stage !== 'lead') return false;
   mark(L, 'contacted');
-  say(L, '你好，我是知夏的朋友沈既白，想了解一下 Huracán。', 'me');
-  say(L, '沈先生您好！知夏跟我说过您～ 我们这边可以把试驾车开到您那边，外滩可以吗？');
+  say(L, '你好，我是知夏的朋友纪白，想了解一下 Huracán。', 'me');
+  say(L, '纪先生您好！知夏跟我说过您～ 我们这边可以把试驾车开到您那边，外滩可以吗？');
   b.at = at;
   say(L, `那就${Math.floor(at / 60) % 24}点${String(at % 60).padStart(2, '0')}在汉口路，车停在路边，我在车旁边等您。`);
   mark(L, 'booked');

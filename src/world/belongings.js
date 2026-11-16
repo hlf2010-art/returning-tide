@@ -11,7 +11,7 @@ import { stepOrders, handOver, canUse, item } from '../engine/shopping.js';
 import { t, tr } from '../ui/i18n.js';
 
 const COURIER_LINES = [
-  { zh: '沈先生是吧？您的快递，拿好。', en: 'Mr Shen? Your parcel. There you go.' },
+  { zh: '纪先生是吧？您的快递，拿好。', en: 'Mr Ji? Your parcel. There you go.' },
   { zh: '尾号0731是吧？给，您的快递。', en: 'Number ending 0731? Here, your parcel.' },
   { zh: '您的快递，麻烦给个好评哈。', en: "Your parcel. A good rating would be great, thanks." },
 ];

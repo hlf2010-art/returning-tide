@@ -34,8 +34,8 @@ export const S = {
   district: { zh: '黄浦区 · 外滩', en: 'Huangpu · The Bund' }, weatherNow: { zh: '12°C 雨后转阴 · 江风 4 级', en: '12°C · cloudy after rain · river wind F4' },
   chapter: { zh: '序章 · 抵达外滩', en: 'Prologue · Arriving at the Bund' },
   premise: {
-    zh: '沈既白，二十三岁。南京人，在旧金山读了四年工业设计，回国一周。十二岁以前的每个暑假，他都坐在汉口路老周的修表摊边。一别十一年。然后是老周的一条语音：九秒，几乎全是江风。“到外滩来。海关钟下面……”之后再也打不通。',
-    en: "Shen Jibai, 23. Born in Nanjing; four years of industrial design in San Francisco; back a week. Every summer until he was twelve he sat at Old Zhou's watch stall on Hankou Road. Eleven years away. Then a voicemail from Old Zhou: nine seconds, mostly river wind. \"Come to the Bund. Under the Customs clock...\" He hasn't picked up since.",
+    zh: '纪白，二十七岁。南京人，伯克利读完认知科学，在硅谷做了几年 AI 产品，回国一周，下周一去陆家嘴的咨询公司报到。父亲在南京的厂等着他接手；他给自己一年。十二岁以前的每个暑假，他都坐在汉口路老周的修表摊边。然后是老周的一条语音：九秒，几乎全是江风。“到外滩来。海关钟下面……”之后再也打不通。',
+    en: "Ji Bai, 27. Born in Nanjing; cognitive science at Berkeley; a few years building AI products in Silicon Valley; back a week, and due at a consulting firm in Lujiazui on Monday. His father's factory in Nanjing is waiting for him to take it over; he has given himself a year. Every summer until he was twelve he sat at Old Zhou's watch stall on Hankou Road. Then a voicemail from Old Zhou: nine seconds, mostly river wind. \"Come to the Bund. Under the Customs clock...\" He hasn't picked up since.",
   },
   loading: { zh: '正在载入上海…', en: 'Loading Shanghai…' },
   begin: { zh: '走出去', en: 'Step out' },

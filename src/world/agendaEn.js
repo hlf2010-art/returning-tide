@@ -42,7 +42,7 @@ export const EN = {
   "去": "I'll be there",
   "周五有事": "Busy on Friday",
   "上次谢了。学长说你那句话点醒他了。顾问的事你再想想？": "Thanks for last time. Zhou says what you said opened his eyes. Think about advising them again?",
-  "有个做硬件的投资人想认识你，说看了你的手套专利。下周一起吃个饭？": "A hardware investor wants to meet you. He's seen your glove patent. Dinner next week?",
+  "有个做硬件的投资人想认识你，说看过你在硅谷做的产品。下周一起吃个饭？": "A hardware investor wants to meet you. He's seen what you shipped in the Valley. Dinner next week?",
   "可以，你约。": "Sure, set it up.",
   "好，我订个地方。别穿你那件工装外套。": "OK, I'll book somewhere. Don't wear that work jacket.",
   "先不用，我想自己先做点东西。": "Not yet. I want to build something of my own first.",
@@ -67,7 +67,7 @@ export const EN = {
   "我还在想。": "I'm still thinking.",
   "……你自己的事，你自己想清楚。钱够不够？": "...Your life, you think it through. Do you have enough money?",
   "够。": "Yes.",
-  "专利的钱还在。": "The patent money's still there.",
+  "在美国攒的还在。": "What I saved in the States is still there.",
   "嗯。你妈让你按时吃饭。挂了。": "Mm. Your mother says eat properly. Bye.",
   "白白这张可以啊🔥": "Baibai, this one is good 🔥",
   "哪里拍的？我也要去": "Where was this? I want to go",
@@ -86,8 +86,8 @@ export const EN = {
   '到了吗？外滩风大，你那件薄外套不够的。': 'Here yet? It\'s windy on the Bund. That thin jacket of yours won\'t cut it.',
   '到了，确实冷。在海关大楼这边。': 'Here. It is cold. I\'m by the Customs House.', '海关大楼？那正好，钟楼刚修完，你抬头看看。': 'The Customs House? Perfect, the clock tower\'s just been restored. Look up.',
   '还行，不冷。': 'It\'s fine, not cold.', '嘴硬。': 'Liar.',
-  '喂，沈既白，听说你那个手套专利的钱到账了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？':
-    'Hey, Shen Jibai, heard the money for your glove patent came through? ...Don\'t play dumb, Ruoan told me. Come to Tianma this weekend, I\'ll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?',
+  '喂，纪白，听说你硅谷那家公司的股票套现了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？':
+    'Hey, Ji Bai, heard you cashed out your stock from that Valley company? ...Don\'t play dumb, Ruoan told me. Come to Tianma this weekend, I\'ll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?',
   '周末可以，车的事再说。': 'Weekend works. We\'ll see about the car.', '再说就是想。我认识保时捷浦东的一个顾问，人靠谱，回头推给你。': '"We\'ll see" means yes. I know a consultant at Porsche in Pudong, she\'s solid. I\'ll send you her contact.',
   'Model 3 挺好的。': 'The Model 3 is fine.', '……行，你开心就好。': '...Sure. Whatever makes you happy.',
   '说正事。有个做机械臂的团队，创始人是我学长，产品经理跑了，原型卡住了。': 'Business. There\'s a robotic-arm team, the founder was a year above me at LSE. Their product lead quit and the prototype\'s stuck.',
@@ -101,7 +101,7 @@ export const EN = {
   '测试台又炸了一个电芯，没人受伤，就是心疼钱': 'Another cell blew on the test bench. Nobody hurt, just painful for the budget',
   '有人知道海关大楼钟每天几点敲吗，甲方问我我也不知道😂': 'Anyone know what times the Customs House clock chimes? The client asked and I have no idea 😂',
   '谁有静安那家生煎的电话，排队排疯了': 'Anyone have the number for that shengjian place in Jing\'an? The queue is insane', '刚落虹桥，雾好大': 'Just landed at Hongqiao. So foggy',
-  '@沈既白 你周末到底在不在上海': '@Shen Jibai are you in Shanghai this weekend or not', '周末天马下雨就取消，别问了': 'If it rains at Tianma this weekend it\'s off. Don\'t ask',
+  '@纪白 你周末到底在不在上海': '@Ji Bai are you in Shanghai this weekend or not', '周末天马下雨就取消，别问了': 'If it rains at Tianma this weekend it\'s off. Don\'t ask',
   '[表情] 旺柴.gif': '[Sticker] doge.gif', '今天工地挖出来一块1920年代的地砖，开心一整天': 'Dug up a 1920s floor tile on site today. Happy all day',
   // reactions
   '好！门口报我名字就行，带你认识下我们鼓手': 'Great! Just give my name at the door. I\'ll introduce you to our drummer', '行吧……下次啊，下次不来就绝交': 'Fine... next time. Skip that too and we\'re done',
@@ -114,8 +114,8 @@ export const EN = {
   // the Huracán: Zhixia's card, Vivian
   '推给你，Vivian，人很实在，不会硬推销。你就说是我朋友。': "Here's Vivian. She's straight with people, no hard sell. Just say you're my friend.",
   '[名片] Vivian 陈': '[Contact card] Vivian Chen',
-  '你好，我是知夏的朋友沈既白，想了解一下 Huracán。': "Hi, I'm Shen Jibai, a friend of Zhixia's. I'd like to know about the Huracán.",
-  '沈先生您好！知夏跟我说过您～ 我们这边可以把试驾车开到您那边，外滩可以吗？': "Hello Mr Shen! Zhixia told me about you. We can bring the demo car to you. Would the Bund work?",
+  '你好，我是知夏的朋友纪白，想了解一下 Huracán。': "Hi, I'm Ji Bai, a friend of Zhixia's. I'd like to know about the Huracán.",
+  '纪先生您好！知夏跟我说过您～ 我们这边可以把试驾车开到您那边，外滩可以吗？': "Hello Mr Ji! Zhixia told me about you. We can bring the demo car to you. Would the Bund work?",
   '定金收到啦，合同我发您邮箱。配额已经帮您锁好，大概两周到店。': "Deposit received! I'll email you the contract. Your allocation is locked in; it should reach us in about two weeks.",
   '上牌的话，车在哪儿买不影响，跟着户口走。您是南京户口，我们这边可以帮您代办苏A，车先挂临牌。': "For the plate, it doesn't matter where you buy the car: registration follows your hukou. Yours is Nanjing, so we can register it on a 苏A plate for you. The car runs on temporary plates meanwhile.",
   '好，上苏A。': "OK, 苏A it is.", '拍沪牌不行吗？': "Couldn't I bid for a Shanghai plate?",
@@ -140,7 +140,7 @@ export const EN = {
   '到上海了？': 'You\'re in Shanghai?', '到了，在外滩。': 'Yes, I\'m on the Bund.', '嗯，到了。': 'Mm, I\'m here.', '住哪儿？': 'Where are you staying?',
   '先住和平饭店几天。': 'The Peace Hotel, for a few days.', '朋友家。': 'At a friend\'s.', '……嗯。你妈让我问你吃饭了没有。': '...Mm. Your mother wants to know if you\'ve eaten.',
   '吃了。': 'I have.', '还没，等会儿吃。': 'Not yet, I will soon.',
-  '钱的事你自己有数。专利那笔钱，别全扔在车上。有空回南京一趟，厂里的事我们当面谈。': 'You know your own mind about money. Don\'t throw all the patent money at a car. Come back to Nanjing when you can. We\'ll talk about the factory in person.',
+  '钱的事你自己有数。你在美国攒的那点钱，别全扔在车上。有空回南京一趟，厂里的事我们当面谈。': 'You know your own mind about money. Don\'t throw everything you saved in America at a car. Come back to Nanjing when you can. We\'ll talk about the factory in person.',
   '知道了，爸。': 'Got it, Dad.', '我在上海有自己的打算。': 'I have my own plans in Shanghai.', '行。挂了。': 'Fine. I\'m hanging up.',
 };
 

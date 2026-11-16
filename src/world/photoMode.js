@@ -1,4 +1,4 @@
-// Photo mode, with the night gimbal Jibai built (engine/maker.js). G raises the phone on its gimbal:
+// Photo mode, with the night gimbal Ji Bai built (engine/maker.js). G raises the phone on its gimbal:
 // a viewfinder with thirds, the focal length, the stabiliser. Mouse frames the shot (the gimbal
 // smooths it), wheel or [ ] zooms (24-135 mm equivalent), Space or a click takes it, G or Esc lowers it.
 // Each shot is scored against the Bund-after-dark list (PHOTO_TARGETS): is the subject in the frame,

@@ -33,7 +33,7 @@ const BEATS = [
     { text: '到了，确实冷。在海关大楼这边。', delta: 2, follow: '海关大楼？那正好，钟楼刚修完，你抬头看看。' },
     { text: '还行，不冷。', delta: 0, follow: '嘴硬。' },
   ] }) },
-  { id: 'z1', at: 7, run: (L) => post(L, 'zhixia', { from: 'zhixia', kind: 'voice', text: '喂，沈既白，听说你那个手套专利的钱到账了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？', replies: [
+  { id: 'z1', at: 7, run: (L) => post(L, 'zhixia', { from: 'zhixia', kind: 'voice', text: '喂，纪白，听说你硅谷那家公司的股票套现了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？', replies: [
     { text: '周末可以，车的事再说。', delta: 3, follow: '再说就是想。我认识保时捷浦东的一个顾问，人靠谱，回头推给你。', flag: 'carCurious' },
     { text: 'Model 3 挺好的。', delta: -1, follow: '……行，你开心就好。' },
   ] }) },
@@ -96,7 +96,7 @@ BEATS.push(
     invite(L, { id: 'xuan-demo', from: 'xuan', thread: 'xuan', title: '机械臂演示日', place: '陆家嘴 IFC 二期 32F', at: D(5, 15, 0), deadline: D(5, 12, 0), text: '周五下午三点，IFC 32楼。', onAccept: 5, onDecline: -2, onMiss: -5, yesText: '去', noText: '周五有事' });
   } },
   { id: 'x2b', when: D(3, 10, 0), if: (L) => !said(L, 'lujiazui', 'advisor') && L.invites.some((i) => i.id === 'xuan-arm' && i.kept), run: (L) => post(L, 'xuan', { from: 'xuan', kind: 'text', text: '上次谢了。学长说你那句话点醒他了。顾问的事你再想想？' }) },
-  { id: 'x3', when: D(6, 20, 0), run: (L) => post(L, 'xuan', { from: 'xuan', kind: 'text', text: '有个做硬件的投资人想认识你，说看了你的手套专利。下周一起吃个饭？', replies: [
+  { id: 'x3', when: D(6, 20, 0), run: (L) => post(L, 'xuan', { from: 'xuan', kind: 'text', text: '有个做硬件的投资人想认识你，说看过你在硅谷做的产品。下周一起吃个饭？', replies: [
     { text: '可以，你约。', delta: 2, flag: 'investorMeet', follow: '好，我订个地方。别穿你那件工装外套。' },
     { text: '先不用，我想自己先做点东西。', delta: 0, follow: '有骨气。那等你做出来。' },
   ] }) },
@@ -120,7 +120,7 @@ BEATS.push(
 const CHATTER = [
   ['momo', '[视频] 今天排练的，这段solo我自己都想哭'], ['xuan', '开会开到现在，饭都没吃'], ['zhixia', '测试台又炸了一个电芯，没人受伤，就是心疼钱'],
   ['ruoan', '有人知道海关大楼钟每天几点敲吗，甲方问我我也不知道😂'], ['momo', '谁有静安那家生煎的电话，排队排疯了'], ['yinuo', '刚落虹桥，雾好大'],
-  ['xuan', '@沈既白 你周末到底在不在上海'], ['zhixia', '周末天马下雨就取消，别问了'], ['momo', '[表情] 旺柴.gif'], ['ruoan', '今天工地挖出来一块1920年代的地砖，开心一整天'],
+  ['xuan', '@纪白 你周末到底在不在上海'], ['zhixia', '周末天马下雨就取消，别问了'], ['momo', '[表情] 旺柴.gif'], ['ruoan', '今天工地挖出来一块1920年代的地砖，开心一整天'],
 ];
 
 export function runAgenda(L, rnd = Math.random) {
@@ -197,7 +197,7 @@ export const CALLS = {
     { who: 'dad', text: '厂里新上了一条线，做电驱的壳体。研发那层楼空着，我给你留着。' },
     { who: 'me', choices: [{ text: '我想在上海先做自己的工作室。', delta: -1, flag: 'toldDadStudio' }, { text: '过阵子回去看看。', delta: 2 }, { text: '我还在想。', delta: 0 }] },
     { who: 'dad', text: '……你自己的事，你自己想清楚。钱够不够？' },
-    { who: 'me', choices: [{ text: '够。', delta: 1 }, { text: '专利的钱还在。', delta: 0 }] },
+    { who: 'me', choices: [{ text: '够。', delta: 1 }, { text: '在美国攒的还在。', delta: 0 }] },
     { who: 'dad', text: '嗯。你妈让你按时吃饭。挂了。' },
   ] },
   'dad-arrival': { from: 'dad', lines: [
@@ -207,7 +207,7 @@ export const CALLS = {
     { who: 'me', choices: [{ text: '先住和平饭店几天。', delta: -1, flag: 'toldDadHotel' }, { text: '朋友家。', delta: 0 }] },
     { who: 'dad', text: '……嗯。你妈让我问你吃饭了没有。' },
     { who: 'me', choices: [{ text: '吃了。', delta: 0 }, { text: '还没，等会儿吃。', delta: 0 }] },
-    { who: 'dad', text: '钱的事你自己有数。专利那笔钱，别全扔在车上。有空回南京一趟，厂里的事我们当面谈。' },
+    { who: 'dad', text: '钱的事你自己有数。你在美国攒的那点钱，别全扔在车上。有空回南京一趟，厂里的事我们当面谈。' },
     { who: 'me', choices: [{ text: '知道了，爸。', delta: 2 }, { text: '我在上海有自己的打算。', delta: -2, flag: 'toldDadPlans' }] },
     { who: 'dad', text: '行。挂了。' },
   ] },

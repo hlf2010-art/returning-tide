@@ -24,7 +24,7 @@ import { summary as workSummary, unwritten as workUnwritten } from '../../engine
 // one language at a time: Z(zh, en) picks; X(text) translates what people wrote; nm(id) names them
 const Z = (zh, en) => (getLang() === 'zh' ? zh : en);
 const X = (text) => (getLang() === 'en' ? enText(text) : text);
-const nm = (id) => { const p = PEOPLE[id]; if (id === 'me') return Z(ME.name, ME.en); return p ? Z(p.name, p.en === 'Dad (Shen Jianguo)' ? 'Dad' : p.en) : id; };
+const nm = (id) => { const p = PEOPLE[id]; if (id === 'me') return Z(ME.name, ME.en); return p ? Z(p.name, p.en === 'Dad (Ji Jianguo)' ? 'Dad' : p.en) : id; };
 // English: given names (Mingxuan, Ruoan), as friends would; Momo stays Momo
 const shortEn = (id, p) => (id === 'dad' ? 'Dad' : id === 'manner' ? 'Manner' : /^[A-Za-z]/.test(p.short) ? p.short : (p.en || '').split(' ').slice(1).join(' ') || p.en);
 const short = (id) => { const p = PEOPLE[id]; return p ? Z(p.short, shortEn(id, p)) : id; };

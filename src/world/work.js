@@ -1,7 +1,7 @@
 // 一件自己的东西 / Something of your own: the words and the story-side rules of the night gimbal's
 // week (engine/studio.js has the numbers). Pure data and rules over life, like world/story.js, so
 // the whole week can be played in node (tests/studio.test.mjs).
-//   what's wrong with it, in Jibai's notebook voice; what each fix is
+//   what's wrong with it, in Ji Bai's notebook voice; what each fix is
 //   what people say with it in their hands: passers-by, and the three who are there every evening
 //     老陈   a retired lathe hand who photographs the Customs House clock on the hour, hands unsteady
 //     小叶   shoots visitors' portraits on the promenade for a living
@@ -12,6 +12,7 @@
 // All written in Chinese first, the way these people would say it, with English alongside.
 import { post, thread, stamp } from '../engine/life.js';
 import { gainFollowers } from '../engine/maker.js';
+import { finalDay } from '../engine/year.js';
 import { studio, hasProduct, rev, specs, summary, isOpen, hear, addToList, machined, eveningOf, todays, tonight, REGULARS, FIXES, HEAVY_AT } from '../engine/studio.js';
 
 const B = (zh, en) => ({ zh, en });
@@ -177,10 +178,10 @@ const morningAfter = (L, eve) => eve != null && (eveningOf(L) > eve) && L.clock.
 const BEATS = [
   // Kai: the bench is free (the morning of day 2), or, if it's already built, get it out of the building
   { id: 'w-kai1', when: (L) => stamp(L) >= D(2, 9, 30), run: (L) => { thread(L, 'kai', { title: '阿凯', members: ['me', 'kai'], kind: 'person' });
-    post(L, 'kai', { from: 'kai', kind: 'text', text: hasProduct(L) ? '那台云台做得不错。光摆在台子上可惜了，天黑了拿去外滩，给拍照的人用用。' : '小沈，今天上午没人，两台打印机都空着。你那个云台的图纸还贴在白板上呢。' }); } },
+    post(L, 'kai', { from: 'kai', kind: 'text', text: hasProduct(L) ? '那台云台做得不错。光摆在台子上可惜了，天黑了拿去外滩，给拍照的人用用。' : '小纪，今天上午没人，两台打印机都空着。你那个云台的图纸还贴在白板上呢。' }); } },
   { id: 'w-kai2', when: (L) => rev(L) >= 2 && !!L.threads.kai, run: (L) => post(L, 'kai', { from: 'kai', kind: 'text', text: '改版了？这才像做产品的样子。记住，一次别改太多，不然不知道是哪一处起的作用。' }) },
   // Momo borrows it for a gig video
-  { id: 'w-momo1', when: (L) => hasProduct(L) && stamp(L) >= D(3, 16, 0) && stamp(L) < D(6, 12, 0), run: (L) => post(L, 'momo', { from: 'momo', kind: 'text', text: '白白，听说你做了个云台？？今晚演出借我拍一条，我给你@出来', replies: [
+  { id: 'w-momo1', when: (L) => hasProduct(L) && stamp(L) >= D(3, 16, 0) && stamp(L) < D(finalDay(L), 12, 0), run: (L) => post(L, 'momo', { from: 'momo', kind: 'text', text: '白白，听说你做了个云台？？今晚演出借我拍一条，我给你@出来', replies: [
     { text: '拿去，别摔了。', delta: 3, flag: 'lentMomo', follow: '摔了我赔！（我没钱，但我赔）' },
     { text: '还没改好，好了第一个给你。', delta: 0, follow: '行，那我等正式版' },
   ] }) },
@@ -189,18 +190,18 @@ const BEATS = [
     else { const a = gainFollowers(L, 1800); addToList(L, 'fans', 3); if (a) L.flags.pendingAchievement = a; post(L, 'momo', { from: 'momo', kind: 'text', text: '视频发了，评论区一堆人问哪儿买。我说还没卖，是我兄弟做的。有三个人非要留名字。' }); }
   } },
   // Mingxuan asks the question an investor would
-  { id: 'w-xuan1', when: (L) => hasProduct(L) && stamp(L) >= D(4, 11, 0) && stamp(L) < D(6, 18, 0), run: (L) => post(L, 'xuan', { from: 'xuan', kind: 'text', text: '听说你在做云台？说句不好听的，这东西大厂三百块就能买到。你的凭什么？', replies: [
+  { id: 'w-xuan1', when: (L) => hasProduct(L) && stamp(L) >= D(4, 11, 0) && stamp(L) < D(finalDay(L), 18, 0), run: (L) => post(L, 'xuan', { from: 'xuan', kind: 'text', text: '听说你在做云台？说句不好听的，这东西大厂三百块就能买到。你的凭什么？', replies: [
     { text: '大厂的是给白天做的。我这个是给外滩的晚上做的。', delta: 2, flag: 'pitchNight', follow: '……这句话可以写进BP。成本多少？算过了告诉我。' },
     { text: '我还不知道。先做出来再说。', delta: 0, follow: '行。知道了告诉我，我是认真问的。' },
   ] }) },
   // Zhixia sees the bearing seat (an engineer's eye: she tells you about the drift)
-  { id: 'w-zhixia1', when: (L) => hasProduct(L) && stamp(L) >= D(5, 10, 0) && stamp(L) < D(6, 18, 0), run: (L) => { hear(L, 'drift', 'zhixia');
+  { id: 'w-zhixia1', when: (L) => hasProduct(L) && stamp(L) >= D(5, 10, 0) && stamp(L) < D(finalDay(L), 18, 0), run: (L) => { hear(L, 'drift', 'zhixia');
     post(L, 'zhixia', { from: 'zhixia', kind: 'text', text: '把你那云台的轴拍个特写我看看。……轴承座是打印的？那是晃的。夜里画面是不是会飘？', replies: [
       { text: '会。你怎么知道的。', delta: 2, follow: '我天天跟公差打交道。先调滤波顶着，以后换金属座。' },
       { text: '还行吧。', delta: 0, follow: '嘴硬。' },
     ] }); } },
   // Mum: Dad has been asking
-  { id: 'w-mum1', when: (L) => hasProduct(L) && !!L.threads.mum && stamp(L) >= D(5, 20, 30) && stamp(L) < D(6, 19, 0), run: (L) => post(L, 'mum', { from: 'mum', kind: 'voice', text: '白白，你爸昨天问我，你在上海是不是在做什么东西。他不好意思自己问你。', replies: [
+  { id: 'w-mum1', when: (L) => hasProduct(L) && !!L.threads.mum && stamp(L) >= D(5, 20, 30) && stamp(L) < D(finalDay(L), 19, 0), run: (L) => post(L, 'mum', { from: 'mum', kind: 'voice', text: '白白，你爸昨天问我，你在上海是不是在做什么东西。他不好意思自己问你。', replies: [
     { text: '做了个拍夜景用的云台。见面我拿给他看。', delta: 2, flag: 'toldMumWork', follow: '好，好。你带上。他嘴上不说，心里是想看的。' },
     { text: '没什么，瞎弄。', delta: 0, follow: '你呀，跟你爸一个样。' },
   ] }) },
@@ -221,7 +222,7 @@ export function runWork(L) {
 // English for those messages (world/agendaEn.js looks here too)
 export const EN_WORK = {
   '那台云台做得不错。光摆在台子上可惜了，天黑了拿去外滩，给拍照的人用用。': "That gimbal's a decent piece of work. Wasted on a bench, though. Take it down to the Bund after dark and let people who are taking photos use it.",
-  '小沈，今天上午没人，两台打印机都空着。你那个云台的图纸还贴在白板上呢。': "Shen, it's empty here this morning and both printers are free. Your gimbal sketch is still up on the whiteboard.",
+  '小纪，今天上午没人，两台打印机都空着。你那个云台的图纸还贴在白板上呢。': "Ji Bai, it's empty here this morning and both printers are free. Your gimbal sketch is still up on the whiteboard.",
   '改版了？这才像做产品的样子。记住，一次别改太多，不然不知道是哪一处起的作用。': "A new version? Now you're doing it properly. One thing: don't change too much at once, or you won't know which change did the work.",
   '白白，听说你做了个云台？？今晚演出借我拍一条，我给你@出来': "Baibai, I hear you've built a gimbal?? Lend it to me for tonight's set, I'll shoot a clip and tag you",
   '拿去，别摔了。': "Take it. Don't drop it.", '摔了我赔！（我没钱，但我赔）': "If I drop it I'll pay! (I have no money, but I'll pay)",
@@ -304,7 +305,7 @@ export function dinnerWork(L) {
     else { say(null, `卖 ${s.price}，零件 ${s.bom}。`, `¥${s.price}. The parts come to ¥${s.bom}.`); say('dad', '单台就不亏。量上去还能降。账你算过了。', "It doesn't lose money even one at a time, and volume brings it down. You've done the sums."); d += 1; }
   }
   // what it comes to
-  if (s.grade >= 4) { say('dad', '这东西，是用的人一句一句教你改出来的。……跟你那个手套一样。', "The people who use this taught you how to make it, one remark at a time. ...Same as that glove of yours."); d += 2; }
+  if (s.grade >= 4) { say('dad', '这东西，是用的人一句一句教你改出来的。……你在那边学的，原来是这个。', "The people who use this taught you how to make it, one remark at a time. ...So that is what you learned over there."); d += 2; }
   else if (s.grade === 3) { if (s.list) say('dad', '改了几版，有人用，有人要。……像回事了。', "Several versions. People using it, people wanting it. ...It's starting to look like something.");
     else say('dad', '改了几版，有人用过，毛病一条一条在改。……像回事了。', "Several versions, people have had it in their hands, the faults coming out one at a time. ...It's starting to look like something."); d += 1; }
   else if (s.grade === 2) say('dad', '才开了个头。开了头，就别放下。', "It's a beginning. Now you've begun, don't put it down.");

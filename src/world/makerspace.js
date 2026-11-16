@@ -1,4 +1,4 @@
-// The Yangpu riverside makerspace: an old factory floor by the river where Jibai rents a bench (a DiDi
+// The Yangpu riverside makerspace: an old factory floor by the river where Ji Bai rents a bench (a DiDi
 // away; 杨浦滨江 is lined with converted warehouses like it). Brick, steel trusses, hanging lamps,
 // benches, two 3D printers, a CNC, a laser cutter, a shelf of parts, a whiteboard of sketches, and
 // Kai, who runs the place (T to talk).
@@ -174,7 +174,7 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
     finished.visible = true; pieces.visible = false;
     hud.toast(T(`做好了！质量 ${Math.round(quality * 100)}% · +${r.xp} 创客经验${r.levelUp ? ` · 升到创客 ${r.levelUp}` : ''}`, `Built! Quality ${Math.round(quality * 100)}% · +${r.xp} Maker XP${r.levelUp ? ` · Maker ${r.levelUp}` : ''}`), 4.5);
     for (const a of r.achievements) setTimeout(() => hud.achievement && hud.achievement(T(a.zh, a.en)), 1500);
-    if (kai) setTimeout(() => hud.bark({ speaker: { zh: '阿凯', en: 'Kai' }, text: quality > 0.8 ? { zh: '可以啊小沈，焊点很漂亮。', en: 'Nice one. Those joints are clean.' } : { zh: '能用就行，下次手再稳一点。', en: 'It works. Steadier hand next time.' }, who: 'maker', seconds: 3 }), 900);
+    if (kai) setTimeout(() => hud.bark({ speaker: { zh: '阿凯', en: 'Kai' }, text: quality > 0.8 ? { zh: '可以啊小纪，焊点很漂亮。', en: 'Nice one. Those joints are clean.' } : { zh: '能用就行，下次手再稳一点。', en: 'It works. Steadier hand next time.' }, who: 'maker', seconds: 3 }), 900);
     if (S.lastBuilt === 'gimbal') setTimeout(() => hud.toast(T('天黑以后，把它拿到外滩，借给江边拍照的人试试（N 翻开本子）。', 'After dark, take it down to the Bund and lend it to people taking photos by the river (N opens your notebook).'), 6), 5200);
     render(); setTimeout(() => close(), 2500);
   }
@@ -198,7 +198,7 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
       if (id !== 'yangpu') return false;
       S.here = true; group.visible = true; const m = maker(L0()); finished.visible = !!m.gadgets.gimbal; pieces.visible = !m.gadgets.gimbal;
       travel(async () => { player.teleport(M.spawn.x, M.spawn.z, M.spawn.yaw, 0); }, { line: T('杨浦滨江 · 创客空间', 'Yangpu riverside · the makerspace'), hold: 900, to: 'play' });
-      if (!S.kaiSaid && kai) { S.kaiSaid = true; setTimeout(() => hud.bark({ speaker: { zh: '阿凯', en: 'Kai' }, text: { zh: '小沈来啦！你的工作台给你留着，零件在门口那个架子上。', en: "Hey, Shen! Your bench is waiting. Parts are on the shelf by the door." }, who: 'maker', seconds: 4 }), 3500); }
+      if (!S.kaiSaid && kai) { S.kaiSaid = true; setTimeout(() => hud.bark({ speaker: { zh: '阿凯', en: 'Kai' }, text: { zh: '小纪来啦！你的工作台给你留着，零件在门口那个架子上。', en: "Hey, Ji Bai! Your bench is waiting. Parts are on the shelf by the door." }, who: 'maker', seconds: 4 }), 3500); }
       return true;
     },
     candidates() { return S.here && !S.open ? targets.map((t) => ({ ...t, cone: 0.6 })) : []; },
