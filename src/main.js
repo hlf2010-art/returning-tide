@@ -93,7 +93,7 @@ import { createNanjingRoad } from './world/nanjingRoad.js';
 import { createHenanTraffic } from './world/henanTraffic.js';
 import { createMetro } from './world/metro.js';
 import { updateQuests, currentStep } from './engine/quests.js';
-import { QUESTS as STORY_QUESTS, runStoryBeats, storyContext, ENDINGS } from './world/story.js';
+import { QUESTS as STORY_QUESTS, runStoryBeats, storyContext, ENDINGS, endingOf, afterword as endingAfterword } from './world/story.js';
 import { WORK_QUESTS, runWork, epilogue as workEpilogue, REG as WORK_REG } from './world/work.js';
 import { hasProduct, isDusk, studio as workState, summary as workSummary, goesLeft, unwritten as workUnwritten, REGULARS as WORK_REGULARS } from './engine/studio.js';
 import { createFieldTest, SPOTS as WORK_SPOTS } from './world/fieldTest.js';
@@ -102,6 +102,8 @@ import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
 import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText } from './engine/year.js';
 const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the story's, the street moments' (world/moments.js), and the gimbal's week (world/work.js)
 import { createSceneTalk } from './ui/sceneTalk.js';
+import { createYearWorld } from './world/yearWorld.js';   // the working year in the world: the firm's floor, the flat, the calendar on screen
+import { shortDate as yearDate, passLine as yearPassLine } from './world/career.js';
 import { createDinner } from './world/dinner.js';
 import { createJournal } from './ui/journal.js';
 import { createCrowdView } from './world/crowdView.js';
@@ -310,7 +312,11 @@ async function boot() {
   world.fieldTest = createFieldTest({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), getCrowdView: () => world.crowdView, getRain: () => weather.rain,
     isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active, enabled: !!people });
   world.workDesk = createWorkDesk({ scene, player, getLife: () => life, onOpen: () => openWork('desk') });
+  // the year (world/yearWorld.js): Marlowe Finch on IFC 28F, the flat he rents, days played as a card, the stall; arrivals at Lujiazui go through it
+  world.year = createYearWorld({ scene, people, player, hud, audio, voice, travel, sceneTalk: world.sceneTalk, dests, getLife: () => life, save: () => saveLife(), lifeOn: params.get('life') !== '0',
+    freeze: (on) => { player.enabled = !on && mode === 'play'; if (on) { player.clearInput(); hud.prompt(false); } }, onWork: () => openWork('desk') });
   places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk];
+  places.push(world.year);
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
     getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
@@ -353,6 +359,7 @@ async function boot() {
     isClueRead: () => clueRead,
     onViewClosed: () => { if (mode === 'pouch') exitInteraction(); },
   });
+  mission1.mission.on('complete', ({ outcome }) => { world.year.handoff(outcome); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
   document.getElementById('inspect-paper').appendChild(clue.canvas);
   player.update(0);
   R.renderer.compile(scene, camera);
@@ -394,6 +401,7 @@ function driveMode(m) {
 }
 // where you are and what's going on, in a sentence or two, for whoever you're talking to
 function sceneText(extra = '') {
+  if (world.year && world.year.here) return `${world.year.sceneText(clockOf(life.clock.minute))}${extra ? ` ${extra}` : ''}`;   // at the firm, or in his flat
   const b = player.body, l = life, m = l.clock.minute, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
   const where = world.makerspace && world.makerspace.here ? 'the Yangpu riverside makerspace in an old brick factory: benches, 3D printers humming, a CNC, a whiteboard of sketches' : world.dest && world.dest.here === 'lujiazui' ? 'the 32nd floor of IFC in Lujiazui, a robot-arm start-up\'s office, the Bund lit up across the river'
     : world.dest && world.dest.here === 'northbund' ? 'an empty top-floor show flat on the North Bund, 160 m up, the river and Lujiazui through the glass'
@@ -426,6 +434,7 @@ function talkables() {
   const out = [];
   for (const q of traffic ? traffic.peds : []) if (q.active !== false && q.visible !== false) out.push({ key: `ped:${q.id}`, persona: PERSONAS[q.persona] ? q.persona : 'office', x: q.x, y: (q.y ?? L.curbH) + 1.62, z: q.z, hold(on, pp) { if (on) { q.pause = 999; q.faceTo = [pp.x, pp.z]; q.faceFor = 999; } else { q.pause = 0.3; q.faceFor = 0; q.faceTo = null; } } });
   for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale, world.makerspace, world.friends, world.fieldTest]) if (m && m.talkables) out.push(...m.talkables());
+  if (world.year) out.push(...world.year.talkables());                       // colleagues, once the day's meeting is over
   if (world.crowdView) for (const a of world.crowdView.nearAgents()) {
     if (a.kind === 'follower' || a.leader) continue;                       // the one in charge answers for a group or a couple
     out.push({ key: `crowd:${a.id}`, persona: PERSONAS[a.persona] ? a.persona : 'visitor', x: a.x, y: a.y + 1.62 * (a.scale || 1), z: a.z,
@@ -795,12 +804,13 @@ const LIFE_KEY = slotKey(currentSlot());   // the slot you're playing (ui/saves.
 let life = null;
 try { life = params.has('fresh') ? null : lifeLoad(localStorage.getItem(LIFE_KEY)); } catch { life = null; }
 if (!life) { life = createLife(); setupThreads(life); initYear(life); }   // a new game is a year long (engine/year.js); older saves keep their six days
+if (params.has('legacy') && params.has('fresh')) delete life.flags.year;   // tools: a new six-day game, as before the year existed
 if (params.has('hour')) { const [h, m] = params.get('hour').split(':').map(Number); if (h >= 0 && h < 24) { life.clock.minute = h * 60 + (m || 0); life.clock.sec = 0; } }
 let saves = null;
 const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); if (saves) saves.touched(); } catch { /* private mode: no saving */ } };
 // the pause menu's saves panel: three slots, copy / load / export / import
 saves = createSaves({ getLife: () => life, serialize: lifeSave, deserialize: lifeLoad,
-  describe: (L) => { const c = currentStep(L, QUESTS); const q = c ? QT(c.quest.title) : ''; return `${tx('day', L.clock.day)} · ${lifeClock(L.clock.minute)}${q ? ` · ${q}` : ''}`; },
+  describe: (L) => { const c = currentStep(L, QUESTS); const q = c ? QT(c.quest.title) : ''; return `${yearDate(L, getLang())} · ${lifeClock(L.clock.minute)}${q ? ` · ${q}` : ''}`; },
   onLoad: () => { location.reload(); } });
 let lifeSaveIn = 5, pendingCalls = [], cupFor = 0, wasDusk = null;
 const phone = createPhone({
@@ -926,7 +936,7 @@ const pad = createGamepad({ player, getMode: () => mode, hud, t: tx,
   onPause: () => { if (mode === 'pause') play(); else if (['play', 'ride', 'seat', 'drive'].includes(mode)) pause(); } });
 // the map (M): the mouse is yours while it's open
 const worldMap = createWorldMap({
-  getState: () => ({ x: player.body.x, z: player.body.z, yaw: player.yaw, blips: world ? mapBlips() : [], objective: world ? storyTarget() : null, waypoint, clock: `${tx('day', life.clock.day)} · ${lifeClock(life.clock.minute)}` }),
+  getState: () => ({ x: player.body.x, z: player.body.z, yaw: player.yaw, blips: world ? mapBlips() : [], objective: world ? storyTarget() : null, waypoint, clock: `${yearDate(life, getLang())} · ${lifeClock(life.clock.minute)}` }),
   onClose: () => { if (mode === 'map') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } },
   onWaypoint: (w) => { waypoint = w; },
 });
@@ -956,15 +966,15 @@ function openWork(where = 'read', tab = null) {
 const journal = createJournal({
   getLife: () => life, defs: QUESTS, work: (L) => workSummaryHtml(L),
   onClose: () => { if (mode === 'journal') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } },
-  onWait: (at) => travel(() => { lifeSkipTo(life, at); saveLife(); questIn = 0; }, { line: tx('questWait', lifeClock(at % 1440)), hold: 900 }),
+  onWait: (at) => travel(() => { lifeSkipTo(life, at); saveLife(); questIn = 0; }, { line: (yearPassLine(life, at, getLang()) ? `${yearPassLine(life, at, getLang())} · ` : '') + tx('questWait', lifeClock(at % 1440)), hold: 900 }),
 });
 // an ending: the card, then the Bund goes on
 function showEnding(id) {
-  const e = ENDINGS[id]; if (!e) return;
+  const e = endingOf(life, id); if (!e) return;                                  // (a year game tells the same six endings in the year's terms)
   const from = mode; mode = 'ending'; player.enabled = false; player.clearInput();
   try { document.exitPointerLock(); } catch { /* not locked */ }
   audio.cue && audio.cue('chime', 0, 0.6);
-  journal.ending(e, () => { mode = from === 'ending' ? 'play' : 'play'; player.enabled = true; player.clearInput(); lock(); saveLife(); }, workEpilogue(life, id));
+  journal.ending(e, () => { mode = from === 'ending' ? 'play' : 'play'; player.enabled = true; player.clearInput(); lock(); saveLife(); }, endingAfterword(life, id, workEpilogue(life, id)));
 }
 function updateLife(dt) {
   if (mode !== 'play' && mode !== 'ride' && mode !== 'sale' && mode !== 'sale-seat' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
@@ -983,6 +993,7 @@ function updateLife(dt) {
     lifeThread(life, 'manner', { title: 'Manner Coffee', members: ['me', 'manner'], kind: 'service' });
     lifePost(life, 'manner', { from: 'manner', kind: 'text', text: `您的${mo.item.name}已做好，取餐号 ${mo.num}，请到窗口取餐` });
   }
+  if (world && world.year) world.year.tick(dt);                               // a new day: salary, rent, absences, the date; the year's messages
   for (const ev of events) if (ev.type === 'ending') showEnding(ev.ending);
   // the floodlights come on: if you've something to show people, now is when they're out
   { const dusk = isDusk(life.clock.minute); if (dusk && wasDusk === false && mode === 'play' && hasProduct(life) && !params.has('q')) hud.toast(getLang() === 'zh' ? '泛光灯亮了，江边拍照的人多起来了。云台在你口袋里。' : 'The floodlights are on and the railing is filling with people taking photos. The gimbal is in your pocket.', 6); wasDusk = dusk; }
@@ -1225,6 +1236,7 @@ function frame(now) {
   world.dest.update(mode === 'pause' ? 0 : dt, player.body);
   world.sceneTalk.update(mode === 'pause' ? 0 : dt);
   world.dinner.update(mode === 'pause' ? 0 : dt, player.body);
+  world.year.update(mode === 'pause' ? 0 : dt, player.body);
   world.makerspace.update(mode === 'pause' ? 0 : dt, player.body);
   world.friends.update(mode === 'pause' ? 0 : dt, player.body);
   world.fieldTest.update(mode === 'pause' ? 0 : dt, player.body); world.workDesk.update(); workbook.update(dt);   // the gimbal's evening
@@ -1234,6 +1246,7 @@ function frame(now) {
   if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
   else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
   { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : world.dumpling.inside ? 0.3 : 0); }
+  if (world.year.here) audio.setInside(1);
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
   world.dawn.update(mode === 'pause' ? 0 : dt, { dawn: hourState.dawn, eye: camera.position });   // tai chi on the promenade at dawn
   world.moments.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });
