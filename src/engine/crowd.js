@@ -384,7 +384,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           a.startAt = e; trip(a);
           continue;
         }
-        let tx, tz, speed = a.speed, n = null;
+        let tx, tz, speed = a.speed, n = null, own = false;   // own: walking their own path (not following)
         if (a.kind === 'follower') {
           const g = a.group.guide, h = g.heading;
           if (g.state === 'act') {                                     // gathered round the guide at the railing
@@ -422,6 +422,15 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           const sg = state.sig[a.sig || 'bund'];
           if (sg.aspect === 'walk' && sg.walkFor < 4) { a.state = 'cross'; a.i++; }
         } else {
+          own = true;
+          // walking onto a zebra without having waited at the kerb (started mid-crossing, or nudged back
+          // onto the kerb): wait for the green man like everyone else
+          if (a.state === 'walk' && a.i > 0) {
+            const pv0 = net.by[a.path[a.i - 1]], ze0 = pv0 && pv0.links.find((e) => e.to === a.path[a.i] && e.kind === 'zebra');
+            if (ze0) { a.i--; a.state = 'kerb'; a.sig = ze0.sig; tx = a.x; tz = a.z; speed = 0; }
+          }
+        }
+        if (own && (a.state === 'walk' || a.state === 'cross')) {
           [tx, tz, n] = target(a);
           if (a.state === 'cross') speed = Math.max(a.speed, 1.2);
           const d = Math.hypot(tx - a.x, tz - a.z), pv = net.by[a.path[a.i - 1]];
@@ -484,8 +493,12 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
         const mayCross = rescue || a.state === 'cross' || (zb && (lead.state === 'cross' || state.sig[zb].aspect === 'walk'));
         const bad = (x, z) => blocked(x, z) || (!mayCross && onRoad(x, z) && !onRoad(a.x, a.z));
         if (bad(nx, nz)) {
+          const sp = Math.hypot(a.vx, a.vz) * dt || 0.02, ux = a.vx / (Math.hypot(a.vx, a.vz) || 1), uz = a.vz / (Math.hypot(a.vx, a.vz) || 1);
           if (!bad(nx, a.z)) nz = a.z;
           else if (!bad(a.x, nz)) nx = a.x;
+          // a corner (both slides blocked): step sideways round it, whichever side is clear
+          else if (!bad(a.x - uz * sp, a.z + ux * sp)) { nx = a.x - uz * sp; nz = a.z + ux * sp; }
+          else if (!bad(a.x + uz * sp, a.z - ux * sp)) { nx = a.x + uz * sp; nz = a.z - ux * sp; }
           else { nx = a.x; nz = a.z; a.vx *= 0.3; a.vz *= 0.3; }
         }
         a.x = nx; a.z = nz;
