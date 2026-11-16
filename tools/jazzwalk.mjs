@@ -23,7 +23,7 @@ await walk(2); let s = await S(); ok(s.z < -222.6, `the door is shut (z=${s.z.to
 // 21:25 on Momo's night, the invite accepted
 await p.evaluate(() => { const L = window.__bund.life; let inv = L.invites.find((i) => i.id === 'momo-gig'); if (!inv) { inv = { id: 'momo-gig', from: 'momo', thread: 'wuhu', title: 'Momo trio', place: 'Jazz Bar', at: L.clock.day * 1440 + 1290, deadline: L.clock.day * 1440 + 1260 }; L.invites.push(inv); } inv.status = 'accepted'; L.clock.minute = 21 * 60 + 25; window.__bund.player.teleport(-44.0, -224.8, Math.PI, 0); });
 await p.waitForTimeout(2500); let j = await jz(); ok(j.playing, `21:25: the band is playing (${j.tune})`);
-await walk(3); await p.waitForTimeout(1500); s = await S(); ok(s.z > -222.9 && (await jz()).inBar, `in through the open door (z=${s.z.toFixed(2)})`);
+await walk(6); await p.waitForTimeout(1500); s = await S(); ok(s.z > -222.9 && (await jz()).inBar, `in through the open door (z=${s.z.toFixed(2)})`);
 await p.evaluate(() => window.__bund.player.teleport(-43.0, -217.5, -1.1, -0.04)); await p.waitForTimeout(3000); await shot('room');
 // sit at the table Momo kept
 await p.evaluate(() => window.__bund.player.teleport(-42.5, -219.2, -0.5, -0.4)); await p.waitForTimeout(1500);
