@@ -5,3 +5,6 @@ dist/
 
 # test screenshots written to the project root by tools/*
 /*.png
+
+# agent worktrees
+.claude/
