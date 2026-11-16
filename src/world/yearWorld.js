@@ -278,6 +278,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     if (id === 'home') return isYear(L) ? enterFlat(info) : false;
     if (id === 'hongqiao') { const t = isYear(L) ? todaysWork(L) : null; if (t && t.via === 'hongqiao' && !t.done && L.clock.minute < WORK_HOURS.last + 120) return openCard(t); if (isYear(L)) hud.toast(T('今天没有要坐的车。', 'No train to catch today.'), 3); return false; }
     if (id !== 'lujiazui') return upstairs(id, info);
+    if (!info.up) return a0(id, info);                                                               // from outside (a ride, the metro): street level in the district (world/lujiazui.js); the lobby's lift comes back here with up
     if (!isYear(L)) return info.invite || info.method === 'metro' ? upstairs(id, info) : false;        // a six-day game: as it always was
     if (info.invite) return upstairs(id, info);                                                       // expected on 32F
     const t = todaysWork(L), c = career(L), atFirm = L.clock.day <= 12 ? !work(L).applied || c.track === 'consulting' : c.track === 'consulting';
@@ -285,7 +286,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     if (c.track === 'startup' && L.clock.day > 12) return enter32(t && !t.done ? t : null, info);
     if (atFirm) return enterFirm(info);
     if (info.method === 'metro') { const ok = upstairs(id, info); const sc = dests.scene; if (ok && sc && L.invites.some((i) => i.id === 'xuan-arm' && (i.kept || i.status !== 'pending'))) { sc.done = true; sc.queue.length = 0; sc.ask = null; setTimeout(() => { const b = document.getElementById('ride-sub'); if (b) b.classList.remove('on'); hud.toast(T('陆家嘴今天没有你要办的事。32 楼的人你都认识。', 'Nothing of yours to do in Lujiazui today. You know everyone on the 32nd floor.'), 4); }, 2500); } return ok; }
-    return false;
+    return info.up ? upstairs(id, info) : false;                                                    // nothing of his own up there today: the room on 32, as it was
   }
   dests.arrive = route;
 

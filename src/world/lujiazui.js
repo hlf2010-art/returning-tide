@@ -107,7 +107,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     const came = pending && pending.invite && l.invites.find((i) => i.id === pending.invite && !i.kept);
     const inv = came || due || null;
     audio && audio.cue && audio.cue('door');
-    upstairs('lujiazui', { up: true, method: (pending && pending.method) || 'wechat', invite: inv ? inv.id : null });
+    dests.arrive('lujiazui', { up: true, method: (pending && pending.method) || 'wechat', invite: inv ? inv.id : null });   // (whoever has the floors decides which: the firm on 28, the room on 32)
   }
   // down again: the lift opens on the lobby, you step out onto Century Avenue
   dests.exitTo = (id, finish) => {
@@ -214,7 +214,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     },
     owns(id) { return typeof id === 'string' && id.startsWith('ljz:'); },
     prompt(id) {
-      if (id === 'ljz:lobby') return { target: T('国金中心 · 办公楼大堂', 'IFC · the office lobby'), action: T('乘电梯上 32 层', 'Take the lift to the 32nd floor') };
+      if (id === 'ljz:lobby') return { target: T('国金中心 · 办公楼大堂', 'IFC · the office lobby'), action: T('乘电梯上楼', 'Take the lift up') };
       if (id === 'ljz:didi') { const back = fare(dest('lujiazui'), getLife().clock.minute); return { target: T('网约车上下客点', 'Ride-hailing point'), action: T(`叫车回外滩（¥${back}）`, `A car back to the Bund (¥${back})`) }; }
       if (id === 'ljz:apple:table') return { target: T('桌上的样机', 'The devices on the table'), action: T('拿起来看看', 'Pick one up') };
       const t = TARGETS.find((q) => q.id === id), W = t && t.well;
