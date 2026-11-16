@@ -177,14 +177,16 @@ export function yearDinner(L) {
     const togText = own && t === 'startup' ? B('让厂里做我们的标杆客户：先上一条线，做好了再铺开。我两边跑。', 'Let the works be our reference customer: one line first, and the rest when that one is right. I\'ll work between the two cities.')
       : own && t === 'family' ? B('厂里的数字化我接着做。但我要在上海留一个自己的小团队，也接别家的活。我两边跑。', "I'll go on with the digital side of the works. But I keep a small team of my own in Shanghai, and it takes other people's work too. I'll go between the two.")
         : own && t === 'switched' ? B('让厂里上我们的排产系统。实施我回避，方案我来把关。我两边跑。', "Put our scheduling system into the works. I stand aside from the contract and answer for the design. I'll go between the two cities.")
-          : B('让厂里来做我们的机械臂。我两边跑。', "Let the works build our robot arm. I'll work between the two cities.");
+          : demo ? B('让厂里来做我们的机械臂。我两边跑。', "Let the works build our robot arm. I'll work between the two cities.")
+            : B('上海我不放，厂里的事我也想搭把手。我两边跑。', "I'm not giving up Shanghai, and I want a hand in the works as well. I'll go between the two.");
     const togYes = own && t === 'startup' ? ['dad', '……把合同和报价发给老秦。按市价，不许打折。', '...Send Old Qin the contract and the price. Market price. No discount.'] : own && t === 'family' ? ['dad', '……别家的活。行。账分开算，厂里的事不许耽误。', "...Other people's work. Very well. Separate books, and the works is never kept waiting."] : own && t === 'switched' ? ['dad', '……让你们销售来报价。你回避，这是规矩。', '...Have your sales people quote. You stand aside. That is the rule.'] : ['dad', '……把方案发给我。下周带他们来厂里看看。', '...Send me the proposal. Bring them to the works next week.'];
     return [
       { zh: stayText.zh, en: stayText.en, d: -2, set: 'stay', flag: stay.flag,
         then: [...(warm ? [['dad', '……那就做好。别让人看笑话。钱不够，跟我说。', "...Then do it properly. Don't let anyone laugh at you. If money's short, tell me."]] : [['dad', '……随你。', '...Suit yourself.']]), ...stay.then] },
       { zh: homeText.zh, en: homeText.en, d: 6, set: 'home', flag: hm.flag, then: [['dad', '……好。你妈会高兴的。', '...Good. Your mother will be happy.'], ...hm.then] },
       { zh: togText.zh, en: togText.en, d: canTogether ? 4 : -2, set: canTogether ? 'together' : 'stay', flag: tog.flag,
-        then: canTogether ? [togYes, ...tog.then] : tog.replace ? tog.then : [['dad', '你拿什么让我信？先把你自己的事做成再说。', 'What have you got to make me believe it? Get your own thing working first.']] },
+        then: canTogether ? [togYes, ...tog.then] : tog.replace ? tog.then : demo || own ? [['dad', '你拿什么让我信？先把你自己的事做成再说。', 'What have you got to make me believe it? Get your own thing working first.']]
+          : [['dad', '两边跑，就是两边都不沾。先把你自己的事做成再说。', 'Between the two is in neither. Get your own thing standing first.']] },
       { zh: '（沉默）', en: '(Silence.)', d: -1, set: 'silent', then: [['dad', '你还是没想好。没关系。想好了，告诉我。', "You still haven't decided. That's all right. When you have, tell me."]] },
     ];
   } });

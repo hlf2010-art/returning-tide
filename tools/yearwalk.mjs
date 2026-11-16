@@ -100,6 +100,7 @@ await ev(() => window.__bund.world.dest.arrive('home', { method: 'wechat' }));  
 await p.waitForFunction(() => window.__bund.world.year.here === 'flat', null, { timeout: 120000 }); await veilClear(); await p.waitForTimeout(800);
 await ev(() => { const F = window.__bund.world.year.FLATS; window.__bund.player.teleport(40.6, -703.4, 1.0, -0.1, F.y.northbund); }); await p.waitForTimeout(1200);
 await shot('flat');
+await ev(() => { const F = window.__bund.world.year.FLATS; window.__bund.player.teleport(39.2, -704.3, 1.0, -0.1, F.y.northbund); }); await p.waitForTimeout(600);
 await lookAt(37.6, 70.6, -704.6); await p.waitForTimeout(900);
 const pb = await prompt(); ok(zh ? /睡到早上/.test(pb) : /Sleep till morning/.test(pb), `in the flat: "${pb}"`);
 await p.keyboard.press('KeyE');
@@ -125,8 +126,8 @@ await p.keyboard.press('KeyJ'); await mode('play');
 // ---- 4. the watch-repairer's daughter at the stall ----
 await quick(7, [0, 0]);
 await setClock(8, 12, 0);
-await ev(() => window.__bund.player.teleport(-55.7, -2.6, 0, 0)); await p.waitForTimeout(2500);
-await lookAt(-55.7, 1.6, -4.55); await p.waitForTimeout(1200);
+await ev(() => window.__bund.player.teleport(-53.9, -4.4, 0, 0)); await p.waitForTimeout(2500);
+await lookAt(-55.7, 1.65, -4.55); await p.waitForTimeout(1200);
 const pz = await prompt(); ok(zh ? /修表摊/.test(pz) : /at the stall/.test(pz), `Hankou Road, January: "${pz}"`);
 await shot('stall');
 await p.keyboard.press('KeyE');

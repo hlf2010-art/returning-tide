@@ -12,7 +12,7 @@
 // All written in Chinese first, the way these people would say it, with English alongside.
 import { post, thread, stamp } from '../engine/life.js';
 import { gainFollowers } from '../engine/maker.js';
-import { finalDay } from '../engine/year.js';
+import { finalDay, isYear } from '../engine/year.js';
 import { studio, hasProduct, rev, specs, summary, isOpen, hear, addToList, machined, eveningOf, todays, tonight, REGULARS, FIXES, HEAVY_AT } from '../engine/studio.js';
 
 const B = (zh, en) => ({ zh, en });
@@ -309,6 +309,7 @@ export function dinnerWork(L) {
   else if (s.grade === 3) { if (s.list) say('dad', '改了几版，有人用，有人要。……像回事了。', "Several versions. People using it, people wanting it. ...It's starting to look like something.");
     else say('dad', '改了几版，有人用过，毛病一条一条在改。……像回事了。', "Several versions, people have had it in their hands, the faults coming out one at a time. ...It's starting to look like something."); d += 1; }
   else if (s.grade === 2) say('dad', '才开了个头。开了头，就别放下。', "It's a beginning. Now you've begun, don't put it down.");
+  else if (isYear(L)) say('dad', '一年，一台样件。', 'One year. One sample.');
   else say('dad', '一个星期，一台样件。', 'One week. One sample.');
   d = Math.max(-2, Math.min(8, d));
   return [

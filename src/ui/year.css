@@ -1,6 +1,6 @@
 /* The year on screen (world/yearWorld.js, ui/journal.js): the date chip, the scene card for days
    played as a conversation, the journal's "year" page. */
-#year-chip { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); padding: 4px 12px; border-radius: 999px; background: rgba(8, 10, 14, 0.42); color: #e9e2d2;
+#year-chip { position: fixed; top: 20px; right: 20px; padding: 5px 12px; border-radius: 999px; background: rgba(8, 10, 14, 0.42); color: #e9e2d2;
   font: 500 12px/1.4 var(--ui, "Inter", "Noto Sans SC", sans-serif); letter-spacing: 0.06em; opacity: 0; transition: opacity 0.6s; pointer-events: none; z-index: 6; white-space: nowrap; }
 #year-chip.on { opacity: 0.92; }
 #year-card { position: fixed; inset: 0; z-index: 30; display: none; align-items: flex-start; justify-content: center; pointer-events: none;

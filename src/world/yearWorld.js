@@ -25,6 +25,7 @@ import { stamp, skipTo, pay, clockText } from '../engine/life.js';
 import { DESTINATIONS, dest, fare } from '../engine/ride.js';
 import { isYear, career, actOf } from '../engine/year.js';
 import { PICKUP } from './didi.js';
+import { PLACES } from './destinations.js';
 import { work, todaysWork, arriveAtWork, enterScene, partScript, finishScene, workFull, rollover, runCareer, recordHandoff, zhouMinHere, zhouMinScript, playScene,
   shortDate, passLine, hasFlat, home, LISTINGS, FIRM, CAREER_NAMES, WORK_HOURS, inLimbo, startup } from './career.js';
 
@@ -210,12 +211,17 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
   const afterScene = (t) => () => hud.toast(t.where === 'card' ? '' : T('今天的事谈完了。回到工位，干到下班（或坐电梯走）。', "That's the day's business. Back to your desk to work on to the evening, or take the lift."), 5);
 
   // ================= arriving =================
+  // An arrival can come inside someone else's fade (the metro's gate fades, then calls arrive): a
+  // second fade is refused while one is running, so in that case do the arriving in the dark that is already there.
+  const veilOn = () => { const v = document.getElementById('veil'); return !!v && v.classList.contains('on'); };
+  const fade = (during, opts = {}) => { if (veilOn()) { if (opts.line) document.getElementById('veil').dataset.line = opts.line; Promise.resolve().then(during); } else travel(during, opts); };
+  const upstairs = (id, info) => { const nested = veilOn(), ok = a0(id, info); if (ok && nested && PLACES[id]) { const P = PLACES[id]; player.teleport(P.spawn.x, P.spawn.z, P.spawn.yaw, 0, P.y); } return ok; };
   const hide = () => { for (const g of Object.values(groups)) g.visible = false; here = null; flatId = null; };
   function enterFirm(info = {}) {
     const L = L0(), P = OFFICE; if (!groups.firm) buildFirm();
     const t = arriveAtWork(L), meeting = castFirm(t && !t.tooLate ? t.def : t ? { cast: ['taoke'], id: 'late' } : { cast: L.clock.minute >= 8 * 60 && L.clock.minute < 20 * 60 && L.clock.day <= 16 && !inLimbo(L) ? ['taoke', 'shaofeng'] : [], id: 'none' });
     const sp = meeting && t && !t.done ? P.meetingSpawn : P.spawn;
-    travel(async () => { hide(); groups.firm.visible = true; here = 'firm'; player.teleport(sp.x, sp.z, sp.yaw, 0, P.y); save && save(); }, { line: TB(FIRM.place), hold: 900, to: 'play' });
+    fade(async () => { hide(); groups.firm.visible = true; here = 'firm'; player.teleport(sp.x, sp.z, sp.yaw, 0, P.y); save && save(); }, { line: TB(FIRM.place), hold: 900, to: 'play' });
     if (t && !t.done && !t.tooLate) {
       setTimeout(() => { if (here !== 'firm') return; if (t.late) hud.toast(T('十点多了。你迟到了，大家都看见了。', "Past ten. You're late, and everyone has seen it."), 3.5); else if (t.hurt) hud.toast(T('你带着伤来上班。没人问，都看见了。', 'You have come to work hurt. Nobody asks. Everybody sees.'), 3.5); runScene(t.def, headOf, afterScene(t)); }, 1700);
     } else if (t && t.tooLate) setTimeout(() => hud.toast(T('快下班了。今天的会早就开完了，没有你。', 'Nearly the end of the day. The meeting happened hours ago, without you.'), 4.5), 2200);
@@ -226,12 +232,12 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     const L = L0(); if (!hasFlat(L)) return false;
     const id = home(L).id, P = FLATS; if (!LISTINGS[id]) return false;
     const g = groups[`flat:${id}`] || buildFlat(id);
-    travel(async () => { hide(); g.visible = true; g.userData.lamp.visible = !!L.flags.ruoanLamp; here = 'flat'; flatId = id; player.teleport(P.spawn.x, P.spawn.z, P.spawn.yaw, 0, P.y[id]); save && save(); }, { line: T(LISTINGS[id].zh, LISTINGS[id].en), hold: 900, to: 'play' });
+    fade(async () => { hide(); g.visible = true; g.userData.lamp.visible = !!L.flags.ruoanLamp; here = 'flat'; flatId = id; player.teleport(P.spawn.x, P.spawn.z, P.spawn.yaw, 0, P.y[id]); save && save(); }, { line: T(LISTINGS[id].zh, LISTINGS[id].en), hold: 900, to: 'play' });
     return true;
   }
   // the start-up's day upstairs: 32F is destinations.js's floor; its own scene is set aside, ours played in it
-  function enter32(t, a0, info) {
-    if (!a0('lujiazui', { ...info, invite: t && t.def.cast.includes('wang') ? 'xuan-demo' : 'xuan-arm' })) return false;
+  function enter32(t, info) {
+    if (!upstairs('lujiazui', { ...info, invite: t && t.def.cast.includes('wang') ? 'xuan-demo' : 'xuan-arm' })) return false;
     const sc = dests.scene; if (sc) { sc.done = true; sc.queue.length = 0; sc.ask = null; sc.wait = 0; }
     const box = document.getElementById('ride-sub'); if (box) box.classList.remove('on');
     f32 = { t, started: false, at: performance.now() };
@@ -242,7 +248,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
   const cardEl = document.createElement('div'); cardEl.id = 'year-card'; document.body.appendChild(cardEl);
   function openCard(t) {
     const L = L0(); arriveAtWork(L);
-    travel(async () => {
+    fade(async () => {
       hide(); player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0);
       card = { t, over: false }; freeze(true); document.body.classList.add('year-card');
       cardEl.innerHTML = `<div class="in"><div class="k">${T('工作日', 'A working day')} · ${shortDate(L, getLang())}</div><h1></h1><h2></h2><p class="note">${T('（这个地方没有建模：这一天以对话的方式过。按 1-4 回答。）', '(This place is not modelled: the day is played as a conversation. 1-4 to answer.)')}</p><div class="acts"></div></div>`;
@@ -270,14 +276,14 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     const L = L0();
     if (id === 'home') return isYear(L) ? enterFlat(info) : false;
     if (id === 'hongqiao') { const t = isYear(L) ? todaysWork(L) : null; if (t && t.via === 'hongqiao' && !t.done && L.clock.minute < WORK_HOURS.last + 120) return openCard(t); if (isYear(L)) hud.toast(T('今天没有要坐的车。', 'No train to catch today.'), 3); return false; }
-    if (id !== 'lujiazui') return a0(id, info);
-    if (!isYear(L)) return info.invite || info.method === 'metro' ? a0(id, info) : false;        // a six-day game: as it always was
-    if (info.invite) return a0(id, info);                                                       // expected on 32F
+    if (id !== 'lujiazui') return upstairs(id, info);
+    if (!isYear(L)) return info.invite || info.method === 'metro' ? upstairs(id, info) : false;        // a six-day game: as it always was
+    if (info.invite) return upstairs(id, info);                                                       // expected on 32F
     const t = todaysWork(L), c = career(L), atFirm = L.clock.day <= 12 ? !work(L).applied || c.track === 'consulting' : c.track === 'consulting';
     if (t && t.where === 'card' && !t.done && L.clock.minute < WORK_HOURS.last) return openCard(t);
-    if (c.track === 'startup' && L.clock.day > 12) return enter32(t && !t.done ? t : null, a0, info);
+    if (c.track === 'startup' && L.clock.day > 12) return enter32(t && !t.done ? t : null, info);
     if (atFirm) return enterFirm(info);
-    if (info.method === 'metro') { const ok = a0(id, info); const sc = dests.scene; if (ok && sc && L.invites.some((i) => i.id === 'xuan-arm' && (i.kept || i.status !== 'pending'))) { sc.done = true; sc.queue.length = 0; sc.ask = null; setTimeout(() => { const b = document.getElementById('ride-sub'); if (b) b.classList.remove('on'); hud.toast(T('陆家嘴今天没有你要办的事。32 楼的人你都认识。', 'Nothing of yours to do in Lujiazui today. You know everyone on the 32nd floor.'), 4); }, 2500); } return ok; }
+    if (info.method === 'metro') { const ok = upstairs(id, info); const sc = dests.scene; if (ok && sc && L.invites.some((i) => i.id === 'xuan-arm' && (i.kept || i.status !== 'pending'))) { sc.done = true; sc.queue.length = 0; sc.ask = null; setTimeout(() => { const b = document.getElementById('ride-sub'); if (b) b.classList.remove('on'); hud.toast(T('陆家嘴今天没有你要办的事。32 楼的人你都认识。', 'Nothing of yours to do in Lujiazui today. You know everyone on the 32nd floor.'), 4); }, 2500); } return ok; }
     return false;
   }
   dests.arrive = route;
@@ -395,6 +401,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     // each frame
     update(dt, pp) {
       const L = L0();
+      if (card && player.enabled) { player.enabled = false; player.clearInput && player.clearInput(); }      // a day over a card: nobody walks about under it
       if (here === 'firm') for (const [id, p] of Object.entries(ppl)) { if (id === 'zhoumin' || !p.root.visible) continue; const talking = sceneTalk.active && sceneTalk.speaking === id; p.play(talking ? 'talk1' : 'idle', 0.4); p.update(dt, Math.hypot(pp.x - p.root.position.x, pp.z - p.root.position.z) < 9 ? [pp.x, pp.z] : null); }
       if (zm && zm.group.visible) { zm.play(sceneTalk.active && running && running.def.id === 'zhoumin' ? 'talk1' : 'idle', 0.4); zm.update(dt, Math.hypot(pp.x - ZM.x, pp.z - ZM.z) < 6 ? [pp.x, pp.z] : null); }
       // 32F: once you are there and the fade has cleared, the day's talk begins
