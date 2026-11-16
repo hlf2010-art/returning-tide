@@ -27,7 +27,7 @@ const m = (zh, en) => { EN_CAREER[zh] = en; return zh; };
 export const careerEn = (text) => EN_CAREER[text] || null;
 
 // ---- state ----
-export function work(L) { const Y = year(L); if (!Y) return null; return (Y.work ||= { through: L.clock.day, days: {}, story: {}, road: null, absent: 0, applied: null, watch: {} }); }
+export function work(L) { const Y = year(L); if (!Y) return null; return (Y.work ||= { through: Math.min(L.clock.day, Y.career.paidThrough || 1), days: {}, story: {}, road: null, absent: 0, applied: null, watch: {} }); }
 export const story = (L) => (work(L) || { story: {} }).story;
 const LIMBO = ['resigned', 'laidoff'];
 export const inLimbo = (L) => isYear(L) && LIMBO.includes(career(L).track) && !!work(L).applied;
@@ -179,7 +179,7 @@ export function sceneLines(L, def) {
 // ---- Act III: what he decided, made real ----
 export function applyDecision(L) {
   const W = work(L), S = W.story, c = career(L); if (W.applied || !S.decided) return null;
-  W.applied = L.clock.day;
+  W.applied = Math.min(L.clock.day, 12);
   S.taoke = S.gavePlace ? 'stays' : S.memo === 'sign' ? 'blamed' : 'laidoff';
   if (S.decided === 'consulting') setTrack(L, 'consulting', S.memo === 'sign' ? { title: 'senior consultant', salary: 48000 } : {});
   else if (S.decided === 'switched') setTrack(L, 'switched', { employer: NEWCO.en, title: 'AI product lead', salary: 52000 });
