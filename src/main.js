@@ -92,6 +92,7 @@ import { GUIDE_LINES, BUS_LINES, LATE_LINES } from './world/crowdLines.js';
 import { createNanjingRoad } from './world/nanjingRoad.js';
 import { createHenanTraffic } from './world/henanTraffic.js';
 import { createMetro } from './world/metro.js';
+import { createLujiazui } from './world/lujiazui.js';
 import { updateQuests, currentStep } from './engine/quests.js';
 import { QUESTS as STORY_QUESTS, runStoryBeats, storyContext, ENDINGS, endingOf, afterword as endingAfterword } from './world/story.js';
 import { WORK_QUESTS, runWork, epilogue as workEpilogue, REG as WORK_REG } from './world/work.js';
@@ -263,6 +264,8 @@ async function boot() {
   // where you can go in: a pool of light at each open door, a label over it when it's in view
   const entrances = createEntrances({ scene, camera, list: entranceList({ shopOpen: () => { const m = life.clock.minute; return m >= 390 && m < 1290; }, cruiseOpen: () => { const m = life.clock.minute; return m >= 9 * 60 + 30 && m < 21 * 60 + 30; }, metroOpen: () => hourState.metro }) });
   const lighting = createLighting(scene, street.lanterns, [...entrances.lights, ...dumpling.lights, { ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...buses.lights, ...nanjing.lights, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
+  // Lujiazui, across the river (world/lujiazui.js): built when you first go there, hidden while you're on the Bund
+  const ljz = createLujiazui({ scene, camera, M, people, hud, audio, player, travel, skyline, dests, lighting, getLife: () => life, save: () => saveLife(), metroOpen: () => hourState.metro, trafficFactor: params.has('q') && !params.has('traffic') ? 0.6 : gfxDetail({ ...gfx, lod: bootLod }).traffic });
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -330,6 +333,7 @@ async function boot() {
   world.confront = createConfrontation({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, onMode: fightMode, getPlayerBody: () => world.playerBody,
     isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active && !world.fieldTest.busy, enabled: !!people && (!params.has('q') || params.has('fight')) });
   places.push(world.confront);
+  world.ljz = ljz; places.push(ljz);
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
     getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
@@ -416,6 +420,7 @@ function driveMode(m) {
 function sceneText(extra = '') {
   if (world.year && world.year.here) return `${world.year.sceneText(clockOf(life.clock.minute))}${extra ? ` ${extra}` : ''}`;   // at the firm, or in his flat
   const b = player.body, l = life, m = l.clock.minute, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
+  if (world.ljz && world.ljz.here(b)) return world.ljz.sceneLine(clockOf(m), weather.rain > 0.3, extra);   // in Lujiazui
   const where = world.makerspace && world.makerspace.here ? 'the Yangpu riverside makerspace in an old brick factory: benches, 3D printers humming, a CNC, a whiteboard of sketches' : world.dest && world.dest.here === 'lujiazui' ? 'the 32nd floor of IFC in Lujiazui, a robot-arm start-up\'s office, the Bund lit up across the river'
     : world.dest && world.dest.here === 'northbund' ? 'an empty top-floor show flat on the North Bund, 160 m up, the river and Lujiazui through the glass'
     : world.upper && world.upper.here ? 'the sixth floor of the Peace Hotel, by room 612'
@@ -449,6 +454,7 @@ function talkables() {
   for (const m of [world.walkers, world.interiors, world.jazz, world.dest, world.carSale, world.makerspace, world.friends, world.fieldTest]) if (m && m.talkables) out.push(...m.talkables());
   if (world.year) out.push(...world.year.talkables());                       // colleagues, once the day's meeting is over
   if (world.hearts) out.push(...world.hearts.talkables());
+  if (world.ljz) out.push(...world.ljz.talkables());
   if (world.crowdView) for (const a of world.crowdView.nearAgents()) {
     if (a.kind === 'follower' || a.leader) continue;                       // the one in charge answers for a group or a couple
     out.push({ key: `crowd:${a.id}`, persona: PERSONAS[a.persona] ? a.persona : 'visitor', x: a.x, y: a.y + 1.62 * (a.scale || 1), z: a.z,
@@ -1083,6 +1089,7 @@ function mapBlips() {
   if (life.flags.car && world.huracan.loaded) { const g = world.huracan.group.position; out.push({ x: g.x, z: g.z, glyph: '▲', bg: '#e8b800', fg: '#111', name: { zh: '你的车', en: 'Your car' } }); }
   const m = life.flags.maker;
   if (m && m.gadgets && m.gadgets.gimbal) for (const t of [{ id: 'customs', x: -45, z: 26 }, { id: 'peace', x: -43, z: -243 }, { id: 'linsu', x: 23.7, z: -15 }]) if (!m.shot[t.id]) out.push({ x: t.x, z: t.z, glyph: '◉', bg: '#1d3a8a', fg: '#fff' });
+  if (world.ljz) out.push(...world.ljz.mapBlips());
   return out;
 }
 function updateMap(dt) {
@@ -1310,6 +1317,7 @@ function frame(now) {
   // the light shows (the Pearl's colours, LED façades, boats' strips, screens); debug.freezeShow holds them for tools
   const showT = debug.freezeShow ? 0 : t;
   world.sky.update(t, weather.haze); world.skyline.update(showT); world.river.update(t, dt, showT); world.bund.update(t); world.street.update(t); world.nanjing.update(showT);
+  world.ljz.update(mode === 'pause' ? 0 : dt, player.body, { eye: camera.position, hour: hourState, playing: mode === 'play' });   // Lujiazui (only when you're there)
   world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);
   { const tl = params.has('q') ? R.level : treeStep(gfx, R.drop); if (tl !== treeLevel) { treeLevel = tl; world.trees.setQuality(tl); } }
   if (world.playerBody) world.playerBody.shadow.visible = world.lighting.shadowCount > 0;   // the shadow copy only matters with shadows

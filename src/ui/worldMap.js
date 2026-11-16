@@ -3,11 +3,11 @@
 // the river, the Pudong bank. Places, your quest's next step, you. Wheel or +/- zooms, drag or the
 // arrows pan, C centres on you; click a place (or anywhere) to set a waypoint (it shows on the
 // minimap until you get there), click it again to clear it. M or Esc closes.
-import { paint } from './minimap.js';
+import { paint, mapExtras } from './minimap.js';
 import { getLang } from './i18n.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
-const B = { X0: -570, X1: 560, Z0: -310, Z1: 150 }, P = 2;     // painted bounds (metres), pixels per metre
+const B = { X0: -570, X1: 1340, Z0: -310, Z1: 500 }, P = 2;     // painted bounds (metres), pixels per metre
 const LABELS = [
   { x: 14, z: -80, zh: '外滩 · 滨江步道', en: 'The Bund promenade', rot: -Math.PI / 2, size: 13 },
   { x: -16, z: 60, zh: '中山东一路', en: 'Zhongshan Rd E-1', rot: -Math.PI / 2, size: 11 },
@@ -15,7 +15,12 @@ const LABELS = [
   { x: -505, z: -120, zh: '河南中路', en: 'Henan Rd M', rot: -Math.PI / 2, size: 11 },
   { x: -95, z: 6, zh: '汉口路', en: 'Hankou Rd', rot: 0, size: 11 },
   { x: 250, z: -150, zh: '黄 浦 江', en: 'H U A N G P U   R I V E R', rot: -Math.PI / 2, size: 15, water: true },
-  { x: 515, z: -40, zh: '陆家嘴', en: 'Lujiazui', rot: 0, size: 13 },
+  { x: 735, z: 60, zh: '陆家嘴', en: 'Lujiazui', rot: 0, size: 13 },
+  { x: 640, z: -86, zh: '东方明珠', en: 'Oriental Pearl', rot: 0, size: 11 },
+  { x: 968, z: 232, zh: '世纪大道', en: 'Century Avenue', rot: 0.43, size: 11 },
+  { x: 1176, z: 146, zh: '陆家嘴中心绿地', en: 'Central Green', rot: 0, size: 12 },
+  { x: 830, z: 322, zh: '国金中心', en: 'IFC', rot: 0, size: 11 },
+  { x: 1240, z: 492, zh: '金茂大厦', en: 'Jin Mao', rot: 0, size: 10 }, { x: 1212, z: 670, zh: '上海中心', en: 'Shanghai Tower', rot: 0, size: 10 }, { x: 1300, z: 548, zh: '环球金融中心', en: 'SWFC', rot: 0, size: 10 },
 ];
 
 export function createWorldMap({ getState, onClose, onWaypoint }) {
@@ -32,6 +37,7 @@ export function createWorldMap({ getState, onClose, onWaypoint }) {
   function paintGround() {
     const base = paint(B, P), c = base.c, x = c.getContext('2d');
     // the Pudong bank across the water
+    if (mapExtras.length) return base;                        // (Lujiazui paints its own ground: world/lujiazui.js)
     x.fillStyle = '#2a2e36'; x.fillRect(base.px(470), 0, c.width - base.px(470), c.height);
     x.fillStyle = '#3c414c'; for (const [tx, tz, w, d] of [[640, -42, 30, 30], [700, 40, 40, 40], [520, -120, 36, 40], [540, 70, 30, 60]]) if (tx - w / 2 < B.X1) x.fillRect(base.px(tx - w / 2), base.pz(tz - d / 2), w * P, d * P);
     return base;

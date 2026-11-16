@@ -119,6 +119,10 @@ export const S = {
   areas: { hankou: { zh: '汉口路', en: 'Hankou Road' }, zhongshan: { zh: '中山东一路', en: 'Zhongshan Road (E-1)' }, promenade: { zh: '外滩观景平台', en: 'The Promenade' }, customs: { zh: '海关大楼', en: 'Customs House' }, nanjing: { zh: '南京东路步行街', en: 'Nanjing Road East' }, henan: { zh: '河南中路', en: 'Henan Road (M)' }, metro: { zh: '南京东路站', en: 'East Nanjing Rd Station' } },
 };
 
+// Lujiazui's areas (world/lujiazuiLayout.js ljzZone)
+Object.assign(S.areas, { ring: { zh: '明珠环 · 人行天桥', en: 'The Mingzhu Ring' }, roundabout: { zh: '陆家嘴环岛', en: 'Lujiazui Roundabout' }, century: { zh: '世纪大道', en: 'Century Avenue' }, ifc: { zh: '国金中心', en: 'Shanghai IFC' },
+  apple: { zh: 'Apple 浦东', en: 'Apple Pudong' }, green: { zh: '陆家嘴中心绿地', en: 'Lujiazui Central Green' }, ljzMetro: { zh: '陆家嘴站', en: 'Lujiazui Station' } });
+
 // a key from S (functions are called with args)
 export function t(key, ...args) {
   const v = S[key]; if (v == null) return key;

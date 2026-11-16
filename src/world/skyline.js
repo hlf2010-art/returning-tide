@@ -436,10 +436,13 @@ export function createSkyline() {
   const cool = basic(towerAtlas(5, 0.2), 1.0), warm = basic(towerAtlas(6, 0.6), 1.0);
   const A = new Batch(), B = new Batch(), dark = new Batch(), accents = new Batch();
 
-  const pearlMat = buildPearl(group);
-  buildJinMao(group, 800, 205);
-  buildSWFC(group, 935, 285);
-  const ticker = buildShanghaiTower(group, 860, 395);
+  // (each landmark's meshes are remembered: up close, world/lujiazui.js puts the three supertalls where they really stand)
+  const landmarks = {}, HOME = { jinmao: [800, 205], swfc: [935, 285], tower: [860, 395] };
+  const part = (name, fn) => { const n = group.children.length, out = fn(); landmarks[name] = group.children.slice(n); return out; };
+  const pearlMat = part('pearl', () => buildPearl(group));
+  part('jinmao', () => buildJinMao(group, ...HOME.jinmao));
+  part('swfc', () => buildSWFC(group, ...HOME.swfc));
+  const ticker = part('tower', () => buildShanghaiTower(group, ...HOME.tower));
 
   // Riverfront row and the Lujiazui cluster behind it. Hand-placed anchors, then filler.
   const anchors = [
@@ -554,6 +557,18 @@ export function createSkyline() {
   const palette = [new THREE.Color(1, 1, 1), new THREE.Color(0.78, 0.72, 1.45), new THREE.Color(0.32, 0.58, 1.9), new THREE.Color(1.25, 0.7, 1.1)];
   return {
     group,
+    // In Pudong (world/lujiazui.js): the far skyline is arranged for the view from the Bund. Up close
+    // the Pearl stays where it is, the three supertalls move to their real places (at: { jinmao, swfc,
+    // tower } as { x, z }) and the generic far towers are hidden: the district draws its own. Off:
+    // exactly as built.
+    setNear(on, at = {}) {
+      const kept = new Set(Object.values(landmarks).flat());
+      for (const o of group.children) if (!kept.has(o)) o.visible = !on;
+      for (const k of Object.keys(HOME)) for (const o of landmarks[k]) {
+        const p = on ? at[k] : null, h = o.userData.home || (o.userData.home = o.position.clone());
+        o.position.set(h.x + (p ? p.x - HOME[k][0] : 0), h.y, h.z + (p ? p.z - HOME[k][1] : 0)); o.updateMatrix();
+      }
+    },
     // the hour: the Pearl's show runs with the LED walls; late at night it holds a dim glow
     setTime(st) { PEARL_LIGHT.value = Math.max(st.media, 0.35 * st.outline); },
     update(t) {
