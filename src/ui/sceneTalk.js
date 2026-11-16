@@ -42,13 +42,15 @@ export function createSceneTalk({ voice = null, getLife, save, names = {} }) {
     if (a.flag) l.flags[a.flag] = true;
     if (a.set) c.set = a.set;
     show(null, T(a.zh, a.en)); c.wait = lineSecs(T(a.zh, a.en)) * 0.7; c.speaking = null;
-    c.queue.push(...(a.then || []));
+    const said = a.run ? a.run(l, a) : null;                           // an answer with consequences of its own (world/romance.js); it may give back what's said in reply
+    c.queue.push(...(Array.isArray(said) ? said : a.then || []));
     save && save();
     return true;
   }
   return {
     get active() { return !!cur; },
     get asking() { return !!(cur && cur.ask); },
+    addNames(more) { Object.assign(names, more); },                    // more speakers (world/romanceScenes.js)
     // with: whose feelings the answers move; at(who) -> [x, y, z] for positional voices
     play(script, { with: who = null, at = null, onDone = null } = {}) { cur = { script, i: 0, queue: [], wait: 1.2, ask: null, with: who, at, onDone, set: null }; },
     key(code) { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(code); return i >= 0 ? answer(i) : false; },

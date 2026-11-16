@@ -362,7 +362,9 @@ export function guardTalk(llm, getLife, getLang = () => 'zh') {
 const STAGE_WORD = { stranger: B('还不认识', 'Not met'), known: B('认识', 'Acquainted'), close: B('走得近', 'Close'), dating: B('在约会', 'Seeing each other'), together: B('在一起', 'Together') };
 const OVER_WORD = { faded: B('断了联系', 'Lost touch'), left: B('她离开了', 'She left'), 'stood-up': B('你两次没到，她走了', 'Stood up twice: she left'), 'two-timed': B('她知道了，走了', 'She found out, and left'), ended: B('你结束了', 'You ended it'), residency: B('她留在了里斯本', 'She stayed in Lisbon'), moved: B('她搬走了', 'She moved away'), returned: B('她回了旧金山', 'She went back to San Francisco') };
 export function romanceStanding(L, who) {
-  const P = CAST[who], h = heart(L, who), st = standingOf(L, who);
+  const P = CAST[who];
+  if (!isYear(L)) return { id: who, name: P.name, role: P.role, met: false, over: false, stage: STAGE_WORD.stranger, line: null, now: null };
+  const h = heart(L, who), st = standingOf(L, who);
   const stage = h.stage === 'over' ? (OVER_WORD[(h.over || {}).why] || B('结束了', 'Over')) : STAGE_WORD[h.stage];
   const ahead = datesAhead(L).find((d) => d.who === who), last = h.memories.length ? memoryText(who, h.memories[h.memories.length - 1].key) : null;
   const line = h.stage === 'over' ? last : h.rift ? B('她在等你一个答复。', 'She is waiting for your answer.') : h.quiet != null ? B('她不再先找你了。', 'She has stopped writing first.')

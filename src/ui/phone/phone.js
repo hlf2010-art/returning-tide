@@ -20,6 +20,8 @@ import { maker, level, nextLevelAt, LEVELS, BLUEPRINTS, PHOTO_TARGETS, ACHIEVEME
 import { warmth } from '../../world/agenda.js';
 import { spoken, isZh } from '../../engine/llm.js';
 import { summary as workSummary, unwritten as workUnwritten } from '../../engine/studio.js';
+import { ROMANCE } from '../../engine/hearts.js';
+import { askToMeet, romanceStanding } from '../../world/romance.js';
 
 // one language at a time: Z(zh, en) picks; X(text) translates what people wrote; nm(id) names them
 const Z = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -198,7 +200,11 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const friend = t.kind === 'person' && ['ruoan', 'xuan', 'momo', 'zhixia', 'yinuo', 'dad'].includes(id);
     const aff = friend ? Math.round((l.relations[id] || { affinity: 50 }).affinity) : null;
     const gauge = friend ? `<span class="aff" title="${Z('关系', 'How they feel')}: ${aff}" style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:10px;opacity:0.75">♥<i style="display:inline-block;width:34px;height:4px;border-radius:2px;background:rgba(127,127,127,0.35);overflow:hidden"><u style="display:block;height:100%;width:${Math.max(4, Math.min(100, aff))}%;background:#e7b96a"></u></i></span>` : '';
-    return `<div class="view chat"><div class="bar"><span class="back" data-act="back">‹</span>${esc(threadTitle(t))}${t.kind === 'group' ? `<span class="sub">(${t.members.length})</span>` : ''}${gauge}${typing}</div><div class="msgs">${msgs}</div>${foot}</div>`;
+    // one of the five: how it stands, by her name; and, when nothing's waiting to be answered, a way to ask to see her
+    const hs = t.kind === 'person' && ROMANCE.includes(id) ? romanceStanding(l, id) : null;
+    const heartTag = hs && hs.met ? `<span class="htag${hs.over ? ' over' : ''}">${esc(Z(hs.stage.zh, hs.stage.en))}</span>` : '';
+    const askRow = hs && hs.met && !hs.over && !pendingReplies && !(S.askedAt && S.askedAt[id] > stamp(l) - 90) ? `<div class="replies hask"><button class="chip" data-act="heartAsk" data-id="${esc(id)}">${Z('约她见面', 'Ask to see her')}</button></div>` : '';
+    return `<div class="view chat"><div class="bar"><span class="back" data-act="back">‹</span>${esc(threadTitle(t))}${t.kind === 'group' ? `<span class="sub">(${t.members.length})</span>` : ''}${gauge}${heartTag}${typing}</div><div class="msgs">${msgs}</div>${askRow}${foot}</div>`;
   }
   // the camera roll: what you shot with the gimbal; share one to Moments
   function photosView(l) {
@@ -331,6 +337,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (act === 'reply') { const t = top(), c = reply(l, t.id, id, +el.dataset.i); render(); if (c && c.do && onEvent) onEvent({ type: 'reply-do', do: c.do, thread: t.id }); }
     else if (act === 'addContact') { if (onEvent) onEvent({ type: 'add-contact', id }); render(); }
     else if (act === 'invite') { respondToInvite(l, id, el.dataset.yes === '1'); render(); }
+    else if (act === 'heartAsk') { (S.askedAt ||= {})[id] = stamp(l); askToMeet(l, id); render(); }
     else if (act === 'send') sendFree(id);
     else if (act === 'sharePhoto') {
       const p = maker(l).photos[+el.dataset.i]; const r = p && sharePhoto(l, p);
@@ -354,6 +361,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   });
   // ---- writing to a friend in your own words: they answer in character (engine/llm.js) ----
   const FREE_CHAT = new Set(['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo', 'dad', 'vivian', 'wuhu']);
+  for (const id of ROMANCE) FREE_CHAT.add(id);                              // the five he might come to love: what they're told is world/romance.js's (guardTalk)
   S.draft = {}; S.typing = {};
   root.addEventListener('input', (e) => { if (e.target.classList && e.target.classList.contains('say')) S.draft[e.target.dataset.thread] = e.target.value; });
   root.addEventListener('keydown', (e) => {
