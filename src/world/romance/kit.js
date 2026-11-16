@@ -55,7 +55,7 @@ export const A = (zh, en, fx = null, ...then) => ({ zh, en, fx, then });
 // (ui/sceneTalk.js calls run when he answers; what it returns, if anything, is said instead of `then`)
 export const ask = (L, who, ...opts) => ({ ask: opts.filter(Boolean).map((o) => ({ zh: o.zh, en: o.en, then: o.then, run: () => applyFx(L, who, o.fx) })) });
 // can the evening end upstairs? only where things already stand that way
-export const mayStay = (L, who) => { const h = heart(L, who); return !h.rift && h.trust >= 50 && (isSeeing(L, who) || (!!(h.said || {}).step && h.attraction >= 55)); };
+export const mayStay = (L, who) => { const h = heart(L, who); return !h.rift && h.trust >= 40 && (isSeeing(L, who) || (!!(h.said || {}).step && h.attraction >= 45)); };
 
 // "I live upstairs": an answer that ends the evening one way or the other (the cut-away is world/romanceScenes.js's)
 export const upstairs = (who, yes, no) => (L) => { if (!mayStay(L, who)) return no; meta(L).night = who; return yes; };

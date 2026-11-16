@@ -23,6 +23,12 @@ export const PEOPLE = {
   chen:   { name: '老陈', short: '老陈', en: 'Old Chen', role: 'retired lathe hand; photographs the Customs clock', color: '#7a6a55', voice: { pitch: 0.85, rate: 0.92 }, sex: 'm' },
   ye:     { name: '小叶', short: '小叶', en: 'Xiao Ye', role: 'portrait photographer on the Bund', color: '#5a8a9a', voice: { pitch: 1.08, rate: 1.08 }, sex: 'f' },
   zhe:    { name: '阿哲', short: '阿哲', en: 'Zhe', role: 'livestreams the Bund at night', color: '#9a5a8a', voice: { pitch: 1.0, rate: 1.15 }, sex: 'm' },
+  // the five he might come to love (world/romance.js and world/romance/*.js have who they are)
+  zhiwei:  { name: '许知微', short: '知微', en: 'Xu Zhiwei', role: 'his project manager, Lujiazui', color: '#3d5a80', voice: { pitch: 1.02, rate: 1.1 }, sex: 'f' },
+  nanxing: { name: '沈南星', short: '南星', en: 'Shen Nanxing', role: 'independent photographer', color: '#b0623a', voice: { pitch: 1.1, rate: 1.06 }, sex: 'f' },
+  gunian:  { name: '顾念', short: '顾念', en: 'Gu Nian', role: 'architect, Bund restorations', color: '#5f7f6e', voice: { pitch: 1.0, rate: 0.98 }, sex: 'f' },
+  yuan:    { name: '林予安', short: '予安', en: "Lin Yu'an", role: 'product designer, San Francisco', color: '#7d6b9e', voice: { pitch: 1.06, rate: 1.04 }, sex: 'f' },
+  kexin:   { name: '唐可昕', short: '可昕', en: 'Tang Kexin', role: 'lifestyle creator, 180K on Xiaohongshu', color: '#c0507a', voice: { pitch: 1.14, rate: 1.12 }, sex: 'f' },
   mum:    { name: '妈', short: '妈', en: 'Mum (Zhou Lan)', role: 'cardiologist, Gulou Hospital, Nanjing', color: '#b56576', voice: { pitch: 1.05, rate: 0.98 }, sex: 'f' },
 };
 export const FRIENDS = ['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo'];

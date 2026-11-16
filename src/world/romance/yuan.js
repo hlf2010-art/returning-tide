@@ -7,7 +7,7 @@
 //            hidden, a tune from the Mission at the Jazz Bar; a ticket that can be one-way
 //   Act V    San Francisco and fog, or a south-facing flat in Jing'an
 import { emit, stamp } from '../../engine/life.js';
-import { heart, inLife, isSeeing, feel, remember, decide, meet, leave } from '../../engine/hearts.js';
+import { heart, inLife, isSeeing, feel, remember, decide, meet, leave, shared } from '../../engine/hearts.js';
 import { B, D, H, tod, between, say, R, A, ask, askOut, done, dateOn, upstairs, t, openThread } from './kit.js';
 
 const W = 'yuan';
@@ -20,7 +20,7 @@ const P = {
   role: B('旧金山的产品设计师；他在湾区那几年的人', 'Product designer in San Francisco; the person from his Bay Area years'),
   ambition: B('排了三年的绿卡；一份不是替别人收尾的工作', "A green card three years in the queue; a job that isn't finishing other people's work"),
   how: "You and he were at UC Berkeley in the same year, and for two years in San Francisco you were together without either of you ever calling it that. He took a job in Shanghai and left within three weeks. Neither of you said what it had been.",
-  calls: B('纪白', 'Ji Bai'),
+  address: B('纪白', 'Ji Bai'),
   card: "Lin Yu'an (林予安), 27, from Chengdu; went to UC Berkeley the same year as Ji Bai (design and cognitive science), then product designer at an AI start-up in SoMa; for two years in San Francisco she and Ji Bai were together without ever naming it: a flat in the Sunset, the N Judah, fog at Ocean Beach, Sunday dim sum on Clement Street; funny, quick, proud, covers hurt with jokes; her green-card process ties her to the Bay Area; writes to him in her morning, which is his night; mixes English into her Chinese the way people do after ten years abroad",
   arc: {
     1: B('在旧金山。公司在裁人，她还在名单外面。', 'In San Francisco. The company is cutting people and she is not on the list yet.'),
@@ -104,7 +104,7 @@ const P = {
   },
   beats: [
     { id: 'y1', first: true, urgent: true, when: () => D(2, 1, 20), until: () => D(3, 12, 0), run: (L) => {
-      meet(L, W); feel(L, W, { attraction: 25, trust: 18 }, 'history'); remember(L, W, 'sf-years'); openThread(L, W, P.name.zh);
+      meet(L, W); feel(L, W, { attraction: 25, trust: 18 }, 'history'); shared(L, W, 'outing', 'sf-years'); openThread(L, W, P.name.zh);
       say(L, W, '看到你朋友圈了。外滩。', 'Saw your Moments. The Bund.');
       say(L, W, '所以你真的回去了。', 'So you really went back.', [
         R('回了。走得太急，没好好跟你说。', 'I did. I left in too much of a hurry to tell you properly.', { t: 5, mem: 'said-sorry' }, '三个星期。你退租比跟我说话还快。……算了。上海怎么样？', "Three weeks. You gave up your lease faster than you talked to me. ...Never mind. How's Shanghai?"),
@@ -201,7 +201,7 @@ const P = {
   epilogue(L, h) {
     if (h.settled === 'stays' && h.stage !== 'over') return B('予安的机票改成了单程。静安那间朝南的房子里，窗台上放着一只印着 GO BEARS 的马克杯。', "Yu'an made her ticket one-way. On the windowsill of the south-facing flat in Jing'an stands a mug that says GO BEARS.");
     if (h.settled === 'distance' && h.stage !== 'over') return B('予安回旧金山收尾去了。她说春天回来，如果你那句话还作数。你把那句话又说了一遍。', "Yu'an has gone back to San Francisco to close things up. She says she'll return in the spring, if your sentence still stands. You say it to her again.");
-    if (h.stage === 'over' && h.over && h.over.why === 'returned') return B('予安回了旧金山。这一次你们把话说完了，雾里和雾外的都说了。', "Yu'an went back to San Francisco. This time the two of you finished your sentences, the ones from inside the fog and the ones from outside it.");
+    if (h.stage === 'over' && h.over && h.over.why === 'returned' && h.plan === 'returns') return B('予安回了旧金山。这一次你们把话说完了，雾里和雾外的都说了。', "Yu'an went back to San Francisco. This time the two of you finished your sentences, the ones from inside the fog and the ones from outside it.");
     if (h.stage === 'over' && h.over && h.over.why !== 'faded') return B('你的马克杯最后还是寄到了和平饭店的前台。盒子里没有字条。', 'Your mug arrived at the Peace Hotel front desk in the end. There was no note in the box.');
     return null;
   },

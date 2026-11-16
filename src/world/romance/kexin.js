@@ -25,7 +25,7 @@ const P = {
   role: B('生活方式博主，小红书 18 万 / 抖音 9 万', 'Lifestyle creator: 180K on Xiaohongshu, 90K on Douyin'),
   ambition: B('年底五十万粉；一个自己的小牌子，不再只替别人带货', "Half a million followers by the year's end; a small label of her own, not just selling other people's things"),
   how: 'You met him at the Peace Hotel Jazz Bar, where you were filming and he walked through your shot; you both know Momo (Zhou Zimo), whom you call 墨老师.',
-  calls: B('纪白', 'Ji Bai'),
+  address: B('纪白', 'Ji Bai'),
   card: "Tang Kexin (唐可昕), 25, from Suzhou, lives in Jing'an; a lifestyle and fashion creator with about 180,000 followers on Xiaohongshu and 90,000 on Douyin (her account is 可昕今天穿什么, \"What Kexin Wore Today\"); two years as a buyer's assistant at a department store before going full-time; earns from brand events, try-ons and night-out vlogs and works harder than anyone watching would guess; wants a small label of her own rather than being the face of other people's products; funny, quick, performs confidence, privately anxious about her numbers; since a follower found her building from a reflection in a window she never posts a place until she has left it and never shows where she lives; talks fast, with internet slang and the odd emoji in text; knows Momo from gigs and calls him 墨老师",
   arc: {
     1: B('一周三个品牌活动，一条夜生活 vlog。粉丝卡在十八万。', 'Three brand events a week and a night-out vlog. Stuck at 180,000 followers.'),

@@ -178,7 +178,7 @@ export function runRomance(L) {
   }
   M.calls = calls.length;
   // what their own files raised for everyone else
-  for (const ev of (M.raised || []).splice(0)) romanceEvent(L, ev.by || null, ev.type, { ...ev, own: true });
+  for (const ev of (M.raised || []).splice(0)) romanceEvent(L, null, ev.type, { ...ev, own: true });
   // their beats, when the minute has changed
   if (M.t !== now) {
     M.t = now;
@@ -190,7 +190,7 @@ export function runRomance(L) {
         const due = b.when(L); if (due == null || now < due) continue;
         const until = b.until ? b.until(L) : due + 2880;
         if (until != null && now > until) { M.fired[b.id] = -1; continue; }
-        if (!mayWrite(L, who, slot, { urgent: !!b.urgent })) continue;
+        if (!mayWrite(L, who, b.work ? { ...slot, free: true } : slot, { urgent: !!b.urgent })) continue;   // (work: something she'd send from her desk)
         if (b.if && !b.if(L)) { M.fired[b.id] = -1; continue; }
         M.fired[b.id] = now; b.run(L); heart(L, who).lastWrote = now; out.push({ id: who, type: 'beat', beat: b.id });
         break;                                                           // one thing at a time from each of them
@@ -265,7 +265,7 @@ export function romanceEvent(L, id, type, data = {}) {
   if (type === 'met') { if (CAST[id] && heart(L, id).stage === 'stranger') { meet(L, id); openThread(L, id, CAST[id].name.zh); out.push({ id, type }); } return out; }
   const ids = (id && CAST[id] ? [id] : ROMANCE).filter((w) => inLife(L, w));
   for (const who of ids) {
-    const P = CAST[who], lines = P.lines, own = data.own && data.by === who;
+    const P = CAST[who], lines = P.lines;
     if (type === 'saw-fight' || type === 'heard-fight') { f(who, FEEL[type][who], type); remember(L, who, type); tell(who, type === 'saw-fight' ? lines.fight : lines.heard); }
     else if (type === 'credit-taken') { f(who, [-4, -12], type); heart(L, who).mood = 'hurt'; remember(L, who, 'he-took-credit'); tell(who, LINES.creditTaken); }
     else if (type === 'credit-shared') { f(who, [3, 8], type); remember(L, who, 'shared-credit'); tell(who, LINES.creditShared); }
@@ -275,7 +275,7 @@ export function romanceEvent(L, id, type, data = {}) {
     else if (type === 'promoted') { if (who === 'zhiwei') { f(who, [1, -2], type); tell(who, LINES.promoted); } }
     else if (type === 'hurt') { f(who, [0, 1], type); tell(who, lines.hurt); }
     else if (type === 'posted-online') {
-      if (own) continue;                                                // her own post: she knows
+      if (data.by === who) continue;                                    // her own post: she knows
       if (data.by === 'kexin' && data.couple && isSeeing(L, who)) { voice(L, foundOut(L, who, 'online'), out); continue; }
       if (data.by === 'kexin' && !data.couple) continue;                // two seconds of a stranger in someone's vlog: nobody notices
       remember(L, who, 'seen-online'); if (data.bad) f(who, [0, -2], type); tell(who, lines.online);

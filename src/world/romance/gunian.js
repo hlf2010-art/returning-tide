@@ -21,7 +21,7 @@ const P = {
   role: B('建筑师，外滩老建筑修缮；若安的组长', "Architect, restoring the Bund's old buildings; Ruoan's team lead"),
   ambition: B('考完一级注册建筑师，开一间自己的小事务所，修里弄', 'Finish her registration exams and open a small practice of her own, repairing lane houses'),
   how: "You are the team lead of his oldest friend Xu Ruoan at the conservation practice; you met him in the AIA Building lobby when you asked him to hold the end of a tape.",
-  calls: B('纪白', 'Ji Bai'),
+  address: B('纪白', 'Ji Bai'),
   card: "Gu Nian (顾念), 29, Shanghai-born, grew up in a lane house in Hongkou; Tongji architecture, eight years at the conservation practice where Xu Ruoan is her junior, leading the survey of the AIA Building and Peace Hotel interiors; sitting the last papers of her registered-architect exam in May; wants a small practice of her own repairing lane houses for the people who still live in them; calm, exact, warm in a quiet way, says what she means and asks what you mean; ended a six-year relationship two years ago without a quarrel and has no interest in being anyone's option; writes in full sentences with punctuation; one flat white a day, at one o'clock, at the Manner on Hankou Road",
   arc: {
     1: B('白天量和平饭店，下班以后量友邦大楼的大堂。', 'Measuring the Peace Hotel by day and the AIA lobby after office hours.'),
@@ -150,7 +150,7 @@ const P = {
         G('准时。我喜欢准时的人。', 'On time. I like people who are on time.'),
         ask(L, W,
           A('船票我买了。', "I've got the tickets.", (L2) => { const r = pay(L2, { method: 'wechat', amount: 240, to: '浦江游览', memo: '游船票 ×2', kind: 'purchase' }); if (r.ok) r.entry.memoEn = 'Cruise tickets ×2'; feel(L2, W, { trust: 2 }, 'tickets'); return [G('那晚饭我请。公平。', "Then dinner is mine. Fair.")]; }),
-          A('AA？', 'Shall we split it?', (L2) => { const r = pay(L2, { method: 'wechat', amount: 120, to: '浦江游览', memo: '游船票', kind: 'purchase' }); if (r.ok) r.entry.memoEn = 'Cruise ticket'; feel(L2, W, { trust: 1 }, 'tickets'); return [G('AA。我喜欢账目清楚。', 'Split it. I like clean accounts.')]; })),
+          A('AA 吧？', 'Shall we split it?', (L2) => { const r = pay(L2, { method: 'wechat', amount: 120, to: '浦江游览', memo: '游船票', kind: 'purchase' }); if (r.ok) r.entry.memoEn = 'Cruise ticket'; feel(L2, W, { trust: 1 }, 'tickets'); return [G('AA。我喜欢账目清楚。', 'Split it. I like clean accounts.')]; })),
         { fade: B('游船绕了一圈，五十分钟。她指了一路：哪栋楼是谁设计的，哪栋她量过，哪栋的窗是去年换的。', 'The boat makes its loop: fifty minutes. She points the whole way: who designed which building, which ones she has measured, which had its windows replaced last year.'), minutes: 55 },
         N('下船的时候，太阳刚落到外滩的楼后面，江面是铜色的。', 'When you step ashore the sun has just gone behind the Bund, and the river is the colour of copper.'),
         G('好吧，我承认，不丢人。从水上看才知道，这一排楼是给江上的人看的。', 'All right, I admit it: not embarrassing. From the water you understand that this whole row was built to be seen from the river.'),

@@ -12,7 +12,9 @@ export const STAGES = ['stranger', 'known', 'close', 'dating', 'together', 'over
 const clamp = (v) => Math.max(0, Math.min(100, v));
 export function hearts(L) { return (L.flags.hearts ||= {}); }
 export function heart(L, id) {
-  return (hearts(L)[id] ||= { stage: 'stranger', attraction: 20, trust: 20, met: null, memories: [], lastSeen: null, lastWrote: null, asked: 0, stoodUp: 0, mood: 'ok', over: null });
+  const h = (hearts(L)[id] ||= { stage: 'stranger', attraction: 20, trust: 20, met: null, memories: [], lastSeen: null, lastWrote: null, asked: 0, stoodUp: 0, mood: 'ok', over: null });
+  if (!h.said) { h.events ||= {}; h.said = {}; h.unanswered ??= 0; h.declined ??= 0; h.quiet ??= null; h.day ??= null; h.doubt ??= 0; h.streak ??= 0; h.rift ??= null; }   // (the rules' fields: see below)
+  return h;
 }
 export const stageOf = (L, id) => heart(L, id).stage;
 export function meet(L, id) { const h = heart(L, id); if (h.met == null) { h.met = stamp(L); if (h.stage === 'stranger') h.stage = 'known'; } h.lastSeen = stamp(L); return h; }
@@ -40,8 +42,9 @@ export const seeing = (L) => ROMANCE.filter((id) => ['dating', 'together'].inclu
 //   availability  from her own day (the slot world/romance.js reads off her schedule: busy, asleep,
 //                 out of town) and her mood: hurt and unsure of him, she isn't free for him
 //   ignoring      ignored(): a message left unanswered, an invitation left to lapse, a no, a
-//                 no-show, a silence. Each costs, and they add up: after NATURE.asks of them she
-//                 stops asking (quiet). He can still reach out (contact with his: true). If he
+//                 no-show, a silence (days without a word while she's waiting on him; three times
+//                 as long if nothing is owed either way). Each costs, and they add up: after
+//                 NATURE.asks of them she stops asking (quiet). He can still reach out (contact with his: true). If he
 //                 doesn't within NATURE.patience playable days, she's gone: 'faded' if they were
 //                 only getting to know each other, 'left' if they were seeing each other.
 //                 Two no-shows and she leaves there and then
@@ -68,17 +71,14 @@ export const COST = {
   'stood-up': { trust: -12, attraction: -6 }, silence: { trust: -3, attraction: -4 },
 };
 export const NEEDS = {                                               // what each step takes
-  close: { shared: 2, trust: 35 },
-  dating: { dates: 1, attraction: 45, trust: 40, said: 'step' },
-  together: { dates: 2, trust: 60, said: 'commit' },
+  close: { shared: 2, trust: 26 },
+  dating: { dates: 1, attraction: 32, trust: 26, said: 'step' },
+  together: { dates: 2, attraction: 45, trust: 50, said: 'commit' },
 };
+// time spent together is itself something: what each kind of shared event adds, once ([attraction, trust])
+export const WARMTH = { talk: [2, 2], help: [2, 3], call: [2, 3], outing: [3, 3], date: [3, 3], night: [4, 4] };
 const N = (id) => NATURE[id] || NATURE.gunian;
-// the whole record (older saves, and hearts made by heart() alone, lack the later fields)
-function full(L, id) {
-  const h = heart(L, id);
-  h.events ||= {}; h.said ||= {}; h.unanswered ??= 0; h.declined ??= 0; h.quiet ??= null; h.day ??= null; h.doubt ??= 0; h.streak ??= 0; h.rift ??= null;
-  return h;
-}
+const full = heart;
 const meta = (L) => (hearts(L)._ ||= { day: L.clock.day });
 export const isOver = (L, id) => heart(L, id).stage === 'over';
 export const inLife = (L, id) => !['stranger', 'over'].includes(heart(L, id).stage);
@@ -100,7 +100,7 @@ export function contact(L, id, { his = false } = {}) {
 export function overture(L, id) { const h = full(L, id); h.asked += 1; h.lastWrote = stamp(L); h.streak += 1; return h; }
 // he answered what she sent / said yes to what she asked
 export function answered(L, id) { const h = full(L, id); h.unanswered = 0; h.declined = 0; return contact(L, id); }
-export const oneSided = (L, id) => full(L, id).streak >= 4 && ['close', 'dating', 'together'].includes(heart(L, id).stage);
+export const oneSided = (L, id) => full(L, id).streak >= 6 && ['dating', 'together'].includes(heart(L, id).stage);
 // her own day and her mood -> can he reach her, see her?   slot: { free, away } from her schedule
 export function availability(L, id, slot = {}) {
   const h = full(L, id);
@@ -144,7 +144,7 @@ export const asksLeft = (L, id) => Math.max(0, N(id).asks - full(L, id).unanswer
 export function shared(L, id, kind, key, data = {}) {
   const h = full(L, id); if (h.stage === 'over') return h.stage;
   if (h.met == null) meet(L, id);
-  if (!recalls(L, id, key)) { h.events[kind] = (h.events[kind] || 0) + 1; remember(L, id, key, { kind, ...data }); }
+  if (!recalls(L, id, key)) { h.events[kind] = (h.events[kind] || 0) + 1; remember(L, id, key, { kind, ...data }); const w = WARMTH[kind] || WARMTH.talk; feel(L, id, { attraction: w[0], trust: w[1] }, `shared:${key}`); }
   contact(L, id);
   return advance(L, id);
 }
@@ -211,7 +211,12 @@ function oneDay(L, day) {
     if (h.rift && day - h.rift.day >= 2) { out.push({ type: 'left', ...leave(L, id, 'two-timed') }); continue; }
     // she's stopped asking, and he hasn't come
     if (h.quiet != null) { if (day - h.quiet >= n.patience) { out.push({ type: 'left', ...leave(L, id, isSeeing(L, id) ? 'left' : 'faded') }); continue; } }
-    else if (day - last >= n.patience && (day - last) % n.patience === 0) { const r = ignored(L, id, 'silence'); out.push({ type: r.left ? 'left' : r.quiet ? 'quiet' : 'silence', ...r }); if (r.left) continue; }
+    else {
+      // a silence is his when she's waiting on him (something of hers went unanswered): every `patience` days of it
+      // counts again. With nothing owed either way, it takes three times as long to start counting
+      const gap = day - last, step = h.unanswered > 0 ? n.patience : n.patience * 3;
+      if (gap >= step && gap % step === 0) { const r = ignored(L, id, 'silence'); out.push({ type: r.left ? 'left' : r.quiet ? 'quiet' : 'silence', ...r }); if (r.left) continue; }
+    }
     // seeing someone else as well
     const s = seeing(L);
     if (s.length >= 2 && s.includes(id)) {

@@ -22,7 +22,7 @@ const P = {
   role: B('他项目的项目经理，陆家嘴', 'His project manager, Lujiazui'),
   ambition: B('三十岁之前升高级经理，然后是合伙人', 'Senior manager before thirty; then partner'),
   how: 'You are the project manager on his first engagement at the firm; he was hired from Silicon Valley at nearly your level, which you noticed. You have a rule about not getting close to colleagues.',
-  calls: B('纪白', 'Ji Bai'),
+  address: B('纪白', 'Ji Bai'),
   card: 'Xu Zhiwei (许知微), 28, from Hangzhou; Fudan economics, six years at the international technology consulting firm in Lujiazui where Ji Bai has just started, and the project manager on his first engagement (an enterprise AI rollout for a large client); wants senior manager this cycle and partner after that, and her sponsor is the partner, Vincent; sharp, fast, dry, guarded, fair when it costs her; competitive with Ji Bai because he was hired from Silicon Valley at nearly her level; lives alone in a rented flat off Yuyuan Road and crosses the river on Line 2; her mother in Hangzhou sends her the CVs of suitable men; texts in short sentences with no emoji and the English work words Lujiazui uses (kickoff, deck, deadline)',
   arc: {
     1: B('带着八个月的客户，突然多了一个硅谷回来的“同级”。', 'Eight months into running the account, and suddenly a "peer" from Silicon Valley on her team.'),
@@ -90,7 +90,7 @@ const P = {
   },
   beats: [
     // ---- Act I ----
-    { id: 'z1', first: true, urgent: true, when: () => D(1, 18, 10), until: () => D(2, 9, 0), run: (L) => { meet(L, W); openThread(L, W, P.name.zh); say(L, W, '纪白？我是许知微，你这个项目的 PM。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。', "Ji Bai? Xu Zhiwei. I'm the PM on your project. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight.", [
+    { id: 'z1', first: true, urgent: true, work: true, when: () => D(1, 18, 10), until: () => D(2, 9, 0), run: (L) => { meet(L, W); openThread(L, W, P.name.zh); say(L, W, '纪白？我是许知微，你这个项目的 PM。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。', "Ji Bai? Xu Zhiwei. I'm the PM on your project. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight.", [
       R('收到，今晚看完。', "Got it. I'll read it tonight.", { t: 2 }, '好。', 'Good.'),
       R('刚落地，时差还没倒过来。明早路上看行吗？', "I've only just landed and I'm jet-lagged. Can I read it on the way in?", { t: -2 }, '九点二十，楼下。别让我在客户面前替你翻页。', "9:20, downstairs. Don't make me turn your pages for you in front of the client."),
     ]); } },

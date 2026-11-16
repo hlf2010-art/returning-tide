@@ -23,7 +23,7 @@ const P = {
   role: B('独立摄影师，拍十点以后的外滩', 'Independent photographer; shoots the Bund after ten'),
   ambition: B('第一个个展；里斯本的三个月驻留', 'A first solo show; a three-month residency in Lisbon'),
   how: 'You met him at the Bund railing at night when he walked into an eight-second exposure of yours.',
-  calls: B('纪白', 'Ji Bai'),
+  address: B('纪白', 'Ji Bai'),
   card: 'Shen Nanxing (沈南星), 26, from Kunming; left a journalism MA unfinished and has lived five years in Shanghai as an independent photographer: magazine and brand shoots pay for a room in an old lane house near Suzhou Creek; her own project, "After Ten", is the Bund once the floodlights drop at ten and the people who work nights there; shoots on a battered full-frame camera and still keeps a film body; wants a first solo show and has applied for a three-month residency in Lisbon; spontaneous, warm, teasing, allergic to plans and to being owned; awake until four and asleep until noon; texts in bursts, sends a photo instead of an answer, vanishes for days on a shoot and comes back as if no time had passed',
   arc: {
     1: B('每晚在江边等十点。“十点以后”这组还差一半。', 'At the river every night, waiting for ten. "After Ten" is half finished.'),
@@ -94,7 +94,7 @@ const P = {
     { id: 'n2', when: (L) => dayAfter(L, W, 'n-rail', 15, 0), until: () => D(10, 20, 0), run: (L) => askOut(L, W, 'n-ten', P.dates['n-ten'], tonightOr(L, 21, 40, 60)) },
     { id: 'n3', when: (L) => after(L, W, 'n-ten', 240), run: (L) => say(L, W, '[图片] 海关的钟，十点零一秒。左下角那个肩膀是你的。我不裁。', "[Photo] The Customs clock at one second past ten. The shoulder bottom left is yours. I'm not cropping it.") },
     { id: 'n4', when: (L) => dayAfter(L, W, 'n-ten', 16, 0), until: () => D(12, 20, 0), run: (L) => askOut(L, W, 'n-jazz', P.dates['n-jazz'], tonightOr(L, 21, 30, 60)) },
-    { id: 'n5', urgent: true, when: () => D(7, 5, 30), until: () => D(7, 6, 0), if: (L) => inLife(L, W), run: (L) => say(L, W, '这两天在崇明拍候鸟，岛上没信号。别找我，明天傍晚回。', "On Chongming for two days shooting the winter birds. No signal on the island. Don't look for me. Back tomorrow evening.") },
+    { id: 'n5', urgent: true, work: true, when: () => D(7, 5, 30), until: () => D(7, 6, 0), if: (L) => inLife(L, W), run: (L) => say(L, W, '这两天在崇明拍候鸟，岛上没信号。别找我，明天傍晚回。', "On Chongming for two days shooting the winter birds. No signal on the island. Don't look for me. Back tomorrow evening.") },
     { id: 'n6', when: () => D(8, 19, 0), until: () => D(9, 2, 0), if: (L) => inLife(L, W), run: (L) => say(L, W, '[图片] 回来了。四千张，手冻裂了。你这两天干了什么，一件一件说。', '[Photo] Back. Four thousand frames and split knuckles. What have you been doing these two days? One thing at a time.', [
       R('加班。想你。', 'Working late. Missing you.', { a: 3 }, '后面两个字再说一遍。', 'Say the second part again.'),
       R('你不是说不用解释吗？我也不解释。', "You said no explaining. I'm not explaining either.", { a: 2 }, '学得真快。', 'Quick learner.'),
