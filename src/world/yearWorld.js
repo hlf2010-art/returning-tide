@@ -279,7 +279,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     if (id === 'hongqiao') { const t = isYear(L) ? todaysWork(L) : null; if (t && t.via === 'hongqiao' && !t.done && L.clock.minute < WORK_HOURS.last + 120) return openCard(t); if (isYear(L)) hud.toast(T('今天没有要坐的车。', 'No train to catch today.'), 3); return false; }
     if (id !== 'lujiazui') return upstairs(id, info);
     if (!info.up) return a0(id, info);                                                               // from outside (a ride, the metro): street level in the district (world/lujiazui.js); the lobby's lift comes back here with up
-    if (!isYear(L)) return info.invite || info.method === 'metro' ? upstairs(id, info) : false;        // a six-day game: as it always was
+    if (!isYear(L)) return upstairs(id, info);                                                       // a six-day game: the lobby's lift goes to the room on 32        // a six-day game: as it always was
     if (info.invite) return upstairs(id, info);                                                       // expected on 32F
     const t = todaysWork(L), c = career(L), atFirm = L.clock.day <= 12 ? !work(L).applied || c.track === 'consulting' : c.track === 'consulting';
     if (t && t.where === 'card' && !t.done && L.clock.minute < WORK_HOURS.last) return openCard(t);

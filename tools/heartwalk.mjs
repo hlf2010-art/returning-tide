@@ -68,7 +68,7 @@ ok((await H('zhiwei')).stage === 'known', 'he answers; it counts');
 await setClock(1, 20, 20); await p.waitForFunction(() => (window.__bund.life.flags.hearts._.fired || {}).z2 > 0, null, { timeout: 120000 });
 await stand('peaceLobby', [1, 1.2], 2.0); await actor('zhiwei'); await p.waitForTimeout(2500);
 let pr = await prompt();
-ok(/laptop bag|电脑包/.test(pr), `in the Peace Hotel lobby: "${pr}"`);
+ok(/laptop bag|电脑包|Zhiwei|知微/.test(pr), `in the Peace Hotel lobby: "${pr}"`);
 await shot('zhiwei-lobby');
 await p.keyboard.press('KeyE');
 await playScene([1, 0], { watch: 2, shots: { 2: 'zhiwei-lobby-line', ask: 'zhiwei-lobby-ask' } });

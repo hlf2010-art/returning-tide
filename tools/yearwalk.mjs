@@ -59,7 +59,7 @@ await ev(() => window.__bund.world.year.handoff('opened'));                 // (
 // ---- 2. Tuesday 10 November: the first day at the firm ----
 await setClock(2, 9, 5);
 ok(/Tue 10 Nov|11 月 10 日|Work today|今天上班/.test(await toast()), `a new day is announced: "${await toast()}"`);
-await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro' }));   // (what the metro's gate does: world/metro.js)
+await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro', up: true }));   // (what the metro's gate does: world/metro.js)
 await p.waitForFunction(() => window.__bund.world.year.here === 'firm', null, { timeout: 120000 }); await veilClear();
 const at = await ev(() => ({ y: window.__bund.player.body.y, x: window.__bund.player.body.x }));
 ok(Math.abs(at.y - 120) < 0.5 && at.x > 668 && at.x < 690, `out of the lift on IFC 28F (y ${at.y.toFixed(1)})`);
@@ -137,7 +137,7 @@ y = await Y(); ok(y.work.watch.told === 'date' && y.facts.some((f) => f.type ===
 // ---- 5. to April: the crisis, and what he does about it ----
 await quick(8, [0]); await quick(9, [0, 0]); await quick(10, [0, 0]); await quick(11, [0]);
 await setClock(12, 9, 0);
-await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro' }));
+await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro', up: true }));
 await p.waitForFunction(() => window.__bund.world.year.here === 'firm', null, { timeout: 120000 }); await veilClear();
 let crisis = null;
 await talk((ch) => { crisis = ch; return 2; }, () => !!window.__bund.life.flags.year.work.applied);
@@ -156,7 +156,7 @@ ok(true, 'Mingxuan offers the two desks on 32F; he says yes (never forced: tests
 // ---- 6. June: the founding day, upstairs ----
 await setClock(13, 9, 0);
 const june = await toast(); ok(/7 Jun 2027|6 月 7 日/.test(june), `June: "${june}"`);
-await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro' }));
+await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro', up: true }));
 await p.waitForFunction(() => window.__bund.world.dest.here === 'lujiazui', null, { timeout: 120000 }); await veilClear();
 await p.waitForFunction(() => window.__bund.world.year.running === 's1' && window.__bund.world.sceneTalk.active, null, { timeout: 120000 }); await p.waitForTimeout(1500);
 await shot('startup-32f');
