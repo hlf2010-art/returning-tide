@@ -107,7 +107,9 @@ const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the sto
 import { createSceneTalk } from './ui/sceneTalk.js';
 import { createYearWorld } from './world/yearWorld.js';   // the working year in the world: the firm's floor, the flat, the calendar on screen
 import { shortDate as yearDate, passLine as yearPassLine } from './world/career.js';
-import { createConfrontation } from './world/confrontation.js';   // a row outside the Peace Hotel, once (engine/fight.js)
+import { createConfrontation } from './world/confrontation.js';
+import { romanceEvent } from './world/romance.js';
+import { careerEvent } from './world/career.js';   // a row outside the Peace Hotel, once (engine/fight.js)
 import { createDinner } from './world/dinner.js';
 import { createJournal } from './ui/journal.js';
 import { createCrowdView } from './world/crowdView.js';
@@ -333,6 +335,8 @@ async function boot() {
   world.confront = createConfrontation({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, onMode: fightMode, getPlayerBody: () => world.playerBody,
     isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active && !world.fieldTest.busy, enabled: !!people && (!params.has('q') || params.has('fight')) });
   places.push(world.confront);
+  // what a row sets off elsewhere: the people in his life hear of it (or saw it); if it was filmed, so does the office
+  world.confront.onOutcome((R, L) => { try { if (R.blows) { if (R.companion) romanceEvent(L, R.companion.id, 'saw-fight', { outcome: R.outcome }); else romanceEvent(L, null, 'heard-fight', { outcome: R.outcome }); if (R.filmed) careerEvent(L, 'fight-seen', { where: 'the Peace Hotel' }); } saveLife(); } catch (e) { console.warn('fight outcome', e); } });
   world.ljz = ljz; places.push(ljz);
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
