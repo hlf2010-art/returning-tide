@@ -189,7 +189,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     if (on && !zm && people) { const g = new THREE.Group(); g.name = 'year-zhoumin'; scene.add(g); zm = person('zhoumin', ZM.x, Y0, ZM.z, 0.5, g); zm.group = g; zmBox = addDynamicCollider('npc'); }
     if (!zm) return;
     zm.group.visible = on;
-    Object.assign(zmBox, on ? { minX: ZM.x - 0.28, maxX: ZM.x + 0.28, minZ: ZM.z - 0.28, maxZ: ZM.z + 0.28 } : { minX: 1e6, maxX: 1e6, minZ: 1e6, maxZ: 1e6 });
+    Object.assign(zmBox, { minX: 1e6, maxX: 1e6, minZ: 1e6, maxZ: 1e6 });   // (not solid: a box of her own would hide her from the prompt's line of sight)
   }
 
   // ================= playing a day's scene =================
@@ -240,6 +240,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     if (!upstairs('lujiazui', { ...info, invite: t && t.def.cast.includes('wang') ? 'xuan-demo' : 'xuan-arm' })) return false;
     const sc = dests.scene; if (sc) { sc.done = true; sc.queue.length = 0; sc.ask = null; sc.wait = 0; }
     const box = document.getElementById('ride-sub'); if (box) box.classList.remove('on');
+    if (here) { if (veilOn()) hide(); else setTimeout(hide, 700); }                 // (coming straight from the flat or the 28th floor: that room is put away once it's dark)
     f32 = { t, started: false, at: performance.now() };
     return true;
   }

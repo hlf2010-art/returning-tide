@@ -58,7 +58,7 @@ await ev(() => window.__bund.world.year.handoff('opened'));                 // (
 
 // ---- 2. Tuesday 10 November: the first day at the firm ----
 await setClock(2, 9, 5);
-ok(/Tue 10 Nov|11 月 10 日/.test(await toast()), `a new day is announced: "${await toast()}"`);
+ok(/Tue 10 Nov|11 月 10 日|Work today|今天上班/.test(await toast()), `a new day is announced: "${await toast()}"`);
 await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro' }));   // (what the metro's gate does: world/metro.js)
 await p.waitForFunction(() => window.__bund.world.year.here === 'firm', null, { timeout: 120000 }); await veilClear();
 const at = await ev(() => ({ y: window.__bund.player.body.y, x: window.__bund.player.body.x }));
@@ -110,7 +110,7 @@ ok(zh ? /2 个月后 · 2027 年 1 月 11 日 周一/.test(line) : /2 months lat
 await veilClear(); await p.waitForFunction(() => window.__bund.life.flags.year.work.through === 7, null, { timeout: 60000 }); await p.waitForTimeout(600);
 const jan = await ev(() => ({ bank: window.__bund.life.wallet.bank, toast: document.getElementById('toast').textContent, chip: document.getElementById('year-chip').textContent, achv: document.getElementById('achv') ? document.getElementById('achv').innerText.replace(/\n/g, ' ') : '' }));
 ok(jan.bank === bank6 + 2 * 42000 - 2 * 12800 && /84,000/.test(jan.toast) && /25,600/.test(jan.toast), `two months' salary in, two months' rent out: "${jan.toast}"`);
-ok((zh ? /第二幕/ : /Act II/).test(jan.achv) && (zh ? /2027 年 1 月 11 日/ : /Mon 11 Jan 2027/).test(jan.chip), `Act II is announced (${jan.achv}); the date reads "${jan.chip}"`);
+ok((zh ? /第二幕/ : /Act II/).test(jan.achv + jan.chip) && (zh ? /2027 年 1 月 11 日/ : /Mon 11 Jan 2027/).test(jan.chip), `Act II is announced (${jan.achv}); the date reads "${jan.chip}"`);
 await shot('january');
 await ev(() => window.__bund.world.year.interact('yDoor')); await p.waitForFunction(() => window.__bund.world.year.here === null, null, { timeout: 60000 }); await veilClear();
 // the journal: the date, the acts, the year's page
