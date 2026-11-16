@@ -1,0 +1,20 @@
+/* The row outside the Peace Hotel (world/confrontation.js): two thin bars while it has come to blows
+   (how you are, how much wind you have), a line of keys for the first seconds, a flush at the edges
+   when you're hit, and a dark card for the hospital. Nothing else. */
+#fight-hud { position: fixed; inset: 0; pointer-events: none; z-index: 9; opacity: 0; transition: opacity 0.35s; }
+#fight-hud.on { opacity: 1; }
+#fight-hud .bars { position: absolute; left: 50%; bottom: 34px; width: min(240px, 40vw); transform: translateX(-50%); display: grid; gap: 5px; }
+#fight-hud .bar { height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.16); overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.35); }
+#fight-hud .bar i { display: block; height: 100%; width: 100%; transform-origin: left center; background: rgba(243, 234, 216, 0.92); transition: transform 0.12s linear, background 0.3s; }
+#fight-hud .bar.st { height: 2px; }
+#fight-hud .bar.st i { background: rgba(231, 185, 106, 0.85); }
+#fight-hud .bar.hp.low i { background: rgba(214, 84, 70, 0.95); }
+#fight-hud .bar.st.low i { background: rgba(150, 150, 150, 0.8); }
+#fight-hud .hint { position: absolute; left: 50%; bottom: 54px; transform: translateX(-50%); white-space: nowrap; font: 500 12px var(--ui, system-ui, sans-serif); letter-spacing: 0.03em; color: rgba(255, 255, 255, 0.82); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); opacity: 0; transition: opacity 0.6s; }
+#fight-hud .hint.on { opacity: 1; }
+#fight-hud .flash { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(120, 0, 0, 0) 45%, rgba(120, 8, 4, 0.75) 100%); opacity: 0; }
+#fight-hud .flash.block { background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0) 55%, rgba(230, 230, 230, 0.35) 100%); }
+#fight-dark { position: fixed; inset: 0; z-index: 11; background: #050607; opacity: 0; pointer-events: none; transition: opacity 0.9s; display: grid; place-items: start center; }
+#fight-dark.on { opacity: 0.96; }
+#fight-dark span { margin-top: 22vh; font: 500 15px var(--ui, system-ui, sans-serif); letter-spacing: 0.22em; color: rgba(243, 234, 216, 0.7); }
+@media (max-width: 760px) { #fight-hud .hint { font-size: 10.5px; white-space: normal; text-align: center; width: 92vw; } }

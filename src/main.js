@@ -106,6 +106,7 @@ const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the sto
 import { createSceneTalk } from './ui/sceneTalk.js';
 import { createYearWorld } from './world/yearWorld.js';   // the working year in the world: the firm's floor, the flat, the calendar on screen
 import { shortDate as yearDate, passLine as yearPassLine } from './world/career.js';
+import { createConfrontation } from './world/confrontation.js';   // a row outside the Peace Hotel, once (engine/fight.js)
 import { createDinner } from './world/dinner.js';
 import { createJournal } from './ui/journal.js';
 import { createCrowdView } from './world/crowdView.js';
@@ -325,6 +326,10 @@ async function boot() {
   world.hearts = createRomanceScenes({ scene, people, player, hud, audio, sceneTalk: world.sceneTalk, travel, jazz, dinner: world.dinner, getLife: () => life, save: () => saveLife(),
     isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active && !world.fieldTest.busy, enabled: !!people && HEARTS_ON });
   places.push(world.hearts);
+  // a late-evening row outside the Peace Hotel, once a game (world/confrontation.js, engine/fight.js): off for measurement tools unless ?fight
+  world.confront = createConfrontation({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, onMode: fightMode, getPlayerBody: () => world.playerBody,
+    isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active && !world.fieldTest.busy, enabled: !!people && (!params.has('q') || params.has('fight')) });
+  places.push(world.confront);
   // photo mode with the gimbal you built (world/photoMode.js): G
   world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
     getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
@@ -454,6 +459,11 @@ function talkables() {
 // photo mode: you stand still and frame; the mouse still looks
 function photoMode(m) {
   if (m === 'photo') { mode = 'photo'; player.enabled = false; player.lookOnly = true; player.clearInput(); hud.prompt(false); target = null; }
+  else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
+}
+// a confrontation (world/confrontation.js): he is in front of you; answers 1-4, then your hands (F R Space A D Q)
+function fightMode(m) {
+  if (m === 'fight') { if (phone.isOpen) phone.close(); mode = 'fight'; player.enabled = false; player.lookOnly = true; player.clearInput(); hud.prompt(false); target = null; }
   else { mode = 'play'; player.enabled = true; player.lookOnly = false; player.clearInput(); }
 }
 // at the workbench: the build panel has the keys
@@ -724,6 +734,7 @@ window.addEventListener('keydown', (e) => {
   if (mode === 'work') { workbook.key(k); e.preventDefault(); return; }                 // the notebook has the keys
   if (mode === 'map') { if (k === 'KeyM' || k === 'Escape') worldMap.close(); else worldMap.key(k); e.preventDefault(); return; }
   if (mode === 'drive') { if (world.driving.key(k)) e.preventDefault(); else if (k === 'Escape' && noLock) pause(); return; }
+  if (mode === 'fight') { if (world.confront.key(k)) e.preventDefault(); return; }      // the row has the keys: 1-4, then F R Space Q
   if (mode === 'ride') {
     if (k === 'KeyT' && world.rideFlow.inCar && world.rideFlow.ride && world.rideFlow.ride.driver && !talk.open) { const d = world.rideFlow.ride.driver; startTalk({ key: 'driver', persona: `driver:${d.id}`, x: camera.position.x, y: camera.position.y, z: camera.position.z }, { inRide: true }); e.preventDefault(); return; }
     if (world.rideFlow.key(k)) { e.preventDefault(); return; }
@@ -1126,6 +1137,7 @@ function updateTraffic(dt) {
     const canSpawnAt = (n) => { const dx = n.x - eye.x, dz = n.z - eye.z, d = Math.hypot(dx, dz); return d > 45 || (d > 14 && (dx * _d.x + dz * _d.z) / d < -0.2); };
     const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others(), ...world.moments.others(), ...world.fieldTest.others()];
     others.push(...world.hearts.others());
+    others.push(...world.confront.others());                                        // (the crowd walks round a row, too)
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : b, canSpawnAt, others });
     world.crowdView.update(dt, eye, { rain: weather.rain });
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
@@ -1266,6 +1278,7 @@ function frame(now) {
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
   world.dawn.update(mode === 'pause' ? 0 : dt, { dawn: hourState.dawn, eye: camera.position });   // tai chi on the promenade at dawn
   world.moments.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });
+  world.confront.update(mode === 'pause' ? 0 : dt, { mode });                          // the row outside the hotel: its rules, before your own step
   world.cruise.update(mode === 'pause' ? 0 : dt, player);                              // the boat moves, carrying whoever's aboard (before your own step)
   world.dumpling.update(mode === 'pause' ? 0 : dt, player.body);
   world.entrances.update(dt, { eye: camera.position, prompting: !!target, active: mode === 'play' || mode === 'ride' });
@@ -1276,6 +1289,7 @@ function frame(now) {
   const seated = mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat') || driving;
   { const st = player.stamina, show = mode === 'play' && (player.running || st.level < 0.995 || st.winded > 0); hud.stamina(st.level, show, st.exhausted || st.winded > 0); }
   if (world.playerBody) { world.playerBody.setVisible(!riding && !seated); if (!riding && !seated) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
+  world.confront.late(mode === 'pause' ? 0 : dt);                                      // ...and after it: its people, your hands, the camera's kicks
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0
   if (mode !== 'pause') {
