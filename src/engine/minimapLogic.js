@@ -5,6 +5,7 @@
 //     mode: 'play' | 'dialogue' | 'inspect' | 'pause' | 'entry' | 'pouch'
 //     moving: the player is walking; objective: a mission target exists; zone: a named area id;
 //     held: the player is holding the map key
+import { ljzZone, ljzState } from '../world/lujiazuiLayout.js';
 export const MAP = { idleHide: 5, zoneShow: 7, settle: 1.2 };
 
 export function createMinimapState() { return { shown: false, idle: 0, zone: null, zoneFor: 0, since: 0 }; }
@@ -27,6 +28,7 @@ export function updateMinimap(s, dt, { mode = 'play', moving = false, objective 
 
 // Coarse named areas, for "you've arrived somewhere"
 export function zoneAt(x, z, L) {
+  if (x > 480) return ljzZone(x, z, ljzState.y);                          // across the river: Lujiazui's own areas
   if (x >= L.wallX) return 'promenade';
   if (x < -480 && x > -530 && z > -212 && z < -207 && x > -530) { if ((x > -494.5 && x < -483) || (x > -528 && x < -516.5)) return 'metro'; }
   if (x < -496 && x > -514) return 'henan';

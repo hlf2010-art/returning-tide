@@ -178,6 +178,8 @@ export const covers = [
   { id: 'northbund-flat', x0: 30, x1: 80, z0: -1380, z1: -1330, top: 400 },     // places a DiDi takes you (world/destinations.js)
   { id: 'ifc-32f', x0: 660, x1: 720, z0: 30, z1: 90, top: 400 },
   { id: 'yangpu-makers', x0: 290, x1: 335, z0: -2630, z1: -2590, top: 400 },
+  { id: 'apple-pudong-store', x0: 773, x1: 803, z0: 216.8, z1: 246.8, top: -5.5 },   // Lujiazui (world/lujiazuiLayout.js APPLE): the store under the court
+  { id: 'apple-pudong-cylinder', x0: 784.5, x1: 791.5, z0: 228.3, z1: 235.3, top: 7.2 },   // and inside the glass cylinder
 ];   // (read at module load by materials.js and rain.js: everything with a roof is declared here)
 export const underCover = (x, z, y = 0) => covers.some((c) => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && y < c.top);
 

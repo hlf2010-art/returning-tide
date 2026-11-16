@@ -13,6 +13,9 @@ const C = {
   zebra: 'rgba(230,226,215,0.55)', tree: 'rgba(120,150,96,0.75)', text: 'rgba(236,230,216,0.78)',
 };
 
+// more ground, painted over the base by whoever has some (world/lujiazui.js: Pudong): ({ g, px, pz, P, bounds }) => void
+export const mapExtras = [];
+const FAR = { X0: 560, X1: 1330, Z0: -70, Z1: 480 };   // the minimap's second sheet: Lujiazui
 // the ground, painted once: bounds and scale (the full map screen, ui/worldMap.js, paints a wider one)
 export function paint(bounds = { X0, X1, Z0, Z1 }, P = PPM) {
   const { X0: x0b, X1: x1b, Z0: z0b, Z1: z1b } = bounds;
@@ -47,6 +50,7 @@ export function paint(bounds = { X0, X1, Z0, Z1 }, P = PPM) {
   rect(DUMPLING.x0, DUMPLING.x1, DUMPLING.z0, DUMPLING.z1, '#3a2a28');                    // the shengjian shop
   g.fillStyle = C.tree;
   for (const t of [...streetTrees, ...planterIslands.map((p) => ({ x: (p.x0 + p.x1) / 2, z: (p.z0 + p.z1) / 2 }))]) { g.beginPath(); g.arc(px(t.x), pz(t.z), 2.2 * P, 0, Math.PI * 2); g.fill(); }
+  for (const extra of mapExtras) extra({ g, px, pz, P, bounds });
   return { c, px, pz };
 }
 
@@ -56,12 +60,13 @@ export function createMinimap(el) {
   el.appendChild(canvas);
   const label = document.createElement('div'); label.className = 'mm-area'; el.appendChild(label);
   const g = canvas.getContext('2d');
-  let base = null, lastArea = '';
+  let base = null, baseFar = null, lastArea = '';
   onLang(() => { lastArea = ''; });
 
   // state: { x, z, yaw, objective: {x, z, label}|null, people: [{x, z}], area }
   function draw(s) {
     if (!base) base = paint();
+    const sheet = s.x > 500 ? (baseFar || (baseFar = paint(FAR))) : base;   // across the river: Lujiazui's own sheet
     const k = PPM * VIEW;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, SIZE, SIZE);
@@ -70,7 +75,7 @@ export function createMinimap(el) {
     // heading-up: rotate the world by the player's yaw about the centre. The view looks along
     // (-sin yaw, -cos yaw) in x/z; on the map +z is down, so "forward" must end up pointing up.
     g.translate(R, R); g.rotate(s.yaw); g.scale(VIEW, VIEW);
-    g.drawImage(base.c, -base.px(s.x), -base.pz(s.z));
+    g.drawImage(sheet.c, -sheet.px(s.x), -sheet.pz(s.z));
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     // live marks, placed by the same transform
     const toScreen = (x, z) => {

@@ -342,6 +342,8 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
   }
   function leave() {
     const id = here, P = PLACES[id], l = getLife(), d = dest(id);
+    // (a place with its own street below takes the lift from here: world/lujiazui.js sets exitTo)
+    if (api.exitTo && api.exitTo(id, () => { hide(); cur = null; groups[id].visible = false; here = null; })) return;
     const stay = cur && cur.done ? P.stay : 20, back = fare(d, (l.clock.minute + stay) % 1440);
     hide(); cur = null;
     travel(async () => {
@@ -360,7 +362,8 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     if (here === 'lujiazui') t.push({ id: 'dArm', x: ARM.x, y: ARM.y + 0.3, z: ARM.z, reach: 2.6 });
     return t;
   };
-  return {
+  const api = {
+    exitTo: null,
     lights, arrive, leave, has: (id) => !!PLACES[id],
     get here() { return here; },
     get scene() { return cur; },
@@ -368,6 +371,7 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     talkables() { if (!here || (cur && !cur.done)) return []; return Object.entries(ppl).filter(([, p]) => groups[here].children.includes(p.root)).map(([k, p]) => ({ key: k, persona: k, x: p.root.position.x, y: p.root.position.y + 1.62, z: p.root.position.z, hold() {} })); },
     candidates() { return targets().map((t) => ({ ...t, cone: 0.6 })); },
     prompt(id) {
+      if (id === 'dLift' && api.exitTo && here === 'lujiazui') return { target: T('电梯', 'Lift'), action: T('下楼，到一楼大堂', 'Down to the lobby') };
       if (id === 'dLift') return { target: T('电梯', 'Lift'), action: cur && !cur.done ? T('先走了（打车回外滩）', 'Leave now (a car back to the Bund)') : T('下楼，打车回外滩', 'Down, and a car back to the Bund') };
       if (id === 'dArm') return { target: T('机械臂原型', 'The arm prototype'), action: T('凑近看', 'Look closer') };
       return null;
@@ -400,4 +404,5 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
       }
     },
   };
+  return api;
 }

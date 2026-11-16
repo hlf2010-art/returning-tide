@@ -77,6 +77,7 @@ export const APPLE = {
   x: APX, z: APZ, entry: 328, rPlaza: 17, rOut: 21.5, rail: 21.9, yPlaza: -5.2, yStore: -10, rCyl: 5, rCore: 1.7, cylH: 12.5, storeR: 15,
   stairs: { top: 10, foot: 100, land: 113, open: [101, 111.5] },          // the two curved stairs round the court: degrees either side of the entry
   spiral: { start: 25, total: 400, drop: 4.8, r0: 1.95, r1: 4.35 }, landing: [-40, 25], door: 13.5, foot: [57, 88],
+  tables: [[140, 10], [185, 10.5], [230, 10], [275, 10.5], [320, 10], [5, 10.5], [112, 10.5]].map(([ang, r]) => ({ ang, r })),   // the store's tables (each along a radius)
 };
 export const appleAng = (x, z) => wrap180(bearingOf(x, z, APPLE) - APPLE.entry);
 export const applePt = (ang, r) => polar(APPLE.entry + ang, r, APPLE);
@@ -241,7 +242,7 @@ function clampR(p, o, lo, hi) {
 function setAppleAng(p, ang) { const r = Math.hypot(p.x - APPLE.x, p.z - APPLE.z), [x, z] = applePt(ang, r); p.x = x; p.z = z; }
 
 // what the body is on (a bridge stair, down in the Apple court), remembered from step to step
-const S = { x: NaN, z: NaN, ramp: -1, pit: false };
+const S = { x: NaN, z: NaN, y: 0, ramp: -1, pit: false };
 export const ljzState = S;
 function infer(b) {
   S.ramp = -1; S.pit = false;
@@ -258,6 +259,7 @@ function keepPit(b) {
       if (ang > A.foot[1] || ang < -120) setAppleAng(b, A.foot[1]);
     } else if (ra < A.rCyl + RAD + 0.15 && !(ang >= A.foot[0] && ang <= A.foot[1])) clampR(b, A, A.rCyl + RAD + 0.15, 99);
     clampR(b, A, 0, A.storeR - RAD);
+    for (const t of A.tables) for (const k of [-1, 0, 1]) { const [x, z] = applePt(t.ang, t.r + k * 1.05), dx = b.x - x, dz = b.z - z, d = Math.hypot(dx, dz); if (d < 0.75 + RAD && d > 1e-6) { b.x = x + dx / d * (0.75 + RAD); b.z = z + dz / d * (0.75 + RAD); } }
     return;
   }
   if (ra < A.rCyl) {                                          // ---- inside the glass cylinder
@@ -308,7 +310,7 @@ export function ljzKeep(b) {
   if (!(b.x > 520) || b.y > 60) { S.x = NaN; return; }
   if (!(Math.hypot(b.x - S.x, b.z - S.z) < 2.5)) infer(b);     // arrived here (or teleported): where are we?
   step(b);
-  S.x = b.x; S.z = b.z;
+  S.x = b.x; S.z = b.z; S.y = b.y;
 }
 function step(b) {
   const A = APPLE, ra = Math.hypot(b.x - A.x, b.z - A.z);
