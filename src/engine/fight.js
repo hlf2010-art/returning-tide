@@ -71,12 +71,12 @@ export function disputeStep(D, move) {
 // ---------------------------------------------------------------------------------------------
 export const FIGHT = {
   // you
-  jab: { hitAt: 0.10, total: 0.38, dmg: 7, reach: 1.3, cost: 9 },
-  cross: { hitAt: 0.26, total: 0.72, dmg: 15, reach: 1.25, cost: 18 },
+  jab: { hitAt: 0.10, total: 0.38, dmg: 7, reach: 1.2, cost: 9 },
+  cross: { hitAt: 0.26, total: 0.72, dmg: 15, reach: 1.15, cost: 18 },
   dodge: { total: 0.42, safe: [0.03, 0.34], dist: 0.75, cost: 12 },
   cone: 0.5,                 // rad: how squarely you must face him for a punch to land
   buffer: 0.22,              // s: a press a moment early still counts (never more than one queued)
-  speed: 1.5, guardSpeed: 0.8, awaySpeed: 2.0, minDist: 0.72,
+  speed: 1.5, guardSpeed: 0.8, awaySpeed: 2.0, minDist: 0.7,
   regen: 16, guardRegen: 6, regenDelay: 0.45,
   block: 0.2, blockCost: 0.6, guardBreakAt: 8,
   hurt: 0.3, stagger: 0.7,
@@ -85,10 +85,10 @@ export const FIGHT = {
   away: { dist: 3.2, hold: 0.9 },
   // him: a heavy, drunk man. Slow hands, long recoveries, a short temper and not much wind.
   him: {
-    speed: 1.15, backSpeed: 1.5, yieldSpeed: 0.55, range: 1.05, turn: 2.4, turnWind: 1.0,
-    haymaker: { wind: 0.62, dmg: 27, reach: 1.4, cone: 0.6, recover: 0.85, cost: 26, push: 0.3 },
-    shove: { wind: 0.42, dmg: 6, reach: 1.25, cone: 0.5, recover: 0.5, cost: 14, push: 0.9 },
-    straight: { wind: 0.36, dmg: 13, reach: 1.3, cone: 0.42, recover: 0.5, cost: 14, push: 0.15 },
+    speed: 1.15, backSpeed: 1.5, yieldSpeed: 0.55, range: 0.95, turn: 2.4, turnWind: 1.0,
+    haymaker: { wind: 0.62, dmg: 27, reach: 1.3, cone: 0.6, recover: 0.85, cost: 26, push: 0.3 },
+    shove: { wind: 0.42, dmg: 6, reach: 1.15, cone: 0.5, recover: 0.5, cost: 14, push: 0.9 },
+    straight: { wind: 0.36, dmg: 13, reach: 1.2, cone: 0.42, recover: 0.5, cost: 14, push: 0.15 },
     strike: 0.14, missExtra: 0.3, flinch: 0.32, stagger: 0.9, backoff: 1.7, gassed: 2.3, cover: 0.6,
     regen: 4, breath: 35, stopBefore: 0.7, yieldAt: 35, nerve: 3, whiffs: 4,
   },
@@ -106,7 +106,7 @@ export function createFight({ started = 'him', called = false, rnd = Math.random
     t: 0, over: null, how: null, started, called, rnd, canStand, exchanges: 0, cheap: 0,
     you: { x: 0, z: 0, h: 0, hp: 100, st: 100, act: 'ready', at: 0, dur: 0, hand: 'L', resolved: true, guard: false, dir: 0, buf: null, bufT: 0, rest: 1, chain: 0, counterT: 0, awayT: 0,
       thrown: 0, landed: 0, heavy: 0, took: 0, blocked: 0, slipped: 0, ...you },
-    him: { x: 0, z: 1.6, h: Math.PI, hp: 100, st: 100, nerve: FIGHT.him.nerve, act: 'close', at: 0, dur: 0, attack: null, wait: started === 'him' ? 0.35 : 0.9, aim: 0, flinches: 0, whiffs: 0, quick: false, yielding: false,
+    him: { x: 0, z: 1.5, h: Math.PI, hp: 100, st: 100, nerve: FIGHT.him.nerve, act: 'close', at: 0, dur: 0, attack: null, wait: started === 'him' ? 0.35 : 0.9, aim: 0, flinches: 0, whiffs: 0, quick: false, yielding: false,
       swings: 0, ...him },
   };
   if (started === 'you') F.you.buf = 'jab', F.you.bufT = 1;      // the first punch is yours, already thrown
@@ -199,7 +199,7 @@ function sub(F, h, inp, ev) {
       if (H.cover > 0) H.cover -= h;
       if (d > KH.range) { const s = Math.min(KH.speed * h, d - KH.range); moveTo(F, H, H.x + Math.sin(hb) * s, H.z + Math.cos(hb) * s); }
       if (d <= KH.range + 0.35 && (H.wait -= h) <= 0) {
-        const r = F.rnd(), name = H.quick ? 'straight' : d < 0.9 || (Y.guard && r < 0.45) ? 'shove' : r < 0.62 ? 'haymaker' : r < 0.82 ? 'shove' : 'straight';
+        const r = F.rnd(), name = H.quick ? 'straight' : d < 0.8 || (Y.guard && r < 0.45) ? 'shove' : r < 0.62 ? 'haymaker' : r < 0.82 ? 'shove' : 'straight';
         const A = KH[name]; H.firm = H.quick; H.quick = false;                        // (the short one he comes back with can't be stopped)
         if (H.st < A.cost) { H.nerve -= 1; H.yielding = H.nerve <= 0 || H.hp <= KH.yieldAt; himTo(F, 'backoff', KH.gassed, ev, H.yielding ? 'yield' : 'gassed'); H.st = Math.min(100, H.st + KH.breath); break; }
         H.st -= A.cost; H.attack = name; H.swings += 1; himTo(F, 'windup', A.wind, ev); ev.push({ type: 'tell', attack: name, dur: A.wind });
@@ -471,7 +471,7 @@ export function morningMessages(R) {
     say('wuhu', dirty ? 'xuan' : 'zhixia', dirty ? '你们公司的人刷到怎么办。先动手的是你，视频里看得清清楚楚。' : '评论区都在说是那个人先动的手。');
   } else if (R.filmed && R.outcome === 'stood') { say('wuhu', 'zhixia', '[视频] 这个被推了都不还手的，是不是纪白'); say('wuhu', 'momo', '是他！！评论区说“情绪稳定天花板”哈哈哈哈'); }
   if (R.level >= 2) say('ruoan', 'ruoan', '你脸怎么了？谁告诉我的不重要。冰敷，别热敷。');
-  if (R.police) say('police110', 'police110', { statement: '【警情回执】您报告的南京东路纠纷警情已处置完毕，感谢您的配合。', warning: '【警情回执】南京东路纠纷已调解结案。请遵守法律，理性处理矛盾。', fine: '【行政处罚告知】因殴打他人，依据《治安管理处罚法》对您处以罚款，款项已缴纳。该记录将依法留存。' }[R.police.verdict], { title: '110 警情回执', kind: 'service' });
+  if (R.police) say('110', '110', { statement: '【警情回执】您报告的南京东路纠纷警情已处置完毕，感谢您的配合。', warning: '【警情回执】南京东路纠纷已调解结案。请遵守法律，理性处理矛盾。', fine: '【行政处罚告知】因殴打他人，依据《治安管理处罚法》对您处以罚款，款项已缴纳。该记录将依法留存。' }[R.police.verdict], { title: '110', kind: 'service' });
   // whoever was with you (unless the system that owns her has said it will write itself: R.companionWrites === false)
   if (R.companion && R.companionWrites !== false) {
     const id = R.companion.id, t = R.companion.as === 'target';
