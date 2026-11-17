@@ -584,8 +584,7 @@ html[lang="zh-CN"] #entry .hero-sub .alt-zh, html:not([lang="zh-CN"]) #entry .he
 /* the card under the title, centred over the dusk sky between the title and the skyline */
 #entry .card { position: relative; left: auto; bottom: auto; margin-top: clamp(18px, 4.5vh, 52px); max-width: min(36rem, 100%); padding: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; }
 #entry .card::before { content: ''; position: absolute; inset: -40px -90px; z-index: -1; background: radial-gradient(ellipse at 50% 45%, rgba(6,9,18,0.62) 0%, rgba(6,9,18,0.35) 45%, rgba(6,9,18,0) 72%); pointer-events: none; }
-#entry .card .kicker { justify-content: center; }
-#entry .chapter { margin: 14px 0 0; }
+#entry .chapter { margin: 0; }
 #entry .premise { margin: 12px auto 0; max-width: 33rem; text-shadow: 0 1px 12px rgba(4,7,14,0.8); }
 #entry .actions { justify-content: center; margin-top: 26px; }
 #entry.loading .card { visibility: hidden; }
