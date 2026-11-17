@@ -10,7 +10,8 @@
 //   4. written as one GLB with the RB hierarchy (names, structure) so people.js and playerBody.js take it
 import { Document, Accessor } from '@gltf-transform/core';
 import * as THREE from 'three';
-import { io, arr, newMeshPositions } from './common.mjs';
+import { io, arr, newMeshPositions, surfaceSamples, allIndices } from './common.mjs';
+import { shoulderEstimate } from './shoulder.mjs';
 
 const [,, RB_FILE, NEW_FILE, OUT] = process.argv;
 const A = await io.read(RB_FILE), B = await io.read(NEW_FILE);
@@ -54,24 +55,62 @@ console.log('tips', tip.L.toArray().map((v) => v.toFixed(1)), 'rb', rbTip.L.toAr
 const fit = Bm.map((m) => m.clone());                                           // fitted bind matrices (mesh space)
 const descendants = (root) => { const out = []; const rec = (n) => { if (jIndex.has(n)) out.push(jIndex.get(n)); n.listChildren().forEach(rec); }; rec(joints[root]); return out; };
 // turn + scale a chain about its first joint so `from` lands on `to`: positions scaled, frames only turned
-function fitChain(rootName, from, to) {
-  const r = byName[rootName], pivot = pos(r), a = from.clone().sub(pivot), b = to.clone().sub(pivot), k = b.length() / a.length();
+function fitChain(rootName, from, to, pivotAt = null) {
+  const r = byName[rootName], pivot = pivotAt || pos(r), a = from.clone().sub(pivot), b = to.clone().sub(pivot), k = b.length() / a.length();
   const q = new THREE.Quaternion().setFromUnitVectors(a.clone().normalize(), b.clone().normalize()), R = new THREE.Matrix4().makeRotationFromQuaternion(q);
   for (const i of descendants(r)) { const p = new THREE.Vector3().setFromMatrixPosition(fit[i]).sub(pivot).applyQuaternion(q).multiplyScalar(k).add(pivot); const rot = new THREE.Matrix4().extractRotation(fit[i]); fit[i] = R.clone().multiply(rot).setPosition(p); }
   console.log(rootName, 'scale', k.toFixed(3), 'turn', (2 * Math.acos(Math.min(1, Math.abs(q.w))) * 180 / Math.PI).toFixed(1) + '°');
 }
 // the spine, neck and head: front/back to his middle (his torso's own centre line, a little toward the back)
 const shiftY = (name, dy) => { for (const i of descendants(byName[name])) { const p = new THREE.Vector3().setFromMatrixPosition(fit[i]); p.y += dy; fit[i].setPosition(p); } };
+const rbS = surfaceSamples(rbP, allIndices(rbMesh), 14);
+const depthMid = (Q, z0, z1, w) => { let lo = 1e9, hi = -1e9; for (let i = 0; i < Q.length / 3; i++) { const z = Q[i * 3 + 2]; if (z > z0 && z < z1 && Math.abs(Q[i * 3]) < w) { lo = Math.min(lo, Q[i * 3 + 1]); hi = Math.max(hi, Q[i * 3 + 1]); } } return (lo + hi) / 2; };
+const slabs = [[86, 92, 6], [105, 112, 6], [125, 132, 6], [150, 155, 4]];
+const dY = slabs.reduce((s, [a, b, w]) => s + depthMid(P, a, b, w) - depthMid(rbS, a, b, w), 0) / slabs.length;
+for (let i = 1; i < P.length; i += 3) P[i] -= dY;                                 // his body moved front/back onto the RB's
+console.log('front/back offset', dY.toFixed(2), 'cm (removed)');
+if (false) {
 const torsoY = midY(95, 125), rbTorsoY = (() => { const a = []; for (let i = 0; i < used.length; i++) if (used[i] && Math.abs(rbP[i * 3]) < 9 && rbP[i * 3 + 2] > 95 && rbP[i * 3 + 2] < 125) a.push(rbP[i * 3 + 1]); return a.reduce((s, v) => s + v, 0) / a.length; })();
 shiftY('Bip01_Spine', torsoY - rbTorsoY);
 const headY = midY(160, 175, 8), rbHeadY = (() => { const a = []; for (let i = 0; i < used.length; i++) if (used[i] && Math.abs(rbP[i * 3]) < 8 && rbP[i * 3 + 2] > 160 && rbP[i * 3 + 2] < 175) a.push(rbP[i * 3 + 1]); return a.reduce((s, v) => s + v, 0) / a.length; })();
 shiftY('Bip01_Neck', headY - rbHeadY - (torsoY - rbTorsoY));
-console.log('torso y', torsoY.toFixed(1), 'rb', rbTorsoY.toFixed(1), '| head y', headY.toFixed(1), 'rb', rbHeadY.toFixed(1));
-for (const s of ['L', 'R']) { const up = byName[`Bip01_${s}_UpperArm`]; const sh = new THREE.Vector3().setFromMatrixPosition(fit[up]); const from = rbTip[s].clone().sub(pos(up)).add(sh); fitChain(`Bip01_${s}_UpperArm`, from, tip[s]); }
+}
+// his shoulders: the armpit estimate, calibrated on the RB body (whose joint is known)
+// (on the RB body the same estimate lands ~1 cm out and ~1 cm above its true joint: its sparse mesh makes a live
+// calibration noisy, so the offset is fixed)
+const estNew = shoulderEstimate(P), rbUp = pos(byName.Bip01_L_UpperArm);
+const sh = { x: estNew.armpit.x - 1.0, z: estNew.armpit.z - 1.0 };
+console.log('shoulder joint', sh.x.toFixed(1), sh.z.toFixed(1), '(RB', rbUp.x.toFixed(1), rbUp.z.toFixed(1) + ')');
+for (const s of ['L', 'R']) { const i = byName[`Bip01_${s}_UpperArm`], p = pos(i), to = new THREE.Vector3(s === 'L' ? sh.x : -sh.x, p.y, sh.z), d = to.clone().sub(p); for (const k of descendants(i)) { const q = new THREE.Vector3().setFromMatrixPosition(fit[k]).add(d); fit[k].setPosition(q); } }
+for (const s of ['L', 'R']) { const up = byName[`Bip01_${s}_UpperArm`]; const shp = new THREE.Vector3().setFromMatrixPosition(fit[up]); const from = rbTip[s].clone().sub(pos(up)).add(shp); fitChain(`Bip01_${s}_UpperArm`, from, tip[s], shp); }
 for (const s of ['L', 'R']) fitChain(`Bip01_${s}_Thigh`, rbAnkle[s], ankle[s]);
+// the palms: turn each forearm (and the hand on it) about its own axis so the bones' hand faces the way his
+// mesh's hand does. His palm's normal: the flattest direction of the points around the palm (PCA)
+function flatNormal(points) {
+  const c = points.reduce((s, v) => s.add(v), new THREE.Vector3()).multiplyScalar(1 / points.length), C = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  for (const p of points) { const d = [p.x - c.x, p.y - c.y, p.z - c.z]; for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) C[a][b] += d[a] * d[b]; }
+  // smallest eigenvector: power iteration on (tr·I − C)
+  const tr = C[0][0] + C[1][1] + C[2][2]; let v = new THREE.Vector3(1, 0.3, 0.2).normalize();
+  for (let it = 0; it < 80; it++) { const w = new THREE.Vector3(tr * v.x - (C[0][0] * v.x + C[0][1] * v.y + C[0][2] * v.z), tr * v.y - (C[1][0] * v.x + C[1][1] * v.y + C[1][2] * v.z), tr * v.z - (C[2][0] * v.x + C[2][1] * v.y + C[2][2] * v.z)); v = w.normalize(); }
+  return v;
+}
+const Kpre = Bm.map((_, i) => fit[i].clone().multiply(IBM[i]));
+for (const s of ['L', 'R']) {
+  const fo = byName[`Bip01_${s}_Forearm`], ha = byName[`Bip01_${s}_Hand`], f0 = new THREE.Vector3().setFromMatrixPosition(fit[fo]), h0 = new THREE.Vector3().setFromMatrixPosition(fit[ha]);
+  const axis = h0.clone().sub(f0).normalize(), palm = h0.clone().addScaledVector(axis, 6);
+  const mine = []; for (let i = 0; i < nV; i++) { const v = new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]); if (v.distanceTo(palm) < 5.5) mine.push(v); }
+  const theirs = []; for (let i = 0; i < used.length; i++) { if (!used[i]) continue; const v = new THREE.Vector3(rbP[i * 3], rbP[i * 3 + 1], rbP[i * 3 + 2]), o = new THREE.Vector3(); for (let k = 0; k < 4; k++) { const wk = rbW[i * 4 + k]; if (wk) o.addScaledVector(v.clone().applyMatrix4(Kpre[rbJ[i * 4 + k]]), wk); } if (o.distanceTo(palm) < 5.5) theirs.push(o); }
+  if (mine.length < 20 || theirs.length < 8) { console.log(s, 'palm: too few points', mine.length, theirs.length); continue; }
+  const flat = (n) => n.clone().addScaledVector(axis, -n.dot(axis)).normalize(), a = flat(flatNormal(theirs)), b = flat(flatNormal(mine));
+  let ang = Math.atan2(a.clone().cross(b).dot(axis), a.dot(b)); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
+  const q = new THREE.Quaternion().setFromAxisAngle(axis, ang), R = new THREE.Matrix4().makeRotationFromQuaternion(q);
+  for (const i of descendants(fo)) { const p = new THREE.Vector3().setFromMatrixPosition(fit[i]).sub(f0).applyQuaternion(q).add(f0), rot = new THREE.Matrix4().extractRotation(fit[i]); fit[i] = R.clone().multiply(rot).setPosition(p); }
+  console.log(s, 'palm roll', (ang * 180 / Math.PI).toFixed(1) + '°', `(${mine.length} / ${theirs.length} points)`);
+}
 
 // ---------- weights ----------
-const remap = (name) => { const m = /^Bip01_([LR])_Finger/.exec(name); if (m) return byName[`Bip01_${m[1]}_Hand`]; if (!/^Bip01_([LR]_|Pelvis|Spine|Neck|Head$|Footsteps)/.test(name) && name !== 'Bip01') return byName.Bip01_Head; return byName[name]; };
+const FINGERS = process.env.FINGERS !== '0';                    // (fingers keep their own bones; FINGERS=0 ties them to the hand)
+const remap = (name) => { const m = /^Bip01_([LR])_Finger/.exec(name); if (m && !FINGERS) return byName[`Bip01_${m[1]}_Hand`]; if (m) return byName[name]; if (!/^Bip01_([LR]_|Pelvis|Spine|Neck|Head$|Footsteps)/.test(name) && name !== 'Bip01') return byName.Bip01_Head; return byName[name]; };
 const REMAP = joints.map((j) => remap(j.getName()));
 const K = Bm.map((_, i) => fit[i].clone().multiply(IBM[i]));                   // RB bind -> fitted pose
 const src = [];                                                                   // the RB body, deformed into the fitted pose
@@ -122,6 +161,16 @@ for (let it = 0; it < 2; it++) {
 const JW = new Uint16Array(nV * 4), WW = new Float32Array(nV * 4);
 for (let i = 0; i < nV; i++) { const top = Object.entries(W[i]).sort((a, b) => b[1] - a[1]).slice(0, 4); const s = top.reduce((t, [, x]) => t + x, 0) || 1; top.forEach(([b, x], k) => { JW[i * 4 + k] = +b; WW[i * 4 + k] = x / s; }); }
 
+// ---------- arms a little closer in: the RB clips hold the arms out for a bulky blazer; with the bind turned
+// outward by ADDUCT degrees (after the weights, which need the true fit), every pose brings his arms in by as much
+const ADDUCT = +(process.env.ADDUCT ?? 4) * Math.PI / 180;
+for (const s of ['L', 'R']) {
+  const up = byName[`Bip01_${s}_UpperArm`], pivot = new THREE.Vector3().setFromMatrixPosition(fit[up]), hand = new THREE.Vector3().setFromMatrixPosition(fit[byName[`Bip01_${s}_Hand`]]);
+  let q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ADDUCT);
+  if (Math.abs(hand.clone().sub(pivot).applyQuaternion(q).add(pivot).x) < Math.abs(hand.x)) q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -ADDUCT);
+  const R = new THREE.Matrix4().makeRotationFromQuaternion(q);
+  for (const i of descendants(up)) { const p = new THREE.Vector3().setFromMatrixPosition(fit[i]).sub(pivot).applyQuaternion(q).add(pivot), rot = new THREE.Matrix4().extractRotation(fit[i]); fit[i] = R.clone().multiply(rot).setPosition(p); }
+}
 // ---------- write: B's mesh + material, with the RB hierarchy and the fitted skin ----------
 const doc = B, R = doc.getRoot(), buf = R.listBuffers()[0];
 const scene = R.listScenes()[0]; for (const c of scene.listChildren()) scene.removeChild(c);

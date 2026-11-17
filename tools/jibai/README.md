@@ -6,7 +6,12 @@
 1. `simplify.mjs IN.glb OUT.glb 0.05`: weld, simplify (meshoptimizer: ~1M → 50k triangles), textures to 2048 px JPEG.
 2. `rig.mjs RB.glb SIMPLE.glb OUT.glb`: the Rocketbox Biped skeleton of the old player model (`RB.glb`, e.g.
    `git show 53515bd:public/people/player.glb`) fitted to him (arm chains turned and scaled to his fingertips, legs to
-   his ankles, spine and head to his body's middle, 182 cm so the root motion keeps his feet on the ground); weights
+   his ankles, 182 cm so the root motion keeps his feet on the ground). His body is first moved front/back onto the
+   Rocketbox body (slice depth midpoints); his shoulder joints are measured from his armpits (`shoulder.mjs`: the top of
+   the arm where it separates from the torso, 1 cm in and down), and each forearm is turned about its axis so the
+   hand bone faces the way his palm does (the flattest direction of the points around the palm), or he stands with
+   his palms forward. Last, after the weights, each arm's bind is turned 4° outward (`ADDUCT`), so every clip (made for
+   a bulkier body in a blazer) brings his arms that much closer to his sides. weights
    transferred from the Rocketbox body deformed into that pose (nearest vertices, normals agreeing; fingers to the hand,
    face to the head), smoothed; his neck and face skin on the head bone, so first person hides it with the head.
    Same bone names and hierarchy, so every clip in `anim-player.glb` / `anim-m.glb` plays on him unchanged.
