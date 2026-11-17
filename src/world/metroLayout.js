@@ -105,6 +105,8 @@ function station(id, name, F, ways) {
   box(ESC.aT - ESC.plate, ESC.aT + 8.4, -ESC.well, ESC.well, 'under-stair', py0, Y.P + 1.0);
   for (const [a, p] of COLS.plat) box(a - 0.36, a + 0.36, p - 0.36, p + 0.36, 'column', py0, py1);
   ob.push(...ways.obstacles);
+  // the shutters at the ways in, rolled down after the last train (world/metro.js says when)
+  for (const [a0, a1, p0, p1] of ways.shutters || []) box(a0, a1, p0, p1, 'shutter', cy0, cy1, { shut: true });
   const xs = [], zs = [];
   for (const r of regions) for (const [a, p] of [[r.a0, r.p0], [r.a1, r.p1], [r.a0, r.p1], [r.a1, r.p0]]) { const [x, z] = F.toW(a, p); xs.push(x); zs.push(z); }
   return { id, name, F, regions, floors, ob, ways, box: { x0: Math.min(...xs) - 2, x1: Math.max(...xs) + 2, z0: Math.min(...zs) - 2, z1: Math.max(...zs) + 2 } };
@@ -122,7 +124,7 @@ const enrWays = (() => {
   }
   // between the two landings: the concourse reaches up to them under Henan Road
   regions.push(R(-27.4, -3.6, -13.6, -9.4, 'C', ...BAND.C));
-  return { regions, obstacles: [], exits, passages: [] };
+  return { regions, obstacles: [], exits, passages: [], shutters: [[-27.25, -26.95, -13.6, -10], [-4.05, -3.75, -13.6, -10]] };
 })();
 export const ENR = station('enr', { zh: '南京东路', en: 'East Nanjing Road', py: 'Nanjing Donglu' }, ENR_F, enrWays);
 
@@ -143,7 +145,9 @@ const ljzWays = (() => {
     exits.push({ exit: W.exit, land: [at + W.run + 0.6, pt], up: -1, name: W.name });
   }
   const ex1 = [CONC.a0 + 0.9, 0];                       // Exit 1's long passage leaves from the concourse's west end
-  return { regions, obstacles: [], exits, passages: [{ exit: 1, at: ex1, name: W1.name, well: W1 }] };
+  const shutters = [W6, W4].map((W) => { const [at, pt] = LJZ_F.toL(W.top[0], W.top[1]); return [at + W.len + 0.05, at + W.len + 0.35, pt - W.hw, pt + W.hw]; });
+  shutters.push([CONC.a0 - 0.35, CONC.a0 - 0.05, -1.6, 1.6]);                // and the Exit 1 passage's door
+  return { regions, obstacles: [], exits, passages: [{ exit: 1, at: ex1, name: W1.name, well: W1 }], shutters };
 })();
 export const LJZS = station('ljz', { zh: '陆家嘴', en: 'Lujiazui', py: 'Lujiazui' }, LJZ_F, ljzWays);
 export const STATIONS = [ENR, LJZS];
@@ -154,6 +158,7 @@ export const HOOK = {
   gateOpen: (st, i) => false,              // a gate's flaps are open
   doorOpen: (st, side, i) => false,        // a screen door is open (side +1 eastbound track, -1 westbound)
   mustScreen: (st) => false,               // you're carrying a bag that hasn't been through the X-ray here
+  closed: (st) => false,                   // the station is shut for the night (its shutters are down)
   inTrain: (b) => false,                   // you're inside a train car (its own rules apply)
   onHit: null,                             // (station, obstacle) you walked into something that talks back
 };
@@ -202,6 +207,7 @@ export function metroKeep(b) {
     if (b.y < o.y0 || b.y > o.y1) continue;
     if (o.gate != null && HOOK.gateOpen(S, o.gate)) continue;
     if (o.hold && !HOOK.mustScreen(S)) continue;
+    if (o.shut && !HOOK.closed(S)) continue;
     const ca = Math.max(o.a0, Math.min(o.a1, a)), cp = Math.max(o.p0, Math.min(o.p1, p)), da = a - ca, dp = p - cp, d2 = da * da + dp * dp;
     if (d2 >= RAD * RAD) continue;
     if (d2 > 1e-9) { const d = Math.sqrt(d2); a = ca + da / d * RAD; p = cp + dp / d * RAD; }

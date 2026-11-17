@@ -10,7 +10,7 @@ const url = process.env.URL || 'http://localhost:4181/', out = `${process.env.OU
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const p = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 2 });
 p.on('pageerror', (e) => console.log('ERR', e.message));
-await p.goto(`${url}?q=4&nolock&fresh&legacy&lang=${lang}&life=0&hour=10:00`, { waitUntil: 'load' });
+await p.goto(`${url}?q=4&nolock&fresh&legacy&lang=${lang}&life=0&hour=${process.env.HOUR || '10:00'}`, { waitUntil: 'load' });
 await p.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', null, { timeout: 300000 });
 const ev = (f, a) => p.evaluate(f, a);
 await ev(() => { window.__bund.start(); window.__bund.dtMax = 0.25; const s = document.createElement('style'); s.textContent = '#dev,#tip,#hud .objective,#minimap{display:none!important}'; document.head.appendChild(s); });
@@ -23,7 +23,8 @@ const clockTo = (abs) => ev((abs) => { const l = window.__bund.life; l.clock.day
 const shot = async (name, wait = 3500) => { if (only.length && !only.includes(name)) return; await p.waitForTimeout(wait); await p.screenshot({ path: `${out}metro-${name}.png`, timeout: 300000 }); console.log('shot', name); };
 const day = await ev(() => window.__bund.life.clock.day);
 // a train standing at a station, eastbound: the minute it stops (+ s seconds of its dwell)
-const standing = (st, dir, s = 8) => { const n = nextStop(trainClock(day * 1440 + 10 * 60), st, dir); return (n.T + s) * TIME_RATE / 60; };
+const H0 = (process.env.HOUR || '10:00').split(':').map(Number), startMin = H0[0] * 60 + (H0[1] || 0);
+const standing = (st, dir, s = 8) => { const n = nextStop(trainClock(day * 1440 + startMin), st, dir); return (n.T + s) * TIME_RATE / 60; };
 
 await at(E, -10, -11.5, Y.C, GATE.a, 1, Y.C + 1.2); await shot('enr-concourse', 6000);
 await at(E, -3, 6.5, Y.C, GATE.a, -1, Y.C + 0.9); await shot('enr-security');
@@ -34,6 +35,8 @@ await at(E, DOOR_AS[17] + 1.5, 3.4, Y.P, DOOR_AS[17] - 6, 7, Y.P + 1.4); await s
 await at(E, PLAT.a0 + 30, 0, Y.P, PLAT.a1, 0, Y.P + 1.6); await shot('enr-platform-long');
 // aboard: step into a car at its door, then let the train take you
 await at(E, DOOR_AS[17], 7.4, Y.P, DOOR_AS[17] + 8, 7.6, Y.P + 1.5); await shot('car-inside', 4000);
+await at(E, DOOR_AS[18] - 0.2, 7.2, Y.P, DOOR_AS[18], 9.2, Y.P + 1.95); await shot('car-door-display', 3000);
+await at(E, DOOR_AS[18] + 2.2, 7.65, Y.P, DOOR_AS[18] + 2.2, 9.3, Y.P + 1.95); await shot('car-printed-map', 2500);
 const t0 = standing(0, 1, 9);
 for (let k = 1; k <= 14; k++) { await clockTo(t0 + k * 0.4); await p.waitForTimeout(500); }
 await shot('car-tunnel', 1500);

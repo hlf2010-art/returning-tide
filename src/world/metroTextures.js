@@ -196,29 +196,79 @@ export function liveryTex() {
   x.fillStyle = 'rgba(0,0,0,0.22)'; for (let i = 0; i < 2048; i += 90) x.fillRect(i, 0, 2, 256);
   return tex(c, { repeat: false });
 }
-// the screen over the doors inside a car: the line, this station / the next, the doors' side
+// the interchanges along Line 2 (approximate line colours), drawn as small squares by a station's name
+export const TRANSFERS = { 1: [10, 17], 2: [10], 7: [3, 4], 8: [11], 9: [7, 14], 10: [12, 13], 11: [1, 8], 12: [10], 13: [14], 15: [4, 6, 9], 18: [7, 16, 18] };
+export const LINE_COLORS = { 1: '#e3002b', 3: '#ffd100', 4: '#5f259f', 6: '#d7006f', 7: '#ff6900', 8: '#0094d8', 9: '#87b5e0', 10: '#c6afd4', 11: '#871c2b', 12: '#007a60', 13: '#e999c0', 14: '#827a04', 16: '#77c8c7', 17: '#bc8a6e', 18: '#c4984f' };
+// the display over every door inside a car (as on Lines 1, 2 and 10's newer trains): on the left a screen
+// (the line, which way, 本站 / 下一站 and the station, which side the doors open); on the right the whole
+// line as a lit strip map: the stations passed dimmed, this station (at a platform) red and blinking, the
+// next one (between stations) green and blinking, the arrows between running the way the train goes
 export function carScreenTex(c, x, { dir, next, here = null, doors = 'left', t = 0 }) {
-  const w = c.width, h = c.height;
-  x.fillStyle = '#0c0f13'; x.fillRect(0, 0, w, h);
-  x.fillStyle = L2; x.fillRect(0, 0, w, 10);
+  const w = c.width, h = c.height, on = Math.floor(t * 2) % 2 === 0;
+  x.fillStyle = '#16191d'; x.fillRect(0, 0, w, h);
+  // ---- the screen ----
+  const SW = Math.round(w * 0.27);
+  x.fillStyle = '#05080c'; x.fillRect(10, 10, SW - 20, h - 20);
+  x.fillStyle = L2; x.fillRect(10, 10, SW - 20, 8);
   const st = LINE2[next], [tz, te] = TERMINUS[dir];
   x.textBaseline = 'middle'; x.textAlign = 'left';
-  badge(x, 20, 26, 54);
-  x.fillStyle = '#9fb0bf'; x.font = `600 22px ${FONT.sans}`; x.fillText(`往 ${tz} · To ${te}`, 90, 54);
-  x.fillStyle = '#fff'; x.font = `800 30px ${FONT.sans}`; x.textAlign = 'right';
-  x.fillText(here != null ? '本站 This station' : '下一站 Next station', w - 24, 54);
-  x.textAlign = 'center'; x.fillStyle = here != null ? '#ffd24a' : '#fff'; x.font = `900 96px ${FONT.sans}`; x.fillText(st[0], w / 2, 160);
-  x.font = `600 38px ${FONT.sans}`; x.fillStyle = '#d6dde4'; x.fillText(st[1], w / 2, 222);
-  // a strip of the line around here
-  const Yl = 290, step = 120;
-  x.fillStyle = L2; x.fillRect(40, Yl - 6, w - 80, 12);
-  for (let k = -3; k <= 3; k++) {
-    const i = next + k * dir; if (i < 0 || i >= LINE2.length) continue;
-    const X = w / 2 + k * step; x.fillStyle = k === 0 ? (Math.floor(t * 2) % 2 ? '#ffd24a' : '#fff') : k < 0 ? '#555' : '#fff';
-    x.beginPath(); x.arc(X, Yl, k === 0 ? 12 : 8, 0, 7); x.fill();
-    x.font = `${k === 0 ? 800 : 500} 20px ${FONT.sans}`; x.fillStyle = k < 0 ? '#777' : '#e8eef3'; x.fillText(LINE2[i][0], X, Yl + 34);
+  badge(x, 28, 34, 44);
+  x.fillStyle = '#a9b8c6'; x.font = `600 22px ${FONT.sans}`; x.fillText(`往 ${tz}`, 84, 46); x.font = `500 16px ${FONT.sans}`; x.fillText(`To ${te}`, 84, 70);
+  x.fillStyle = here != null ? '#ff6b5e' : '#7fe08a'; x.font = `800 26px ${FONT.sans}`; x.textAlign = 'right';
+  x.fillText(here != null ? '本站' : '下一站', SW - 28, 44); x.font = `600 15px ${FONT.sans}`; x.fillText(here != null ? 'This station' : 'Next station', SW - 28, 70);
+  x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = `900 ${st[0].length > 4 ? 64 : 78}px ${FONT.sans}`; x.fillText(st[0], SW / 2, 160);
+  x.fillStyle = '#d4dde6'; x.font = `600 28px ${FONT.sans}`; x.fillText(st[1], SW / 2, 222);
+  x.fillStyle = doors === 'left' ? '#7fd06a' : '#888'; x.font = `700 20px ${FONT.sans}`; x.fillText('◀ 开左边门 Doors open on the left', SW / 2, h - 40);
+  // ---- the strip map ----
+  const X0 = SW + 50, X1 = w - 40, Yl = 92, n = LINE2.length, step = (X1 - X0) / (n - 1);
+  const cur = next, passed = (i) => (dir > 0 ? i < cur : i > cur) || (here == null && i === (cur - dir) && false);
+  x.fillStyle = '#0c0e11'; x.fillRect(SW, 10, w - SW - 10, h - 20);
+  x.textAlign = 'left'; x.fillStyle = '#9aa6b1'; x.font = `700 20px ${FONT.sans}`; x.fillText('2号线 Line 2', SW + 24, 36);
+  // the line itself: passed in grey, ahead in Line 2's green
+  for (let i = 0; i < n - 1; i++) {
+    const xa = X0 + i * step, gone = dir > 0 ? i + 1 <= cur - (here != null ? 0 : 1) : i >= cur + (here != null ? 0 : 1);
+    x.fillStyle = gone ? '#3a3f45' : L2; x.fillRect(xa, Yl - 5, step, 10);
   }
-  x.fillStyle = doors === 'left' ? '#7fd06a' : '#888'; x.font = `700 24px ${FONT.sans}`; x.fillText(doors === 'left' ? '◀ 开左边门 Doors open on the left' : '', w / 2, h - 28);
+  // the arrows between here and the next station (and on along the line), lit in turn
+  for (let i = 0; i < n - 1; i++) {
+    const ahead = dir > 0 ? i >= cur - (here != null ? 0 : 1) : i < cur + (here != null ? 0 : 1);
+    if (!ahead) continue;
+    const xa = X0 + (i + 0.5) * step, lit = (Math.floor(t * 4) + (dir > 0 ? -i : i)) % 3 === 0;
+    x.fillStyle = lit ? '#e8ffd0' : 'rgba(255,255,255,0.35)';
+    x.beginPath(); x.moveTo(xa + dir * 7, Yl); x.lineTo(xa - dir * 5, Yl - 6); x.lineTo(xa - dir * 5, Yl + 6); x.closePath(); x.fill();
+  }
+  for (let i = 0; i < n; i++) {
+    const X = X0 + i * step, isCur = i === cur, gone = passed(i);
+    // the lamp
+    let col = gone ? '#4a4f55' : '#f4f6f2', r = 9;
+    if (isCur) { r = 13; col = here != null ? (on ? '#ff3b30' : '#6d1612') : (on ? '#4cff6a' : '#1d5a26'); }
+    if (isCur) { x.fillStyle = here != null ? 'rgba(255,59,48,0.25)' : 'rgba(76,255,106,0.25)'; x.beginPath(); x.arc(X, Yl, r + 8, 0, 7); x.fill(); }
+    x.fillStyle = col; x.beginPath(); x.arc(X, Yl, r, 0, 7); x.fill();
+    x.strokeStyle = '#0c0e11'; x.lineWidth = 3; x.stroke();
+    // the name, written downwards (as on the real strips), the interchanges above it
+    const name = LINE2[i][0];
+    x.fillStyle = isCur ? (here != null ? '#ff8a80' : '#9dffad') : gone ? '#5b636b' : '#e9eef2';
+    x.font = `${isCur ? 900 : 600} ${isCur ? 22 : 19}px ${FONT.sans}`; x.textAlign = 'center';
+    const chars = [...name]; const lh = chars.length > 5 ? 19 : 23;
+    chars.forEach((ch, k) => x.fillText(ch, X, Yl + 34 + k * lh));
+    (TRANSFERS[i] || []).forEach((ln, k) => { x.fillStyle = LINE_COLORS[ln] || '#999'; x.fillRect(X - 9, Yl - 40 - k * 20, 18, 16); x.fillStyle = '#fff'; x.font = `800 11px ${FONT.sans}`; x.fillText(String(ln), X, Yl - 32 - k * 20); });
+  }
+}
+// the printed map above the windows: the whole line, the interchanges, no lights
+export function printedMapTex() {
+  const [c, x] = makeCanvas(2048, 300);
+  x.fillStyle = '#f4f4ef'; x.fillRect(0, 0, 2048, 300);
+  x.fillStyle = L2; x.fillRect(0, 0, 2048, 10);
+  badge(x, 20, 26, 56); x.fillStyle = '#222'; x.font = `800 30px ${FONT.sans}`; x.textAlign = 'left'; x.textBaseline = 'middle'; x.fillText('2号线 Line 2 · 徐泾东 — 广兰路', 92, 54);
+  x.fillStyle = '#666'; x.font = `500 18px ${FONT.sans}`; x.textAlign = 'right'; x.fillText('□ 换乘 Interchange', 2020, 54);
+  const n = LINE2.length, X0 = 70, X1 = 1980, Yl = 140, step = (X1 - X0) / (n - 1);
+  x.fillStyle = L2; x.fillRect(X0, Yl - 7, X1 - X0, 14);
+  for (let i = 0; i < n; i++) {
+    const X = X0 + i * step; x.fillStyle = '#fff'; x.strokeStyle = '#2d5a10'; x.lineWidth = 4; x.beginPath(); x.arc(X, Yl, 10, 0, 7); x.fill(); x.stroke();
+    x.fillStyle = '#1b1d20'; x.font = `700 20px ${FONT.sans}`; x.textAlign = 'center'; [...LINE2[i][0]].forEach((ch, k) => x.fillText(ch, X, Yl + 30 + k * 21));
+    (TRANSFERS[i] || []).forEach((ln, k) => { x.fillStyle = LINE_COLORS[ln] || '#999'; x.fillRect(X - 9, Yl - 38 - k * 19, 18, 15); x.fillStyle = '#fff'; x.font = `800 11px ${FONT.sans}`; x.fillText(String(ln), X, Yl - 30 - k * 19); });
+  }
+  return tex(c, { repeat: false });
 }
 export function seatTex() {
   const [c, x] = makeCanvas(256, 256);

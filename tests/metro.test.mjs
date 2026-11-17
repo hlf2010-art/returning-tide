@@ -54,6 +54,13 @@ for (const st of STATIONS) {
   const d = body(E, GATE.a - 2, -2, Y.C); for (let i = 0; i < 60; i++) stepBody(d, 0, 1, false, 1 / 30);
   ok(local(E, d)[1] < SEC.divider, 'the divider keeps the way out from the way in');
 }
+// ---- shut for the night: the shutters at the ways in ----
+{
+  const m = E.ways.exits.find((e) => e.exit === 7), b = body(E, m.land[0], m.land[1], Y.C); HOOK.closed = () => true;
+  for (let i = 0; i < 90; i++) stepBody(b, -1, 0.3, false, 1 / 30);
+  ok(local(E, b)[0] > -4.4, `shut: the shutter stops you at Exit 7's landing (${local(E, b)[0].toFixed(2)})`);
+  HOOK.closed = () => false;
+}
 // ---- the screen doors ----
 {
   const b = body(E, DOOR_AS[10], 4.5, Y.P); HOOK.doorOpen = () => false;

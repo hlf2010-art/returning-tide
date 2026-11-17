@@ -302,11 +302,20 @@ export function buildStation(root, S, m) {
   for (const a of [A0 + 36, A1 - 50]) hang([{ zh: '出站', en: 'Way out' }, { arrow: a < ESC.aT ? 'right' : 'left' }], a, 0, 2.4, a < ESC.aT ? -1 : 1, 0, yP + 2.75, [{ zh: '出站', en: 'Way out' }, { arrow: a < ESC.aT ? 'left' : 'right' }]);
   for (const s of [-1, 1]) pic(signMat(lineMapTex(IDX[S.id], s > 0 ? 1 : -1), 1.15), ESC.aB + 5, yP + 1.6, s * (ESC.well - 0.1), 3.2, 0.5, 0, s);
 
+  // the night shutters (shown when the station is shut): corrugated steel, a notice
+  const shutters = new THREE.Group(); shutters.name = `metro-${S.id}-shutters`; shutters.visible = false; g.add(shutters);
+  { const corr = (() => { const [c, x] = makeCanvas(64, 256); x.fillStyle = '#8f9498'; x.fillRect(0, 0, 64, 256); for (let i = 0; i < 256; i += 16) { x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(0, i, 64, 3); x.fillStyle = 'rgba(255,255,255,0.25)'; x.fillRect(0, i + 3, 64, 2); } return tex(c); })();
+    const sm = new THREE.MeshStandardMaterial({ map: corr, roughness: 0.5, metalness: 0.6 }), note = signMat(signTex([{ zh: '本站运营已结束', en: 'Closed for the night' }, { gap: 30 }, { zh: '首班车 5:30', en: 'First train 5:30', col: '#ffd27a' }], { w: 1024, h: 160 }));
+    for (const [a0, a1, p0, p1] of S.ways.shutters || []) {
+      const [x, z] = F.toW((a0 + a1) / 2, (p0 + p1) / 2), along = a1 - a0 < p1 - p0;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(a1 - a0, yCc - yC, p1 - p0), sm); m.position.set(x, (yC + yCc) / 2, z); m.rotation.y = rotY; shutters.add(m);
+      for (const s of [-1, 1]) { const n = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(2.4, (along ? p1 - p0 : a1 - a0) - 0.3), 0.36), note); const [nx, nz] = F.toW((a0 + a1) / 2 + (along ? s * 0.2 : 0), (p0 + p1) / 2 + (along ? 0 : s * 0.2)); n.position.set(nx, yC + 1.6, nz); n.rotation.y = Math.atan2(along ? s * F.ux : -s * F.uz, along ? s * F.uz : s * F.ux); shutters.add(n); }
+    } }
   // ---- the meshes ----
   const add = (k, name) => { if (!B[k] || B[k].empty) return; const o = B[k].mesh(m[k], `metro-${S.id}-${name || k}`); o.receiveShadow = false; o.castShadow = false; g.add(o); if (k === 'glass' || k === 'psdGlass') o.renderOrder = 3; };
   for (const k of Object.keys(B)) add(k);
   for (const [mat, geos] of merged) { const o = new THREE.Mesh(mergeGeometries(geos, false), mat); o.name = `metro-${S.id}-signs`; o.matrixAutoUpdate = false; g.add(o); }
-  return { group: g, flaps, lamps, psdDoors, psdFrames, psd, posters };
+  return { group: g, flaps, lamps, psdDoors, psdFrames, psd, posters, shutters };
 }
 function RISE() { return Y.C - Y.P; }
 

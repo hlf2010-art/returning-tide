@@ -19,7 +19,15 @@ import { STATIONS, Y, PLAT, GATE, gateP, SEC, ESC, COLS, DOOR_AS, CAR } from './
 import { carToWorld, worldToCar, CAR_IN, CAR_SEATS, FLOOR } from './metroTrain.js';
 
 const ROLES = ['p1', 'p2', 'p3', 'p4', 'p5', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'];
-const POOL = 30, VISIBLE = 10;
+const POOL = 46;
+// how busy the metro is at a minute of the day (0 shut .. 1 the rush): Shanghai's two peaks, a quiet
+// middle of the day, an evening that thins out; nobody new comes in after the last train (about 23:00)
+export function busyAt(min) {
+  const h = min / 60;
+  if (h < 5.5 || h >= 23) return 0;
+  const peak = (c, w) => Math.exp(-(((h - c) / w) ** 2));
+  return Math.min(1, 0.22 + 0.78 * Math.max(peak(8.25, 0.9), peak(18.1, 1.0)) + (h > 11.5 && h < 13.5 ? 0.12 : 0) - (h > 21.5 ? (h - 21.5) * 0.1 : 0));
+}
 const rnd = Math.random, pick = (a) => a[Math.floor(rnd() * a.length)];
 // the heading (world) of a local direction (along, across) in a station's frame
 const headingOf = (st, fa, fp) => Math.atan2(fa * st.F.ux - fp * st.F.uz, fa * st.F.uz + fp * st.F.ux);
@@ -143,8 +151,9 @@ export function createMetroFolk({ root, people, metro }) {
 
   // a station already going when you arrive: people waiting at the doors, others on their way through
   function seed(st) {
-    for (let k = 0; k < 7; k++) { const P = planIn(st), last = P.pts[P.pts.length - 1], ag = spawn(st, P, [last[0], last[1]]); if (ag) { ag.i = P.pts.length; ag.state = 'wait'; ag.y = Y.P; } }
-    for (let k = 0; k < 4; k++) { const P = planIn(st), j = 4 + Math.floor(rnd() * 3), q = P.pts[j], ag = spawn(st, P, [q[0], q[1]]); if (ag) { ag.i = j + 1; ag.y = Y.C; const [x, z] = st.F.toW(q[0], q[1]); ag.y = groundHeight(x, z, Y.C + 0.3); } }
+    const b = busyAt(metro.minute); if (b <= 0) return;      // (shut: nobody about)
+    for (let k = 0; k < Math.round(2 + 16 * b); k++) { const P = planIn(st), last = P.pts[P.pts.length - 1], ag = spawn(st, P, [last[0], last[1]]); if (ag) { ag.i = P.pts.length; ag.state = 'wait'; ag.y = Y.P; } }
+    for (let k = 0; k < Math.round(1 + 6 * b); k++) { const P = planIn(st), j = 4 + Math.floor(rnd() * 3), q = P.pts[j], ag = spawn(st, P, [q[0], q[1]]); if (ag) { ag.i = j + 1; ag.y = Y.C; const [x, z] = st.F.toW(q[0], q[1]); ag.y = groundHeight(x, z, Y.C + 0.3); } }
   }
   const _h = new THREE.Vector3(), _f = new THREE.Vector3();
   function pose(ag, dt, moving, speed, pp) {
@@ -165,12 +174,12 @@ export function createMetroFolk({ root, people, metro }) {
     const pp = playerPos();
     const st = metro.stationNear(pp, 40) && pp.y < -1.6 ? metro.stationNear(pp, 40) : null;
     if (st !== S.st) { S.st = st; for (const ag of [...agents]) if (!ag.ride) free(ag); if (st) { staffFor(st); seed(st); } else for (const s of staff.splice(0)) { s.body.free = true; s.body.person.root.visible = false; } }
-    const busy = 0.7;
+    const busy = busyAt(metro.minute);
     S.density = Math.min(1, agents.length / 18);
     // new people coming in
     if (st && playing) {
       S.spawnT -= dt;
-      if (S.spawnT <= 0) { S.spawnT = (4 + rnd() * 5) / busy; if (agents.filter((a) => !a.ride && a.st === st).length < 14) spawn(st, planIn(st)); }
+      if (S.spawnT <= 0) { S.spawnT = busy > 0 ? (2.2 + rnd() * 3) / (0.25 + busy) : 5; if (busy > 0 && agents.filter((a) => !a.ride && a.st === st).length < 8 + 22 * busy) spawn(st, planIn(st)); }
     }
     // the trains: riders where you can see them, people getting off where one has stopped
     for (const tr of metro.near) {
@@ -181,11 +190,11 @@ export function createMetroFolk({ root, people, metro }) {
         const c = cs[k], dk = Math.hypot(c.x - pp.x, c.z - pp.z);
         const want = ridingThis ? Math.abs(k - metro.stats.ride.k) <= 1 : dk < 40;
         const key = `${tr.id}:${k}`;
-        if (want && !S.seeded.has(key)) { S.seeded.add(key); const n = ridingThis && k === metro.stats.ride.k ? 7 : 3; for (let j = 0; j < n; j++) rider(tr, k, rnd() < 0.55); }
+        if (want && !S.seeded.has(key)) { S.seeded.add(key); const n = Math.round((ridingThis && k === metro.stats.ride.k ? 4 + 12 * busy : 2 + 5 * busy)); for (let j = 0; j < n; j++) rider(tr, k, rnd() < 0.55); }
       }
       if (tr.phase === 'dwell' && st && tr.station === STATIONS.indexOf(st) && tr.dwellT > 3.6 && tr.dwellT < 14 && !S.alit.has(`${tr.id}:${tr.station}`)) {
         S.alit.add(`${tr.id}:${tr.station}`);
-        const n = 3 + Math.floor(rnd() * 5);
+        const n = Math.round(2 + 12 * busy * (0.7 + rnd() * 0.6));
         for (let j = 0; j < n; j++) {
           const door = pickDoor(), side = tr.dir;
           const ag = spawn(st, planOut(st, door, side), [DOOR_AS[door] + (rnd() - 0.5) * 0.6, side * (PLAT.track - 0.9)]);
@@ -204,6 +213,7 @@ export function createMetroFolk({ root, people, metro }) {
     // only the nearest are drawn (a person is a dozen draw calls): the rest stand hidden where they are
     const live = [...agents.filter((a) => a.body.person.root.visible || a.drawn != null)];
     live.sort((u, v) => Math.hypot(u.x - pp.x, u.z - pp.z) - Math.hypot(v.x - pp.x, v.z - pp.z));
+    const VISIBLE = Math.round(9 + 11 * busy);                 // (a person is a dozen draw calls: more of them in the rush)
     live.forEach((a, i) => { const on = i < VISIBLE && Math.hypot(a.x - pp.x, a.z - pp.z) < 45 && !(a.delay > 0); a.drawn = on; a.body.person.root.visible = on; if (!on) { a.body.phone.visible = false; a.body.bag.visible = a.bagOn && Math.hypot(a.x - pp.x, a.z - pp.z) < 30; } });
     for (const s of staff) {
       const [x, z] = s.st.F.toW(s.a, s.p); s.x = x; s.z = z; s.heading = headingOf(s.st, s.face[0], s.face[1]);
@@ -220,7 +230,7 @@ export function createMetroFolk({ root, people, metro }) {
     if (!nearIds.has(R.tr)) { free(ag); return; }
     const tr = metro.near.find((t) => t.id === R.tr), c = metro.carsOf(tr)[R.k];
     // far from you and not on your train: let them go
-    if (!(metro.riding && metro.stats.rideTrain === tr) && Math.hypot(c.x - pp.x, c.z - pp.z) > 70) { free(ag); return; }
+    if (!(metro.riding && metro.stats.rideTrain === tr) && Math.hypot(c.x - pp.x, c.z - pp.z) > 70) { S.seeded.delete(`${R.tr}:${R.k}`); free(ag); return; }   // (the car fills again if you come back)
     if (ag.boardTo) { // walking in from the door to a place
       const dx = ag.boardTo[0] - R.lx, dz = ag.boardTo[1] - R.lz, d = Math.hypot(dx, dz);
       if (d < 0.05) ag.boardTo = null; else { const s = Math.min(d, 1.1 * dt); R.lx += dx / d * s; R.lz += dz / d * s; R.face = Math.atan2(dx, dz); }

@@ -260,7 +260,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   }
   const post0 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, H, 12), brass); post0.position.y = H / 2; vanes.add(post0);
   const drumTop = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.06, R + 0.06, 0.3, 32), brass); drumTop.position.y = H + 0.15; drum.add(drumTop);
-  const crown = new THREE.Mesh(new THREE.CircleGeometry(R - 0.1, 32).rotateX(Math.PI / 2), frosted); crown.position.y = H - 0.005; drum.add(crown);
+  const crown = new THREE.Mesh(new THREE.CircleGeometry(R - 0.1, 32).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.05, 0.88, 0.64) })); crown.position.y = H - 0.005; drum.add(crown);
   lights.push({ x: doorX, y: Y0 + H - 0.2, z: -212.2, intensity: 5, distance: 6, color: new THREE.Color(1.0, 0.8, 0.55) });
   add(new THREE.PlaneGeometry(5.6, 0.7), new THREE.MeshBasicMaterial({ map: signTex([['和 平 饭 店', 70]], { bg: '#00000000', fg: '#d9b46a', w: 800, h: 100 }), transparent: true }), doorX, Y0 + 4.4, -211.86);
   // light: the hall's own lamps join the lighting pool (only the nearest get real lights)

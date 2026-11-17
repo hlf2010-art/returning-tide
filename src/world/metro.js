@@ -132,7 +132,12 @@ export function createMetro({ scene, camera, renderer = null, hud, audio, voice,
   HOOK.doorOpen = (st, side) => doorsAt(st, side) > 0.7;
   HOOK.mustScreen = (st) => carryingBag(getLife()) && !S.screened[st.id];
   HOOK.inTrain = (b) => !!b.metroTrain;
-  HOOK.onHit = (st, o) => { if (o.hold && S.clock - S.holdBark > 5) { S.holdBark = S.clock; staff('bagStop', st); } };
+  // shut for the night (about 23:15 to 5:15): the shutters come down, but never on you (only once you're out)
+  HOOK.closed = () => S.shut;
+  HOOK.onHit = (st, o) => {
+    if (o.hold && S.clock - S.holdBark > 5) { S.holdBark = S.clock; staff('bagStop', st); }
+    if (o.shut && S.clock - S.holdBark > 4) { S.holdBark = S.clock; hud.toast(T('本站运营已结束，首班车早上五点半左右。', 'The station is shut for the night. The first train is at about 5:30 am.'), 3.4); }
+  };
 
   function line(key) { return METRO_LINES[key]; }
   // an announcement: the subtitle, then Mandarin and English, as Shanghai's are
@@ -280,6 +285,8 @@ export function createMetro({ scene, camera, renderer = null, hud, audio, voice,
     hemi.intensity = 1.55 * S.under; sun.intensity = 0.55 * S.under;
     // stranded underground off the line (a save loaded mid-ride, a train gone): back to the nearest platform
     if (!h && !S.zone && b.y < -6 && distToLine(b) < 14) { S.rescue += dt; if (S.rescue > 0.5) { const st = STATIONS.reduce((best, s) => (Math.hypot(s.F.ox - b.x, s.F.oz - b.z) < Math.hypot(best.F.ox - b.x, best.F.oz - b.z) ? s : best)); const [x, z] = st.F.toW(PLAT.ac + 10, 0); player.teleport(x, z, player.yaw, 0, Y.P); S.rescue = 0; } } else S.rescue = 0;
+    // the night: once the last train has gone and you're not inside, the shutters are down until morning
+    { const m = getLife().clock.minute, night = m >= 23 * 60 + 15 || m < 5 * 60 + 15; if (!night) S.shut = false; else if (!S.zone || S.zone.level === 'way') S.shut = true; }
     // what's drawn
     root.visible = !!(close || h || S.under > 0.01);
     for (const st of STATIONS) S.st[st.id].group.visible = root.visible && (stationNear(b, 120) === st || (S.under > 0.01 && Math.hypot(st.F.ox - b.x, st.F.oz - b.z) < 320));
@@ -345,6 +352,7 @@ export function createMetro({ scene, camera, renderer = null, hud, audio, voice,
         }
       }
       V.flaps.instanceMatrix.needsUpdate = true;
+      V.shutters.visible = S.shut;
       const svc = open();
       for (const l of V.lamps) l.o.material = svc && l.go ? S.m.green : S.m.red;
     }
@@ -432,6 +440,7 @@ export function createMetro({ scene, camera, renderer = null, hud, audio, voice,
     get trains() { return S.list; },
     get near() { return S.near; },
     get clock() { return S.clock; },
+    get minute() { const l = getLife(); return l.clock.minute + l.clock.sec / 60; },
     // where you are, for the map's label (ui/i18n.js areas)
     get areaKey() { if (S.ride) return 'metroTrain'; const z = S.zone; if (!z) return null; return `${z.st.id}${z.level === 'platform' || z.level === 'escalator' ? 'Plat' : 'Conc'}`; },
     // for whoever you're talking to (main.js sceneText)

@@ -23,6 +23,17 @@ Two stations you can walk, and the line between them, with trains that run to a 
 
 ## Playing it
 
-- Trains run from about 5:30 am to 11 pm (game time). Outside those the entry gates refuse you; the exit gates always let you out.
+- Trains run from about 5:30 am to 11 pm (game time). Outside those the entry gates refuse you; the exit gates always let you out. From about 23:15 to 5:15 the shutters at the ways in are down (never on you: they drop once you're out).
+- How many people: `busyAt(minute)` in `world/metroFolk.js`, Shanghai's two peaks (about 8:15 and 18:00), a quiet middle of the day, thinning after 21:30. More people are drawn in the rush (each is a dozen draw calls).
+- Inside the cars, as on Lines 1, 2 and 10's newer trains: over every door a screen (本站 / 下一站, the station, the doors' side) and a strip map of the whole line, the stations passed dimmed, this station red and blinking at a platform, the next one green and blinking between stations, interchanges marked; printed line maps above the windows.
 - With something in a bag (an item from JD or Taobao that you carry), security holds you until you put it on the belt (E at the belt) and pick it up at the far end.
 - Lujiazui's Exit 1 (by the Pearl) is a long passage: E at its landing, or at the passage door at the concourse's west end.
+
+## Pictures
+
+![East Nanjing Road concourse](metro-enr-concourse.jpg)
+![The gates](metro-enr-gates.jpg)
+![A train in, doors open](metro-enr-platform-train.jpg)
+![The platform](metro-enr-platform-long.jpg)
+![Aboard](metro-car-inside.jpg)
+![Lujiazui concourse](metro-ljz-concourse.jpg)

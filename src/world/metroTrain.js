@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { Batch } from './geo.js';
 import { CAR } from './metroLayout.js';
-import { liveryTex, seatTex, carFloorTex, carScreenTex, L2, makeCanvas, tex } from './metroTextures.js';
+import { liveryTex, seatTex, carFloorTex, carScreenTex, printedMapTex, L2, makeCanvas, tex } from './metroTextures.js';
 
 export const FLOOR = 1.08;                    // the car floor above the rail head (level with the platform)
 const HALF = CAR.len / 2 - 0.3, W = CAR.halfW, IN = W - 0.08, ROOF = 3.62, CEIL = FLOOR + CAR.ceil;
@@ -52,6 +52,7 @@ export function createTrainSet(root, { slots = 3 } = {}) {
     leaf: std({ map: leafTex(), roughness: 0.3, metalness: 0.1 }),
     head: Object.assign(new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 3, 2.8) }), { userData: { todSkip: true } }),
     tail: Object.assign(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 0.12, 0.1) }), { userData: { todSkip: true } }),
+    map: Object.assign(new THREE.MeshBasicMaterial({ map: printedMapTex(), color: new THREE.Color(1.0, 1.0, 1.0) }), { userData: { todSkip: true } }),
     dest: Object.assign(new THREE.MeshBasicMaterial({ map: destTex(), color: new THREE.Color(1.6, 1.6, 1.6) }), { userData: { todSkip: true } }),
   };
   void liveryTex;
@@ -103,6 +104,8 @@ export function createTrainSet(root, { slots = 3 } = {}) {
     rod('steel', s * 0.8, FLOOR + 1.86, (z0 + z1) / 2, z1 - z0 + 0.3, 0.016, 'z');
     for (let z = z0 + 0.25; z < z1 - 0.1; z += 0.42) { bx('rubber', s * 0.8 - 0.012, s * 0.8 + 0.012, FLOOR + 1.6, FLOOR + 1.86, z - 0.015, z + 0.015); b('rubber').add(new THREE.TorusGeometry(0.06, 0.012, 4, 10), { x: s * 0.8, y: FLOOR + 1.54, z, ry: Math.PI / 2 }); }
   }
+  // the printed line maps above the windows, between the doors (both sides)
+  for (const s of [-1, 1]) for (const [z0, z1] of SEATS) { const w = Math.min(2.3, z1 - z0 - 0.2); if (w < 1) continue; const g = new THREE.PlaneGeometry(w, w * 300 / 2048 * 1.0); g.rotateY(-s * Math.PI / 2); g.translate(s * (IN - 0.025), WIN1 + 0.17, (z0 + z1) / 2); b('map').push(g); }
   // a pole in the middle of each doorway's vestibule
   for (const d of CAR.doors) rod('steel', 0, (FLOOR + CEIL) / 2, d, CEIL - FLOOR, 0.02);
   const geo = Object.fromEntries(Object.entries(B).map(([k, v]) => [k, v.geometry()]));
@@ -137,8 +140,8 @@ export function createTrainSet(root, { slots = 3 } = {}) {
   // the screens over the doors: one canvas a slot
   const screens = [];
   for (let i = 0; i < slots; i++) {
-    const [c, x] = makeCanvas(1024, 384), t = tex(c, { repeat: false }); const mat = new THREE.MeshBasicMaterial({ map: t }); mat.color.setScalar(1.05); mat.userData.todSkip = true;
-    const o = inst(new THREE.PlaneGeometry(0.66, 0.25), mat, CAR.n * CAR.doors.length * 2, `metro-screens-${i}`);
+    const [c, x] = makeCanvas(2048, 320), t = tex(c, { repeat: false }); t.anisotropy = 8; const mat = new THREE.MeshBasicMaterial({ map: t }); mat.color.setScalar(1.05); mat.userData.todSkip = true;
+    const o = inst(new THREE.PlaneGeometry(1.36, 0.212), mat, CAR.n * CAR.doors.length * 2, `metro-screens-${i}`);
     screens.push({ c, x, t, o, key: '' });
   }
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), sc = new THREE.Vector3();
@@ -165,7 +168,7 @@ export function createTrainSet(root, { slots = 3 } = {}) {
         leaves.count = Math.max(leaves.count, li);
         // the screens over the doors, both sides, facing in
         const so = screens[slot].o; let si = k * CAR.doors.length * 2;
-        for (const d of CAR.doors) for (const s of [-1, 1]) { local.compose(sc.set(s * (IN - 0.03), FLOOR + DOOR_H + 0.16, d), q.setFromEuler(e.set(0, -s * Math.PI / 2, 0)), one); m4.multiplyMatrices(mm, local); so.setMatrixAt(si++, m4); }
+        for (const d of CAR.doors) for (const s of [-1, 1]) { local.compose(sc.set(s * (IN - 0.03), FLOOR + DOOR_H + 0.135, d), q.setFromEuler(e.set(0, -s * Math.PI / 2, 0)), one); m4.multiplyMatrices(mm, local); so.setMatrixAt(si++, m4); }
         so.count = Math.max(so.count, si);
       }
       for (let k = 0; k < carsAt.length - 1; k++) {
