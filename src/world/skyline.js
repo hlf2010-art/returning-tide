@@ -1,6 +1,7 @@
 // Pudong across the Huangpu: scenery only, never walkable. Built to real-ish scale
 // (Oriental Pearl 468 m, Shanghai Tower 632 m, ~450 m of river) so it looms correctly.
 import * as THREE from 'three';
+import { skylineGlass } from './facade.js';
 import { Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT } from './canvas.js';
 import { REFLECT_LAYER } from './sky.js';
@@ -548,7 +549,7 @@ export function createSkyline() {
   group.traverse((o) => {
     if (!o.material || o.material.userData.tod) return;
     const m = o.material;
-    if (m.isMeshBasicMaterial && !m.transparent && m.blending !== THREE.AdditiveBlending && (m.map || DAY_GLASS[o.name])) glassByDay(m, DAY_GLASS[o.name] || [0.46, 0.53, 0.6]);
+    if (m.isMeshBasicMaterial && !m.transparent && m.blending !== THREE.AdditiveBlending && (m.map || DAY_GLASS[o.name])) skylineGlass(m, DAY_GLASS[o.name] || [0.46, 0.53, 0.6]);
     else if (m.isMeshBasicMaterial || m.isPointsMaterial) asLight(m, 'outline', 0.3);
   });
 

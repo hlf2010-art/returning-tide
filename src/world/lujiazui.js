@@ -21,7 +21,7 @@ import { createEntrances } from './entrances.js';
 import { mapExtras } from '../ui/minimap.js';
 import {
   C, RING, ARMS, RAMPS, SPUR, APPLE, METRO_LJZ, IFC, BUILDINGS, GREEN, LAKE, YIN, ZEBRAS, AVE, CH, LJZ,
-  dirOf, polar, fromAP, toAP, applePt, wellPt, wellLocal, IFC_ARC, arcPt, carriage, zebra, inPudong, ljzZone, ljzState, signalAt,
+  dirOf, polar, rpolar, fromAP, toAP, applePt, wellPt, wellLocal, PEARL_PARK, RC, carriage, zebra, inPudong, ljzZone, ljzState, signalAt,
 } from './lujiazuiLayout.js';
 import { buildGround, buildMarkings, railTexture } from './lujiazuiGround.js';
 import { ljzMaterials, buildBridge, buildApple, buildIfc, buildMetro, buildTrees, buildGreen, buildSurroundings, buildStreet, lampKit, LJZ_TEXT } from './lujiazuiBuild.js';
@@ -168,21 +168,21 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     const disc = (x, z, r, fill) => { g.fillStyle = fill; g.beginPath(); g.arc(px(x), pz(z), r * P, 0, 6.2832); g.fill(); };
     const line = (x0, z0, x1, z1, w, col) => { g.strokeStyle = col; g.lineWidth = w * P; g.lineCap = 'butt'; g.beginPath(); g.moveTo(px(x0), pz(z0)); g.lineTo(px(x1), pz(z1)); g.stroke(); };
     g.fillStyle = '#30343c'; g.fillRect(px(470), 0, 1e5, 1e5);                           // the Pudong bank
-    poly([fromAP(GREEN.a0, GREEN.p0), fromAP(GREEN.a1, GREEN.p0), fromAP(GREEN.a1, GREEN.p1), fromAP(GREEN.a0, GREEN.p1)], '#2f4a30');
-    for (const l of LAKE) { const pts = []; for (let i = 0; i < 28; i++) { const t = i / 28 * 6.2832; pts.push(fromAP(l.a + l.ra * Math.cos(t), l.p + l.rp * Math.sin(t))); } poly(pts, '#0c1c2c'); }
-    { const pts = []; for (let b = 274; b <= 349; b += 5) pts.push(polar(b, 98)); for (let b = 349; b >= 274; b -= 5) pts.push(polar(b, 330)); poly(pts, '#2a3f2c'); }
-    for (const A of ARMS) line(C.x + A.dx * 20, C.z + A.dz * 20, C.x + A.dx * A.len, C.z + A.dz * A.len, A.hw * 2, '#15181d');
-    line(...fromAP(YIN.ac, -YIN.len), ...fromAP(YIN.ac, YIN.len), 18, '#15181d');
+    poly(GREEN.P, '#2f4a30');
+    for (const l of LAKE) poly(l.P, '#0c1c2c');
+    poly(PEARL_PARK, '#2a3f2c');
+    for (const A of ARMS) line(C.x + A.dx * 20 + A.px * A.off, C.z + A.dz * 20 + A.pz * A.off, C.x + A.dx * A.len + A.px * A.off, C.z + A.dz * A.len + A.pz * A.off, A.hw * 2, '#15181d');
+    line(...fromAP(YIN.ac, -YIN.len), ...fromAP(YIN.ac, YIN.len), YIN.a1 - YIN.a0, '#15181d');
     disc(C.x, C.z, RING.road, '#15181d'); disc(C.x, C.z, RING.island, '#2f4a30');
     for (const q of ZEBRAS) poly([fromAP(q.a0, q.p0), fromAP(q.a1, q.p0), fromAP(q.a1, q.p1), fromAP(q.a0, q.p1)], 'rgba(230,226,215,0.55)');
-    for (const B of BUILDINGS) poly([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [B.cx + a * B.hx * B.c - b * B.hz * B.s, B.cz + a * B.hx * B.s + b * B.hz * B.c]), B.id.startsWith('ifc') ? '#525a68' : '#454a55', '#5b616d');
+    const ifcIds = new Set([IFC.north, IFC.south, IFC.mall].map((B) => B.id));
+    for (const B of BUILDINGS) if (!B.part || B.min < 3) poly(B.P, ifcIds.has(B.id) ? '#525a68' : '#454a55', '#5b616d');
     for (const [k, t] of Object.entries(LJZ.towers)) if (!k.startsWith('ifc')) disc(t.x, t.z, k === 'pearl' ? 30 : 26, '#5a5266');
     // the ring bridge, its stairs and the spur; the Apple plaza and the mall's curved front; the station's exits
-    g.strokeStyle = 'rgba(214,206,190,0.9)'; g.lineWidth = (RING.r1 - RING.r0) * P; g.beginPath(); g.arc(px(C.x), pz(C.z), RING.rc * P, 0, 6.2832); g.stroke();
+    g.strokeStyle = 'rgba(214,206,190,0.9)'; g.lineWidth = (RING.r1 - RING.r0) * P; g.beginPath(); g.arc(px(RC.x), pz(RC.z), RING.rc * P, 0, 6.2832); g.stroke();
     for (const R of RAMPS) line(R.top[0], R.top[1], R.bot[0], R.bot[1], R.hw * 2, 'rgba(214,206,190,0.9)');
-    line(...polar(SPUR.b, RING.r1 - 1), ...polar(SPUR.b, SPUR.s1), SPUR.hw * 2, 'rgba(214,206,190,0.9)');
+    line(...rpolar(SPUR.b, RING.r1 - 1), ...rpolar(SPUR.b, SPUR.s1), SPUR.hw * 2, 'rgba(214,206,190,0.9)');
     disc(APPLE.x, APPLE.z, APPLE.rOut, '#4a4f58'); disc(APPLE.x, APPLE.z, APPLE.rCyl, '#cfe6e6');
-    { const pts = []; for (let t = IFC_ARC.t0; t <= IFC_ARC.t1; t += 4) pts.push(arcPt(t)); g.strokeStyle = '#9fb4c8'; g.lineWidth = Math.max(1, 0.8 * P); g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)))); g.stroke(); }
     for (const W of METRO_LJZ) { const [x, z] = wellPt(W, W.len / 2); line(...W.top, ...wellPt(W, W.len), W.hw * 2, '#c8161e'); g.fillStyle = '#fff'; g.font = `700 ${Math.round(3.4 * P)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`M${W.exit}`, px(x), pz(z)); }
   });
 
@@ -197,7 +197,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     // for whoever you are talking to: where you are, in the same shape as main.js's sceneText
     sceneLine(clock, raining, extra = '') {
       const b = player.body, z = ljzZone(b.x, b.z, b.y);
-      const where = { ring: 'the Mingzhu Ring, the circular footbridge over the Lujiazui roundabout in Pudong, traffic going round below, the Oriental Pearl Tower just to the north-west',
+      const where = { ring: 'the Mingzhu Ring, the circular footbridge over the Lujiazui roundabout in Pudong, traffic going round below, the Oriental Pearl Tower just to the north-north-west',
         apple: b.y < APPLE.yPlaza - 3 ? 'the Apple store under the plaza at IFC in Lujiazui, long oak tables, the spiral glass stair up into the glass cylinder' : 'the plaza of Apple Pudong in front of the IFC mall, the 13-metre glass cylinder with the spiral stair in it, the mall\'s curved glass front behind; the Oriental Pearl Tower across the roundabout',
         green: 'Lujiazui Central Green, the lawn and the lake in the middle of the towers: Jin Mao, the World Financial Center and the Shanghai Tower to the south-east',
         ljzMetro: 'an exit of Lujiazui metro station (Line 2), by the roundabout', ifc: 'outside Shanghai IFC on Century Avenue in Lujiazui, the office tower\'s lobby behind, taxis at the kerb',

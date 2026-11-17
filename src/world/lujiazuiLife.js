@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { createVehicles } from './vehicles.js';
 import { createPerson } from './people.js';
 import { holdPhone } from './pedestriansReal.js';
-import { C, RING, ROUTES, APPLE, LOOP, CH, signalAt, bearingOf, wrap180, polar, fromAP, applePt, ljzGround } from './lujiazuiLayout.js';
+import { C, RING, ROUTES, APPLE, LOOP, CH, signalAt, bearingOf, wrap180, polar, rpolar, fromAP, applePt, ljzGround } from './lujiazuiLayout.js';
 import { PEARL } from './skyline.js';
 
 const MIX = [
@@ -87,16 +87,16 @@ export function createLjzPeople({ group, people }) {
   if (!people) return { update() {}, talkables: () => [], list: [] };
   const roles = Object.keys(people.manifest.cast).filter((r) => !['lin', 'su', 'player', 'dad', 'k1', 'k2'].includes(r));
   const phoneMat = new THREE.MeshStandardMaterial({ color: 0x16161a, roughness: 0.3, metalness: 0.5 });
-  const ringLoop = (dir, r) => { const pts = []; for (let b = 0; b < 360; b += 10) { const [x, z] = polar(dir > 0 ? b : 360 - b, r); pts.push([x, z, RING.y]); } return pts; };
+  const ringLoop = (dir, r) => { const pts = []; for (let b = 0; b < 360; b += 10) { const [x, z] = rpolar(dir > 0 ? b : 360 - b, r); pts.push([x, z, RING.y]); } return pts; };
   const lakeLoop = (dir, off) => { const pts = []; for (let i = 0; i < 40; i++) { const t = (dir > 0 ? i : 40 - i) / 40 * 6.2832, [x, z] = fromAP(LOOP.a + (LOOP.ra + off) * Math.cos(t), LOOP.p + (LOOP.rp + off) * Math.sin(t)); pts.push([x, z, CH]); } return pts; };
   const ave = (p, a0, a1) => { const pts = []; for (let a = a0; a <= a1; a += 20) { const [x, z] = fromAP(a, p); pts.push([x, z, CH]); } return [...pts, ...pts.slice(1, -1).reverse()]; };
   const PLANS = [
-    { kind: 'tourist', persona: 'visitor', speed: 0.9, pts: ringLoop(1, 51.5), photo: true, start: 4 },
-    { kind: 'tourist', persona: 'student', speed: 0.85, pts: ringLoop(-1, 48.6), photo: true, start: 20 },
-    { kind: 'office', persona: 'office', speed: 1.4, pts: ringLoop(1, 49.6), start: 27, phone: true },
-    { kind: 'office', persona: 'office', speed: 1.45, pts: ave(-24, 120, 220), phone: true, start: 1 },
+    { kind: 'tourist', persona: 'visitor', speed: 0.9, pts: ringLoop(1, 59.6), photo: true, start: 4 },
+    { kind: 'tourist', persona: 'student', speed: 0.85, pts: ringLoop(-1, 56.8), photo: true, start: 20 },
+    { kind: 'office', persona: 'office', speed: 1.4, pts: ringLoop(1, 57.8), start: 27, phone: true },
+    { kind: 'office', persona: 'office', speed: 1.45, pts: ave(-26, 120, 320), phone: true, start: 1 },
     { kind: 'office', persona: 'youngMan', speed: 1.35, pts: ave(23, 128, 216), start: 3 },
-    { kind: 'office', persona: 'office', speed: 1.3, pts: ave(-30, 262, 540), start: 6 },
+    { kind: 'office', persona: 'office', speed: 1.3, pts: ave(-30, 372, 740), start: 6 },
     { kind: 'jogger', persona: 'youngMan', speed: 2.7, pts: lakeLoop(1, 0.6), jog: true, start: 5 },
     { kind: 'stroller', persona: 'auntie', speed: 0.8, pts: lakeLoop(-1, -0.7), start: 12 },
     { kind: 'stroller', persona: 'elder', speed: 0.7, pts: lakeLoop(1, -0.6), start: 26 },

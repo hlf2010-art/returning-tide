@@ -1,0 +1,126 @@
+{
+ "Q80813": {
+  "zh": "金茂大厦",
+  "en": "Jin Mao Tower",
+  "lon": 121.501388888,
+  "lat": 31.237222222,
+  "height": 421.0,
+  "floors": 88.0
+ },
+ "Q18547": {
+  "zh": "上海中心大厦",
+  "en": "Shanghai Tower",
+  "lon": 121.501,
+  "lat": 31.2355,
+  "height": 632.0,
+  "floors": 128.0
+ },
+ "Q80852": {
+  "zh": "上海环球金融中心",
+  "en": "Shanghai World Financial Center",
+  "lon": 121.502777777,
+  "lat": 31.236666666,
+  "height": 492.0,
+  "floors": 101.0
+ },
+ "Q223207": {
+  "zh": "東方明珠廣播電視塔",
+  "en": "Oriental Pearl Tower",
+  "lon": 121.494716666,
+  "lat": 31.241669444,
+  "height": 468.0
+ },
+ "Q368017": {
+  "zh": "交银金融大厦",
+  "en": "Bocom Financial Towers",
+  "lon": 121.499,
+  "lat": 31.241,
+  "height": 265.0,
+  "floors": 52.0
+ },
+ "Q406446": {
+  "zh": "上海国际金融中心",
+  "en": "Shanghai IFC",
+  "lon": 121.497872,
+  "lat": 31.238357,
+  "height": 260.0,
+  "floors": 56.0
+ },
+ "Q782435": {
+  "zh": "上海银行大厦",
+  "en": "Bank of Shanghai Headquarters",
+  "lon": 121.49965556,
+  "lat": 31.24151944,
+  "floors": 46.0
+ },
+ "Q2109257": {
+  "zh": "震旦国际大楼",
+  "en": "Aurora Plaza",
+  "lon": 121.4952,
+  "lat": 31.236192,
+  "floors": 38.0
+ },
+ "Q2405705": {
+  "zh": "中银大厦",
+  "en": "Bank of China Tower, Shanghai",
+  "lon": 121.498888888,
+  "lat": 31.240555555,
+  "floors": 53.0
+ },
+ "Q5647842": {
+  "zh": "恒生銀行大廈",
+  "en": "Hang Seng Bank Tower",
+  "lon": 121.502671,
+  "lat": 31.242265,
+  "floors": 46.0
+ },
+ "Q7258354": {
+  "zh": "上海信息大楼",
+  "en": "Pudong International Information Port",
+  "lon": 121.5058,
+  "lat": 31.2375,
+  "floors": 40.0
+ },
+ "Q8035728": {
+  "zh": "世界金融大厦",
+  "en": "World Finance Tower",
+  "lon": 121.504,
+  "lat": 31.2405,
+  "floors": 43.0
+ },
+ "Q15920905": {
+  "zh": "上海太平金融大厦",
+  "en": "Taiping Financial Building",
+  "lon": 121.499,
+  "lat": 31.2362,
+  "floors": 38.0
+ },
+ "Q23907600": {
+  "zh": "",
+  "en": "Huaneng Union Tower",
+  "lon": 121.503855555,
+  "lat": 31.241302777,
+  "floors": 38.0
+ },
+ "Q20991712": {
+  "zh": "",
+  "en": "",
+  "lon": 121.5054,
+  "lat": 31.2361,
+  "floors": 50.0
+ },
+ "Q24341001": {
+  "zh": "国家开发银行大厦",
+  "en": "",
+  "lon": 121.506,
+  "lat": 31.239,
+  "floors": 45.0
+ },
+ "Q26308310": {
+  "zh": "",
+  "en": "",
+  "lon": 121.502777777,
+  "lat": 31.236666666,
+  "floors": 15.0
+ }
+}

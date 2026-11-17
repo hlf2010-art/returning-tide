@@ -10,9 +10,10 @@ import { asLight, TOD } from './dayNight.js';
 import { markCanvas } from '../ui/brands.js';
 import { LINE_COLOR } from './nanjingRoad.js';
 import {
-  C, RING, ARMS, COLUMNS, SPUR, RAMPS, APPLE, METRO_LJZ, IFC, BUILDINGS, GREEN, LAKE, CANOPY, LOOP, BENCHES, YIN, CH, AVE, AVE_ROT,
-  dirOf, polar, fromAP, toAP, applePt, wellPt, carriage, inDistrict, inLake, loopPt, addBox, addCircle, LJZ, IFC_ARC, arcPt,
+  C, RC, RING, ARMS, COLUMNS, SPUR, RAMPS, APPLE, METRO_LJZ, IFC, BUILDINGS, GREEN, LAKE, CANOPY, LOOP, BENCHES, YIN, ZEBRAS, CH, AVE, AVE_ROT, LOBBY, PEARL_PARK,
+  dirOf, polar, rpolar, fromAP, toAP, applePt, wellPt, carriage, inDistrict, inLake, inGreen, inPoly, inBuilding, polyDist, loopPt, addBox, addCircle, LJZ,
 } from './lujiazuiLayout.js';
+import { facadeGlass } from './facade.js';
 import { kindAt, KIND, parkPath } from './lujiazuiGround.js';
 
 const D2R = Math.PI / 180;
@@ -101,20 +102,20 @@ export function buildBridge(g, m, lights) {
   // where the outer rail is open: the tops of the stairs, the spur
   const gaps = [...RAMPS.filter((r) => r.kind === 'ring').map((r) => [r.b, Math.asin(r.hw / RING.r1) / D2R]), [SPUR.b, Math.asin(SPUR.hw / RING.r1) / D2R]];
   const open = (b) => gaps.some(([c, w]) => Math.abs(((b - c + 540) % 360) - 180) < w);
-  top.arc(C, RING.r0, RING.r1, 0, 360, Y, 120); und.arc(C, RING.r0, RING.r1, 0, 360, yU, 120);
-  fas.drum(C, RING.r1 + 0.05, 0, 360, yU, Y + 0.28, 120); fas.drum(C, RING.r0 - 0.05, 0, 360, yU, Y + 0.28, 120);
-  led.drum(C, RING.r1 + 0.07, 0, 360, yU + 0.04, yU + 0.14, 120); led.drum(C, RING.r0 - 0.07, 0, 360, yU + 0.04, yU + 0.14, 120);
+  top.arc(RC, RING.r0, RING.r1, 0, 360, Y, 120); und.arc(RC, RING.r0, RING.r1, 0, 360, yU, 120);
+  fas.drum(RC, RING.r1 + 0.05, 0, 360, yU, Y + 0.28, 120); fas.drum(RC, RING.r0 - 0.05, 0, 360, yU, Y + 0.28, 120);
+  led.drum(RC, RING.r1 + 0.07, 0, 360, yU + 0.04, yU + 0.14, 120); led.drum(RC, RING.r0 - 0.07, 0, 360, yU + 0.04, yU + 0.14, 120);
   // glass balustrades with a steel rail, a light under the rail
   for (let b = 0; b < 360; b += 3) {
-    const rail = (r) => { const [x0, z0] = polar(b, r), [x1, z1] = polar(b + 3, r); gl.wall(x0, z0, x1, z1, Y + 0.28, Y + 1.2); const [dx, dz] = dirOf(b + 91.5); obox(st, (x0 + x1) / 2, Y + 1.2, (z0 + z1) / 2, dx, dz, Math.hypot(x1 - x0, z1 - z0) + 0.02, 0.06, 0.09); };
+    const rail = (r) => { const [x0, z0] = rpolar(b, r), [x1, z1] = rpolar(b + 3, r); gl.wall(x0, z0, x1, z1, Y + 0.28, Y + 1.2); const [dx, dz] = dirOf(b + 91.5); obox(st, (x0 + x1) / 2, Y + 1.2, (z0 + z1) / 2, dx, dz, Math.hypot(x1 - x0, z1 - z0) + 0.02, 0.06, 0.09); };
     rail(RING.r0 + 0.14);
     if (!open(b + 1.5)) rail(RING.r1 - 0.14);
   }
-  for (let b = 0; b < 360; b += 12) for (const r of [RING.r0 + 0.14, RING.r1 - 0.14]) { if (r > RING.rc && open(b)) continue; const [x, z] = polar(b, r); st.box(x, Y + 0.2, z, 0.06, 1.0, 0.06); }
+  for (let b = 0; b < 360; b += 12) for (const r of [RING.r0 + 0.14, RING.r1 - 0.14]) { if (r > RING.rc && open(b)) continue; const [x, z] = rpolar(b, r); st.box(x, Y + 0.2, z, 0.06, 1.0, 0.06); }
   // columns: a round shaft flaring into the deck
-  for (const b of COLUMNS) { const [x, z] = polar(b, RING.rc); con.cyl(x, CH, z, 0.62, 0.72, 3.3, 20); con.cyl(x, CH + 3.3, z, 2.0, 0.62, yU - CH - 3.3, 20); con.cyl(x, CH, z, 0.95, 1.0, 0.25, 20); }
+  for (const b of COLUMNS) { const [x, z] = rpolar(b, RING.rc); con.cyl(x, CH, z, 0.62, 0.72, 3.3, 20); con.cyl(x, CH + 3.3, z, 2.0, 0.62, yU - CH - 3.3, 20); con.cyl(x, CH, z, 0.95, 1.0, 0.25, 20); }
   // the spur toward IFC: a wide deck
-  const sp = (s, l, y) => [C.x + sdx * s + spx * l, y, C.z + sdz * s + spz * l];
+  const sp = (s, l, y) => [RC.x + sdx * s + spx * l, y, RC.z + sdz * s + spz * l];
   top.quad(sp(RING.r1 - 0.3, -SPUR.hw, Y), sp(SPUR.s1, -SPUR.hw, Y), sp(SPUR.s1, SPUR.hw, Y), sp(RING.r1 - 0.3, SPUR.hw, Y));
   und.quad(sp(RING.r1 - 0.3, -SPUR.hw, yU), sp(SPUR.s1, -SPUR.hw, yU), sp(SPUR.s1, SPUR.hw, yU), sp(RING.r1 - 0.3, SPUR.hw, yU));
   const SR = RAMPS[RAMPS.length - 1];
@@ -123,7 +124,7 @@ export function buildBridge(g, m, lights) {
     fas.wall(a[0], a[2], b[0], b[2], yU, Y + 0.28); gl.wall(a[0], a[2], b[0], b[2], Y + 0.28, Y + 1.2); obox(st, (a[0] + b[0]) / 2, Y + 1.2, (a[2] + b[2]) / 2, sdx, sdz, SPUR.s1 - RING.r1, 0.06, 0.09);
     fas.wall(b[0], b[2], e[0], e[2], yU, Y + 0.28); gl.wall(b[0], b[2], e[0], e[2], Y + 0.28, Y + 1.2);
   }
-  { const [x, z] = polar(SPUR.b, SPUR.s1 - 1.2); for (const l of [-4.6, 4.6]) { con.cyl(x + spx * l, CH, z + spz * l, 0.5, 0.6, yU - CH, 16); addCircle(x + spx * l, z + spz * l, 0.6, { y1: 5 }); } }
+  { const [x, z] = rpolar(SPUR.b, SPUR.s1 - 1.2); for (const l of [-4.6, 4.6]) { con.cyl(x + spx * l, CH, z + spz * l, 0.5, 0.6, yU - CH, 16); addCircle(x + spx * l, z + spz * l, 0.6, { y1: 5 }); } }
   // stairs (and, on the ring's four, a pair of escalators beside them)
   for (const R of RAMPS) {
     const n = 34, rise = (R.y1 - R.y0) / n, go = R.run / n, P = (t, l, y) => [R.top[0] + R.dx * t + R.px * l, y, R.top[1] + R.dz * t + R.pz * l];
@@ -147,8 +148,8 @@ export function buildBridge(g, m, lights) {
     if (!esc) { const mid = P(R.run / 2, 0, (R.y0 + R.y1) / 2 + 0.95), len = Math.hypot(R.run, R.y1 - R.y0), geo = new THREE.BoxGeometry(0.07, 0.07, len); geo.rotateX(Math.atan2(R.y1 - R.y0, R.run)); geo.rotateY(Math.atan2(R.dx, R.dz)); geo.translate(mid[0], mid[1], mid[2]); st.push(geo); }
     lights.push({ x: R.top[0] + R.dx * R.run * 0.5, y: 5.2, z: R.top[1] + R.dz * R.run * 0.5, intensity: 26, distance: 16, color: new THREE.Color(1.0, 0.93, 0.82), out: true });
   }
-  for (let b = 0; b < 360; b += 30) { const [x, z] = polar(b + 15, RING.rc); lights.push({ x, y: Y + 2.4, z, intensity: 30, distance: 16, color: new THREE.Color(1.0, 0.92, 0.8), out: true }); }
-  for (let b = 0; b < 360; b += 45) { const [x, z] = polar(b + 7, RING.rc); lights.push({ x, y: yU - 0.3, z, intensity: 22, distance: 14, color: new THREE.Color(0.85, 0.92, 1.0), out: true }); }
+  for (let b = 0; b < 360; b += 30) { const [x, z] = rpolar(b + 15, RING.rc); lights.push({ x, y: Y + 2.4, z, intensity: 30, distance: 16, color: new THREE.Color(1.0, 0.92, 0.8), out: true }); }
+  for (let b = 0; b < 360; b += 45) { const [x, z] = rpolar(b + 7, RING.rc); lights.push({ x, y: yU - 0.3, z, intensity: 22, distance: 14, color: new THREE.Color(0.85, 0.92, 1.0), out: true }); }
   const meshes = [top.mesh(m.deck, 'ljz-deck'), fas.mesh(m.fascia, 'ljz-fascia'), und.mesh(m.under, 'ljz-under'), st.mesh(m.steel, 'ljz-bridge-steel'), con.mesh(m.concrete, 'ljz-columns'), steps.mesh(m.granite, 'ljz-steps'), dark.mesh(m.rubber, 'ljz-escalators'), led.mesh(m.led, 'ljz-bridge-led')];
   for (const o of meshes) { o.castShadow = true; o.receiveShadow = true; g.add(o); }
   const glass = gl.mesh(m.glass, 'ljz-bridge-glass'); glass.renderOrder = 3; g.add(glass);
@@ -282,125 +283,99 @@ function curtainAtlas(seed, { glass = '#0f1f2e', warm = 0.4, fin = 'rgba(190,210
   x.fillStyle = fin; for (let b = 0; b < 16; b++) x.fillRect(b * 16, 0, 1.6, 1024);
   return tex(c, { aniso: 8 });
 }
-// the curtain wall's material: by night the atlas (lit rooms, fewer late); by day pale glass in which the
-// floors and the lit rooms only just read (dayNight.js glassByDay, with far less contrast: these are seen close)
-function curtainMat(map, day, gain = 1, contrast = 0.3, side = THREE.FrontSide) {
-  const m = new THREE.MeshBasicMaterial({ map, side }); m.color.setScalar(gain); m.userData.tod = 'glass';
-  const glass = { value: new THREE.Color(...day) };
-  m.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, { todDay: TOD.day, todWin: TOD.windows, todAmb: TOD.amb, todGlass: glass });
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float todDay, todWin, todAmb; uniform vec3 todGlass;')
-      .replace('#include <map_fragment>', `#include <map_fragment>
-      { float l = clamp(dot(diffuseColor.rgb, vec3(0.3, 0.55, 0.15)), 0.0, 1.0);
-        diffuseColor.rgb = mix(diffuseColor.rgb * mix(0.35, 1.0, todWin), todGlass * todAmb * (0.86 + ${contrast.toFixed(2)} * sqrt(l)), todDay); }`);
-  };
-  m.customProgramCacheKey = () => `ljz-curtain-${contrast}`;
-  return m;
+// ---- footprints: walls and roofs from OSM outlines (anticlockwise in x, z), UVs in curtain-atlas units
+// (u = metres round the outline / 24, v = metres up / 100.8) ----
+function walls(tris, P, y0, y1, u0 = 0) {
+  let u = u0;
+  for (let i = 0; i < P.length; i++) {
+    const [x0, z0] = P[i], [x1, z1] = P[(i + 1) % P.length], len = Math.hypot(x1 - x0, z1 - z0);
+    if (len < 0.05) continue;
+    tris.wall(x1, z1, x0, z0, y0, y1, [(u + len) / 24, y0 / 100.8, u / 24, y1 / 100.8]);        // (outward: the outline runs anticlockwise)
+    u += len;
+  }
+  return u;
 }
-// a box tower (any heading) with curtain-wall UVs in metres; its top face dark
-function curtainBox(batch, B, y0, h, r) {
-  const g = new THREE.BoxGeometry(B.hx * 2, h, B.hz * 2), uv = g.attributes.uv, ou = Math.floor(r() * 16) / 16, ov = Math.floor(r() * 24) / 24;
-  const dims = [B.hz * 2, B.hz * 2, 0, 0, B.hx * 2, B.hx * 2];
-  for (let f = 0; f < 6; f++) for (let i = 0; i < 4; i++) { const k = f * 4 + i; if (f === 2 || f === 3) uv.setXY(k, 0.002, 0.002); else uv.setXY(k, ou + (uv.getX(k) * dims[f]) / 24, ov + (y0 + uv.getY(k) * h) / 100.8); }
-  g.rotateY(-B.rot); g.translate(B.cx, y0 + h / 2, B.cz); batch.push(g);
+function cap(tris, P, y) {
+  const tri = THREE.ShapeUtils.triangulateShape(P.map(([x, z]) => new THREE.Vector2(x, z)), []);
+  for (const [i, j, k] of tri) tris.tri([P[i][0], y, P[i][1]], [P[j][0], y, P[j][1]], [P[k][0], y, P[k][1]], [[0.001, 0.001], [0.002, 0.001], [0.002, 0.002]]);
 }
+const shrink = (P, k, [cx, cz]) => P.map(([x, z]) => [cx + (x - cx) * k, cz + (z - cz) * k]);
+// the facing edge of a footprint toward a point: its midpoint, outward normal and direction
+function faceToward(P, tx, tz) {
+  let best = null;
+  for (let i = 0; i < P.length; i++) {
+    const [x0, z0] = P[i], [x1, z1] = P[(i + 1) % P.length], l = Math.hypot(x1 - x0, z1 - z0); if (l < 4) continue;
+    const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, nx = (z1 - z0) / l, nz = -(x1 - x0) / l, d = Math.hypot(tx - mx, tz - mz), facing = ((tx - mx) * nx + (tz - mz) * nz) / d;
+    const score = facing * 2 - d / 60 + Math.min(l, 30) / 60; if (facing > 0.3 && (!best || score > best.score)) best = { score, x: mx, z: mz, nx, nz, ex: (x1 - x0) / l, ez: (z1 - z0) / l, len: l };
+  }
+  return best;
+}
+
 export function buildIfc(g, m, lights) {
-  const r = rng(808), glassB = new Batch(), crown = new Tris(24), edge = new Batch(), stone = new Batch(), st = new Batch(), gl = new Tris(), shops = new Tris(), lob = new Tris();
-  const front = new Tris(), roof = new Tris(), fascia = new Tris(), mull = new Batch();
-  const atlas = curtainAtlas(31, { glass: '#122634', warm: 0.3, occ: 0.18, fin: 'rgba(214,226,236,0.8)' });
-  // the two towers: a square shaft with notched corners in silvery glass and close vertical mullions, then the
-  // cut-crystal crown (four leaning facets up to a tilted top), its edges lit at night
-  for (const [T, tall] of [[IFC.north, 259.9], [IFC.south, 249.9]]) {
-    const hs = tall - 46, n = T.notch || 0;
-    curtainBox(glassB, { ...T, hz: T.hz - n }, 0, hs, r); curtainBox(glassB, { ...T, hx: T.hx - n }, 0, hs, r);
-    const P = (lx, lz, y) => [T.cx + lx * T.c - lz * T.s, y, T.cz + lx * T.s + lz * T.c], k = 0.52;
-    const base = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => P(a * T.hx, b * T.hz, hs)), topH = [tall, tall - 14, tall - 30, tall - 14];
-    const topP = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b], i) => P(a * T.hx * k, b * T.hz * k, topH[i]));
-    for (let i = 0; i < 4; i++) { const j = (i + 1) % 4, w = T.hx * 2 / 24; crown.quad(base[i], base[j], topP[j], topP[i], [[0, hs / 100.8], [w, hs / 100.8], [w * (0.5 + k / 2), topH[j] / 100.8], [w * (0.5 - k / 2), topH[i] / 100.8]]); }
-    crown.quad(topP[0], topP[1], topP[2], topP[3], [[0, 0], [0.001, 0], [0.001, 0.001], [0, 0.001]]);
-    // the notches close under the crown: a soffit at each corner
-    for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { const c0 = P(a * T.hx, b * T.hz, hs), c1 = P(a * (T.hx - n), b * T.hz, hs), c2 = P(a * (T.hx - n), b * (T.hz - n), hs), c3 = P(a * T.hx, b * (T.hz - n), hs); crown.quad(c0, c1, c2, c3, [[0, 0], [0.001, 0], [0.001, 0.001], [0, 0.001]]); }
-    for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; for (const [a, b] of [[base[i], topP[i]], [topP[i], topP[j]], [base[i], base[j]]]) { const d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), len = d.length(), geo = new THREE.BoxGeometry(0.7, 0.7, len); geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.normalize())); geo.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); edge.push(geo); } }
-  }
-  // the 85 m block behind and between them
-  { const B = IFC.annex; curtainBox(glassB, B, 0, B.h - 6, r); curtainBox(glassB, { ...B, hx: B.hx - 3, hz: B.hz - 3 }, B.h - 6, 6, r); }
-  // ---- the mall's podium: four levels; shop windows along the street, glass and stone bands above ----
-  const AP = (a, p, y) => { const [x, z] = fromAP(a, p); return [x, y, z]; }, H = IFC_ARC.h;
-  for (const B of [IFC.podium, IFC.podiumW]) { const geo = new THREE.BoxGeometry(B.hx * 2 - 0.6, H - 0.4, B.hz * 2 - 0.6); geo.rotateY(-B.rot); geo.translate(B.cx, (H - 0.4) / 2, B.cz); stone.push(geo); }
-  const [Pa, Pp] = toAP(IFC.podium.cx, IFC.podium.cz), [Wa, Wp] = toAP(IFC.podiumW.cx, IFC.podiumW.cz);
-  const streetFaces = [[Pa - IFC.podium.hx, 40, Pa + IFC.podium.hx, 40], [Wa - IFC.podiumW.hx, Wp + IFC.podiumW.hz, Wa - IFC.podiumW.hx, Wp - IFC.podiumW.hz]];
-  for (const [a0, p0, a1, p1] of streetFaces) {
-    const len = Math.hypot(a1 - a0, p1 - p0), nb = Math.round(len / 5.5);
-    for (let i = 0; i < nb; i++) {
-      const f0 = i / nb + 0.004, f1 = (i + 1) / nb - 0.004, am = a0 + (a1 - a0) * (f0 + f1) / 2; if (p0 === 40 && am > 149 && am < 203) continue;   // (the north tower stands there)
-      const kk = Math.floor(r() * 8), q0 = AP(a0 + (a1 - a0) * f0, p0 + (p1 - p0) * f0, 0), q1 = AP(a0 + (a1 - a0) * f1, p0 + (p1 - p0) * f1, 0);
-      shops.wall(q0[0], q0[2], q1[0], q1[2], CH, 6.4, [kk / 8, 0, (kk + 1) / 8, 1]);
+  const r = rng(808), glassT = new Tris(24), edge = new Batch(), stone = new Batch(), st = new Batch(), gl = new Tris(), shops = new Tris(), lob = new Tris(), mallG = new Tris(24), stoneT = new Tris(), roofT = new Tris();
+  // ---- the two towers: OSM's footprints (squares with their corners cut), silvery glass with close
+  // mullions, rising to the cut-crystal crown: the outline leans in to a smaller copy of itself whose top
+  // is tilted, each tower's toward the other; its edges lit at night ----
+  const towers = [[IFC.north, 259.9, IFC.south], [IFC.south, 249.9, IFC.north]];
+  for (const [T, tall, other] of towers) {
+    const P = T.P, c = [T.cx, T.cz], hs = tall - 40;
+    const u1 = walls(glassT, P, 0, hs);
+    const toward = Math.atan2(other.cz - T.cz, other.cx - T.cx), k = 0.55;
+    const top = shrink(P, k, c).map(([x, z]) => { const ang = Math.atan2(z - T.cz, x - T.cx), h = tall - 26 * (0.5 - 0.5 * Math.cos(ang - toward)); return [x, z, h]; });
+    let u = 0;
+    for (let i = 0; i < P.length; i++) {
+      const j = (i + 1) % P.length, [x0, z0] = P[i], [x1, z1] = P[j], len = Math.hypot(x1 - x0, z1 - z0), t0 = top[i], t1 = top[j];
+      glassT.quad([x1, hs, z1], [x0, hs, z0], [t0[0], t0[2], t0[1]], [t1[0], t1[2], t1[1]], [[(u + len) / 24, hs / 100.8], [u / 24, hs / 100.8], [u / 24 + len * (1 - k) / 48, t0[2] / 100.8], [(u + len) / 24 - len * (1 - k) / 48, t1[2] / 100.8]]);
+      u += len;
+      for (const [a, b] of [[[x0, hs, z0], [t0[0], t0[2], t0[1]]], [[t0[0], t0[2], t0[1]], [t1[0], t1[2], t1[1]]]]) { const d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), len2 = d.length(), geo = new THREE.BoxGeometry(0.6, 0.6, len2); geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.normalize())); geo.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); edge.push(geo); }
     }
-    const q0 = AP(a0, p0, 0), q1 = AP(a1, p1, 0), out = p0 === 40 ? [-dirOf(AVE + 90)[0], -dirOf(AVE + 90)[1]] : [-dirOf(AVE)[0], -dirOf(AVE)[1]];
-    front.wall(q0[0] + out[0] * 0.05, q0[2] + out[1] * 0.05, q1[0] + out[0] * 0.05, q1[2] + out[1] * 0.05, 6.4, H, [0, 6.4 / H, len / 12, 1]);
+    { const tri = THREE.ShapeUtils.triangulateShape(top.map(([x, z]) => new THREE.Vector2(x, z)), []); for (const [i, j, k2] of tri) roofT.tri([top[i][0], top[i][2], top[i][1]], [top[j][0], top[j][2], top[j][1]], [top[k2][0], top[k2][2], top[k2][1]]); }
+    void u1;
   }
-  // ---- the concave glass front round the Apple plaza: full height, the atrium behind it, stainless mullions every 3 m, stone floor edges ----
-  const b0 = AVE + IFC_ARC.t0, b1 = AVE + IFC_ARC.t1, R = IFC_ARC.r, arcLen = R * (b1 - b0) * D2R;
-  front.drum(APPLE, R, b0, b1, 0.0, H, 60, arcLen / 12);
-  for (const y of [6.4, 12.9, 19.4, H - 0.6]) fascia.drum(APPLE, R - 0.08, b0, b1, y - 0.2, y + 0.45, 60);
-  fascia.drum(APPLE, R - 0.3, b0, b1, H - 0.2, H + 1.1, 60); fascia.arc(APPLE, R - 0.3, R + 0.6, b0, b1, H + 1.1, 60);
-  for (let i = 0; i <= Math.round(arcLen / 3); i++) { const b = b0 + (b1 - b0) * i / Math.round(arcLen / 3), [x, z] = polar(b, R - 0.1, APPLE); mull.box(x, CH, z, 0.08, H - CH, 0.08); }
-  { // the roof over the wedge between the curved front and the two boxes: out along each ray to where the podium ends
-    const tAt = (t) => { const c = Math.cos(t * D2R), s2 = Math.sin(t * D2R), a0 = Wa - IFC.podiumW.hx; let d = R + 12;
-      if (c > 1e-3) d = Math.min(d, R / c); if (c < -1e-3) d = Math.min(d, (IFC_ARC.a - a0) / -c);
-      if (s2 > 1e-3) d = Math.min(d, (Wp - IFC.podiumW.hz - IFC_ARC.p) / s2); if (s2 < -1e-3) d = Math.min(d, (IFC_ARC.p - 40) / -s2); return Math.max(R, d); };
-    for (let i = 0; i < 40; i++) { const t0 = IFC_ARC.t0 + (IFC_ARC.t1 - IFC_ARC.t0) * i / 40, t1 = IFC_ARC.t0 + (IFC_ARC.t1 - IFC_ARC.t0) * (i + 1) / 40, d0 = tAt(t0) + 0.3, d1 = tAt(t1) + 0.3;
-      const [x0, z0] = polar(AVE + t0, R, APPLE), [x1, z1] = polar(AVE + t1, R, APPLE), [x2, z2] = polar(AVE + t1, d1, APPLE), [x3, z3] = polar(AVE + t0, d0, APPLE);
-      roof.quad([x0, H, z0], [x1, H, z1], [x2, H, z2], [x3, H, z3]); } }
-  // its way in, facing the cylinder: a pair of glass doors under a stainless canopy, the mall's name high on the glass
-  const tm = (IFC_ARC.t0 + IFC_ARC.t1) / 2, bm = AVE + tm, [ex, ez] = polar(bm, R, APPLE), [ix, iz] = dirOf(bm + 180), [jx, jz] = dirOf(bm + 90);
-  obox(st, ex + ix * 2.2, 5.0, ez + iz * 2.2, jx, jz, 12, 0.22, 4.4);
-  for (const s2 of [-4.2, 4.2]) st.box(ex + ix * 4.2 + jx * s2, CH, ez + iz * 4.2 + jz * s2, 0.12, 4.85, 0.12);
-  g.add(sign(['ifc mall'], { w: 13, h: 3.6, x: ex + ix * 0.9, y: 16.6, z: ez + iz * 0.9, ry: Math.atan2(ix, iz), color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.45, font: FONT.sans }));
-  g.add(sign(['上海国金中心商场'], { w: 9, h: 1.3, x: ex + ix * 0.9, y: 13.6, z: ez + iz * 0.9, ry: Math.atan2(ix, iz), color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.3 }));
-  // the same name on the avenue, at the podium's corner
-  { const [x, z] = fromAP(128, 39.7), d = dirOf(AVE + 270); g.add(sign(['ifc mall', '上海国金中心商场'], { w: 16, h: 4.4, x, y: 20.5, z, ry: Math.atan2(d[0], d[1]), color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.4 })); }
-  // a directory totem on the plaza by the doors: the mall, the hotel in the south tower, Apple, the metro
-  { const [x, z] = polar(bm - 14, R - 3.2, APPLE), d = dirOf(bm + 180 - 14); obox(stone, x, CH, z, -d[1], d[0], 1.1, 2.6, 0.3); addCircle(x, z, 0.6, { y1: 2 });
-    g.add(sign(['国金中心商场 · ifc mall', 'Apple · 浦东丽思卡尔顿酒店 Ritz-Carlton · 地铁2号线 Metro'], { w: 1.0, h: 1.9, x: x + d[0] * 0.16, y: CH + 1.5, z: z + d[1] * 0.16, ry: Math.atan2(d[0], d[1]), color: '#f2ede2', bg: '#2b2d31', ch: null, gain: 1.1 })); }
-  lights.push({ x: ex + ix * 3, y: 4.6, z: ez + iz * 3, intensity: 22, distance: 16, color: new THREE.Color(1.0, 0.92, 0.8) });
-  for (const t of [IFC_ARC.t0 + 25, tm, IFC_ARC.t1 - 25]) { const [x, z] = polar(AVE + t, R + 6, APPLE); lights.push({ x, y: 10, z, intensity: 30, distance: 22, color: new THREE.Color(1.0, 0.9, 0.75) }); }
+  // ---- the mall: OSM's outline, four levels of glass over shopfronts at street level, a planted roof ----
+  const MP = IFC.mall.P, MH = IFC.mall.h;
+  walls(mallG, MP, 6.4, MH);
+  { let uu = 0; for (let i = 0; i < MP.length; i++) { const [x0, z0] = MP[i], [x1, z1] = MP[(i + 1) % MP.length], len = Math.hypot(x1 - x0, z1 - z0), nb = Math.max(1, Math.round(len / 5.5)); for (let q = 0; q < nb; q++) { const f0 = q / nb + 0.004, f1 = (q + 1) / nb - 0.004, kk = Math.floor(r() * 8); shops.wall(x1 + (x0 - x1) * f0, z1 + (z0 - z1) * f0, x1 + (x0 - x1) * f1, z1 + (z0 - z1) * f1, CH, 6.4, [kk / 8, 0, (kk + 1) / 8, 1]); } uu += len; } }
+  { const band = new Tris(); for (let i = 0; i < MP.length; i++) { const [x0, z0] = MP[i], [x1, z1] = MP[(i + 1) % MP.length], l = Math.hypot(x1 - x0, z1 - z0) || 1, nx = (z1 - z0) / l * 0.12, nz = -(x1 - x0) / l * 0.12; for (const y of [6.4, 12.9, 19.4]) band.wall(x1 + nx, z1 + nz, x0 + nx, z0 + nz, y - 0.25, y + 0.45); band.wall(x1 + nx, z1 + nz, x0 + nx, z0 + nz, MH - 0.6, MH + 0.9); }
+    stoneT.p.push(...band.p); stoneT.n.push(...band.n); stoneT.u.push(...band.u); }
+  cap(roofT, MP, MH);
+  // its way in from the Apple plaza: the face of the mall nearest the cylinder; glass doors under a canopy, the name above
+  const F = faceToward(MP, APPLE.x, APPLE.z);
+  if (F) {
+    const ex = F.x + F.nx * 0.2, ez = F.z + F.nz * 0.2, ry = Math.atan2(F.nx, F.nz);
+    obox(st, ex + F.nx * 2.2, 5.0, ez + F.nz * 2.2, F.ex, F.ez, 12, 0.22, 4.4);
+    for (const s2 of [-4.2, 4.2]) st.box(ex + F.nx * 4.2 + F.ex * s2, CH, ez + F.nz * 4.2 + F.ez * s2, 0.12, 4.85, 0.12);
+    gl.wall(ex - F.ex * 5, ez - F.ez * 5, ex + F.ex * 5, ez + F.ez * 5, CH, 4.6);
+    g.add(sign(['ifc mall'], { w: 13, h: 3.6, x: ex + F.nx * 0.5, y: MH - 8.5, z: ez + F.nz * 0.5, ry, color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.45 }));
+    g.add(sign(['上海国金中心商场'], { w: 9, h: 1.3, x: ex + F.nx * 0.5, y: MH - 12.4, z: ez + F.nz * 0.5, ry, color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.3 }));
+    // a directory totem on the plaza side: the mall, Apple, the hotel in the south tower, the metro
+    const tx = ex + F.nx * 6 + F.ex * 7.5, tz = ez + F.nz * 6 + F.ez * 7.5;
+    if (!inBuilding(tx, tz, 1)) { obox(stone, tx, CH, tz, F.ex, F.ez, 1.1, 2.6, 0.3); addCircle(tx, tz, 0.6, { y1: 2 });
+      g.add(sign(['国金中心商场 · ifc mall', 'Apple · 浦东丽思卡尔顿酒店 Ritz-Carlton · 地铁2号线 Metro'], { w: 1.0, h: 1.9, x: tx + F.nx * 0.16, y: CH + 1.5, z: tz + F.nz * 0.16, ry, color: '#f2ede2', bg: '#2b2d31', ch: null, gain: 1.1 })); }
+    lights.push({ x: ex + F.nx * 3, y: 4.6, z: ez + F.nz * 3, intensity: 22, distance: 16, color: new THREE.Color(1.0, 0.92, 0.8) });
+  }
+  // the same name where the mall meets the avenue
+  { const F2 = faceToward(MP, ...fromAP(260, 0)); if (F2) g.add(sign(['ifc mall', '上海国金中心商场'], { w: 16, h: 4.4, x: F2.x + F2.nx * 0.4, y: MH - 8, z: F2.z + F2.nz * 0.4, ry: Math.atan2(F2.nx, F2.nz), color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.4 })); }
   // the north tower's lobby on Century Avenue: a tall glass front, a canopy, revolving doors, the address stone
-  const T = IFC.north, L = LJZ.ifcLobbyDoor, [ux, uz] = dirOf(AVE);
-  { const [x0, z0] = [L.x - ux * 13, L.z - uz * 13], [x1, z1] = [L.x + ux * 13, L.z + uz * 13];
+  const L = LJZ.ifcLobbyDoor, ux = LOBBY.ex, uz = LOBBY.ez, LROT = Math.atan2(uz, ux);
+  { const [x0, z0] = [L.x - ux * 8.6, L.z - uz * 8.6], [x1, z1] = [L.x + ux * 8.6, L.z + uz * 8.6];
     lob.wall(x0 + L.nx * 0.12, z0 + L.nz * 0.12, x1 + L.nx * 0.12, z1 + L.nz * 0.12, CH, 8.8, [0, 0, 2, 1]);
-    obox(st, L.x + L.nx * 2.8, 4.6, L.z + L.nz * 2.8, ux, uz, 16, 0.3, 5.6); for (const s of [-7, 7]) st.cyl(L.x + ux * s + L.nx * 5, CH, L.z + uz * s + L.nz * 5, 0.14, 0.14, 4.45, 12);
+    obox(st, L.x + L.nx * 2.8, 4.6, L.z + L.nz * 2.8, ux, uz, 14, 0.3, 5.6); for (const s of [-6, 6]) st.cyl(L.x + ux * s + L.nx * 5, CH, L.z + uz * s + L.nz * 5, 0.14, 0.14, 4.45, 12);
     for (const s of [-2.4, 2.4]) { const dm = new Tris(); dm.drum({ x: L.x + ux * s + L.nx * 0.9, z: L.z + uz * s + L.nz * 0.9 }, 1.25, 0, 360, CH, 2.9, 16); gl.p.push(...dm.p); gl.n.push(...dm.n); gl.u.push(...dm.u); st.cyl(L.x + ux * s + L.nx * 0.9, 2.9, L.z + uz * s + L.nz * 0.9, 1.32, 1.32, 0.16, 20); }
-    obox(stone, L.x - ux * 11 + L.nx * 6.5, CH, L.z - uz * 11 + L.nz * 6.5, ux, uz, 3.6, 1.5, 0.5);
-    g.add(sign(['上海国金中心', 'Shanghai ifc · 世纪大道8号'], { w: 3.3, h: 1.1, x: L.x - ux * 11 + L.nx * 6.77, y: CH + 0.78, z: L.z - uz * 11 + L.nz * 6.77, ry: Math.atan2(L.nx, L.nz), color: '#e9dcb8', bg: '#2a2620', ch: null }));
+    obox(stone, L.x - ux * 7.6 + L.nx * 6.5, CH, L.z - uz * 7.6 + L.nz * 6.5, ux, uz, 3.6, 1.5, 0.5);
+    g.add(sign(['上海国金中心 二期', 'Two IFC · 世纪大道8号'], { w: 3.3, h: 1.1, x: L.x - ux * 7.6 + L.nx * 6.77, y: CH + 0.78, z: L.z - uz * 7.6 + L.nz * 6.77, ry: Math.atan2(L.nx, L.nz), color: '#e9dcb8', bg: '#2a2620', ch: null }));
     lights.push({ x: L.x + L.nx * 2.6, y: 4.2, z: L.z + L.nz * 2.6, intensity: 26, distance: 16, color: new THREE.Color(1.0, 0.9, 0.74) });
-    addCircle(L.x + ux * 7 + L.nx * 5, L.z + uz * 7 + L.nz * 5, 0.2); addCircle(L.x - ux * 7 + L.nx * 5, L.z - uz * 7 + L.nz * 5, 0.2);
-    addBox(L.x - ux * 11 + L.nx * 6.5, L.z - uz * 11 + L.nz * 6.5, AVE_ROT, 1.8, 0.3, { id: 'stone', y1: 2 }); }
-  const towerMat = curtainMat(atlas, [0.36, 0.45, 0.53], 0.95, 0.5, THREE.DoubleSide);
+    addCircle(L.x + ux * 6 + L.nx * 5, L.z + uz * 6 + L.nz * 5, 0.2); addCircle(L.x - ux * 6 + L.nx * 5, L.z - uz * 6 + L.nz * 5, 0.2);
+    addBox(L.x - ux * 7.6 + L.nx * 6.5, L.z - uz * 7.6 + L.nz * 6.5, LROT, 1.8, 0.3, { id: 'stone', y1: 2 }); }
+  const towerMat = facadeGlass(curtainAtlas(31, { glass: '#122634', warm: 0.3, occ: 0.18, fin: 'rgba(214,226,236,0.6)' }), { tint: [0.8, 0.88, 0.95], f0: 0.34, frame: [0.7, 0.73, 0.76], seed: 3 });
+  const mallMat = facadeGlass(curtainAtlas(57, { glass: '#3a2c1c', warm: 0.9, occ: 0.85, fin: 'rgba(230,220,200,0.5)' }), { tint: [0.9, 0.93, 0.95], f0: 0.12, frame: [0.78, 0.76, 0.72], spandrel: 0.1, body: [0.09, 0.075, 0.06], seed: 9 });
   const lobbyMat = new THREE.MeshBasicMaterial({ map: lobbyTex(), side: THREE.DoubleSide }); lobbyMat.color.setScalar(0.9); lobbyMat.userData.todSkip = true;
   const shopMat = asLight(new THREE.MeshBasicMaterial({ map: shopfronts(), side: THREE.DoubleSide }), 'shops', 0.3);
-  const frontMat = curtainMat(atriumTex(), [0.3, 0.37, 0.42], 0.72, 0.75, THREE.DoubleSide);
-  const tw = glassB.mesh(towerMat, 'ljz-ifc-towers'), cr = crown.mesh(towerMat, 'ljz-ifc-crowns'), sm = stone.mesh(std({ color: 0xcfc6b6, roughness: 0.6 }), 'ljz-ifc-podium'), stm = st.mesh(m.steel, 'ljz-ifc-steel');
-  for (const o of [tw, cr, sm, stm]) { o.castShadow = true; o.receiveShadow = true; g.add(o); }
-  for (const o of [fascia.mesh(std({ color: 0xd8d2c6, roughness: 0.5 }), 'ljz-ifc-mall-fascia'), mull.mesh(m.steel, 'ljz-ifc-mall-mullions'), roof.mesh(std({ color: 0x5d625f, roughness: 0.9 }), 'ljz-ifc-mall-roof')]) { o.castShadow = true; o.receiveShadow = true; g.add(o); }
-  g.add(edge.mesh(asLight(lit(1.5, 1.7, 2.2), 'outline', 0.3), 'ljz-ifc-edges'), shops.mesh(shopMat, 'ljz-ifc-shops'), lob.mesh(lobbyMat, 'ljz-ifc-lobby'), front.mesh(frontMat, 'ljz-ifc-mall-glass'));
+  const stoneMat = std({ color: 0xd8d2c6, roughness: 0.55 });
+  const out = [glassT.mesh(towerMat, 'ljz-ifc-towers'), mallG.mesh(mallMat, 'ljz-ifc-mall-glass'), stone.mesh(stoneMat, 'ljz-ifc-stone'), stoneT.mesh(stoneMat, 'ljz-ifc-mall-bands'), st.mesh(m.steel, 'ljz-ifc-steel'), roofT.mesh(std({ color: 0x5d625f, roughness: 0.9 }), 'ljz-ifc-roofs')];
+  for (const o of out) { o.castShadow = true; o.receiveShadow = true; g.add(o); }
+  g.add(edge.mesh(asLight(lit(1.5, 1.7, 2.2), 'outline', 0.3), 'ljz-ifc-edges'), shops.mesh(shopMat, 'ljz-ifc-shops'), lob.mesh(lobbyMat, 'ljz-ifc-lobby'));
   const gm = gl.mesh(m.glass, 'ljz-ifc-glass'); gm.renderOrder = 3; g.add(gm);
-}
-// the mall's atrium seen through its glass: 12 m across, the podium's height (four levels), shopfronts at
-// the back of each level, glass balustrades on the slab edges, an escalator crossing, a few people
-function atriumTex() {
-  const [c, x] = makeCanvas(512, 1024), r = rng(77), H = 1024, lv = [0, 6.4, 12.9, 19.4, 26].map((y) => H - y / 26 * H);
-  for (let k = 0; k < 4; k++) {
-    const y0 = lv[k + 1], y1 = lv[k], gd = x.createLinearGradient(0, y0, 0, y1);
-    gd.addColorStop(0, '#f6e7c8'); gd.addColorStop(0.6, '#d9b98a'); gd.addColorStop(1, '#6d5538'); x.fillStyle = gd; x.fillRect(0, y0, 512, y1 - y0);
-    for (let i = 0; i < 4; i++) { const X = i * 128 + 10; x.fillStyle = i % 2 ? 'rgba(255,250,236,0.9)' : 'rgba(236,228,214,0.85)'; x.fillRect(X, y0 + (y1 - y0) * 0.35, 108, (y1 - y0) * 0.55); x.fillStyle = `hsl(${(r() * 360) | 0},25%,${25 + r() * 25}%)`; x.fillRect(X + 10, y0 + (y1 - y0) * 0.22, 88, (y1 - y0) * 0.08); }
-    for (let i = 0; i < 2; i++) if (r() < 0.7) { const px = 40 + r() * 430; x.fillStyle = 'rgba(30,24,20,0.8)'; x.beginPath(); x.ellipse(px, y1 - 62, 6, 8, 0, 0, 7); x.fill(); x.fillRect(px - 8, y1 - 54, 16, 50); }
-    x.fillStyle = 'rgba(220,230,232,0.35)'; x.fillRect(0, y1 - 30, 512, 26);
-    x.fillStyle = 'rgba(40,36,30,0.95)'; x.fillRect(0, y1 - 6, 512, 12);
-  }
-  x.strokeStyle = 'rgba(60,60,64,0.8)'; x.lineWidth = 10; x.beginPath(); x.moveTo(60, lv[1]); x.lineTo(320, lv[2]); x.stroke();
-  x.fillStyle = 'rgba(16,18,22,0.9)'; for (let i = 0; i <= 4; i++) x.fillRect(i * 128 - 2, 0, 4, H);
-  return tex(c, { aniso: 8 });
 }
 function lobbyTex() {
   const [c, x] = makeCanvas(1024, 512), gd = x.createLinearGradient(0, 0, 0, 512);
@@ -520,11 +495,11 @@ export function buildTrees(g, spots) {
 export function buildGreen(g, m, lights, trees) {
   const r = rng(909), hedge = new Batch(), wood = new Batch(), st = new Batch(), water = new Tris(4), bank = new Tris(), mem = new Tris(), stone = new Batch(), fl = { red: new Tris(), yellow: new Tris(), violet: new Tris() };
   const ap = (a, p) => fromAP(a, p), [ux, uz] = dirOf(AVE), [nx, nz] = dirOf(AVE + 90);
-  // the lake: water a little below the lawn, a stone edge
+  // the lake (OSM's outline): water a little below the lawn, a stone edge
   for (const l of LAKE) {
-    const pts = []; for (let i = 0; i < 48; i++) { const t = i / 48 * 6.2832; pts.push([l.a + (l.ra + 0.6) * Math.cos(t), l.p + (l.rp + 0.6) * Math.sin(t)]); }
-    const [cx, cz] = ap(l.a, l.p);
-    for (let i = 0; i < 48; i++) { const [x0, z0] = ap(...pts[i]), [x1, z1] = ap(...pts[(i + 1) % 48]); water.tri([cx, CH - 0.28, cz], [x0, CH - 0.28, z0], [x1, CH - 0.28, z1]); bank.wall(x0, z0, x1, z1, CH - 0.5, CH + 0.06); }
+    const P = l.P, tri = THREE.ShapeUtils.triangulateShape(P.map(([x, z]) => new THREE.Vector2(x, z)), []);
+    for (const [i, j, k] of tri) water.tri([P[i][0], CH - 0.28, P[i][1]], [P[j][0], CH - 0.28, P[j][1]], [P[k][0], CH - 0.28, P[k][1]]);
+    for (let i = 0; i < P.length; i++) { const [x0, z0] = P[i], [x1, z1] = P[(i + 1) % P.length]; bank.wall(x0, z0, x1, z1, CH - 0.5, CH + 0.06); bank.wall(x1, z1, x0, z0, CH - 0.5, CH + 0.06); }
   }
   // benches along the loop path (slatted wood on steel), facing the water
   for (const b of BENCHES) {
@@ -537,7 +512,7 @@ export function buildGreen(g, m, lights, trees) {
   // lamps along the loop and the ways in
   const lamp = (x, z, h = 4.2) => { st.cyl(x, CH, z, 0.05, 0.08, h, 8); lights.lamp(x, CH + h + 0.1, z, 0.26, { intensity: 16, distance: 18, pool: 11 }); addCircle(x, z, 0.12, { y1: 3 }); };
   for (let i = 0; i < 22; i++) { const t = i / 22 * 6.2832 + 0.14; const [x, z] = ap(LOOP.a + (LOOP.ra - 2.8) * Math.cos(t), LOOP.p + (LOOP.rp - 2.8) * Math.sin(t)); if (!inLake(LOOP.a + (LOOP.ra - 2.8) * Math.cos(t), LOOP.p + (LOOP.rp - 2.8) * Math.sin(t), 2)) lamp(x, z); }
-  for (const [a, p] of [[270, -60], [286, -84], [300, -120], [316, -164], [527, -80], [512, -118]]) lamp(...ap(a, p));
+  for (const [a, p] of [[374, -62], [386, -96], [396, -128], [559, -70], [555, -110], [640, -120]]) lamp(...ap(a, p));
   // the white canopy on the lawn's west side: three peaks of membrane on steel masts
   for (const [da, dp, h] of [[-5, -3, 9], [4, 2, 11], [-1, 7, 8]]) {
     const [x, z] = ap(CANOPY.a + da, CANOPY.p + dp), n = 10, R = 7.5;
@@ -547,22 +522,26 @@ export function buildGreen(g, m, lights, trees) {
     lights.push({ x, y: 3.4, z, intensity: 14, distance: 14, color: new THREE.Color(1.0, 0.95, 0.86), out: true });
   }
   // the park's name on a boulder at the corner gate
-  { const [x, z] = ap(268.5, -58); const geo = new THREE.DodecahedronGeometry(1.5, 1); geo.scale(1.5, 0.75, 0.6); geo.rotateY(-AVE_ROT + 0.5); geo.translate(x, CH + 0.85, z); stone.push(geo); addCircle(x, z, 1.3, { y1: 3 });
+  { const [x, z] = ap(364, -60); const geo = new THREE.DodecahedronGeometry(1.5, 1); geo.scale(1.5, 0.75, 0.6); geo.rotateY(-AVE_ROT + 0.5); geo.translate(x, CH + 0.85, z); stone.push(geo); addCircle(x, z, 1.3, { y1: 3 });
     const d = dirOf(AVE + 270 - 28); g.add(sign(['陆家嘴中心绿地'], { w: 3.0, h: 0.62, x: x + d[0] * 0.62, y: CH + 1.0, z: z + d[1] * 0.62, ry: Math.atan2(d[0], d[1]), color: '#b3221c', bg: null, ch: null, font: FONT.serif, gain: 1 })); }
-  // trees: a belt round the Green's edge, clumps on the lawn, clear of the paths, the water and the canopy
-  const want = (a, p) => !inLake(a, p, 3) && !parkPath(a, p) && Math.hypot(a - CANOPY.a, p - CANOPY.p) > 16;
-  for (let a = GREEN.a0 + 5; a < GREEN.a1 - 3; a += 11) for (const p of [GREEN.p0 + 5, GREEN.p1 - 5]) { const aa = a + r() * 4, pp = p + (r() - 0.5) * 4; if (want(aa, pp) && !(aa < 302 && pp > -114)) { const [x, z] = ap(aa, pp); trees.push({ x, z, h: 9 + r() * 4 }); } }
-  for (let p = GREEN.p0 + 14; p < GREEN.p1 - 10; p += 11) for (const a of [GREEN.a0 + 5, GREEN.a1 - 5]) { const aa = a + (r() - 0.5) * 4, pp = p + r() * 4; if (want(aa, pp) && !(aa < 302 && pp > -114)) { const [x, z] = ap(aa, pp); trees.push({ x, z, h: 9 + r() * 4 }); } }
-  for (let i = 0; i < 46; i++) { const a = GREEN.a0 + 14 + r() * (GREEN.a1 - GREEN.a0 - 28), p = GREEN.p0 + 14 + r() * (GREEN.p1 - GREEN.p0 - 28), e = Math.hypot((a - LOOP.a) / LOOP.ra, (p - LOOP.p) / LOOP.rp); if (want(a, p) && (e > 1.12 || e < 0.9) && !(a > 330 && a < 372 && p > -190 && p < -120)) { const [x, z] = ap(a, p); trees.push({ x, z, h: 7 + r() * 5 }); } }
-  // hedges along the Green's edges (its fence), open at the gates
-  const hedgeRun = (a0, p0, a1, p1, skip = () => false) => { const len = Math.hypot(a1 - a0, p1 - p0), n = Math.ceil(len / 3); for (let i = 0; i < n; i++) { const f0 = i / n, f1 = (i + 1) / n, am = a0 + (a1 - a0) * (f0 + f1) / 2, pm = p0 + (p1 - p0) * (f0 + f1) / 2; if (skip(am, pm)) continue; const [x, z] = ap(am, pm), d = [(a1 - a0) / len, (p1 - p0) / len]; obox(hedge, x, CH, z, ux * d[0] + nx * d[1], uz * d[0] + nz * d[1], len / n + 0.05, 1.25, 1.1); } };
-  hedgeRun(GREEN.a0 - 0.8, GREEN.p0 - 0.8, GREEN.a1 + 0.8, GREEN.p0 - 0.8); hedgeRun(GREEN.a1 + 0.8, GREEN.p0 - 0.8, GREEN.a1 + 0.8, GREEN.p1 + 26); hedgeRun(GREEN.a0 - 0.8, GREEN.p0 - 0.8, GREEN.a0 - 0.8, GREEN.p1 - 0.5);
-  hedgeRun(298.8, GREEN.p1 + 0.8, 519.2, GREEN.p1 + 0.8);
-  // the avenue's median: a clipped hedge; the planted strip on its north side: a hedge at the back of the pavement
-  hedgeRun(76, 0, 218, 0); hedgeRun(262, 0, 786, 0); hedgeRun(72, -40.9, 234, -40.9);
+  // trees: a belt just inside the Green's edge, clumps on the lawn, clear of the paths, the water and the canopy
+  const want = (a, p) => !inLake(a, p, 3) && !parkPath(a, p) && Math.hypot(a - CANOPY.a, p - CANOPY.p) > 16 && inGreen(...ap(a, p));
+  for (let i = 0; i < GREEN.P.length; i++) {
+    const [x0, z0] = GREEN.P[i], [x1, z1] = GREEN.P[(i + 1) % GREEN.P.length], len = Math.hypot(x1 - x0, z1 - z0), nx = (z1 - z0) / len, nz = -(x1 - x0) / len;
+    for (let k = 4; k < len - 2; k += 11) { const x = x0 + (x1 - x0) * k / len - nx * (5 + r() * 3), z = z0 + (z1 - z0) * k / len - nz * (5 + r() * 3), [a, p] = toAP(x, z); if (want(a, p) && !(a < 392 && p > -100)) trees.push({ x, z, h: 9 + r() * 4 }); }
+  }
+  for (let i = 0; i < 70; i++) { const a = GREEN.a0 + 14 + r() * (GREEN.a1 - GREEN.a0 - 28), p = GREEN.p0 + 14 + r() * (GREEN.p1 - GREEN.p0 - 28), e = Math.hypot((a - LOOP.a) / LOOP.ra, (p - LOOP.p) / LOOP.rp); if (want(a, p) && (e > 1.12 || e < 0.9) && !(a < 392 && p > -100)) { const [x, z] = ap(a, p); trees.push({ x, z, h: 7 + r() * 5 }); } }
+  // a clipped hedge along the Green's edge (its fence), open at the gates (the corner by the junction, the avenue gate)
+  for (let i = 0; i < GREEN.P.length; i++) {
+    const [x0, z0] = GREEN.P[i], [x1, z1] = GREEN.P[(i + 1) % GREEN.P.length], len = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.ceil(len / 3));
+    for (let k = 0; k < n; k++) { const xm = x0 + (x1 - x0) * (k + 0.5) / n, zm = z0 + (z1 - z0) * (k + 0.5) / n, [am, pm] = toAP(xm, zm); if ((am < 392 && pm > -100) || (Math.abs(am - 556) < 7 && pm > -60) || parkPath(am, pm)) continue; obox(hedge, xm, CH, zm, (x1 - x0) / len, (z1 - z0) / len, len / n + 0.05, 1.25, 1.1); }
+  }
+  // the avenue's median: a clipped hedge; the planted strip at the back of the north pavement
+  const hedgeRun = (a0, p0, a1, p1) => { const len = Math.hypot(a1 - a0, p1 - p0), n = Math.ceil(len / 3); for (let i = 0; i < n; i++) { const f0 = i / n, f1 = (i + 1) / n, am = a0 + (a1 - a0) * (f0 + f1) / 2, pm = p0 + (p1 - p0) * (f0 + f1) / 2, [x, z] = ap(am, pm); if (inBuilding(x, z, 0.8)) continue; const d = [(a1 - a0) / len, (p1 - p0) / len]; obox(hedge, x, CH, z, ux * d[0] + nx * d[1], uz * d[0] + nz * d[1], len / n + 0.05, 1.25, 1.1); } };
+  hedgeRun(66, 0, YIN.a0 - 16, 0); hedgeRun(YIN.a1 + 6, 0, 886, 0); hedgeRun(72, -50.4, YIN.a0 - 12, -50.4);
   // the roundabout's island: lawn, rings of bedding flowers, clipped balls
-  fl.red.arc(C, 20.5, 23.5, 0, 360, CH + 0.1, 72); fl.yellow.arc(C, 16, 18.5, 0, 360, CH + 0.12, 60); fl.violet.arc(C, 6, 11, 0, 360, CH + 0.14, 40);
-  for (let i = 0; i < 12; i++) { const [x, z] = polar(i * 30 + 15, 13.5); const geo = new THREE.SphereGeometry(1.1, 10, 8); geo.translate(x, CH + 0.8, z); hedge.push(geo); }
+  fl.red.arc(C, 20, 23, 0, 360, CH + 0.1, 72); fl.yellow.arc(C, 15.5, 18, 0, 360, CH + 0.12, 60); fl.violet.arc(C, 6, 10.5, 0, 360, CH + 0.14, 40);
+  for (let i = 0; i < 12; i++) { const [x, z] = polar(i * 30 + 15, 13); const geo = new THREE.SphereGeometry(1.1, 10, 8); geo.translate(x, CH + 0.8, z); hedge.push(geo); }
   { const geo = new THREE.SphereGeometry(2.6, 14, 10); geo.scale(1, 0.8, 1); geo.translate(C.x, CH + 1.6, C.z); hedge.push(geo); }
   const add = (o, cast = true) => { o.castShadow = cast; o.receiveShadow = true; g.add(o); };
   add(hedge.mesh(m.hedge, 'ljz-hedges')); add(wood.mesh(m.wood, 'ljz-benches')); add(st.mesh(m.steel, 'ljz-park-steel')); add(water.mesh(m.water, 'ljz-lake'), false); add(bank.mesh(m.granite, 'ljz-lake-edge'), false);
@@ -570,57 +549,86 @@ export function buildGreen(g, m, lights, trees) {
   add(fl.red.mesh(m.flowerRed, 'ljz-flowers-r'), false); add(fl.yellow.mesh(m.flowerYellow, 'ljz-flowers-y'), false); add(fl.violet.mesh(m.flowerViolet, 'ljz-flowers-v'), false);
 }
 
-// ================= the towers around, the district's edge =================
-export function buildSurroundings(g, m, lights, trees) {
-  const r = rng(2031), cool = new Batch(), warm = new Batch(), gold = new Batch(), stone = new Batch(), hedge = new Batch(), hoard = new Batch(), st = new Batch();
-  // the named neighbours (their footprints are the colliders)
-  for (const B of BUILDINGS) {
-    if (B.id.startsWith('ifc')) continue;
-    if (B.id === 'superbrand') {                               // Super Brand Mall: a long stone-clad block, a glass drum at its corner, its name
-      const geo = new THREE.BoxGeometry(B.hx * 2, B.h, B.hz * 2); geo.rotateY(-B.rot); geo.translate(B.cx, B.h / 2, B.cz); stone.push(geo);
-      const fx = B.cx - B.c * (B.hx + 0.3), fz = B.cz - B.s * (B.hx + 0.3), ry = Math.atan2(-B.c, -B.s);
-      curtainBox(warm, { ...B, cx: B.cx - B.c * (B.hx - 4.4), cz: B.cz - B.s * (B.hx - 4.4), hx: 5, hz: B.hz * 0.6 }, 0, B.h * 0.8, r);
-      g.add(sign(['正大广场', 'SUPER BRAND MALL'], { w: 34, h: 8, x: fx, y: B.h * 0.8 + 6, z: fz, ry, color: '#ffe9c0', bg: null, ch: 'signs', gain: 1.5 }));
-      continue;
+// ================= the buildings around (OSM's footprints), the district's edge =================
+// low and mid-rise blocks: stone or render with bands of windows, lit by the sun; their windows lit after dark
+function blockTex(seed, { wall = '#c9c2b4', glass = '#3a4550', bay = 16, style = 0 } = {}) {
+  const [c, x] = makeCanvas(256, 1024), r = rng(seed); x.fillStyle = wall; x.fillRect(0, 0, 256, 1024);
+  const fh = 1024 / 24, w = 256 / bay, img = x.getImageData(0, 0, 256, 1024), d = img.data;
+  for (let i = 0; i < d.length; i += 4) { const n = (r() - 0.5) * 10; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+  x.putImageData(img, 0, 0);
+  const pane = (x0, y0, ww, hh) => { const gd = x.createLinearGradient(0, y0, 0, y0 + hh); gd.addColorStop(0, '#6f7c88'); gd.addColorStop(0.35, glass); gd.addColorStop(1, '#1f262d'); x.fillStyle = gd; x.fillRect(x0, y0, ww, hh); };
+  for (let f = 0; f < 24; f++) {
+    const y = f * fh;
+    if (style === 0) {                                          // ribbon windows: a band of glass across each floor, slim mullions
+      pane(0, y + fh * 0.34, 256, fh * 0.46); x.fillStyle = 'rgba(60,62,64,0.85)'; for (let b = 0; b <= bay; b++) x.fillRect(b * w - 1, y + fh * 0.34, 2, fh * 0.46);
+      x.fillStyle = 'rgba(255,255,255,0.18)'; x.fillRect(0, y + fh * 0.8, 256, 2);
+    } else if (style === 1) {                                   // punched windows with a reveal
+      for (let b = 0; b < bay; b++) { pane(b * w + w * 0.24, y + fh * 0.3, w * 0.52, fh * 0.5); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(b * w + w * 0.24, y + fh * 0.3, w * 0.52, 2); x.fillStyle = 'rgba(255,255,255,0.22)'; x.fillRect(b * w + w * 0.2, y + fh * 0.8, w * 0.6, 2); }
+    } else {                                                    // glass between stone piers
+      for (let b = 0; b < bay; b++) pane(b * w + w * 0.14, y + fh * 0.12, w * 0.72, fh * 0.76);
+      x.fillStyle = 'rgba(230,226,218,0.9)'; x.fillRect(0, y, 256, fh * 0.12);
     }
-    const batch = B.id === 'boc' ? gold : r() < 0.5 ? cool : warm;
-    curtainBox(batch, B, 0, B.h * 0.86, r); curtainBox(batch, { ...B, hx: B.hx * 0.72, hz: B.hz * 0.72 }, B.h * 0.86, B.h * 0.14, r);
   }
-  // the wider skyline: towers on the blocks beyond, wherever there is no road, park or walkable ground
-  for (let x = 500; x < 1500; x += 62) for (let z = -230; z < 780; z += 62) {
-    const cx = x + (r() - 0.5) * 22, cz = z + (r() - 0.5) * 22, hw = 15 + r() * 10, hd = 15 + r() * 10, [a, p] = toAP(cx, cz);
-    let ok = Math.hypot(cx - 640, cz + 42) > 105 && Math.hypot(cx - C.x, cz - C.z) > 150;
-    for (const [dx, dz] of [[0, 0], [-1, -1], [1, -1], [1, 1], [-1, 1], [-1.6, 0], [1.6, 0], [0, -1.6], [0, 1.6]]) { const px = cx + dx * (hw + 9), pz = cz + dz * (hd + 9); if (kindAt(px, pz) !== KIND.pave || inDistrict(px, pz)) ok = false; }
-    for (const B of BUILDINGS) if (Math.hypot(cx - B.cx, cz - B.cz) < Math.max(B.hx, B.hz) + hw + 18) ok = false;
-    for (const t of Object.values(LJZ.towers)) if (Math.hypot(cx - t.x, cz - t.z) < 70) ok = false;
-    if (a > 240 && a < 570 && p > -330 && p < -40) ok = false;
-    if (!ok) continue;
-    const h = 60 + r() * r() * 190, rot = r() < 0.5 ? AVE_ROT : 0, B = { cx, cz, rot, hx: hw, hz: hd };
-    curtainBox(r() < 0.55 ? cool : r() < 0.8 ? warm : gold, B, 0, h, r);
+  return tex(c, { aniso: 8 });
+}
+function blockLit(seed, bay = 16) {
+  const [c, x] = makeCanvas(256, 1024), r = rng(seed); x.fillStyle = '#000'; x.fillRect(0, 0, 256, 1024);
+  const fh = 1024 / 24;
+  for (let f = 0; f < 24; f++) for (let b = 0; b < bay; b++) if (r() < 0.32) { const w = 256 / bay, k = 0.5 + r() * 0.5; x.fillStyle = r() < 0.6 ? `rgb(${255 * k | 0},${200 * k | 0},${140 * k | 0})` : `rgb(${200 * k | 0},${220 * k | 0},${250 * k | 0})`; x.fillRect(b * w + w * 0.18, f * fh + fh * 0.28, w * 0.64, fh * 0.52); }
+  return tex(c, { aniso: 4 });
+}
+function blockMat(seed, opt) {
+  const m = std({ map: blockTex(seed, opt), emissiveMap: blockLit(seed + 1, opt.bay || 16), emissive: 0xffffff, roughness: 0.6, metalness: 0.05, envMapIntensity: 0.6, side: THREE.FrontSide });
+  m.onBeforeCompile = (sh) => { sh.uniforms.todWin = TOD.windows; sh.uniforms.todDay = TOD.day; sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float todWin, todDay;').replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= todWin * (1.0 - todDay) * 0.8;'); };
+  m.customProgramCacheKey = () => 'ljz-block';
+  return m;
+}
+export function buildSurroundings(g, m, lights, trees) {
+  const r = rng(2031), hedge = new Batch(), hoard = new Batch(), st = new Batch(), roofs = new Tris(), plant = new Batch();
+  // glass towers: four kinds of glass seen in Lujiazui; blocks: three kinds of facade
+  const GLASS = [
+    { tint: [0.72, 0.84, 0.96], f0: 0.32, atlas: { glass: '#0e1b2a', warm: 0.25, occ: 0.22 }, frame: [0.62, 0.66, 0.7] },            // blue reflective
+    { tint: [0.86, 0.89, 0.91], f0: 0.36, atlas: { glass: '#141a20', warm: 0.4, occ: 0.2 }, frame: [0.74, 0.75, 0.76] },             // silver
+    { tint: [0.74, 0.88, 0.84], f0: 0.27, atlas: { glass: '#0f201c', warm: 0.35, occ: 0.24 }, frame: [0.55, 0.6, 0.58] },            // green-grey
+    { tint: [0.92, 0.82, 0.66], f0: 0.26, atlas: { glass: '#241a0a', warm: 0.9, occ: 0.3, fin: 'rgba(255,205,120,0.5)' }, frame: [0.7, 0.62, 0.48] },   // bronze
+  ].map((k, i) => ({ ...k, tris: new Tris(24), mat: null, i }));
+  const BLOCK = [{ wall: '#a9aaa6', glass: '#3c4855', style: 0 }, { wall: '#c4bdb0', glass: '#38434e', style: 1, bay: 12 }, { wall: '#bfc1c0', glass: '#34414d', style: 2, bay: 12 }].map((k, i) => ({ ...k, tris: new Tris(24), i }));
+  const skip = new Set([IFC.north, IFC.south, IFC.mall].map((B) => B.osm));
+  for (const B of BUILDINGS) {
+    if (skip.has(B.osm) || B.h - B.min < 2) continue;
+    const hsh = (B.osm * 2654435761 % 997) / 997, glassy = B.mat === 'glass' || (B.h >= 45 && B.kind !== 'apartments') || (B.part && B.h >= 40);
+    const K = glassy ? GLASS[Math.floor(hsh * 4)] : BLOCK[Math.floor(hsh * 3)];
+    walls(K.tris, B.P, B.min, B.h, hsh * 24);
+    cap(roofs, B.P, B.h);
+    // on a tall roof: the plant room, set in from the edge
+    if (B.h > 60 && B.P.length >= 4) { const inner = shrink(B.P, 0.45, [B.cx, B.cz]); walls(roofs, inner, B.h, B.h + 4 + hsh * 4); cap(roofs, inner, B.h + 4 + hsh * 4); }
   }
+  for (const K of GLASS) { if (K.tris.empty) continue; const o = K.tris.mesh(facadeGlass(curtainAtlas(41 + K.i, { ...K.atlas, fin: K.atlas.fin || 'rgba(200,215,228,0.5)' }), { tint: K.tint, f0: K.f0, frame: K.frame, seed: 11 + K.i * 7 }), `ljz-osm-glass-${K.i}`); o.castShadow = true; o.receiveShadow = true; g.add(o); }
+  for (const K of BLOCK) { if (K.tris.empty) continue; const o = K.tris.mesh(blockMat(61 + K.i * 3, K), `ljz-osm-blocks-${K.i}`); o.castShadow = true; o.receiveShadow = true; g.add(o); }
+  { const o = roofs.mesh(std({ color: 0x6b6e6c, roughness: 0.9 }), 'ljz-osm-roofs'); o.castShadow = true; o.receiveShadow = true; g.add(o); }
+  // Super Brand Mall's name, on its face toward the roundabout
+  { const SB = BUILDINGS.find((B) => /正大广场/.test(B.name?.zh || '')); const F = SB && faceToward(SB.P, C.x, C.z);
+    if (F) g.add(sign(['正大广场', 'SUPER BRAND MALL'], { w: 34, h: 8, x: F.x + F.nx * 0.4, y: SB.h - 8, z: F.z + F.nz * 0.4, ry: Math.atan2(F.nx, F.nz), color: '#ffe9c0', bg: null, ch: 'signs', gain: 1.5 })); }
   // the district's edge: hedges where the pavement goes on beyond, a hoarding across the far end of each pavement
   const edge = (x0, z0, x1, z1) => { const len = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(len / 2.5)), tx = (x1 - x0) / len, tz = (z1 - z0) / len;
     for (let i = 0; i < n; i++) { const f = (i + 0.5) / n, x = x0 + (x1 - x0) * f, z = z0 + (z1 - z0) * f, in1 = inDistrict(x - tz * 0.9, z + tx * 0.9), in2 = inDistrict(x + tz * 0.9, z - tx * 0.9);
       if (in1 === in2) continue; const ox = in1 ? x + tz * 0.9 : x - tz * 0.9, oz = in1 ? z - tx * 0.9 : z + tx * 0.9; if (kindAt(ox, oz) === KIND.road || kindAt(x, z) === KIND.road) continue;
-      if (BUILDINGS.some((B) => { const lx = (ox - B.cx) * B.c + (oz - B.cz) * B.s, lz = -(ox - B.cx) * B.s + (oz - B.cz) * B.c; return Math.abs(lx) < B.hx + 0.3 && Math.abs(lz) < B.hz + 0.3; })) continue;
+      if (inBuilding(ox, oz, 0.4)) continue;
       obox(hedge, ox - (in1 ? tz : -tz) * 0.1, CH, oz + (in1 ? tx : -tx) * 0.1, tx, tz, len / n + 0.06, 1.3, 1.0); } };
-  const arcEdge = (rr, b0, b1) => { for (let b = b0; b < b1; b += 1.2) edge(...polar(b, rr), ...polar(Math.min(b1, b + 1.2), rr)); };
-  arcEdge(125, 0, 360); arcEdge(98, 274, 349); edge(...polar(274, 98), ...polar(274, 125)); edge(...polar(349, 98), ...polar(349, 125));
-  const apEdge = (a0, p0, a1, p1) => edge(...fromAP(a0, p0), ...fromAP(a1, p1));
-  apEdge(100, 34, 560, 34); apEdge(30, 108, 236, 108); apEdge(236, 34, 236, 108); apEdge(254, -66, 264, -66); apEdge(298, 34, 254, 34); apEdge(520, -40, 520, -66); apEdge(547, -40, 560, -40);
-  { const [x, z] = fromAP(560.4, -3), d = dirOf(AVE + 90); for (const [p0, p1] of [[-40, -16], [16, 34]]) { const [hx, hz] = fromAP(560.4, (p0 + p1) / 2); obox(hoard, hx, CH, hz, d[0], d[1], p1 - p0, 2.4, 0.12); } void x; void z; }
+  for (let b = 0; b < 360; b += 1.2) edge(...polar(b, 135), ...polar(b + 1.2, 135));
+  const apEdge = (a0, p0, a1, p1) => { const n = Math.ceil(Math.hypot(a1 - a0, p1 - p0) / 3); for (let i = 0; i < n; i++) edge(...fromAP(a0 + (a1 - a0) * i / n, p0 + (p1 - p0) * i / n), ...fromAP(a0 + (a1 - a0) * (i + 1) / n, p0 + (p1 - p0) * (i + 1) / n)); };
+  apEdge(30, -66, 760, -66); apEdge(30, 40, 760, 40); apEdge(30, 140, 362, 140); apEdge(362, 40, 362, 140); apEdge(30, 16, 30, 140);
+  for (let i = 0; i < GREEN.P.length; i++) { const [x0, z0] = GREEN.P[i], [x1, z1] = GREEN.P[(i + 1) % GREEN.P.length], n = Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 3); for (let k = 0; k < n; k++) edge(x0 + (x1 - x0) * k / n, z0 + (z1 - z0) * k / n, x0 + (x1 - x0) * (k + 1) / n, z0 + (z1 - z0) * (k + 1) / n); }
+  { const d = dirOf(AVE + 90); for (const [p0, p1] of [[-66, -17], [17, 40]]) { const [hx, hz] = fromAP(760.4, (p0 + p1) / 2); obox(hoard, hx, CH, hz, d[0], d[1], p1 - p0, 2.4, 0.12); } }
+  // the Pearl's park fence, where it comes near the street (a low rail on a stone kerb)
+  for (let i = 0; i < PEARL_PARK.length; i++) { const [x0, z0] = PEARL_PARK[i], [x1, z1] = PEARL_PARK[(i + 1) % PEARL_PARK.length]; if (Math.hypot((x0 + x1) / 2 - C.x, (z0 + z1) / 2 - C.z) > 260) continue; const len = Math.hypot(x1 - x0, z1 - z0); if (len < 0.5) continue; obox(st, (x0 + x1) / 2, CH + 1.0, (z0 + z1) / 2, (x1 - x0) / len, (z1 - z0) / len, len, 0.05, 0.05); for (let k = 0; k < len; k += 2.5) st.box(x0 + (x1 - x0) * k / len, CH, z0 + (z1 - z0) * k / len, 0.06, 1.0, 0.06); }
   // trees on the pavements: along the avenue, round the roundabout, in the Pearl's park
-  for (let a = 70; a < 556; a += 13) { if (a > 226 && a < 262) continue; for (const p of [-19.5, 19.5]) { const [x, z] = fromAP(a + (p > 0 ? 6 : 0), p); if (inDistrict(x, z) && Math.hypot(x - APPLE.x, z - APPLE.z) > 27 && !METRO_LJZ.some((M) => Math.hypot(x - M.top[0] - M.dx * 5.6, z - M.top[1] - M.dz * 5.6) < 9) && Math.hypot(x - LJZ.kerbPickup.x, z - LJZ.kerbPickup.z) > 9 && !RAMPS.some((R) => Math.hypot(x - R.bot[0], z - R.bot[1]) < 10)) trees.push({ x, z, h: 8 + r() * 2, r: 2.6 }); } }
-  for (let b = 0; b < 360; b += 9) { const [x, z] = polar(b, 74 + (b % 18 ? 0 : 6)); if (kindAt(x, z) === KIND.pave && inDistrict(x, z) && !carriage(...polar(b, 68)) && Math.hypot(x - APPLE.x, z - APPLE.z) > 30 && !RAMPS.some((R) => Math.hypot(x - R.bot[0], z - R.bot[1]) < 9) && !METRO_LJZ.some((M) => Math.hypot(x - M.top[0], z - M.top[1]) < 13) && !BUILDINGS.some((B) => Math.hypot(x - B.cx, z - B.cz) < Math.max(B.hx, B.hz) + 6)) trees.push({ x, z, h: 8 + r() * 3 }); }
-  for (let i = 0; i < 46; i++) { const b = 276 + r() * 71, rr = 102 + r() * 150, [x, z] = polar(b, rr); if (kindAt(x, z) === KIND.grass && Math.hypot(x - 640, z + 42) > 68) trees.push({ x, z, h: 8 + r() * 5, solid: false }); }
-  // the Pearl's fence along its park (a low rail on a stone kerb)
-  for (let b = 274; b < 349; b += 1.5) { const [x0, z0] = polar(b, 98.6), [x1, z1] = polar(b + 1.5, 98.6), d = dirOf(b + 90.75); obox(st, (x0 + x1) / 2, CH + 1.0, (z0 + z1) / 2, d[0], d[1], 2.7, 0.05, 0.05); st.box(x0, CH, z0, 0.06, 1.0, 0.06); }
-  const mat = (seed, opt, day, gain = 0.95) => curtainMat(curtainAtlas(seed, opt), day, gain, 0.3);
-  const meshes = [cool.mesh(mat(41, { glass: '#0e1b2a', warm: 0.25, occ: 0.24 }, [0.4, 0.47, 0.54]), 'ljz-towers-cool'), warm.mesh(mat(42, { glass: '#17140f', warm: 0.75, occ: 0.26, fin: 'rgba(220,200,170,0.45)' }, [0.47, 0.45, 0.42]), 'ljz-towers-warm'),
-    gold.mesh(mat(43, { glass: '#241a0a', warm: 0.95, occ: 0.4, fin: 'rgba(255,205,120,0.6)' }, [0.5, 0.44, 0.33], 1.05), 'ljz-towers-gold')];
-  for (const o of meshes) { o.castShadow = true; g.add(o); }
+  const clear = (x, z, rr = 3) => !inBuilding(x, z, rr) && Math.hypot(x - APPLE.x, z - APPLE.z) > APPLE.rOut + 4 && !METRO_LJZ.some((M) => Math.hypot(x - M.top[0] - M.dx * 5.6, z - M.top[1] - M.dz * 5.6) < 9) && Math.hypot(x - LJZ.kerbPickup.x, z - LJZ.kerbPickup.z) > 9 && !RAMPS.some((R) => Math.hypot(x - R.bot[0], z - R.bot[1]) < 10 || Math.hypot(x - (R.top[0] + R.bot[0]) / 2, z - (R.top[1] + R.bot[1]) / 2) < 8);
+  for (let a = 70; a < 756; a += 13) { if (a > YIN.a0 - 22 && a < YIN.a1 + 12) continue; for (const p of [-20.5, 20.5]) { const [x, z] = fromAP(a + (p > 0 ? 6 : 0), p); if (inDistrict(x, z) && !carriage(x, z) && clear(x, z)) trees.push({ x, z, h: 8 + r() * 2, r: 2.6 }); } }
+  for (let b = 0; b < 360; b += 8) { const [x, z] = polar(b, 96 + (b % 16 ? 0 : 8)); if (kindAt(x, z) === KIND.pave && inDistrict(x, z) && !carriage(...polar(b, 90)) && clear(x, z, 4)) trees.push({ x, z, h: 8 + r() * 3 }); }
+  for (let i = 0; i < 70; i++) { const xs = PEARL_PARK.map((q) => q[0]), zs = PEARL_PARK.map((q) => q[1]), x = Math.min(...xs) + r() * (Math.max(...xs) - Math.min(...xs)), z = Math.min(...zs) + r() * (Math.max(...zs) - Math.min(...zs)); if (inPoly(PEARL_PARK, x, z) && kindAt(x, z) === KIND.grass && Math.hypot(x - 640, z + 42) > 68 && !inBuilding(x, z, 2)) trees.push({ x, z, h: 8 + r() * 5, solid: false }); }
   const add = (o) => { o.castShadow = true; o.receiveShadow = true; g.add(o); };
-  add(stone.mesh(m.stoneWarm, 'ljz-superbrand')); add(hedge.mesh(m.hedge, 'ljz-edge-hedges')); add(hoard.mesh(m.hoard, 'ljz-hoardings')); add(st.mesh(m.steel, 'ljz-fence'));
+  add(hedge.mesh(m.hedge, 'ljz-edge-hedges')); add(hoard.mesh(m.hoard, 'ljz-hoardings')); add(st.mesh(m.steel, 'ljz-fence')); void plant;
 }
 
 // ================= street furniture: lamps, signals, signs =================
@@ -628,8 +636,8 @@ export function buildStreet(g, m, lights) {
   const st = new Batch(), dark = new Batch(), [ux, uz] = dirOf(AVE), [nx, nz] = dirOf(AVE + 90);
   // street lamps: a tall post, an arm over the carriageway
   const lamp = (x, z, toX, toZ) => { const l = Math.hypot(toX, toZ) || 1, dx = toX / l, dz = toZ / l; st.cyl(x, CH, z, 0.09, 0.14, 9.4, 10); obox(st, x + dx * 1.3, 9.4, z + dz * 1.3, dx, dz, 2.8, 0.1, 0.12); lights.lamp(x + dx * 2.5, 9.3, z + dz * 2.5, 0.34, { intensity: 150, distance: 50, pool: 24, px: x + dx * 3, pz: z + dz * 3, color: [1.0, 0.86, 0.66] }); addCircle(x, z, 0.16, { y1: 3 }); };
-  for (let a = 78; a < 556; a += 32) { if (a > 226 && a < 262) continue; for (const s of [-1, 1]) { const [x, z] = fromAP(a + (s > 0 ? 16 : 0), s * 17.2); if (Math.hypot(x - LJZ.kerbPickup.x, z - LJZ.kerbPickup.z) > 5) lamp(x, z, -s * nx, -s * nz); } }
-  for (let b = 0; b < 360; b += 20) { const [x, z] = polar(b, 64); if (carriage(x, z) || carriage(...polar(b, 58)) || Math.hypot(x - APPLE.x, z - APPLE.z) < 26 || RAMPS.some((R) => Math.abs(((b - R.b + 540) % 360) - 180) < (R.kind === 'spur' ? 14 : 7))) continue; const d = dirOf(b + 180); lamp(x, z, d[0], d[1]); }
+  for (let a = 78; a < 756; a += 32) { if (a > YIN.a0 - 20 && a < YIN.a1 + 6) continue; for (const s of [-1, 1]) { const [x, z] = fromAP(a + (s > 0 ? 16 : 0), s * 18.2); if (Math.hypot(x - LJZ.kerbPickup.x, z - LJZ.kerbPickup.z) > 5 && !inBuilding(x, z, 1) && inDistrict(x, z)) lamp(x, z, -s * nx, -s * nz); } }
+  for (let b = 0; b < 360; b += 18) { const [x, z] = polar(b, 84); if (carriage(x, z) || carriage(...polar(b, 79)) || Math.hypot(x - APPLE.x, z - APPLE.z) < APPLE.rOut + 6 || inBuilding(x, z, 1.5) || RAMPS.some((R) => Math.hypot(x - R.bot[0], z - R.bot[1]) < 7 || Math.hypot(x - (R.top[0] + R.bot[0]) / 2, z - (R.top[1] + R.bot[1]) / 2) < 7)) continue; const d = dirOf(b + 180); lamp(x, z, d[0], d[1]); }
   for (const A of ARMS) { if (A.id === 'century') continue; for (let al = 78; al < 124; al += 30) for (const s of [-1, 1]) { const x = C.x + A.dx * al + A.px * s * (A.hw + 1.2), z = C.z + A.dz * al + A.pz * s * (A.hw + 1.2); if (inDistrict(x, z) && !carriage(x, z)) lamp(x, z, -s * A.px, -s * A.pz); } }
   // round the Apple plaza's edge: low bollard lights (open toward the roundabout)
   for (let b = 45; b <= 315; b += 30) { const [x, z] = applePt(b, APPLE.rOut - 0.25); if (!inDistrict(x, z) || carriage(x, z)) continue; st.cyl(x, CH, z, 0.07, 0.07, 0.9, 8); lights.lamp(x, CH + 0.95, z, 0.14, { intensity: 7, distance: 9, pool: 6 }); addCircle(x, z, 0.12, { y1: 2 }); }
@@ -641,9 +649,9 @@ export function buildStreet(g, m, lights) {
     for (const f of [1, -1]) g.add(sign([A.zh, `${A.en}`], { w: 1.5, h: 0.52, x: x + A.px * 0.03 * f, y: 2.75, z: z + A.pz * 0.03 * f, ry: Math.atan2(A.px * f, A.pz * f), bg: '#1d4f9c', color: '#fff' }));
   }
   // pedestrian wayfinding on the ring, at the head of each stair: what lies that way
-  const WAY = { 22: ['丰和路 · 陆家嘴环路', 'Fenghe Rd · Lujiazui Ring Rd'], 82: ['地铁2号线 · 世纪大道 · 中心绿地', 'Metro Line 2 · Century Ave · Central Green'], 230: ['正大广场', 'Super Brand Mall'], 312: ['东方明珠广播电视塔 · 地铁1号口', 'Oriental Pearl Tower · Metro Exit 1'], 148: ['国金中心 · Apple · 地铁6号口', 'IFC · Apple · Metro Exit 6'] };
+  const WAY = { 60: ['地铁2号线 1号口 · 世纪大道北侧 · 中心绿地', 'Metro Line 2 Exit 1 · Century Ave north · Central Green'], 190: ['陆家嘴环路 · 香格里拉', 'Lujiazui Ring Rd · Shangri-La'], 235: ['正大广场 · 陆家嘴西路', 'Super Brand Mall · West Lujiazui Rd'], 290: ['丰和路 · 国际会议中心', 'Fenghe Rd · Intl Convention Center'], 330: ['东方明珠广播电视塔', 'Oriental Pearl Tower'], 150: ['国金中心 · Apple · 地铁6号口', 'IFC · Apple · Metro Exit 6'] };
   for (const R of RAMPS) {
-    const sp = R.kind === 'spur', [x, z] = sp ? polar(SPUR.b, RING.r1 + 1.2) : polar(R.b - 6.2, RING.r1 - 0.6), d = dirOf(R.b);
+    const sp = R.kind === 'spur', [x, z] = sp ? rpolar(SPUR.b, RING.r1 + 1.2) : rpolar(R.b - 5.4, RING.r1 - 0.6), d = dirOf(R.b);
     const px = x + (sp ? dirOf(R.b + 90)[0] * 6.4 : 0), pz = z + (sp ? dirOf(R.b + 90)[1] * 6.4 : 0);
     st.cyl(px, RING.y, pz, 0.04, 0.04, 2.6, 8);
     g.add(sign(WAY[R.b], { w: 2.6, h: 0.62, x: px - d[0] * 0.05, y: RING.y + 2.4, z: pz - d[1] * 0.05, ry: Math.atan2(-d[0], -d[1]), bg: '#14458f', color: '#fff', both: false }));
@@ -654,9 +662,9 @@ export function buildStreet(g, m, lights) {
   // signals at Century Avenue / Yincheng Road: posts with a vehicle head; a green / red man at each end of the zebras
   const heads = { ave: [], yin: [], z1: [], z2: [] }, bulb = new THREE.SphereGeometry(0.13, 10, 8), man = new THREE.PlaneGeometry(0.34, 0.34);
   const veh = (a, p, key, facing) => { const [x, z] = fromAP(a, p); st.cyl(x, CH, z, 0.07, 0.09, 5.6, 8); const f = dirOf(facing); obox(dark, x + f[0] * 0.12, 4.3, z + f[1] * 0.12, f[0], f[1], 0.22, 1.25, 0.36); const set = [0, 1, 2].map((i) => { const b = new THREE.Mesh(bulb, new THREE.MeshBasicMaterial({ color: 0x111111 })); b.material.userData.todSkip = true; b.position.set(x + f[0] * 0.26, 5.3 - i * 0.38, z + f[1] * 0.26); g.add(b); return b.material; }); heads[key].push(set); addCircle(x, z, 0.14, { y1: 3 }); };
-  veh(221, 17.2, 'ave', AVE + 180); veh(258, -17.2, 'ave', AVE); veh(YIN.a0 - 1.2, -33, 'yin', AVE + 270); veh(YIN.a1 + 1.2, 20, 'yin', AVE + 90);
+  veh(YIN.a0 - 15, 18.2, 'ave', AVE + 180); veh(YIN.a1 + 4, -18.2, 'ave', AVE); veh(YIN.a0 - 1.2, -34, 'yin', AVE + 270); veh(YIN.a1 + 1.2, 21, 'yin', AVE + 90);
   const ped = (a, p, key, facing) => { const [x, z] = fromAP(a, p); st.cyl(x, CH, z, 0.05, 0.05, 2.9, 8); const f = dirOf(facing); obox(dark, x + f[0] * 0.08, 2.35, z + f[1] * 0.08, f[0], f[1], 0.14, 0.85, 0.42); const set = [0, 1].map((i) => { const b = new THREE.Mesh(man, new THREE.MeshBasicMaterial({ color: 0x111111, side: THREE.DoubleSide })); b.material.userData.todSkip = true; b.position.set(x + f[0] * 0.16, 2.98 - i * 0.4, z + f[1] * 0.16); b.rotation.y = Math.atan2(f[0], f[1]); g.add(b); return b.material; }); heads[key].push(set); addCircle(x, z, 0.1, { y1: 3 }); };
-  ped(YIN.a0 - 0.9, -26.5, 'z1', AVE); ped(YIN.a1 + 0.9, -26.5, 'z1', AVE + 180); ped(228.2, 17, 'z2', AVE + 270); ped(228.2, -17, 'z2', AVE + 90);
+  const zc = (ZEBRAS[1].a0 + ZEBRAS[1].a1) / 2; ped(YIN.a0 - 0.9, -27.5, 'z1', AVE); ped(YIN.a1 + 0.9, -27.5, 'z1', AVE + 180); ped(zc, 18, 'z2', AVE + 270); ped(zc, -18, 'z2', AVE + 90);
   const a1 = st.mesh(m.steel, 'ljz-street-steel'), a2 = dark.mesh(m.dark, 'ljz-street-dark'); a1.castShadow = a2.castShadow = true; g.add(a1, a2);
   return heads;
 }

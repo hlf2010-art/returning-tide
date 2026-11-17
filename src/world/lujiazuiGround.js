@@ -4,18 +4,18 @@
 // roundabout's centre, then lines across Century Avenue); where two neighbouring scanlines disagree
 // about what they cross, a scanline is put between them, until the gap is a few centimetres.
 import * as THREE from 'three';
-import { C, RING, ARMS, YIN, ZEBRAS, APPLE, METRO_LJZ, GREEN, LOOP, CANOPY, FLARE, AVE, CH, dirOf, fromAP, toAP, polar, bearingOf, carriage, zebra, inLake, inDistrict, ROUTES } from './lujiazuiLayout.js';
+import { C, RING, ARMS, YIN, ZEBRAS, APPLE, METRO_LJZ, GREEN, LOOP, CANOPY, FLARE, AVE, CH, dirOf, fromAP, toAP, polar, bearingOf, carriage, zebra, inLake, inDistrict, inGreen, inPoly, PEARL_PARK, ROUTES } from './lujiazuiLayout.js';
 import { PEARL } from './skyline.js';
 
 const D2R = Math.PI / 180;
 export const KIND = { void: 0, road: 1, pave: 2, grass: 3, path: 4 };
 const segDist = (a, p, a0, p0, a1, p1) => { const da = a1 - a0, dp = p1 - p0, t = Math.max(0, Math.min(1, ((a - a0) * da + (p - p0) * dp) / (da * da + dp * dp))); return Math.hypot(a - a0 - da * t, p - p0 - dp * t); };
 // the Green's paths (avenue frame): the loop round the lake, the corner plaza, the ways in, the canopy's pad
-export const PARK_WAYS = [[290, -100, 330, -178], [533, -66, 498, -150], [318, -150, 336, -172]];
+export const PARK_WAYS = [[372, -56, 404, -150], [560, -48, 548, -146], [655, -100, 572, -190], [CANOPY.a + 10, CANOPY.p, 384, -205]];
 export function parkPath(a, p) {
   const h = Math.hypot(a - LOOP.a, p - LOOP.p), e = Math.hypot((a - LOOP.a) / LOOP.ra, (p - LOOP.p) / LOOP.rp);
   if (e > 0.5 && Math.abs(h * (1 - 1 / e)) < 2.0) return true;
-  if (a < 300 && p > -112) return true;
+  if (a < 392 && p > -96) return true;                                          // the paved corner by the junction
   if (Math.hypot(a - CANOPY.a, p - CANOPY.p) < 11) return true;
   for (const [a0, p0, a1, p1] of PARK_WAYS) if (segDist(a, p, a0, p0, a1, p1) < 1.9) return true;
   return false;
@@ -28,9 +28,9 @@ export function kindAt(x, z) {
   if (r2 < RING.island * RING.island) return KIND.grass;
   const [a, p] = toAP(x, z);
   if (carriage(x, z)) return Math.abs(p) < 1.5 && ((a > 72 && a < 220) || (a > 260 && a < 790)) ? KIND.grass : KIND.road;   // (the avenue's planted median)
-  if (a >= GREEN.a0 && a <= GREEN.a1 && p >= GREEN.p0 && p <= GREEN.p1) return inLake(a, p) ? KIND.void : parkPath(a, p) ? KIND.path : KIND.grass;
-  if (r2 > 98 * 98 && r2 < 330 * 330) { const b = bearingOf(x, z); if (b > 274 && b < 349) return Math.hypot(x - PEARL.x, z - PEARL.z) < 64 ? KIND.path : KIND.grass; }   // the Pearl's park
-  if (p < -40 && p > -62 && a > 70 && a < 234) return KIND.grass;                     // planting along the avenue's north side
+  if (a >= GREEN.a0 - 1 && a <= GREEN.a1 + 1 && p >= GREEN.p0 - 1 && p <= GREEN.p1 + 1 && inGreen(x, z)) return inLake(a, p) ? KIND.void : parkPath(a, p) ? KIND.path : KIND.grass;
+  if (inPoly(PEARL_PARK, x, z)) return Math.hypot(x - PEARL.x, z - PEARL.z) < 64 ? KIND.path : KIND.grass;   // the Pearl's park
+  if (p < -38 && p > -50 && a > 70 && a < YIN.a0 - 12) return KIND.grass;                // planting along the avenue's north side
   return KIND.pave;
 }
 
@@ -80,14 +80,14 @@ export function buildGround() {
     }
   }
   // rays out from the roundabout's centre (as far as the line a = 140 along the avenue, 340 m elsewhere)
-  const ray = (b) => { const [dx, dz] = dirOf(b), c = Math.cos((b - AVE) * D2R), L = { u: b, ox: C.x, oz: C.z, dx, dz, t0: 0, t1: c > 0.4118 ? 140 / c : 340 }; L.segs = segments(L); return L; };
+  const ray = (b) => { const [dx, dz] = dirOf(b), c = Math.cos((b - AVE) * D2R), L = { u: b, ox: C.x, oz: C.z, dx, dz, t0: 0, t1: c > 0.4118 ? 140 / c : 360 }; L.segs = segments(L); return L; };
   let prev = ray(0);
   for (let b = 0.5; b <= 360.001; b += 0.5) { const cur = ray(Math.min(360, b)); join(prev, cur, ray, 0); prev = cur; }
   // lines across the avenue, from a = 140 out east
   const [nx, nz] = dirOf(AVE + 90);
   const cross = (a) => { const [ox, oz] = fromAP(a, 0), L = { u: a, ox, oz, dx: nx, dz: nz, t0: -420, t1: 420 }; L.segs = segments(L); return L; };
   prev = cross(140);
-  for (let a = 142; a <= 800.001; a += 2) { const cur = cross(a); join(prev, cur, cross, 0); prev = cur; }
+  for (let a = 142; a <= 900.001; a += 2) { const cur = cross(a); join(prev, cur, cross, 0); prev = cur; }
 
   const geo = (arr) => {
     const g = new THREE.BufferGeometry(), n = arr.length / 3, pos = new Float32Array(arr), nor = new Float32Array(n * 3), uv = new Float32Array(n * 2);
@@ -146,16 +146,16 @@ export function buildMarkings() {
   // round the island: an edge line, dashed lane lines
   const arc = (buf, r, b0, b1, w) => { const n = Math.max(1, Math.round((b1 - b0) / 3)); for (let i = 0; i < n; i++) { const [x0, z0] = polar(b0 + (b1 - b0) * i / n, r), [x1, z1] = polar(b0 + (b1 - b0) * (i + 1) / n, r); quad(buf, x0, z0, x1, z1, w); } };
   arc(white, RING.island + 0.5, 0, 360, 0.15);
-  for (const r of [31.6, 36, 40.2]) { const stepDeg = 9 / r / D2R; for (let b = 0; b < 360; b += stepDeg) arc(white, r, b, b + stepDeg * 0.42, 0.14); }
+  for (const r of [28.8, 32.8]) { const stepDeg = 9 / r / D2R; for (let b = 0; b < 360; b += stepDeg) arc(white, r, b, b + stepDeg * 0.42, 0.14); }
   // the arms: a centre line (double yellow), lane dashes, a give-way line where each joins the roundabout
   for (const A of ARMS) {
-    const P = (al, pe) => [C.x + A.dx * al + A.px * pe, C.z + A.dz * al + A.pz * pe], far = A.id === 'century' ? 790 : A.len - 6;
-    const lanes = A.id === 'century' ? [5.1, 8.7, 12.3] : [A.hw / 2 + 0.2];
+    const P = (al, pe) => [C.x + A.dx * al + A.px * (pe + A.off), C.z + A.dz * al + A.pz * (pe + A.off)], far = A.id === 'century' ? 890 : A.len - 6;
+    const lanes = A.id === 'century' ? [5.4, 9.2, 13] : A.hw > 11 ? [A.hw / 3, A.hw * 2 / 3] : [A.hw / 2 + 0.2];
     if (A.id !== 'century') for (const s of [-0.16, 0.16]) quad(yellow, ...P(FLARE + 4, s), ...P(far, s), 0.12);
     for (const side of [-1, 1]) {
       quad(white, ...P(FLARE + 2, side * (A.hw - 0.35)), ...P(far, side * (A.hw - 0.35)), 0.14);
       if (A.id === 'century') quad(white, ...P(74, side * 1.75), ...P(far, side * 1.75), 0.14);
-      for (const ln of lanes) for (let al = FLARE + 6; al < far - 4; al += 12) { if (A.id === 'century' && al > 208 && al < 268) continue; quad(white, ...P(al, side * ln), ...P(al + 4.5, side * ln), 0.14); }
+      for (const ln of lanes) for (let al = FLARE + 6; al < far - 4; al += 12) { if (A.id === 'century' && al > YIN.a0 - 30 && al < YIN.a1 + 10) continue; quad(white, ...P(al, side * ln), ...P(al + 4.5, side * ln), 0.14); }
     }
     for (let pe = -A.hw + 1; pe < -0.6; pe += 1.2) quad(white, ...P(FLARE + 1.5, pe), ...P(FLARE + 1.5, pe + 0.7), 0.4);   // give way (inbound side)
   }
@@ -166,8 +166,8 @@ export function buildMarkings() {
     if (q.id === 'z1') for (let a = q.a0 + 0.5; a < q.a1 - 0.5; a += 1.0) ap(white, a + 0.25, q.p0, a + 0.25, q.p1, 0.5);
     else for (let p = q.p0 + 0.5; p < q.p1 - 0.5; p += 1.0) { if (Math.abs(p + 0.25) < 1.4) continue; ap(white, q.a0, p + 0.25, q.a1, p + 0.25, 0.5); }
   }
-  ap(white, 221.6, 1.8, 221.6, 15.6, 0.4); ap(white, 257.4, -1.8, 257.4, -15.6, 0.4);                  // stop lines on the avenue
-  ap(white, YIN.a0 + 0.4, -32.4, YIN.ac - 0.4, -32.4, 0.4); ap(white, YIN.ac + 0.4, 19.4, YIN.a1 - 0.4, 19.4, 0.4);
+  ap(white, YIN.a0 - 14.4, 1.8, YIN.a0 - 14.4, 16.6, 0.4); ap(white, YIN.a1 + 3.4, -1.8, YIN.a1 + 3.4, -16.6, 0.4);   // stop lines on the avenue
+  ap(white, YIN.a0 + 0.4, -33.4, YIN.ac - 0.4, -33.4, 0.4); ap(white, YIN.ac + 0.4, 20.4, YIN.a1 - 0.4, 20.4, 0.4);
   const mk = (arr) => { const g = new THREE.BufferGeometry(), n = arr.length / 3, nor = new Float32Array(n * 3); for (let i = 0; i < n; i++) nor[i * 3 + 1] = 1; g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(n * 2), 2)); return g; };
   return { white: mk(white), yellow: mk(yellow) };
 }

@@ -8,12 +8,15 @@ Nanjing Road, or a DiDi through the Yan'an East Road tunnel. Both end at street 
 
 | File | What it holds |
 |---|---|
+| `src/world/lujiazuiOsm.js` | **Generated** from OpenStreetMap by `tools/osm/ljzosm.mjs` (do not edit): 158 building footprints with heights, the Green, its lake, the Pearl's park, the roundabout, the Mingzhu Ring, the Apple plaza and store, the metro entrances, in the game's frame. |
+| `tools/osm/ljzosm.mjs`, `tools/osm/wikidata-lujiazui.json` | The generator (the `curl` for the extract is in its header) and the Wikidata heights it falls back on. |
+| `src/world/facade.js` | Curtain-wall glass: `facadeGlass` (the district's towers) and `skylineGlass` (the far towers seen from the Bund). |
 | `src/world/lujiazuiLayout.js` | Pure, node-tested. Reference coordinates and the game-frame transform (top comment), every position, the ground height, the collisions, the traffic routes, the signal, the exported `LJZ` positions. Registers itself with `layout.js` `movers` (ground + keep), so `layout.js`'s own ground code is untouched. |
 | `src/world/lujiazuiGround.js` | The ground mesh (carriageways, pavements, lawns, paths, kerbs, guard rails, paint), sampled from the same functions the collisions use. |
-| `src/world/lujiazuiBuild.js` | Structures: the ring bridge, Apple's plaza, cylinder and store, IFC (towers, the 85 m block, the podium and its curved glass front), the metro stairwells, the Green's furniture, trees, the towers around, lamps, signals, signs. |
+| `src/world/lujiazuiBuild.js` | Structures: the ring bridge, Apple's plaza, cylinder and store, IFC (the two towers and the mall from their footprints, the crowns, the lobby, the signs), every other OSM building extruded, the metro stairwells, the Green's furniture, trees, lamps, signals, signs. |
 | `src/world/lujiazuiLife.js` | Traffic (route followers) and about eleven people. |
 | `src/world/lujiazui.js` | `createLujiazui`: builds lazily, shows / hides, arriving and leaving, what E does, the map, per-frame update. |
-| `tests/lujiazui.test.mjs` | Walks the ground in node (stairs, ring, court, spiral, store, kerbs, zebras, metro, lake). Not yet in `npm test` (package.json was off limits): run `node tests/lujiazui.test.mjs`. |
+| `tests/lujiazui.test.mjs` | Walks the ground in node (stairs, ring, plaza, spiral, store, kerbs, zebras, metro, the footprints as walls, the lake). Part of `npm test`. |
 | `tools/ljzwalk.mjs`, `tools/ljzcheck.mjs`, `tools/ljzground.mjs` | The browser walkthrough and screenshots; layout sanity; ground mesh size. |
 
 Small hooks elsewhere: `skyline.js` `setNear()`, `destinations.js` `exitTo`, `ride.js` (`walkIn` on
@@ -30,37 +33,40 @@ point, landing), `metroArrive`, `greenGate`, `greenBenches[]`, `greenLawn`, `rin
 
 ## What is there
 
-![Apple Pudong's plaza and the mall's curved front by day](ljz-apple-plaza.png)
+![Apple Pudong's plaza, Two IFC and the mall by day](ljz-apple-plaza.png)
 ![The cylinder and the Pearl at dusk](ljz-apple-dusk.png)
+![Two IFC's lobby: the glass shows the sky and the city](ljz-ifc-glass.png)
+![From the Mingzhu Ring: the IFC towers, the World Financial Center beyond](ljz-ring-ifc.png)
+![From above: OSM's footprints round the roundabout](ljz-air.png)
 
-- **The roundabout and the Mingzhu Ring (明珠环).** A planted island, about four lanes round it, five
-  roads in. No zebra anywhere on the roundabout: kerb-side guard rails all round, and the ring bridge
-  is the way across, as in life. The ring is walkable all the way round at 5.5 m, 9 m wide, glass
-  balustrades; four stairs (each drawn with a pair of escalators beside it) down to the pavements
-  between the roads, and a wide spur toward IFC with its own stair down to the edge of the Apple plaza.
-  Wayfinding signs at each stair head.
-- **Shanghai IFC.** Laid out in Century Avenue's frame: the north tower (259.9 m, offices) on the
-  avenue, the south tower (249.9 m; the Ritz-Carlton's eighteen top floors) behind it to the south-west,
-  and an 85 m block behind and between them. Both towers are square with notched corners, silvery
-  glass with close vertical mullions (they read as fine stripes by night), and the cut-crystal crown
-  with lit edges. The mall's podium is four levels (26 m): shop windows along the avenue and the ring
-  road, glass and stone bands above, and, round the Apple plaza, a concave full-height glass front
-  (30 m radius about the cylinder, 148° of arc) showing the lit atrium behind, with stainless mullions
-  every 3 m and stone floor edges. "ifc mall" and 上海国金中心商场 over its doors (which face the
-  cylinder) and again on the avenue corner; a directory totem on the plaza (the mall, Apple, the
-  Ritz-Carlton, Line 2). The north tower's lobby on Century Avenue (canopy, revolving doors, address
-  stone): **E** at the door takes the lift to the 32nd floor (the existing `dests.arrive`); the lift
-  there now comes back down to the lobby.
-- **Apple Pudong.** A pale granite plaza at street level (24 m radius, darker bands at the sill, halfway
-  and at the edge, flush with the pavement; bollard lights round it, open toward the roundabout), and
-  at its centre the 13 m glass cylinder (5 m radius): twelve curved panels butted glass to glass with
-  no fins or fittings, a stainless ring round the top, a shallow glass dome of twelve panels meeting a
-  glass disc, the white logo hung inside it facing the door and the Pearl, which faces the roundabout.
-  It glows after dark. Inside, the spiral glass stair (36 treads, 400°) round the glass lift core goes
-  down 5.6 m to a round store under the plaza (19 m radius): pale stone floor, twelve oak tables, oak
-  shelving round the wall, a white ceiling with rings of light, a glass shopfront to the mall's lower
-  ground at the back, a video wall with oak cubes before it. All of it walked, not faded.
-- **Lujiazui station.** Three stairwells (Exits 1, 2, 6) with Shanghai Metro's mark, the station's
+- **Everything is where OpenStreetMap has it.** The roundabout, the Mingzhu Ring, the five roads
+  (bearings measured from OSM's ways), the junction with Middle Yincheng Road, the Apple plaza, the
+  metro entrances, the Green and its lake, the Pearl's park, and every building in the district: 158
+  footprints extruded to their heights (OSM's `height` or `building:levels`, else Wikidata's floors,
+  else a few recalled figures, else a flagged guess; see *Fidelity*). Their outlines are the walls you
+  walk into. The Pearl, Jin Mao, the World Financial Center and the Shanghai Tower keep the skyline's
+  own models, moved to their OSM positions while you are in Pudong.
+- **The roundabout and the Mingzhu Ring (明珠环).** A planted island (r 24.7 m), three lanes round it
+  (to r 37 m), five roads in. No zebra on the roundabout: kerb-side guard rails all round, the ring
+  bridge is the way across. The ring (centreline r 58.5 m, 9 m deck, 5.5 m up) is centred 13 m
+  south-west of the roundabout, as OSM draws it; walkable all the way round, glass balustrades,
+  five stairs down (each with a pair of escalators), the spur toward IFC and its stair toward the
+  Apple plaza, wayfinding signs at each stair head.
+- **Shanghai IFC.** The two towers from their OSM footprints (squares with cut corners): Two IFC, the
+  north tower, 259.9 m and 56 floors, nearer the avenue; the HSBC Building, the south tower, 249.9 m
+  and 58 floors (the Ritz-Carlton's eighteen top floors), south-west of it. Silvery glass with close
+  mullions; each rises into a cut-crystal crown, its outline leaning in to a smaller copy whose top
+  tilts toward the other tower, the edges lit at night. The mall between them is OSM's outline (its
+  curved north front faces the Apple plaza): four levels of glass over shopfronts, "ifc mall" and
+  上海国金中心商场 over the doors facing the cylinder and again toward the avenue, a directory totem
+  (the mall, Apple, the Ritz-Carlton, Line 2). Two IFC's lobby is on the face toward Century Avenue
+  (canopy, revolving doors, address stone): **E** at the door takes the lift to the 32nd floor.
+- **Apple Pudong.** OSM's paved round plaza (r 17.5 m) at street level, the 13 m glass cylinder at
+  its centre (twelve finless curved panels, a stainless ring, a shallow glass dome, the logo hung
+  inside facing the door, which faces the ring and the Pearl; it glows after dark), the spiral glass
+  stair round the glass lift down 5.6 m to the round store under the plaza (oak tables and shelving,
+  a ceiling of light rings, a shopfront to the mall's lower ground, a video wall).
+- **Lujiazui station.** Three stairwells at OSM's entrances 1, 4 and 6 with Shanghai Metro's mark, the station's
   name, Line 2 and Line 14 badges, exit numbers. On a landing: **E** at the way in rides one stop back
   to East Nanjing Road (¥3); **E** at the side wall goes through to the next exit.
 - **The Central Green.** Lawn, a lake, a loop path with benches and lamps, a white membrane canopy,
@@ -75,64 +81,36 @@ point, landing), `metroArrive`, `greenGate`, `greenBenches[]`, `greenLawn`, `rin
 
 ## Fidelity notes
 
-**No map data or reference page could be fetched.** The session's egress proxy refused every map and
-reference host tried (overpass-api.de, nominatim.openstreetmap.org, api.openstreetmap.org,
-en.wikipedia.org, www.wikidata.org; in the later session also pcparch.com, eocengineers.com,
-skyscrapercenter.com, macrumors.com, substack.com), so only web-search snippets were available. There
-are no surveyed footprints here. What the layout rests on:
+**Surveyed: OpenStreetMap.** Since this session's network was opened, the district is built from an
+OSM extract (API `map` call, bbox 121.4920,31.2330 – 121.5060,31.2440; data © OpenStreetMap
+contributors, ODbL 1.0) through `tools/osm/ljzosm.mjs`. The frame: x = 640 + (lon − 121.49527) ×
+95190, z = −42 − (lat − 31.2419) × 110860 (the Pearl's OSM centroid at the skyline's PEARL).
 
-| Fact | Value used | Source |
-|---|---|---|
-| Ring bridge: ends, diameter, deck | 31°14′24.19″N 121°29′43.80″E and 31°14′23.99″N 121°29′48.05″E; ca. 110 m; deck 9 m | a web-search snippet of Structurae's entry (the page itself not opened) |
-| Ring bridge height | about 5.5 m | web-search snippet (Komoot) |
-| IFC position; tower heights | about 31.2385 N, 121.497 E; 259.9 m (north) and 249.9 m (south) | web-search snippets (Wikipedia infobox, CTBUH Skyscraper Center) |
-| IFC's third block | 85 m, "behind and between the two towers" | web-search snippet (Wikipedia); KONE gives 260 / 250 / 85 m |
-| IFC podium | four levels of retail | web-search snippet (Pelli Clarke Pelli's project page) |
-| Ritz-Carlton Shanghai, Pudong | the top 18 floors of the south tower (Flair on 58F) | web-search snippets (several travel / hotel listings; one outlier disagrees) |
-| HSBC | **contested**: one source puts its China HQ in the north tower, a 2010 report in 22 floors of the south tower, so no HSBC mark is shown | web-search snippets |
-| Mall and metro | the mall's LG2 links directly to Lujiazui station (Line 2) | web-search snippets (mall guides) |
-| Apple: where | No. 1, IFC Mall, 8 Century Avenue; opened 10 July 2010; the store is under the plaza, entered by the cylinder | web-search snippets (MacRumors forum, a store database) |
-| Apple: the cylinder | 13 m high, 5 m radius, twelve curved laminated panels; originally on glass fins, since the rebuild with no fins or seam fittings, a stainless ring and twelve slightly curved roof panels meeting a glass disc; the stair cantilevers from an inner glass drum; architect Bohlin Cywinski Jackson, glass Eckersley O'Callaghan | web-search snippets (Eckersley O'Callaghan's project page; Michael Steeber, "Best in glass: Apple Pudong") |
-| Apple: the reflecting pool | ringed the cylinder until the rebuild, removed then; what replaced it is not known, so the plaza is plain granite | web-search snippet (Steeber) |
-| Pearl, Jin Mao, SWFC, Shanghai Tower positions | see the layout file's header | recalled published coordinates, not re-checked online |
-| Line colours | Line 2 `#82BF25` (as elsewhere in the game), Line 14 `#827A04` | recalled from Wikipedia's palette; not an official spec |
+| What | From |
+|---|---|
+| Building footprints (158), names | OSM ways tagged `building` / `building:part` (outlines with parts are drawn by their parts unless they carry their own height) |
+| Heights: 31 from OSM `height`, 35 from `building:levels` (× 3.7 m, × 4.6 m for malls) | OSM |
+| 2 from Wikidata floors (Bank of Shanghai HQ 46, World Finance Tower 43, × 4.3 m) | a Wikidata `wikibase:box` query (P2048 / P1101) over the same box, `tools/osm/wikidata-lujiazui.json` |
+| 4 recalled (One Lujiazui 269 m, Super Brand Mall 50 m, IFC Mall 30 m, GALA MALL 24 m) | memory; marked `hs: 'recalled'` in the data |
+| **88 guessed** | no height anywhere: a deterministic guess from the footprint's size and whether it is in the financial core (office towers 95–170 m, apartments 70–110 m, small blocks 8–40 m); marked `g: 1`. Most are secondary buildings; some real towers among them will be the wrong height |
+| Roundabout, island, ring, Apple plaza and store, Green, lake, Pearl's park, metro entrances | OSM (circles fitted to the roundabout's ways and the ring's footway) |
+| Arm bearings, widths, Century Avenue's axis offset, the Yincheng junction | measured from OSM's carriageways; the arms are still drawn straight, the avenue as one 34 m carriageway |
+| Ritz-Carlton in the south tower | travel listings (web search); OSM names the south tower the HSBC Building |
+| Apple's cylinder (13 m, r 5 m, the rebuild) | Eckersley O'Callaghan; Michael Steeber (web search) |
 
-Everything else is from memory of the place and is **approximate**:
+Still approximate:
 
-- The five roads' bearings and widths; Century Avenue is drawn at bearing 114.7° (derived from the
-  ring's centre and Jin Mao's position), 32 m of carriageway with a planted median.
-- Yincheng Middle Road is drawn square to the avenue; really it crosses at an angle.
-- Where exactly IFC's two towers, the 85 m block, the podium and the Apple plaza sit on their block:
-  the towers are on the avenue and diagonally behind it to the south-west, the plaza in the block's
-  corner toward the roundabout, the podium wrapping it on two sides. The tower plans (square, 50 m,
-  4.2 m corner notches) and the crown's shape are from memory; the concave glass front round the plaza
-  is a reading of photographs as remembered, not a survey, and its radius and height are estimates.
-  The Ritz-Carlton is named on the plaza's directory, not on the tower. The mall has no interior and
-  its doors do not open (the atrium behind the glass is a painted texture). The shop windows carry no
-  brands.
-- Apple: the store's real plan and size were not found; it is drawn round, 19 m in radius, one level
-  5.6 m under the plaza. The plaza's paving pattern, the bollards and the totem are invented. The
-  cylinder's door is drawn as a curved leaf slid aside. "Today at Apple" on the video wall is the
-  store's own programme name, the only brand text added.
-- Metro exits: there are three, numbered 1, 2 and 6, placed plausibly (toward the Pearl, on the
-  avenue's north side, at IFC). The real station has more exits and Exit 6 connects under ground into
-  the mall; the numbering against real positions is unverified.
-- The Central Green is about 6.3 ha here (really about 10 ha), set about 440 m east of the roundabout
-  (really nearer 370 m), a rectangle in the avenue's frame with a simplified lake. The row of towers
-  between it and the avenue, and Lujiazui Ring Road running round it, are simplified: the ring road's
-  loop round the park is not drawn. The old Chen Guichun house is not there.
-- Super Brand Mall and the "Bank of China Tower" are massing with a name, not likenesses. The
-  Shangri-La, Aurora and Citigroup towers on the river side are not individually modelled.
-- The ring's stairs: number, positions and the escalators are schematic. The escalators are drawn but
-  do not move (you walk them as stairs). The real Oriental Floating Court deck and the long elevated
-  walkways on to the three supertalls are reduced to one spur and its stair.
-- The Pearl's park is a fenced lawn with trees round the existing tower model; its base buildings are
-  not modelled. You cannot walk to the Pearl, Jin Mao, SWFC or the Shanghai Tower: the walkable area
-  ends at hedges and a hoarding (Century Avenue is walkable to about 560 m from the roundabout).
-- From the 32nd-floor office (which keeps its old position near the Pearl, where the far skyline put
-  IFC) the view is the far skyline as before, not this district.
-- The game's Bund runs due north-south; this district is laid out to true north from the Pearl, so the
-  two halves of the map differ by the few degrees the real Bund is turned.
+- Roads are straight arms with flared mouths, not OSM's carriageway geometry: the slip roads, the
+  Yan'an Road and Middle Yincheng Road tunnels and Century Avenue's service roads are not drawn.
+  Middle Yincheng Road is drawn as a signalled surface junction square to the avenue.
+- OSM shows many stairs and escalators off the ring, most on its south-west; the game has five
+  straight stairs and the spur. The spur's stair lands about 40 m from the plaza.
+- Facades are generic per kind (four kinds of glass, three of block) chosen by OSM's material tag,
+  height and a hash: they are not the buildings' real facades. The IFC crowns' shape is from memory.
+- Super Brand Mall's sign is placed on its face toward the roundabout; no other building is named.
+- The store under the plaza is drawn round (r 16.2 m) inside OSM's store outline.
+- The game's Bund runs due north-south; this district is laid out to true north, so the two halves
+  differ by the few degrees the real Bund is turned.
 
 ## Arriving and leaving
 
@@ -155,9 +133,9 @@ GL, during the fade). While you are in Pudong the Bund's own groups (interiors, 
 trees: about 1,500 meshes) are hidden and restored when you leave; its façades, the promenade and the
 river stay drawn. Measured under SwiftShader at quality step 4 (not on a Mac mini M4):
 
-- District: about 380 meshes in the group including 12 cars and 11 people, 228,000 triangles of
-  static geometry (ground 25,000; 15,800 leaf cards), 129 lamp sources feeding the shared pool of 6
-  real lights.
-- A frame looking down the west road at 1 pm: 148 draw calls, 207,000 triangles. At dusk from the
-  Green: 153 draw calls, 144,000 triangles. (Before the Bund's groups were hidden: 1,800 draw calls.)
+- District (with OSM's 158 buildings): about 390 meshes in the group including 12 cars and 11 people,
+  255,000 triangles of static geometry (ground 27,400; 18,700 leaf cards), 146 lamp sources feeding
+  the shared pool of 6 real lights; built in about 1.8 s under SwiftShader.
+- A frame from the Apple plaza at 1 pm: about 230 draw calls, 175,000 triangles; at dusk about 330
+  draw calls. The facade shader is one per glass kind (seven programs in all, shared).
 - Each visible person is a full Rocketbox avatar; they are drawn within 95 m only.

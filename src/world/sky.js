@@ -3,6 +3,8 @@
 // (engine/timeOfDay.js): the deep night of a big city (never black: a brown-orange glow under the
 // cloud), dawn glowing over Pudong, and a hazy November day with a soft sun.
 import * as THREE from 'three';
+// the sky's own uniforms, shared with whatever reflects it (world/facade.js): one set, set once per tick
+export const SKY = { day: { value: 0 }, night: { value: 0 }, glow: { value: 1 }, side: { value: -1 }, haze: { value: 0 }, sunDir: { value: new THREE.Vector3(0, -1, 0) } };
 
 export const FOG_COLOR = new THREE.Color(0.062, 0.105, 0.22);
 const FOG_NIGHT = new THREE.Color(0.04, 0.045, 0.065), FOG_DAY = new THREE.Color(0.56, 0.61, 0.68);
@@ -13,7 +15,7 @@ export const REFLECT_LAYER = 1;   // far scenery that the river mirrors
 export function createSky() {
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
-    uniforms: { time: { value: 0 }, haze: { value: 0 }, day: { value: 0 }, glow: { value: 1 }, side: { value: -1 }, night: { value: 0 }, sunDir: { value: new THREE.Vector3(0, -1, 0) } },
+    uniforms: { time: { value: 0 }, haze: SKY.haze, day: SKY.day, glow: SKY.glow, side: SKY.side, night: SKY.night, sunDir: SKY.sunDir },
     vertexShader: /* glsl */ `
       varying vec3 vDir;
       void main() {

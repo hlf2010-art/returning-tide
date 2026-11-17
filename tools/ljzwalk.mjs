@@ -4,7 +4,7 @@
 // (The ground and collisions are tested in node: tests/lujiazui.test.mjs.)
 //   URL=http://localhost:4181/ OUT=<dir> UILANG=en|zh [ONLY=shots|walk] [VIEWS=ring,apple] [HOURS=13:00,17:42] node tools/ljzwalk.mjs
 import { createRequire } from 'module';
-import { LJZ, C, RING, RAMPS, SPUR, APPLE, METRO_LJZ, polar, fromAP, applePt, wellPt } from '../src/world/lujiazuiLayout.js';
+import { LJZ, C, RC, RING, RAMPS, SPUR, APPLE, METRO_LJZ, polar, rpolar, fromAP, toAP, applePt, wellPt, inLake } from '../src/world/lujiazuiLayout.js';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const url = process.env.URL || 'http://localhost:4181/', out = `${process.env.OUT || '.'}/`, lang = process.env.UILANG || 'en', only = process.env.ONLY || '';
 const views = (process.env.VIEWS || '').split(',').filter(Boolean), hours = (process.env.HOURS || '13:00,17:42').split(',');
@@ -51,9 +51,9 @@ if (only !== 'walk') {
   const A = APPLE, T = LJZ.towers, m6 = METRO_LJZ[0], lob = LJZ.ifcLobbyDoor;
   const VIEWS = {
     'ring-pearl': [...applePt(-6, 30), 0.15, T.pearl.x, 120, T.pearl.z],
-    'ring-under': [...polar(200, 62), 0.15, ...polar(120, 30).slice(0, 1), 5, polar(120, 30)[1]],
-    'ring-deck': [...polar(200, 50), RING.y, T.pearl.x, 150, T.pearl.z],
-    'ring-ifc': [...polar(SPUR.b - 14, 51), RING.y, A.x, 6, A.z],
+    'ring-under': [...rpolar(205, 70), 0.15, ...rpolar(120, 30).slice(0, 1), 5, rpolar(120, 30)[1]],
+    'ring-deck': [...rpolar(170, RING.rc), RING.y, T.pearl.x, 150, T.pearl.z],
+    'ring-ifc': [...rpolar(SPUR.b - 14, RING.rc), RING.y, A.x, 6, A.z],
     'ring-stairs': [RAMPS[1].bot[0] + RAMPS[1].dx * 7 + RAMPS[1].px * 6, RAMPS[1].bot[1] + RAMPS[1].dz * 7 + RAMPS[1].pz * 6, 0.15, RAMPS[1].top[0], 3.5, RAMPS[1].top[1]],
     'apple-street': [...applePt(-28, 30), 0.15, A.x, 2.5, A.z],
     'apple-plaza': [...applePt(-20, 15), A.yPlaza, A.x, 5, A.z],
@@ -70,9 +70,9 @@ if (only !== 'walk') {
     'century': [...fromAP(130, -22), 0.15, ...fromAP(520, -4).slice(0, 1), 30, fromAP(520, -4)[1]],
     'junction': [...fromAP(214, -22), 0.15, ...fromAP(250, -2).slice(0, 1), 2, fromAP(250, -2)[1]],
     'green-gate': [...fromAP(262, -40), 0.15, ...fromAP(330, -150).slice(0, 1), 3, fromAP(330, -150)[1]],
-    'green-lake': [...fromAP(352, -238), 0.15, T.jinmao.x, 150, T.jinmao.z],
+    'green-lake': [...fromAP(560, -130), 0.15, ...fromAP(470, -240).slice(0, 1), 2, fromAP(470, -240)[1]],
     'green-pearl': [...fromAP(500, -150), 0.15, T.pearl.x, 110, T.pearl.z],
-    'skyline': [...polar(40, 51), RING.y, T.shanghaiTower.x, 250, T.shanghaiTower.z],
+    'skyline': [...rpolar(20, RING.rc), RING.y, T.shanghaiTower.x, 250, T.shanghaiTower.z],
     'west': [...polar(262, 100), 0.15, 0, 10, -40],
   };
   for (const hm of hours) {
@@ -112,17 +112,17 @@ await walkTo(...wellPt(m6, -2.5), 60); b = await body();
 ok(Math.abs(b.y - 0.15) < 0.06, `up Exit 6's stairs to the pavement (y ${b.y.toFixed(2)})`);
 await shot('walk-exit6-top');
 // 2. the ring: up the spur's stairs from the Apple side, round to the east stair, down
-const SR = RAMPS[RAMPS.length - 1], ER = RAMPS[1];
+const SR = RAMPS[RAMPS.length - 1], ER = RAMPS[0];
 await ev(([x, z]) => window.__bund.player.teleport(x, z, 0, 0), [SR.bot[0] + SR.dx * 2, SR.bot[1] + SR.dz * 2]);
-await walkTo(...polar(SPUR.b, 51), 90, true); b = await body();
+await walkTo(...rpolar(SPUR.b, RING.rc), 90, true); b = await body();
 ok(Math.abs(b.y - RING.y) < 0.06, `up the stairs from the Apple side onto the ring (y ${b.y.toFixed(2)})`);
-for (const bb of [136, 122, 108, 95, 85]) await walkTo(...polar(bb, 50.5), 60, true);
+for (const bb of [136, 122, 108, 95, 82, 70]) await walkTo(...rpolar(bb, RING.rc), 60, true);
 b = await body();
-ok(Math.abs(b.y - RING.y) < 0.06 && Math.abs(Math.hypot(b.x - C.x, b.z - C.z) - 50.5) < 2, 'round the deck over Century Avenue (the traffic passes underneath)');
-await walkTo(...polar(90, 80), 6, true); b = await body();
-ok(Math.hypot(b.x - C.x, b.z - C.z) < RING.r1 && Math.abs(b.y - RING.y) < 0.06, 'the deck\'s rail holds');
-await walkTo(...polar(82, 53), 20); await walkTo(ER.bot[0] + ER.dx * 2, ER.bot[1] + ER.dz * 2, 90, true); b = await body();
-ok(Math.abs(b.y - 0.15) < 0.06, `down the east stair to Century Avenue's north pavement (y ${b.y.toFixed(2)})`);
+ok(Math.abs(b.y - RING.y) < 0.06 && Math.abs(Math.hypot(b.x - RC.x, b.z - RC.z) - RING.rc) < 2, 'round the deck over Century Avenue (the traffic passes underneath)');
+await walkTo(...rpolar(100, 95), 6, true); b = await body();
+ok(Math.hypot(b.x - RC.x, b.z - RC.z) < RING.r1 && Math.abs(b.y - RING.y) < 0.06, 'the deck\'s rail holds');
+await walkTo(...rpolar(ER.b + 1, RING.r1 - 2), 20); await walkTo(ER.bot[0] + ER.dx * 2, ER.bot[1] + ER.dz * 2, 90, true); b = await body();
+ok(Math.abs(b.y - 0.15) < 0.06, `down the north-east stair to Century Avenue's north pavement (y ${b.y.toFixed(2)})`);
 await walkTo(C.x, C.z, 8, true); b = await body();
 ok(Math.hypot(b.x - C.x, b.z - C.z) > RING.road - 0.05, 'at street level the roundabout\'s kerb rail holds: the ring is the way across');
 // 3. Apple: across the plaza (street level), in by the cylinder's door, down the spiral to the store, back up
@@ -146,10 +146,10 @@ await walkTo(...applePt(0, 3.2), 20); await walkTo(...applePt(0, 8), 20); b = aw
 ok(Math.abs(b.y - APPLE.yPlaza) < 0.08 && Math.hypot(b.x - APPLE.x, b.z - APPLE.z) > APPLE.rCyl, 'back up the spiral and out on to the plaza');
 // 4. the Green: in at the corner, along the path to the lake, which is water
 await ev(([x, z]) => window.__bund.player.teleport(x, z, 0, 0), [LJZ.greenGate.x, LJZ.greenGate.z]);
-await walkTo(...fromAP(290, -100), 60, true); await walkTo(...fromAP(330, -178), 90, true); b = await body();
+await walkTo(...fromAP(390, -110), 60, true); await walkTo(...fromAP(402, -150), 90, true); b = await body();
 ok(await ev(() => window.__bund.world.ljz.zone(window.__bund.player.body) === 'green') && Math.abs(b.y - 0.15) < 0.05, 'the Central Green: in at the corner gate and along the path');
-await walkTo(...fromAP(384, -214), 25, true);
-{ const [a, pp] = (await ev(() => window.__bund.world.ljz.debug.toAP(window.__bund.player.body.x, window.__bund.player.body.z))); ok(((a - 384) / 30) ** 2 + ((pp + 214) / 22) ** 2 >= 0.98, 'the lake is water: you stop at its edge'); }
+await walkTo(...fromAP(500, -222), 40, true); b = await body();
+ok(!inLake(...toAP(b.x, b.z)) && inLake(...toAP(b.x, b.z), 2.5), 'the lake is water: you stop at its edge');
 await shot('walk-green');
 // 5. by DiDi; IFC: the lobby door up to the 32nd floor, the lift back down to the lobby
 await ev(() => { const L = window.__bund.life, i = L.invites.find((q) => q.id === 'xuan-arm'); if (i) { i.at = L.clock.day * 1440 + L.clock.minute; i.status = 'accepted'; i.kept = false; } });

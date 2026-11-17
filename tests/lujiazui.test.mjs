@@ -2,7 +2,7 @@
 //   node tests/lujiazui.test.mjs
 import { createBody, stepBody } from '../src/engine/movement.js';
 import { groundHeight } from '../src/world/layout.js';
-import { C, RING, RAMPS, SPUR, APPLE, METRO_LJZ, IFC, LJZ, ROUTES, ZEBRAS, GREEN, polar, fromAP, toAP, applePt, appleAng, wellPt, carriage, zebra, inDistrict, onDeck, ljzGround, signalAt, ljzZone, inLake, loopPt } from '../src/world/lujiazuiLayout.js';
+import { C, RC, RING, RAMPS, SPUR, APPLE, METRO_LJZ, IFC, LJZ, ROUTES, ZEBRAS, GREEN, BUILDINGS, polar, rpolar, fromAP, toAP, applePt, appleAng, wellPt, carriage, zebra, inDistrict, onDeck, ljzGround, signalAt, ljzZone, inLake, loopPt, inPoly, inBuilding, inGreen } from '../src/world/lujiazuiLayout.js';
 
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
@@ -17,14 +17,15 @@ function walk(tx, tz, secs = 60, run = false) {
   }
   return Math.hypot(tx - body.x, tz - body.z);
 }
-const rC = () => Math.hypot(body.x - C.x, body.z - C.z), rA = () => Math.hypot(body.x - APPLE.x, body.z - APPLE.z);
+const rC = () => Math.hypot(body.x - C.x, body.z - C.z), rR = () => Math.hypot(body.x - RC.x, body.z - RC.z), rA = () => Math.hypot(body.x - APPLE.x, body.z - APPLE.z);
 
 // ---- the ground ----
 ok(groundHeight(-60, 0) === 0 && groundHeight(15, 0) === 3, 'the Bund is untouched (Hankou Road 0, the deck 3)');
-ok(ljzGround(C.x + 35, C.z) === 0 && ljzGround(...polar(35, 60)) === 0.15, 'roundabout carriageway 0, pavement 0.15');
-ok(ljzGround(...polar(20, 50), 5.5) === 5.5 && ljzGround(...polar(20, 50), 0.15) === 0.15, 'the ring: 5.5 on the deck, the pavement under it');
+ok(ljzGround(C.x + 30, C.z) === 0 && ljzGround(...polar(80, 75)) === 0.15, 'roundabout carriageway 0, pavement 0.15');
+ok(ljzGround(...rpolar(159, RING.rc), 5.5) === 5.5 && ljzGround(...rpolar(159, RING.rc), 0.15) === 0.15, 'the ring: 5.5 on the deck, the pavement under it');
 ok(ljzGround(680, 48, 134.4) === null, 'the 32nd floor is still its own floor');
-ok(LJZ.metroExits.length === 3 && [LJZ.ifcLobbyStand, LJZ.kerbPickup, LJZ.appleEntrance, LJZ.greenGate, LJZ.greenLawn, ...LJZ.greenBenches, ...LJZ.metroExits].every((p) => inDistrict(p.x, p.z) && !carriage(p.x, p.z)), 'the exported positions are on walkable ground');
+ok(LJZ.metroExits.length === 3 && [LJZ.ifcLobbyStand, LJZ.kerbPickup, LJZ.appleEntrance, LJZ.greenGate, LJZ.greenLawn, ...LJZ.greenBenches, ...LJZ.metroExits].every((p) => inDistrict(p.x, p.z) && !carriage(p.x, p.z) && !inBuilding(p.x, p.z, 0.3)), 'the exported positions are on walkable ground, clear of every footprint');
+ok(IFC.north && IFC.south && IFC.mall && Math.abs(IFC.north.h - 259.9) < 0.01 && Math.abs(IFC.south.h - 249.9) < 0.01 && BUILDINGS.length > 100, `OSM's footprints: Two IFC 259.9 m, the HSBC Building 249.9 m, the mall, and ${BUILDINGS.length} buildings in all`);
 
 // ---- up a stair, round the ring, back down ----
 for (const R of RAMPS.filter((r) => r.kind === 'ring')) {
@@ -33,29 +34,29 @@ for (const R of RAMPS.filter((r) => r.kind === 'ring')) {
   ok(left < 0.3 && Math.abs(body.y - RING.y) < 0.05 && onDeck(body.x, body.z), `the stair at bearing ${R.b}: up to the deck (y ${body.y.toFixed(2)})`);
 }
 { // all the way round, leaning on the inner rail; then leaning on the outer one where no stair leaves
-  let minR = 99, maxR = 0, sweep = 0, last = 312;
+  let minR = 99, maxR = 0, sweep = 0, last = 330;
   for (let i = 0; i < 60 * 240 && sweep < 400; i++) {
-    const b = Math.atan2(body.x - C.x, -(body.z - C.z));
+    const b = Math.atan2(body.x - RC.x, -(body.z - RC.z));
     stepBody(body, Math.cos(b) - Math.sin(b) * 0.4, Math.sin(b) + Math.cos(b) * 0.4, true, 1 / 60);
-    const r = rC(), deg = ((b * 180 / Math.PI) + 360) % 360; minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+    const r = rR(), deg = ((b * 180 / Math.PI) + 360) % 360; minR = Math.min(minR, r); maxR = Math.max(maxR, r);
     let d = deg - last; if (d < -180) d += 360; if (d > 180) d -= 360; sweep += d; last = deg;
   }
   ok(sweep >= 400 && Math.abs(body.y - RING.y) < 0.05, `a full lap of the ring on the deck (${sweep.toFixed(0)}°)`);
-  put(...polar(180, 50), 5.5); walk(...polar(180, 80), 8); maxR = Math.max(maxR, rC());
+  put(...rpolar(120, RING.rc), 5.5); walk(...rpolar(120, 90), 8); maxR = Math.max(maxR, rR());
   ok(minR > RING.r0 && maxR < RING.r1 && Math.abs(body.y - RING.y) < 0.05, `the rails hold (r ${minR.toFixed(1)}..${maxR.toFixed(1)})`);
 }
 // ---- the spur, its stairs, the Apple court, the cylinder, the spiral, the store ----
 {
-  put(...polar(SPUR.b, 50), 5.5);
-  let left = walk(...polar(SPUR.b, 77), 40);
+  put(...rpolar(SPUR.b, RING.rc), 5.5);
+  let left = walk(...rpolar(SPUR.b, SPUR.s1 + 15), 40);
   ok(left < 0.3 && Math.abs(body.y - 0.15) < 0.05, `the spur and its stairs: down to the pavement by the Apple court (y ${body.y.toFixed(2)})`);
   // the plaza is at street level: walk straight on to it, round the cylinder; its glass is solid but for the door
-  put(...applePt(60, 26)); left = walk(...applePt(60, 12), 10);
+  put(...applePt(60, 22)); left = walk(...applePt(60, 12), 10);
   ok(left < 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.02 && APPLE.yPlaza === 0.15, `on to the plaza from the pavement, no step (y ${body.y.toFixed(2)})`);
   walk(APPLE.x, APPLE.z, 5);
   ok(rA() > APPLE.rCyl + 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.02, 'the cylinder is glass: no way through its wall');
-  put(...applePt(180, 12)); walk(...applePt(180, 40), 10);
-  ok(rA() < 31.2 && rA() > 25, `the mall's curved glass front behind the plaza holds (stopped ${rA().toFixed(1)} m out)`);
+  put(...applePt(180, 12)); walk(...applePt(180, 70), 30);
+  ok(!inBuilding(body.x, body.z) && body.hit && body.hit.startsWith('osm-'), `toward the mall from the plaza: its walls hold (stopped ${rA().toFixed(1)} m out, at ${body.hit})`);
   put(...applePt(0, 9)); left = walk(...applePt(0, 3.2), 8);
   ok(left < 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.05, 'in through the cylinder\'s door, on to the landing');
   // down the spiral (anticlockwise as seen from above: increasing angle), out at its foot
@@ -78,12 +79,13 @@ for (const R of RAMPS.filter((r) => r.kind === 'ring')) {
 {
   put(...polar(35, 60)); walk(C.x, C.z, 10);
   ok(rC() > RING.road - 0.01, `the kerb rail at the roundabout holds (${rC().toFixed(1)} m out: the ring is the way across)`);
-  put(...fromAP(228, 24)); const left = walk(...fromAP(228, -24), 40);
-  ok(left < 0.3 && zebra(...fromAP(228, 0)) === 'z2', 'the zebra across Century Avenue at Yincheng Road can be walked');
+  const za = (ZEBRAS[1].a0 + ZEBRAS[1].a1) / 2;
+  put(...fromAP(za, 24)); const left = walk(...fromAP(za, -24), 40);
+  ok(left < 0.3 && zebra(...fromAP(za, 0)) === 'z2', 'the zebra across Century Avenue at Yincheng Road can be walked');
   put(...fromAP(200, 24)); walk(...fromAP(200, -24), 12);
   ok(toAP(body.x, body.z)[1] > 15.9, 'elsewhere the avenue\'s kerb rail holds');
-  put(...fromAP(176, 22)); walk(IFC.north.cx, IFC.north.cz, 8);
-  ok(toAP(body.x, body.z)[1] < 31, 'IFC\'s north tower is solid');
+  put(LJZ.kerbPickup.x, LJZ.kerbPickup.z); walk(IFC.north.cx, IFC.north.cz, 12);
+  ok(!inPoly(IFC.north.P, body.x, body.z) && Math.hypot(body.x - LJZ.ifcLobbyDoor.x, body.z - LJZ.ifcLobbyDoor.z) < 4, 'IFC\'s north tower is solid: you fetch up at its door');
   const m = METRO_LJZ[0];
   put(...wellPt(m, -2)); let l2 = walk(...wellPt(m, m.len - 1), 20);
   ok(l2 < 0.3 && Math.abs(body.y + m.depth) < 0.05, `down Exit 6's stairs to the landing (y ${body.y.toFixed(2)})`);
@@ -91,14 +93,14 @@ for (const R of RAMPS.filter((r) => r.kind === 'ring')) {
   ok(Math.abs(body.y + m.depth) < 0.05 && Math.hypot(body.x - wellPt(m, m.len - 1, 6)[0], body.z - wellPt(m, m.len - 1, 6)[1]) > 4, 'the stairwell\'s walls hold');
   l2 = walk(...wellPt(m, -2), 30);
   ok(l2 < 0.3 && Math.abs(body.y - 0.15) < 0.05, 'and back up to the street');
-  put(...fromAP(300, -120)); walk(...fromAP(432, -188), 60);
+  put(LJZ.greenLawn.x, LJZ.greenLawn.z); walk(...fromAP(500, -222), 60);
   ok(!inLake(...toAP(body.x, body.z)), 'the lake in the Green is water');
-  put(...fromAP(280, -100)); walk(...fromAP(280, -400), 120);
-  ok(toAP(body.x, body.z)[1] >= GREEN.p0 - 0.01 && body.hit === 'boundary', 'the Green\'s far edge is the district\'s edge');
+  put(...fromAP(420, -100)); walk(...fromAP(380, -420), 120);
+  ok(inGreen(body.x, body.z) && Math.hypot(body.x - fromAP(380, -420)[0], body.z - fromAP(380, -420)[1]) > 40, 'the Green\'s far edge is the district\'s edge (you slide along it, inside)');
 }
 // ---- the loop path, the zones ----
-ok([0, 1, 2, 3, 4, 5, 6].every((t) => { const [a, p] = loopPt(t); return !inLake(a, p, 4) && a > GREEN.a0 && a < GREEN.a1 && p > GREEN.p0 && p < GREEN.p1; }), 'the loop path runs round the lake inside the Green');
-ok(ljzZone(...polar(20, 50), 5.5) === 'ring' && ljzZone(APPLE.x + 3, APPLE.z, -10) === 'apple' && ljzZone(...fromAP(400, -150)) === 'green' && ljzZone(LJZ.kerbPickup.x, LJZ.kerbPickup.z) === 'ifc', 'zones: the ring, Apple, the Green, IFC');
+ok([0, 1, 2, 3, 4, 5, 6].every((t) => { const [a, p] = loopPt(t); return !inLake(a, p, 4) && inGreen(...fromAP(a, p)); }), 'the loop path runs round the lake inside the Green');
+ok(ljzZone(...rpolar(80, RING.rc), 5.5) === 'ring' && ljzZone(APPLE.x + 3, APPLE.z, -10) === 'apple' && ljzZone(...fromAP(400, -150)) === 'green' && ljzZone(LJZ.kerbPickup.x, LJZ.kerbPickup.z) === 'ifc', 'zones: the ring, Apple, the Green, IFC');
 // ---- traffic ----
 for (const R of ROUTES) { const bad = R.pts.filter(([x, z]) => !carriage(x, z)); if (bad.length) console.log('  off the road:', R.id, bad.length, bad.slice(0, 3).map((q) => q.map((v) => v.toFixed(1)))); }
 ok(ROUTES.length === 10 && ROUTES.every((R) => R.pts.every(([x, z]) => carriage(x, z)) && R.yaw.every(Number.isFinite) && R.limit.every((v) => v >= 5.5 && v <= 12)), 'every traffic route stays on the carriageway');
