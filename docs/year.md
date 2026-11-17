@@ -24,7 +24,7 @@ journal's act labels and the watch-repairer's side story.
 
 State: everything is under `life.flags.year` (`year.work = { through, days, story, road, watch }`,
 `year.career.startup`, `year.home`), plus plain flags (`handoff`, `rentNorthbund`, `goStartup`,
-`goFamily`, `ruoanLamp`, ...). The save format is still v1.
+`goFamily`, `yuanLamp`, ...). The save format is still v1.
 
 ## The calendar in play
 
@@ -108,7 +108,7 @@ with three flats (Tilanqiao ¥6,200, the North Bund ¥12,800, Dianchi Road ¥19,
 a deposit, the first month and the fee from the bank, sets `home`, and adds "My flat" to DiDi. The
 flat is one room at three heights (the North Bund one has the view): a bed, a desk that opens the
 notebook, a door (a DiDi to the Bund, or straight to work). Once he has a flat the key card for 612
-stops working. Ruoan sends a floor lamp if asked. Salary 42,000 (48,000 if promoted, 52,000 at
+stops working. Yu'an sends a floor lamp if asked. Salary 42,000 (48,000 if promoted, 52,000 at
 Yushen, 30,000 at the works); severance N+3; a year-end bonus on the consulting and Yushen roads.
 
 **Not built:** furnishing or decorating the flat (beyond the lamp), utilities, food and daily

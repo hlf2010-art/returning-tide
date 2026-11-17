@@ -48,6 +48,7 @@ export const FLATS = {
   spawn: { x: 42.0, z: -705.0, yaw: Math.PI / 2 }, door: { x: 42.95, z: -705.0 }, hook: { x: 42.95, z: -703.6 },
   bed: { x: 37.6, z: -704.6 }, desk: { x: 39.9, z: -700.75 }, window: { x: 38.5, z: -700.45 },
 };
+// Zhiwei is c4 in the street too (romance/zhiwei.js): one body for one person
 const AVATAR = { zhiwei: 'c4', taoke: 'c2', shaofeng: 'c5', partner: 'c6', feng: 'su', gu: 'p1', chair: 'c7', hr: 'c8', zhoumin: 'c3' };
 // floors and walls (module load: movement reads the colliders as they are)
 {
@@ -169,14 +170,14 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     shell(g, { ...P, y: F }, F, view ? ['N', 'E'] : ['N'], floorMat, wall);
     if (!view) { add(new THREE.PlaneGeometry(P.x1 - P.x0 - 0.2, P.h - 0.1), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.86, 0.8, 0.68), transparent: true, opacity: 0.93 }), (P.x0 + P.x1) / 2, F + P.h / 2, P.z0 + 0.12); }   // a drawn curtain: no view from here
     else add(new THREE.PlaneGeometry(1.6, P.h - 0.1), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.8, 0.76, 0.68), transparent: true, opacity: 0.9, side: THREE.DoubleSide }), P.x1 - 0.12, F + P.h / 2, P.z0 + 0.9, Math.PI / 2);
-    // the door, the bed, the desk, a wardrobe, a sofa (and Ruoan's lamp, if she sent one)
+    // the door, the bed, the desk, a wardrobe, a sofa (and Yu'an's lamp, if she sent one)
     box(0.06, 2.1, 0.95, std({ color: 0x6b5138, roughness: 0.6 }), P.x1 - 0.04, F, P.door.z); box(0.04, 0.5, 0.3, mullion, P.x1 - 0.06, F + 1.3, P.hook.z);
     rbox(2.1, 0.36, 2.1, 0.06, std({ color: 0x4a3a2c, roughness: 0.7 }), 37.3, F, -704.8); rbox(2.0, 0.2, 2.0, 0.08, std({ color: 0xf4f1ea, roughness: 0.95 }), 37.3, F + 0.36, -704.8); rbox(0.9, 0.14, 0.5, 0.06, std({ color: 0xffffff, roughness: 0.9 }), 37.3, F + 0.54, -705.5); box(2.1, 0.9, 0.08, std({ color: 0x4a3a2c, roughness: 0.7 }), 37.3, F + 0.2, -705.9);
     box(1.8, 0.04, 0.6, std({ color: 0xd9c9a8, roughness: 0.5 }), 39.95, F + 0.74, P.z1 - 0.32); for (const dx of [-0.85, 0.85]) box(0.04, 0.74, 0.5, mullion, 39.95 + dx, F, P.z1 - 0.32);
     box(0.34, 0.22, 0.02, std({ color: 0x111111, roughness: 0.3 }), 39.95, F + 0.78, P.z1 - 0.2); add(new THREE.PlaneGeometry(0.32, 0.2), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.25, 0.32, 0.42) }), 39.95, F + 0.89, P.z1 - 0.212, Math.PI);
     box(0.55, 2.0, 2.0, std({ color: 0xcfc6b4, roughness: 0.8 }), 36.4, F, -701.6);
     rbox(2.2, 0.42, 0.9, 0.1, std({ color: id === 'dianchi' ? 0x50606c : 0x7c7468, roughness: 0.9 }), 41.3, F, -701.75); rbox(2.2, 0.4, 0.22, 0.08, std({ color: id === 'dianchi' ? 0x50606c : 0x7c7468, roughness: 0.9 }), 41.3, F + 0.42, -701.38);
-    const lampG = new THREE.Group(); lampG.name = 'ruoan-lamp'; g.add(lampG);
+    const lampG = new THREE.Group(); lampG.name = 'yuan-lamp'; g.add(lampG);
     { const m1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.5, 8), mullion); m1.position.set(42.55, F + 0.75, -701.6); const m2 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.28, 16, 1, true), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.25, 0.8), side: THREE.DoubleSide })); m2.position.set(42.55, F + 1.6, -701.6); const m3 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.02, 16), mullion); m3.position.set(42.55, F + 0.01, -701.6); lampG.add(m1, m2, m3); }
     add(new THREE.CircleGeometry(0.09, 12), lamp, 39.5, F + P.h - 0.004, -703.2, 0, Math.PI / 2); add(new THREE.CircleGeometry(0.09, 12), lamp, 41.6, F + P.h - 0.004, -704.4, 0, Math.PI / 2);
     g.userData.lamp = lampG; g.visible = false;
@@ -233,7 +234,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     const L = L0(); if (!hasFlat(L)) return false;
     const id = home(L).id, P = FLATS; if (!LISTINGS[id]) return false;
     const g = groups[`flat:${id}`] || buildFlat(id);
-    fade(async () => { hide(); g.visible = true; g.userData.lamp.visible = !!L.flags.ruoanLamp; here = 'flat'; flatId = id; player.teleport(P.spawn.x, P.spawn.z, P.spawn.yaw, 0, P.y[id]); save && save(); }, { line: T(LISTINGS[id].zh, LISTINGS[id].en), hold: 900, to: 'play' });
+    fade(async () => { hide(); g.visible = true; g.userData.lamp.visible = !!L.flags.yuanLamp; here = 'flat'; flatId = id; player.teleport(P.spawn.x, P.spawn.z, P.spawn.yaw, 0, P.y[id]); save && save(); }, { line: T(LISTINGS[id].zh, LISTINGS[id].en), hold: 900, to: 'play' });
     return true;
   }
   // the start-up's day upstairs: 32F is destinations.js's floor; its own scene is set aside, ours played in it

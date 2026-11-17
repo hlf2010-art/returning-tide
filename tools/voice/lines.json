@@ -640,7 +640,7 @@
   "en": "It is!! Top comment: \"the calmest man in Shanghai\" hahaha"
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "你脸怎么了？谁告诉我的不重要。冰敷，别热敷。",
   "en": "What happened to your face? Never mind who told me. Ice, not heat."
  },
@@ -662,7 +662,8 @@
  {
   "who": "zhixia",
   "zh": "喂，纪白，听说你硅谷那家公司的股票套现了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？",
-  "en": "Hey, Ji Bai, heard you cashed out your stock from that Valley company? ...Don't play dumb, Ruoan told me. Come to Tianma this weekend, I'll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?"
+  "en": "Hey, Ji Bai, heard you cashed out your stock from that Valley company? ...Don't play dumb, Ruoan told me. Come to Tianma this weekend, I'll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?",
+  "status": "DEPRECATED"
  },
  {
   "who": "zhixia",
@@ -1272,7 +1273,8 @@
  {
   "who": "zhiwei",
   "zh": "纪白？我是许知微，这个项目的 PM。工牌和电脑在你桌上，IT 十点来装 VPN。",
-  "en": "Ji Bai? Xu Zhiwei. I'm the engagement manager on this one. Your badge and laptop are on your desk. IT will be round at ten to set up the VPN."
+  "en": "Ji Bai? Xu Zhiwei. I'm the engagement manager on this one. Your badge and laptop are on your desk. IT will be round at ten to set up the VPN.",
+  "status": "DEPRECATED"
  },
  {
   "who": "zhiwei",
@@ -1707,7 +1709,8 @@
  {
   "who": "zhiwei",
   "zh": "没有一天了，报告今晚发。……我签吧，我是 PM。",
-  "en": "There isn't a day. The report goes tonight. ...I'll sign it. I'm the manager."
+  "en": "There isn't a day. The report goes tonight. ...I'll sign it. I'm the manager.",
+  "status": "DEPRECATED"
  },
  {
   "who": "shaofeng",
@@ -2860,17 +2863,17 @@
   "en": "Striking another person. Back to the station. Under the Public Security Administration Punishments Law, a five-hundred-yuan fine."
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "……你知道这省了我们多少事吗？两周的测绘。下次请你吃饭，我请。",
   "en": "...Do you know how much work that just saved us? Two weeks of measuring. Dinner's on me next time."
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "每一格都是手工做的，九十多年了。……要是有台便携的激光雷达就好了，我们量了三个礼拜。",
   "en": "Every one of those coffers was made by hand, ninety-odd years ago. ...If only we had a portable LiDAR. We've been measuring for three weeks."
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "跟紧我。保安认识我。",
   "en": "Stay close. The guard knows me."
  },
@@ -2885,7 +2888,7 @@
   "en": "Baibai... thanks. Really."
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "来啦。准时，难得。",
   "en": "You came. On time, for once."
  },
@@ -3162,32 +3165,38 @@
  {
   "who": "gunian.js",
   "zh": "昨天谢谢你帮我按卷尺。汉口路那家 Manner，我每天一点在。今天也在。",
-  "en": "Thank you for holding the tape yesterday. I'm at the Manner on Hankou Road at one every day. Today as well."
+  "en": "Thank you for holding the tape yesterday. I'm at the Manner on Hankou Road at one every day. Today as well.",
+  "status": "DEPRECATED"
  },
  {
   "who": "gunian.js",
   "zh": "今天回去以后我量了和平饭店的八角厅，抬头看了很久那个玻璃顶。想到你住在它楼上。",
-  "en": "After we parted I went and measured the octagon hall at the Peace Hotel and stood a long time looking up at the glass. It occurred to me that you live above it."
+  "en": "After we parted I went and measured the octagon hall at the Peace Hotel and stood a long time looking up at the glass. It occurred to me that you live above it.",
+  "status": "DEPRECATED"
  },
  {
   "who": "gunian.js",
   "zh": "这周末我搬画图桌，从我妈家搬到新租的工作室：虹口，一个石库门的二楼。不是请你帮忙搬。是想让你第一个看。",
-  "en": "I'm moving my drawing table this weekend, from my mother's to the studio I've rented: Hongkou, the first floor of a lane house. I'm not asking you to carry it. I'd like you to be the first to see the place."
+  "en": "I'm moving my drawing table this weekend, from my mother's to the studio I've rented: Hongkou, the first floor of a lane house. I'm not asking you to carry it. I'd like you to be the first to see the place.",
+  "status": "DEPRECATED"
  },
  {
   "who": "gunian.js",
   "zh": "下个月考最后三门。考前我晚上都在画图，不太回消息。不是冷淡，是在考试。先跟你说一声。",
-  "en": "Last three papers next month. Until then I'm drawing every evening and slow to answer. It isn't coldness. It's an exam. I wanted you to know beforehand."
+  "en": "Last three papers next month. Until then I'm drawing every evening and slow to answer. It isn't coldness. It's an exam. I wanted you to know beforehand.",
+  "status": "DEPRECATED"
  },
  {
   "who": "gunian.js",
   "zh": "过了。九门全过。",
-  "en": "I passed. All nine papers."
+  "en": "I passed. All nine papers.",
+  "status": "DEPRECATED"
  },
  {
   "who": "gunian.js",
   "zh": "第一个自己签字的项目：山阴路一栋里弄，三户人家，住了五十年。业主是个八十岁的阿婆，她问我，修完还认不认得出来。",
-  "en": "The first job under my own signature: a lane house on Shanyin Road, three households, fifty years in it. The owner is eighty. She asked me whether she would still recognise it when I had finished."
+  "en": "The first job under my own signature: a lane house on Shanyin Road, three households, fifty years in it. The owner is eighty. She asked me whether she would still recognise it when I had finished.",
+  "status": "DEPRECATED"
  },
  {
   "who": "gunian.js",
@@ -3317,47 +3326,56 @@
  {
   "who": "yuan.js",
   "zh": "看到你朋友圈了。外滩。",
-  "en": "Saw your Moments. The Bund."
+  "en": "Saw your Moments. The Bund.",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
   "zh": "所以你真的回去了。",
-  "en": "So you really went back."
+  "en": "So you really went back.",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
   "zh": "[图片] 你的马克杯还在我这儿。印着 GO BEARS 那个。寄给你，还是扔了？",
-  "en": "[Photo] Your mug is still here. The GO BEARS one. Shall I post it to you, or throw it out?"
+  "en": "[Photo] Your mug is still here. The GO BEARS one. Shall I post it to you, or throw it out?",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
   "zh": "名单这次有我了。早上十点开的会，十点十五电脑就登不进去了。",
-  "en": "This time my name was on the list. The meeting was at ten. By a quarter past I couldn't log in."
+  "en": "This time my name was on the list. The meeting was at ten. By a quarter past I couldn't log in.",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
   "zh": "有家上海的公司找我，做 AI 产品的设计负责人。让我六月过去，先待三个月，算试用。我还没答应。",
-  "en": "A Shanghai company has approached me: design lead on their AI products. They want me over in June for three months, as a trial. I haven't said yes."
+  "en": "A Shanghai company has approached me: design lead on their AI products. They want me over in June for three months, as a trial. I haven't said yes.",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
   "zh": "机票订了。六月五号到浦东。别来接，我自己会坐磁悬浮。",
-  "en": "Flight's booked. I land at Pudong on the fifth of June. Don't meet me. I can manage the maglev by myself."
+  "en": "Flight's booked. I land at Pudong on the fifth of June. Don't meet me. I can manage the maglev by myself.",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
   "zh": "我在你那个饭店的大堂。你以前说它像老电影。——确实像。",
-  "en": "I'm in the lobby of that hotel of yours. You used to say it was like an old film. — It is."
+  "en": "I'm in the lobby of that hotel of yours. You used to say it was like an old film. — It is.",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
   "zh": "单程。公司的 offer 我签了。静安，租了个朝南的。你的杯子我带回来了。",
-  "en": "One-way. I've signed the offer. A south-facing flat in Jing'an. I brought your mug back with me."
+  "en": "One-way. I've signed the offer. A south-facing flat in Jing'an. I brought your mug back with me.",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
   "zh": "[图片] 旧金山，雾。到了。我在收尾：退租，卖车，跟律师谈绿卡。明年春天见，如果你那句话还作数。",
-  "en": "[Photo] San Francisco, fog. I'm here. Closing things up: the lease, the car, a talk with the lawyer about the green card. See you in the spring, if that sentence of yours still stands."
+  "en": "[Photo] San Francisco, fog. I'm here. Closing things up: the lease, the car, a talk with the lawyer about the green card. See you in the spring, if that sentence of yours still stands.",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
@@ -3367,17 +3385,20 @@
  {
   "who": "yuan.js",
   "zh": "到旧金山了。保重，纪白。",
-  "en": "I'm back in San Francisco. Take care, Ji Bai."
+  "en": "I'm back in San Francisco. Take care, Ji Bai.",
+  "status": "DEPRECATED"
  },
  {
   "who": "yuan.js",
   "zh": "[图片] 回旧金山了。Clement 街那家点心店还开着。下次你来，我请。",
-  "en": "[Photo] Back in San Francisco. The dim sum place on Clement is still open. Next time you are over, my treat."
+  "en": "[Photo] Back in San Francisco. The dim sum place on Clement is still open. Next time you are over, my treat.",
+  "status": "DEPRECATED"
  },
  {
   "who": "zhiwei.js",
   "zh": "纪白？我是许知微，你这个项目的 PM。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。",
-  "en": "Ji Bai? Xu Zhiwei. I'm the PM on your project. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight."
+  "en": "Ji Bai? Xu Zhiwei. I'm the PM on your project. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight.",
+  "status": "DEPRECATED"
  },
  {
   "who": "zhiwei.js",
@@ -3417,7 +3438,8 @@
  {
   "who": "zhiwei.js",
   "zh": "今天给合伙人过方案，你做的那个评估模型，我说的是“我们组做的”。Vincent 以为是我做的，我没纠正。",
-  "en": "At the partner review today I called your evaluation model \"the team's work\". Vincent assumed it was mine. I didn't correct him."
+  "en": "At the partner review today I called your evaluation model \"the team's work\". Vincent assumed it was mine. I didn't correct him.",
+  "status": "DEPRECATED"
  },
  {
   "who": "zhiwei.js",
@@ -3447,12 +3469,14 @@
  {
   "who": "zhiwei.js",
   "zh": "新加坡办公室要人去带亚太的 AI 业务。Vincent 推了我。年底走，两年。",
-  "en": "The Singapore office needs someone to run AI for Asia-Pacific. Vincent put my name forward. I'd leave at the end of the year. Two years."
+  "en": "The Singapore office needs someone to run AI for Asia-Pacific. Vincent put my name forward. I'd leave at the end of the year. Two years.",
+  "status": "DEPRECATED"
  },
  {
   "who": "zhiwei.js",
   "zh": "我跟 Vincent 说了，新加坡我不去。不是为你。——有一部分是。",
-  "en": "I've told Vincent I'm not taking Singapore. Not for you. — Partly for you."
+  "en": "I've told Vincent I'm not taking Singapore. Not for you. — Partly for you.",
+  "status": "DEPRECATED"
  },
  {
   "who": "zhiwei.js",
@@ -3668,5 +3692,155 @@
   "who": "dad",
   "zh": "机械臂是别人的事。桌上这个，才是你的。先把它做成。",
   "en": "The robot arm is someone else's affair. The thing on this table is yours. Make that work first."
+ },
+ {
+  "who": "zhixia",
+  "zh": "喂，纪白，听说你硅谷那家公司的股票套现了？……别装，予安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？",
+  "en": "Hey, Ji Bai, heard you cashed out your stock from that Valley company? ...Don't play dumb, Yu'an told me. Come to Tianma this weekend, I'll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "zhiwei",
+  "zh": "纪白？我是许知微，这个项目的产品设计负责人，交付也是我带。工牌和电脑在你桌上，IT 十点来装 VPN。",
+  "en": "Ji Bai? Xu Zhiwei. Product design lead on this one, and I run delivery. Your badge and laptop are on your desk. IT will be round at ten to set up the VPN.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "zhiwei",
+  "zh": "没有一天了，报告今晚发。……我签吧，项目是我带的。",
+  "en": "There isn't a day. The report goes tonight. ...I'll sign it. It's my engagement.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "昨天谢谢你替我坐下。汉口路那家 Manner，我每天一点在。今天也在。",
+  "en": "Thank you for sitting down for me yesterday. I'm at the Manner on Hankou Road at one every day. Today as well.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "回去以后，我把你那天说的问题转给了那个创始人。他半夜回我：这人是谁？我说：一个住在和平饭店楼上、不收钱的人。",
+  "en": "After we parted I sent the founder what you had said about his camera. He replied at midnight: who is this? I said: a man who lives above the Peace Hotel and doesn't charge.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "我跟合伙人们说了：我要出来，自己募一支基金。办公室看好了，杨浦滨江一个老厂房的楼上，楼下就是创客空间。不是请你帮忙搬东西。是想让你第一个看。",
+  "en": "I've told my partners: I'm leaving to raise a fund of my own. I've found the office, upstairs in an old factory on the Yangpu riverside, right above the makerspace. I'm not asking you to carry anything. I'd like you to be the first to see it.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "下个月出去路演：香港、新加坡、北京，三周见二十六个出资人。这之前我晚上都在改材料，不太回消息。不是冷淡，是在募资。先跟你说一声。",
+  "en": "Next month I take the fund on the road: Hong Kong, Singapore, Beijing, twenty-six investors in three weeks. Until then I'm rewriting the deck every evening and slow to answer. It isn't coldness. It's fundraising. I wanted you to know beforehand.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "首关了。两亿，比我定的目标多两千万。",
+  "en": "First close. Two hundred million yuan, twenty million more than I aimed for.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "明轩说，你在做的东西越来越像一家公司了。把材料发我。不是要投你，是想让你先从我这儿听到最难听的那部分。",
+  "en": "Mingxuan says what you're building is starting to look like a company. Send me your deck. Not so that I can invest: so that you hear the worst of it from me first.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "慢潮资本的第一笔投资签了：就是那台摄像头。他没跟我解释，他去修了：拿一百个真实家庭的晚上重新录数据，让模型看前后两秒，不只看一帧。尽调的时候，我在同一个大堂、同样的灯下坐了三十次，又在两户老人家里各看了一晚，一次误报都没有。他问我，当初是谁先指出问题的。我没告诉他。",
+  "en": "Slow Tide's first investment is signed: that camera. He didn't explain it to me. He fixed it: new data from evenings in a hundred real homes, and a model that watches the two seconds either side, not one frame. For the due diligence I sat down thirty times in the same lobby under the same lights, and watched it for a night in two old people's homes. Not one false alarm. He asked me who first spotted the problem. I didn't tell him.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "今天在和平饭店顶上测了一天，下来看见你站在江边。没叫你。",
+  "en": "I spent the day surveying the Peace Hotel's roof, and when I came down you were standing by the river. I didn't call out.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "所以你真的回来了。比我晚了两年。",
+  "en": "So you really came back. Two years after me.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "[图片] 你那只 GO BEARS 的马克杯，两年前被我顺手装进箱子带回来了，一直在我工位上。还你，还是我接着用？",
+  "en": "[Photo] Your GO BEARS mug came home in my suitcase two years ago. It has been on my desk ever since. Do you want it back, or shall I keep using it?",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "反对意见我交上去了：那条弄堂不能只留一张皮，把住在里面的人掏空。组长说我会后悔。",
+  "en": "I've filed my dissent: that lane can't be kept as a skin with the people scooped out of it. My team lead says I'll regret it.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "旧金山来信了：以前合作过的那家城市研究所，请我回去带一个社区更新的项目，两年。九月要答复。我还没想好。",
+  "en": "A letter from San Francisco: the urban-research institute I worked with wants me back to lead a community-renewal project. Two years. They want an answer by September. I haven't decided.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "决定下来了：方案改了，居民可以留下来。改过的那一页上，有我的名字。",
+  "en": "The decision is in: the scheme has changed, and the residents can stay. My name is on the page that changed.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "我在你那个饭店的八角厅，测玻璃顶。你以前说它像老电影。——确实像。",
+  "en": "I'm in the octagon hall of that hotel of yours, measuring the glass roof. You used to say it was like an old film. — It is.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "旧金山我回掉了。弄堂二期我签了。你的杯子还在我桌上。",
+  "en": "I've turned San Francisco down and signed on for the lane's second phase. Your mug is still on my desk.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "[图片] 旧金山，雾。到了。先做一年，然后我们再看，如果你那句话还作数。",
+  "en": "[Photo] San Francisco, fog. I'm here. One year first, and then we'll see, if that sentence of yours still stands.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "到旧金山了。保重，纪白。",
+  "en": "I'm in San Francisco. Take care, Ji Bai.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "[图片] 到旧金山了。Clement 街那家点心店还开着。下次你来，我请。群里我照样说话。",
+  "en": "[Photo] I'm in San Francisco. The dim sum place on Clement is still open. Next time you're over, my treat. I'll still be in the group chat.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "纪白？我是许知微，你这个项目的设计负责人，交付也归我管。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。",
+  "en": "Ji Bai? Xu Zhiwei. Design lead on your project, and delivery is mine too. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "今天给合伙人过方案，你做的那个评估模型，我说的是“我们组做的”。Raymond 以为是我做的，我没纠正。",
+  "en": "At the partner review today I called your evaluation model \"the team's work\". Raymond assumed it was mine. I didn't correct him.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "新加坡办公室要人去带亚太的 AI 业务。Raymond 推了我。年底走，两年。",
+  "en": "The Singapore office needs someone to run AI for Asia-Pacific. Raymond put my name forward. I'd leave at the end of the year. Two years.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "我跟 Raymond 说了，新加坡我不去。不是为你。——有一部分是。",
+  "en": "I've told Raymond I'm not taking Singapore. Not for you. — Partly for you.",
+  "status": "VO_PENDING"
  }
 ]

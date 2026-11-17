@@ -321,7 +321,7 @@ async function boot() {
     henan.traffic.setExtraPeople(() => world.crowd.onHenan());
     crowdBoxes = Array.from({ length: (params.has('q') ? 5 : det.nearPeople) + 2 }, () => addDynamicCollider('npc'));
   }
-  // the friends in person after the first days (world/friendScenes.js): Ruoan at the AIA, Momo in 612, LiDAR scans
+  // the friends in person after the first days (world/friendScenes.js): Yu'an at the AIA, Momo in 612, LiDAR scans
   world.friends = createFriendScenes({ scene, people, hud, audio, voice, getLife: () => life, save: () => saveLife(), player, interiors });
   // Line 2: down an exit's stairs, through the gates, a real train under the river to Lujiazui and back (world/metro.js)
   world.metro = createMetro({ scene, camera, renderer: R.renderer, hud, audio, voice, player, people, travel, getLife: () => life, save: () => saveLife(), open: () => hourState.metro, onPudongSoon: () => world.ljz.buildAsync() });

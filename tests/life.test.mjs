@@ -51,12 +51,12 @@ const play = (L, realSecs, step = 1, r = rng(1)) => { for (let s = 0; s < realSe
   // reactions to the world, and saving
   const L = createLife(); setupThreads(L);
   pay(L, { method: 'wechat', amount: 15, to: 'Manner' }); react(L, { type: 'paid', to: 'Manner' }); play(L, 60);
-  ok(L.threads.ruoan.messages.some((m) => /Manner/.test(m.text || '')), 'buying a coffee on Hankou Road: Ruoan, who works nearby, guesses where you are');
+  ok(L.threads.yuan.messages.some((m) => /Manner/.test(m.text || '')), 'buying a coffee on Hankou Road: Yu\'an, who works nearby, guesses where you are');
   emit(L, { type: 'parcel', item: 'x' }); const out = drain(L);
   ok(out.length === 1 && drain(L).length === 0, 'world events are handed over once');
   own(L, { kind: 'gadget', name: '口袋激光雷达' });
   const L2 = load(save(L));
-  ok(L2 && L2.inventory.length === 1 && L2.wallet.wechat === L.wallet.wechat && L2.threads.ruoan.messages.length === L.threads.ruoan.messages.length && stamp(L2) === stamp(L), 'everything survives a save and load');
+  ok(L2 && L2.inventory.length === 1 && L2.wallet.wechat === L.wallet.wechat && L2.threads.yuan.messages.length === L.threads.yuan.messages.length && stamp(L2) === stamp(L), 'everything survives a save and load');
   ok(load('{"v":99}') === null && load('nonsense') === null, 'a bad or old save is refused, not half-loaded');
 }
 // the phone's media (ui/phone/media.js): Old Zhou's voicemail, video clips, and no synthetic speech
@@ -77,6 +77,19 @@ const play = (L, realSecs, step = 1, r = rng(1)) => { for (let s = 0; s < realSe
   ok(notes.length > 10 && notes.every(([t, k]) => t >= 0 && t < len && k >= 0 && k <= 13), `the solo has ${notes.length} notes inside the clip, on the keyboard drawn`);
   const src = ['src/ui/phone/phone.js', 'src/ui/phone/media.js', 'src/ui/phone/didiApp.js', 'src/ui/phone/shopApp.js'].map((f) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8').replace(/\/\/.*$/gm, '')).join('\n');
   ok(!/speechSynthesis|SpeechSynthesisUtterance/.test(src), 'the phone never uses the browser\'s synthetic speech');
+}
+// ---- old saves: 许若安 Ruoan and 林予安 Lin Yu'an are one person (Character Bible v2.2), id 'yuan' ----
+{
+  const raw = readFileSync(new URL('./fixtures/save-before-phase5.json', import.meta.url), 'utf8'), was = JSON.parse(raw);
+  const L = load(raw), s = JSON.stringify(L);
+  ok(!/"ruoan|ruoan[A-Z"-]/.test(s) && L.threads.yuan && L.threads.yuan.messages.length === was.threads.ruoan.messages.length && L.threads.yuan.title === '林予安' && L.order.filter((x) => x === 'yuan').length === 1, 'an old save: her chat, her relation and every id move to yuan; nothing written is lost');
+  ok(L.threads.yuan.messages.map((m) => m.text).join() === was.threads.ruoan.messages.map((m) => m.text).join(), 'what she wrote stays as it was written');
+  const both = { v: 1, order: ['ruoan', 'yuan', 'momo'], threads: { ruoan: { id: 'ruoan', title: '许若安', members: ['me', 'ruoan'], messages: [{ at: 10, from: 'ruoan', text: 'a' }, { at: 30, from: 'me', text: 'c' }], unread: 1 }, yuan: { id: 'yuan', title: '林予安', members: ['me', 'yuan'], messages: [{ at: 20, from: 'yuan', text: 'b' }], unread: 2 } },
+    relations: { ruoan: { affinity: 61 } }, invites: [{ id: 'ruoan-aia', from: 'ruoan', thread: 'ruoan', kept: true }], flags: { ruoanLamp: true, spoke: { ruoan: [5], yuan: [7] }, hearts: { yuan: { stage: 'known' } } } };
+  const M = load(JSON.stringify(both));
+  ok(M.threads.yuan.messages.map((m) => m.text).join('') === 'abc' && M.threads.yuan.unread === 3 && !M.threads.ruoan && M.order.join() === 'yuan,momo', 'two chats for one person become one, in order');
+  ok(M.relations.yuan.affinity === 61 && M.invites[0].id === 'yuan-aia' && M.invites[0].from === 'yuan' && M.flags.yuanLamp === true && M.flags.spoke.yuan.join() === '5,7' && M.flags.hearts.yuan.stage === 'known' && M.flags.idsV === 2, 'the friendship, the AIA evening, the lamp and the romance all carry over');
+  ok(load(save(M)).threads.yuan.messages.length === 3, 'and a migrated save loads again unchanged');
 }
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);

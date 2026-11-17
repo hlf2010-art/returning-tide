@@ -32,7 +32,10 @@ const ex = parseExchange('Sure! ```json\n[{"speaker":"su","zh":"今天风大。"
 ok(ex && ex.length === 2 && ex[0].speaker === 'su' && ex[1].en === 'It is.', 'a generated exchange is parsed out of chatter, unknown speakers dropped');
 ok(parseExchange('no json here', ['a', 'b']) === null && parseExchange('[{"speaker":"a","zh":"嗯"}]', ['a', 'b']) === null, 'nothing usable -> nothing played');
 // voices: the game's key for a line is the generator's (tools/voice/generate.py)
-const lines = JSON.parse(fs.readFileSync('tools/voice/lines.json', 'utf8'));
+// (lines marked VO_PENDING are new text awaiting a recording: subtitles until generate.py voices them;
+// DEPRECATED ones are replaced lines whose recordings are kept, not deleted)
+const allLines = JSON.parse(fs.readFileSync('tools/voice/lines.json', 'utf8')), lines = allLines.filter((l) => l.status !== 'VO_PENDING');
+ok(allLines.every((l) => !l.status || ['VO_PENDING', 'DEPRECATED'].includes(l.status)), `voice line statuses are VO_PENDING or DEPRECATED only (${allLines.filter((l) => l.status === 'VO_PENDING').length} pending, ${allLines.filter((l) => l.status === 'DEPRECATED').length} deprecated)`);
 let man = null; try { man = JSON.parse(fs.readFileSync('public/voice/manifest.json', 'utf8')); } catch { /* not generated yet */ }
 if (man) {
   const zhHit = lines.filter((l) => man.clips[voiceKey('zh', l.zh)]).length, enHit = lines.filter((l) => l.en && man.clips[voiceKey('en', l.en)]).length;

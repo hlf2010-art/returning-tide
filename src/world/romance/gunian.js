@@ -9,12 +9,18 @@
 //   Act III  the roadshow; she says she'll be slow, and why
 //   Act IV   first close: Slow Tide Capital, upstairs from the Yangpu makerspace; a second key (to her
 //            flat, never to the office); his deck, and four pages of honest notes
-//   Act V    she asks the question the second time
+//   Act V    she asks the question the second time (unchanged from the original Act V, as the owner asked)
+// Character Bible v2.2 (F03): LOCKED: 29, 170 cm, tech investor & strategist, warm / exacting, the F03
+// face and the ivory-suit look; she refuses to invest in a man she is dating as her own principle (telling
+// her LPs would be governance, not a ban). WORKING (provisional, not canon yet): INSEAD, Slow Tide
+// Capital, the AIA office, the Yangpu rooms, Xuhui, and the currency of the two hundred million.
+// Timeline: day 7 she tells her partners (off screen, `disclosure_to_partner`); day 9 she tells him (g5,
+// `message_to_ji_bai`). He cannot know before day 9.
 import { pay, post } from '../../engine/life.js';
 import { heart, inLife, isSeeing, feel } from '../../engine/hearts.js';
 import { owns } from '../../engine/maker.js';
 import { hasProduct } from '../../engine/studio.js';
-import { career } from '../../engine/year.js';
+import { career, fact } from '../../engine/year.js';
 import { B, D, H, tod, between, say, R, A, ask, askOut, dayAfter, afterBeat, done, dateOn, upstairs, t } from './kit.js';
 
 const W = 'gunian';
@@ -24,15 +30,18 @@ const roadshow = (L) => day(L) >= 11 && day(L) <= 12;
 const building = (L) => hasProduct(L) || career(L).track === 'startup';
 
 const P = {
-  id: W, name: B('顾念', 'Gu Nian'), short: B('顾念', 'Gu Nian'), age: 29, sex: 'f', color: '#5f7f6e', avatar: ['gunian', 'c4', 'p5', 'c1'], voice: { pitch: 1.0, rate: 0.98 },
+  id: W, name: B('顾念', 'Gu Nian'), short: B('顾念', 'Gu Nian'), age: 29, sex: 'f', color: '#5f7f6e', avatar: ['gunian', 'c4', 'c1'], height: 1.70, voice: { pitch: 1.0, rate: 0.98 },
   role: B('科技投资人、战略顾问；一家早期基金的合伙人', 'Tech investor and strategist; a partner at an early-stage fund'),
   ambition: B('募一支自己的小基金，投那些真能让人过得更好的消费科技，而且投得久', 'Raise a small fund of her own and back consumer tech that makes people\'s lives genuinely better, for the long run'),
   how: "You are a partner at an early-stage fund upstairs in the AIA Building. You met him in its lobby after office hours: a start-up's fall-detection camera you were testing kept reporting a fall every time someone sat down, you asked him to sit on the sofa for it, and in a minute he told you what was wrong with it.",
   address: B('纪白', 'Ji Bai'),
-  card: "Gu Nian (顾念), 29, Shanghai-born, grew up in a lane in Jing'an (her mother is a retired maths teacher); computer science at Fudan, two years as a product manager at a Shenzhen hardware company, an MBA abroad at INSEAD; now the youngest partner at a small early-stage fund with offices upstairs in the AIA Building on the Bund, investing in early-stage innovation, consumer tech and new lifestyle ventures; from spring she leaves to raise a small fund of her own, Slow Tide Capital (慢潮资本), with two rooms upstairs from the Yangpu riverside makerspace: consumer tech for how people actually live, the old, the lonely, the overworked; her line: 投资的不只是项目，也是人，以及一个更大的可能 (you never invest in a project alone, but in people, and in a larger possibility); intelligent, rational, strategic and quick in a pitch, values long-term, meaningful impact over a fast exit, empathetic about the people a product is for, fiercely independent; emotionally reserved: in love she is slower and less sure of herself than in the boardroom, and shows care by paying attention rather than saying it; she will never invest in a man she is seeing (she would have to declare it to her own investors, and he would get her money instead of her honest opinion), but she will tell him plainly what is wrong with his work; knows his friend Lu Mingxuan slightly, as a junior analyst at another fund; ended a six-year relationship two years ago without a quarrel and has no interest in being anyone's option; lives alone in Xuhui; writes in full sentences with punctuation; cream blazers, pearl earrings, a slim leather watch; one flat white a day, at one o'clock, at the Manner on Hankou Road",
+  card: "Gu Nian (顾念), 29, Shanghai-born, grew up in a lane in Jing'an (her mother is a retired maths teacher); computer science at Fudan, two years as a product manager at a Shenzhen hardware company, an MBA abroad at INSEAD; now the youngest partner at a small early-stage fund with offices upstairs in the AIA Building on the Bund, investing in early-stage innovation, consumer tech and new lifestyle ventures; from spring she leaves to raise a small fund of her own, Slow Tide Capital (慢潮资本), with two rooms upstairs from the Yangpu riverside makerspace: consumer tech for how people actually live, the old, the lonely, the overworked; her line: 投资的不只是项目，也是人，以及一个更大的可能 (you never invest in a project alone, but in people, and in a larger possibility); intelligent, rational, strategic and quick in a pitch, values long-term, meaningful impact over a fast exit, empathetic about the people a product is for, fiercely independent; emotionally reserved: in love she is slower and less sure of herself than in the boardroom, and shows care by paying attention rather than saying it; she will never invest in a man she is seeing: that is her own rule, stricter than anything required of her (declaring the relationship to her investors would be a necessary governance step, not something that forbids the deal), because he would get her money instead of her honest opinion; she will still judge his product objectively and tell him plainly what is wrong with his work; knows his friend Lu Mingxuan slightly, as a junior analyst at another fund; ended a six-year relationship two years ago without a quarrel and has no interest in being anyone's option; lives alone in Xuhui; writes in full sentences with punctuation; 170 cm, long dark-brown wavy hair, soft almond eyes, pearl earrings, a slim leather watch; at work an ivory blazer over a pale champagne draped top, matching wide trousers and ivory pointed low heels; off duty a cream knit; one flat white a day, at one o'clock, at the Manner on Hankou Road",
   arc: {
     1: B('在一家小型早期基金做合伙人，办公室在友邦大楼楼上。这一季听了四十个路演，一个都没投。', 'A partner at a small early-stage fund upstairs in the AIA Building. Forty pitches this quarter, and she has backed none of them.'),
-    2: B('她跟合伙人们摊牌了：她要出来，自己募一支基金。办公室看好了，在杨浦滨江，创客空间楼上。', 'She has told her partners she is leaving to raise a fund of her own. She has found the office: on the Yangpu riverside, upstairs from the makerspace.'),
+    // day 7 she tells her partners; Ji Bai hears it from her on day 9 (beat g5), not before
+    2: (L) => (L.flags.hearts && L.flags.hearts._ && L.flags.hearts._.fired && L.flags.hearts._.fired.g5 > 0)
+      ? B('她跟合伙人们摊牌了：她要出来，自己募一支基金。办公室看好了，在杨浦滨江，创客空间楼上。她已经告诉了纪白。', 'She has told her partners she is leaving to raise a fund of her own. She has found the office: on the Yangpu riverside, upstairs from the makerspace. She has told Ji Bai.')
+      : B('在一家小型早期基金做合伙人。她在想一件还没对任何外人说的事。', 'A partner at a small early-stage fund. She is weighing something she has told no one outside the fund; she does not mention it to Ji Bai until she writes to him herself.'),
     3: B('五月出去路演：香港、新加坡、北京，三周见二十六个出资人。晚上都在改材料。', 'In May she takes the fund on the road: Hong Kong, Singapore, Beijing, twenty-six investors in three weeks. She rewrites the deck every evening.'),
     4: B('首关两亿。“慢潮资本”挂了牌；第一笔投资，是那台当初分不清坐下和摔倒的摄像头。', 'First close: two hundred million yuan. Slow Tide Capital has its sign up, and its first investment is the camera that once couldn\'t tell sitting from falling.'),
     5: B('她的日子是定的。她在等他说他的。', 'Her life is settled. She is waiting to hear his.'),
@@ -103,10 +112,10 @@ const P = {
       R('你会投他吗？', 'Will you invest in him?', { t: 2 }, '还不会。如果他一个月里把它修好，而不是跟我解释它没坏，我就投。我投会修的人，不投会解释的人。', "Not yet. If he fixes it within a month, instead of explaining to me that it isn't broken, then yes. I back people who fix things, not people who explain them."),
     ]) },
     { id: 'g4', when: (L) => { const c = done(L, 'g-cruise'); return c ? Math.max(D(7, 20, 0), D(Math.floor(c / 1440) + 1, 20, 0)) : null; }, until: () => D(10, 12, 0), run: (L) => askOut(L, W, 'g-night', P.dates['g-night'], D(day(L) + 1, 20, 30)) },
-    { id: 'g5', when: () => D(9, 21, 30), until: () => D(10, 22, 0), if: (L) => inLife(L, W) && heart(L, W).stage !== 'known', run: (L) => say(L, W, '我跟合伙人们说了：我要出来，自己募一支基金。办公室看好了，杨浦滨江一个老厂房的楼上，楼下就是创客空间。不是请你帮忙搬东西。是想让你第一个看。', "I've told my partners: I'm leaving to raise a fund of my own. I've found the office, upstairs in an old factory on the Yangpu riverside, right above the makerspace. I'm not asking you to carry anything. I'd like you to be the first to see it.", [
+    { id: 'g5', when: () => D(9, 21, 30), until: () => D(10, 22, 0), if: (L) => inLife(L, W) && heart(L, W).stage !== 'known', run: (L) => { fact(L, 'timeline', { event: 'message_to_ji_bai', about: 'leaving-to-raise' }, [W]); return say(L, W, '我跟合伙人们说了：我要出来，自己募一支基金。办公室看好了，杨浦滨江一个老厂房的楼上，楼下就是创客空间。不是请你帮忙搬东西。是想让你第一个看。', "I've told my partners: I'm leaving to raise a fund of my own. I've found the office, upstairs in an old factory on the Yangpu riverside, right above the makerspace. I'm not asking you to carry anything. I'd like you to be the first to see it.", [
       R('我来看。', "I'll come and look.", { a: 3, t: 4, mem: 'studio-first' }, '那我多买一份生煎。……你的工作台就在楼下，这件事我想过。要么很方便，要么是个坏主意。到时候看。', "Then I'll buy an extra box of shengjian. ...I know your bench is downstairs. I've thought about that. It's either very convenient or a very bad idea. We'll see."),
       R('这周末要加班。', "I'm working this weekend.", { t: -1 }, '好。那下次。', 'All right. Next time.'),
-    ]) },
+    ]); } },
     { id: 'g6', urgent: true, when: () => D(11, 12, 10), until: () => D(11, 18, 30), if: (L) => inLife(L, W), run: (L) => say(L, W, '下个月出去路演：香港、新加坡、北京，三周见二十六个出资人。这之前我晚上都在改材料，不太回消息。不是冷淡，是在募资。先跟你说一声。', "Next month I take the fund on the road: Hong Kong, Singapore, Beijing, twenty-six investors in three weeks. Until then I'm rewriting the deck every evening and slow to answer. It isn't coldness. It's fundraising. I wanted you to know beforehand.", [
       R('好好讲。回来第一顿饭我请。', "Go and win them over. The first dinner when you're back is on me.", { t: 3 }, '好。回来第一顿归你。', 'Good. The first dinner is yours.'),
       R('要不要先拿我练一遍？我演最难缠的那个出资人。', "Want to rehearse on me first? I'll play the worst investor in the room.", { a: 3 }, '……好。周四晚上，十分钟。别手下留情。', "...All right. Thursday evening, ten minutes. Don't go easy on me."),
@@ -116,9 +125,9 @@ const P = {
     { id: 'g10', when: () => D(14, 12, 40), until: () => D(14, 22, 0), if: (L) => inLife(L, W) && heart(L, W).stage !== 'known' && building(L), run: (L) => say(L, W, '明轩说，你在做的东西越来越像一家公司了。把材料发我。不是要投你，是想让你先从我这儿听到最难听的那部分。', "Mingxuan says what you're building is starting to look like a company. Send me your deck. Not so that I can invest: so that you hear the worst of it from me first.", [
       R('发你了。别手下留情。', "Sent. Don't go easy on me.", { t: 4, mem: 'her-notes' }, '四页意见，你自己看。最要紧的一条：第六页那个数字，你自己都不信，就别指望别人信。另外，我不投，别问。', "Four pages of notes. The one that matters: you don't believe the number on page six yourself, so don't expect anyone else to. And I'm not investing. Don't ask."),
       R('等它准备好了再给你看。', "I'll show you when it's ready.", { a: 1 }, '也对。出资人都是等东西准备好了才看的。我本来想当另一种人。', "Fair. Investors only see things once they're ready. I'd hoped to be the other kind of person."),
-      R('你会投吗？', 'Would you invest?', { t: -2, mem: 'asked-money' }, '不会。我们这样的时候不会。真要投，我得先跟我的出资人报备我们俩的关系，到那时候你从我这儿拿到的是钱，不是实话。我更想给你后者。', "No. Not while we're like this. If I did, I'd first have to declare us to my own investors, and then what you'd get from me is money, not the truth. I'd rather give you the second."),
+      R('你会投吗？', 'Would you invest?', { t: -2, mem: 'asked-money' }, '不会。我们这样的时候不会，这是我给自己定的规矩。跟出资人报备只是程序，程序挡不住；可那样你从我这儿拿到的是钱，不是实话。我更想给你后者。', "No. Not while we're like this. That's my own rule. Declaring us to my investors is only procedure, and procedure wouldn't stop it; but then what you'd get from me is money, not the truth. I'd rather give you the second."),
     ]) },
-    { id: 'g8', when: () => D(15, 12, 30), until: () => D(15, 22, 0), if: (L) => inLife(L, W), run: (L) => say(L, W, '慢潮资本的第一笔投资签了：就是那台摄像头。他拿一百个真实家庭的晚上重新训练了模型，现在分得清坐下和摔倒了。他问我，当初是谁先指出问题的。我没告诉他。', "Slow Tide's first investment is signed: that camera. He retrained the model on evenings in a hundred real homes, and now it can tell sitting from falling. He asked me who first spotted the problem. I didn't tell him.", [
+    { id: 'g8', when: () => D(15, 12, 30), until: () => D(15, 22, 0), if: (L) => inLife(L, W), run: (L) => say(L, W, '慢潮资本的第一笔投资签了：就是那台摄像头。他没跟我解释，他去修了：拿一百个真实家庭的晚上重新录数据，让模型看前后两秒，不只看一帧。尽调的时候，我在同一个大堂、同样的灯下坐了三十次，又在两户老人家里各看了一晚，一次误报都没有。他问我，当初是谁先指出问题的。我没告诉他。', "Slow Tide's first investment is signed: that camera. He didn't explain it to me. He fixed it: new data from evenings in a hundred real homes, and a model that watches the two seconds either side, not one frame. For the due diligence I sat down thirty times in the same lobby under the same lights, and watched it for a night in two old people's homes. Not one false alarm. He asked me who first spotted the problem. I didn't tell him.", [
       R('为什么不告诉他？', "Why didn't you tell him?", { t: 2, a: 2 }, '因为那是你的事，不是我拿来做人情的。你哪天想认识他，我介绍。', "Because that's yours to tell, not mine to trade on. If you ever want to meet him, I'll introduce you."),
       R('恭喜，顾总。', 'Congratulations, Managing Partner Gu.', { a: 2 }, '别这么叫，听着像在开会。……算了，再叫一遍。', "Don't call me that. It sounds like a board meeting. ...Actually, say it again."),
     ]) },
@@ -135,7 +144,7 @@ const P = {
         N('下了班，大堂的灯调暗了一半。一个穿米色西装的女人站在访客沙发旁边，手里的小摄像头隔一会儿就“嘀”一声。', "After hours the lobby lights are turned down by half. A woman in a cream blazer stands by the visitors' sofa, and the little camera in her hand beeps every so often."),
         G('不好意思——能帮我在那张沙发上坐一下吗？就是坐下，像平常那样。', 'Excuse me — would you sit down on that sofa for me? Just sit, the way you normally would.'),
         ask(L, W,
-          A('（走过去坐下）', '(Go over and sit down.)', { t: 4, mem: 'held-tape' }, N('摄像头“嘀”了一声，屏幕上跳出红字：检测到跌倒。', 'The camera beeps. Red letters on its screen: FALL DETECTED.'), G('谢谢。今晚第十一次“跌倒”了。到现在为止，一个摔倒的人都没有。', "Thank you. That's the eleventh fall tonight. So far nobody has actually fallen.")),
+          A('（走过去坐下）', '(Go over and sit down.)', { t: 4, mem: 'held-tape' }, N('摄像头“嘀”了一声，屏幕上跳出红字：检测到跌倒。', 'The camera beeps. Red letters on its screen: FALL DETECTED.'), G('谢谢。今晚第十一次“跌倒”了。到现在为止，一个摔倒的人都没有。', "Thank you. That's the eleventh fall tonight. So far nobody has actually fallen."), G('楼上会议室亮得像手术室，演示当然完美。这东西是要放进独居老人家里的，人家晚上就是这种光。所以我借了楼下的大堂。', "Upstairs the meeting room is lit like an operating theatre, so of course the demo was perfect. This is meant for old people living alone, and their evenings look like this. So I borrowed the lobby.")),
           A('为什么？', 'Why?', { a: 2 }, G('这是给独居老人用的，人摔倒了会通知子女。创始人刚才在楼上演示得很完美。我想在更像普通人家的光线里再试一次。麻烦你。', "It's for old people who live alone: if they fall, it tells their children. The founder's demo upstairs was perfect. I wanted to try it again in light that's more like someone's home. If you would."), N('你坐下。摄像头“嘀”了一声：检测到跌倒。', 'You sit. The camera beeps: FALL DETECTED.'), G('第十一次了。到现在为止，一个摔倒的人都没有。', "That's the eleventh. So far nobody has actually fallen."))),
         ask(L, W,
           A('它是在亮堂堂的办公室里训练的吧。这么暗、这么暖的光，它没见过。', "It was trained in a bright office, wasn't it? It's never seen light this dim and this warm.", { t: 2, a: 2 }, G('他说在哪儿都能用。', 'He told me it works anywhere.'), G('……你的意思是，在他试过的地方都能用。', '...You mean it works anywhere he tried it.')),
@@ -219,6 +228,8 @@ const P = {
           A('我送你上车。', "I'll see you into a car.", { t: 2 }, G('好。到家告诉你。', "Thank you. I'll tell you when I'm home."))),
       ] },
   },
+  // day 7: she tells her partners she is leaving (off screen); he hears it from her on day 9 (beat g5)
+  offscreen: [{ id: 'disclosure_to_partner', at: () => D(7, 17, 30), run: (L) => fact(L, 'timeline', { event: 'disclosure_to_partner', about: 'leaving-to-raise' }, [W]) }],
   events: {},
   end() { return null; },
   epilogue(L, h) {

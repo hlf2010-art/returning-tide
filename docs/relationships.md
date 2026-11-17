@@ -29,10 +29,10 @@ Ages and jobs as briefed. All five are women; each has her own Rocketbox avatar 
 
 | | Who | Wants | How he meets her | Nature |
 |---|---|---|---|---|
-| 许知微 Xu Zhiwei, 28 (`zhiwei`) | The project manager on his first engagement. From Hangzhou, six years at the firm. Sharp, dry, guarded, fair when it costs her | Senior manager before thirty, then partner | She writes at 18:10 on day 1, and brings his pass and laptop to the Peace Hotel lobby that evening (20:20 to 21:35) | Has it out with him if he sees someone else; two unanswered overtures and she stops asking |
+| 许知微 Xu Zhiwei, 28 (`zhiwei`) | Product and industrial designer (Character Bible F01, 178 cm, the F01 face): design lead on his first engagement, and she runs its delivery. From Hangzhou, six years at the firm (WORKING). Cool, uncompromising, dry, guarded, fair when it costs her | Senior manager before thirty, then partner | She writes at 18:10 on day 1, and brings his pass and laptop to the Peace Hotel lobby that evening (20:20 to 21:35) | Has it out with him if he sees someone else; two unanswered overtures and she stops asking |
 | 沈南星 Shen Nanxing, 26 (`nanxing`) | Independent photographer from Kunming. Shoots the Bund after the lights drop at ten. Awake till four | A first solo show; a three-month residency in Lisbon | At the railing north of Nanjing Road, any night 20:40 to 23:40 through day 10: he walks into her eight-second exposure. She notices the gimbal if he has built it | Doesn't police him, but won't commit to a man who sees others; three unanswered and she stops |
-| 顾念 Gu Nian, 29 (`gunian`) | Tech investor and strategist: a partner at a small early-stage fund upstairs in the AIA Building. Shanghai-born, MBA abroad. Rational across a table, reserved across a dinner. Not one of his friends | A fund of her own (Slow Tide Capital: roadshow in May, first close in June) backing consumer tech for the long run | In the AIA Building lobby after office hours (18:20 to 20:40, through day 8): a start-up's fall-detection camera calls everyone who sits down a fall; she asks him to sit on the sofa for it, and he tells her what's wrong | Leaves at once if he is seeing someone else. She is nobody's option. She will never invest in him while they're together |
-| 林予安 Lin Yu'an, 27 (`yuan`) | Product designer in San Francisco; the two years there they never named | Her green card; a job that isn't finishing other people's work | She writes first, from California, at 01:20 on day 2 (her morning). In person from June (day 13) | Asks him straight; the most patient of the five |
+| 顾念 Gu Nian, 29 (`gunian`) | Tech investor and strategist (F03, 170 cm, the F03 face): a partner at a small early-stage fund upstairs in the AIA Building. Shanghai-born, MBA abroad. Rational across a table, reserved across a dinner. Not one of his friends | A fund of her own (Slow Tide Capital: roadshow in May, first close in June) backing consumer tech for the long run | In the AIA Building lobby after office hours (18:20 to 20:40, through day 8): a start-up's fall-detection camera calls everyone who sits down a fall; she asks him to sit on the sofa for it, and he tells her what's wrong | Leaves at once if he is seeing someone else. She is nobody's option. She will never invest in him while they're together: her own principle (telling her investors would be governance, not a ban); she still judges his product honestly |
+| 林予安 Lin Yu'an, 27 (`yuan`) | Architect and urban-space researcher (F04, 167 cm, the F04 face); his oldest friend from Nanjing, the old drafts' 许若安 Ruoan: one person, one chat. The two years in San Francisco they never named (WORKING) | To keep an old lane with its people in it; then a project of her own | She is in his chats as a friend from day 1; late on day 2 she writes as more than that (23:10). In person in her friend scenes (the AIA, day 4) and, as more, from day 13 | Asks him straight; the most patient of the five. If it ends, she is still his friend |
 | 唐可昕 Tang Kexin, 25 (`kexin`) | Lifestyle creator from Suzhou: 180K on Xiaohongshu, 90K on Douyin. Knows Momo | Half a million followers; a small label of her own | Filming in the Jazz Bar on days 1, 3, 5, 7, 9 (20:15 to 23:30): he walks through her shot | Learns things in public; if she learns of someone else from her own comments, she is gone |
 
 ### Their years (Acts I to V)
@@ -61,10 +61,14 @@ Ages and jobs as briefed. All five are women; each has her own Rocketbox avatar 
   the question a second time. Her ending reads `life.flags.dinnerChoice`. Between acts
   (`src/world/allotEvents.js`), a small batch or a launch brings a message from her: her fund wants
   a meeting, unless he is seeing her.
-- **Yu'an.** I: "So you really went back." His mug; a voice call from Clement Street about what
-  the two years were. II: she is laid off; a Shanghai company wants her to come and look. III: she
-  books the flight. IV: three months in Shanghai: the octagon hall, the river, the Jazz Bar, and a
-  ticket that can be made one-way. V: Jing'an, or San Francisco (warmly, or not).
+- **Yu'an.** I: "So you really came back. Two years after me." His mug, on her desk since San
+  Francisco; a call from outside the site about what those two years were. II: she files a dissent
+  against her own team (an old lane behind the Bund can't be kept as a skin with its people scooped
+  out); an institute in San Francisco wants her back for two years. III: the scheme changes and her
+  name is on the page that changed. IV: the octagon hall's glass roof, the river, the Jazz Bar; the
+  firm wants her to lead phase two. V: the lane, or San Francisco (warmly, or not). Her friend beats
+  (the flight number, the river wind, the AIA ceiling, the lamp) are `world/agenda.js`,
+  `world/friendScenes.js` and `world/career.js`, on the same chat.
 - **Kexin.** I: two seconds of him in her vlog (keep, cover his face, or cut); shengjian on
   Nanjing Road with no phone and no make-up; would he mind being posted? II: four hundred followers
   lost for telling the truth; a gossip account, and six figures for a "couple" series; a live
@@ -170,10 +174,10 @@ A game begun before the year existed has none of this (`isYear(L)` is false).
 ## Honest notes
 
 - **Faces.** Only the Rocketbox adults in `public/people/people.json` exist, and the crowd is cast
-  from the same set. Zhiwei is `p5`, Nanxing `c8`, Gu Nian her own model (`gunian`, from her character sheet; `c4` if it is missing), Yu'an `c1`, Kexin `c3`. Each has
-  her own, but the same faces walk past in the street, sit in the Jazz Bar (`p5` is also a guest
-  there) and stand on the promenade.
-- **Voices.** None of their lines is recorded. They are subtitles, the game's default for new
+  from the same set. Zhiwei is `c4` (in the office as well; standing, at her 1.78 m), Nanxing `c8`, Gu Nian her own model (`gunian`, from her character sheet; `c4` if it is missing), Yu'an `c1` (in her friend scenes as well; at her 1.67 m), Kexin `c3`. Each has
+  her own, but the same faces walk past in the street and stand on the promenade. On the phone and
+  the relationship map, Zhiwei, Gu Nian and Yu'an have their approved faces (F01, F03, F04).
+- **Voices.** None of their scene lines is recorded (the phone messages listed in `tools/voice/lines.json` that changed with the Character Bible are `VO_PENDING`; the six old Gu Nian lines they replace are `DEPRECATED`, recordings kept). Yu'an's friend lines keep her recorded friend voice. They are subtitles, the game's default for new
   lines (or the browser's or a local server's speech, if the player has chosen that).
 - **Bodies.** They stand or sit. No walking, no gestures beyond the idle clip and a turned head;
   the camera Gu Nian is testing, and its beep when he sits down, are told by the narrator, not shown.

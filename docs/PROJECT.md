@@ -32,11 +32,11 @@ Returning Tide is a first-person RPG set in contemporary Shanghai that runs in t
 
 ## 3. Storyline
 
-**Protagonist:** 沈既白 Shen Jibai, 23, from Nanjing.
-- He has just graduated in industrial design in San Francisco.
-- His father runs a precision-machining firm and wants him home to run the R&D floor. Jibai wants his own studio in Shanghai.
-- He has one year and a budget to prove himself.
-- His circle is five school friends, the "金陵五虎+1" group chat. Full cast: `docs/characters.md`.
+**Protagonist:** 纪白 Ji Bai, 27, from Nanjing (Character Bible v2.2, LOCKED; the old 沈既白 Shen Jibai, 23, is retired).
+- UC Berkeley cognitive science (HCI, AI, product), a few years in Silicon Valley, now at a technology consulting firm in Lujiazui.
+- His father runs a precision-manufacturing business in Nanjing and expects him to take it over. Ji Bai wants a life of his own in Shanghai.
+- He has one year, played as 17 days in five acts, before a dinner with his father.
+- His circle is five school friends, the "金陵五虎+1" group chat; five women he might come to love have lives of their own. 林予安 Lin Yu'an (once drafted as 许若安 Ruoan) is both a friend and one of the five. Full cast and canon status: `docs/characters.md`.
 
 **Mission One, 错交 "The Wrong Handoff":** Old Lin sends you to fetch a sealed pouch from the shuttered stall of Zhou, a missing watch-repairer. Inside is a stall-transfer agreement dated after Zhou disappeared, with the new holder's name left blank. Whether you break the seal is permanent and remembered.
 

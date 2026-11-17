@@ -19,7 +19,7 @@ const nm = (id) => (CAST[id] ? T(CAST[id].short || CAST[id].name, (CAST[id].en |
 const USE = {
   make: { zh: '做东西', en: 'Making', sub: { zh: '工作台 · 代码 · 模型', en: 'bench · code · models' }, c: '#f2c26b' },
   love: { zh: '陪一个人', en: 'One person', sub: { zh: '约会 · 一起过', en: 'dates · time together' }, c: '#f08aa0' },
-  friends: { zh: '朋友和家人', en: 'Friends & family', sub: { zh: '若安 · Momo · 明轩 · 爸', en: 'Ruoan · Momo · Mingxuan · Dad' }, c: '#8cc8f2' },
+  friends: { zh: '朋友和家人', en: 'Friends & family', sub: { zh: '予安 · Momo · 明轩 · 爸', en: 'Yu\'an · Momo · Mingxuan · Dad' }, c: '#8cc8f2' },
   business: { zh: '生意', en: 'Business', sub: { zh: '投资人 · 客户 · 同行', en: 'investors · clients · peers' }, c: '#8fd6b0' },
   rest: { zh: '休息', en: 'Rest', sub: { zh: '睡觉 · 跑步 · 发呆', en: 'sleep · a run · nothing' }, c: '#5a6aa6' },
 };

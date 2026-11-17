@@ -21,8 +21,11 @@ const B = (zh, en) => ({ zh, en });
 const name = (id, lang = 'zh') => (CAST[id] ? (lang === 'zh' ? CAST[id].short || CAST[id].name : (CAST[id].en || id).split(' ').pop()) : id);
 function say(L, id, text) { thread(L, id, { title: CAST[id] ? CAST[id].name : id, members: ['me', id] }); post(L, id, { from: id, kind: 'text', text }); }
 // Gu Nian invests in companies like his: if he is seeing her she won't, and says why; if not, her fund is interested
+// (each once: a season that reports the same milestone again sends nothing new; she knows only what is public
+// about his project and whether they are seeing each other, never what is in his files)
 function guNian(L, what) {
   if (!isYear(L) || !inLife(L, 'gunian')) return null;
+  const sent = (L.flags.guNianHeard ||= {}); if (sent[what]) return null; sent[what] = L.clock.day;
   const hers = isSeeing(L, 'gunian');
   if (what === 'batch') say(L, 'gunian', hers
     ? t('听说明轩的基金要看你的小批量。好事，去见。他们发来的任何文件，找律师看，别找我。', "I hear Mingxuan's fund wants to look at your small batch. Good. Take the meeting. Anything they send you, have a lawyer read it. Not me.")

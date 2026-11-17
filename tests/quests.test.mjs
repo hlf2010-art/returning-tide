@@ -21,7 +21,7 @@ const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) fail
 }
 
 // ---- the story, played through ----
-function play({ demo = true, ruoan = true, dadDelta = 0, choice = 0, miss = false } = {}) {
+function play({ demo = true, yuan = true, dadDelta = 0, choice = 0, miss = false } = {}) {
   const L = createLife();
   const ctx = { player: { x: -80, y: 0.15, z: 0 } };
   const tick = () => { runStoryBeats(L); return updateQuests(L, QUESTS, stamp(L), ctx); };
@@ -32,9 +32,9 @@ function play({ demo = true, ruoan = true, dadDelta = 0, choice = 0, miss = fals
   // Mingxuan's invitation, the review, a gadget, the demo
   L.invites.push({ id: 'xuan-arm', from: 'xuan', status: 'pending', at: D(2, 15), deadline: D(2, 12) }); tick();
   answerInvite(L, 'xuan-arm', true); skipTo(L, D(2, 15)); L.invites.find((i) => i.id === 'xuan-arm').kept = true; tick();
-  // Dad's second call (day 2 evening), then Ruoan
+  // Dad's second call (day 2 evening), then Yu'an
   skipTo(L, D(2, 20)); L.flags.calls.push({ from: 'dad', script: 'dad-plans', missed: false }); tick();
-  if (ruoan) { L.flags.spoke = { ruoan: [stamp(L) + 1, stamp(L) + 2] }; }
+  if (yuan) { L.flags.spoke = { yuan: [stamp(L) + 1, stamp(L) + 2] }; }
   skipTo(L, D(3, 10)); tick();
   if (demo) { L.flags.maker = { gadgets: { telemetry: { quality: 0.8 } } }; L.invites.push({ id: 'xuan-demo', from: 'xuan', status: 'accepted', at: D(5, 15), kept: true }); }
   skipTo(L, D(5, 19, 30)); tick(); tick();
@@ -56,7 +56,7 @@ function play({ demo = true, ruoan = true, dadDelta = 0, choice = 0, miss = fals
   const L = play();
   const Q = questState(L).list;
   ok(['first-night', 'robot-arm', 'dads-offer', 'dinner', 'tide'].every((id) => Q[id] && Q[id].status === 'done'), `the main arc runs start to finish (${Object.entries(Q).map(([k, v]) => `${k}:${v.status}`).join(' ')})`);
-  ok(L.flags.demoDone && !!L.invites.find((i) => i.id === 'dad-dinner'), 'the demo counts; Dad invites you to dinner after you talk to Ruoan');
+  ok(L.flags.demoDone && !!L.invites.find((i) => i.id === 'dad-dinner'), 'the demo counts; Dad invites you to dinner after you talk to Yu\'an');
   ok(L.outbox.some((e) => e.type === 'ending'), `an ending is emitted (${L.flags.ending})`);
 }
 const endings = {
@@ -70,8 +70,8 @@ const endings = {
 for (const [want, got] of Object.entries(endings)) ok(want === got && ENDINGS[got], `ending "${want}" reachable (${got}: ${ENDINGS[got] ? ENDINGS[got].title.en : '?'})`);
 ok(play({ demo: false, choice: 2, dadDelta: 10 }).flags.ending !== 'together', 'without the demo, "make the arm at the works" doesn\'t convince him');
 {
-  const L = play({ ruoan: false });
-  ok(!!L.invites.find((i) => i.id === 'dad-dinner'), 'skipping Ruoan: Dad still writes on the evening of day 5');
+  const L = play({ yuan: false });
+  ok(!!L.invites.find((i) => i.id === 'dad-dinner'), 'skipping Yu\'an: Dad still writes on the evening of day 5');
 }
 // journal and markers mid-arc
 {
@@ -80,9 +80,9 @@ ok(play({ demo: false, choice: 2, dadDelta: 10 }).flags.ending !== 'together', '
   const c = currentStep(L, QUESTS);
   ok(c && c.step.id === 'river' && c.target === PLACE.rail, 'the first step points at the river railing');
   ok(journal(L, QUESTS, 'zh')[0].title === '外滩的第一晚', 'the journal speaks Chinese too');
-  L.flags.calls = [{ from: 'dad', script: 'dad-arrival' }]; L.relations.ruoan = { affinity: 60 };
+  L.flags.calls = [{ from: 'dad', script: 'dad-arrival' }]; L.relations.yuan = { affinity: 60 };
   L.quests.list['dads-offer'] = { status: 'active', step: 1, started: 0, skipped: [] };
-  ok(/R&D/.test(storyContext(L, 'ruoan')) && /Ruoan/.test(storyContext(L, 'ruoan')), 'Ruoan\'s free conversation is told what\'s going on');
+  ok(/R&D/.test(storyContext(L, 'yuan')) && /Yu\'an/.test(storyContext(L, 'yuan')), 'Yu\'an\'s free conversation is told what\'s going on');
   ok(storyContext(L, 'office') === '', 'a stranger isn\'t');
 }
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);

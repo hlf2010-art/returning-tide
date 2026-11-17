@@ -23,7 +23,7 @@ export const YEAR_QUESTS = [
   // ======== Act I ========
   { id: 'act1-work', act: 1, main: true, giver: 'zhiwei',
     title: B('迈芬的第一周', 'The first week at Marlowe Finch'),
-    summary: B('迈芬咨询，国金中心二期 28 层。项目是东澜保险的理赔 AI 助手，项目经理是许知微。工作日去上班；不去，是要算账的。', "Marlowe Finch, IFC Tower 2, 28th floor. The project is an AI claims assistant for Donglan Insurance; the engagement manager is Xu Zhiwei. Go to work on working days. Days you don't are counted."),
+    summary: B('迈芬咨询，国金中心二期 28 层。项目是东澜保险的理赔 AI 助手，带项目的是产品设计负责人许知微。工作日去上班；不去，是要算账的。', "Marlowe Finch, IFC Tower 2, 28th floor. The project is an AI claims assistant for Donglan Insurance; the engagement is run by its product design lead, Xu Zhiwei. Go to work on working days. Days you don't are counted."),
     start: (L) => isYear(L) && (stamp(L) >= D(1, 18, 5) || L.clock.day >= 2),
     steps: [
       step('d2', B('11 月 10 日（周二）上午九点半前，到陆家嘴国金中心二期 28 层报到', 'Tuesday 10 November, by 9:30 am: report to the 28th floor of IFC Tower 2 in Lujiazui')),
@@ -198,7 +198,7 @@ export function yearDinner(L) {
 const YEAR_ENDINGS = {
   together: B('第二年春天，你一周在南京，一周在上海。高铁上的一小时九分钟，你用来回消息。爸爸学会了用微信发语音，第一条是：“图纸收到了。”', 'The next spring you spend a week in Nanjing, a week in Shanghai. The hour and nine minutes on the train are for answering messages. Your father learns to send WeChat voice notes. The first one says: "Got the drawings."'),
   stay: B('灯暗下来的时候，爸爸发来四个字：“注意身体。”上海的冬天，比你去年记得的还要冷一点。', 'As the lights dim, your father sends four words: "Look after your health." Shanghai\'s winter is a little colder even than you remember from last year.'),
-  alone: B('爸爸一个月没有打电话。若安说他会想通的。那天晚上，外滩的灯照常在十点暗下来。', "Your father doesn't call for a month. Ruoan says he'll come round. That night the Bund's lights dim at ten, as they always do."),
+  alone: B('爸爸一个月没有打电话。予安说他会想通的。那天晚上，外滩的灯照常在十点暗下来。', "Your father doesn't call for a month. Yu\'an says he'll come round. That night the Bund's lights dim at ten, as they always do."),
   home: B('走的那天，大家在虹桥送你。Momo 在候车厅的钢琴上弹了一首歌。你把一张外滩的照片贴在了厂里二楼的窗边。', 'The day you leave, they all see you off at Hongqiao. Momo plays a song on the station piano. You pin a photograph of the Bund beside the upstairs window at the works.'),
   open: B('灯暗了，江还在流。一年了，你还没想好，这也是一种答案。明天，外滩的灯会再亮。', "The lights dim; the river keeps moving. A year, and you still haven't decided, and that's an answer of a kind. Tomorrow the Bund's lights will come on again."),
   apart: B('他等了你四十分钟。回南京的高铁上，他发来一张照片：爵士吧里那张空着的椅子。', 'He waited forty minutes. From the train back to Nanjing he sends a photo: the empty chair at the Jazz Bar.'),
@@ -271,7 +271,7 @@ export function careerContext(L, who) {
   if (work28) out.push(`You work with him at ${FIRM.en} (IFC Tower 2, 28F) on the ${CLIENT.en} AI claims-assistant project${work(L).applied ? `; since April: ${({ consulting: 'he stayed with the firm', resigned: 'he resigned', laidoff: 'he was laid off with a package', switched: `he left for ${NEWCO.en}` })[S.decided] || ''}` : ''}. He is ${standingWord(c.standing)}.`);
   if (who === 'gu' || who === 'feng') out.push(`You know him as the ${FIRM.en} consultant on your company's (${CLIENT.en}) AI claims project.`);
   if (who === 'dad' || who === 'mum' || who === 'qin') out.push(`The family business is ${WORKS.en} in Jiangning, Nanjing.`);
-  const mine = factsAbout(L).filter((f) => f.type === 'career' || f.type === 'home' || (f.type === 'said' && (f.who || []).includes(who)) || (['dad', 'mum', 'ruoan', 'xuan'].includes(who) && ['family', 'watch', 'handoff'].includes(f.type)) || (work28 && f.type === 'work' && ['absent', 'late', 'came-in-hurt', 'fight-seen'].includes(f.what)));
+  const mine = factsAbout(L).filter((f) => f.type === 'career' || f.type === 'home' || (f.type === 'said' && (f.who || []).includes(who)) || (['dad', 'mum', 'yuan', 'xuan'].includes(who) && ['family', 'watch', 'handoff'].includes(f.type)) || (work28 && f.type === 'work' && ['absent', 'late', 'came-in-hurt', 'fight-seen'].includes(f.what)));
   const lines = mine.slice(-7).map((f) => factLine(L, f)).filter(Boolean);
   if (lines.length) out.push(`Things that have really happened (the only events you may treat as having happened): ${lines.join(' ')}`);
   return out.join(' ');

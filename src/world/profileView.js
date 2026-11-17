@@ -17,9 +17,9 @@ import { LISTINGS } from './career.js';
 const pick = (lang) => (zh, en) => (lang === 'zh' ? zh : en);
 // who each person is to him (the cast's roles are written in English)
 const ROLE_ZH = {
-  xuan: '风投分析师，陆家嘴', ruoan: '建筑师，外滩老楼修缮', momo: '爵士键盘手，120 万粉丝', zhixia: '电动车工程师，业余 GT 车手', yinuo: '家族办公室，艺术与地产',
+  xuan: '风投分析师，陆家嘴', yuan: '建筑师、城市空间研究者，外滩老楼修缮', momo: '爵士键盘手，120 万粉丝', zhixia: '电动车工程师，业余 GT 车手', yinuo: '家族办公室，艺术与地产',
   dad: '精密机加工厂，南京', mum: '心内科医生，鼓楼医院', kai: '杨浦创客空间', chen: '退休车工，拍海关大楼', ye: '外滩人像摄影师', zhe: '外滩夜间主播',
-  zhiwei: '项目经理，陆家嘴', nanxing: '独立摄影师', gunian: '科技投资人，早期基金合伙人', yuan: '产品设计师，旧金山', kexin: '生活方式博主，小红书 18 万',
+  zhiwei: '产品与工业设计师，陆家嘴', nanxing: '独立摄影师', gunian: '科技投资人，早期基金合伙人', kexin: '生活方式博主，小红书 18 万',
   zhou: '汉口路修表匠', vivian: '兰博基尼销售顾问', taoke: '分析师，迈芬', shaofeng: '高级顾问，迈芬', partner: '合伙人，迈芬', gu: '东澜理赔系统；后来屿深',
   feng: '东澜保险运营副总', agent: '房产中介', zhoumin: '修表匠的女儿',
 };
@@ -80,11 +80,13 @@ export function profileView(L, defs = [], lang = 'zh') {
   };
   // ---- the people ----
   const met = (id) => {
-    if (ROMANCE.includes(id)) return heart(L, id).stage !== 'stranger';
+    if (ROMANCE.includes(id) && !FRIENDS.includes(id)) return heart(L, id).stage !== 'stranger';   // (Lin Yu'an is a friend first)
     return !!(L.relations[id] || L.threads[id]);
   };
   const people = Object.keys(PEOPLE).filter((id) => PEOPLE[id].role && !['app', 'shop', 'coffee', 'human resources', 'letting agent'].includes(PEOPLE[id].role) && met(id)).map((id) => {
-    const p = PEOPLE[id], rom = ROMANCE.includes(id), h = rom ? heart(L, id) : null, r = L.relations[id];
+    const p = PEOPLE[id], h0 = ROMANCE.includes(id) ? heart(L, id) : null, r = L.relations[id];
+    // one of the five who is also an old friend (Lin Yu'an) shows as a friend until it is more than that
+    const rom = !!h0 && (!FRIENDS.includes(id) || ['close', 'dating', 'together'].includes(h0.stage) || (h0.stage === 'over' && ['dating', 'together'].includes((h0.over || {}).was))), h = rom ? h0 : null;
     const close = rom ? Math.round((h.attraction + h.trust) / 2 + ({ close: 15, dating: 25, together: 35 }[h.stage] || 0)) : r ? r.affinity : 50;
     const group = rom ? 'heart' : FAMILY.includes(id) ? 'family' : FRIENDS.includes(id) ? 'friend' : WORK.includes(id) ? 'work' : 'other';
     return { id, name: T(p.short || p.name, (p.en || id).replace(/ \(.*\)$/, '')), full: T(p.name, p.en), role: lang === 'zh' ? ROLE_ZH[id] || p.role : p.role, color: p.color, group,

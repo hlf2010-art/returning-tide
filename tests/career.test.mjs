@@ -118,7 +118,7 @@ function playYear({ road = 'consulting', picks = {}, absent = [], rent = null, e
   ok(hasFlat(L) && H.id === 'northbund' && H.rent === 12800 && L.wallet.ledger.some((e) => e.kind === 'rent' && e.amount === -32000) && L.threads.agent.messages.some((m) => /门锁密码/.test(m.text)), 'answering the agent rents the North Bund flat: deposit, first month and fee leave the bank');
   const rents = L.wallet.ledger.filter((e) => e.memo === '房租');
   ok(rents.length >= 10 && rents.every((e) => e.amount === -12800) && year(L).facts.some((f) => f.type === 'home'), `rent then leaves with the months (${rents.length} payments over the year)`);
-  ok(L.threads.ruoan.messages.some((m) => /灰色的家具/.test(m.text)), 'Ruoan hears about it');
+  ok(L.threads.yuan.messages.some((m) => /灰色的家具/.test(m.text)), 'Yu\'an hears about it');
   ok(/rented flat in the North Bund/.test(lifeContext(L)), 'and the people he talks to are told where he lives');
 }
 

@@ -99,8 +99,8 @@ const BASE_QUESTS = [
     start: (L) => stamp(L) >= D(2, 19) || tookCall(L, 'dad-plans'),
     steps: [
       { id: 'call', optional: true, text: B('接爸爸的电话', 'Take Dad\'s call'), done: (L) => tookCall(L, 'dad-plans'), fail: (L) => stamp(L) > D(4, 12) && !tookCall(L, 'dad-plans') },
-      { id: 'ruoan', optional: true, text: B('和若安聊聊这件事（当面，或在微信上）', 'Talk it over with Ruoan (in person, or on WeChat)'),
-        done: (L, st) => spokeSince(L, 'ruoan', st.started) >= 2, fail: (L) => stamp(L) > D(5, 19) },
+      { id: 'yuan', optional: true, text: B('和予安聊聊这件事（当面，或在微信上）', 'Talk it over with Yu\'an (in person, or on WeChat)'),
+        done: (L, st) => spokeSince(L, 'yuan', st.started) >= 2, fail: (L) => stamp(L) > D(5, 19) },
       { id: 'coming', text: B('爸爸要来上海', 'Dad is coming to Shanghai'), done: (L) => !!inv(L, 'dad-dinner') },
     ],
     onComplete: () => {} },
@@ -132,8 +132,8 @@ export const QUESTS = [...BASE_QUESTS, ...YEAR_QUESTS];
 
 // ---- story beats the quests need (run alongside world/agenda.js) ----
 export const STORY_BEATS = [
-  // Dad tells you he's coming: after you've talked it over with Ruoan, or on the evening of day 5 regardless
-  { id: 'dad-coming', when: (L) => { const q = (L.quests || { list: {} }).list['dads-offer']; return !!q && q.status === 'active' && (isYear(L) ? stamp(L) >= D(finalDay(L) - 1, 19) : (q.skipped.includes('ruoan') || spokeSince(L, 'ruoan', q.started) >= 2 || stamp(L) >= D(5, 19))); },
+  // Dad tells you he's coming: after you've talked it over with Yu'an, or on the evening of day 5 regardless
+  { id: 'dad-coming', when: (L) => { const q = (L.quests || { list: {} }).list['dads-offer']; return !!q && q.status === 'active' && (isYear(L) ? stamp(L) >= D(finalDay(L) - 1, 19) : (q.skipped.includes('yuan') || spokeSince(L, 'yuan', q.started) >= 2 || stamp(L) >= D(5, 19))); },
     run: (L) => {
       post(L, 'dad', { from: 'dad', kind: 'text', text: isYear(L) ? '下个月十三号我到上海，嘉定有个供应商要见。' : '我后天到上海，嘉定有个供应商要见。' });
       invite(L, { id: 'dad-dinner', from: 'dad', thread: 'dad', title: '和爸爸吃饭', place: '和平饭店 · 爵士吧', at: FD(L, 20, 0), deadline: FD(L, 18, 0),
@@ -156,7 +156,7 @@ export function runStoryBeats(L) {
 export function storyContext(L, who) {
   const q = (L.quests || { list: {} }).list, out = [];
   const act = q.tide ? 3 : q['dads-offer'] || q['robot-arm'] ? 2 : 1;
-  if (['ruoan', 'xuan', 'momo', 'yinuo', 'zhixia', 'dad', 'maker', 'founder', ...COLLEAGUES].includes(who)) {
+  if (['yuan', 'xuan', 'momo', 'yinuo', 'zhixia', 'dad', 'maker', 'founder', ...COLLEAGUES].includes(who)) {
     out.push('Ji Bai (纪白, the person talking to you) is 27, from Nanjing; UC Berkeley cognitive science (HCI, AI, product), then a few years in Silicon Valley tech; he has just moved to Shanghai to join an international technology consulting firm in Lujiazui, working on enterprise AI products. He is strong at AI programming (data, models, on-device deployment, agents) and product, and builds hardware in his spare time at a Yangpu makerspace, where he is out of practice.');
     if (act >= 2) out.push('His father has offered him the R&D floor at the family\'s precision-machining works in Nanjing and wants him home; Ji Bai hasn\'t decided.');
     if (q['robot-arm']) out.push(L.flags.demoDone ? 'The robot-arm start-up (Zhou\'s, introduced by Mingxuan) did well in its investor demo, partly thanks to Ji Bai.' : 'Mingxuan has pulled him into Zhou\'s robot-arm start-up, which needs a product lead.');
@@ -166,7 +166,7 @@ export function storyContext(L, who) {
     const w = workContext(L); if (w) out.push(w);
     const y = lifeContext(L); if (y) out.push(y);
     const cc = careerContext(L, who); if (cc) out.push(cc);                 // what has really happened this year, as far as this person would know it
-    if (who === 'ruoan' && act >= 2) out.push('You (Ruoan) know him best of anyone; you think he should stop pleasing everyone and say what he wants, but you won\'t tell him what to choose.');
+    if (who === 'yuan' && act >= 2) out.push('You (Yu\'an) know him best of anyone; you think he should stop pleasing everyone and say what he wants, but you won\'t tell him what to choose.');
     if (who === 'dad') out.push('You are his father: proud, few words, you won\'t say you miss him.');
   }
   return out.join(' ');
@@ -230,8 +230,8 @@ export const ENDINGS = {
     'The next spring your father\'s works turned out the first fifty arms. You spend a week in Nanjing, a week in Yangpu. Your father learns to send WeChat voice notes. The first one says: "Got the drawings."') },
   stay: { title: B('留下', 'Staying'), text: B('灯暗下来的时候，爸爸发来三个字：“注意身体。”你在杨浦租下了阿凯隔壁的那间厂房。上海的冬天比你记得的冷。',
     'As the lights dim, your father sends four words: "Look after your health." You rent the empty unit next to Kai\'s in Yangpu. Shanghai\'s winter is colder than you remember.') },
-  alone: { title: B('一个人', 'On your own'), text: B('爸爸一个月没有打电话。若安说他会想通的。你在杨浦的厂房里装好了第一张工作台，那天晚上外滩的灯照常在十点暗下来。',
-    'Your father doesn\'t call for a month. Ruoan says he\'ll come round. You set up your first bench in the Yangpu unit, and that night the Bund\'s lights dim at ten as they always do.') },
+  alone: { title: B('一个人', 'On your own'), text: B('爸爸一个月没有打电话。予安说他会想通的。你在杨浦的厂房里装好了第一张工作台，那天晚上外滩的灯照常在十点暗下来。',
+    'Your father doesn\'t call for a month. Yu\'an says he\'ll come round. You set up your first bench in the Yangpu unit, and that night the Bund\'s lights dim at ten as they always do.') },
   home: { title: B('回南京', 'Home'), text: B('走的那天，大家在虹桥送你。Momo 在候车厅的钢琴上弹了一首歌。南京的研发楼很安静。你把外滩的照片贴在了工位上。',
     'The day you leave, they all see you off at Hongqiao. Momo plays a song on the station piano. The R&D floor in Nanjing is quiet. You pin a photo of the Bund above your desk.') },
   open: { title: B('潮未定', 'The tide hasn\'t turned'), text: B('灯暗了，江还在流。你还没想好，这也是一种答案。明天，外滩的灯会再亮。',

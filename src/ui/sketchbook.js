@@ -134,7 +134,7 @@ function spreads(L) {
     hw(10, 10, T('11月8日 · 周日 · 晴，有风', 'Sun 8 Nov · clear, windy'), { size: 4.8, cls: 'pen', seed: 2 }) +
     hw(10, 24, T('回来了。外滩的风比记忆里冷。\n和平饭店 612，窗外就是陆家嘴。\n东方明珠还是那个粉色。\n十年没回来，城市长高了，\n我好像没有。', "Back. The wind on the Bund is colder\nthan I remember. Peace Hotel, 612:\nLujiazui right outside the window.\nThe Pearl is still that pink.\nTen years. The city got taller.\nI don't think I did."), { size: 4.4, seed: 3 }) +
     hw(10, 74, T('这周：', 'This week:'), { size: 4.6, cls: 'pen', seed: 5 }) +
-    hw(12, 82, T('☐ 给爸回电话（别吵）\n☐ 若安 · 外滩工地\n☐ 知夏：周末天马跑两圈\n☐ 明轩 —— 机械臂原型？\n☑ Manner 燕麦拿铁', "☐ call Dad back (don't argue)\n☐ Ruoan · the site on the Bund\n☐ Zhixia: laps at Tianma, Sat\n☐ Mingxuan: the robot arm?\n☑ Manner, oat latte"), { size: 4.2, seed: 7 }),
+    hw(12, 82, T('☐ 给爸回电话（别吵）\n☐ 予安 · 外滩工地\n☐ 知夏：周末天马跑两圈\n☐ 明轩 —— 机械臂原型？\n☑ Manner 燕麦拿铁', "☐ call Dad back (don't argue)\n☐ Yu\'an · the site on the Bund\n☐ Zhixia: laps at Tianma, Sat\n☐ Mingxuan: the robot arm?\n☑ Manner, oat latte"), { size: 4.2, seed: 7 }),
     skyline() + hw(14, 8, T('从 612 的窗口', 'from the window of 612'), { size: 4.4, cls: 'pen', seed: 4 }) +
     hw(30, 33, T('东方明珠', 'the Pearl'), { size: 3.4, seed: 8 }) + hw(52, 15, T('上海中心 632m', 'Shanghai Tower 632 m'), { size: 3.2, seed: 9 }) +
     hw(14, 108, T('（晚上灯一亮，江上全是拍照的人。\n手机举得高高的，都在抖。）', "(When the lights come on, the river's\nlined with people taking photos,\nphones up high, all shaking.)"), { size: 3.8, seed: 6 }),

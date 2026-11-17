@@ -203,7 +203,7 @@ in China a week, with a patent fee in the bank and a year on your own terms. Eve
 you were twelve you sat at Old Zhou's watch stall on Hankou Road. **Your friends** are five people
 from your Nanjing middle-school class:
 - **陆明轩 Lu Mingxuan**, a VC analyst in Lujiazui
-- **许若安 Xu Ruoan**, an architect restoring Bund buildings
+- **林予安 Lin Yu'an** (the old drafts' 许若安 Ruoan: one person), an architect and urban-space researcher restoring Bund buildings; also one of the five he might come to love
 - **周子墨 "Momo" Zhou Zimo**, a jazz keyboardist and creator
 - **韩知夏 Han Zhixia**, an EV engineer and amateur racer
 - **程以诺 Cheng Yinuo**, who runs her family office's art and property
@@ -230,7 +230,7 @@ Esc goes back.
 **Friends live without you** (`world/agenda.js`, node-tested).
 - On your first evening:
   - Momo invites you to his trio's set at the Peace Hotel's Jazz Bar.
-  - Ruoan checks you're dressed for the river wind.
+  - Yu'an checks you're dressed for the river wind.
   - Zhixia sends a voice note about the circuit and about how you should buy a real car.
   - Xuan needs your eye on a robotics team's stuck prototype tomorrow at 3 pm.
   - Your father calls.
@@ -238,7 +238,7 @@ Esc goes back.
 - Then the group chat keeps its own life.
 - **Invitations have consequences:** accepting warms a friend and goes in your calendar,
   declining cools them a little, and letting one lapse unanswered costs more and they say so.
-- **Friends react to the world:** buy a coffee at Manner on Hankou Road and Ruoan, who works on the
+- **Friends react to the world:** buy a coffee at Manner on Hankou Road and Yu'an, who works on the
   street, guesses where you are.
 - **Saving:** the life state (clock, money, chats, relationships, calendar, inventory) saves to
   this browser's local storage and survives a reload; `?fresh` starts over.
@@ -271,7 +271,7 @@ redraws whatever is already on screen, including an open phone, in place.
   - Mission One's text and the notice
   - the phone's interface
 - **Messages** are written and stored in Chinese, the way these people would write them, and read
-  in English through `world/agendaEn.js`. Names use given names in English (Mingxuan, Ruoan, Momo).
+  in English through `world/agendaEn.js`. Names use given names in English (Mingxuan, Yu'an, Momo).
 - **What stays as-is:**
   - The world itself: shop signs, the bilingual Manner menu board, the lamp-post notice and the label
     on the pouch.
@@ -636,7 +636,7 @@ Jibai designs and builds. He rents a bench in a converted factory on the Yangpu 
 ## The friends, after the first days (`src/world/agenda.js`, `src/world/friendScenes.js`)
 
 Their lives keep moving on the phone, on the calendar, and in person. Every message has its English.
-- **Ruoan** surveys the Peace Hotel's roof, then asks you to the AIA Building at 19:00 on day 4. She's at the gates with her site badge: go through with her and the guard nods you past, and she shows you the coffered ceiling she's restoring.
+- **Yu'an** surveys the Peace Hotel's roof, then asks you to the AIA Building at 19:00 on day 4. She's at the gates with her site badge: go through with her and the guard nods you past, and she shows you the coffered ceiling she's restoring.
   - Scan it with the Pocket LiDAR and you've saved her team two weeks of measuring. She'll want to borrow it.
   - Without the LiDAR, she wishes someone had one.
 - **Zhixia** wants a race-telemetry logger for her car (CAN bus, GPS, g-forces). Say yes and her parts arrive at the makerspace. Build it and she invites you to a track day at Tianma, told by the card: her lap time depends on how well you built it. If you own the Huracán, she drives it too.
@@ -1286,7 +1286,7 @@ src/engine/voice.js, tools/voice/   recorded voices per character (Kokoro-82M, o
 src/engine/llm.js, src/world/personas.js, src/ui/talk.js, src/world/ambient.js   free conversation with local models
 src/ui/brands.js       real brand marks (Simple Icons) and wordmarks
 src/engine/maker.js, src/world/makerspace.js, src/world/photoMode.js   building gadgets, the makerspace, photo mode (maker.js tested)
-src/world/friendScenes.js   Ruoan at the AIA, Momo in 612, LiDAR scans
+src/world/friendScenes.js   Yu'an at the AIA, Momo in 612, LiDAR scans
 src/engine/gfx.js      graphics settings: presets, GPU detection, frame cap (tested)
 src/engine/crowd.js, src/world/crowdView.js   the evening crowd (tested) and its near people / impostor atlas
 src/world/trafficMix.js, buses.js   how much traffic, the bus stops; the buses and shelters
@@ -1308,7 +1308,7 @@ tools/                 headless screenshot / playtest / render-cost scripts (nee
                        Momo's night), hailwalk (other people's DiDis), destwalk (by DiDi to IFC 32F and
                        back; the North Bund flat), drivewalk (the Huracán), didiwalk, carwalk,
                        talkwalk (talking to people, against a running model server), makerwalk (build the
-                       gimbal, photograph the Pearl), friendwalk (the days after: Ruoan, the LiDAR, Momo),
+                       gimbal, photograph the Pearl), friendwalk (the days after: Yu'an, the LiDAR, Momo),
                        storywalk (the story to an ending), streetwalk (murmur, families, umbrellas, the three
                        moments), placeswalk (a meal at the shengjian shop, a full cruise), basicswalk (map,
                        gamepad, saves, tips, benchmark); todshots shoots the same views through the day)

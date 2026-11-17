@@ -20,7 +20,7 @@ import { isYear, career, standing } from './year.js';
 
 export const USES = ['make', 'love', 'friends', 'business', 'rest'];
 export const EVENING = 3;                                      // hours an evening holds
-export const FRIENDS = ['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo', 'dad'];   // (world/cast.js FRIENDS, and Dad)
+export const FRIENDS = ['xuan', 'yuan', 'momo', 'zhixia', 'yinuo', 'dad'];   // (world/cast.js FRIENDS, and Dad)
 export const MILESTONES = [                                    // beyond the playable days' validated product
   { id: 'ready', hours: 60, product: 3, zh: '可量产的样机', en: 'A production-ready prototype' },
   { id: 'batch', hours: 120, hw: 3, list: 4, zh: '第一批小批量', en: 'A first small batch' },

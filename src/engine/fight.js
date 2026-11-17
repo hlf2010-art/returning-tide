@@ -470,7 +470,7 @@ export function morningMessages(R) {
     say('wuhu', 'zhixia', '[视频] 这是不是纪白？？昨晚南京路'); say('wuhu', 'xuan', '……是他。');
     say('wuhu', dirty ? 'xuan' : 'zhixia', dirty ? '你们公司的人刷到怎么办。先动手的是你，视频里看得清清楚楚。' : '评论区都在说是那个人先动的手。');
   } else if (R.filmed && R.outcome === 'stood') { say('wuhu', 'zhixia', '[视频] 这个被推了都不还手的，是不是纪白'); say('wuhu', 'momo', '是他！！评论区说“情绪稳定天花板”哈哈哈哈'); }
-  if (R.level >= 2) say('ruoan', 'ruoan', '你脸怎么了？谁告诉我的不重要。冰敷，别热敷。');
+  if (R.level >= 2) say('yuan', 'yuan', '你脸怎么了？谁告诉我的不重要。冰敷，别热敷。');
   if (R.police) say('110', '110', { statement: '【警情回执】您报告的南京东路纠纷警情已处置完毕，感谢您的配合。', warning: '【警情回执】南京东路纠纷已调解结案。请遵守法律，理性处理矛盾。', fine: '【行政处罚告知】因殴打他人，依据《治安管理处罚法》对您处以罚款，款项已缴纳。该记录将依法留存。' }[R.police.verdict], { title: '110', kind: 'service' });
   // whoever was with you (unless the system that owns her has said it will write itself: R.companionWrites === false)
   if (R.companion && R.companionWrites !== false) {

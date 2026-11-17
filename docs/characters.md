@@ -1,5 +1,31 @@
 # 回潮 Returning Tide — people (the protagonist and his friends)
 
+## Canon status (Character Bible v2.2, 17 Nov 2026)
+
+The shared Character Bible (Notion: Documents › Character Bible) decides who these people are. Its
+labels are used here too: **LOCKED** (decided by the owner, or an approved Fxx face; never changed
+without asking), **WORKING** (built or supported by older material, not yet confirmed), **PROPOSAL**
+(story material open for discussion) and **OPEN** (undecided: not filled in by guesswork). When
+sources disagree: the owner's recent decision > an approved Fxx Hero > older concept sheets > story
+proposals.
+
+| ID | Who | LOCKED | WORKING in the game | OPEN |
+|---|---|---|---|---|
+| P01 | 纪白 Ji Bai, 27 | 27, Nanjing, UC Berkeley cognitive science, AI/digital consulting in Shanghai; black, full, slightly wavy short hair; black jacket, white tee, loose dark trousers, white trainers | 1.80 m in the game, 178 cm in the Bible (both unconfirmed); his father's business and the year's deadline | birth date, starting post and money |
+| F01 | 许知微 Xu Zhiwei, 28 | 178 cm; product & industrial designer (not a brand/visual creative director); the F01 Approved Hero face (`docs/zhiwei-reference.jpg`): short light ash-blonde layered hair with dark roots, thin silver glasses, narrow almond eyes; black knitwear; cool, uncompromising | her employer (the game's consulting firm, where she leads design and runs delivery on his engagement), from Hangzhou, six years there, Singapore | education, real employer, how she first knew him, an orthographic turnaround and her own 3D model |
+| F02 | 沈南星 Shen Nanxing, 26 | dark, full, short curly hair; an easy smile; photography as a way of seeing | 26, 165 cm, from Kunming; Lisbon | an approved face; family background |
+| F03 | 顾念 Gu Nian, 29 | 29, 170 cm; tech investor & strategist, warm / exacting; the F03 face (`docs/gunian-reference.webp`); the ivory-suit look; she will not invest in a man she is dating (her own principle: declaring it to her LPs would be governance, not a ban), but she judges his product honestly | Shanghai-born; INSEAD; the AIA Building fund; Slow Tide Capital in Yangpu; Xuhui; first close of "two hundred million" (the game says yuan) | the currency and stage of the 2亿; fund and school names; how the camera's founder fixed it, beyond what is written |
+| F04 | 林予安 Lin Yu'an, 27 | the canonical name; the old drafts' 许若安 Ruoan is the same person (one id, `yuan`); 27, 167 cm; architect & urban-space researcher; the F04 face (`docs/yuan-reference.jpg`): shoulder-length dark layered hair with a slight wave, thin metal glasses, dark blazer over black; calm, principled | his oldest friend from Nanjing; two years in San Francisco while he was there, unnamed; the lamp | whether the San Francisco history stays; which of the old Ruoan story survives; her projects |
+| F05 | 唐可昕 Tang Kexin, 25 | her name; energy, sport and lifestyle; the pink sporty look; never a flat always-happy character | 25, 160 cm; follower numbers; knows Momo | an approved face; real numbers; any earlier history with him |
+
+Bodies: only Ji Bai and Gu Nian have their own 3D models. Zhiwei is the Rocketbox woman `c4` (at 1.78 m
+when standing), Lin Yu'an is `c1` (at 1.67 m) in every scene, friend or romance. Their phone avatars and
+relationship-map cards are their approved faces (`public/people/zhiwei/`, `public/people/yuan/`).
+
+Voices: when a recorded line's text changes, the old line stays in `tools/voice/lines.json` as
+`DEPRECATED` (its recording is kept) and the new one is added as `VO_PENDING` (subtitles until
+`tools/voice/generate.py` records it).
+
 ## The protagonist — 纪白 Ji Bai (old friends call him 白白 only to annoy him), 27
 
 - **Home:** Nanjing, Gulou district. His father, 纪建国 Ji Jianguo, built a precision-manufacturing
@@ -40,8 +66,9 @@
 - **What he makes:** he still builds things in his spare time at a rented bench in Yangpu: hardware
   with software in it, the board and the model on the board. The night gimbal
   (`src/engine/studio.js`) is that side of him: optional, and his own.
-- **Look:** 1.80 m, lean. Dark grey technical jacket, black jeans, white trainers, a cheap steel
-  watch he refuses to replace. (The player body is Rocketbox Male_Adult_07; only his hands are seen.)
+- **Look:** tall and lean (1.80 m in the game; the Bible's 178 cm is WORKING). Black, full, slightly
+  wavy short hair; a black jacket, white tee, loose dark trousers, white trainers; a cheap steel watch he
+  refuses to replace. (His own 3D body: below.)
 - **Before he was twelve** he spent every summer at Old Zhou's watch-repair stall on Hankou Road.
   Old Zhou is missing. That is Mission One, and it stays a thread through the year.
 
@@ -60,11 +87,16 @@ In the game: the character page shows the sheet's portrait (`public/people/jibai
      petty about restaurants.
    - **In play:** he introduces deals and people (the business-connection line). He asks Jibai to
      look at a startup's prototype (a favour that becomes a mission). He notices cars.
-2. **许若安 Xu Ruoan, 27, architect.**
+2. **林予安 Lin Yu'an, 27, architect and urban-space researcher** (Character Bible F04). The old
+   drafts called her 许若安 Xu Ruoan: it is the same person, with one id (`yuan`), one chat and one
+   body. She is also one of the five he might come to love (below), the only one who is a friend first.
    - **Background:** her parents are both professors at Southeast University. She studied
-     architecture at Tongji and is now a junior designer at a firm restoring Bund-era buildings.
-   - **Personality:** dry, observant, the moral compass and Jibai's oldest friend. Some people assume
-     there is more between them. There isn't, yet.
+     architecture at Tongji, spent two years in San Francisco on an urban-research job while he was
+     in the Bay (WORKING), and is now at a firm restoring Bund-era buildings. What she cares about is
+     the people who live in old buildings and lanes, not nostalgia.
+   - **Personality:** calm, principled, dry, observant; the moral compass and Ji Bai's oldest friend;
+     the only one of the six who is not an heir. Some people assume there is more between them. What
+     there was, in San Francisco, nobody in the group knows.
    - **In play:** she knows the Peace Hotel and AIA interiors professionally, which opens restricted
      doors. She gives opinions on any property he considers, and gets genuinely involved in
      furnishing it.
@@ -102,9 +134,16 @@ Gu Nian has her own model, from her character sheet (Hunyuan 3D, rigged as Ji Ba
 Each has a life, a schedule and ambitions of their own. They write first, ask him out, are busy,
 disagree with him, and leave. Details and what is playable for each: `docs/relationships.md`.
 
-- **许知微 Xu Zhiwei, 28.** Project manager at his firm. Workplace chemistry, rivalry, trust.
+- **许知微 Xu Zhiwei, 28, 178 cm** (F01). A product and industrial designer: she judges digital products,
+  physical objects and whether people can really use them in the same breath. At his firm she leads
+  product design on his first engagement and runs its delivery (her employer is WORKING). Cool and
+  uncompromising; her standards are her own. Workplace chemistry, rivalry, trust. Look: the F01
+  Approved Hero (`docs/zhiwei-reference.jpg`): short light ash-blonde layered hair with dark roots,
+  thin silver metal-frame glasses, black knitwear, silver rings, headphones on the way home. Her
+  sponsor is the partner, Raymond He (贺维安), the same man in her romance and at work.
 - **沈南星 Shen Nanxing, 26.** Independent photographer. The city at night; freedom.
-- **顾念 Gu Nian, 29.** Tech investor and strategist. The long term; a conflict of interest.
+- **顾念 Gu Nian, 29, 170 cm** (F03). Tech investor and strategist. The long term; a conflict of interest.
+  (The fund, the school, the office, her flat and the size of the first close are WORKING.)
   - **Background:** Shanghai-born (a lane in Jing'an; her mother is a retired maths teacher).
     Computer science at Fudan, two years as a product manager at a Shenzhen hardware company, an
     MBA abroad (INSEAD). Now the youngest partner at a small early-stage fund upstairs in the AIA
@@ -118,11 +157,23 @@ disagree with him, and leave. Details and what is playable for each: `docs/relat
   - **In play:** she is not one of his friends (she knows Mingxuan only as a junior analyst at
     another fund). They meet over a start-up's fall-detection camera that fails in the AIA lobby's
     evening light, and he tells her why. She is the one investor who will never put money into
-    him while they are together (she would have to declare it to her own investors), and the one
+    him while they are together (her own principle, stricter than any rule: declaring it to her
+    investors would be a governance step, not a ban), and the one
     who tells him most honestly what is wrong with his deck. When his project reaches a small batch
     or launches (`src/world/allotEvents.js`), her fund wants a meeting, unless he is seeing her.
-  - **Look:** long dark wavy hair, a cream blazer over a silk camisole, wide cream trousers,
-    pearl earrings, a slim leather watch.
-- **林予安 Lin Yu'an, 27.** From his San Francisco years. What was left unsaid.
+  - **Look:** long dark-brown wavy hair, soft almond eyes, pearl earrings; at work an ivory blazer
+    over a pale champagne draped top, matching wide trousers, ivory pointed low heels; off duty a cream
+    knit. (Her model stands 1.73 m with the heels.)
+  - **Her year, against the Bible's five acts:** I the AIA lobby (she explains why she tests the camera
+    downstairs: upstairs is lit like an operating theatre, homes are not); II Lujiazui from the railing,
+    every lit window a bet; III the roadshow (Hong Kong, Singapore, Beijing), slow to answer, and her
+    life does not pause for him; IV first close, the Jazz Bar, and her fund's first investment is the
+    camera, with why it now works and her own due diligence; V unchanged from the original Act V (she
+    asks the second time; her ending reads the dinner). Day 7 she tells her partners off screen
+    (`disclosure_to_partner`); day 9 she tells him (`message_to_ji_bai`). After his small batch or
+    launch she writes once each: a meeting if they are not together, only advice if they are.
+- **林予安 Lin Yu'an, 27, 167 cm** (F04), his oldest friend (above). What was left unsaid in San
+  Francisco. Her own fight over an old lane behind the Bund, an offer to go back to San Francisco for
+  two years, and a September answer: San Francisco, or the lane. Advanced by honesty, not attendance.
 - **唐可昕 Tang Kexin, 25.** Lifestyle creator (about 180K on Xiaohongshu, 90K on Douyin).
   Exposure and privacy.

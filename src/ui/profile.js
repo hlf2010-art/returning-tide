@@ -304,7 +304,8 @@ export function createProfile({ getLife, defs = [], getPeople = () => null, onCl
       <div class="legend">${Object.entries(GROUPS).filter(([g]) => V.people.some((p) => p.group === g)).map(([, g]) => `<span style="color:${g[2]}"><i style="background:${g[2]}"></i><span style="color:rgba(236,212,154,.8)">${esc(T(g[0], g[1]))}</span></span>`).join('')}</div>`;
   }
   // a photograph for those who have a character sheet (public/people/<id>/face-*.jpg), her face by where things stand
-  const PORTRAIT = { gunian: { known: 'serious', close: 'neutral', dating: 'smile', together: 'smile', over: 'calm' } };
+  // Zhiwei (F01) and Lin Yu'an (F04) have one approved portrait each, no expression set yet
+  const PORTRAIT = { gunian: { known: 'serious', close: 'neutral', dating: 'smile', together: 'smile', over: 'calm' }, zhiwei: {}, yuan: {} };
   function portraitOf(p) {
     const P = PORTRAIT[p.id]; if (!P) return '';
     const st = (getLife().flags.hearts || {})[p.id]?.stage || 'known', face = P[st] || 'neutral';

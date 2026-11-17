@@ -58,7 +58,7 @@ const closePhone = async () => { await ev(() => window.__bund.phone.close()); aw
 // ---- day 1: Zhiwei writes; the reply chips ----
 await setClock(1, 18, 10); await p.waitForFunction(() => !!window.__bund.life.threads.zhiwei, null, { timeout: 120000 });
 let txt = await chat('zhiwei');
-ok((zh ? /我是许知微/ : /Xu Zhiwei\. I'm the PM/).test(txt) && (zh ? /收到，今晚看完/ : /I'll read it tonight/).test(txt), 'day 1, ten past six: his project manager writes, with two ways to answer');
+ok((zh ? /我是许知微/ : /Xu Zhiwei\. Design lead/).test(txt) && (zh ? /收到，今晚看完/ : /I'll read it tonight/).test(txt), 'day 1, ten past six: his project manager writes, with two ways to answer');
 await shot('phone-zhiwei');
 await dom('#phone .replies .chip'); await p.waitForTimeout(600);
 await closePhone();
