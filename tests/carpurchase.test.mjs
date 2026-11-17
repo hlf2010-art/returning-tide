@@ -1,6 +1,7 @@
 // Buying the Huracán (src/engine/carPurchase.js). npm test.
 import { createLife, balance, stamp, skipTo, drain } from '../src/engine/life.js';
 import { lead, contact, view, spec, payDeposit, choosePlate, payBalance, quote, stepPurchase, deliver, CAR, PLATE, auctionEligible } from '../src/engine/carPurchase.js';
+import { initYear } from '../src/engine/year.js';
 import { rng } from './util-rng.mjs';
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
@@ -29,6 +30,15 @@ const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) fail
   ok(stepPurchase(L).includes('delivery-due'), 'two weeks on: ready for delivery');
   const car = deliver(L);
   ok(car && car.plate.startsWith('苏A') && L.flags.car && L.inventory.some((i) => i.kind === 'car'), `delivered: ${car.en}, ${car.colour}, plate ${car.plate}`);
+}
+{
+  // a year game: weeks pass between some playable days, so "about two weeks" is the first playable day
+  // that far on by the calendar (day 7, January), not fourteen playable days (day 15, September)
+  const L = createLife(); initYear(L); L.clock.day = 1;
+  lead(L); contact(L, stamp(L)); view(L); spec(L, { colour: 'giallo', interior: 'nero' }); payDeposit(L); choosePlate(L, 'nanjing');
+  ok(payBalance(L, 'finance').ok && Math.floor(L.flags.carBuy.deliverAt / 1440) === 7, `a year game: ordered on day 1 (9 November), delivered on day ${Math.floor(L.flags.carBuy.deliverAt / 1440)} (the first playable day two weeks on)`);
+  skipTo(L, L.flags.carBuy.deliverAt + 1);
+  ok(stepPurchase(L).includes('delivery-due') && deliver(L), 'and it is delivered then');
 }
 {
   // someone who is eligible (years of Shanghai social insurance): a fee, mostly a loss the first month

@@ -291,8 +291,8 @@ async function boot() {
   const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode, voice, arriveAt: (d, info) => world.dest.arrive(d.id, info) || world.makerspace.arrive(d.id, info) });
   document.querySelector('#ride-card .go').addEventListener('click', () => { if (!closeInfoCard()) rideFlow.closeCard(); });
   // buying it: Vivian, the consultant, at the car (world/carSale.js, engine/carPurchase.js)
-  const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode, voice });
-  if (life.flags.carBuy && life.flags.carBuy.stage === 'booked' && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');
+  const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode, voice, testDrive: () => driving.testDrive() });
+  if (life.flags.carBuy && ['booked', 'viewed', 'specced'].includes(life.flags.carBuy.stage) && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');   // (met her but not ordered: she's still there)
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
   world = { entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
@@ -1040,7 +1040,7 @@ function updateLife(dt) {
 // purchase's own clock, delivery, and what your friends make of it
 function updateCarSale(events) {
   const f = life.flags, now = lifeStamp(life);
-  if (f.carCurious && params.get('life') !== '0') { f.carCuriousAt ??= now; if (!f.carBuy && now >= f.carCuriousAt + 25) carLead(life); }
+  if (f.carCurious && params.get('life') !== '0') { f.carCuriousAt ??= now; if (!f.carBuy && now >= f.carCuriousAt + 10) carLead(life); }
   for (const ev of events) {
     if (ev.type === 'car-appointment') f.carAppointAt = ev.at;
     if (ev.type === 'car-delivered') {
@@ -1049,7 +1049,10 @@ function updateCarSale(events) {
     }
   }
   const b = f.carBuy;
-  if (b && b.stage === 'booked' && f.carAppointAt != null && now >= f.carAppointAt - 5 && !world.carSale.present) world.carSale.appear('viewing');
+  if (b && b.stage === 'booked' && f.carAppointAt != null && now >= f.carAppointAt - 5 && !world.carSale.present) {
+    world.carSale.appear('viewing');
+    if (!f.carArrivedNoted) { f.carArrivedNoted = true; lifePost(life, 'vivian', { from: 'vivian', kind: 'text', text: '我到汉口路了，车停在海关大楼旁边的路边，我在车旁等您。可以开一圈～' }); }
+  }
   if (b) for (const e of stepPurchase(life)) {
     if (e === 'delivery-due' && !f.deliveryNoted) { f.deliveryNoted = true; lifePost(life, 'vivian', { from: 'vivian', kind: 'text', text: '车到了！明天下午我们把车开到汉口路给您交车，您看几点方便？' }); world.carSale.appear('delivery'); }
   }
@@ -1091,6 +1094,7 @@ function mapBlips() {
   if (hasProduct(life)) for (const [id, R] of Object.entries(WORK_REGULARS)) { const st = workState(life), sp = WORK_SPOTS[id]; if ((st.people[id] || (st.heardOf || {})[id]) && tod >= R.from && tod < R.to) out.push({ x: sp.x, z: sp.z, glyph: getLang() === 'zh' ? WORK_REG[id].name.zh.slice(-1) : WORK_REG[id].name.en.split(' ').pop()[0], bg: '#20303a', fg: '#bfe6d2', name: WORK_REG[id].name }); }
   if (world.hearts) out.push(...world.hearts.mapBlips());
   if (life.flags.car && world.huracan.loaded) { const g = world.huracan.group.position; out.push({ x: g.x, z: g.z, glyph: '▲', bg: '#e8b800', fg: '#111', name: { zh: '你的车', en: 'Your car' } }); }
+  else if (world.carSale.present && !world.carSale.sitting) out.push({ x: HURACAN_SPOT.x, z: HURACAN_SPOT.z, glyph: '▲', bg: '#e8b800', fg: '#111', name: { zh: 'Vivian（车旁）', en: 'Vivian, at the car' } });
   const m = life.flags.maker;
   if (m && m.gadgets && m.gadgets.gimbal) for (const t of [{ id: 'customs', x: -45, z: 26 }, { id: 'peace', x: -43, z: -243 }, { id: 'linsu', x: 23.7, z: -15 }]) if (!m.shot[t.id]) out.push({ x: t.x, z: t.z, glyph: '◉', bg: '#1d3a8a', fg: '#fff' });
   if (world.ljz) out.push(...world.ljz.mapBlips());

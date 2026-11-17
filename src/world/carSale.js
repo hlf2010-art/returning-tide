@@ -3,6 +3,8 @@
 //   - at the appointment Vivian (the sales consultant) waits on the pavement by the demo car on
 //     Hankou Road. E to talk: what she says, and what you can answer with 1-4
 //   - sit in it (the passenger seat; mouse to look round, E to get out), hear her start the V10
+//   - take it for a test drive: you drive (world/driving.js), she rides along; stop and E, and the
+//     car is back by the kerb on Hankou Road and she asks what you thought
 //   - colour and interior, then the deposit (by bank transfer, in-game money)
 //   - the plate and the balance carry on in WeChat with her (her messages offer the choices)
 //   - delivery: back on Hankou Road, the car in your colour with your plate, Vivian with the key
@@ -28,8 +30,8 @@ function plateTexture(text) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
-export function createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife, save, onMode, voice = null }) {
-  const S = { vivian: null, present: false, talk: null, sitting: false, delivery: false, plates: [] };
+export function createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife, save, onMode, voice = null, testDrive = null }) {
+  const S = { vivian: null, present: false, talk: null, sitting: false, riding: false, delivery: false, plates: [] };
   if (people) {
     const role = people.manifest.cast.vivian ? 'vivian' : 'p2';
     S.vivian = createPerson(people, role); S.vivian.root.visible = false; S.vivian.root.name = 'vivian';
@@ -51,12 +53,17 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
   const scenes = {
     hello: () => ({
       text: B('纪先生？我是Vivian。这台是我们的试驾车，Huracán LP610-4，5.2升V10自然吸气，您随便看。', "Mr Ji? I'm Vivian. This is our demo car, the Huracán LP610-4: 5.2-litre naturally aspirated V10. Have a good look."),
-      choices: [[T('能坐进去看看吗？', 'Can I sit in it?'), 'sit'], [T('听听发动机？', "Can I hear the engine?"), 'engine'], [T('颜色和内饰有哪些？', 'What colours and interiors are there?'), 'colour'], [T('我再想想。', "I'll think about it."), 'bye']],
+      choices: [[T('能坐进去看看吗？', 'Can I sit in it?'), 'sit'], [T('能开一圈吗？', 'Can I take it for a drive?'), 'drive'], [T('颜色和内饰有哪些？', 'What colours and interiors are there?'), 'colour'], [T('我再想想。', "I'll think about it."), 'bye']],
     }),
     engine: () => { audio && audio.cue && audio.cue('v10'); huracan.setLights(true); return {
       text: B('（她探身进去按了启动键。V10先是一声吼，然后低低地怠速。路边好几个人回头。）', '(She leans in and presses start. The V10 barks, then settles into a low idle. Several people on the pavement turn round.)'),
-      choices: [[T('能坐进去看看吗？', 'Can I sit in it?'), 'sit'], [T('颜色和内饰有哪些？', 'What colours and interiors are there?'), 'colour'], [T('价格呢？', 'And the price?'), 'price'], [T('我再想想。', "I'll think about it."), 'bye']],
+      choices: [[T('能开一圈吗？', 'Can I take it for a drive?'), 'drive'], [T('颜色和内饰有哪些？', 'What colours and interiors are there?'), 'colour'], [T('价格呢？', 'And the price?'), 'price'], [T('我再想想。', "I'll think about it."), 'bye']],
     }; },
+    // back from the test drive (上门试驾: you drive, she rides along in the passenger seat)
+    drove: () => ({
+      text: B('怎么样？在外滩开这台车，整条路的人都在看您。', 'Well? Drive this along the Bund and the whole street watches you.'),
+      choices: [[T('颜色和内饰有哪些？', 'What colours and interiors are there?'), 'colour'], [T('价格呢？', 'And the price?'), 'price'], [T('我再想想。', "I'll think about it."), 'bye']],
+    }),
     colour: () => ({
       text: B('车身色我推荐这四个，上海这边绿色的最少见。', 'For the body I would suggest one of these four. Green is the rarest in Shanghai.'),
       choices: COLOURS.map((c) => [T(c.zh, c.en), `paint:${c.id}`]),
@@ -94,6 +101,7 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
     if (act.startsWith('paint:')) { picked.colour = act.slice(6); return go('interior'); }
     if (act.startsWith('trim:')) { picked.interior = act.slice(5); spec(L, picked); return go('price'); }
     if (act === 'sit') return sitIn();
+    if (act === 'drive') return driveOff();
     if (act === 'deposit') {
       if (!picked.colour) return go('colour');
       const r = payDeposit(L); if (save) save();
@@ -107,6 +115,13 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
     player.lookOnly = true; player.yaw = -Math.PI / 2; player.pitch = -0.08;
     hud.toast(T('E 下车 · 鼠标环顾', 'E to get out · mouse to look around'), 3);
     onMode('sale-seat');
+  }
+  // the test drive: you take the wheel (world/driving.js), she rides along; E once stopped ends it
+  function driveOff() {
+    S.talk = null; hide(); S.riding = true;
+    if (S.vivian) S.vivian.root.visible = false;
+    if (testDrive && testDrive()) { const b = getLife().flags.carBuy; if (b) b.rode = true; return; }
+    S.riding = false; if (S.vivian) S.vivian.root.visible = true; go('hello');
   }
   function end() { S.talk = null; hide(); onMode('play'); if (S.vivian) S.vivian.play('idle', 0.4); }
 
@@ -124,6 +139,13 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
     get present() { return S.present; },
     talkables() { return S.present && S.vivian && !S.talk && !S.sitting ? [{ key: 'vivian', persona: 'vivian', x: S.vivian.root.position.x, y: LAYOUT.curbH + 1.62, z: S.vivian.root.position.z, hold() {} }] : []; },
     get sitting() { return S.sitting; },
+    // the test drive is over (world/driving.js has put the car back on Hankou Road): out on the
+    // pavement beside her, and she asks what you thought
+    afterDrive() {
+      S.riding = false; if (S.vivian) S.vivian.root.visible = true;
+      player.teleport(VIVIAN_SPOT.x + 2.2, VIVIAN_SPOT.z + 0.4, Math.atan2(2.2, 0.4), -0.05);
+      onMode('sale'); go('drove');
+    },
     // the appointment (or the delivery): Vivian at the car
     appear(kind = 'viewing') {
       S.present = true; S.delivery = kind === 'delivery';

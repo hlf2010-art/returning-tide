@@ -21,6 +21,7 @@
 //   paid        the balance: in full by bank transfer, or dealer finance (30% down)
 //   delivered   handed over on the Bund; it's yours (inventory + flags.car)
 import { stamp, pay, post, thread, own, emit, balance } from './life.js';
+import { dateOf } from './year.js';
 // (quote() is used before its definition below: function declarations are hoisted)
 
 export const CAR = { id: 'huracan', zh: '兰博基尼 Huracán LP610-4', en: 'Lamborghini Huracán LP610-4', price: 2_680_000, deposit: 200_000 };
@@ -44,6 +45,16 @@ export const CONSULTANT = { id: 'vivian', name: 'Vivian 陈', en: 'Vivian Chen' 
 const say = (L, text, from = CONSULTANT.id) => { thread(L, CONSULTANT.id, { title: CONSULTANT.name, members: ['me', CONSULTANT.id], kind: 'person' }); post(L, CONSULTANT.id, { from, kind: 'text', text }, { notify: from !== 'me' }); };
 const P = (L) => (L.flags.carBuy ||= { stage: 'none', log: [] });
 const mark = (L, stage) => { const b = P(L); b.stage = stage; b.log.push({ stage, at: stamp(L) }); return b; };
+// `days` calendar days after the moment `from` (absolute minutes), as the game's clock counts it. The
+// clock counts playable days, and in a year game weeks can pass between two of them (engine/year.js),
+// so "two weeks" is the first playable day on or after that date, not fourteen playable days on
+// (which would put the delivery ten months away, near the end of the year)
+const DAY_MS = 86400000, msOf = (L, day) => { const t = dateOf(L, day); return Date.UTC(t.y, t.m - 1, t.d); };
+export function afterDays(L, from, days) {
+  const d0 = Math.floor(from / 1440), want = msOf(L, d0) + days * DAY_MS;
+  let d = d0; while (msOf(L, d) < want) d++;
+  return d * 1440 + (from - d0 * 1440);
+}
 
 // Zhixia passes on the card (call when flags.carCurious is set)
 export function lead(L) {
@@ -141,7 +152,7 @@ export function payBalance(L, how = 'full') {
   if (!r.ok) return r;
   r.entry.memoEn = how === 'finance' ? 'Down payment (dealer finance)' : 'Balance';
   b.paid = { how, ...q }; mark(L, 'paid');
-  b.deliverAt = Math.max(stamp(L) + 3 * 1440, (b.orderedAt || stamp(L)) + 14 * 1440);
+  b.deliverAt = Math.max(afterDays(L, stamp(L), 3), afterDays(L, b.orderedAt || stamp(L), 14));
   say(L, how === 'finance' ? `首付收到，金融合同签好了，月供 ¥${q.monthly.toLocaleString('en-US')}，${q.months}期。` : '尾款收到！我们准备交车～');
   return { ok: true, ...q };
 }
