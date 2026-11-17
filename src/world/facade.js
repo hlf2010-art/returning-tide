@@ -40,8 +40,8 @@ const GLSL = `
         float shade = 0.75 + 0.5 * fh(vec2(col, 9.3));
         vec3 tower = mix(vec3(0.012, 0.016, 0.026), vec3(0.2, 0.235, 0.27) * shade, todDay) * mix(1.0, 1.0 + 0.4 * smoothstep(0.0, 0.12, sky1 - elev), todDay);
         // their windows after dark
-        vec2 w = vec2(az * 180.0, elev * 260.0); float lit = step(0.78, fh(floor(w))) * step(0.25, fract(w.x)) * step(0.3, fract(w.y));
-        tower += vec3(1.0, 0.82, 0.56) * lit * 0.55 * (1.0 - todDay) * todWin;
+        vec2 w = vec2(az * 90.0, elev * 130.0); float lit = step(0.9, fh(floor(w))) * step(0.3, fract(w.x)) * step(0.35, fract(w.y));
+        tower += vec3(1.0, 0.82, 0.56) * lit * 0.22 * (1.0 - todDay) * todWin;
         vec3 street = mix(vec3(0.02, 0.022, 0.03), vec3(0.24, 0.245, 0.25), todDay);
         return elev < -0.06 ? mix(tower, street, smoothstep(-0.06, -0.3, elev)) : tower;
       }
@@ -90,7 +90,7 @@ export function facadeGlass(map, { tint = [0.78, 0.86, 0.93], f0 = 0.3, frame = 
         diffuseColor.rgb = c;
       }`);
   };
-  m.customProgramCacheKey = () => 'facade-glass-v2';
+  m.customProgramCacheKey = () => 'facade-glass-v3';
   return m;
 }
 
@@ -120,7 +120,7 @@ export function skylineGlass(m, dayColor = [0.46, 0.53, 0.6], f0 = 0.2) {
         vec3 day = abs(N.y) > 0.6 ? tint * 0.8 : mix(tint, refl, F);
         diffuseColor.rgb = mix(diffuseColor.rgb * mix(0.35, 1.0, todWin) + refl * F * 0.5 * skGlow * (1.0 - todDay), day, todDay); }`);
   };
-  m.customProgramCacheKey = () => 'skyline-glass-v2';
+  m.customProgramCacheKey = () => 'skyline-glass-v3';
   m.needsUpdate = true;
   return m;
 }
