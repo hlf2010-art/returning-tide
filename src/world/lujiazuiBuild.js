@@ -68,7 +68,7 @@ const noise = (seed, base, spread, size = 256, blotch = 0) => {
   return tex(c, { aniso: 8 });
 };
 // every string drawn into a texture here (so the fonts can be asked for their glyphs before building)
-export const LJZ_TEXT = '陆家嘴站 Lujiazui 号口 Exit 进站 Entrance 号线 Line 东方明珠 正大广场 国金中心 世纪大道 环路 西路 丰和路 银城中路 中心绿地 商场 上海 北侧 网约车上下客点 广播电视塔 办公楼大堂 地铁 步行 请勿翻越护栏 注意安全 中银大厦 SUPER BRAND MALL ifc mall Shanghai Century Avenue Central Green Oriental Pearl Tower Metro Ride-hailing pick-up Ring Rd Fenghe Yincheng 人行天桥 明珠环 东 西 南 北 E W S N ↑ ← → 2 14 1 6 8 米 m';
+export const LJZ_TEXT = '轮渡 东昌路码头 外滩 Ferry Dongchang pier the Bund 陆家嘴站 Lujiazui 号口 Exit 进站 Entrance 号线 Line 东方明珠 正大广场 国金中心 世纪大道 环路 西路 丰和路 银城中路 中心绿地 商场 上海 北侧 网约车上下客点 广播电视塔 办公楼大堂 地铁 步行 请勿翻越护栏 注意安全 中银大厦 SUPER BRAND MALL ifc mall Shanghai Century Avenue Central Green Oriental Pearl Tower Metro Ride-hailing pick-up Ring Rd Fenghe Yincheng 人行天桥 明珠环 东 西 南 北 E W S N ↑ ← → 2 14 1 6 8 米 m';
 
 // ================= materials =================
 export function ljzMaterials(M) {
@@ -726,6 +726,9 @@ export function buildStreet(g, m, lights) {
     st.cyl(px, RING.y, pz, 0.04, 0.04, 2.6, 8);
     g.add(sign(WAY[R.b], { w: 2.6, h: 0.62, x: px - d[0] * 0.05, y: RING.y + 2.4, z: pz - d[1] * 0.05, ry: Math.atan2(-d[0], -d[1]), bg: '#14458f', color: '#fff', both: false }));
   }
+  // the ferry's sign, where the way down to the Dongchang Road pier leaves West Lujiazui Road
+  { const F = LJZ.ferrySign, d = dirOf(65); st.cyl(F.x, CH, F.z, 0.05, 0.05, 2.8, 8); addCircle(F.x, F.z, 0.12, { y1: 3 });
+    for (const f of [1, -1]) g.add(sign(['轮渡 · 东昌路码头 → 外滩', 'Ferry · Dongchang Rd pier → the Bund'], { w: 1.8, h: 0.6, x: F.x + d[0] * 0.03 * f, y: 2.55, z: F.z + d[1] * 0.03 * f, ry: Math.atan2(d[0] * f, d[1] * f), bg: '#0f2a24', color: '#ffe08a' })); }
   // the ride-hailing point at IFC's kerb
   { const K = LJZ.kerbPickup, x = K.x - ux * 3.2, z = K.z - uz * 3.2; st.cyl(x, CH, z, 0.04, 0.04, 2.7, 8); addCircle(x, z, 0.1, { y1: 3 });
     for (const f of [1, -1]) g.add(sign(['网约车上下客点', 'Ride-hailing pick-up'], { w: 1.3, h: 0.56, x: x + ux * 0.03 * f, y: 2.5, z: z + uz * 0.03 * f, ry: Math.atan2(ux * f, uz * f), bg: '#1b2733', color: '#ffb05a' })); }

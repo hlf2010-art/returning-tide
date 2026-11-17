@@ -15,6 +15,7 @@ import { createPerson } from './people.js';
 import { asLight } from './dayNight.js';
 import { cruiseAt, DOCK, FARE, TRIP_MINUTES, PA_AT } from '../engine/cruiseRoute.js';
 import { stamp, pay, clockText } from '../engine/life.js';
+import { FERRY, nextFerry } from '../engine/ferry.js';
 import { getLang } from '../ui/i18n.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -70,7 +71,19 @@ function timetableTexture() {
   return tex(c, { repeat: false });
 }
 
-export function createCruise({ scene, people, player, hud, audio, voice, getLife, save, travel, skipTo, roles = [], clock = null }) {
+function ferryTexture() {
+  const [c, x] = makeCanvas(512, 512);
+  x.fillStyle = '#0f2a24'; x.fillRect(0, 0, 512, 512);
+  x.fillStyle = '#ffe08a'; x.font = `900 52px ${FONT.serif}`; x.textAlign = 'center'; x.fillText('轮渡 · 过江', 256, 74);
+  x.fillStyle = '#e8f2ee'; x.font = `600 28px ${FONT.sans}`; x.fillText('Ferry across the river', 256, 118);
+  x.font = `800 34px ${FONT.sans}`; x.fillText('外滩 → 陆家嘴', 256, 196); x.font = `500 24px ${FONT.sans}`; x.fillText('The Bund → Lujiazui (Dongchang Rd)', 256, 234);
+  x.font = `700 34px ${FONT.sans}`; x.fillText('06:00 – 23:00', 256, 304); x.font = `500 24px ${FONT.sans}`; x.fillText('每15分钟一班 · every 15 min', 256, 344);
+  x.fillStyle = '#ffe08a'; x.font = `800 44px ${FONT.sans}`; x.fillText(`¥${FERRY.fare}`, 256, 418);
+  x.fillStyle = '#9fc6b8'; x.font = `500 22px ${FONT.sans}`; x.fillText('刷码乘船 · scan to board', 256, 462);
+  return tex(c, { repeat: false });
+}
+
+export function createCruise({ scene, people, player, hud, audio, voice, getLife, save, travel, skipTo, ferryTo = null, roles = [], clock = null }) {
   const L0 = () => getLife();
   const C = () => { const l = L0(); return l.flags.cruise || (l.flags.cruise = { rides: 0, ticket: null }); };
   const std = (o) => new THREE.MeshStandardMaterial(o);
@@ -96,6 +109,10 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
     const tt = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), new THREE.MeshBasicMaterial({ map: timetableTexture() }));
     tt.material.color.setScalar(0.95); tt.position.set(PIER.x0 - 0.9, Y + 1.25, PIER.z1 + 0.9); tt.rotation.y = -Math.PI / 2 + 0.5; pier.add(tt);
     stone.box(PIER.x0 - 0.9, Y, PIER.z1 + 0.9, 0.12, 0.6, 0.12, { rotY: 0.5 });
+    // the cross-river ferry's board on the other side of the gate (E there: across to Lujiazui)
+    const fb = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), new THREE.MeshBasicMaterial({ map: ferryTexture() }));
+    fb.material.color.setScalar(0.95); fb.position.set(PIER.x0 - 0.9, Y + 1.25, PIER.z0 - 0.9); fb.rotation.y = -Math.PI / 2 - 0.5; pier.add(fb);
+    stone.box(PIER.x0 - 0.9, Y, PIER.z0 - 0.9, 0.12, 0.6, 0.12, { rotY: -0.5 });
     // the turnstile gate
     for (const z of [PIER.z0 + 1.2, PIER.z1 - 1.2]) iron.box(PIER.x0 + 1.1, Y, z, 0.5, 1.0, 0.25);
     pier.add(deck.mesh(std({ color: 0x6b5843, roughness: 0.75 }), 'pier-deck'), iron.mesh(std({ color: 0x1b2128, roughness: 0.45, metalness: 0.6 }), 'pier-iron'), stone.mesh(std({ color: 0x8a8780, roughness: 0.8 }), 'pier-piles'));
@@ -259,11 +276,14 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
     candidates() {
       const out = [], b = player.body;
       if (!S.aboard && Math.abs(b.z - (PIER.z0 + PIER.z1) / 2) < 6 && b.x > 18 && b.x < PIER.x0 + 1.5 && !ticketOk()) out.push({ id: 'cruise:gate', x: PIER.x0 + 0.5, y: Y + 1.3, z: (PIER.z0 + PIER.z1) / 2, reach: 4, cone: 0.7 });
+      if (ferryTo && !S.aboard && Math.hypot(b.x - (PIER.x0 - 0.9), b.z - (PIER.z0 - 0.9)) < 5) out.push({ id: 'cruise:ferry', x: PIER.x0 - 0.9, y: Y + 1.25, z: PIER.z0 - 0.9, reach: 3.5, cone: 0.7 });
       if (S.aboard && S.st.status === 'out' && S.st.s < 1400) { const [x, z] = toWorld(0, 13.5); out.push({ id: 'cruise:skip', x, y: Y + 1.2, z, reach: 3, cone: 0.6 }); }
       return out;
     },
     owns: (id) => id.startsWith('cruise:'),
+    // (the ferry board is beside the gate: it has its own map blip in main's list via mapBlip)
     prompt(id) {
+      if (id === 'cruise:ferry') { const m = L0().clock.minute, n = nextFerry(m); return { target: T('轮渡 · 外滩 → 陆家嘴', 'Ferry · the Bund → Lujiazui'), action: n == null ? T('今天的轮渡已停 · 早上6点首班', 'No more ferries today · first at 6 am') : T(`过江 · ¥${FERRY.fare} · ${clockText(n)} 开`, `Cross the river · ¥${FERRY.fare} · leaves ${clockText(n)}`) }; }
       if (id === 'cruise:skip') return { target: T('驾驶室', 'The wheelhouse'), action: T('一直坐到靠岸（跳过）', 'Stay aboard till we\'re back (skip)') };
       const st = S.st;
       if (st.status === 'docked' && st.next != null) return { target: T('浦江游览', 'River cruise'), action: T(`买票 ¥${FARE} · ${clockText(st.next)} 开`, `Buy a ticket · ¥${FARE} · sails ${clockText(st.next)}`) };
@@ -272,6 +292,17 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
     },
     interact(id) {
       const l = L0(), c = C(), st = S.st;
+      if (id === 'cruise:ferry') {
+        const n = nextFerry(l.clock.minute);
+        if (n == null) { hud.toast(T('今天的轮渡已经停了。地铁2号线（南京东路站）或叫车也能过江。', 'No more ferries today. Line 2 (East Nanjing Road) or a DiDi still cross.'), 3.6); return true; }
+        const r = pay(l, { method: 'alipay', amount: FERRY.fare, to: '上海轮渡 Shanghai Ferry', memo: '金陵东路 → 东昌路', kind: 'transport' });
+        if (!r.ok) { hud.toast(T('支付宝余额不足。', 'Not enough on Alipay.'), 3); return true; }
+        r.entry.memoEn = 'Jinling Rd E → Dongchang Rd ferry';
+        audio && audio.cue && audio.cue('ping', 0, 0.6);
+        const arrive = Math.floor(stamp(l) / 1440) * 1440 + n + FERRY.crossing;
+        travel(() => { skipTo(arrive); ferryTo({ method: 'ferry', fare: FERRY.fare }); }, { line: T(`轮渡 · ${clockText(n)} · 金陵东路 → 东昌路 · 八分钟过江`, `The ferry · ${clockText(n)} · Jinling Rd E → Dongchang Rd · eight minutes across`), hold: 1700 });
+        return true;
+      }
       if (id === 'cruise:skip') {
         const end = Math.floor(stamp(l) / 1440) * 1440 + Math.ceil(st.dep + TRIP_MINUTES) + 0.5;
         travel(() => { skipTo(end); }, { line: T('江风，灯，船慢慢靠岸……', 'River wind, lights, the boat easing in…'), hold: 1400 });

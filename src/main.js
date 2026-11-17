@@ -260,7 +260,7 @@ async function boot() {
   // places (phase 4.4): a shengjian shop on Nanjing Road (world/dumpling.js) and the river cruise from a
   // pier on the promenade (world/cruise.js)
   const dumpling = createDumpling({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), onMode: shopMode });
-  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); },
+  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); }, ferryTo: (info) => world.dest.arrive('lujiazui', info),
     roles: people ? Object.keys(people.manifest.cast).filter((r) => !['lin', 'su', 'player', 'dad'].includes(r)) : [],
     clock: () => (PIN_HOUR ? 17 * 60 + 42 : life.clock.minute + life.clock.sec / 60) });   // (measurement tools: alongside, as at 5:42 pm)
   // where you can go in: a pool of light at each open door, a label over it when it's in view

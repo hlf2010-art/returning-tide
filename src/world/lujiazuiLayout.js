@@ -518,6 +518,8 @@ export const LJZ = {
   appleStore: P2(...applePt(75, 9), { y: APPLE.yStore }),
   metroExits: METRO_LJZ.map((m) => { const [x, z] = wellPt(m, -1.4), [lx, lz] = wellPt(m, m.len - 1.3); return { exit: m.exit, x, z, y: CH, landing: { x: lx, z: lz, y: -m.depth }, name: m.name }; }),
   metroArrive: P2(...wellPt(m6, m6.run + 0.6), { y: -m6.depth, yaw: yawTo(-m6.dx, -m6.dz) }),   // up Exit 6's stairs, by IFC
+  ferryArrive: P2(...polar(245, 112), { y: CH, yaw: yawTo(Math.sin(65 * D2R), -Math.cos(65 * D2R)) }),   // up from the Dongchang Road ferry, by West Lujiazui Road, facing the roundabout
+  ferrySign: P2(...polar(245, 117), { y: CH }),
   greenGate: P2(...fromAP(372, -56), { y: CH }),
   greenBenches: BENCHES.map((b) => ({ x: b.x, z: b.z, y: CH })),
   greenLawn: P2(...fromAP(430, -120), { y: CH }),

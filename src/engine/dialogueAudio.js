@@ -1,6 +1,6 @@
 // Positional audio for recorded NPC dialogue clips (WebAudio PannerNode + distance attenuation),
-// with a clearly labeled Mandarin Web Speech API (speechSynthesis) temporary fallback when
-// recorded voice clips are unavailable.
+// and, when a line has no recorded clip, its subtitle alone (timed as if spoken). The browser's
+// speech synthesis is no longer used.
 import * as THREE from 'three';
 import { computeDistanceGain } from './conversation.js';
 import { shape, moodOf } from './delivery.js';
@@ -149,6 +149,23 @@ export function createDialogueAudio({
   }
 
   function playWithSynthesis(line, dist, gain, myToken, onEnd) {
+    // No recorded clip: the browser's speech synthesis is no longer used (it sounds robotic). The line is
+    // carried by its subtitle, phrase by phrase, with the same timing as if spoken, so the face keeps
+    // talking and the scene keeps its pace.
+    if (true) {
+      activeBackend = 'subtitles';
+      const phrases = shape(line.text, SPEAKER_PROFILE[line.speaker] || SPEAKER_PROFILE.lin, { mood: line.mood || moodOf(line.text) });
+      spokenCount++; lastVolume = 0;
+      let i = 0;
+      const next = () => {
+        if (playToken !== myToken) return;
+        if (i >= phrases.length) { delivery.phrase = null; if (onEnd) onEnd(); return; }
+        const ph = phrases[i++]; delivery.phrase = ph; delivery.pause = false;
+        setTimeout(() => { if (playToken !== myToken) return; delivery.pause = true; setTimeout(next, ph.pauseAfter * 1000); }, Math.max(0.35, ph.text.length / (4.5 * (ph.rate || 1))) * 1000);
+      };
+      next();
+      return;
+    }
     if (!synth || typeof SpeechSynthesisUtterance !== 'function') {
       activeBackend = 'unavailable';
       return;

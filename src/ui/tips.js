@@ -13,7 +13,7 @@ export const TIPS = {
   talk: ['T 和身边的人聊天（打字或说话）', 'T to talk with someone near you (type, or speak)'],
   hour: ['城市跟着钟点变：灯光、人流、开门关门的店。晚上十点外滩换成深夜灯光。', 'The city follows the clock: the lights, the crowds, which shops are open. At ten the Bund goes over to its late-night lighting.'],
   moment: ['街上会发生一些小事。走近看看，也可以不管。', 'Small things happen on the street. Go and see, or let them be.'],
-  cruise: ['浦江游览每个整点开船（10 点到 21 点）。在闸口买票。', 'The river cruise sails on the hour, 10 am to 9 pm. Buy a ticket at the gate.'],
+  cruise: ['浦江游览每个整点开船（10 点到 21 点），闸口买票。闸口旁的轮渡每15分钟一班过江到陆家嘴（6 点到 23 点，¥2）。', 'The river cruise sails on the hour, 10 am to 9 pm: buy a ticket at the gate. Beside it, the ferry crosses to Lujiazui every 15 minutes, 6 am to 11 pm, ¥2.'],
   shop: ['阿潮生煎：在柜台点单，等叫号，端了托盘找位子坐。', 'A-Chao Shengjian: order at the counter, wait for your number, take the tray to a seat.'],
   seat: ['坐着的时候：1–4 回答或选择，E 起身。', 'Sitting down: 1-4 to answer or choose, E to get up.'],
   lend: ['天黑了，云台在你口袋里。看着江边正在拍照的人按 E，借给他试试。', "It's dark, and the gimbal's in your pocket. Look at someone taking a photo by the river and press E to lend it."],

@@ -2,7 +2,8 @@
 // (tools/voice/generate.py: Kokoro-82M, an open neural speech model; each character has their own
 // voice), in Mandarin and in English. Lines nobody could record in advance (numbers in them, what an
 // AI-driven conversation says) go to a local voice server if one is running (tools/voice/server.py,
-// the same model live), and only then to the browser's own speech, picking its most natural voice.
+// the same model live); otherwise the subtitle carries them. The browser's own (robotic) speech is
+// never used.
 //
 // Which language you hear (settings, 'voices'):
 //   original   everyone speaks as they would: Mandarin, and the tourists English (the default)
@@ -105,8 +106,11 @@ export function createVoice({ audio, getLang, camera = null }) {
     const t = setTimeout(() => onEnd && onEnd(), duration * 1000);
     return { duration, stop: () => clearTimeout(t), silent: true };
   }
-  // the browser's own speech, as natural as it has (last resort)
-  function synthSay(text, lang, { sex, onEnd, gain = 1 }) {
+  // the browser's own speech is never used (it sounds like a machine): a line with no recording and no
+  // local voice server is carried by its subtitle, timed as if spoken
+  function synthSay(text, lang, o) { return silent(text, lang, o); }
+  // (kept for reference; not called)
+  function browserSpeech(text, lang, { sex, onEnd, gain = 1 }) {
     const syn = typeof window !== 'undefined' && window.speechSynthesis; if (!syn) { onEnd && setTimeout(onEnd, 1500); return null; }
     const u = new SpeechSynthesisUtterance(text); u.lang = lang === 'zh' ? 'zh-CN' : 'en-GB';
     const v = rankVoices(syn.getVoices() || [], lang, sex)[0]; if (v) u.voice = v;
@@ -122,20 +126,20 @@ export function createVoice({ audio, getLang, camera = null }) {
     get serverOn() { return get('bund.voiceServerOn', '0') === '1'; },
     // lines with no recording (AI conversation, lines with numbers): 'off' subtitles only (the default),
     // 'browser' the browser's own speech (robotic), or the local voice server (serverOn)
-    get newLines() { return this.serverOn ? 'server' : get('bund.synthOn', '0') === '1' ? 'browser' : 'off'; },
-    setNewLines(v) { set('bund.synthOn', v === 'browser' ? '1' : '0'); this.setServer(v === 'server'); },
+    get newLines() { return this.serverOn ? 'server' : 'off'; },
+    setNewLines(v) { set('bund.synthOn', '0'); this.setServer(v === 'server'); },
     setServer(on) { set('bund.voiceServerOn', on ? '1' : '0'); serverChecked = 0; if (on) checkServer(); },
     get stats() { return { clips: S.clipHits, server: S.serverHits, synth: S.synthHits, loaded: !!manifest, size: manifest ? Object.keys(manifest.clips).length : 0, last: S.last, serverUp: server }; },
     has(lang, text) { return !!(manifest && manifest.clips[voiceKey(lang, text)]); },
     clipUrl(lang, text) { const c = manifest && manifest.clips[voiceKey(lang, text)]; return c ? `./voice/${c[0]}` : null; },
     langFor,
     update() { listener(); for (const h of S.active) if (h.at && h.pan && h.follow) { const p = h.follow(); if (p) { h.pan.positionX.value = p[0]; h.pan.positionY.value = p[1]; h.pan.positionZ.value = p[2]; } } },
-    stopAll() { for (const h of [...S.active]) h.stop(); S.active.clear(); try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch { /* none */ } },
+    stopAll() { for (const h of [...S.active]) h.stop(); S.active.clear(); },
     // { zh, en, who, sex, at, phone, gain, onEnd, voice (server voice id), rate, noSynth }
     // noSynth: an incidental line (a passer-by's "sorry"): the recorded voice or nothing, never the
     // browser's robotic last resort
     async say(o) {
-      if (get('bund.synthOn', '0') !== '1') o = { ...o, noSynth: true };   // the browser voice only if chosen
+      o = { ...o, noSynth: true };                                          // never the browser's robotic voice
       const lang = o.lang || langFor(o.who, o.zh, o.en), text = (lang === 'zh' ? o.zh : o.en) || o.zh || o.en;
       if (!text) { o.onEnd && o.onEnd(); return null; }
       S.last = { lang, text: text.slice(0, 40), who: o.who };

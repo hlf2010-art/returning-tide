@@ -13,7 +13,8 @@ import * as THREE from 'three';
 import { getLang } from '../ui/i18n.js';
 import { FONT, loadFonts } from './canvas.js';
 import { autoLights } from './dayNight.js';
-import { METRO, METRO_DEPTH, addDynamicCollider } from './layout.js';
+import { METRO, METRO_DEPTH, PIER, addDynamicCollider } from './layout.js';
+import { FERRY, nextFerry } from '../engine/ferry.js';
 import { PICKUP } from './didi.js';
 import { stamp, skipTo, pay } from '../engine/life.js';
 import { fare, dest } from '../engine/ride.js';
@@ -60,6 +61,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
       { id: 'ljz-ifc', name: ['国金中心 · 办公楼', 'IFC · the office tower'], act: ['上楼', 'go up'], x: L.x, z: L.z, nx: L.nx, nz: L.nz, y: CH, w: 5 },
       { id: 'ljz-apple', name: ['Apple 浦东', 'Apple Pudong'], act: ['进去 · 旋转楼梯', 'in, down the spiral stair'], x: AD.x - toC[0] * 0.4, z: AD.z - toC[1] * 0.4, nx: toC[0], nz: toC[1], y: APPLE.yPlaza, w: 3, glow: false },
       ...METRO_LJZ.map((W) => ({ id: `ljz-m${W.exit}`, name: [`陆家嘴站 ${W.exit} 号口`, `Lujiazui station, Exit ${W.exit}`], act: ['下楼 · 2号线', 'down to Line 2'], x: W.top[0] - W.dx * 0.8, z: W.top[1] - W.dz * 0.8, nx: -W.dx, nz: -W.dz, y: CH, w: 3, open: metroOpen, glow: false })),
+      { id: 'ljz-ferry', name: ['轮渡 · 东昌路码头', 'Ferry · Dongchang Rd pier'], act: ['回外滩', 'back to the Bund'], x: LJZ.ferrySign.x, z: LJZ.ferrySign.z, nx: Math.sin(65 * Math.PI / 180), nz: -Math.cos(65 * Math.PI / 180), y: CH, w: 3, glow: false },
       { id: 'ljz-didi', name: ['网约车上下客点', 'Ride-hailing point'], act: ['回外滩', 'a car back to the Bund'], x: K.x, z: K.z, nx: LJZ.ifcLobbyStand.x - K.x, nz: LJZ.ifcLobbyStand.z - K.z, y: CH, w: 3, glow: false },
     ].map((e) => { const l = Math.hypot(e.nx, e.nz) || 1; return { ...e, nx: e.nx / l, nz: e.nz / l }; }) });
     kit.push(...ent.lights);
@@ -92,16 +94,18 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   // ---- arriving: by DiDi at IFC's kerb, by Line 2 up Exit 6 ----
   const upstairs = dests.arrive.bind(dests);
   function arriveStreet(info = {}) {
-    pending = { method: info.method === 'metro' ? 'alipay' : info.method || 'wechat', invite: info.invite || null, at: stamp(getLife()) };
+    const behind = info.method === 'metro' || info.method === 'ferry';   // already behind that journey's own fade
+    pending = { method: behind ? 'alipay' : info.method || 'wechat', invite: info.invite || null, at: stamp(getLife()) };
     let done = false;
     const go = () => {
       if (done) return; done = true; build();
-      const p = info.method === 'metro' ? LJZ.metroArrive : LJZ.kerbPickup;
+      const p = info.method === 'metro' ? LJZ.metroArrive : info.method === 'ferry' ? LJZ.ferryArrive : LJZ.kerbPickup;
       player.teleport(p.x, p.z, p.yaw, 0, p.y); show(true);
-      if (info.method !== 'metro') hud.toast(T(`国金中心 · 世纪大道8号${info.fare ? ` · 车费 ¥${info.fare}` : ''}`, `IFC · 8 Century Avenue${info.fare ? ` · fare ¥${info.fare}` : ''}`), 3.6);
+      if (info.method === 'ferry') hud.toast(T('东昌路轮渡码头 · 沿陆家嘴西路走上来', 'Off the Dongchang Road ferry · up West Lujiazui Road'), 3.6);
+      else if (info.method !== 'metro') hud.toast(T(`国金中心 · 世纪大道8号${info.fare ? ` · 车费 ¥${info.fare}` : ''}`, `IFC · 8 Century Avenue${info.fare ? ` · fare ¥${info.fare}` : ''}`), 3.6);
     };
     travel(async () => go(), { line: T('陆家嘴', 'Lujiazui'), hold: 900, to: 'play' });
-    if (info.method === 'metro') go();                        // (already behind the metro's own fade)
+    if (behind) go();
     return true;
   }
   dests.arrive = (id, info = {}) => (id === 'lujiazui' && !info.up ? arriveStreet(info) : upstairs(id, info));
@@ -122,6 +126,16 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     return true;
   };
   // back to the Bund: a car from the kerb (through the Yan'an East Road tunnel), or Line 2 from any exit
+  function ferryBack() {
+    const l = getLife(), n = nextFerry(l.clock.minute);
+    if (n == null) { hud.toast(T('今天的轮渡已经停了。地铁或者叫车都能回外滩。', 'No more ferries today. The metro or a DiDi will take you back.'), 3.6); return; }
+    const r = pay(l, { method: 'alipay', amount: FERRY.fare, to: '上海轮渡 Shanghai Ferry', memo: '东昌路 → 金陵东路', kind: 'transport' }); if (!r.ok) { hud.toast(T('支付宝余额不足。', 'Not enough on Alipay.'), 3); return; }
+    r.entry.memoEn = 'Dongchang Rd → Jinling Rd E ferry';
+    travel(async () => {
+      skipTo(l, Math.floor(stamp(l) / 1440) * 1440 + n + FERRY.crossing);
+      player.teleport(PIER.x0 - 2.6, PIER.z0 - 2.2, Math.PI / 2, 0); show(false); save && save();
+    }, { line: T('轮渡 · 东昌路 → 金陵东路 · 八分钟过江', 'The ferry · Dongchang Rd → Jinling Rd E · eight minutes across'), hold: 1600, to: 'play' });
+  }
   function carBack() {
     const l = getLife(), d = dest('lujiazui'), back = fare(d, l.clock.minute);
     travel(async () => {
@@ -150,6 +164,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   // ---- what E does here ----
   const TARGETS = [];
   { const L = LJZ.ifcLobbyDoor; TARGETS.push({ id: 'ljz:lobby', x: L.x, y: CH + 1.5, z: L.z, reach: 4.2, cone: 0.55 }); }
+  { const F = LJZ.ferrySign; TARGETS.push({ id: 'ljz:ferry', x: F.x, y: CH + 1.8, z: F.z, reach: 4.0, cone: 0.6 }); }
   { const K = LJZ.kerbPickup, [ux, uz] = dirOf(AVE); TARGETS.push({ id: 'ljz:didi', x: K.x - ux * 3.2, y: CH + 2.2, z: K.z - uz * 3.2, reach: 4.0, cone: 0.6 }); }
   for (const W of METRO_LJZ) {
     const [x, z] = wellPt(W, W.len - 0.2), [sx, sz] = wellPt(W, W.run + 0.8, W.hw - 0.1);
@@ -161,6 +176,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     const out = [
       { x: LJZ.ifcLobbyDoor.x, z: LJZ.ifcLobbyDoor.z, glyph: '国', bg: '#24303f', fg: '#cfe0f5', name: { zh: '国金中心（办公楼大堂）', en: 'IFC (office lobby)' } },
       { x: APPLE.x, z: APPLE.z, glyph: 'A', bg: '#e9ecee', fg: '#111', name: { zh: 'Apple 浦东', en: 'Apple Pudong' } },
+      { x: LJZ.ferrySign.x, z: LJZ.ferrySign.z, glyph: '⛴', bg: '#0f2a24', fg: '#ffe08a', name: { zh: '轮渡（东昌路 → 外滩）', en: 'Ferry (Dongchang Rd → the Bund)' } },
       { x: LJZ.kerbPickup.x, z: LJZ.kerbPickup.z, glyph: 'D', bg: '#ff7a00', fg: '#fff', name: { zh: '网约车上下客点（国金中心）', en: 'Ride-hailing point (IFC)' } },
       { x: LJZ.greenGate.x, z: LJZ.greenGate.z, glyph: '绿', bg: '#2f5a34', fg: '#e3f2dc', name: { zh: '陆家嘴中心绿地', en: 'Lujiazui Central Green' } },
       ...LJZ.metroExits.map((e) => ({ x: e.x, z: e.z, glyph: String(e.exit), bg: '#c8161e', fg: '#fff', name: { zh: `陆家嘴站 ${e.exit} 号口`, en: `Lujiazui station, Exit ${e.exit}` } })),
@@ -222,6 +238,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     owns(id) { return typeof id === 'string' && id.startsWith('ljz:'); },
     prompt(id) {
       if (id === 'ljz:lobby') return { target: T('国金中心 · 办公楼大堂', 'IFC · the office lobby'), action: T('乘电梯上楼', 'Take the lift up') };
+      if (id === 'ljz:ferry') { const n = nextFerry(getLife().clock.minute); return { target: T('轮渡 · 东昌路 → 外滩', 'Ferry · Dongchang Rd → the Bund'), action: n == null ? T('今天的轮渡已停 · 早上6点首班', 'No more ferries today · first at 6 am') : T(`坐轮渡回外滩 · ¥${FERRY.fare} · ${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`, `The ferry back to the Bund · ¥${FERRY.fare} · ${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`) }; }
       if (id === 'ljz:didi') { const back = fare(dest('lujiazui'), getLife().clock.minute); return { target: T('网约车上下客点', 'Ride-hailing point'), action: T(`叫车回外滩（¥${back}）`, `A car back to the Bund (¥${back})`) }; }
       if (id === 'ljz:apple:table') return { target: T('桌上的样机', 'The devices on the table'), action: T('拿起来看看', 'Pick one up') };
       const t = TARGETS.find((q) => q.id === id), W = t && t.well;
@@ -233,6 +250,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     interact(id) {
       if (id === 'ljz:lobby') goUp();
       else if (id === 'ljz:didi') carBack();
+      else if (id === 'ljz:ferry') ferryBack();
       else if (id === 'ljz:apple:table') hud.toast(T('屏幕都亮着，壁纸是今天的外滩。你把它放回了原位。', 'Every screen is lit; the wallpaper is today\'s Bund. You put it back where it was.'), 3.4);
       else { const t = TARGETS.find((q) => q.id === id); if (t && t.well) { if (id.endsWith(':in')) metroBack(); else metroThrough(t.well); } }
       return true;
