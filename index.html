@@ -103,16 +103,39 @@
     </div>
   </div>
 
-  <div id="entry">
+  <div id="entry" class="loading">
+    <!-- the Bund at blue hour, painted; glints, lamps and the Pearl drawn live on top (ui/titleScreen.js) -->
+    <div class="backdrop" aria-hidden="true"><div class="bd-pan"><img class="bd-img" src="/title/bund-night.webp" alt="" decoding="async" fetchpriority="high"><canvas id="entry-fx"></canvas></div></div>
     <div class="topbar"><div class="seg lang-quick" data-setting="lang"><button data-v="zh">中文</button><button data-v="en">EN</button></div></div>
-    <div class="card">
-      <div class="kicker"><span class="neon"></span><span data-t="kicker"></span></div>
-      <h1 class="logo" data-t="title"></h1>
-      <div class="chapter" data-t="chapter"></div>
-      <p class="premise" data-t="premise"></p>
-      <div class="actions">
-        <button id="begin" class="mbtn primary" disabled data-t="loading"></button>
-        <button class="mbtn" data-open-settings data-t="settings"></button>
+    <div class="stage">
+      <div class="hero">
+        <h1 class="logo" data-t="title"></h1>
+        <svg class="swoosh" viewBox="0 0 1000 60" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="sw-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="0">
+              <stop offset="0" stop-color="#f6d9a2" stop-opacity="0"/>
+              <stop offset="0.3" stop-color="#e9b96f" stop-opacity="0.55"/>
+              <stop offset="0.56" stop-color="#fff4e2" stop-opacity="1"/>
+              <stop offset="0.8" stop-color="#e9b96f" stop-opacity="0.5"/>
+              <stop offset="1" stop-color="#f6d9a2" stop-opacity="0"/>
+            </linearGradient>
+            <radialGradient id="sw-flare-g"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset="0.25" stop-color="#ffd9a0" stop-opacity="0.7"/><stop offset="1" stop-color="#e9a25a" stop-opacity="0"/></radialGradient>
+            <filter id="sw-blur" x="-10%" y="-200%" width="120%" height="500%"><feGaussianBlur stdDeviation="3"/></filter>
+          </defs>
+          <path class="sw-glow" pathLength="1" d="M10,40 C200,22 380,30 520,40 C640,48 760,26 990,18" filter="url(#sw-blur)"/>
+          <path class="sw-line" pathLength="1" d="M10,40 C200,22 380,30 520,40 C640,48 760,26 990,18"/>
+          <ellipse class="sw-flare" cx="10" cy="40" rx="70" ry="7" fill="url(#sw-flare-g)"/>
+        </svg>
+        <div class="hero-sub" aria-hidden="true"><span class="alt-zh">回潮</span><span class="alt-en">Returning Tide</span></div>
+        <div class="load" role="status"><span data-t="loading"></span><span class="pct" id="load-pct">0%</span></div>
+      </div>
+      <div class="card">
+        <div class="chapter" data-t="chapter"></div>
+        <p class="premise" data-t="premise"></p>
+        <div class="actions">
+          <button id="begin" class="mbtn primary" disabled data-t="loading"></button>
+          <button class="mbtn" data-open-settings data-t="settings"></button>
+        </div>
       </div>
     </div>
     <div class="cityline"><span class="geo">31.2397° N&nbsp;&nbsp;121.4906° E</span><span data-t="district"></span><span data-t="weatherNow"></span><span id="entry-time"></span></div>
