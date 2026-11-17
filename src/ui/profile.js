@@ -12,7 +12,7 @@
 //   createProfile({ getLife, defs, getPeople, onClose }) -> { open(tab), close(), key(k), get isOpen }
 import './fonts.js';
 import { getLang } from './i18n.js';
-import { profileView, GROUPS, SKILL_NOTE, REP_SAY, tier, personNote, nowLines, daysBack } from '../world/profileView.js';
+import { profileView, GROUPS, SKILL_NOTE, REP_SAY, tier, personNote, nowLines, daysBack, moodOf } from '../world/profileView.js';
 import { createPortrait } from './portrait.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -73,6 +73,18 @@ const CSS = `
 #profile .sun line { stroke: var(--rt-gold-hi); stroke-width: .6; }
 @keyframes rt-turn { to { transform: translate(-50%, -50%) rotate(360deg); } }
 #profile .stage { position: absolute; left: 3%; top: 4%; bottom: 4%; width: 36%; }
+#profile .art { position: absolute; inset: 0 2% 13% 4%; overflow: hidden; -webkit-mask-image: radial-gradient(85% 75% at 50% 42%, #000 55%, transparent 100%); mask-image: radial-gradient(85% 75% at 50% 42%, #000 55%, transparent 100%); }
+#profile .art img { width: 100%; height: 100%; object-fit: cover; object-position: 58% 18%; filter: saturate(.82) contrast(1.06) brightness(.86); transform: scale(1.02); animation: rt-breathe 14s ease-in-out infinite alternate; }
+#profile .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,26,32,.25), rgba(11,26,32,0) 30%, rgba(7,11,15,.75) 92%), linear-gradient(90deg, rgba(105,210,255,.18), transparent 40%, rgba(236,190,110,.22)); mix-blend-mode: multiply; }
+#profile .art::before { content: ''; position: absolute; inset: 0; z-index: 1; background: radial-gradient(60% 50% at 85% 30%, rgba(236,190,110,.25), transparent 70%); mix-blend-mode: screen; pointer-events: none; }
+@keyframes rt-breathe { to { transform: scale(1.06) translateY(-1%); } }
+#profile .stage.three .art { display: none; } #profile .stage:not(.three) .portrait { display: none; }
+#profile .view { position: absolute; right: 4%; top: 2%; z-index: 2; background: none; border: 1px solid var(--rt-gold-lo); color: var(--rt-gold); font: 11px var(--rt-thin); letter-spacing: .3em; padding: 4px 10px; cursor: pointer; }
+#profile .view:hover { color: var(--rt-gold-hi); border-color: var(--rt-gold); }
+#profile .mood { display: flex; align-items: center; gap: 16px; margin-top: 18px; }
+#profile .mood .cameo { width: 74px; height: 92px; border-radius: 50% / 46%; overflow: hidden; box-shadow: 0 0 0 1px var(--rt-gold), 0 0 0 5px rgba(200,163,90,.15), 0 8px 24px rgba(0,0,0,.5); flex: none; }
+#profile .mood .cameo img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.85); }
+#profile .mood .t { font: 11px var(--rt-thin); letter-spacing: .4em; color: var(--rt-gold); } #profile .mood .w { font-family: var(--rt-hand); font-size: 22px; color: #f1e2bd; margin-top: 4px; }
 #profile .portrait { position: absolute; inset: 0 0 14% 0; } #profile .portrait canvas { width: 100%; height: 100%; display: block; cursor: grab; }
 #profile .portrait.none::after { content: ''; position: absolute; left: 50%; bottom: 6%; width: 28%; height: 78%; transform: translateX(-50%); border-radius: 40% 40% 8% 8%; background: linear-gradient(#1c3a44, #081217); box-shadow: 0 0 60px rgba(105,210,255,.18); }
 #profile .name { position: absolute; left: 8%; bottom: 3%; right: 0; }
@@ -208,12 +220,13 @@ export function createProfile({ getLife, defs = [], getPeople = () => null, onCl
   document.body.appendChild(root);
   const stage = root.querySelector('.stage'), nav = root.querySelector('nav'), body = root.querySelector('.body'), foot = root.querySelector('.foot');
   const portrait = createPortrait(getPeople);
-  const S = { open: false, tab: 'now', sel: null, V: null };
+  const S = { open: false, tab: 'now', sel: null, V: null, three: false };
   let tide = null;
 
   function renderStage(V) {
     const e = V.me.energy;
-    stage.innerHTML = '';
+    stage.innerHTML = `<div class="art"><img src="./people/jibai/hero.jpg" alt=""></div><button class="view" data-view>${S.three ? T('立 绘', 'ART') : '3D'}</button>`;
+    stage.classList.toggle('three', !!S.three);
     stage.appendChild(portrait.el);
     stage.insertAdjacentHTML('beforeend', `<div class="tidegauge" title="${T('精力', 'Energy')}"><div class="col"><i style="height:${e}%"></i></div>${[0, 25, 50, 75, 100].map((p) => `<span class="tk" style="bottom:${p}%"></span>`).join('')}<span class="lb">${T('精力 · 潮位', 'ENERGY · TIDE')}</span><span class="v">${e}</span></div>
       <div class="name"><div class="zh">${esc(V.me.name)}</div>${seal()}<div class="lat">${T('JI BAI', 'JI BAI · 纪白')}</div><div class="sub">${T(`${V.me.age} 岁 · 回国第 ${daysBack(getLife())} 天`, `${V.me.age} · day ${daysBack(getLife())} back`)}</div></div>`);
@@ -227,10 +240,16 @@ export function createProfile({ getLife, defs = [], getPeople = () => null, onCl
   function now(V) {
     const d = bigDate(V), q = V.quests.active.find((x) => x.tracked) || V.quests.active[0];
     return `<div class="rise"><div><div class="date">${esc(d.big)}<small>${esc(d.small)}</small></div><div class="act">${esc(V.me.act || '')}</div></div>
+      ${moodHtml(V)}
       <div class="lines hand">${nowLines(getLife(), V, getLang()).map((l) => `<div>${esc(l)}</div>`).join('')}</div>
       <div class="rule"></div>
       ${q ? `<div><div class="eyebrow">${T('手头的事', 'In hand')}</div><div class="letter"><div class="wax">${T('事', '✦')}</div><div class="t">${esc(q.title)}</div><div class="s">${esc(q.step)}</div></div></div>` : ''}
       <div class="plaques"><div class="plaque"><b>¥${num(V.money.net)}</b><span>${T('身家', 'WORTH')}</span></div><div class="plaque"><b>${esc((V.people[0] || {}).name || '—')}</b><span>${T('最亲近', 'CLOSEST')}</span></div><div class="plaque"><b>${V.rep[1].v}</b><span>${T('口碑', 'NAME')}</span></div></div></div>`;
+  }
+  // his face today (the expressions from his character sheet, public/people/jibai/)
+  function moodHtml(V) {
+    const m = moodOf(getLife(), V), W = { neutral: ['平常', 'As usual'], smile: ['心情不错', 'In a good mood'], laugh: ['很高兴', 'Happy'], serious: ['在想事情', 'Preoccupied'], thinking: ['在琢磨', 'Turning it over'], surprised: ['有点意外', 'Caught off guard'], concerned: ['有心事', 'Worried'], sad: ['有点难过', 'Low'] }[m];
+    return `<div class="mood"><div class="cameo"><img src="./people/jibai/face-${m}.jpg" alt=""></div><div><div class="t">${T('今天的他', 'TODAY')}</div><div class="w">${T(W[0], W[1])}</div></div></div>`;
   }
   function craft(V) {
     const H = V.time.hours, sum = Object.values(H).reduce((a, b) => a + b, 0), lang = getLang();
@@ -349,13 +368,14 @@ export function createProfile({ getLife, defs = [], getPeople = () => null, onCl
   }
   const go = (tab) => { if (tab === S.tab) return; S.tab = tab; renderNav(); renderBody(); };
   root.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-tab],[data-x]'); if (!b) return;
+    const b = e.target.closest('[data-tab],[data-x],[data-view]'); if (!b) return;
     if (b.dataset.x != null) return api.close();
+    if (b.dataset.view != null) { S.three = !S.three; renderStage(S.V); if (S.three) portrait.start(); else portrait.stop(); return; }
     if (b.dataset.tab) go(b.dataset.tab);
   });
   const api = {
     get isOpen() { return S.open; },
-    open(tab = null) { if (tab) S.tab = tab; S.open = true; root.classList.remove('hidden'); render(); portrait.start(); },
+    open(tab = null) { if (tab) S.tab = tab; S.open = true; root.classList.remove('hidden'); render(); if (S.three) portrait.start(); },
     close() { if (!S.open) return; S.open = false; stopTide(); portrait.stop(); root.classList.add('hidden'); onClose && onClose(); },
     key(k) {
       if (k === 'KeyI' || k === 'Escape') return api.close();

@@ -141,3 +141,16 @@ export function nowLines(L, V, lang = 'zh') {
   if (V.project.has) out.push(T(`夜行云台，第 ${V.project.version} 版。`, `The night gimbal, version ${V.project.version}.`));
   return out;
 }
+// his face today: one of the eight expressions on his character sheet (public/people/jibai/face-*.jpg)
+export function moodOf(L, V) {
+  const A = allot(L), lost = V.people.some((p) => p.over && p.group === 'heart');
+  if (A.burnout && V.me.energy < 40) return 'sad';
+  if (V.me.energy < 25) return 'sad';
+  if (lost) return 'sad';
+  if (V.me.hurt) return 'concerned';
+  if (V.me.energy < 40) return 'concerned';
+  if (A.milestones.launch) return 'laugh';
+  if (V.people.some((p) => p.group === 'heart' && p.close >= 70 && !p.over)) return 'smile';
+  if (V.quests.active.some((q) => q.main)) return 'thinking';
+  return 'neutral';
+}
