@@ -72,6 +72,7 @@ import { WALK_SPEED, RUN_SPEED } from './engine/movement.js';
 import { createTrees } from './world/trees.js';
 import { createBumps } from './world/bumps.js';
 import { createManner } from './world/shops.js';
+import { createBaristas } from './world/baristas.js';
 import { createBelongings } from './world/belongings.js';
 import { createHuracan, HURACAN_SPOT } from './world/huracan.js';
 import { createCarSale } from './world/carSale.js';
@@ -241,6 +242,7 @@ async function boot() {
   scene.add(trees.group);
   // Manner Coffee's takeaway front on Hankou Road (world/shops.js), lit from inside
   const manner = createManner(L.curbH); scene.add(manner.group);
+  const baristas = createBaristas({ scene, people, work: manner.work });   // and the two making the coffee in it (world/baristas.js)
   // a Lamborghini parked on Hankou Road (loads in the background; world/huracan.js)
   const huracan = createHuracan(scene);
   huracan.ready.then((r) => {
@@ -296,7 +298,7 @@ async function boot() {
   if (life.flags.carBuy && ['booked', 'viewed', 'specced'].includes(life.flags.carBuy.stage) && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');   // (met her but not ordered: she's still there)
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
-  world = { entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  world = { baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -793,6 +795,7 @@ function interact() {
     if (mo && !mo.done && mo.notified) { mo.done = true; cupFor = 240; hud.bark({ speaker: { zh: '店员', en: 'Barista' }, text: { zh: `${mo.num}号，您的${mo.item.name}，拿好～`, en: `Number ${mo.num}, your ${mo.item.en.toLowerCase()}. Here you go.` }, seconds: 2.6 }); saveLife(); }
     else if (mo && !mo.done) hud.bark({ speaker: { zh: '店员', en: 'Barista' }, text: { zh: '稍等一下哦，马上好。', en: 'Just a moment, nearly ready.' }, seconds: 2.2 });
     else { hud.bark({ speaker: { zh: '店员', en: 'Barista' }, text: { zh: '您好～扫码点单哦，码在窗口这边。', en: 'Hi! Scan the code by the window to order.' }, seconds: 2.6 }); phone.openManner(); }
+    world.baristas.greet();
   }
 }
 player.onStep = (surface, running, landing) => audio.step(surface, running, landing);
@@ -1307,6 +1310,7 @@ function frame(now) {
   world.confront.update(mode === 'pause' ? 0 : dt, { mode });                          // the row outside the hotel: its rules, before your own step
   world.cruise.update(mode === 'pause' ? 0 : dt, player);                              // the boat moves, carrying whoever's aboard (before your own step)
   world.dumpling.update(mode === 'pause' ? 0 : dt, player.body);
+  world.baristas.update(mode === 'pause' ? 0 : dt, player.body);
   world.entrances.update(dt, { eye: camera.position, prompting: !!target, active: mode === 'play' || mode === 'ride' });
   const driving = mode === 'drive' || (mode === 'pause' && pausedFrom === 'drive');
   if (driving) world.driving.update(dt, mode === 'pause');
