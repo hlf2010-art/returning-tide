@@ -28,6 +28,7 @@ import { createNpcs } from './world/npcs.js';
 import { createDialogueAudio } from './engine/dialogueAudio.js';
 import { createConversation, computeDistanceGain } from './engine/conversation.js';
 import { createHud } from './ui/hud.js';
+import { createTitleScreen } from './ui/titleScreen.js';
 import { createVoice } from './engine/voice.js';
 import { createLLM } from './engine/llm.js';
 import { createTalk } from './ui/talk.js';
@@ -139,6 +140,7 @@ const R = createRenderer(canvas, scene, camera, { fixedLevel: params.has('q') ? 
 const player = createPlayer(camera, canvas);
 const audio = createAudio();
 const hud = createHud();
+const titleScreen = createTitleScreen();   // the painted Bund behind the title; its gold line is the loading bar
 // people's voices: recorded clips per character (engine/voice.js); barks speak through the HUD
 const voice = createVoice({ audio, getLang, camera });
 hud.voice = voice; hud.audio = audio;
@@ -348,6 +350,7 @@ async function boot() {
   R.renderer.compile(scene, camera);
   mode = 'entry';
   hud.ready(lifeClock(life.clock.minute));
+  titleScreen.ready();
 }
 
 // ---- mode changes ----
@@ -1355,4 +1358,4 @@ Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   start() { noLock = true; if (mode === 'entry') begin(); },
 }));
 
-boot().catch((err) => { console.error(err); hud.fail(err); });
+boot().catch((err) => { console.error(err); titleScreen.fail(); hud.fail(err); });
