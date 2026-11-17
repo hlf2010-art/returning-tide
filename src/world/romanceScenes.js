@@ -21,6 +21,7 @@ import { createSeatedPose } from './driverPose.js';
 import { groundHeight, addDynamicCollider, L as LAY } from './layout.js';
 import { getLang } from '../ui/i18n.js';
 import { stamp, skipTo, clockText } from '../engine/life.js';
+import { slept } from '../engine/allot.js';
 import { ROMANCE, heart } from '../engine/hearts.js';
 import { CAST, ROMANCE_SCENES, ROMANCE_NAMES, presence, sceneScript, startScene, endScene, leftScene, takeNews, datesAhead, romanceStanding } from './romance.js';
 
@@ -133,7 +134,7 @@ export function createRomanceScenes({ scene, people, player, hud, audio = null, 
     save && save();
     if (r.cut) {                                                           // the evening ends upstairs: cut away to the morning
       if (c.seat && jazz && jazz.seated) jazz.stand();
-      travel(async () => { skipTo(l, r.cut.until); drop(c.who); player.teleport(MORNING.x, MORNING.z, MORNING.yaw, 0.02); if (player.stamina) { player.stamina.energy = 1; player.stamina.winded = 0; } save && save(); },
+      travel(async () => { slept(l, 7); skipTo(l, r.cut.until); drop(c.who); player.teleport(MORNING.x, MORNING.z, MORNING.yaw, 0.02); if (player.stamina) { player.stamina.energy = 1; player.stamina.winded = 0; } save && save(); },
         { line: `${P(r.cut.line)}`, down: 900, hold: 3600, up: 900 });
     } else if (c.seat) hud.toast(T('E 起身', 'E to stand up'), 3);
   }

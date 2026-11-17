@@ -15,6 +15,7 @@ import { createPerson } from './people.js';
 import { groundHeight, addDynamicCollider } from './layout.js';
 import { getLang } from '../ui/i18n.js';
 import { stamp, skipTo } from '../engine/life.js';
+import { logTime, slept } from '../engine/allot.js';
 import { studio, hasProduct, rev, fieldTest, anonTester, regularTester, isDusk, goesLeft, REGULARS } from '../engine/studio.js';
 import { REG, QUOTES, ISSUE_TEXT, PERSONA_NAME, quoteOf } from './work.js';
 import { createGimbalProp } from './props/gimbal.js';
@@ -94,7 +95,7 @@ export function createFieldTest({ scene, people, player, hud, audio = null, voic
       save && save(); return;
     }
     if (res.kind === 'day' || res.kind === 'same' || res.kind === 'none') { speak(c.name, res.kind === 'same' ? REG[reg].same : QUOTES.day[res.v || 0], where); if (res.kind === 'day') hud.toast(T('夜里用的东西，要夜里试。泛光灯 17:10 亮。', 'A thing for the night has to be tried at night. The floodlights come on at 5:10.'), 4.5); return; }
-    skipTo(L, stamp(L) + GO_MINUTES);
+    skipTo(L, stamp(L) + GO_MINUTES); logTime(L, 'make', GO_MINUTES);
     // a regular first says what they notice has changed, and whether you kept your word
     if (reg) {
       if (res.late) sayLater(c.name, REG[reg].late, c.at);

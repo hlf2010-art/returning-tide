@@ -9,6 +9,7 @@
 import { getLang } from './i18n.js';
 import { createSketchbook } from './sketchbook.js';
 import { clockText, stamp } from '../engine/life.js';
+import { logTime, slept } from '../engine/allot.js';
 import { level, maker, solderJoint, solderWindow } from '../engine/maker.js';
 import { gainSkill, skillLevel } from '../engine/skills.js';
 import { aiState, predictRun, canTrain, train, deploy, ACC_OK, LAT_OK, studio, hasProduct, rev, specs, summary, isOpen, eveningOf, todays, quotable, unwritten, canWrite, writePage, knownFixes, revise, setPrice, goesLeft, batteryLeft,
@@ -170,7 +171,7 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
     const L = L0(), ids = [...S.pick], r = revise(L, ids, S.where === 'desk' ? 'desk' : 'bench', { quality });
     S.solder = null;
     if (!r.ok) { S.note = T('这一版做不了。', "That version can't be made."); render(); return; }
-    S.pick.clear(); S.note = ''; save && save();
+    S.pick.clear(); S.note = ''; logTime(L, 'make', Math.round(r.hours * 60)); save && save();
     const names = ids.map((id) => P(FIX_TEXT[id])).join(T('；', '; '));
     const done = () => { render(); hud && hud.toast(T(`第 ${r.rev} 版：${names} · +${r.xp} 创客经验${r.levelUp ? ` · 升到创客 ${r.levelUp}` : ''}`, `Version ${r.rev}: ${names} · +${r.xp} Maker XP${r.levelUp ? ` · Maker ${r.levelUp}` : ''}`), 5); };
     if (pass) { root.classList.add('hidden'); pass(Math.round(r.hours * 60), T(`改第 ${r.rev} 版 · ${hoursText(r.hours)}`, `Making version ${r.rev} · ${hoursText(r.hours)}`), () => { if (S.open) root.classList.remove('hidden'); done(); }); }
@@ -187,7 +188,7 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
     if (b.dataset.ai) { const [k, v] = b.dataset.ai.split(':'); S.ai[k] = v; render(); return; }
     if (b.dataset.act === 'train') {
       const r = train(L, S.ai, skillLevel(L, 'ai')); if (!r.ok) return;
-      const g = gainSkill(L, 'ai', 30 + Math.round(r.run.acc * 40), 'train'); save && save();
+      const g = gainSkill(L, 'ai', 30 + Math.round(r.run.acc * 40), 'train'); logTime(L, 'make', Math.round(r.run.hours * 60)); save && save();
       const done = () => { render(); hud && hud.toast(T(`训练完了：夜间 ${Math.round(r.run.acc * 100)}% · ${r.run.ms} ms${r.run.ok ? ' · 跟得住' : ' · 还跟不住'} · +${g.xp} 软件与 AI${g.levelUp ? ` · 升到 ${g.levelUp} 级` : ''}`, `Trained: ${Math.round(r.run.acc * 100)}% at night · ${r.run.ms} ms${r.run.ok ? ' · it keeps up' : " · it won't keep up"} · +${g.xp} Software & AI${g.levelUp ? ` · level ${g.levelUp}` : ''}`), 5); };
       if (pass) { root.classList.add('hidden'); pass(Math.round(r.run.hours * 60), T(`标注、训练 · ${hoursText(r.run.hours)}`, `Labelling, training · ${hoursText(r.run.hours)}`), () => { if (S.open) root.classList.remove('hidden'); done(); }); } else done();
       return;

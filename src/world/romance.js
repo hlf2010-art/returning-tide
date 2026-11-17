@@ -16,6 +16,7 @@
 //   romanceStanding(L, who), romanceEpilogue(L)         for the journal and the ending card
 // State: life.flags.hearts only (hearts._ is the bookkeeping), plus facts on the year's ledger.
 import { post, stamp, skipTo, answerInvite } from '../engine/life.js';
+import { logTime, slept } from '../engine/allot.js';
 import { ROMANCE, heart, hearts, meet, feel, remember, recalls, seeing, contact, answered, ignored, mayWrite, availability, askResult, shared, foundOut, resolveRift, dayTick, leave, inLife, isSeeing, oneSided, standingOf } from '../engine/hearts.js';
 import { isYear, fact, factsAbout, lifeContext, actOf, rep } from '../engine/year.js';
 import { EN_HEARTS, EVENTS, meta, t, B, D, say, R, applyFx, openThread, askOut, invOf, done, tonightOr } from './romance/kit.js';
@@ -94,6 +95,7 @@ export function endScene(L, id) {
   shared(L, who, s.kind || 'talk', id);
   fact(L, s.kind === 'date' ? 'date' : 'met', { what: id }, [who]);
   if (s.pass) skipTo(L, stamp(L) + s.pass);
+  logTime(L, ROMANCE.includes(who) ? 'love' : 'friends', 60 + (s.pass || 0), who);   // (engine/allot.js: where the year's time went)
   let cut = null;
   if (M.night === who) {
     shared(L, who, 'night', `${who}-night`); fact(L, 'night', {}, [who]);

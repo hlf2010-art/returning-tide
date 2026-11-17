@@ -15,6 +15,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { colliders, addFloor, addDynamicCollider } from './layout.js';
 import { getLang } from '../ui/i18n.js';
 import { stamp, skipTo, clockText } from '../engine/life.js';
+import { logTime, slept } from '../engine/allot.js';
 import { isYear } from '../engine/year.js';
 import { passLine, hasFlat } from './career.js';
 
@@ -302,7 +303,7 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
       const now = stamp(l), tod = now % 1440, night = tod >= bedFrom(l) || tod < 5 * 60;
       const until = night ? (tod >= 5 * 60 ? now - tod + 1440 + 7 * 60 + 30 : now - tod + 7 * 60 + 30) : now + 40;
       const gap = night ? passLine(l, until, getLang()) : '';                           // a year game: weeks can pass in this night (world/career.js)
-      travel(async () => { skipTo(l, until); if (player.stamina) { player.stamina.energy = 1; player.stamina.winded = 0; } save && save(); },
+      travel(async () => { slept(l, (until - now) / 60); skipTo(l, until); if (player.stamina) { player.stamina.energy = 1; player.stamina.winded = 0; } save && save(); },
         { line: gap || (night ? T(`一夜好眠 · ${clockText(until)}`, `A good night's sleep · ${clockText(until)}`) : T(`躺了一会儿 · ${clockText(until)}`, `You lie down a while · ${clockText(until)}`)), hold: gap ? 2400 : night ? 1600 : 900 });
     } else if (id === 'uWindow' || id === 'uWindowB') {
       const lines = [

@@ -102,6 +102,8 @@ import { hasProduct, isDusk, studio as workState, summary as workSummary, goesLe
 import { createFieldTest, SPOTS as WORK_SPOTS } from './world/fieldTest.js';
 import { createWorkDesk } from './world/workDesk.js';
 import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
+import { createSeasonPlan } from './ui/season.js';
+import { timeVariant, timeAfterword } from './world/allotEvents.js';
 import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText } from './engine/year.js';
 import { runRomance, romanceCallChoice, guardTalk, ROMANCE_CALLS } from './world/romance.js';   // the five he might come to love (engine/hearts.js)
 import { createRomanceScenes } from './world/romanceScenes.js';
@@ -329,7 +331,7 @@ async function boot() {
   world.workDesk = createWorkDesk({ scene, player, getLife: () => life, onOpen: () => openWork('desk') });
   // the year (world/yearWorld.js): Marlowe Finch on IFC 28F, the flat he rents, days played as a card, the stall; arrivals at Lujiazui go through it
   world.year = createYearWorld({ scene, people, player, hud, audio, voice, travel, sceneTalk: world.sceneTalk, dests, getLife: () => life, save: () => saveLife(), lifeOn: params.get('life') !== '0',
-    freeze: (on) => { player.enabled = !on && mode === 'play'; if (on) { player.clearInput(); hud.prompt(false); } }, onWork: () => openWork('desk') });
+    freeze: (on) => { player.enabled = !on && mode === 'play'; if (on) { player.clearInput(); hud.prompt(false); } }, onWork: () => openWork('desk'), onSeason: (days, gap) => openSeason(days, gap) });
   places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk];
   places.push(world.year);
   // the five he might come to love, where their own days put them (world/romanceScenes.js): off for measurement tools unless ?hearts
@@ -747,6 +749,7 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (mode === 'journal') { if (k === 'KeyJ' || k === 'Escape') { journal.close(); e.preventDefault(); } return; }
+  if (mode === 'season') { season.key(k); e.preventDefault(); return; }
   if (mode === 'work') { workbook.key(k); e.preventDefault(); return; }                 // the notebook has the keys
   if (mode === 'map') { if (k === 'KeyM' || k === 'Escape') worldMap.close(); else worldMap.key(k); e.preventDefault(); return; }
   if (mode === 'drive') { if (world.driving.key(k)) e.preventDefault(); else if (k === 'Escape' && noLock) pause(); return; }
@@ -997,6 +1000,17 @@ function openJournal() {
 const workbook = createWorkbook({ getLife: () => life, save: () => saveLife(), hud, audio,
   onClose: () => { if (mode === 'work') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } },
   pass: (minutes, line, after) => travel(async () => { lifeSkipTo(life, lifeStamp(life) + minutes); saveLife(); questIn = 0; after(); }, { line, hold: 1100 }) });
+// weeks went by between two playable days: the season plan (ui/season.js), as soon as nothing else is on screen
+const season = createSeasonPlan({ getLife: () => life, save: () => saveLife(), hud });
+let pendingSeason = null;
+function openSeason(days, gap) { pendingSeason = { days, gap }; }
+function trySeason() {
+  if (!pendingSeason || mode !== 'play' || phone.inCall) return;
+  const { days, gap } = pendingSeason; pendingSeason = null;
+  mode = 'season'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
+  try { document.exitPointerLock(); } catch { /* not locked */ }
+  season.open(days, gap, () => { if (mode === 'season') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } saveLife(); });
+}
 function openWork(where = 'read', tab = null) {
   if (mode !== 'play') return;
   mode = 'work'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
@@ -1010,12 +1024,14 @@ const journal = createJournal({
 });
 // an ending: the card, then the Bund goes on
 function showEnding(id) {
-  const e = endingOf(life, id); if (!e) return;                                  // (a year game tells the same six endings in the year's terms)
+  const e0 = endingOf(life, id); if (!e0) return;                                 // (a year game tells the same six endings in the year's terms)
+  const v = timeVariant(life), e = v ? { title: v.title, text: { zh: `${e0.text.zh}\n\n${v.text.zh}`, en: `${e0.text.en}\n\n${v.text.en}` } } : e0;   // where the year's time went (world/allotEvents.js)
   const from = mode; mode = 'ending'; player.enabled = false; player.clearInput();
   try { document.exitPointerLock(); } catch { /* not locked */ }
   audio.cue && audio.cue('chime', 0, 0.6);
-  journal.ending(e, () => { mode = from === 'ending' ? 'play' : 'play'; player.enabled = true; player.clearInput(); lock(); saveLife(); }, endingAfterword(life, id, workEpilogue(life, id)));
+  journal.ending(e, () => { mode = from === 'ending' ? 'play' : 'play'; player.enabled = true; player.clearInput(); lock(); saveLife(); }, withTime(endingAfterword(life, id, workEpilogue(life, id))));
 }
+function withTime(a) { const t = timeAfterword(life); if (!t) return a; return a ? { zh: `${a.zh}${t.zh}`, en: `${a.en} ${t.en}` } : t; }
 function updateLife(dt) {
   if (mode !== 'play' && mode !== 'ride' && mode !== 'sale' && mode !== 'sale-seat' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
   lifeAdvance(life, dt);
@@ -1027,6 +1043,7 @@ function updateLife(dt) {
   if (world && world.belongings) world.belongings.step(dt, events);
   if (world && world.carSale) updateCarSale(events);
   // calls wait until you're not in the middle of something else
+  trySeason();
   if (pendingCalls.length && mode === 'play' && !phone.inCall) { const c = pendingCalls.shift(); phone.ring(c.script); }
   const mo = life.flags.mannerOrder;
   if (mo && !mo.notified && lifeStamp(life) >= mo.ready) {

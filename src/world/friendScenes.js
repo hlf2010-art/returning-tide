@@ -16,6 +16,7 @@ import { AIA } from './interiors.js';
 import { SIX } from './hotelUpper.js';
 import { getLang } from '../ui/i18n.js';
 import { stamp, nudge, post } from '../engine/life.js';
+import { logTime, slept } from '../engine/allot.js';
 import { maker, owns, gainXp, achieve } from '../engine/maker.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -66,7 +67,7 @@ export function createFriendScenes({ scene, people, hud, audio, voice, getLife, 
   }
   function ruoanDone(scanned) {
     const l = L0(), inv = ruoanInv(); if (!inv || inv.kept) return;
-    inv.kept = true; nudge(l, 'ruoan', scanned ? 7 : 3, `kept:ruoan-aia${scanned ? ':scan' : ''}`);
+    inv.kept = true; logTime(l, 'friends', 75, 'ruoan'); nudge(l, 'ruoan', scanned ? 7 : 3, `kept:ruoan-aia${scanned ? ':scan' : ''}`);
     S.ruoan.phase = 'done';
     if (scanned) { say(T('许若安', 'Ruoan'), 'ruoan', '……你知道这省了我们多少事吗？两周的测绘。下次请你吃饭，我请。', "...Do you know how much work that just saved us? Two weeks of measuring. Dinner's on me next time.", 5, ruoanHead()); gainXp(l, 80, 'ruoan:scan'); }
     else { say(T('许若安', 'Ruoan'), 'ruoan', '每一格都是手工做的，九十多年了。……要是有台便携的激光雷达就好了，我们量了三个礼拜。', "Every one of those coffers was made by hand, ninety-odd years ago. ...If only we had a portable LiDAR. We've been measuring for three weeks.", 6, ruoanHead()); l.flags.ruoanWantsLidar = true; }

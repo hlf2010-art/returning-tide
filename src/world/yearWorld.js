@@ -22,6 +22,7 @@ import { colliders, addFloor, addDynamicCollider, stall as STALL_SPOT, L as LAYO
 import { createPerson } from './people.js';
 import { getLang } from '../ui/i18n.js';
 import { stamp, skipTo, pay, clockText } from '../engine/life.js';
+import { logTime, slept } from '../engine/allot.js';
 import { DESTINATIONS, dest, fare } from '../engine/ride.js';
 import { isYear, career, actOf } from '../engine/year.js';
 import { PICKUP } from './didi.js';
@@ -75,7 +76,7 @@ function syncDestinations(L) {
   want('hongqiao', yr && career(L).track === 'family', () => ({ id: 'hongqiao', zh: '虹桥火车站（高铁去南京）', en: 'Hongqiao Station (trains to Nanjing)', km: 18.5, mins: 38, walkIn: true }));
 }
 
-export function createYearWorld({ scene, people, player, hud, audio, voice = null, travel, sceneTalk, dests, getLife, save, freeze = () => {}, onWork = null, lifeOn = true }) {
+export function createYearWorld({ scene, people, player, hud, audio, voice = null, travel, sceneTalk, dests, getLife, save, freeze = () => {}, onWork = null, onSeason = null, lifeOn = true }) {
   Object.assign(sceneTalk.names, CAREER_NAMES);
   const groups = {}, ppl = {}, L0 = () => getLife();
   let here = null, flatId = null, running = null, card = null, beatIn = 0, chipIn = 0, hintAt = 0, f32 = null;
@@ -310,7 +311,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     const L = L0(), now = stamp(L), tod = now % 1440;
     const until = night ? (tod >= 5 * 60 ? now - tod + 1440 + 7 * 60 + 30 : now - tod + 7 * 60 + 30) : now + 40;
     const gap = passLine(L, until, getLang());
-    travel(async () => { skipTo(L, until); if (night) work(L).sleptHome = true; if (player.stamina) { player.stamina.energy = 1; player.stamina.winded = 0; } save && save(); },
+    travel(async () => { slept(L, (until - now) / 60); skipTo(L, until); if (night) work(L).sleptHome = true; if (player.stamina) { player.stamina.energy = 1; player.stamina.winded = 0; } save && save(); },
       { line: night ? (gap || T(`一夜好眠 · ${clockText(until)}`, `A good night's sleep · ${clockText(until)}`)) : T(`躺了一会儿 · ${clockText(until)}`, `You lie down a while · ${clockText(until)}`), hold: night ? (gap ? 2400 : 1600) : 900 });
   }
   const nightNow = (L) => { const tod = stamp(L) % 1440; return tod >= 18 * 60 + 30 || tod < 5 * 60; };
@@ -332,6 +333,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     if (r.absent.length) bits.push(T(`缺勤 ${r.absent.length} 天`, `${r.absent.length} working ${r.absent.length === 1 ? 'day' : 'days'} missed`));
     if (r.act) hud.achievement(T(r.act.zh, r.act.en), shortDate(L, lang));
     hud.toast(bits.join(' · '), r.days > 1 || sal || rent ? 8 : 4);
+    if (r.days >= 14 && onSeason) onSeason(r.days, TB(r.gap));          // weeks went by: how were the evenings spent? (ui/season.js)
     hintAt = performance.now() + (r.days > 1 ? 9000 : 5000);
     save && save();
   }
@@ -376,8 +378,8 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
       if (running) hud.toast(T('先把眼前的事谈完。', 'Finish what is in front of you first.'), 2.4);
       else if (rec.full) hud.toast(T('今天的活干完了。', "Today's work is done."), 2.4);
       else if (!t || !t.done) hud.toast(id === 'yDesk' ? T('你的电脑，你的工牌，一盆别人留下的绿萝。', 'Your laptop, your badge, a pothos somebody left behind.') : T('靠窗的两张桌子。', 'Two desks by the window.'), 3);
-      else if (id === 'yDesk32') { skipTo(L, workFull(L)); const sc = dests.scene; if (sc) sc.done = false; f32 = null; save && save(); dests.leave(); }
-      else { const until = workFull(L); travel(async () => { skipTo(L, until); save && save(); }, { line: T(`干到下班 · ${clockText(until)}`, `You work on to the evening · ${clockText(until)}`), hold: 1300 }); }
+      else if (id === 'yDesk32') { logTime(L, 'work', Math.max(0, workFull(L) - stamp(L))); skipTo(L, workFull(L)); const sc = dests.scene; if (sc) sc.done = false; f32 = null; save && save(); dests.leave(); }
+      else { const until = workFull(L); travel(async () => { logTime(L, 'work', Math.max(0, until - stamp(L))); skipTo(L, until); save && save(); }, { line: T(`干到下班 · ${clockText(until)}`, `You work on to the evening · ${clockText(until)}`), hold: 1300 }); }
     } else if (id === 'yCoffee') { audio && audio.cue && audio.cue('ping', 0, 0.2); hud.toast(T('美式，纸杯。茶水间是这层楼消息最灵的地方。', 'An americano in a paper cup. The pantry is the best-informed place on the floor.'), 3.2); }
     else if (id === 'yWindow') hud.toast(T('隔着江，是你每天早上出门的那一排老楼。从这儿看，很小。', 'Across the river, the row of old buildings you leave every morning. From here they are small.'), 4);
     else if (id === 'yBed') sleep(nightNow(L));

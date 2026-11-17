@@ -13,6 +13,7 @@ import { L, colliders } from './layout.js';
 import { createPerson } from './people.js';
 import { getLang } from '../ui/i18n.js';
 import { stamp, skipTo, pay } from '../engine/life.js';
+import { logTime, slept } from '../engine/allot.js';
 import { fare, dest } from '../engine/ride.js';
 import { PICKUP } from './didi.js';
 import { PARTS, BLUEPRINTS, PERKS, maker, level, nextLevelAt, canBuild, buyPart, startBuild, finishBuild, solderJoint, solderWindow } from '../engine/maker.js';
@@ -160,7 +161,7 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
     const l = L0(), s = startBuild(l, id); if (!s.ok) return;
     S.building = s.build; save && save();
     el.classList.remove('on');
-    travel(async () => { skipTo(l, stamp(l) + 40); }, { line: T('3D 打印外壳 · 四十分钟', '3D printing the housing · forty minutes'), hold: 900, to: 'build' });
+    travel(async () => { skipTo(l, stamp(l) + 40); logTime(l, 'make', 40); }, { line: T('3D 打印外壳 · 四十分钟', '3D printing the housing · forty minutes'), hold: 900, to: 'build' });
     setTimeout(() => { S.step = 'solder'; S.joints = []; S.phase = 0; el.classList.add('on'); render(); }, 2400);
   }
   function solder() {
