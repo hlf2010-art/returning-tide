@@ -5,7 +5,8 @@
 //   switched     Yushen Technology: an in-house product, a planner on a night shift, his own number
 //   startup      his own company, at two borrowed desks on IFC 32F beside the robot-arm team
 //   family       back at his father's works in Nanjing: the line, Old Qin, an audit
-// Extra answer fields here: su { cash, burn, customer, hire, ... } changes to the start-up's books.
+// Extra answer fields here: su { cash, burn, customer, hire, ... } changes to the start-up's books;
+// sk { ai, product, hw } is what the work teaches him (engine/skills.js), as in careerScenes.js.
 import { FIRM, NEWCO, WORKS } from './careerScenes.js';
 const B = (zh, en) => ({ zh, en });
 const F32 = B('陆家嘴 · 国金中心二期 32 层 · 借来的两张桌子', 'Lujiazui · IFC Tower 2, 32F · two borrowed desks');
@@ -26,7 +27,7 @@ export const ROADS = {
         ['zhiwei', S.memo === 'sign' ? '东澜二期，理赔员工作台。你现在是高级顾问了，这一块你带。' : '东澜二期，理赔员工作台。职级没动，但这一块你带，对客户你就是负责人。', S.memo === 'sign' ? "Donglan, phase two: the adjusters' workbench. You are a senior consultant now. This workstream is yours." : "Donglan, phase two: the adjusters' workbench. Your grade hasn't moved, but the workstream is yours. To the client you are the lead."],
         ['zhiwei', '一期的使用率是三成四。理赔员宁可自己翻材料，也不点“采纳建议”。', "Adoption in phase one was thirty-four per cent. The adjusters would sooner go through the papers themselves than click 'accept'."],
         { ask: [
-          { zh: '给我两周，我去理赔中心坐着，跟他们一起办案。先弄明白他们不信它哪一点。', en: "Give me two weeks. I'll sit in the claims centre and work cases with them. First I want to know exactly what they don't trust.", s: 2, r: 3, zw: 2, k: 'cShadow',
+          { zh: '给我两周，我去理赔中心坐着，跟他们一起办案。先弄明白他们不信它哪一点。', en: "Give me two weeks. I'll sit in the claims centre and work cases with them. First I want to know exactly what they don't trust.", s: 2, r: 3, zw: 2, k: 'cShadow', sk: { product: 40 },
             then: [['zhiwei', '两周没有产出，Raymond 会问。我替你顶着。', "Two weeks without a deliverable and Raymond will ask. I'll hold him off."]] },
           { zh: '冯总要的是看板。先把使用率看板做出来，按人排名。', en: 'Ms Feng wants a dashboard. Build the adoption dashboard first, ranked by adjuster.', s: 2, r: -1, k: 'cDashboard',
             then: [['zhiwei', '排名。他们会点的，点完照样不信。', 'A ranking. They will click, then. And go on not trusting it.']] },
@@ -59,7 +60,7 @@ export const ROADS = {
         ['feng', '工作台的效果我认。结案六天半了。所以理赔中心明年编制减四十个人，方案你们来写，写成“AI 提效的自然结果”。', "I grant you the workbench works. Six and a half days to close. So the claims centre loses forty posts next year, and you will write the plan. Call it 'the natural result of AI efficiency'."],
         [null, '（那两周，你坐在其中几个人旁边。）', '(For two weeks you sat next to some of those people.)'],
         { ask: [
-          { zh: '我可以写另一份：这四十个人转去做复核和疑难案件，把错拒率再降一半。算给您看，比裁掉省得多。', en: "I can write a different plan. Those forty move to review and to the hard cases, and the wrongful-rejection rate halves again. I'll show you the sums: it saves more than cutting them.", s: 1, r: 4, zw: 2, k: ['forty', 'redeploy'],
+          { zh: '我可以写另一份：这四十个人转去做复核和疑难案件，把错拒率再降一半。算给您看，比裁掉省得多。', en: "I can write a different plan. Those forty move to review and to the hard cases, and the wrongful-rejection rate halves again. I'll show you the sums: it saves more than cutting them.", s: 1, r: 4, zw: 2, k: ['forty', 'redeploy'], sk: { product: 20 },
             then: [['feng', '……把数算清楚。算得过来，我拿去董事会。', '...Get the numbers straight. If they add up I will take it to the board.']] },
           { zh: '这是东澜自己的人事决定。我们只提供数据。', en: "That is Donglan's own staffing decision. We only supply the data.", s: 1, k: ['forty', 'data'], then: [['feng', '那就把数据给我。', 'Then give me the data.']] },
           { zh: '好，我来写。', en: "All right. I'll write it.", s: 3, r: -2, zw: -2, k: ['forty', 'wrote'], then: [['partner', '这就是二期的续约。', 'And there is our renewal for phase two.']] },
@@ -87,7 +88,7 @@ export const ROADS = {
         ['gu', '欢迎。这儿没有 deck，只有版本号。产品叫“排产助手”：中小工厂的计划员，每天早上靠 Excel 和电话排当天的生产，我们想让他问一句话就行。', 'Welcome. No decks here, only version numbers. The product is the scheduling assistant: in a mid-sized factory the planner builds the day\'s production every morning out of Excel and phone calls. We want that to be one question.'],
         ['sheng', '七月有工博会。我要一个能在展台上跑的演示，要炫。', 'There is the industry fair in July. I want a demo that runs on the stand, and I want it to dazzle.'],
         { ask: [
-          { zh: '演示我做。但先给我两周，去一家客户的车间，跟计划员一起排两周的产。', en: "I'll build the demo. But first give me two weeks on a customer's shop floor, scheduling alongside their planner.", s: 1, r: 3, rel: { gu: 2 }, k: 'nFloor',
+          { zh: '演示我做。但先给我两周，去一家客户的车间，跟计划员一起排两周的产。', en: "I'll build the demo. But first give me two weeks on a customer's shop floor, scheduling alongside their planner.", s: 1, r: 3, rel: { gu: 2 }, k: 'nFloor', sk: { product: 40 },
             then: [['sheng', '两周？……顾磊说你就是这种人。去吧，昆山那家注塑厂。', "Two weeks? ...Gu Lei said this is what you're like. Go on, then. The injection-moulding plant in Kunshan."]] },
           { zh: '明白。展会优先，演示我两周出来。', en: 'Understood. The fair comes first. You will have the demo in two weeks.', s: 3, k: 'nDemo', then: [['sheng', '这才对。', "That's more like it."]] },
         ] },
@@ -112,7 +113,7 @@ export const ROADS = {
         ['planner', '（电话）我当时点了“不同意”，系统让我填理由，填完它还是按自己的排。那我还填它干什么？', '(On the phone) I clicked "disagree". It made me type a reason, and then scheduled its own way regardless. So what was I typing for?'],
         ['sheng', '“全自动排产”是我们的卖点。加一个人工否决，卖点就没了。', '"Fully automatic scheduling" is what we sell. Add a human veto and there is nothing left to sell.'],
         { ask: [
-          { zh: '计划员说了算，系统记下他为什么改。卖点换一个：“越用越像你们厂自己的老计划员”。这批废品，本来不该有。', en: 'The planner has the last word, and the system records why he changed it. Sell something else: "the longer you use it, the more it plans like your own best planner." This scrap should never have happened.', r: 4, rel: { gu: 3, sheng: -2 }, k: ['veto', 'human'],
+          { zh: '计划员说了算，系统记下他为什么改。卖点换一个：“越用越像你们厂自己的老计划员”。这批废品，本来不该有。', en: 'The planner has the last word, and the system records why he changed it. Sell something else: "the longer you use it, the more it plans like your own best planner." This scrap should never have happened.', r: 4, rel: { gu: 3, sheng: -2 }, k: ['veto', 'human'], sk: { product: 30, ai: 20 },
             then: [['sheng', '……顾磊，你招的人，跟你一个脾气。给你们一个版本的时间。', '...Gu Lei, you hired a man with your own temper. You have one release to prove it.']] },
           { zh: '保留全自动，但加安全规则：人手不够的班次不排急单。', en: 'Keep it fully automatic, but add safety rules: no rush orders onto a short-handed shift.', s: 2, k: ['veto', 'rules'], then: [['gu', '规则能挡住这一次。下一次是我们想不到的。', 'A rule stops this one. The next one will be something we never thought of.']] },
           { zh: '盛总说得对，卖点不能动。让实施团队去培训他们。', en: 'Mr Sheng is right: the selling point stays. Have the implementation team train them.', s: 3, r: -3, rel: { gu: -3 }, k: ['veto', 'none'], then: [['planner', '（电话已经挂了。）', '(He has already hung up.)']] },
@@ -144,11 +145,11 @@ export const ROADS = {
           ['xuan', '注册资本认缴一百万，先实缴三十万进公司账户。这是你自己的钱，想好。', 'Registered capital of a million, three hundred thousand of it paid in now, into the company account. It is your own money. Be sure.'],
           ['xuan', '然后是最要紧的：做什么？', 'And then the thing that matters most. What does it make?'],
           { ask: [
-            { zh: '产线质检。模型看得出缺陷，更要说得清为什么判废：老师傅信了，才会用。', en: 'Quality inspection on production lines. A model that sees the defect and, more to the point, can say why it rejected the part. The old hands will only use it once they believe it.', su: { product: 'qc' },
+            { zh: '产线质检。模型看得出缺陷，更要说得清为什么判废：老师傅信了，才会用。', en: 'Quality inspection on production lines. A model that sees the defect and, more to the point, can say why it rejected the part. The old hands will only use it once they believe it.', su: { product: 'qc' }, sk: { ai: 20, hw: 20 },
               then: [['founder', '我们的机械臂末端正好缺一双眼睛。', 'The end of our arm happens to be missing a pair of eyes.'], ['xuan', '制造业，客单价高，回款慢。你爸那边……算了，你自己定。', "Manufacturing: big tickets, slow payers. Your father's place... never mind. Your call."]] },
-            { zh: '理赔复核。把我在东澜没做成的那件事做完：每一个拒赔，后面都站着一个人。', en: 'Claims review. To finish what I could not finish at Donglan: behind every rejection, a person.', su: { product: 'claims' },
+            { zh: '理赔复核。把我在东澜没做成的那件事做完：每一个拒赔，后面都站着一个人。', en: 'Claims review. To finish what I could not finish at Donglan: behind every rejection, a person.', su: { product: 'claims' }, sk: { ai: 20, product: 20 },
               then: [['xuan', '保险公司采购要走半年。你的钱够烧到那时候吗？', 'An insurer takes six months to buy anything. Does your money last that long?']] },
-            { zh: '设备对话台。操作工一句话，机械臂就知道干什么。先从周学长的臂做起。', en: "A talking console for machines. The operator says a sentence and the arm knows what to do. Starting with Zhou's arm.", su: { product: 'console' },
+            { zh: '设备对话台。操作工一句话，机械臂就知道干什么。先从周学长的臂做起。', en: "A talking console for machines. The operator says a sentence and the arm knows what to do. Starting with Zhou's arm.", su: { product: 'console' }, sk: { ai: 20, hw: 20 },
               then: [['founder', '那我就是你第一个客户了。先说好，我们也没钱。', "Then I am your first customer. Fair warning: we haven't any money either."]] },
           ] },
         ],
@@ -226,9 +227,9 @@ export const ROADS = {
         ['qin', '系统说我们上个月合格率 99.2%。实际返工的件堆了半个车间。它只认扫码，不认人拿去返修又放回来。', 'The system says our pass rate last month was 99.2 per cent. In fact the rework is stacked across half the shop. It only knows a scan. It doesn\'t know a man took the part away, reworked it and put it back.'],
         ['dad', '你在外面给别人做这个。给自己家做，会不会？', 'You do this for other people out there. Can you do it for your own family?'],
         { ask: [
-          { zh: '先不动系统。给我两周，我跟夜班，从上料跟到包装，看数据是在哪一步开始说假话的。', en: "I won't touch the system yet. Give me two weeks on the night shift, from loading to packing, to see at which step the data starts to lie.", r: 2, rel: { qin: 5, dad: 2 }, k: 'fFloor',
+          { zh: '先不动系统。给我两周，我跟夜班，从上料跟到包装，看数据是在哪一步开始说假话的。', en: "I won't touch the system yet. Give me two weeks on the night shift, from loading to packing, to see at which step the data starts to lie.", r: 2, rel: { qin: 5, dad: 2 }, k: 'fFloor', sk: { product: 30 },
             then: [['qin', '跟夜班？你爸当年也跟过。', 'The night shift? Your father worked it once, too.'], ['dad', '……工作服去仓库领。', '...Get overalls from the stores.']] },
-          { zh: '我先把半年的数据导出来分析，一周给你一份报告。', en: "I'll export six months of data and analyse it first. You will have a report in a week.", rel: { qin: -2, dad: 0 }, k: 'fReport',
+          { zh: '我先把半年的数据导出来分析，一周给你一份报告。', en: "I'll export six months of data and analyse it first. You will have a report in a week.", rel: { qin: -2, dad: 0 }, k: 'fReport', sk: { ai: 20 },
             then: [['qin', '又是报告。', 'Another report.']] },
           { zh: '系统选型就错了。应该换一套。', en: 'The system was the wrong choice to begin with. It should be replaced.', rel: { dad: -4, qin: -1 }, k: 'fReplace',
             then: [['dad', '两百万，我签的字。你回来第一天，就说我签错了。', 'Two million. I signed for it. And on your first day back you tell me I signed wrong.']] },
@@ -240,7 +241,7 @@ export const ROADS = {
         ['operator', '不贴，这个月的计件就没了。纪工，你说怎么办。', "If we don't, there go this month's piece rates. Engineer Ji, you tell us what to do."],
         ['dad', '两百万的设备，贴胶带。谁贴的，报上来。', 'A two-million machine with tape on it. I want the names of whoever did it.'],
         { ask: [
-          { zh: '爸，先别查人。他们贴得对：这个工位在误判。停它三天，我和秦师傅把光源和阈值重新标定，误判记在我头上，不扣他们计件。', en: "Dad, no names yet. They were right to tape it: the station is misjudging. Shut it for three days. Old Qin and I recalibrate the lighting and the thresholds. The false rejects go on my account, not on their piece rates.", r: 2, rel: { qin: 5, dad: 1 }, k: ['tape', 'workers'],
+          { zh: '爸，先别查人。他们贴得对：这个工位在误判。停它三天，我和秦师傅把光源和阈值重新标定，误判记在我头上，不扣他们计件。', en: "Dad, no names yet. They were right to tape it: the station is misjudging. Shut it for three days. Old Qin and I recalibrate the lighting and the thresholds. The false rejects go on my account, not on their piece rates.", r: 2, rel: { qin: 5, dad: 1 }, k: ['tape', 'workers'], sk: { hw: 30, ai: 30 },
             then: [['dad', '……三天。三天以后还误判，胶带你自己去贴。', '...Three days. And if it is still misjudging after three days, you can put the tape on yourself.'], ['operator', '纪工，夜里标定我留下帮你。', "Engineer Ji, I'll stay on tonight and help you calibrate."]] },
           { zh: '胶带撕掉，工位照开。今晚我来调参数。', en: "The tape comes off and the station keeps running. I'll tune the parameters tonight.", rel: { qin: -1, dad: 2 }, k: ['tape', 'tune'],
             then: [['qin', '照开，今晚又要停线。', 'Keep it running and the line stops again tonight.']] },
@@ -253,7 +254,7 @@ export const ROADS = {
         ['dad', '主机厂来审核了。九十天之内，每个壳体要能追到哪台机床、哪把刀、哪个人、哪一炉料。做不到，订单给韩家。', "The carmaker's auditors have been. Within ninety days every housing must trace back to its machine, its tool, its operator and its melt. If we cannot, the order goes to the Hans."],
         ['qin', '你原来那家公司来报过价。八百万，十个月。', 'That firm you used to work for sent a quotation. Eight million. Ten months.'],
         { ask: [
-          { zh: '不用八百万。每个夹具贴二维码，每个工位一台平板，扫码绑定。土办法，六周，三十万以内。我带着夜班的人一起做。', en: 'It does not need eight million. A QR code on every fixture, a tablet at every station, scan to bind. Rough and ready: six weeks, under three hundred thousand. I do it with the night shift.', r: 4, rel: { dad: 5, qin: 3 }, k: ['audit', 'frugal'],
+          { zh: '不用八百万。每个夹具贴二维码，每个工位一台平板，扫码绑定。土办法，六周，三十万以内。我带着夜班的人一起做。', en: 'It does not need eight million. A QR code on every fixture, a tablet at every station, scan to bind. Rough and ready: six weeks, under three hundred thousand. I do it with the night shift.', r: 4, rel: { dad: 5, qin: 3 }, k: ['audit', 'frugal'], sk: { product: 20, hw: 20 },
             then: [['dad', '……土办法。我那时候追料，是拿粉笔在毛坯上写炉号。', '...Rough and ready. In my day we traced a melt by chalking the heat number on the blank.'], ['qin', '平板别买太贵的，车间油大。', 'Don\'t buy dear tablets. The shop is oily.']] },
           { zh: '请专业公司做。这种事不能省，我去把价格谈下来。', en: "Bring in a proper firm. This is not a place to economise. I'll negotiate the price down.", rel: { dad: -1 }, k: ['audit', 'vendor'],
             then: [['dad', '十个月。九十天，你拿什么交？', 'Ten months. What do you hand over at ninety days?']] },

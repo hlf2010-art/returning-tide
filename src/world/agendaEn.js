@@ -39,6 +39,11 @@ export const EN = {
   "……行，冷漠的资本家": "...Fine, heartless capitalist",
   "谢了兄弟🙏 你的充电器我先借走了，下次还你（大概）": "Thanks bro 🙏 I've borrowed your charger, will give it back (probably)",
   "我发了个视频：白白的车在外滩，配了我的钢琴。一晚上80万播放🔥 你多了好几千粉丝，不用谢": "I posted a video: Baibai's car on the Bund, with my piano over it. 800k plays overnight 🔥 You've got thousands of new followers. You're welcome",
+  "周五客户和投资人都来看演示。学长说今天的主角是你那个模型，你来压个场？": "The customer and the investors are coming to the demo on Friday. Zhou says the star of the show is your model. Come and back us up?",
+  // the morning after the review, if what he offered was software he'd write (world/story.js ARM_NEWS)
+  "学长让我转给你：日志一跑就对上了，每次掉件前三十毫秒都是转腕的冲击峰。你那个抓取点模型今早上了，掉件率从一成二降到不到百分之一。": "Zhou asked me to pass this on: the logs matched straight away. Every drop comes thirty milliseconds after the peak jerk on the wrist turn. Your grasp-point model went on this morning, and drops are down from twelve per cent to under one.",
+  "学长说你那个抓取点模型今早上了，掉件率从一成二降到不到百分之一。他问你半夜三点发代码是不是硅谷的习惯。": "Zhou says your grasp-point model went on this morning, and drops are down from twelve per cent to under one. He wants to know whether sending code at three in the morning is a Silicon Valley habit.",
+  "小唐把压电薄膜贴进指尖了，你那个模型在单片机上跑，四毫秒一次。抹了油的件，一个没掉。学长说要请你吃饭。": "Tang has stuck the piezo film into the fingertips, and your model runs on the microcontroller, four milliseconds a pass. Oiled parts, and not one dropped. Zhou says dinner's on him.",
   "学长说换了指垫以后一个都没掉！周五客户和投资人都来看演示，你来压个场？": "Zhou says with the new pads it hasn't dropped a single one! The customer and the investors are coming to the demo on Friday. Come and back us up?",
   "机械臂演示日": "Robot-arm demo day",
   "周五下午三点，IFC 32楼。": "Friday, 3 pm, IFC 32nd floor.",

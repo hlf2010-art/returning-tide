@@ -6,11 +6,29 @@
   business (bearing housings, then EV drivetrain parts) from one workshop in Jiangning and expects
   him to take it over. His mother, 周岚 Zhou Lan, is a cardiologist at Gulou Hospital. An only child.
 - **Education:** UC Berkeley, B.A. in Cognitive Science: human-computer interaction, AI, product
-  development.
-- **Before:** a few years in Silicon Valley's tech industry, building AI products. He came back
-  with savings and some cashed-out stock, not a fortune.
+  development. He took the machine-learning and systems courses the CS majors took, and spent
+  his evenings in the Invention Lab.
+- **Before:** a few years in Silicon Valley's tech industry, building AI products end to end: the
+  data pipelines, the models, getting them small enough to run on a device, and later the agents
+  that act on a user's behalf. He came back with savings and some cashed-out stock, not a fortune.
 - **Now:** he joins an international technology consulting firm in Lujiazui, working on enterprise
   AI products and digital transformation. (The firm is invented.)
+- **What he can do (a 2026 kind of engineer):** three things at once, and the interesting work is
+  where they meet (`src/engine/skills.js`):
+  - *Software & AI* (软件与 AI): Python, firmware in C, data collection and labelling, training and
+    evaluating small models, quantising them for on-device inference (an NPU, a microcontroller),
+    multimodal models and agents. He lands strong here (level 4 of 5).
+  - *Product* (产品): watching people use a thing, turning complaints into problems, deciding what
+    not to build. He lands at level 3.
+  - *Hardware* (硬件, the Maker XP): soldering, 3D printing, mechanisms, sensors. He was good at the
+    bench at Berkeley and hasn't touched one in three years: he lands rusty (level 1), and the
+    Yangpu makerspace is where it comes back.
+  - Together: the robot arm's dropped parts (`src/world/destScripts.js`) can be answered at the
+    bench (softer pads), with data (log the motors at a kilohertz), with a sensor and a model
+    (a slip sensor in the fingertip, a small model on the controller), with vision (a grasp-point
+    model), or as a product question (does the customer need forty a minute?). At the firm he
+    builds a real agent for a bank's back office instead of a click-through, argues for models
+    that run where the data lives, and puts evaluation before any number in a deck.
 - **The premise:** he has given himself one year to establish a life of his own in Shanghai before
   a dinner with his father at the Peace Hotel. The year is played as 17 days in five acts
   (`src/engine/year.js`): New Beginnings, Corporate Reality, Turning Point, Building a Life, The
@@ -19,8 +37,9 @@
 - **Temperament:** quick, funny, impatient with anything slow. He fixes things that aren't his to
   fix. Generous without being careless. He hates being "the rich kid". Good with systems and worse
   with people he loves.
-- **What he makes:** he still builds things in his spare time at a rented bench in Yangpu. The
-  night gimbal (`src/engine/studio.js`) is that side of him: optional, and his own.
+- **What he makes:** he still builds things in his spare time at a rented bench in Yangpu: hardware
+  with software in it, the board and the model on the board. The night gimbal
+  (`src/engine/studio.js`) is that side of him: optional, and his own.
 - **Look:** 1.80 m, lean. Dark grey technical jacket, black jeans, white trainers, a cheap steel
   watch he refuses to replace. (The player body is Rocketbox Male_Adult_07; only his hands are seen.)
 - **Before he was twelve** he spent every summer at Old Zhou's watch-repair stall on Hankou Road.

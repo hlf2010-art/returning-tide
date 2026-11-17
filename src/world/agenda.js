@@ -4,6 +4,7 @@
 import { post, invite, thread, stamp, nudge, relation, emit, answerInvite } from '../engine/life.js';
 import { maker, addParts, gainFollowers } from '../engine/maker.js';
 import { GROUP, PEOPLE } from './cast.js';
+import { armRoute } from './destScripts.js';
 
 const D = (day, h, m = 0) => day * 1440 + h * 60 + m;           // absolute minute
 
@@ -104,7 +105,7 @@ BEATS.push(
   } },
   // Xuan: the demo, if you said you'd advise
   { id: 'x2', when: D(3, 10, 0), if: (L) => said(L, 'lujiazui', 'advisor'), run: (L) => {
-    post(L, 'xuan', { from: 'xuan', kind: 'text', text: '学长说换了指垫以后一个都没掉！周五客户和投资人都来看演示，你来压个场？' });
+    post(L, 'xuan', { from: 'xuan', kind: 'text', text: armRoute(L).code ? '周五客户和投资人都来看演示。学长说今天的主角是你那个模型，你来压个场？' : '学长说换了指垫以后一个都没掉！周五客户和投资人都来看演示，你来压个场？' });
     invite(L, { id: 'xuan-demo', from: 'xuan', thread: 'xuan', title: '机械臂演示日', place: '陆家嘴 IFC 二期 32F', at: D(5, 15, 0), deadline: D(5, 12, 0), text: '周五下午三点，IFC 32楼。', onAccept: 5, onDecline: -2, onMiss: -5, yesText: '去', noText: '周五有事' });
   } },
   { id: 'x2b', when: D(3, 10, 0), if: (L) => !said(L, 'lujiazui', 'advisor') && L.invites.some((i) => i.id === 'xuan-arm' && i.kept), run: (L) => post(L, 'xuan', { from: 'xuan', kind: 'text', text: '上次谢了。学长说你那句话点醒他了。顾问的事你再想想？' }) },

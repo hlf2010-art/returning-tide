@@ -15,6 +15,7 @@ import { isYear, year, DATES, FINAL_DAY, dateOf, actOf, isWorkday, gapText, sett
 import { feel, meet } from '../engine/hearts.js';
 import { FIRM_SCENES, FIRM, NEWCO, WORKS, CLIENT, CAREER_NAMES } from './careerScenes.js';
 import { ROADS, STARTUP_NAMES, STARTUP_PRODUCTS } from './careerRoads.js';
+import { visible, award } from './skillChoices.js';
 
 const B = (zh, en) => ({ zh, en });
 const D = (day, h, m = 0) => day * 1440 + h * 60 + m;
@@ -124,6 +125,7 @@ export function applyAnswer(L, def, a) {
   if (a.k) { if (Array.isArray(a.k)) S[a.k[0]] = a.k[1]; else S[a.k] = true; }
   if (a.cash) { if (a.cash > 0) receive(L, { method: 'bank', amount: a.cash, from: FIRM.zh, memo: def.title.zh }); else pay(L, { method: 'bank', amount: -a.cash, to: FIRM.zh, memo: def.title.zh }); }
   if (a.su) applyStartup(L, a.su);
+  if (a.sk) award(L, a.sk, `work:${def.id}`);
   if (a.fx) a.fx(L, S);
   fact(L, 'said', { scene: def.id, title: def.title.en, en: a.en.length > 150 ? `${a.en.slice(0, 147)}...` : a.en, s: a.s || 0 }, def.cast || []);
 }
@@ -139,7 +141,7 @@ function applyStartup(L, su) {
 // one part of a scene as ui/sceneTalk.js plays it: the answers do their work when they're chosen
 export function partScript(L, def, i) {
   const beats = (def.parts[i] ? def.parts[i](L, story(L), helpers(L)) : null) || [];
-  return beats.map((b) => (Array.isArray(b) ? b : { ask: b.ask.map((a) => { let done = false; return { zh: a.zh, en: a.en, get then() { if (!done) { done = true; applyAnswer(L, def, a); } return a.then || []; } }; }) }));
+  return beats.map((b) => (Array.isArray(b) ? b : { ask: visible(L, b.ask).map((a) => { let done = false; return { zh: a.zh, en: a.en, get then() { if (!done) { done = true; applyAnswer(L, def, a); } return a.then || []; } }; }) }));
 }
 export function enterScene(L, def) { const W = work(L), rec = (W.days[L.clock.day] ||= {}); if (!rec.came) rec.came = stamp(L); if (!rec.entered) { rec.entered = def.id; const h = HOOKS[def.id]; if (h && h.enter) h.enter(L, story(L)); } return def.parts.length; }
 export function finishScene(L, def) {
@@ -171,7 +173,7 @@ export function playScene(L, def, picks = []) {
 export function sceneLines(L, def) {
   const out = [];
   for (const p of def.parts) for (const b of p(L, story(L), helpers(L)) || []) {
-    if (Array.isArray(b)) out.push(b); else for (const a of b.ask) { out.push([null, a.zh, a.en]); out.push(...(a.then || [])); }
+    if (Array.isArray(b)) out.push(b); else for (const a0 of b.ask) for (const a of [a0, a0.else].filter(Boolean)) { out.push([null, a.zh, a.en]); out.push(...(a.then || [])); }
   }
   return out;
 }

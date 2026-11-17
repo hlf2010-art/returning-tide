@@ -7,7 +7,7 @@ import { DRIVERS } from './drivers.js';
 import { CAST as HEARTS } from './romance.js';
 
 import { CAREER_PERSONAS } from './careerStory.js';
-const ME = 'Ji Bai (纪白; old friends call him 白白 "Baibai" to annoy him), 27, from Nanjing; UC Berkeley cognitive science (HCI, AI, product), a few years in Silicon Valley tech, just moved to Shanghai to work at an international technology consulting firm in Lujiazui on enterprise AI products; builds things in his spare time; his father runs a manufacturing business in Nanjing and expects him to take it over; comfortable but hates being "the rich kid"';
+const ME = 'Ji Bai (纪白; old friends call him 白白 "Baibai" to annoy him), 27, from Nanjing; UC Berkeley cognitive science (HCI, AI, product), a few years in Silicon Valley building AI products end to end, just moved to Shanghai to work at an international technology consulting firm in Lujiazui on enterprise AI products; multidisciplinary: strong at AI programming (data, training and evaluating models, running them on-device, agents), a product person by training, and builds hardware in his spare time at a Yangpu makerspace (sensors, boards, mechanisms), where he is rusty after three years away from a bench; his father runs a manufacturing business in Nanjing and expects him to take it over; comfortable but hates being "the rich kid"';
 export const PERSONAS = {
   // ---- the street ----
   office: { zh: '上班族', en: 'Office worker', sex: 'f', voice: 'bump:office', lang: 'zh', card: 'a Shanghai office worker in her late twenties, on her way home from a Lujiazui or Bund office; polite but busy, a bit tired, checks her phone; Shanghai-born, speaks standard Mandarin with the odd Shanghainese word; knows the area well (Nanjing Road, the metro, where to get food)' },
