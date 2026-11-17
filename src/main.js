@@ -129,6 +129,7 @@ import { t as tx, tr, getLang, setLang, onLang } from './ui/i18n.js';
 import { createMinimapState, updateMinimap, zoneAt } from './engine/minimapLogic.js';
 import { createWind, WIND_LEVELS } from './world/wind.js';
 import { planterIslands, streetTrees } from './world/layout.js';
+import './ui/glass.css';                                    // liquid glass: loaded last, restyles the UI (ui/glass.css)
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('view');
