@@ -2,8 +2,8 @@
 // what's said; engine/hearts.js keeps the score). Each is where her own day puts her:
 //   Nanxing   at the railing at night with a tripod, north of Nanjing Road; opposite the Customs
 //             House clock for the lights at ten
-//   Gu Nian   in the AIA Building lobby after office hours; by the Manner window on Hankou Road
-//             at one; at the cruise pier
+//   Gu Nian   in the AIA Building lobby after office hours, trying out a start-up's camera; by the
+//             Manner window on Hankou Road at one; at the cruise pier
 //   Kexin     filming in the Peace Hotel Jazz Bar on its busy nights; outside the shengjian shop
 //   Zhiwei    in the Peace Hotel lobby the first night; by the river after a late one at the office
 //   Yu'an     under the octagon's glass in June; at the river off Nanjing Road

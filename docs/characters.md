@@ -104,7 +104,25 @@ disagree with him, and leave. Details and what is playable for each: `docs/relat
 
 - **许知微 Xu Zhiwei, 28.** Project manager at his firm. Workplace chemistry, rivalry, trust.
 - **沈南星 Shen Nanxing, 26.** Independent photographer. The city at night; freedom.
-- **顾念 Gu Nian, 29.** Architect. Steadiness; the long term.
+- **顾念 Gu Nian, 29.** Tech investor and strategist. The long term; a conflict of interest.
+  - **Background:** Shanghai-born (a lane in Jing'an; her mother is a retired maths teacher).
+    Computer science at Fudan, two years as a product manager at a Shenzhen hardware company, an
+    MBA abroad (INSEAD). Now the youngest partner at a small early-stage fund upstairs in the AIA
+    Building: early-stage innovation, consumer tech, new lifestyle ventures. In spring she leaves to
+    raise a fund of her own, 慢潮资本 Slow Tide Capital, two rooms upstairs from the Yangpu
+    makerspace. Her line: 「投资的不只是项目，也是人，以及一个更大的可能。」
+  - **Personality** (the sheet's traits): intelligent, rational, empathetic, independent, strategic,
+    emotionally reserved. Sharp and quick across a table, and she cares more about long-term,
+    meaningful impact than a fast exit. In love she is slower and less sure of herself than in the
+    boardroom; she shows care by paying attention, not by saying it. She is nobody's option.
+  - **In play:** she is not one of his friends (she knows Mingxuan only as a junior analyst at
+    another fund). They meet over a start-up's fall-detection camera that fails in the AIA lobby's
+    evening light, and he tells her why. She is the one investor who will never put money into
+    him while they are together (she would have to declare it to her own investors), and the one
+    who tells him most honestly what is wrong with his deck. When his project reaches a small batch
+    or launches (`src/world/allotEvents.js`), her fund wants a meeting, unless he is seeing her.
+  - **Look:** long dark wavy hair, a cream blazer over a silk camisole, wide cream trousers,
+    pearl earrings, a slim leather watch.
 - **林予安 Lin Yu'an, 27.** From his San Francisco years. What was left unsaid.
 - **唐可昕 Tang Kexin, 25.** Lifestyle creator (about 180K on Xiaohongshu, 90K on Douyin).
   Exposure and privacy.

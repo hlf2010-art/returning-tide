@@ -167,7 +167,7 @@ const only = (who, scenes = {}) => ({ reply: (w) => (w === who ? 0 : null), invi
   const L = fresh(); skipTo(L, D(1, 21, 0));
   const pn = presence(L, 'nanxing'), pk = presence(L, 'kexin');
   ok(pn && pn.spot === 'railNorth' && pn.scene === 'n-rail' && pk && pk.spot === 'jazzFloor' && pk.scene === 'k-bar' && presence(L, 'gunian') === null, 'nine on the first night: Nanxing at the railing with her tripod, Kexin filming in the Jazz Bar (Momo\'s night); Gu Nian has gone home');
-  skipTo(L, D(2, 19, 0)); ok(presence(L, 'gunian').scene === 'g-aia' && presence(L, 'nanxing') === null && presence(L, 'kexin') === null, 'seven the next evening: Gu Nian surveying the AIA lobby; it is too early for Nanxing; Kexin has no event tonight');
+  skipTo(L, D(2, 19, 0)); ok(presence(L, 'gunian').scene === 'g-aia' && presence(L, 'nanxing') === null && presence(L, 'kexin') === null, 'seven the next evening: Gu Nian testing a start-up\'s camera in the AIA lobby; it is too early for Nanxing; Kexin has no event tonight');
   run(L, D(1, 0), never); skipTo(L, D(7, 21, 0)); ok(presence(L, 'nanxing') === null && CAST.nanxing.schedule(L).away, 'in January Nanxing is on Chongming with no signal: not at the railing');
 }
 
@@ -217,18 +217,18 @@ const kept = {};
   ok(S.invites.find((i) => i.id === 'h-n-ten').stood && heart(S, 'nanxing').stoodUp === 1 && S.threads.nanxing.messages.some((m) => m.text === CAST.nanxing.lines.stood.zh), 'said yes and did not come: she says so, once');
 }
 {
-  // Gu Nian: the tape, the coffee, the cruise, the foundations, the key
+  // Gu Nian: the camera, the coffee, the cruise, the lights across the river, the key
   const L = fresh();
   run(L, D(2, 19, 0), never); play(L, 'g-aia', [0, 0]);
   run(L, D(3, 13, 5), only('gunian'));
-  ok(L.threads.ruoan.messages.some((m) => /顾念/.test(m.text) && !cjk(enText(m.text))) && presence(L, 'gunian').scene === 'g-manner', 'Gu Nian: Ruoan has something to say about it; at one she is at Manner on Hankou Road');
+  ok(L.threads.xuan.messages.some((m) => /顾念/.test(m.text) && !cjk(enText(m.text))) && presence(L, 'gunian').scene === 'g-manner', 'Gu Nian: she has asked Mingxuan who he is, and Mingxuan has something to say about it; at one she is at Manner on Hankou Road');
   play(L, 'g-manner', [1, 0]);
   ok(heart(L, 'gunian').stage === 'close', 'the tape and the coffee: close');
   run(L, D(4, 16, 0), only('gunian'));
   const w0 = L.wallet.wechat, t0 = stamp(L); play(L, 'g-cruise', [0, 0]);
   ok(L.wallet.wechat === w0 - 240 && stamp(L) >= t0 + 55 && heart(L, 'gunian').stage === 'dating', 'the cruise: he buys the tickets (¥240), fifty-five minutes on the river, and he says he wants to see her again');
   run(L, D(13, 21, 5), only('gunian', { 'g-night': [0, 1, 0] }));
-  ok(heart(L, 'gunian').memories.some((m) => m.key === 'tell-first') && presence(L, 'gunian').scene === 'g-key', 'Act II: the Bund from the foundations; Act IV: she has passed, and is at the Jazz Bar');
+  ok(heart(L, 'gunian').memories.some((m) => m.key === 'tell-first') && presence(L, 'gunian').scene === 'g-key', 'Act II: the lights across the river; Act IV: her fund\'s first close, and she is at the Jazz Bar');
   play(L, 'g-key', [0, 0, 1]);
   ok(heart(L, 'gunian').stage === 'together' && heart(L, 'gunian').memories.some((m) => m.key === 'the-key'), 'he takes the key: together');
   run(L, D(17, 12), only('gunian')); L.flags.dinnerChoice = 'home';
