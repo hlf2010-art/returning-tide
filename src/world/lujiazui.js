@@ -30,7 +30,7 @@ import { createLjzTraffic, createLjzPeople } from './lujiazuiLife.js';
 export { LJZ };
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 
-export function createLujiazui({ scene, camera, M, people, hud, audio, player, travel, getLife, save, skyline, dests, lighting, metroOpen = () => true, trafficFactor = 1 }) {
+export function createLujiazui({ scene, camera, M, people, hud, audio, player, travel, getLife, save, skyline, dests, lighting, renderer = null, metroOpen = () => true, trafficFactor = 1 }) {
   const root = new THREE.Group(); root.name = 'lujiazui'; root.visible = false; scene.add(root);
   // the fonts' glyphs for the signs, asked for early (in the background) so they are there when the district is built
   loadFonts([[`800 40px ${FONT.sans}`, LJZ_TEXT], [`900 40px ${FONT.sans}`, LJZ_TEXT], [`600 40px ${FONT.sans}`, LJZ_TEXT], [`700 40px ${FONT.sans}`, LJZ_TEXT], [`800 40px ${FONT.serif}`, '陆家嘴中心绿地']]);
@@ -71,6 +71,9 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     root.updateMatrixWorld(true);
     let tris = 0, meshes = 0; root.traverse((o) => { if (o.isMesh && o.geometry) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
     stats = { ms: Math.round(performance.now() - t0), meshes, tris: Math.round(tris), ground: Math.round(G.tris), leafCards: cards, lights: kit.length, cars: traffic.cars.length, people: folk.list.length };
+    // compile the district's shaders now, behind the fade, not on the first frame you see it (a stall of a
+    // second or more on some GPUs and drivers, Windows' ANGLE above all)
+    if (renderer) { const was = root.visible; root.visible = true; try { const t1 = performance.now(); renderer.compile(root, camera, scene); stats.compileMs = Math.round(performance.now() - t1); } catch (e) { console.warn('Lujiazui: shader precompile skipped', e); } root.visible = was; }
     console.info('Lujiazui built', stats);
   }
   function show(on) {

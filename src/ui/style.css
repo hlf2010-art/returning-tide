@@ -259,6 +259,9 @@ html[lang="zh-CN"] #pause h1 { font: 900 clamp(48px, 7vw, 88px)/1 var(--serif); 
 
 /* HUD v3 */
 #place { left: clamp(22px, 7vw, 120px); bottom: clamp(70px, 14vh, 140px); }
+/* clear of the minimap (bottom-left, 168 px + its area label): the place card above it, the key hints beside it */
+#place { bottom: max(clamp(70px, 14vh, 140px), 226px); }
+#keys { left: 212px; }
 #place .name { margin-top: 10px; font: 800 clamp(30px, 4.2vw, 54px)/1 var(--ui); letter-spacing: -0.01em; text-transform: uppercase; }
 html[lang="zh-CN"] #place .name { font: 900 clamp(34px, 4.6vw, 58px)/1 var(--serif); letter-spacing: 0.12em; text-transform: none; }
 #objective { padding: 12px 16px 13px 18px; border-radius: 6px; background: linear-gradient(90deg, rgba(10,12,18,0.72), rgba(10,12,18,0.42)); border: 0; box-shadow: none; }

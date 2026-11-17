@@ -267,7 +267,7 @@ async function boot() {
   const entrances = createEntrances({ scene, camera, list: entranceList({ shopOpen: () => { const m = life.clock.minute; return m >= 390 && m < 1290; }, cruiseOpen: () => { const m = life.clock.minute; return m >= 9 * 60 + 30 && m < 21 * 60 + 30; }, metroOpen: () => hourState.metro }) });
   const lighting = createLighting(scene, street.lanterns, [...entrances.lights, ...dumpling.lights, { ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...buses.lights, ...nanjing.lights, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
   // Lujiazui, across the river (world/lujiazui.js): built when you first go there, hidden while you're on the Bund
-  const ljz = createLujiazui({ scene, camera, M, people, hud, audio, player, travel, skyline, dests, lighting, getLife: () => life, save: () => saveLife(), metroOpen: () => hourState.metro, trafficFactor: params.has('q') && !params.has('traffic') ? 0.6 : gfxDetail({ ...gfx, lod: bootLod }).traffic });
+  const ljz = createLujiazui({ scene, camera, M, people, hud, audio, player, travel, skyline, dests, lighting, renderer: R.renderer, getLife: () => life, save: () => saveLife(), metroOpen: () => hourState.metro, trafficFactor: params.has('q') && !params.has('traffic') ? 0.6 : gfxDetail({ ...gfx, lod: bootLod }).traffic });
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
