@@ -13,7 +13,7 @@
 //                                    (112 m apart, east-west): diameter ca. 110 m, deck 9 m wide;
 //                                    about 5.5 m above the street
 //   Shanghai IFC (国金中心)          31.2385 N, 121.4970 E   8 Century Avenue; towers 259.9 m and 249.9 m
-//   Apple Pudong                     in the sunken court on IFC's roundabout side; glass cylinder 13 m
+//   Apple Pudong                     on a street-level plaza on IFC's roundabout side, store below; glass cylinder 13 m, r 5 m
 //   Jin Mao Tower                    31.2372 N, 121.5014 E   420.5 m
 //   Shanghai World Financial Center  31.2367 N, 121.5028 E   492 m
 //   Shanghai Tower                   31.2356 N, 121.5011 E   632 m
@@ -60,7 +60,7 @@ export const YIN = { a0: 236, a1: 254, ac: 245, len: 300 };
 export const ZEBRAS = [{ id: 'z1', a0: 236, a1: 254, p0: -29.5, p1: -23.5 }, { id: 'z2', a0: 225, a1: 231.5, p0: -16, p1: 16 }];
 // columns under the ring (bearings chosen clear of the carriageways)
 export const COLUMNS = [15, 28, 72, 84, 147, 171, 214, 247, 290, 336];
-// the "Oriental Floating Court" spur toward IFC and the Apple court (a wide deck, then stairs down)
+// the "Oriental Floating Court" spur toward IFC and the Apple plaza (a wide deck, then stairs down)
 export const SPUR = { b: 148, s0: 50, s1: 62, hw: 7 };
 // stairs and escalators down from the deck: top (deck level) and bottom (pavement) points
 function ramp(b, rTop, rBot, hw, kind) {
@@ -69,15 +69,18 @@ function ramp(b, rTop, rBot, hw, kind) {
 }
 export const RAMPS = [...[22, 82, 230, 312].map((b) => ramp(b, RING.r1, RING.r1 + 13, 3.0, 'ring')), ramp(SPUR.b, SPUR.s1, SPUR.s1 + 12, 3.5, 'spur')];
 
-// Apple Pudong: a sunken round court, the glass cylinder at its centre, the spiral glass stair inside
-// it down to the store under the court. Angles are measured clockwise from the court's entry (which
-// faces the roundabout).
+// Apple Pudong (No. 1, IFC Mall): a granite plaza at street level in the corner the mall's podium wraps
+// round, the 13 m glass cylinder (5 m radius, twelve curved panels, a stainless ring and a shallow glass
+// dome since the rebuild) at its centre, and inside it the spiral glass stair, cantilevered off a second
+// glass drum (the lift), down to the store under the plaza. Angles are measured clockwise from the
+// cylinder's door, which faces the roundabout and the Pearl.
 const [APX, APZ] = polar(148, 100);
 export const APPLE = {
-  x: APX, z: APZ, entry: 328, rPlaza: 17, rOut: 21.5, rail: 21.9, yPlaza: -5.2, yStore: -10, rCyl: 5, rCore: 1.7, cylH: 12.5, storeR: 15,
-  stairs: { top: 10, foot: 100, land: 113, open: [101, 111.5] },          // the two curved stairs round the court: degrees either side of the entry
-  spiral: { start: 25, total: 400, drop: 4.8, r0: 1.95, r1: 4.35 }, landing: [-40, 25], door: 13.5, foot: [57, 88],
-  tables: [[140, 10], [185, 10.5], [230, 10], [275, 10.5], [320, 10], [5, 10.5], [112, 10.5]].map(([ang, r]) => ({ ang, r })),   // the store's tables (each along a radius)
+  x: APX, z: APZ, entry: 328, rPlaza: 24, rOut: 24, yPlaza: CH, yStore: CH - 5.6, rCyl: 5, rCore: 1.7, cylH: 13, storeR: 19,
+  spiral: { start: 25, total: 400, drop: 5.6, r0: 1.95, r1: 4.35 }, landing: [-40, 25], door: 13.5, foot: [57, 88],
+  // the store's oak tables (each along a radius): an inner ring and an outer one, clear of the stair's foot
+  tables: [[125, 10.5], [165, 10.5], [205, 10.5], [245, 10.5], [285, 10.5], [325, 10.5], [10, 11], [140, 15.2], [185, 15.2], [230, 15.2], [275, 15.2], [320, 15.2]].map(([ang, r]) => ({ ang, r })),
+  mall: 180,                                                                // the store's back, toward the mall (its lower-ground door)
 };
 export const appleAng = (x, z) => wrap180(bearingOf(x, z, APPLE) - APPLE.entry);
 export const applePt = (ang, r) => polar(APPLE.entry + ang, r, APPLE);
@@ -97,13 +100,24 @@ const W148 = dirOf(148), ROT148 = Math.atan2(W148[1], W148[0]);
 const obox = (id, cx, cz, rot, hx, hz, h, extra = {}) => ({ id, cx, cz, rot, c: Math.cos(rot), s: Math.sin(rot), hx, hz, h, ...extra });
 const apBox = (id, a, p, ha, hp, h, extra) => { const [x, z] = fromAP(a, p); return obox(id, x, z, AVE_ROT, ha, hp, h, extra); };
 const polBox = (id, b, r, hr, ht, h, extra) => { const [x, z] = polar(b, r), d = dirOf(b); return obox(id, x, z, Math.atan2(d[1], d[0]), hr, ht, h, extra); };
+// Shanghai IFC (Pelli Clarke Pelli; Sun Hung Kai Properties): the north tower (259.9 m, offices) on Century
+// Avenue, the south tower (249.9 m; the Ritz-Carlton in its top eighteen floors) behind it to the south-west,
+// an 85 m block behind and between them, and the mall's four-level podium joining them, which wraps the
+// Apple plaza on its east and south sides in a concave glass front (all in the avenue's frame: a, p).
+const [APA, APP] = toAP(APX, APZ);                            // the plaza's centre in the avenue's frame (a 83.6, p 54.9)
+export const IFC_ARC = { a: APA, p: APP, r: 30, t0: -30, t1: 118, h: 26 };   // the podium's glass front round the plaza (t: degrees from +a toward +p)
+export const arcPt = (t, r = IFC_ARC.r) => fromAP(APA + r * Math.cos(t * D2R), APP + r * Math.sin(t * D2R));
+const ARC_N = arcPt(IFC_ARC.t0), ARC_W = arcPt(IFC_ARC.t1), [ARC_NA] = toAP(...ARC_N), [, ARC_WP] = toAP(...ARC_W);
+const apSpan = (id, a0, a1, p0, p1, h, extra) => apBox(id, (a0 + a1) / 2, (p0 + p1) / 2, (a1 - a0) / 2, (p1 - p0) / 2, h, extra);
 export const IFC = {
-  north: apBox('ifc-n', 176, 56, 25, 25, 259.9),
-  south: obox('ifc-s', APPLE.x + 77.9 * W148[0] + 49.8 * -W148[1], APPLE.z + 77.9 * W148[1] + 49.8 * W148[0], 0, 25, 25, 249.9),
-  podium: obox('ifc-mall', APPLE.x + 66 * W148[0], APPLE.z + 66 * W148[1], ROT148, 40, 44, 30),
+  north: apBox('ifc-n', 176, 56, 25, 25, 259.9, { notch: 4.2 }),
+  south: apBox('ifc-s', 120, 150, 25, 25, 249.9, { notch: 4.2 }),
+  annex: apBox('ifc-annex', 208, 138, 24, 20, 85),
+  podium: apSpan('ifc-mall', APA + IFC_ARC.r, 236, 40, 150, IFC_ARC.h),                // east of the plaza, along the avenue
+  podiumW: apSpan('ifc-mall-w', APA - 14, APA + IFC_ARC.r, Math.max(86, ARC_WP), 150, IFC_ARC.h),   // south of the plaza
 };
 export const BUILDINGS = [
-  IFC.podium, IFC.north, IFC.south,
+  IFC.podium, IFC.podiumW, IFC.north, IFC.south, IFC.annex,
   polBox('superbrand', 230, 137, 42, 62, 52, { name: { zh: '正大广场', en: 'Super Brand Mall' } }),
   polBox('north-tower', 22, 140, 24, 24, 190),
   polBox('boc', 80, 150, 23, 23, 226, { name: { zh: '中银大厦', en: 'Bank of China Tower' } }),
@@ -174,18 +188,13 @@ function spiralY(ang, y) {
   if (ang >= APPLE.landing[0] && ang <= APPLE.landing[1]) tryH(APPLE.yPlaza);
   return best;
 }
-export function courtStairY(absAng) {
-  const S = APPLE.stairs;
-  return absAng <= S.top ? CH : absAng >= S.foot ? APPLE.yPlaza : CH + (APPLE.yPlaza - CH) * (absAng - S.top) / (S.foot - S.top);
-}
 export function ljzGround(x, z, y = 0) {
   if (!(x > 500 && x < 1500 && z > -260 && z < 780) || y > 60) return null;      // not here (the 32nd floor is destinations.js's)
   const ax = x - APPLE.x, az = z - APPLE.z, ra2 = ax * ax + az * az;
   if (ra2 < APPLE.rOut * APPLE.rOut) {
     const ra = Math.sqrt(ra2), ang = appleAng(x, z);
-    if (ra < APPLE.rCyl) return y > -0.6 ? APPLE.yPlaza : spiralY(ang, y);
-    if (ra < APPLE.rPlaza) return y < -7.6 && ra < APPLE.storeR + 0.5 ? APPLE.yStore : APPLE.yPlaza;
-    return Math.abs(ang) <= APPLE.stairs.land ? courtStairY(Math.abs(ang)) : CH;
+    if (ra < APPLE.rCyl) return spiralY(ang, y);
+    return y < APPLE.yPlaza - 3 && ra < APPLE.storeR + 0.5 ? APPLE.yStore : APPLE.yPlaza;
   }
   for (let i = 0; i < METRO_LJZ.length; i++) {
     const m = METRO_LJZ[i], t = (x - m.top[0]) * m.dx + (z - m.top[1]) * m.dz;
@@ -211,6 +220,15 @@ export const circles = [];
 export const addBox = (cx, cz, rot, hx, hz, extra = {}) => { const b = obox(extra.id || 'box', cx, cz, rot, hx, hz, 0, extra); boxes.push(b); return b; };
 export const addCircle = (x, z, r, extra = {}) => { const c = { x, z, r, ...extra }; circles.push(c); return c; };
 for (const b of COLUMNS) { const [x, z] = polar(b, RING.rc); addCircle(x, z, 0.75, { y1: 5 }); }
+{ // the podium's curved glass front round the Apple plaza: short straight runs along the arc, and where it meets the two boxes
+  const n = 30, A = IFC_ARC;
+  for (let i = 0; i < n; i++) {
+    const t0 = A.t0 + (A.t1 - A.t0) * i / n, t1 = A.t0 + (A.t1 - A.t0) * (i + 1) / n, [x0, z0] = arcPt(t0, A.r + 0.25), [x1, z1] = arcPt(t1, A.r + 0.25);
+    addBox((x0 + x1) / 2, (z0 + z1) / 2, Math.atan2(z1 - z0, x1 - x0), Math.hypot(x1 - x0, z1 - z0) / 2 + 0.05, 0.25, { id: 'ifc-mall' });
+  }
+  { const [x0, z0] = fromAP(ARC_NA, 40), [x1, z1] = fromAP(APA + A.r, 40); addBox((x0 + x1) / 2, (z0 + z1) / 2, AVE_ROT, (APA + A.r - ARC_NA) / 2 + 0.4, 0.6, { id: 'ifc-mall' }); }
+  { const [x0, z0] = ARC_W, [x1, z1] = fromAP(APA - 14, Math.max(86, ARC_WP) + 1); addBox((x0 + x1) / 2, (z0 + z1) / 2, AVE_ROT, 1.2, Math.max(1.2, Math.abs(Math.max(86, ARC_WP) + 1 - ARC_WP) / 2 + 1), { id: 'ifc-mall' }); }
+}
 for (const m of METRO_LJZ) {                                  // each stairwell: walls on both sides and at the far end
   const rot = Math.atan2(m.dz, m.dx);
   for (const s of [-1, 1]) { const [x, z] = wellPt(m, m.len / 2, s * (m.hw + 0.12)); addBox(x, z, rot, m.len / 2 + 0.24, 0.12, { id: 'metro-wall' }); }
@@ -241,44 +259,36 @@ function clampR(p, o, lo, hi) {
 // put a point at a given court angle (same radius)
 function setAppleAng(p, ang) { const r = Math.hypot(p.x - APPLE.x, p.z - APPLE.z), [x, z] = applePt(ang, r); p.x = x; p.z = z; }
 
-// what the body is on (a bridge stair, down in the Apple court), remembered from step to step
-const S = { x: NaN, z: NaN, y: 0, ramp: -1, pit: false };
+// what the body is on (a bridge stair), remembered from step to step
+const S = { x: NaN, z: NaN, y: 0, ramp: -1 };
 export const ljzState = S;
 function infer(b) {
-  S.ramp = -1; S.pit = false;
+  S.ramp = -1;
   for (let i = 0; i < RAMPS.length; i++) { const [t, l] = rampLocal(RAMPS[i], b.x, b.z); if (t >= 0 && t <= RAMPS[i].run && Math.abs(l) < RAMPS[i].hw) S.ramp = i; }
-  const ra = Math.hypot(b.x - APPLE.x, b.z - APPLE.z);
-  if (ra < APPLE.rOut + 0.2 && (ra < APPLE.rPlaza + 0.2 || Math.abs(appleAng(b.x, b.z)) <= APPLE.stairs.land)) S.pit = true;
 }
-function keepPit(b) {
-  const A = APPLE, T = A.stairs;
+// Apple Pudong: inside the cylinder and down in the store it has its own walls; out on the plaza only the
+// cylinder's glass (but for its door). True when it has dealt with the body.
+const inStore = (b) => b.y < APPLE.yPlaza - 3 && Math.hypot(b.x - APPLE.x, b.z - APPLE.z) < APPLE.storeR + 1;
+function keepApple(b) {
+  const A = APPLE, yP = A.yPlaza;
   let ra = Math.hypot(b.x - A.x, b.z - A.z), ang = appleAng(b.x, b.z), aa = Math.abs(ang);
-  if (b.y < -9.0) {                                           // ---- the store, under the court
+  if (inStore(b)) {                                           // ---- the store, under the plaza
     if (ra < A.rCyl + 0.1) {                                  // at the foot of the spiral stair, inside its drum
       clampR(b, A, A.spiral.r0, ang >= A.foot[0] && ang <= A.foot[1] ? 99 : A.spiral.r1);
       if (ang > A.foot[1] || ang < -120) setAppleAng(b, A.foot[1]);
     } else if (ra < A.rCyl + RAD + 0.15 && !(ang >= A.foot[0] && ang <= A.foot[1])) clampR(b, A, A.rCyl + RAD + 0.15, 99);
     clampR(b, A, 0, A.storeR - RAD);
     for (const t of A.tables) for (const k of [-1, 0, 1]) { const [x, z] = applePt(t.ang, t.r + k * 1.05), dx = b.x - x, dz = b.z - z, d = Math.hypot(dx, dz); if (d < 0.75 + RAD && d > 1e-6) { b.x = x + dx / d * (0.75 + RAD); b.z = z + dz / d * (0.75 + RAD); } }
-    return;
+    return true;
   }
   if (ra < A.rCyl) {                                          // ---- inside the glass cylinder
-    clampR(b, A, A.spiral.r0, A.rCyl - RAD - 0.1 + (aa < A.door && b.y > -5.6 ? 1.5 : 0));
-    if (b.y > -5.45 && ang < A.landing[0]) setAppleAng(b, A.landing[0]);            // the landing's back rail
-    if (b.y <= -5.45) clampR(b, A, A.spiral.r0, A.spiral.r1);
-    return;
+    clampR(b, A, A.spiral.r0, A.rCyl - RAD - 0.1 + (aa < A.door && b.y > yP - 0.4 ? 1.5 : 0));
+    if (b.y > yP - 0.25 && ang < A.landing[0]) setAppleAng(b, A.landing[0]);        // the landing's back rail
+    if (b.y <= yP - 0.25) clampR(b, A, A.spiral.r0, A.spiral.r1);
+    return true;
   }
-  if (ra < A.rPlaza) {                                        // ---- the court's floor
-    if (ra < A.rCyl + RAD + 0.1 && aa > A.door) clampR(b, A, A.rCyl + RAD + 0.1, 99);       // the glass, but for its door
-    const open = aa >= T.open[0] && aa <= T.open[1];
-    if (!open) clampR(b, A, 0, A.rPlaza - RAD);
-    return;
-  }
-  // ---- the curved stairs and their landings (17 .. 21.5 m out)
-  const open = aa >= T.open[0] && aa <= T.open[1];
-  if (aa > T.land - 1) { setAppleAng(b, Math.sign(ang) * (T.land - 1)); }
-  if (ra > A.rOut - 0.3) { if (aa <= T.top) { if (ra > A.rail) S.pit = false; } else clampR(b, A, 0, A.rOut - 0.3); }
-  if (ra < A.rPlaza + 0.3 && !open) clampR(b, A, A.rPlaza + 0.3, 99);
+  if (ra < A.rCyl + RAD + 0.1 && aa > A.door) clampR(b, A, A.rCyl + RAD + 0.1, 99);   // the glass, but for its door
+  return false;
 }
 function keepRamp(b) {
   const R = RAMPS[S.ramp], [t, l] = rampLocal(R, b.x, b.z);
@@ -314,12 +324,8 @@ export function ljzKeep(b) {
 }
 function step(b) {
   const A = APPLE, ra = Math.hypot(b.x - A.x, b.z - A.z);
-  // the Apple court: in by the top of its stairs only; a glass rail round the rest of it
-  if (S.pit) { if (ra > A.rail + 1) S.pit = false; else { keepPit(b); return; } }
-  else if (ra < A.rail) {
-    if (Math.abs(appleAng(b.x, b.z)) <= A.stairs.top - 0.6 && ra >= A.rPlaza + 0.3) { if (ra < A.rOut) S.pit = true; }
-    else clampR(b, A, A.rail, 999);
-  }
+  // Apple: the cylinder, its stair and the store under the plaza
+  if ((inStore(b) || ra < A.rCyl + RAD + 0.2) && keepApple(b)) return;
   // the bridge's stairs
   if (S.ramp >= 0 && keepRamp(b)) return;
   for (let i = 0; i < RAMPS.length; i++) {
@@ -432,7 +438,7 @@ export const LJZ = {
   ifcLobbyStand: P2(lobby[0] - NX * 2.2, lobby[1] - NZ * 2.2, { y: CH, yaw: yawTo(-NX, -NZ) }),   // where you stand, back to the door
   officeLift: P2(689.9, 55.6, { y: 134.4 }),                                             // the lift on 32F (world/destinations.js PLACES.lujiazui.lift)
   kerbPickup: P2(kerb[0], kerb[1], { y: CH, yaw: yawTo(NX, NZ) }),                       // DiDi set-down and pick-up, Century Avenue's south kerb at IFC
-  appleEntrance: P2(...applePt(0, APPLE.rail + 1.2), { y: CH }),                          // the top of the sunken court's stairs
+  appleEntrance: P2(...applePt(0, APPLE.rCyl + 7), { y: CH }),                          // on the plaza, in front of the cylinder's door
   appleCylinderDoor: P2(...applePt(0, APPLE.rCyl + 0.8), { y: APPLE.yPlaza }),
   appleStore: P2(...applePt(75, 9), { y: APPLE.yStore }),
   metroExits: METRO_LJZ.map((m) => { const [x, z] = wellPt(m, -1.4), [lx, lz] = wellPt(m, m.len - 1.3); return { exit: m.exit, x, z, y: CH, landing: { x: lx, z: lz, y: -m.depth }, name: m.name }; }),
@@ -447,9 +453,9 @@ export const LJZ = {
 export const inPudong = (x, y = 0) => x > 480 && y < 60;
 // a coarse name for where you are in it
 export function ljzZone(x, z, y = 0) {
-  if (y < -7) return 'apple';
+  if (y < APPLE.yPlaza - 3) return 'apple';
   const ra = Math.hypot(x - APPLE.x, z - APPLE.z);
-  if (ra < APPLE.rail + 3) return 'apple';
+  if (ra < APPLE.rOut) return 'apple';
   for (const m of METRO_LJZ) { const [t, l] = wellLocal(m, x, z); if (t > -3 && t < m.len + 1 && Math.abs(l) < m.hw + 1.5) return 'ljzMetro'; }
   if (y > 3.4) return 'ring';
   const [a, p] = toAP(x, z);

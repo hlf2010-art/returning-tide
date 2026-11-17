@@ -2,7 +2,7 @@
 //   node tests/lujiazui.test.mjs
 import { createBody, stepBody } from '../src/engine/movement.js';
 import { groundHeight } from '../src/world/layout.js';
-import { C, RING, RAMPS, SPUR, APPLE, METRO_LJZ, IFC, LJZ, ROUTES, ZEBRAS, GREEN, polar, fromAP, toAP, applePt, appleAng, wellPt, carriage, zebra, inDistrict, onDeck, ljzGround, ljzState, signalAt, ljzZone, inLake, loopPt } from '../src/world/lujiazuiLayout.js';
+import { C, RING, RAMPS, SPUR, APPLE, METRO_LJZ, IFC, LJZ, ROUTES, ZEBRAS, GREEN, polar, fromAP, toAP, applePt, appleAng, wellPt, carriage, zebra, inDistrict, onDeck, ljzGround, signalAt, ljzZone, inLake, loopPt } from '../src/world/lujiazuiLayout.js';
 
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
@@ -49,19 +49,16 @@ for (const R of RAMPS.filter((r) => r.kind === 'ring')) {
   put(...polar(SPUR.b, 50), 5.5);
   let left = walk(...polar(SPUR.b, 77), 40);
   ok(left < 0.3 && Math.abs(body.y - 0.15) < 0.05, `the spur and its stairs: down to the pavement by the Apple court (y ${body.y.toFixed(2)})`);
-  // the glass rail round the court: no way in from the side
-  put(...applePt(60, 26)); walk(APPLE.x, APPLE.z, 6);
-  ok(rA() > APPLE.rail - 0.05 && body.y > 0.1, `the court's rail holds (stopped ${rA().toFixed(1)} m out)`);
-  // in by the top of the stairs, down the right-hand flight
-  put(...applePt(0, 24)); left = walk(...applePt(0, 19.3), 10);
-  for (const a of [20, 40, 60, 80, 100, 106]) left = walk(...applePt(a, 19.3), 20);
-  ok(left < 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.05, `down the curved stair to the court (y ${body.y.toFixed(2)})`);
-  left = walk(...applePt(106, 14), 10); left = walk(...applePt(40, 9), 20); left = walk(...applePt(0, 7), 20);
-  ok(left < 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.05, 'across the court to the cylinder');
-  put(...applePt(90, 9), APPLE.yPlaza); walk(APPLE.x, APPLE.z, 5);
-  ok(rA() > APPLE.rCyl + 0.3, 'the cylinder is glass: no way through its wall');
-  put(...applePt(0, 7), APPLE.yPlaza); left = walk(...applePt(0, 3.2), 8);
-  ok(left < 0.3, 'in by the cylinder\'s door');
+  // the plaza is at street level: walk straight on to it, round the cylinder; its glass is solid but for the door
+  put(...applePt(60, 26)); left = walk(...applePt(60, 12), 10);
+  ok(left < 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.02 && APPLE.yPlaza === 0.15, `on to the plaza from the pavement, no step (y ${body.y.toFixed(2)})`);
+  walk(APPLE.x, APPLE.z, 5);
+  ok(rA() > APPLE.rCyl + 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.02, 'the cylinder is glass: no way through its wall');
+  put(...applePt(180, 12)); walk(...applePt(180, 40), 10);
+  ok(rA() < 31.2 && rA() > 25, `the mall's curved glass front behind the plaza holds (stopped ${rA().toFixed(1)} m out)`);
+  put(...applePt(0, 9)); left = walk(...applePt(0, 3.2), 8);
+  ok(left < 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.05, 'in through the cylinder\'s door, on to the landing');
+  // down the spiral (anticlockwise as seen from above: increasing angle), out at its foot
   let ok2 = true;
   for (let a = 30; a <= 420; a += 15) { left = walk(...applePt(a, 3.2), 10); if (left > 0.4) ok2 = false; }
   ok(ok2 && Math.abs(body.y - APPLE.yStore) < 0.3, `down the spiral stair (y ${body.y.toFixed(2)})`);
@@ -69,15 +66,13 @@ for (const R of RAMPS.filter((r) => r.kind === 'ring')) {
   ok(left < 0.3 && Math.abs(body.y - APPLE.yStore) < 0.02, 'out at its foot into the store');
   walk(...applePt(200, 30), 12);
   ok(rA() < APPLE.storeR && Math.abs(body.y - APPLE.yStore) < 0.02, 'the store\'s wall holds');
-  // and back up
+  // and back: to the foot, up the spiral, out of the door
   left = walk(...applePt(72, 9), 20); left = walk(...applePt(66, 3.2), 10);
   for (let a = 420; a >= 15; a -= 15) left = walk(...applePt(a, 3.2), 10);
-  left = walk(...applePt(0, 3.2), 10); left = walk(...applePt(0, 8), 10);
-  ok(left < 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.05, `back up the spiral and out of the cylinder (y ${body.y.toFixed(2)})`);
-  left = walk(...applePt(-60, 12), 20); left = walk(...applePt(-106, 14), 20); left = walk(...applePt(-106, 19.3), 10);
-  for (const a of [-90, -70, -50, -30, -10, 0]) left = walk(...applePt(a, 19.3), 20);
-  left = walk(...applePt(0, 25), 10);
-  ok(left < 0.3 && Math.abs(body.y - 0.15) < 0.05 && !ljzState.pit, 'up the other curved stair to the street');
+  left = walk(...applePt(0, 3.2), 10); left = walk(...applePt(0, 9), 10);
+  ok(left < 0.3 && Math.abs(body.y - APPLE.yPlaza) < 0.05 && rA() > APPLE.rCyl, `back up the spiral and out of the cylinder (y ${body.y.toFixed(2)})`);
+  left = walk(...applePt(-45, 28), 15);
+  ok(left < 0.3 && Math.abs(body.y - 0.15) < 0.05, 'off the plaza toward the roundabout');
 }
 // ---- kerbs, the zebras, buildings, the metro ----
 {

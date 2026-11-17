@@ -22,7 +22,7 @@ export function parkPath(a, p) {
 }
 export function kindAt(x, z) {
   const ax = x - APPLE.x, az = z - APPLE.z;
-  if (ax * ax + az * az < APPLE.rOut * APPLE.rOut) return KIND.void;                 // the Apple court (its own floor and stairs)
+  if (ax * ax + az * az < APPLE.rOut * APPLE.rOut) return KIND.void;                 // the Apple plaza (its own paving: lujiazuiBuild.js)
   for (let i = 0; i < METRO_LJZ.length; i++) { const m = METRO_LJZ[i], t = (x - m.top[0]) * m.dx + (z - m.top[1]) * m.dz; if (t >= 0 && t <= m.len && Math.abs(-(x - m.top[0]) * m.dz + (z - m.top[1]) * m.dx) <= m.hw) return KIND.void; }
   const dx = x - C.x, dz = z - C.z, r2 = dx * dx + dz * dz;
   if (r2 < RING.island * RING.island) return KIND.grass;

@@ -1,4 +1,4 @@
-// Lujiazui's structures: the ring bridge and its stairs, the Apple court and its glass cylinder, IFC,
+// Lujiazui's structures: the ring bridge and its stairs, the Apple plaza, its glass cylinder and the store under it, IFC,
 // the metro's stairwells, the Central Green's furniture, the towers around, lamps and signs. Static
 // geometry, merged per material (world/geo.js Batch and the Tris helper below). Where things are comes
 // from world/lujiazuiLayout.js; nothing here decides a position you can stand on.
@@ -11,7 +11,7 @@ import { markCanvas } from '../ui/brands.js';
 import { LINE_COLOR } from './nanjingRoad.js';
 import {
   C, RING, ARMS, COLUMNS, SPUR, RAMPS, APPLE, METRO_LJZ, IFC, BUILDINGS, GREEN, LAKE, CANOPY, LOOP, BENCHES, YIN, CH, AVE, AVE_ROT,
-  dirOf, polar, fromAP, toAP, applePt, wellPt, carriage, inDistrict, inLake, loopPt, addBox, addCircle, courtStairY, LJZ,
+  dirOf, polar, fromAP, toAP, applePt, wellPt, carriage, inDistrict, inLake, loopPt, addBox, addCircle, LJZ, IFC_ARC, arcPt,
 } from './lujiazuiLayout.js';
 import { kindAt, KIND, parkPath } from './lujiazuiGround.js';
 
@@ -83,7 +83,7 @@ export function ljzMaterials(M) {
     deck: std({ map: pathMap, color: 0xcfcac0, roughness: 0.7 }), fascia: std({ color: 0xd9dcdf, roughness: 0.35, metalness: 0.55 }), under: std({ color: 0x8e9296, roughness: 0.8 }),
     concrete: std({ color: 0xa9aaa8, roughness: 0.75 }), steel: std({ color: 0xb4babf, roughness: 0.28, metalness: 0.9 }), dark: std({ color: 0x1b1e22, roughness: 0.4, metalness: 0.6 }),
     glass: std({ color: 0xa9c6cc, roughness: 0.04, metalness: 0.15, transparent: true, opacity: 0.22, depthWrite: false, envMapIntensity: 1.6 }),
-    appleGlass: new THREE.MeshPhysicalMaterial({ color: 0xcfe6e6, emissive: 0x1c2a2c, roughness: 0.02, metalness: 0.1, transparent: true, opacity: 0.17, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 2.2, clearcoat: 1, clearcoatRoughness: 0.02 }),
+    appleGlass: new THREE.MeshPhysicalMaterial({ color: 0xc4e2e0, emissive: 0x1c2a2c, roughness: 0.02, metalness: 0.15, transparent: true, opacity: 0.24, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 2.2, clearcoat: 1, clearcoatRoughness: 0.02 }),
     stone: std({ map: pathMap, color: 0xe2ddd0, roughness: 0.6 }), stoneWarm: std({ color: 0xd9cdb6, roughness: 0.7 }), white: std({ color: 0xf1f0ec, roughness: 0.7 }),
     wood: std({ color: 0xb48a58, roughness: 0.55 }), hedge: std({ color: 0x25401f, roughness: 0.95 }), water: std({ color: 0x24403f, roughness: 0.08, metalness: 0.2, envMapIntensity: 1.4 }),
     tile: std({ color: 0xbfc2c0, roughness: 0.4 }), rubber: std({ color: 0x141416, roughness: 0.7 }), membrane: std({ color: 0xf6f5f0, roughness: 0.85, emissive: 0x30302c }),
@@ -161,48 +161,33 @@ function appleLogo() {
   return tex(c, { repeat: false, aniso: 8 });
 }
 export function buildApple(g, m, lights) {
-  const A = APPLE, T = A.stairs, yP = A.yPlaza, yS = A.yStore, o = A, E = A.entry;
-  const floor = new Tris(1.6), wall = new Tris(), gl = new Tris(), ag = new Tris(), stair = new Tris(), st = new Batch(), wood = new Batch(), soil = new Tris(), ceil = new Tris(), warm = new Tris(), storeWall = new Tris(), treads = new Tris(), dark = new Batch();
-  // the court's floor (but for the stair well inside the cylinder), the landing inside the cylinder
-  floor.arc(o, A.rCyl, A.rPlaza, 0, 360, yP, 72);
-  floor.arc(o, A.rCore, A.rCyl, E + A.landing[0], E + A.landing[1], yP, 12);
-  // the two curved stairs, 34 steps each, and their landings
-  const n = 34, rise = (CH - yP) / n, span = (T.foot - T.top) / n;
-  for (const s of [-1, 1]) {
-    for (let i = 0; i < n; i++) {
-      const a0 = E + s * (T.top + i * span), a1 = E + s * (T.top + (i + 1) * span), y = CH - (i + 1) * rise;
-      stair.arc(o, A.rPlaza, A.rOut, a0, a1, y, 1);
-      const [x0, z0] = polar(a0, A.rPlaza, o), [x1, z1] = polar(a0, A.rOut, o); stair.wall(x0, z0, x1, z1, y, y + rise);
-    }
-    stair.arc(o, A.rPlaza, A.rOut, E + s * T.foot, E + s * T.land, yP, 4);
-    const yStair = (b) => courtStairY(Math.abs(((b - E + 540) % 360) - 180));
-    // inner side: the court's wall up to the stair, glass above it (open at the foot); outer side: the retaining wall, glass at street level
-    wall.drum(o, A.rPlaza, E + s * T.top, E + s * T.open[0], yP, yStair, 30);
-    gl.drum(o, A.rPlaza + 0.1, E + s * T.top, E + s * T.open[0], yStair, (b) => yStair(b) + 1.1, 30);
-    wall.drum(o, A.rPlaza, E + s * T.open[1], E + s * T.land, yP, CH, 2);
-    wall.drum(o, A.rOut, E + s * T.top, E + s * T.land, yStair, CH, 30);
-    { const [x0, z0] = polar(E + s * T.land, A.rPlaza, o), [x1, z1] = polar(E + s * T.land, A.rOut, o); wall.wall(x0, z0, x1, z1, yP, CH + 0.4); }
-    gl.drum(o, A.rail - 0.2, E + s * T.top, E + s * 180, CH, CH + 1.15, 44);
-    { const [x0, z0] = polar(E + s * T.top, A.rPlaza, o), [x1, z1] = polar(E + s * T.top, A.rail - 0.2, o); gl.wall(x0, z0, x1, z1, CH, CH + 1.15); }
-  }
-  stair.arc(o, A.rPlaza, A.rOut, E - T.top, E + T.top, CH, 6);                       // the top landing
-  wall.drum(o, A.rPlaza, E - T.top, E + T.top, yP, CH, 6);
-  gl.drum(o, A.rPlaza + 0.1, E - T.top, E + T.top, CH, CH + 1.15, 6);
-  // the mall side: its lower-ground shopfront round the court's back, a planted ledge above
-  warm.drum(o, A.rPlaza - 0.02, E + T.land, E + 360 - T.land, yP + 0.2, yP + 3.9, 40, 1);
-  wall.drum(o, A.rPlaza, E + T.land, E + 360 - T.land, yP + 3.9, CH + 0.4, 40); wall.drum(o, A.rPlaza, E + T.land, E + 360 - T.land, yP, yP + 0.2, 40);
-  soil.arc(o, A.rPlaza, A.rOut + 0.2, E + T.land, E + 360 - T.land, CH + 0.4, 40);
-  for (let b = T.land + 4; b < 360 - T.land - 2; b += 5) { const [x, z] = applePt(b, 19.3); soil.arc({ x, z }, 0, 1.5, 0, 360, CH + 1.0, 6); soil.drum({ x, z }, 1.5, 0, 360, CH + 0.4, CH + 1.0, 6); }
-  // ---- the glass cylinder: twelve curved panels, a glass roof, the door facing the stairs ----
-  const yTop = yP + A.cylH, doorH = 2.7;
-  ag.drum(o, A.rCyl, E + A.door, E + 360 - A.door, yP, yP + doorH, 44); ag.drum(o, A.rCyl, 0, 360, yP + doorH, yTop, 48); ag.arc(o, 0, A.rCyl, 0, 360, yTop, 24);
-  for (let i = 0; i < 12; i++) { const [x, z] = polar(E + 15 + i * 30, A.rCyl, o); st.box(x, yP, z, 0.025, A.cylH, 0.025); }
-  for (const s of [-1, 1]) { const [x, z] = polar(E + s * A.door, A.rCyl, o); st.box(x, yP, z, 0.06, doorH, 0.06); }
-  // below the court: the drum goes on down to the store's floor, open at the stair's foot
-  ag.drum(o, A.rCyl, E + A.foot[1], E + 360 + A.foot[0], yS, yP - 0.4, 40);
+  const A = APPLE, yP = A.yPlaza, yS = A.yStore, o = A, E = A.entry, yCeil = yP - 1.0;
+  const floor = new Tris(1.6), band = new Tris(1.6), ag = new Tris(), seam = new Batch(), st = new Batch(), wood = new Batch(), ceil = new Tris(), storeWall = new Tris(), treads = new Tris(), dark = new Batch(), oak = new Tris(1.2);
+  // ---- the plaza: pale granite at street level, flush with the pavement; darker bands mark the cylinder's sill,
+  // a ring halfway out and the plaza's edge (the reflecting pool that once ringed the cylinder went in the rebuild)
+  floor.arc(o, A.rCyl + 0.6, A.rOut, 0, 360, yP, 90);
+  floor.arc(o, A.rCore, A.rCyl + 0.6, E + A.landing[0], E + A.landing[1], yP, 12);            // the landing inside the cylinder
+  floor.arc(o, A.rCyl, A.rCyl + 0.6, E + A.landing[1], E + 360 + A.landing[0], yP, 40);
+  for (const [r0, r1] of [[A.rCyl - 0.02, A.rCyl + 0.6], [11.7, 12.1], [A.rOut - 0.5, A.rOut]]) band.arc(o, r0, r1, 0, 360, yP + 0.004, 90);
+  for (let i = 0; i < 24; i++) { const b = E + 7.5 + i * 15, [x0, z0] = polar(b, A.rCyl + 0.6, o), [x1, z1] = polar(b, A.rOut - 0.5, o), [dx, dz] = dirOf(b); obox(seam, (x0 + x1) / 2, yP - 0.004, (z0 + z1) / 2, dx, dz, Math.hypot(x1 - x0, z1 - z0), 0.012, 0.05); }
+  // ---- the glass cylinder: twelve curved panels butted with no fins or fittings, a stainless ring round the
+  // top, and a shallow dome of twelve curved panels meeting a glass disc
+  const yTop = yP + A.cylH, doorH = 3.0, rise = 0.55;
+  ag.drum(o, A.rCyl, E + A.door, E + 360 - A.door, yP, yP + doorH, 44); ag.drum(o, A.rCyl, 0, 360, yP + doorH, yTop, 48);
+  const domeY = (r) => yTop + rise * (1 - (r / A.rCyl) ** 2);
+  for (let k = 0; k < 6; k++) { const r0 = A.rCyl * (1 - k / 6), r1 = A.rCyl * (1 - (k + 1) / 6); if (r1 < 0.9) { ag.arc(o, 0, r0, 0, 360, domeY(r0), 24); break; } for (let i = 0; i < 48; i++) { const b0 = i * 7.5, b1 = b0 + 7.5, [x0, z0] = polar(b0, r0, o), [x1, z1] = polar(b1, r0, o), [x2, z2] = polar(b1, r1, o), [x3, z3] = polar(b0, r1, o); ag.quad([x0, domeY(r0), z0], [x1, domeY(r0), z1], [x2, domeY(r1), z2], [x3, domeY(r1), z3]); } }
+  const ring = new Tris(); ring.drum(o, A.rCyl + 0.07, 0, 360, yTop - 0.42, yTop + 0.02, 72); ring.arc(o, A.rCyl - 0.1, A.rCyl + 0.07, 0, 360, yTop + 0.02, 72); ring.drum(o, A.rCyl - 0.1, 0, 360, yTop - 0.42, yTop + 0.02, 72);
+  ring.drum(o, A.rCyl + 0.05, 0, 360, yP, yP + 0.12, 72);                                        // a stainless shoe at the foot
+  for (let i = 0; i < 12; i++) { const [x, z] = polar(E + 15 + i * 30, A.rCyl + 0.005, o); seam.box(x, yP + 0.12, z, 0.018, A.cylH - 0.54, 0.018); }   // the panels' edges (glass to glass)
+  for (let i = 0; i < 12; i++) { const b = E + 15 + i * 30; for (let k = 0; k < 6; k++) { const r0 = A.rCyl * (1 - k / 6), r1 = A.rCyl * (1 - (k + 1) / 6); if (r1 < 0.9) break; const [x0, z0] = polar(b, r0, o), [x1, z1] = polar(b, r1, o), d = new THREE.Vector3(x1 - x0, domeY(r1) - domeY(r0), z1 - z0), len = d.length(), geo = new THREE.BoxGeometry(0.02, 0.02, len); geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.normalize())); geo.translate((x0 + x1) / 2, (domeY(r0) + domeY(r1)) / 2 + 0.01, (z0 + z1) / 2); seam.push(geo); } }
+  // the door: a curved glass leaf slid aside behind the panel, a slim stainless head
+  ag.drum(o, A.rCyl - 0.12, E + A.door - 0.5, E + A.door + 26, yP, yP + doorH, 8);
+  { const hd = new Tris(); hd.drum(o, A.rCyl + 0.03, E - A.door, E + A.door, yP + doorH - 0.02, yP + doorH + 0.14, 8); ring.p.push(...hd.p); ring.n.push(...hd.n); ring.u.push(...hd.u); }
+  // below the plaza the drum goes on down to the store's floor, open at the stair's foot
+  ag.drum(o, A.rCyl, E + A.foot[1], E + 360 + A.foot[0], yS, yCeil, 40);
   // the lift's glass core, the spiral stair round it: glass treads, glass balustrade, a steel rail
-  const core = new Tris(); core.drum(o, A.rCore, 0, 360, yS, yP + 2.6, 24); core.arc(o, 0, A.rCore, 0, 360, yP + 2.6, 12);
-  const SPI = A.spiral, ns = 30, stepA = SPI.total / ns, drop = SPI.drop / ns;
+  const core = new Tris(); core.drum(o, A.rCore, 0, 360, yS, yP + 2.9, 24); core.arc(o, 0, A.rCore, 0, 360, yP + 2.9, 12);
+  const SPI = A.spiral, ns = 36, stepA = SPI.total / ns, drop = SPI.drop / ns;
   for (let i = 0; i < ns; i++) {
     const a0 = E + SPI.start + i * stepA, a1 = a0 + stepA, y = yP - (i + 1) * drop;
     treads.arc(o, A.rCore, SPI.r1 + 0.2, a0, a1, y, 2); treads.arc(o, A.rCore, SPI.r1 + 0.2, a0, a1, y - 0.07, 2);
@@ -212,34 +197,60 @@ export function buildApple(g, m, lights) {
   }
   ag.drum(o, SPI.r1 + 0.2, E + SPI.start, E + SPI.start + SPI.total, (b) => yP - SPI.drop * (b - E - SPI.start) / SPI.total, (b) => yP - SPI.drop * (b - E - SPI.start) / SPI.total + 0.98, 60);
   { const [x0, z0] = polar(E + A.landing[0], A.rCore, o), [x1, z1] = polar(E + A.landing[0], A.rCyl - 0.3, o); ag.wall(x0, z0, x1, z1, yP, yP + 1.0); }
-  // the logo, hung high in the cylinder, facing the stairs (and the Pearl)
-  const logo = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 2.3), new THREE.MeshBasicMaterial({ map: appleLogo(), transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+  // the logo, white, hung high in the cylinder, facing the door (and the Pearl)
+  const logo = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({ map: appleLogo(), transparent: true, side: THREE.DoubleSide, depthWrite: false }));
   logo.material.color.setScalar(1.5); logo.material.userData.todSkip = true;
-  logo.position.set(A.x, yTop - 2.9, A.z); logo.rotation.y = Math.atan2(...dirOf(E)); logo.name = 'ljz-apple-logo'; logo.renderOrder = 2; g.add(logo);
-  // ---- the store under the court: a round room, long oak tables, a ring of light in the ceiling ----
-  floor.arc(o, 0, A.storeR, 0, 360, yS, 60);
-  storeWall.drum(o, A.storeR - 0.02, 0, 360, yS, yP - 0.4, 60);
-  ceil.keepDown = true; ceil.arc(o, A.rCyl, A.storeR, 0, 360, yP - 0.4, 60);
+  logo.position.set(A.x, yTop - 3.4, A.z); logo.rotation.y = Math.atan2(...dirOf(E)); logo.name = 'ljz-apple-logo'; logo.renderOrder = 2; g.add(logo);
+  for (const s of [-0.9, 0.9]) { const [tx, tz] = dirOf(E + 90); seam.box(A.x + tx * s, yTop - 2.1, A.z + tz * s, 0.006, 2.1, 0.006); }          // its two hangers
+  // ---- the store under the plaza: a round room in pale stone, oak tables, oak walls of shelving, a ring of light in the white ceiling
+  floor.arc(o, 0, A.storeR, 0, 360, yS, 72);
+  ceil.keepDown = true; ceil.arc(o, A.rCyl, A.storeR, 0, 360, yCeil, 72);
   const glow = new Tris(); glow.keepDown = true;
-  for (const r of [8, 12]) glow.arc(o, r - 0.25, r + 0.25, 0, 360, yP - 0.41, 60);
+  for (const r of [8, 12.5, 16.5]) glow.arc(o, r - 0.22, r + 0.22, 0, 360, yCeil - 0.01, 72);
+  // the wall: oak up to 3 m (shelving, with a lit shelf line), white plaster above; the mall's glass shopfront at the back; a video wall (the Forum)
+  const back = A.mall, screen = back + 62, gap = (b, c, w) => Math.abs(((b - c + 540) % 360) - 180) < w;
+  for (let i = 0; i < 72; i++) {
+    const b0 = i * 5, b1 = b0 + 5, mid = b0 + 2.5;
+    if (gap(mid, back, 16) || gap(mid, screen, 14)) continue;
+    oak.drum(o, A.storeR - 0.04, E + b0, E + b1, yS, yS + 3.0, 1); storeWall.drum(o, A.storeR - 0.02, E + b0, E + b1, yS + 3.0, yCeil, 1);
+    for (const h of [1.05, 1.75, 2.45]) { const [x, z] = applePt(mid, A.storeR - 0.3), [dx, dz] = dirOf(E + mid + 90); obox(wood, x, yS + h, z, dx, dz, A.storeR * 5 * D2R, 0.04, 0.5); }
+  }
+  const mallFront = new Tris(); mallFront.drum(o, A.storeR - 0.03, E + back - 16, E + back + 16, yS, yCeil, 8, 1);
+  const shopMat = asLight(new THREE.MeshBasicMaterial({ map: shopfronts(), side: THREE.DoubleSide }), 'shops', 0.3); shopMat.color.setScalar(1.0);
+  storeWall.drum(o, A.storeR - 0.02, E + back - 16, E + back + 16, yS + 4.0, yCeil, 4);
+  const scr = new Tris(); scr.drum(o, A.storeR - 0.06, E + screen - 14, E + screen + 14, yS + 0.9, yS + 3.9, 8, 1);
+  storeWall.drum(o, A.storeR - 0.02, E + screen - 14, E + screen + 14, yS, yS + 0.9, 4); storeWall.drum(o, A.storeR - 0.02, E + screen - 14, E + screen + 14, yS + 3.9, yCeil, 4);
   for (const tb of A.tables) {
     const [x, z] = applePt(tb.ang, tb.r), [rx, rz] = dirOf(E + tb.ang);
     obox(wood, x, yS + 0.82, z, rx, rz, 3.2, 0.09, 1.25); for (const s of [-1.3, 1.3]) obox(wood, x + rx * s, yS, z + rz * s, rx, rz, 0.12, 0.82, 1.1);
     for (let i = 0; i < 5; i++) for (const sd of [-0.36, 0.36]) obox(dark, x + rx * (-1.2 + i * 0.6) - rz * sd, yS + 0.915, z + rz * (-1.2 + i * 0.6) + rx * sd, rx, rz, i % 2 ? 0.16 : 0.26, 0.012, i % 2 ? 0.08 : 0.19);
   }
-  lights.push({ x: A.x + 6, y: yP - 0.9, z: A.z + 6, intensity: 16, distance: 18, color: new THREE.Color(1.0, 0.93, 0.82) }, { x: A.x - 7, y: yP - 0.9, z: A.z - 5, intensity: 16, distance: 18, color: new THREE.Color(1.0, 0.93, 0.82) });
-  lights.push({ x: A.x, y: yP + 4, z: A.z, intensity: 20, distance: 22, color: new THREE.Color(0.95, 0.97, 1.0) });
-  const shop = asLight(new THREE.MeshBasicMaterial({ map: shopfronts(), side: THREE.DoubleSide }), 'shops', 0.3); shop.color.setScalar(1.0);
-  const warmWall = std({ color: 0xd9cdb8, roughness: 0.7, emissive: 0x4a4034 });
+  // the Forum's benches: oak cubes before the video wall
+  for (let i = 0; i < 6; i++) { const [x, z] = applePt(screen - 12 + i * 4.8, A.storeR - 5), [dx, dz] = dirOf(E + screen - 12 + i * 4.8); obox(wood, x, yS, z, dx, dz, 0.6, 0.45, 0.6); }
+  lights.push({ x: A.x + 7, y: yCeil - 0.4, z: A.z + 7, intensity: 18, distance: 20, color: new THREE.Color(1.0, 0.95, 0.86) }, { x: A.x - 8, y: yCeil - 0.4, z: A.z - 6, intensity: 18, distance: 20, color: new THREE.Color(1.0, 0.95, 0.86) });
+  lights.push({ x: A.x, y: yP + 5, z: A.z, intensity: 22, distance: 24, color: new THREE.Color(0.96, 0.98, 1.0) });
+  const warmWall = std({ color: 0xf1efe9, roughness: 0.8, emissive: 0x3a3936 });
   const add = (o2, cast = true) => { o2.castShadow = cast; o2.receiveShadow = true; g.add(o2); return o2; };
-  add(floor.mesh(m.stone, 'ljz-apple-floor'), false); add(wall.mesh(m.stoneWarm, 'ljz-apple-walls')); add(stair.mesh(m.stone, 'ljz-apple-stairs')); add(st.mesh(m.steel, 'ljz-apple-steel'));
-  add(soil.mesh(m.hedge, 'ljz-apple-planting')); add(wood.mesh(m.wood, 'ljz-apple-tables')); add(dark.mesh(m.dark, 'ljz-apple-devices'), false);
-  add(ceil.mesh(m.white, 'ljz-apple-ceiling'), false); g.add(glow.mesh(lit(1.8, 1.7, 1.55, { userData: { todSkip: true } }), 'ljz-apple-ceiling-light'));
-  g.add(warm.mesh(shop, 'ljz-mall-lg1')); add(storeWall.mesh(warmWall, 'ljz-apple-store-wall'), false);
+  add(floor.mesh(m.stone, 'ljz-apple-plaza'), false); add(band.mesh(std({ color: 0x8d8b86, roughness: 0.55, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 'ljz-apple-bands'), false);
+  add(seam.mesh(std({ color: 0x9cc3bd, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.55 }), 'ljz-apple-glass-edges'), false);
+  add(ring.mesh(m.steel, 'ljz-apple-ring')); add(st.mesh(m.steel, 'ljz-apple-steel'));
+  add(wood.mesh(m.wood, 'ljz-apple-oak')); add(oak.mesh(std({ color: 0xb98d5c, roughness: 0.6, emissive: 0x2a1c0e }), 'ljz-apple-oak-walls'), false); add(dark.mesh(m.dark, 'ljz-apple-devices'), false);
+  add(ceil.mesh(m.white, 'ljz-apple-ceiling'), false); g.add(glow.mesh(lit(1.35, 1.32, 1.25, { userData: { todSkip: true } }), 'ljz-apple-ceiling-light'));
+  g.add(mallFront.mesh(shopMat, 'ljz-apple-mall-front')); add(storeWall.mesh(warmWall, 'ljz-apple-store-wall'), false);
+  g.add(scr.mesh(new THREE.MeshBasicMaterial({ map: forumTex(), userData: { todSkip: true } }), 'ljz-apple-forum'));
   const tr = treads.mesh(std({ color: 0xdfeeee, roughness: 0.1, transparent: true, opacity: 0.55, depthWrite: false }), 'ljz-apple-treads'); tr.renderOrder = 4; g.add(tr);
   const cm = core.mesh(std({ color: 0xbfd6d8, roughness: 0.05, metalness: 0.3, transparent: true, opacity: 0.3, depthWrite: false }), 'ljz-apple-lift'); cm.renderOrder = 4; g.add(cm);
-  const gm = gl.mesh(m.glass, 'ljz-apple-rails'); gm.renderOrder = 3; g.add(gm);
   const am = ag.mesh(m.appleGlass, 'ljz-apple-cylinder'); am.renderOrder = 5; g.add(am);
+  // after dark the cylinder glows: the store's light coming up the stair well, the glass catching it
+  const gw = new Tris(); gw.drum(o, A.rCyl - 0.04, 0, 360, yP, yTop, 48);
+  const gm = gw.mesh(asLight(lit(0.1, 0.13, 0.15, { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), 'shops', 0), 'ljz-apple-glow'); gm.renderOrder = 6; g.add(gm);
+}
+// the Forum's video wall: a soft gradient with a few tiles of light (no imagery, no brand beyond the store's own)
+function forumTex() {
+  const [c, x] = makeCanvas(1024, 256), gd = x.createLinearGradient(0, 0, 1024, 256);
+  gd.addColorStop(0, '#1d2b4a'); gd.addColorStop(0.5, '#5a3f7a'); gd.addColorStop(1, '#d8805a'); x.fillStyle = gd; x.fillRect(0, 0, 1024, 256);
+  x.fillStyle = 'rgba(255,255,255,0.85)'; x.font = `600 44px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('Today at Apple', 512, 128);
+  return tex(c, { repeat: false, aniso: 8 });
 }
 // lit shop windows without any brand: warm rooms, plinths, a figure or two (the mall's fronts)
 function shopfronts() {
@@ -295,28 +306,65 @@ function curtainBox(batch, B, y0, h, r) {
 }
 export function buildIfc(g, m, lights) {
   const r = rng(808), glassB = new Batch(), crown = new Tris(24), edge = new Batch(), stone = new Batch(), st = new Batch(), gl = new Tris(), shops = new Tris(), lob = new Tris();
-  const atlas = curtainAtlas(31, { glass: '#10222f', warm: 0.35, occ: 0.2 });
-  // the two towers: a square shaft, then the cut-crystal crown (four leaning facets up to a tilted top)
+  const front = new Tris(), roof = new Tris(), fascia = new Tris(), mull = new Batch();
+  const atlas = curtainAtlas(31, { glass: '#122634', warm: 0.3, occ: 0.18, fin: 'rgba(214,226,236,0.8)' });
+  // the two towers: a square shaft with notched corners in silvery glass and close vertical mullions, then the
+  // cut-crystal crown (four leaning facets up to a tilted top), its edges lit at night
   for (const [T, tall] of [[IFC.north, 259.9], [IFC.south, 249.9]]) {
-    const hs = tall - 46; curtainBox(glassB, T, 0, hs, r);
+    const hs = tall - 46, n = T.notch || 0;
+    curtainBox(glassB, { ...T, hz: T.hz - n }, 0, hs, r); curtainBox(glassB, { ...T, hx: T.hx - n }, 0, hs, r);
     const P = (lx, lz, y) => [T.cx + lx * T.c - lz * T.s, y, T.cz + lx * T.s + lz * T.c], k = 0.52;
     const base = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => P(a * T.hx, b * T.hz, hs)), topH = [tall, tall - 14, tall - 30, tall - 14];
     const topP = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b], i) => P(a * T.hx * k, b * T.hz * k, topH[i]));
     for (let i = 0; i < 4; i++) { const j = (i + 1) % 4, w = T.hx * 2 / 24; crown.quad(base[i], base[j], topP[j], topP[i], [[0, hs / 100.8], [w, hs / 100.8], [w * (0.5 + k / 2), topH[j] / 100.8], [w * (0.5 - k / 2), topH[i] / 100.8]]); }
     crown.quad(topP[0], topP[1], topP[2], topP[3], [[0, 0], [0.001, 0], [0.001, 0.001], [0, 0.001]]);
-    for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; for (const [a, b] of [[base[i], topP[i]], [topP[i], topP[j]]]) { const d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), len = d.length(), geo = new THREE.BoxGeometry(0.7, 0.7, len); geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.normalize())); geo.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); edge.push(geo); } }
+    // the notches close under the crown: a soffit at each corner
+    for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { const c0 = P(a * T.hx, b * T.hz, hs), c1 = P(a * (T.hx - n), b * T.hz, hs), c2 = P(a * (T.hx - n), b * (T.hz - n), hs), c3 = P(a * T.hx, b * (T.hz - n), hs); crown.quad(c0, c1, c2, c3, [[0, 0], [0.001, 0], [0.001, 0.001], [0, 0.001]]); }
+    for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; for (const [a, b] of [[base[i], topP[i]], [topP[i], topP[j]], [base[i], base[j]]]) { const d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), len = d.length(), geo = new THREE.BoxGeometry(0.7, 0.7, len); geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.normalize())); geo.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); edge.push(geo); } }
   }
-  // the mall's podium: stone above, shop glass along the street
-  const Pd = IFC.podium, PP = (lx, lz) => [Pd.cx + lx * Pd.c - lz * Pd.s, Pd.cz + lx * Pd.s + lz * Pd.c];
-  { const geo = new THREE.BoxGeometry(Pd.hx * 2, Pd.h - 6.4, Pd.hz * 2); geo.rotateY(-Pd.rot); geo.translate(Pd.cx, 6.4 + (Pd.h - 6.4) / 2, Pd.cz); stone.push(geo); }
-  const front = [[-Pd.hx, -Pd.hz, -Pd.hx, Pd.hz], [-Pd.hx, -Pd.hz, Pd.hx, -Pd.hz], [-Pd.hx, Pd.hz, Pd.hx, Pd.hz]];
-  for (const [a0, b0, a1, b1] of front) {
-    const [x0, z0] = PP(a0, b0), [x1, z1] = PP(a1, b1), len = Math.hypot(x1 - x0, z1 - z0), nb = Math.round(len / 5.5);
-    for (let i = 0; i < nb; i++) { const f0 = i / nb + 0.004, f1 = (i + 1) / nb - 0.004, kk = Math.floor(r() * 8); shops.wall(x0 + (x1 - x0) * f0, z0 + (z1 - z0) * f0, x0 + (x1 - x0) * f1, z0 + (z1 - z0) * f1, CH, 6.4, [kk / 8, 0, (kk + 1) / 8, 1]); }
+  // the 85 m block behind and between them
+  { const B = IFC.annex; curtainBox(glassB, B, 0, B.h - 6, r); curtainBox(glassB, { ...B, hx: B.hx - 3, hz: B.hz - 3 }, B.h - 6, 6, r); }
+  // ---- the mall's podium: four levels; shop windows along the street, glass and stone bands above ----
+  const AP = (a, p, y) => { const [x, z] = fromAP(a, p); return [x, y, z]; }, H = IFC_ARC.h;
+  for (const B of [IFC.podium, IFC.podiumW]) { const geo = new THREE.BoxGeometry(B.hx * 2 - 0.6, H - 0.4, B.hz * 2 - 0.6); geo.rotateY(-B.rot); geo.translate(B.cx, (H - 0.4) / 2, B.cz); stone.push(geo); }
+  const [Pa, Pp] = toAP(IFC.podium.cx, IFC.podium.cz), [Wa, Wp] = toAP(IFC.podiumW.cx, IFC.podiumW.cz);
+  const streetFaces = [[Pa - IFC.podium.hx, 40, Pa + IFC.podium.hx, 40], [Wa - IFC.podiumW.hx, Wp + IFC.podiumW.hz, Wa - IFC.podiumW.hx, Wp - IFC.podiumW.hz]];
+  for (const [a0, p0, a1, p1] of streetFaces) {
+    const len = Math.hypot(a1 - a0, p1 - p0), nb = Math.round(len / 5.5);
+    for (let i = 0; i < nb; i++) {
+      const f0 = i / nb + 0.004, f1 = (i + 1) / nb - 0.004, am = a0 + (a1 - a0) * (f0 + f1) / 2; if (p0 === 40 && am > 149 && am < 203) continue;   // (the north tower stands there)
+      const kk = Math.floor(r() * 8), q0 = AP(a0 + (a1 - a0) * f0, p0 + (p1 - p0) * f0, 0), q1 = AP(a0 + (a1 - a0) * f1, p0 + (p1 - p0) * f1, 0);
+      shops.wall(q0[0], q0[2], q1[0], q1[2], CH, 6.4, [kk / 8, 0, (kk + 1) / 8, 1]);
+    }
+    const q0 = AP(a0, p0, 0), q1 = AP(a1, p1, 0), out = p0 === 40 ? [-dirOf(AVE + 90)[0], -dirOf(AVE + 90)[1]] : [-dirOf(AVE)[0], -dirOf(AVE)[1]];
+    front.wall(q0[0] + out[0] * 0.05, q0[2] + out[1] * 0.05, q1[0] + out[0] * 0.05, q1[2] + out[1] * 0.05, 6.4, H, [0, 6.4 / H, len / 12, 1]);
   }
-  // its way in from the court side: glass doors under a canopy, the mall's name over them
-  { const [x, z] = PP(-Pd.hx - 0.4, 0), [fx, fz] = [-Pd.c, -Pd.s]; obox(st, x + fx * 2.2, 5.2, z + fz * 2.2, fx, fz, 5.2, 0.22, 16); gl.wall(...PP(-Pd.hx - 0.25, -5), ...PP(-Pd.hx - 0.25, 5), CH, 4.6);
-    g.add(sign(['ifc mall', '国金中心商场'], { w: 24, h: 6.5, x: x + fx * 0.2, y: 12, z: z + fz * 0.2, ry: Math.atan2(fx, fz), color: '#f4ead2', bg: null, ch: 'signs' })); }
+  // ---- the concave glass front round the Apple plaza: full height, the atrium behind it, stainless mullions every 3 m, stone floor edges ----
+  const b0 = AVE + IFC_ARC.t0, b1 = AVE + IFC_ARC.t1, R = IFC_ARC.r, arcLen = R * (b1 - b0) * D2R;
+  front.drum(APPLE, R, b0, b1, 0.0, H, 60, arcLen / 12);
+  for (const y of [6.4, 12.9, 19.4, H - 0.6]) fascia.drum(APPLE, R - 0.08, b0, b1, y - 0.2, y + 0.45, 60);
+  fascia.drum(APPLE, R - 0.3, b0, b1, H - 0.2, H + 1.1, 60); fascia.arc(APPLE, R - 0.3, R + 0.6, b0, b1, H + 1.1, 60);
+  for (let i = 0; i <= Math.round(arcLen / 3); i++) { const b = b0 + (b1 - b0) * i / Math.round(arcLen / 3), [x, z] = polar(b, R - 0.1, APPLE); mull.box(x, CH, z, 0.08, H - CH, 0.08); }
+  { // the roof over the wedge between the curved front and the two boxes: out along each ray to where the podium ends
+    const tAt = (t) => { const c = Math.cos(t * D2R), s2 = Math.sin(t * D2R), a0 = Wa - IFC.podiumW.hx; let d = R + 12;
+      if (c > 1e-3) d = Math.min(d, R / c); if (c < -1e-3) d = Math.min(d, (IFC_ARC.a - a0) / -c);
+      if (s2 > 1e-3) d = Math.min(d, (Wp - IFC.podiumW.hz - IFC_ARC.p) / s2); if (s2 < -1e-3) d = Math.min(d, (IFC_ARC.p - 40) / -s2); return Math.max(R, d); };
+    for (let i = 0; i < 40; i++) { const t0 = IFC_ARC.t0 + (IFC_ARC.t1 - IFC_ARC.t0) * i / 40, t1 = IFC_ARC.t0 + (IFC_ARC.t1 - IFC_ARC.t0) * (i + 1) / 40, d0 = tAt(t0) + 0.3, d1 = tAt(t1) + 0.3;
+      const [x0, z0] = polar(AVE + t0, R, APPLE), [x1, z1] = polar(AVE + t1, R, APPLE), [x2, z2] = polar(AVE + t1, d1, APPLE), [x3, z3] = polar(AVE + t0, d0, APPLE);
+      roof.quad([x0, H, z0], [x1, H, z1], [x2, H, z2], [x3, H, z3]); } }
+  // its way in, facing the cylinder: a pair of glass doors under a stainless canopy, the mall's name high on the glass
+  const tm = (IFC_ARC.t0 + IFC_ARC.t1) / 2, bm = AVE + tm, [ex, ez] = polar(bm, R, APPLE), [ix, iz] = dirOf(bm + 180), [jx, jz] = dirOf(bm + 90);
+  obox(st, ex + ix * 2.2, 5.0, ez + iz * 2.2, jx, jz, 12, 0.22, 4.4);
+  for (const s2 of [-4.2, 4.2]) st.box(ex + ix * 4.2 + jx * s2, CH, ez + iz * 4.2 + jz * s2, 0.12, 4.85, 0.12);
+  g.add(sign(['ifc mall'], { w: 13, h: 3.6, x: ex + ix * 0.9, y: 16.6, z: ez + iz * 0.9, ry: Math.atan2(ix, iz), color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.45, font: FONT.sans }));
+  g.add(sign(['上海国金中心商场'], { w: 9, h: 1.3, x: ex + ix * 0.9, y: 13.6, z: ez + iz * 0.9, ry: Math.atan2(ix, iz), color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.3 }));
+  // the same name on the avenue, at the podium's corner
+  { const [x, z] = fromAP(128, 39.7), d = dirOf(AVE + 270); g.add(sign(['ifc mall', '上海国金中心商场'], { w: 16, h: 4.4, x, y: 20.5, z, ry: Math.atan2(d[0], d[1]), color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.4 })); }
+  // a directory totem on the plaza by the doors: the mall, the hotel in the south tower, Apple, the metro
+  { const [x, z] = polar(bm - 14, R - 3.2, APPLE), d = dirOf(bm + 180 - 14); obox(stone, x, CH, z, -d[1], d[0], 1.1, 2.6, 0.3); addCircle(x, z, 0.6, { y1: 2 });
+    g.add(sign(['国金中心商场 · ifc mall', 'Apple · 浦东丽思卡尔顿酒店 Ritz-Carlton · 地铁2号线 Metro'], { w: 1.0, h: 1.9, x: x + d[0] * 0.16, y: CH + 1.5, z: z + d[1] * 0.16, ry: Math.atan2(d[0], d[1]), color: '#f2ede2', bg: '#2b2d31', ch: null, gain: 1.1 })); }
+  lights.push({ x: ex + ix * 3, y: 4.6, z: ez + iz * 3, intensity: 22, distance: 16, color: new THREE.Color(1.0, 0.92, 0.8) });
+  for (const t of [IFC_ARC.t0 + 25, tm, IFC_ARC.t1 - 25]) { const [x, z] = polar(AVE + t, R + 6, APPLE); lights.push({ x, y: 10, z, intensity: 30, distance: 22, color: new THREE.Color(1.0, 0.9, 0.75) }); }
   // the north tower's lobby on Century Avenue: a tall glass front, a canopy, revolving doors, the address stone
   const T = IFC.north, L = LJZ.ifcLobbyDoor, [ux, uz] = dirOf(AVE);
   { const [x0, z0] = [L.x - ux * 13, L.z - uz * 13], [x1, z1] = [L.x + ux * 13, L.z + uz * 13];
@@ -328,13 +376,31 @@ export function buildIfc(g, m, lights) {
     lights.push({ x: L.x + L.nx * 2.6, y: 4.2, z: L.z + L.nz * 2.6, intensity: 26, distance: 16, color: new THREE.Color(1.0, 0.9, 0.74) });
     addCircle(L.x + ux * 7 + L.nx * 5, L.z + uz * 7 + L.nz * 5, 0.2); addCircle(L.x - ux * 7 + L.nx * 5, L.z - uz * 7 + L.nz * 5, 0.2);
     addBox(L.x - ux * 11 + L.nx * 6.5, L.z - uz * 11 + L.nz * 6.5, AVE_ROT, 1.8, 0.3, { id: 'stone', y1: 2 }); }
-  const towerMat = curtainMat(atlas, [0.5, 0.63, 0.7], 0.95, 0.22, THREE.DoubleSide);
+  const towerMat = curtainMat(atlas, [0.36, 0.45, 0.53], 0.95, 0.5, THREE.DoubleSide);
   const lobbyMat = new THREE.MeshBasicMaterial({ map: lobbyTex(), side: THREE.DoubleSide }); lobbyMat.color.setScalar(0.9); lobbyMat.userData.todSkip = true;
   const shopMat = asLight(new THREE.MeshBasicMaterial({ map: shopfronts(), side: THREE.DoubleSide }), 'shops', 0.3);
-  const tw = glassB.mesh(towerMat, 'ljz-ifc-towers'), cr = crown.mesh(towerMat, 'ljz-ifc-crowns'), sm = stone.mesh(m.stoneWarm, 'ljz-ifc-podium'), stm = st.mesh(m.steel, 'ljz-ifc-steel');
+  const frontMat = curtainMat(atriumTex(), [0.3, 0.37, 0.42], 0.72, 0.75, THREE.DoubleSide);
+  const tw = glassB.mesh(towerMat, 'ljz-ifc-towers'), cr = crown.mesh(towerMat, 'ljz-ifc-crowns'), sm = stone.mesh(std({ color: 0xcfc6b6, roughness: 0.6 }), 'ljz-ifc-podium'), stm = st.mesh(m.steel, 'ljz-ifc-steel');
   for (const o of [tw, cr, sm, stm]) { o.castShadow = true; o.receiveShadow = true; g.add(o); }
-  g.add(edge.mesh(asLight(lit(1.5, 1.7, 2.2), 'outline', 0.3), 'ljz-ifc-edges'), shops.mesh(shopMat, 'ljz-ifc-shops'), lob.mesh(lobbyMat, 'ljz-ifc-lobby'));
+  for (const o of [fascia.mesh(std({ color: 0xd8d2c6, roughness: 0.5 }), 'ljz-ifc-mall-fascia'), mull.mesh(m.steel, 'ljz-ifc-mall-mullions'), roof.mesh(std({ color: 0x5d625f, roughness: 0.9 }), 'ljz-ifc-mall-roof')]) { o.castShadow = true; o.receiveShadow = true; g.add(o); }
+  g.add(edge.mesh(asLight(lit(1.5, 1.7, 2.2), 'outline', 0.3), 'ljz-ifc-edges'), shops.mesh(shopMat, 'ljz-ifc-shops'), lob.mesh(lobbyMat, 'ljz-ifc-lobby'), front.mesh(frontMat, 'ljz-ifc-mall-glass'));
   const gm = gl.mesh(m.glass, 'ljz-ifc-glass'); gm.renderOrder = 3; g.add(gm);
+}
+// the mall's atrium seen through its glass: 12 m across, the podium's height (four levels), shopfronts at
+// the back of each level, glass balustrades on the slab edges, an escalator crossing, a few people
+function atriumTex() {
+  const [c, x] = makeCanvas(512, 1024), r = rng(77), H = 1024, lv = [0, 6.4, 12.9, 19.4, 26].map((y) => H - y / 26 * H);
+  for (let k = 0; k < 4; k++) {
+    const y0 = lv[k + 1], y1 = lv[k], gd = x.createLinearGradient(0, y0, 0, y1);
+    gd.addColorStop(0, '#f6e7c8'); gd.addColorStop(0.6, '#d9b98a'); gd.addColorStop(1, '#6d5538'); x.fillStyle = gd; x.fillRect(0, y0, 512, y1 - y0);
+    for (let i = 0; i < 4; i++) { const X = i * 128 + 10; x.fillStyle = i % 2 ? 'rgba(255,250,236,0.9)' : 'rgba(236,228,214,0.85)'; x.fillRect(X, y0 + (y1 - y0) * 0.35, 108, (y1 - y0) * 0.55); x.fillStyle = `hsl(${(r() * 360) | 0},25%,${25 + r() * 25}%)`; x.fillRect(X + 10, y0 + (y1 - y0) * 0.22, 88, (y1 - y0) * 0.08); }
+    for (let i = 0; i < 2; i++) if (r() < 0.7) { const px = 40 + r() * 430; x.fillStyle = 'rgba(30,24,20,0.8)'; x.beginPath(); x.ellipse(px, y1 - 62, 6, 8, 0, 0, 7); x.fill(); x.fillRect(px - 8, y1 - 54, 16, 50); }
+    x.fillStyle = 'rgba(220,230,232,0.35)'; x.fillRect(0, y1 - 30, 512, 26);
+    x.fillStyle = 'rgba(40,36,30,0.95)'; x.fillRect(0, y1 - 6, 512, 12);
+  }
+  x.strokeStyle = 'rgba(60,60,64,0.8)'; x.lineWidth = 10; x.beginPath(); x.moveTo(60, lv[1]); x.lineTo(320, lv[2]); x.stroke();
+  x.fillStyle = 'rgba(16,18,22,0.9)'; for (let i = 0; i <= 4; i++) x.fillRect(i * 128 - 2, 0, 4, H);
+  return tex(c, { aniso: 8 });
 }
 function lobbyTex() {
   const [c, x] = makeCanvas(1024, 512), gd = x.createLinearGradient(0, 0, 0, 512);
@@ -565,8 +631,8 @@ export function buildStreet(g, m, lights) {
   for (let a = 78; a < 556; a += 32) { if (a > 226 && a < 262) continue; for (const s of [-1, 1]) { const [x, z] = fromAP(a + (s > 0 ? 16 : 0), s * 17.2); if (Math.hypot(x - LJZ.kerbPickup.x, z - LJZ.kerbPickup.z) > 5) lamp(x, z, -s * nx, -s * nz); } }
   for (let b = 0; b < 360; b += 20) { const [x, z] = polar(b, 64); if (carriage(x, z) || carriage(...polar(b, 58)) || Math.hypot(x - APPLE.x, z - APPLE.z) < 26 || RAMPS.some((R) => Math.abs(((b - R.b + 540) % 360) - 180) < (R.kind === 'spur' ? 14 : 7))) continue; const d = dirOf(b + 180); lamp(x, z, d[0], d[1]); }
   for (const A of ARMS) { if (A.id === 'century') continue; for (let al = 78; al < 124; al += 30) for (const s of [-1, 1]) { const x = C.x + A.dx * al + A.px * s * (A.hw + 1.2), z = C.z + A.dz * al + A.pz * s * (A.hw + 1.2); if (inDistrict(x, z) && !carriage(x, z)) lamp(x, z, -s * A.px, -s * A.pz); } }
-  // the court and IFC's forecourt: low bollard lights
-  for (let b = 20; b <= 340; b += 32) { const [x, z] = applePt(b, APPLE.rail + 1.6); if (!inDistrict(x, z) || carriage(x, z)) continue; st.cyl(x, CH, z, 0.07, 0.07, 0.9, 8); lights.lamp(x, CH + 0.95, z, 0.14, { intensity: 7, distance: 9, pool: 6 }); addCircle(x, z, 0.12, { y1: 2 }); }
+  // round the Apple plaza's edge: low bollard lights (open toward the roundabout)
+  for (let b = 45; b <= 315; b += 30) { const [x, z] = applePt(b, APPLE.rOut - 0.25); if (!inDistrict(x, z) || carriage(x, z)) continue; st.cyl(x, CH, z, 0.07, 0.07, 0.9, 8); lights.lamp(x, CH + 0.95, z, 0.14, { intensity: 7, distance: 9, pool: 6 }); addCircle(x, z, 0.12, { y1: 2 }); }
   // road-name plates at the mouths of the roads (blue, white letters, as Shanghai's are)
   for (const A of ARMS) {
     const al = 70, s = A.id === 'century' ? -1 : 1, x = C.x + A.dx * al + A.px * s * (A.hw + 2.2), z = C.z + A.dz * al + A.pz * s * (A.hw + 2.2);

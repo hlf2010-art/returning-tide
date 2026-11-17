@@ -1,6 +1,6 @@
 // Lujiazui, across the river: the district you can walk. The roundabout under the Mingzhu Ring (明珠环,
 // the circular footbridge), its stairs and escalators; Century Avenue; Shanghai IFC with its mall and
-// the lobby that takes you up to the 32nd floor; Apple Pudong's glass cylinder in its sunken court,
+// the lobby that takes you up to the 32nd floor; Apple Pudong's glass cylinder on its plaza,
 // the spiral glass stair down into the store; Lujiazui station's exits (Line 2, one stop from East
 // Nanjing Road); the Central Green with its lake, lawn and paths; the Pearl, the Shanghai Tower, Jin
 // Mao and the World Financial Center standing where they stand.
@@ -21,7 +21,7 @@ import { createEntrances } from './entrances.js';
 import { mapExtras } from '../ui/minimap.js';
 import {
   C, RING, ARMS, RAMPS, SPUR, APPLE, METRO_LJZ, IFC, BUILDINGS, GREEN, LAKE, YIN, ZEBRAS, AVE, CH, LJZ,
-  dirOf, polar, fromAP, toAP, applePt, wellPt, wellLocal, carriage, zebra, inPudong, ljzZone, ljzState, signalAt,
+  dirOf, polar, fromAP, toAP, applePt, wellPt, wellLocal, IFC_ARC, arcPt, carriage, zebra, inPudong, ljzZone, ljzState, signalAt,
 } from './lujiazuiLayout.js';
 import { buildGround, buildMarkings, railTexture } from './lujiazuiGround.js';
 import { ljzMaterials, buildBridge, buildApple, buildIfc, buildMetro, buildTrees, buildGreen, buildSurroundings, buildStreet, lampKit, LJZ_TEXT } from './lujiazuiBuild.js';
@@ -55,10 +55,10 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     kit.finish(root);
     autoLights(root, 'lamps', 0.3);
     // where you can go in, marked as on the Bund (a pool of light, a label when it's in view)
-    const L = LJZ.ifcLobbyDoor, K = LJZ.kerbPickup, AE = LJZ.appleEntrance, toC = dirOf(APPLE.entry);
+    const L = LJZ.ifcLobbyDoor, K = LJZ.kerbPickup, AD = LJZ.appleCylinderDoor, toC = dirOf(APPLE.entry);
     ent = createEntrances({ scene, camera, list: [
       { id: 'ljz-ifc', name: ['国金中心 · 办公楼', 'IFC · the office tower'], act: ['上楼', 'go up'], x: L.x, z: L.z, nx: L.nx, nz: L.nz, y: CH, w: 5 },
-      { id: 'ljz-apple', name: ['Apple 浦东', 'Apple Pudong'], act: ['下去', 'down the stairs'], x: AE.x - toC[0] * 1.5, z: AE.z - toC[1] * 1.5, nx: toC[0], nz: toC[1], y: CH, w: 6, glow: false },
+      { id: 'ljz-apple', name: ['Apple 浦东', 'Apple Pudong'], act: ['进去 · 旋转楼梯', 'in, down the spiral stair'], x: AD.x - toC[0] * 0.4, z: AD.z - toC[1] * 0.4, nx: toC[0], nz: toC[1], y: CH, w: 3, glow: false },
       ...METRO_LJZ.map((W) => ({ id: `ljz-m${W.exit}`, name: [`陆家嘴站 ${W.exit} 号口`, `Lujiazui station, Exit ${W.exit}`], act: ['下楼 · 2号线', 'down to Line 2'], x: W.top[0] - W.dx * 0.8, z: W.top[1] - W.dz * 0.8, nx: -W.dx, nz: -W.dz, y: CH, w: 3, open: metroOpen, glow: false })),
       { id: 'ljz-didi', name: ['网约车上下客点', 'Ride-hailing point'], act: ['回外滩', 'a car back to the Bund'], x: K.x, z: K.z, nx: LJZ.ifcLobbyStand.x - K.x, nz: LJZ.ifcLobbyStand.z - K.z, y: CH, w: 3, glow: false },
     ].map((e) => { const l = Math.hypot(e.nx, e.nz) || 1; return { ...e, nx: e.nx / l, nz: e.nz / l }; }) });
@@ -177,11 +177,12 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     for (const q of ZEBRAS) poly([fromAP(q.a0, q.p0), fromAP(q.a1, q.p0), fromAP(q.a1, q.p1), fromAP(q.a0, q.p1)], 'rgba(230,226,215,0.55)');
     for (const B of BUILDINGS) poly([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [B.cx + a * B.hx * B.c - b * B.hz * B.s, B.cz + a * B.hx * B.s + b * B.hz * B.c]), B.id.startsWith('ifc') ? '#525a68' : '#454a55', '#5b616d');
     for (const [k, t] of Object.entries(LJZ.towers)) if (!k.startsWith('ifc')) disc(t.x, t.z, k === 'pearl' ? 30 : 26, '#5a5266');
-    // the ring bridge, its stairs and the spur; the Apple court; the station's exits
+    // the ring bridge, its stairs and the spur; the Apple plaza and the mall's curved front; the station's exits
     g.strokeStyle = 'rgba(214,206,190,0.9)'; g.lineWidth = (RING.r1 - RING.r0) * P; g.beginPath(); g.arc(px(C.x), pz(C.z), RING.rc * P, 0, 6.2832); g.stroke();
     for (const R of RAMPS) line(R.top[0], R.top[1], R.bot[0], R.bot[1], R.hw * 2, 'rgba(214,206,190,0.9)');
     line(...polar(SPUR.b, RING.r1 - 1), ...polar(SPUR.b, SPUR.s1), SPUR.hw * 2, 'rgba(214,206,190,0.9)');
-    disc(APPLE.x, APPLE.z, APPLE.rOut, '#3b4048'); disc(APPLE.x, APPLE.z, APPLE.rCyl, '#cfe6e6');
+    disc(APPLE.x, APPLE.z, APPLE.rOut, '#4a4f58'); disc(APPLE.x, APPLE.z, APPLE.rCyl, '#cfe6e6');
+    { const pts = []; for (let t = IFC_ARC.t0; t <= IFC_ARC.t1; t += 4) pts.push(arcPt(t)); g.strokeStyle = '#9fb4c8'; g.lineWidth = Math.max(1, 0.8 * P); g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)))); g.stroke(); }
     for (const W of METRO_LJZ) { const [x, z] = wellPt(W, W.len / 2); line(...W.top, ...wellPt(W, W.len), W.hw * 2, '#c8161e'); g.fillStyle = '#fff'; g.font = `700 ${Math.round(3.4 * P)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`M${W.exit}`, px(x), pz(z)); }
   });
 
@@ -197,7 +198,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     sceneLine(clock, raining, extra = '') {
       const b = player.body, z = ljzZone(b.x, b.z, b.y);
       const where = { ring: 'the Mingzhu Ring, the circular footbridge over the Lujiazui roundabout in Pudong, traffic going round below, the Oriental Pearl Tower just to the north-west',
-        apple: b.y < -7 ? 'the Apple store under the sunken court at IFC in Lujiazui, long oak tables, the spiral glass stair up into the glass cylinder' : 'the sunken court of Apple Pudong at IFC, the glass cylinder with the spiral stair in it',
+        apple: b.y < APPLE.yPlaza - 3 ? 'the Apple store under the plaza at IFC in Lujiazui, long oak tables, the spiral glass stair up into the glass cylinder' : 'the plaza of Apple Pudong in front of the IFC mall, the 13-metre glass cylinder with the spiral stair in it, the mall\'s curved glass front behind; the Oriental Pearl Tower across the roundabout',
         green: 'Lujiazui Central Green, the lawn and the lake in the middle of the towers: Jin Mao, the World Financial Center and the Shanghai Tower to the south-east',
         ljzMetro: 'an exit of Lujiazui metro station (Line 2), by the roundabout', ifc: 'outside Shanghai IFC on Century Avenue in Lujiazui, the office tower\'s lobby behind, taxis at the kerb',
         roundabout: 'the pavement by the Lujiazui roundabout in Pudong, under the ring footbridge, the Oriental Pearl Tower above', century: 'Century Avenue in Lujiazui, Pudong, among the office towers' }[z] || 'Lujiazui, Pudong';

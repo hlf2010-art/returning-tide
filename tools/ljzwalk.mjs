@@ -1,5 +1,5 @@
 // Walkthrough: Lujiazui. Arrive by Line 2 and by DiDi, walk the ring bridge and its stairs, down into
-// the Apple court and the spiral stair to the store, the metro exit, the Green's paths, IFC's lobby up
+// across the Apple plaza and down the spiral stair to the store, the metro exit, the Green's paths, IFC's lobby up
 // to the 32nd floor and back; and photograph each landmark by day and at dusk.
 // (The ground and collisions are tested in node: tests/lujiazui.test.mjs.)
 //   URL=http://localhost:4181/ OUT=<dir> UILANG=en|zh [ONLY=shots|walk] [VIEWS=ring,apple] [HOURS=13:00,17:42] node tools/ljzwalk.mjs
@@ -56,9 +56,13 @@ if (only !== 'walk') {
     'ring-ifc': [...polar(SPUR.b - 14, 51), RING.y, A.x, 6, A.z],
     'ring-stairs': [RAMPS[1].bot[0] + RAMPS[1].dx * 7 + RAMPS[1].px * 6, RAMPS[1].bot[1] + RAMPS[1].dz * 7 + RAMPS[1].pz * 6, 0.15, RAMPS[1].top[0], 3.5, RAMPS[1].top[1]],
     'apple-street': [...applePt(-28, 30), 0.15, A.x, 2.5, A.z],
-    'apple-court': [...applePt(-20, 13), A.yPlaza, A.x, 0.5, A.z],
-    'apple-spiral': [...applePt(-8, 3.6), A.yPlaza, ...applePt(120, 3).slice(0, 1), -8.5, applePt(120, 3)[1]],
-    'apple-store': [...applePt(70, 12.5), A.yStore, A.x, -8.4, A.z],
+    'apple-plaza': [...applePt(-20, 15), A.yPlaza, A.x, 5, A.z],
+    'apple-mall': [...applePt(-10, 21), A.yPlaza, ...applePt(180, 30).slice(0, 1), 10, applePt(180, 30)[1]],
+    'apple-pearl': [...applePt(196, 26.5), A.yPlaza, T.pearl.x, 60, T.pearl.z],
+    'apple-spiral': [...applePt(-8, 3.6), A.yPlaza, ...applePt(120, 3).slice(0, 1), A.yPlaza - 3.3, applePt(120, 3)[1]],
+    'apple-store': [...applePt(70, 12.5), A.yStore, A.x, A.yStore + 1.6, A.z],
+    'apple-forum': [...applePt(20, 9), A.yStore, ...applePt(242, 19).slice(0, 1), A.yStore + 2, applePt(242, 19)[1]],
+    'ifc-corner': [...fromAP(40, 22), 0.15, ...fromAP(150, 90).slice(0, 1), 70, fromAP(150, 90)[1]],
     'ifc-lobby': [LJZ.kerbPickup.x - 14, LJZ.kerbPickup.z - 2, 0.15, lob.x, 6, lob.z],
     'ifc-towers': [...fromAP(120, -30), 0.15, T.ifcNorth.x, 150, T.ifcNorth.z],
     'metro-exit6': [...wellPt(m6, -7, 3.5), 0.15, ...wellPt(m6, 4), 1.5].map((v, i, a) => (i === 4 ? a[5] : i === 5 ? a[4] : v)),
@@ -121,12 +125,11 @@ await walkTo(...polar(82, 53), 20); await walkTo(ER.bot[0] + ER.dx * 2, ER.bot[1
 ok(Math.abs(b.y - 0.15) < 0.06, `down the east stair to Century Avenue's north pavement (y ${b.y.toFixed(2)})`);
 await walkTo(C.x, C.z, 8, true); b = await body();
 ok(Math.hypot(b.x - C.x, b.z - C.z) > RING.road - 0.05, 'at street level the roundabout\'s kerb rail holds: the ring is the way across');
-// 3. Apple: down the court's curved stair, in by the cylinder's door, down the spiral to the store, back up
-await ev(([x, z]) => window.__bund.player.teleport(x, z, 0, 0), applePt(0, 25));
-for (const a of [0, 20, 40, 60, 80, 100, 106]) await walkTo(...applePt(a, 19.3), 40);
-b = await body();
-ok(Math.abs(b.y - APPLE.yPlaza) < 0.08, `down the curved stair into the sunken court (y ${b.y.toFixed(2)})`);
-await walkTo(...applePt(106, 13), 20); await walkTo(...applePt(45, 9), 30); await walkTo(...applePt(0, 7.5), 30); await walkTo(...applePt(0, 3.3), 20);
+// 3. Apple: across the plaza (street level), in by the cylinder's door, down the spiral to the store, back up
+await ev(([x, z]) => window.__bund.player.teleport(x, z, 0, 0), applePt(-40, 27));
+await walkTo(...applePt(0, 9), 40); b = await body();
+ok(Math.abs(b.y - APPLE.yPlaza) < 0.08 && APPLE.yPlaza === 0.15, `across the plaza to the cylinder, no steps (y ${b.y.toFixed(2)})`);
+await walkTo(...applePt(0, 3.3), 20);
 b = await body();
 ok(Math.hypot(b.x - APPLE.x, b.z - APPLE.z) < APPLE.rCyl, 'in through the cylinder\'s door');
 await shot('walk-cylinder');
@@ -134,13 +137,13 @@ for (let a = 40; a <= 420; a += 20) await walkTo(...applePt(a, 3.2), 20);
 b = await body();
 ok(b.y < APPLE.yStore + 0.4, `down the spiral glass stair (y ${b.y.toFixed(2)})`);
 await walkTo(...applePt(72, 8.5), 20); b = await body();
-ok(Math.abs(b.y - APPLE.yStore) < 0.05 && await ev(() => window.__bund.world.ljz.zone(window.__bund.player.body) === 'apple'), 'out at its foot into the store under the court');
+ok(Math.abs(b.y - APPLE.yStore) < 0.05 && await ev(() => window.__bund.world.ljz.zone(window.__bund.player.body) === 'apple'), 'out at its foot into the store under the plaza');
 { const t = APPLE.tables[1], [tx, tz] = applePt(t.ang, t.r), [sx, sz] = applePt(t.ang + 12, t.r); await stand(sx, sz, APPLE.yStore, tx, APPLE.yStore + 1, tz); }
 ok(await waitPrompt(/devices|样机/), 'the store: a table to look at');
 await stand(...applePt(72, 8.5), APPLE.yStore, APPLE.x, APPLE.yStore + 1.6, APPLE.z);
 await walkTo(...applePt(66, 3.2), 20); for (let a = 400; a >= 40; a -= 20) await walkTo(...applePt(a, 3.2), 20);
 await walkTo(...applePt(0, 3.2), 20); await walkTo(...applePt(0, 8), 20); b = await body();
-ok(Math.abs(b.y - APPLE.yPlaza) < 0.08 && Math.hypot(b.x - APPLE.x, b.z - APPLE.z) > APPLE.rCyl, 'back up the spiral and out into the court');
+ok(Math.abs(b.y - APPLE.yPlaza) < 0.08 && Math.hypot(b.x - APPLE.x, b.z - APPLE.z) > APPLE.rCyl, 'back up the spiral and out on to the plaza');
 // 4. the Green: in at the corner, along the path to the lake, which is water
 await ev(([x, z]) => window.__bund.player.teleport(x, z, 0, 0), [LJZ.greenGate.x, LJZ.greenGate.z]);
 await walkTo(...fromAP(290, -100), 60, true); await walkTo(...fromAP(330, -178), 90, true); b = await body();
