@@ -73,7 +73,7 @@ const CSS = `
 #profile .sun line { stroke: var(--rt-gold-hi); stroke-width: .6; }
 @keyframes rt-turn { to { transform: translate(-50%, -50%) rotate(360deg); } }
 #profile .stage { position: absolute; left: 3%; top: 4%; bottom: 4%; width: 36%; }
-#profile .art { position: absolute; inset: 0 2% 13% 4%; overflow: hidden; -webkit-mask-image: radial-gradient(85% 75% at 50% 42%, #000 55%, transparent 100%); mask-image: radial-gradient(85% 75% at 50% 42%, #000 55%, transparent 100%); }
+#profile .art { position: absolute; inset: 0 0 12% 9%; overflow: hidden; --m1: linear-gradient(180deg, transparent 0, #000 14%, #000 62%, transparent 100%); --m2: linear-gradient(90deg, transparent 0, #000 16%, #000 80%, transparent 100%); -webkit-mask-image: var(--m1), var(--m2); -webkit-mask-composite: source-in; mask-image: var(--m1), var(--m2); mask-composite: intersect; }
 #profile .art img { width: 100%; height: 100%; object-fit: cover; object-position: 58% 18%; filter: saturate(.82) contrast(1.06) brightness(.86); transform: scale(1.02); animation: rt-breathe 14s ease-in-out infinite alternate; }
 #profile .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,26,32,.25), rgba(11,26,32,0) 30%, rgba(7,11,15,.75) 92%), linear-gradient(90deg, rgba(105,210,255,.18), transparent 40%, rgba(236,190,110,.22)); mix-blend-mode: multiply; }
 #profile .art::before { content: ''; position: absolute; inset: 0; z-index: 1; background: radial-gradient(60% 50% at 85% 30%, rgba(236,190,110,.25), transparent 70%); mix-blend-mode: screen; pointer-events: none; }

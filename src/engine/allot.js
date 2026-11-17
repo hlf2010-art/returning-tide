@@ -65,7 +65,7 @@ export function previewSeason(L, plan, days) {
   const ms = nextMilestone(L, { made, network: A.network + networkGain(n('business')) });
   // the person
   for (const id of candidates(L)) {
-    const h = heart(L, id), mine = plan.love === id ? n('love') : 0, per = mine / weeks, seeing = isSeeing(L, id), pat = (NATURE[id] || {}).patience || 3;
+    const h = heart(L, id), mine = plan.lover === id ? n('love') : 0, per = mine / weeks, seeing = isSeeing(L, id), pat = (NATURE[id] || {}).patience || 3;
     if (mine) out.push({ kind: 'love', id, tone: per >= 1 ? 'good' : 'neutral', zh: per >= 1 ? '每周都见：关系会往前走' : `${Math.round(weeks / Math.max(1, mine))} 周见一次：慢慢来`, en: per >= 1 ? 'Every week: it moves forward' : `Once every ${Math.round(weeks / Math.max(1, mine))} weeks: slowly` });
     else if (seeing) out.push({ kind: 'love', id, tone: 'bad', zh: weeks > pat * 2 ? `${Math.round(weeks)} 周不见：她可能会走` : `${Math.round(weeks)} 周不见：她会觉得被冷落`, en: weeks > pat * 2 ? `${Math.round(weeks)} weeks without seeing her: she may leave` : `${Math.round(weeks)} weeks without seeing her: she'll feel neglected` });
     else if (h.stage === 'close') out.push({ kind: 'love', id, tone: 'neutral', zh: '不见：会慢慢淡下去', en: 'Not seeing her: it will fade' });

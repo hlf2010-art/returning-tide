@@ -36,7 +36,7 @@ const CSS = `
 #season.en .hd .gap { font-family: var(--rt-deco); font-size: clamp(36px, 6vh, 64px); letter-spacing: .05em; }
 #season .hd .q { font-size: 20px; margin-top: 10px; color: rgba(244,230,196,.9); letter-spacing: .08em; }
 #season .hd .why { font-size: 13px; margin-top: 6px; color: rgba(236,212,154,.6); letter-spacing: .06em; max-width: 640px; }
-#season .tower { position: absolute; left: 6%; bottom: 0; width: 36%; display: flex; flex-direction: column; align-items: center; }
+#season .tower { position: absolute; left: 4%; bottom: 0; width: 32%; display: flex; flex-direction: column; align-items: center; }
 #season .crown { height: 34px; margin: 0 auto; width: calc(var(--tw) * .62); background: linear-gradient(#1b2a30, #121c21); clip-path: polygon(20% 100%, 30% 40%, 50% 0, 70% 40%, 80% 100%); }
 #season .crown2 { height: 12px; width: calc(var(--tw) * .84); margin: 0 auto; background: #172429; }
 #season .facade { position: relative; padding: 14px 16px 0; background: linear-gradient(90deg, #0f191d, #16252b 50%, #0f191d); box-shadow: 0 0 80px rgba(0,0,0,.6); display: grid; gap: 4px; grid-template-columns: repeat(7, var(--cw)); grid-auto-rows: var(--ch); align-content: end; }
@@ -46,7 +46,8 @@ const CSS = `
 #season .facade i.ot { background: #dfeef6; box-shadow: 0 0 12px rgba(223,238,246,.7); }
 #season .reflect { height: 54px; margin-top: 2px; opacity: .25; transform: scaleY(-1); filter: blur(2px); -webkit-mask-image: linear-gradient(transparent, #000); mask-image: linear-gradient(transparent, #000); overflow: hidden; }
 #season .tlabel { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 12px var(--rt-thin); letter-spacing: .4em; color: rgba(236,212,154,.6); pointer-events: none; }
-#season .ctl { position: absolute; left: 46%; right: 5%; top: 22%; bottom: 4%; display: flex; flex-direction: column; gap: 10px; overflow: auto; scrollbar-width: none; }
+#season .ctl { position: absolute; left: 38%; right: 4%; top: 23%; bottom: 4%; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); grid-template-rows: auto 1fr auto; grid-template-areas: 'budget budget' 'inks note' 'bottom bottom'; gap: 12px 28px; }
+#season .budget { grid-area: budget; } #season .inks { grid-area: inks; align-self: start; } #season .note { grid-area: note; } #season .bottom { grid-area: bottom; }
 #season .budget { display: flex; align-items: baseline; gap: 18px; border-bottom: 1px solid rgba(200,163,90,.3); padding-bottom: 8px; }
 #season .budget b { font-weight: 600; font-size: 40px; color: #ecd49a; font-variant-numeric: oldstyle-nums; } #season .budget span { font: 12px var(--rt-thin); letter-spacing: .3em; color: var(--rt-gold); }
 #season .budget .left { margin-left: auto; font-size: 15px; letter-spacing: .05em; font-family: var(--rt-serif); } #season .budget .left.zero { color: #b8f0c8; } #season .budget .left.over { color: #ffb4a8; }
@@ -62,7 +63,7 @@ const CSS = `
 #season .who button { background: none; border: 1px solid rgba(240,138,160,.4); color: #f4dbe1; font: 15px var(--rt-serif); padding: 2px 12px; cursor: pointer; border-radius: 2px; }
 #season .who button.on { background: #b3352a; border-color: #b3352a; color: #fff3e8; box-shadow: 0 0 12px rgba(179,53,42,.5); }
 #season .presets { font-size: 13px; color: rgba(236,212,154,.6); letter-spacing: .06em; padding-top: 6px; } #season .presets button { background: none; border: 0; color: var(--rt-gold-hi); font: 14px var(--rt-serif); cursor: pointer; padding: 0 4px; text-decoration: underline; text-decoration-color: rgba(200,163,90,.4); text-underline-offset: 4px; }
-#season .note { position: relative; align-self: start; padding: 16px 20px 16px 22px; color: #23345e; transform: rotate(-.7deg); box-shadow: 0 16px 36px rgba(0,0,0,.5); flex: none; margin: 4px 0;
+#season .note { position: relative; align-self: start; padding: 16px 20px 16px 22px; color: #23345e; transform: rotate(-.7deg); box-shadow: 0 16px 36px rgba(0,0,0,.5); margin: 4px 0; max-height: 100%; overflow: auto; scrollbar-width: none;
   background: repeating-linear-gradient(180deg, transparent 0 29px, rgba(43,42,51,.12) 29px 30px), var(--rt-paper); }
 #season .note .h { font: 11px var(--rt-thin); letter-spacing: .45em; color: #6b5b3a; margin-bottom: 4px; }
 #season .note div.l { font-family: var(--rt-hand); font-size: 20px; line-height: 30px; } #season .note .l b { font-weight: 400; display: inline-block; width: 1.3em; }
@@ -71,7 +72,7 @@ const CSS = `
 #season .go { justify-self: end; background: linear-gradient(#e7c97f, #b48a3e); color: #1a1408; border: 0; font: 700 18px var(--rt-serif); letter-spacing: .2em; padding: 12px 34px; cursor: pointer; clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%); box-shadow: 0 0 30px rgba(236,212,154,.25); }
 #season .go[disabled] { filter: grayscale(1) brightness(.5); cursor: default; }
 #season .go small { display: block; font: 10px var(--rt-thin); letter-spacing: .3em; margin-top: 2px; }
-#season .bottom { margin-top: auto; display: flex; align-items: center; gap: 20px; justify-content: space-between; }
+#season .bottom { display: flex; align-items: center; gap: 20px; justify-content: space-between; }
 #season .res { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
 #season .res .in { width: min(760px, 90vw); }
 #season .res .gap2 { font-family: 'JB Hand', var(--rt-serif); font-size: 60px; color: #f4e6c4; } #season.en .res .gap2 { font-family: var(--rt-deco); font-size: 42px; }

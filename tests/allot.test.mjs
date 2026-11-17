@@ -50,6 +50,10 @@ const sumPlan = (p) => ['make', 'love', 'friends', 'business', 'rest'].reduce((s
   ok(r.ok && heart(L, 'nanxing').trust < t0 && r.events.some((e) => e.type === 'apart' && e.id === 'nanxing'), `and so it is: her trust ${t0} -> ${heart(L, 'nanxing').trust}`);
   ok(Math.abs(allot(L).energy - p.energy) < 1e-9 || allot(L).burnout > 0, 'the energy the preview showed is the energy he ends with');
 }
+{
+  const L = fixture(), p = previewSeason(L, { make: 10, lover: 'nanxing', love: 12, friends: 8, business: 8, rest: 12 }, 58);
+  ok(p.lines.some((l) => l.kind === 'love' && l.id === 'nanxing' && l.tone === 'good'), 'evenings given to Nanxing: the preview says it moves forward (not that she will leave)');
+}
 // ---- four years ----
 const PLANS = {
   maker: { make: 34, love: 0, friends: 2, business: 2, rest: 8 },

@@ -45,6 +45,12 @@
 - **Before he was twelve** he spent every summer at Old Zhou's watch-repair stall on Hankou Road.
   Old Zhou is missing. That is Mission One, and it stays a thread through the year.
 
+### How he looks (`docs/jibai-reference.webp`, the character sheet)
+
+Tall and lean, a clean-shaven Chinese face with a defined jaw; thick black hair, worn longer and tousled, falling over his forehead. His everyday outfit: a black zip-front work jacket (collar up a little), a plain white crew-neck tee, loose black trousers, white trainers, a black backpack, a dark-faced watch. Outfit variations on the sheet: business (black suit, tie, briefcase), smart casual (white shirt, chinos), streetwear (black hoodie, cargo trousers, cap), travel (beige jacket, shorts). Reading glasses at the laptop. Eight expressions: neutral, smile, laugh, serious, thinking, surprised, concerned, sad.
+
+In the game: the character page shows the sheet's portrait (`public/people/jibai/hero.jpg`) and his face today from the expressions (`face-*.jpg`, chosen by `moodOf` in `src/world/profileView.js`). The 3D body (`public/people/player.glb`, a Rocketbox avatar) is recoloured to the everyday outfit with black hair; its face is still the library's. A proper 3D model from the sheet would replace it (see the README).
+
 ## The five (Nanjing Foreign Language School, class of 2017; group chat: 「金陵五虎+1」, renamed weekly)
 
 1. **陆明轩 Lu Mingxuan ("Xuan"), 27, venture capital.**
