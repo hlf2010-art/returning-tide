@@ -49,6 +49,20 @@ someone else's name; six hundred duplicated rows in the evaluation set), and `ac
 is four floors under the robot-arm start-up: on days when Mingxuan expects him at three, the second
 lift goes up to 32F.
 
+*His skills at work* (`engine/skills.js`, `world/skillChoices.js`): answers can carry `sk`
+(experience in Software & AI, Product or Hardware) and `needs` (offered only at a level, with an
+`else` in its place below it). The firm's own AI work runs alongside Donglan: on the Thursday the
+partner wants a click-through "agent" for Shenjiang Bank's reconciliations (申江银行, invented);
+Ji Bai can build a real one on the bank's sandbox over the weekend (scored on fifty real breaks,
+the misses shown), sit in their operations room first, mock it in Figma, or pass it to Shao Feng.
+In January it comes back: a pilot signed (and whether the model runs in the bank's own machine
+room or on a cloud API), or a delivery team finding nothing behind the clicks. In March the
+remediation asks for an evaluation set before any number goes in a deck, or the redaction moved
+into Donglan's machine room (a multimodal model that boxes names and IDs on photographs, his only
+at Software & AI 5), or a new OCR vendor. The robot-arm review upstairs has its own versions
+(`world/destScripts.js`): the bench, a kilohertz of logs, a slip sensor with a model on the
+controller, a grasp-point model, or the product question; the investor demo follows what he wrote.
+
 **II · Corporate Reality (January-March 2027).** `act2-project`: the number on page three (94 %
 reported, 71-89 % real, depending on what he did in November); the live demonstration that fails in
 front of the client's chairman (an invented policy clause, a real person's ID on the projector);

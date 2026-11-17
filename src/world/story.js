@@ -17,6 +17,8 @@ import { dinnerWork, dinnerAfter, workContext } from './work.js';
 import { finalDay, isYear, lifeContext } from '../engine/year.js';
 import { dayName } from './career.js';
 import { YEAR_QUESTS, yearDinner, yearEnding, yearEpilogue, careerContext, COLLEAGUES } from './careerStory.js';
+import { armRoute } from './destScripts.js';
+import { award } from './skillChoices.js';
 
 export const D = (day, h, m = 0) => day * 1440 + h * 60 + m;      // absolute minute
 // the day of the dinner: the last day of the year (engine/year.js), or day 6 in a game begun before the year existed
@@ -39,6 +41,22 @@ export const PLACE = {
   jazz: { x: -44, z: -211.5, label: B('爵士吧', 'Jazz Bar') },
   didi: { x: -3.2, z: -18.5, label: B('打车点', 'DiDi pickup') },
   deckNorth: { x: 18, z: -200, label: B('江边', 'By the river') },
+};
+
+// the robot arm, after the review (world/destScripts.js armRoute): if what he offered was software,
+// he writes it that night and the news comes the next morning (STORY_BEATS 'arm-model' below)
+const armMorning = (L) => D(Math.floor(((inv(L, 'xuan-arm') || { at: D(2, 15) }).at) / 1440) + 1, 9, 0);
+function armNow(L) {
+  const r = armRoute(L), demo = inv(L, 'xuan-demo') ? B('演示在周五。', ' The demo is on Friday.') : B('', '');
+  const t = r.fix === 'slip' ? B('周学长的机械臂指尖里多了一片滑移传感器，上面跑的是你写的模型。抹了油的件也夹得住。', "Zhou's arm has a slip sensor in its fingertips now, running the model you wrote. It holds even oiled parts.")
+    : r.data ? B('你的采集脚本找到了原因：每次掉件都在转腕的冲击峰之后。日志标好的图训出了抓取点模型，掉件率不到百分之一。', 'Your logging script found the cause: every drop comes just after the peak jerk on the wrist turn. The frames the logs labelled trained a grasp-point model, and drops are under one per cent.')
+      : B('周学长的相机上跑着你写的抓取点模型，掉件率不到百分之一。', "Zhou's camera is running the grasp-point model you wrote, and drops are under one per cent.");
+  return B(t.zh + demo.zh, t.en + demo.en);
+}
+export const ARM_NEWS = {
+  logs: '学长让我转给你：日志一跑就对上了，每次掉件前三十毫秒都是转腕的冲击峰。你那个抓取点模型今早上了，掉件率从一成二降到不到百分之一。',
+  vision: '学长说你那个抓取点模型今早上了，掉件率从一成二降到不到百分之一。他问你半夜三点发代码是不是硅谷的习惯。',
+  slip: '小唐把压电薄膜贴进指尖了，你那个模型在单片机上跑，四毫秒一次。抹了油的件，一个没掉。学长说要请你吃饭。',
 };
 
 // ---- the quests ----
@@ -66,13 +84,13 @@ const BASE_QUESTS = [
   // (the robot arm and Dad's offer: the first week's two pulls, still open when the year moves on)
   { id: 'robot-arm', act: 1, main: true, giver: 'xuan',
     title: B('机械臂', 'The robot arm'),
-    summary: (L) => (L.flags.demoDone ? B('演示成功了。王总想投。', 'The demo went well. Mr Wang wants in.') : B('明轩学长的团队做协作机械臂，原型卡住了，产品经理也跑了。', 'Mingxuan\'s friend Zhou runs a robot-arm start-up. The prototype is stuck and their product lead has quit.')),
+    summary: (L) => (L.flags.demoDone ? B('演示成功了。王总想投。', 'The demo went well. Mr Wang wants in.') : L.flags.armFix ? armNow(L) : B('明轩学长的团队做协作机械臂，原型卡住了，产品经理也跑了。', 'Mingxuan\'s friend Zhou runs a robot-arm start-up. The prototype is stuck and their product lead has quit.')),
     start: (L) => !!inv(L, 'xuan-arm'),
     steps: [
       { id: 'yes', optional: true, invite: 'xuan-arm', text: B('在微信上回复明轩：答应去看原型', 'Reply to Mingxuan on WeChat: say you\'ll look at the prototype'), done: (L) => (inv(L, 'xuan-arm') || {}).status === 'accepted' || kept(L, 'xuan-arm'), fail: (L) => ['declined', 'missed'].includes((inv(L, 'xuan-arm') || {}).status) },
       { id: 'review', optional: true, text: (L) => B(`${dayName(L, 2).zh}下午三点，陆家嘴 IFC 32 楼（滴滴或地铁 2 号线）`, `${cap(dayName(L, 2).en)}, 3 pm: IFC 32F in Lujiazui (DiDi, or Line 2 from East Nanjing Road)`), target: PLACE.didi, wait: (L) => (inv(L, 'xuan-arm') || { at: D(2, 15) }).at - 30, done: (L) => kept(L, 'xuan-arm'), fail: (L) => lapsed(L, 'xuan-arm', ((inv(L, 'xuan-arm') || {}).at || D(2, 15)) + 150) },
       { id: 'build', optional: true, text: B('去杨浦创客空间，把你的手艺练起来（做一件设备）', 'At the Yangpu makerspace, get your hands back in: build a gadget'), target: PLACE.didi, done: (L) => !!(L.flags.maker && L.flags.maker.gadgets && Object.keys(L.flags.maker.gadgets).length), fail: (L) => stamp(L) > D(5, 15) },
-      { id: 'demo', optional: true, text: (L) => B(`${dayName(L, 5).zh}下午三点，投资人演示（IFC 32 楼）`, `${cap(dayName(L, 5).en)}, 3 pm: the investor demo (IFC 32F)`), target: PLACE.didi, wait: () => D(5, 14, 30), done: (L) => kept(L, 'xuan-demo'), fail: (L) => lapsed(L, 'xuan-demo', D(5, 17, 30)) },
+      { id: 'demo', optional: true, text: (L) => B(`${dayName(L, 5).zh}下午三点，投资人演示（IFC 32 楼）${L.flags.armFix ? '：跑的是你写的模型' : ''}`, `${cap(dayName(L, 5).en)}, 3 pm: the investor demo (IFC 32F)${L.flags.armFix ? ', running the model you wrote' : ''}`), target: PLACE.didi, wait: () => D(5, 14, 30), done: (L) => kept(L, 'xuan-demo'), fail: (L) => lapsed(L, 'xuan-demo', D(5, 17, 30)) },
     ],
     onComplete: (L) => { L.flags.demoDone = kept(L, 'xuan-demo'); } },
   { id: 'dads-offer', act: 1, main: true, giver: 'dad',
@@ -122,6 +140,9 @@ export const STORY_BEATS = [
         text: isYear(L) ? '十一月十三号，周六，晚上八点。和平饭店楼下那个爵士吧。我订了位。' : '周六晚上八点，你住的那个和平饭店，楼下那个爵士吧。我订了位。', onAccept: 4, onDecline: -6, onMiss: -8,
         yesText: '好，爸，我一定到。', noText: '那天……我可能有事。' });
     } },
+  // the morning after the review: the logs, the model, what it did to the drops (and what he learned writing it)
+  { id: 'arm-model', when: (L) => kept(L, 'xuan-arm') && armRoute(L).code && stamp(L) >= armMorning(L),
+    run: (L) => { const r = armRoute(L); L.flags.armFix = r.fix; award(L, r.fix === 'slip' ? { ai: 50, hw: 20 } : { ai: 50 }, 'arm:model'); post(L, 'xuan', { from: 'xuan', kind: 'text', text: ARM_NEWS[r.fix === 'vision' && r.data ? 'logs' : r.fix] }); } },
   // whatever you said, he's coming anyway
   { id: 'dad-insists', when: (L) => ['declined', 'missed'].includes((inv(L, 'dad-dinner') || {}).status), run: (L) => post(L, 'dad', { from: 'dad', kind: 'text', text: '位子我订了。你来不来，自己看着办。' }) },
 ];
@@ -136,9 +157,10 @@ export function storyContext(L, who) {
   const q = (L.quests || { list: {} }).list, out = [];
   const act = q.tide ? 3 : q['dads-offer'] || q['robot-arm'] ? 2 : 1;
   if (['ruoan', 'xuan', 'momo', 'yinuo', 'zhixia', 'dad', 'maker', 'founder', ...COLLEAGUES].includes(who)) {
-    out.push('Ji Bai (纪白, the person talking to you) is 27, from Nanjing; UC Berkeley cognitive science (HCI, AI, product), then a few years in Silicon Valley tech; he has just moved to Shanghai to join an international technology consulting firm in Lujiazui, working on enterprise AI products.');
+    out.push('Ji Bai (纪白, the person talking to you) is 27, from Nanjing; UC Berkeley cognitive science (HCI, AI, product), then a few years in Silicon Valley tech; he has just moved to Shanghai to join an international technology consulting firm in Lujiazui, working on enterprise AI products. He is strong at AI programming (data, models, on-device deployment, agents) and product, and builds hardware in his spare time at a Yangpu makerspace, where he is out of practice.');
     if (act >= 2) out.push('His father has offered him the R&D floor at the family\'s precision-machining works in Nanjing and wants him home; Ji Bai hasn\'t decided.');
     if (q['robot-arm']) out.push(L.flags.demoDone ? 'The robot-arm start-up (Zhou\'s, introduced by Mingxuan) did well in its investor demo, partly thanks to Ji Bai.' : 'Mingxuan has pulled him into Zhou\'s robot-arm start-up, which needs a product lead.');
+    if (q['robot-arm'] && armRoute(L).code) out.push(armRoute(L).fix === 'slip' ? 'For the arm, Ji Bai wrote the small model that reads a fingertip slip sensor and tightens the grip, running on the controller itself.' : `For the arm, Ji Bai ${armRoute(L).data ? 'logged the motors at a kilohertz, let the logs label the camera frames and ' : ''}trained a vision model that picks where to grasp each part.`);
     if (inv(L, 'dad-dinner') && !L.flags.dinnerChoice) out.push('His father is coming to Shanghai and has booked dinner at the Peace Hotel Jazz Bar on Saturday at 8 pm.');
     if (L.flags.dinnerChoice) out.push(`At that dinner Ji Bai ${({ stay: 'told his father he is staying in Shanghai to build his own company', home: 'agreed to go home to Nanjing', together: 'proposed that the family works manufacture the robot arm, working between both cities', silent: 'could not give his father an answer', missed: 'never turned up' })[L.flags.dinnerChoice] || 'talked with his father'}.`);
     const w = workContext(L); if (w) out.push(w);

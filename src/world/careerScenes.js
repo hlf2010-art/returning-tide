@@ -9,12 +9,16 @@
 //              s    how the firm sees him (year.standing)      r    his name in the trade (rep 'work')
 //              zw   Xu Zhiwei's trust (hearts.feel)            rel  { id: delta } colleagues and clients
 //              k    'flag' or ['key', value], remembered in S (life.flags.year.work.story)
-//              cash yuan into (+) or out of (-) the bank       fx   (L, S) => anything else }
+//              cash yuan into (+) or out of (-) the bank       fx   (L, S) => anything else
+//              sk   { ai, product, hw } experience in his three tracks (engine/skills.js)
+//              needs { ai: 5 } offered only if he can (else: the answer offered in its place;
+//                   world/skillChoices.js) }
 //   absent   what happens to the day's decision if he isn't there
 // Parts are functions so that a later part can follow from an earlier answer.
 const B = (zh, en) => ({ zh, en });
 export const FIRM = { zh: '迈芬咨询', en: 'Marlowe Finch', floor: 28, place: B('陆家嘴 · 国金中心二期 28 层 · 迈芬咨询', 'Lujiazui · IFC Tower 2, 28F · Marlowe Finch') };
 export const CLIENT = B('东澜保险', 'Donglan Insurance');
+export const BANK = B('申江银行', 'Shenjiang Bank');                 // a second client: an agent for its back office (Acts I-II)
 export const NEWCO = B('屿深科技', 'Yushen Technology');
 export const WORKS = B('纪氏精工', "Ji's Precision Works");
 // who's who at work (names for the subtitles; the cards for free conversation are in world/career.js)
@@ -53,9 +57,9 @@ export const FIRM_SCENES = [
       () => [
         ['zhiwei', '陶可那张评测表有四千多行，是模型在历史案卷上的对错。本来该有人逐条抽查，一直没人有空。', "Tao Ke's evaluation sheet has four thousand-odd rows: where the model was right and wrong on past claim files. Someone should have been spot-checking it. Nobody has had the time."],
         { ask: [
-          { zh: '我来。这周之内抽五百条看完。', en: "I'll do it. Five hundred rows by the end of the week.", s: 3, zw: 3, rel: { taoke: 2 }, k: 'evalChecked',
+          { zh: '我来。这周之内抽五百条看完。', en: "I'll do it. Five hundred rows by the end of the week.", s: 3, zw: 3, rel: { taoke: 2 }, k: 'evalChecked', sk: { ai: 30 },
             then: [['zhiwei', '第一天就揽活。行，周五告诉我你看到了什么。', 'Taking work on, on day one. All right. Tell me on Friday what you found.']] },
-          { zh: '可以。但我想先见见客户的理赔员，看他们实际怎么用。', en: "Yes. But I'd like to meet the client's adjusters first and see how they would actually use it.", s: 2, zw: 2, k: 'metUsers',
+          { zh: '可以。但我想先见见客户的理赔员，看他们实际怎么用。', en: "Yes. But I'd like to meet the client's adjusters first and see how they would actually use it.", s: 2, zw: 2, k: 'metUsers', sk: { product: 30 },
             then: [['zhiwei', '做产品的习惯。周三 kick-off 之后，我给你约他们的顾工。', "A product person's habit. I'll get you time with their Mr Gu after Wednesday's kick-off."]] },
           { zh: '我刚来，先熟悉熟悉环境吧。', en: "I've only just arrived. Let me find my feet first.", s: -1, then: [['zhiwei', '也行。', 'Fine.']] },
         ] },
@@ -75,7 +79,7 @@ export const FIRM_SCENES = [
         ['zhiwei', '（压低声音）两个月。现在连数据脱敏都没做完。', "(Under her breath) Two months. We haven't even finished anonymising the data."],
         ['feng', '这位是新来的？硅谷回来的那位？你说说，两个月够不够。', "You're the new one? The one back from Silicon Valley? You tell me. Is two months enough?"],
         { ask: [
-          { zh: '全量不够。两个月能做扎实的是一个险种：住院医疗，占你们案件量四成。先把这一个做好。', en: 'Not for everything. What two months can do properly is one line of business: inpatient medical, forty per cent of your volume. Do that one well first.', s: 3, r: 3, rel: { feng: 2, gu: 3, partner: -1 }, k: ['timeline', 'pilot'],
+          { zh: '全量不够。两个月能做扎实的是一个险种：住院医疗，占你们案件量四成。先把这一个做好。', en: 'Not for everything. What two months can do properly is one line of business: inpatient medical, forty per cent of your volume. Do that one well first.', s: 3, r: 3, rel: { feng: 2, gu: 3, partner: -1 }, k: ['timeline', 'pilot'], sk: { product: 30 },
             then: [['feng', '……一个险种。贺总，你们的人比你敢说。行，就住院医疗。但一月十二号，一天不能晚。', '...One line. Mr He, your people are bolder than you are. Fine: inpatient medical. But the twelfth of January, and not a day later.'], ['partner', '（笑）年轻人，说话直。', '(Laughs) The young speak plainly.']] },
           { zh: '够。我们会全力以赴。', en: "It's enough. We'll give it everything we have.", s: 1, zw: -2, rel: { partner: 3 }, k: ['timeline', 'agree'],
             then: [['feng', '好。这句话我记住了。', "Good. I'll remember you said so."], ['zhiwei', '（散会后）“够”这个字，下次说之前先看我一眼。', '(Afterwards) Next time, before you say "enough", look at me first.']] },
@@ -85,7 +89,7 @@ export const FIRM_SCENES = [
         ] },
         ['gu', '（散会后）我是顾磊，理赔系统是我带人维护的。说句实话：我们的历史案卷，有三成是手写病历拍的照片。你们的模型认得出吗？', "(Afterwards) Gu Lei. My team keeps the claims system running. To be honest with you: thirty per cent of our past files are photographs of handwritten hospital notes. Can your model read those?"],
         { ask: [
-          { zh: '现在认不出。你能不能给我一批最差的样本？越差越好。', en: 'Not yet. Can you get me a batch of the worst ones? The worse the better.', s: 1, rel: { gu: 3 }, k: 'worstSamples',
+          { zh: '现在认不出。你能不能给我一批最差的样本？越差越好。', en: 'Not yet. Can you get me a batch of the worst ones? The worse the better.', s: 1, rel: { gu: 3 }, k: 'worstSamples', sk: { ai: 20 },
             then: [['gu', '越差越好。头一回有乙方这么跟我要东西。周五发你。', "The worse the better. That's the first time a vendor has asked me for that. You'll have them on Friday."]] },
           { zh: '技术上都能解决。', en: 'Technically it can all be solved.', rel: { gu: -2 }, then: [['gu', '……行。你们都这么说。', '...Right. You all say that.']] },
           { zh: '我回去问问团队。', en: "I'll ask the team.", then: [['gu', '好。', 'OK.']] },
@@ -120,6 +124,20 @@ export const FIRM_SCENES = [
         ] },
         ['taoke', S.evalChecked ? '纪白，那张评测表你抽到哪儿了？我有个地方不太确定……明天能帮我看一眼吗？' : '纪白……那张评测表，我有个地方不太确定。明天能帮我看一眼吗？', S.evalChecked ? "Ji Bai, how far have you got with the evaluation sheet? There's something I'm not sure of... could you look at it with me tomorrow?" : "Ji Bai... the evaluation sheet. There's something I'm not sure of. Could you look at it with me tomorrow?"],
       ],
+      // a second client: a demo, or something that works
+      () => [
+        ['partner', '小纪，再给你一件事。申江银行运营部下周三来听方案。他们每天对账出三千多笔差错单，四十个人手工一笔一笔查。他们想看“智能体”。', "Ji Bai, one more thing. Shenjiang Bank's operations people come in next Wednesday to hear a proposal. Their reconciliations throw up three thousand-odd breaks a day, and forty people chase them by hand, one at a time. They want to see an 'agent'."],
+        ['partner', '不用真做出来。弄个能点的演示，看起来像就行。', "It doesn't have to be real. Something they can click through. It only has to look the part."],
+        { ask: [
+          { zh: '给我一个周末，接他们的测试环境做个真的：读差错单、查流水、给匹配建议，金额过一百万的停下来等人点头。再拿五十笔真实差错单打分，没做对的也摆给他们看。', en: "Give me a weekend and I'll build a real one on their test environment. It reads the break, searches the ledger and proposes a match, and anything over a million stops and waits for a person to approve it. Then we score it on fifty real breaks and show them the ones it got wrong as well.", s: 2, r: 2, rel: { partner: 1 }, sk: { ai: 60, product: 20 }, k: ['bank', 'real'],
+            then: [['partner', '……真的。行，周三你来讲。', '...A real one. All right. You present on Wednesday.'], ['zhiwei', '测试环境的权限我去要。他们的数据，一条都不许出银行的网。', "I'll get you into the test environment. Not one row of their data leaves the bank's network."]] },
+          { zh: '先别做。让我去他们运营部坐半天，看哪几类差错最吃人工。按工时排，排在前三的才值得做。', en: "Don't build anything yet. Let me spend half a day in their operations room and see which kinds of break eat the most hours. Rank them by hours: only the top three are worth building for.", s: 1, zw: 2, sk: { product: 50 }, k: ['bank', 'users'],
+            then: [['partner', '方案会之前先下客户现场？少见。去吧。', 'Out to the client before the pitch? Unusual. Go on, then.']] },
+          { zh: '行。Figma 里拼一个，周三看着跟真的一样。', en: "Fine. I'll put one together in Figma. On Wednesday it'll look just like the real thing.", s: 2, r: -1, k: ['bank', 'mock'],
+            then: [['partner', '好。客户买的是感觉。', 'Good. What the client buys is a feeling.'], ['zhiwei', '感觉能签合同。交付的时候，要的是真的。', 'A feeling can sign a contract. Delivery needs the real thing.']] },
+          { zh: '我手上有东澜。让邵峰来吧。', en: "I've got Donglan. Let Shao Feng take it.", rel: { shaofeng: 1 }, k: ['bank', 'passed'], then: [['shaofeng', '行，我来。', 'Fine. Mine.']] },
+        ] },
+      ],
     ],
     absent: (L, S) => { S.credit = 'let'; } },
 
@@ -130,7 +148,7 @@ export const FIRM_SCENES = [
         ['taoke', '你看这一列。测试集里有六百多条，案卷号跟训练集是重的。我导数据的时候可能没去重。', 'Look at this column. Six hundred-odd rows in the test set have the same file numbers as the training set. I may not have de-duplicated when I exported.'],
         ['taoke', '要是真的，那 94% 的准确率就是虚的。我不敢跟知微姐说，周三刚跟客户报过这个数。', "If that's right, the 94 per cent isn't real. I daren't tell Zhiwei. We gave the client that number on Wednesday."],
         { ask: [
-          { zh: '先别慌。今天下午我们俩把重的剔掉重跑，拿着真数去说。我陪你去。', en: "Don't panic yet. This afternoon the two of us strip the duplicates out and run it again, and then we go in with the real number. I'll come with you.", s: 2, zw: 3, rel: { taoke: 5 }, k: 'helpedTao', fx: (L, S) => { S.leakKnown = true; },
+          { zh: '先别慌。今天下午我们俩把重的剔掉重跑，拿着真数去说。我陪你去。', en: "Don't panic yet. This afternoon the two of us strip the duplicates out and run it again, and then we go in with the real number. I'll come with you.", s: 2, zw: 3, rel: { taoke: 5 }, k: 'helpedTao', sk: { ai: 40 }, fx: (L, S) => { S.leakKnown = true; },
             then: [[null, '（重跑出来是 78%。）', '(Run again, it comes out at 78 per cent.)'], ['zhiwei', '……78。比我怕的好，比我们报的差。这事我去跟 Raymond 说，你们把去重脚本留好。', "...Seventy-eight. Better than I feared, worse than we reported. I'll take it to Raymond. Keep the de-duplication script safe, both of you."], ['zhiwei', '纪白，谢谢你没让她一个人扛。', 'Ji Bai. Thank you for not leaving her to carry it alone.']] },
           { zh: '这得你自己去说，越早越好。我可以帮你把话理顺。', en: 'This one you have to say yourself, and the sooner the better. I can help you get the words straight.', s: 1, rel: { taoke: 1 },
             then: [['taoke', '……好。我周末想想怎么说。', "...OK. I'll think over the weekend about how to say it."]] },
@@ -140,7 +158,7 @@ export const FIRM_SCENES = [
       () => [
         ['zhiwei', '第一周。说说你的感觉。', 'Your first week. Tell me how it seems to you.'],
         { ask: [
-          { zh: '客户要的是结案天数，我们卖的是准确率。这两个数中间，隔着理赔员愿不愿意用。', en: "The client wants days-to-close. We're selling accuracy. Between those two numbers is whether an adjuster is willing to use the thing.", s: 2, zw: 3, k: 'sawAdoption',
+          { zh: '客户要的是结案天数，我们卖的是准确率。这两个数中间，隔着理赔员愿不愿意用。', en: "The client wants days-to-close. We're selling accuracy. Between those two numbers is whether an adjuster is willing to use the thing.", s: 2, zw: 3, k: 'sawAdoption', sk: { product: 30 },
             then: [['zhiwei', '……这句话你写下来。下周我要用。', "...Write that sentence down. I'm going to need it next week."]] },
           { zh: '节奏比我想的快，话比我想的绕。', en: 'Faster than I expected, and people talk in more circles than I expected.', zw: 1,
             then: [['zhiwei', '绕，是因为每句话都有人要负责。慢慢你也会绕。', 'They circle because somebody is answerable for every sentence. Give it time. You will too.']] },
@@ -174,6 +192,24 @@ export const FIRM_SCENES = [
           { zh: '你来。我坐旁边盯日志。', en: "You drive. I'll sit beside you and watch the logs.", rel: { shaofeng: 2 }, k: ['driver', 'shao'], then: [['shaofeng', '放心。', 'Leave it to me.']] },
         ] },
       ],
+      // the bank, two months on
+      (L, S) => (S.bank === 'real' || S.bank === 'users' ? [
+        S.bank === 'real' ? ['zhiwei', '申江银行回话了：对账试点签了，点名要你周末那个版本。他们的运营总监说，头一回有乙方把做错的单子也摆出来给他看。', "Shenjiang Bank have come back to us. They've signed the reconciliation pilot, and they asked for your weekend version by name. Their head of operations says it's the first time a vendor has shown him the ones it got wrong."]
+          : ['zhiwei', '申江银行回话了：对账试点签了。你在他们运营部坐的那半天排出来的前三类差错，就是试点范围。', "Shenjiang Bank have come back to us. They've signed the reconciliation pilot, and the three kinds of break you ranked in that half-day in their operations room are its scope."],
+        ['partner', '他们 IT 想省钱：直接调云上大模型的接口，按量付费。你看呢？', "Their IT people want to save money: call a big cloud model's API directly and pay by the token. What do you think?"],
+        { ask: [
+          { zh: '不行。流水和客户信息不能出银行。模型放他们自己的机房：开源权重，量化以后两张卡就跑得动。慢一点，但数据不出门。', en: "No. Transaction data and customer details can't leave the bank. The model goes in their own machine room: open weights, quantised, and two GPUs will run it. A little slower, but the data never leaves the building.", r: 3, rel: { partner: -1 }, sk: { ai: 40 }, k: ['bankHost', 'onprem'],
+            then: [['partner', '……贵一点，但合规那关过得去。技术方案你写。', '...Dearer, but it will get past compliance. You write the technical design.']] },
+          { zh: '可以上云。先脱敏再传，签一份数据处理协议。', en: 'The cloud is fine. We anonymise before anything goes up and sign a data-processing agreement.', s: 1, k: ['bankHost', 'cloud'],
+            then: [['zhiwei', '先脱敏。我们手上那套脱敏，你有把握？', 'Anonymise first. And are you sure of the anonymiser we have?']] },
+          { zh: '这不是我们定的。先问他们合规部，数据能出到哪一层。', en: "That isn't ours to decide. Ask their compliance department first how far the data is allowed to go.", s: 1, sk: { product: 20 }, k: ['bankHost', 'asked'],
+            then: [['partner', '那你去问。下周给我答案。', 'Then go and ask. An answer by next week.']] },
+        ] },
+      ] : S.bank === 'mock' ? [
+        ['zhiwei', '申江银行签了，冲着你那个演示签的。交付组进场第一周就发现，演示里点的那几下，背后什么都没有。邵峰在填坑，周末也在。', "Shenjiang Bank signed, on the strength of your demo. In their first week on site the delivery team found there was nothing at all behind those few clicks. Shao Feng is filling the hole. Weekends too."],
+      ] : S.bank === 'passed' ? [
+        ['shaofeng', '申江那个对账，我拼了个演示，客户签了。……交付比我想的难。', "That Shenjiang reconciliation: I put a demo together and the client signed. ...Delivery is harder than I thought."],
+      ] : []),
     ],
     absent: (L, S) => { S.deck = '94'; S.driver = 'shao'; } },
 
@@ -275,6 +311,20 @@ export const FIRM_SCENES = [
           { zh: '我在这儿还有没做完的事。', en: "I've things here I haven't finished.", k: 'guOffer', then: [['gu', '明白。门给你留着。', "Understood. The door stays open."]] },
         ] },
       ] : []),
+      // what stops it happening again: an evaluation set, and the redaction where the data lives
+      () => [
+        ['zhiwei', '二期开始之前，总部要我们交一份技术整改：脱敏为什么在照片上失效，以后拿什么保证。方案你来定。', "Before phase two starts, head office wants a technical remediation from us: why the anonymising failed on photographs, and what guarantees it from now on. You decide the approach."],
+        { ask: [
+          { zh: '先建评测，再动模型。顾工那批最差的案卷，人工一条条标好，每改一次就全量跑一遍。不是从这套评测里跑出来的数，不进任何一页 deck。', en: "Evaluation first, then the model. Gu's batch of the worst files, labelled by hand one by one and run in full on every change. No number goes on any page of any deck unless it came out of that set.", zw: 3, rel: { taoke: 2, gu: 1 }, sk: { ai: 50, product: 20 }, k: 'evalHarness',
+            then: [['taoke', '标注我来。这次我一条一条对。', "I'll do the labelling. One row at a time, this time."], ['zhiwei', '最后那句话，写在整改报告第一页。', 'That last sentence goes on the first page of the remediation.']] },
+          { zh: '脱敏挪到最前面，放在东澜自己的机房里：一个多模态模型先读照片，框出姓名、证件号和手写签名，打完码才往下走。原图一张都不出他们的网。', en: "Move the anonymising to the very front, in Donglan's own machine room. A multimodal model reads each photograph first, boxes the names, the ID numbers and the handwritten signatures, and blurs them before anything else happens. Not one original leaves their network.", needs: { ai: 5 }, r: 3, rel: { gu: 3, feng: 1 }, sk: { ai: 60 }, k: 'redactLocal',
+            then: [['gu', '放我们机房跑？……那我得给你们腾两台服务器。值。', "Run it in our machine room? ...Then I'll have to find you two servers. Worth it."]],
+            else: { zh: '脱敏挪到最前面，放在东澜自己的机房里跑，原图不出他们的网。手写的那部分，我得找个比我更懂视觉模型的人一起做。', en: "Move the anonymising to the very front and run it in Donglan's own machine room, so no original leaves their network. For the handwritten part I'll need someone who knows vision models better than I do.", r: 2, rel: { gu: 2 }, sk: { ai: 30 }, k: 'redactLocal',
+              then: [['gu', '肯说自己不会的乙方不多。人我帮你问问。', "Not many vendors will say what they can't do. I'll ask around for you."]] } },
+          { zh: '换一家做 OCR 的供应商，把责任写进合同。', en: 'Switch to a different OCR vendor and write the liability into the contract.', s: 1, rel: { partner: 1 }, k: 'redactVendor',
+            then: [['zhiwei', '责任是写清楚了。身份证号还是会亮在投影上。', 'The liability will be clear. The ID numbers will still come up on the projector.']] },
+        ] },
+      ],
     ],
     absent: (L, S) => { S.blame = 'tao'; } },
 

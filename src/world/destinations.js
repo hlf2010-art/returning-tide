@@ -8,8 +8,9 @@
 //     wants you to look at. The prototype on the bench keeps dropping parts at speed (watch it); the
 //     founder explains, Xuan asks if you're interested. The west windows look back across the river
 //     at the Bund you came from (the same modelled street, lit).
-// Each is a scene: lines as subtitles, and when you're asked something, four answers (1-4; or say
-// nothing). What you say moves how they feel about you and is remembered. Leave by the lift: a
+// Each is a scene (the words are in world/destScripts.js): lines as subtitles, and when you're asked
+// something, up to four answers (1-4; or say nothing), some only if he has the skill for them. What you
+// say moves how they feel about you, is remembered, and can teach him something. Leave by the lift: a
 // DiDi back to the Bund (time passes, the fare is paid).
 // Positions follow the real geography loosely (the North Bund is ~1.3 km north of where this flat is
 // put; IFC stands south-east of the Pearl Tower); the North Bund's streets are a distant set of lit
@@ -23,7 +24,8 @@ import { stamp, skipTo, pay, post, nudge } from '../engine/life.js';
 import { fare, dest } from '../engine/ride.js';
 import { PICKUP } from './didi.js';
 import { Batch } from './geo.js';
-import { gainXp, achieve } from '../engine/maker.js';
+import { SCRIPTS, NAMES, WHO, answers, choose, armNote } from './destScripts.js';
+import { gainText } from './skillChoices.js';
 import { towerAtlas, tower, basic } from './skyline.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -43,69 +45,7 @@ for (const P of Object.values(PLACES)) {
 { const P = PLACES.lujiazui, y0 = P.y - 0.3, y1 = P.y + 1.2, c = (a, b, d, e) => colliders.push({ minX: a, maxX: b, minZ: d, maxZ: e, tag: 'furniture', y0, y1 });
   c(670.6, 674.0, 46.0, 48.0); for (const z of [42.5, 46.5, 50.5]) c(681.0, 688.0, z - 0.45, z + 0.45); }
 
-// ---- the scenes: [who, zh, en] lines; { ask: [...4 answers] } where each answer has its reply ----
-const YINUO = [
-  ['agent', '纪先生是吧？程小姐在里面等您。这套是顶层，三百二十平，整层就这一户。', "Mr Ji? Ms Cheng's inside. Top floor, three hundred and twenty square metres, the only flat on the floor."],
-  ['yinuo', '来了。', 'You came.'],
-  ['yinuo', '家里想让我在上海有个落脚的地方。他们看中的是这个景。', "My family want me to have somewhere in Shanghai. It's the view they're buying."],
-  ['yinuo', '你是学设计的。除了景，这房子还有什么？', 'You studied design. Apart from the view, what is there to this place?'],
-  { ask: [
-    { zh: '窗框太粗，把江切成一格一格的。层高三米六，吊顶一做就压了。', en: "The mullions are too heavy, they cut the river into panels. And it's three point six metres: put a ceiling in and it'll feel low.", d: 3, flag: 'faults',
-      then: [['yinuo', '……中介没说过这个。', "...The agent didn't mention that."], ['yinuo', '你还是这样，看东西先看毛病。', "You haven't changed. You always see the faults first."]] },
-    { zh: '景是真的好。', en: 'The view really is good.', d: 0, then: [['yinuo', '嗯。所有人都这么说。', 'Mm. Everyone says that.']] },
-    { zh: '你自己想住这儿吗？', en: 'Do you want to live here, though?', d: 2, flag: 'asked', then: [['yinuo', '……没人问过我这个。', "...Nobody's asked me that."]] },
-    { zh: '（看江，不说话）', en: '(Look at the river. Say nothing.)', d: 1, then: [['yinuo', '你也不说话。', "You're not saying anything either."], ['yinuo', '那就好。中介说得够多了。', 'Good. The agent talks enough.']] },
-  ] },
-  ['agent', '程小姐，业主那边说价格还能谈，一点八个亿是挂牌价。', "Ms Cheng, the owner says there's room on the price. A hundred and eighty million is only the asking."],
-  ['yinuo', '我再想想。', "I'll think about it."],
-  ['yinuo', '你觉得呢？买不买？', 'What do you think? Should I buy it?'],
-  { ask: [
-    { zh: '别买。你要的不是一个景，是一个你自己选的地方。', en: "Don't. You don't need a view. You need somewhere you chose yourself.", d: 4, flag: 'own',
-      then: [['yinuo', '……你回来才几天，就开始管我了。', "...You've been back, what, three days, and you're already telling me what to do."]] },
-    { zh: '买。这个位置十年后只会更贵。', en: 'Buy it. This only goes up in ten years.', d: 0, flag: 'buy', then: [['yinuo', '你跟我爸一个口气。', 'You sound like my father.']] },
-    { zh: '先租一年住住看。', en: 'Rent somewhere for a year first and see.', d: 2, flag: 'rent', then: [['yinuo', '租。程家的人租房子。', 'Rent. A Cheng, renting.'], ['yinuo', '……也不是不行。', '...Not impossible, I suppose.']] },
-    { zh: '（不说话）', en: '(Say nothing.)', d: 1, then: [['yinuo', '好。你不说，我自己定。', "Fine. If you won't say, I'll decide myself."]] },
-  ] },
-  ['yinuo', '走吧。……我还要跟中介谈，你自己打车。', "Go on. ...I've still got to talk to the agent. Get yourself a car."],
-];
-const XUAN = [
-  ['xuan', '白白！来来来。这是周学长，我们学校机械系的，现在做协作机械臂。', "Baibai! Come in. This is Zhou, a senior from our university, mechanical engineering. Cobots now."],
-  ['founder', '你好你好。明轩说你在湾区做过产品。', 'Hi, hi. Mingxuan says you built products in the Bay Area.'],
-  ['founder', '问题是这样：速度上到每分钟四十次，夹爪就开始掉件。电机、控制都查过了。客户月底要看演示。', "Here's the thing. Once we're up to forty picks a minute, the gripper starts dropping parts. We've been through the motors and the control loop. The customer wants a demo at the end of the month."],
-  ['founder', '你看，就是这样。', 'Watch. There it goes.', { drop: true }],
-  { ask: [
-    { zh: '掉件都在转腕那一下。是加速度，不是夹力：指尖太硬，没有顺应。换软一点的指垫，或者把腕部的急转平滑掉。', en: "It always lets go on the wrist turn. That's acceleration, not grip: the fingertips are too stiff, there's no compliance. Softer pads, or smooth the jerk out of the wrist move.", d: 4, flag: 'fix',
-      then: [['founder', '……指垫。我们一直在加夹力。', '...The pads. We kept turning up the grip force.'], ['engineer', '我去拿硅胶的那套！', "I'll get the silicone set!"]] },
-    { zh: '我得多看几次才敢说。', en: "I'd need to watch it a few more times.", d: 1, then: [['founder', '没问题，你随便看。', 'Sure. Take your time.']] },
-    { zh: '客户真的需要每分钟四十次吗？', en: 'Does the customer actually need forty a minute?', d: 2, flag: 'spec', then: [['xuan', '……好问题。合同里写的是三十。', '...Good question. The contract says thirty.'], ['founder', '四十是我们自己加的……', 'Forty was our own idea...']] },
-    { zh: '（看着它，不说话）', en: '(Watch it. Say nothing.)', d: 0, then: [['xuan', '他就这样，看东西不说话，说了就准。', "He's like this. Quiet while he looks, and then he's right."]] },
-  ] },
-  ['xuan', '怎么样，有没有兴趣？他们缺一个懂产品又懂工程的人。', 'So, interested? They need someone who gets product and engineering both.'],
-  { ask: [
-    { zh: '可以先当顾问，帮你们把演示做出来。', en: 'I can advise for now. Get the demo working.', d: 3, flag: 'advisor', then: [['founder', '太好了！', 'Brilliant!'], ['xuan', '我就知道。', 'Knew it.']] },
-    { zh: '我刚回来，还没想好要做什么。', en: "I've only just got back. I haven't decided what I'm doing.", d: 0, then: [['xuan', '理解，不急。', 'Fair enough. No rush.']] },
-    { zh: '你是想让我帮你看这个项目值不值得投吧？', en: "You want me to tell you whether it's worth investing in, don't you?", d: 2, flag: 'saw', then: [['xuan', '被你看穿了。两件事都想。', "You've got me. Both, honestly."]] },
-    { zh: '（不说话）', en: '(Say nothing.)', d: 0, then: [['xuan', '行，你回去想想。资料我发你。', "OK, think about it. I'll send you the deck."]] },
-  ] },
-  ['xuan', '晚上一起吃饭？……算了，你先回去倒时差。', "Dinner tonight? ...Actually no. Go home and sleep off the jet lag."],
-];
-// demo day (if you said you'd advise): the arm runs clean in front of the customer and an investor
-const XUAN_DEMO = [
-  ['xuan', '来了！今天你也是主角。', 'You made it! You\'re part of the show today.'],
-  ['founder', '王总，这位就是纪白，指垫的主意是他出的。', 'Mr Wang, this is Ji Bai. The pads were his idea.'],
-  ['investor', '三十个件，一个没掉。年轻人，你是做硬件的？', 'Thirty parts, not one dropped. Young man, you do hardware?'],
-  { ask: [
-    { zh: '学认知科学的，在湾区做了几年 AI 产品。', en: 'Cognitive science. I spent a few years on AI products in the Bay Area.', d: 3, flag: 'pitch', then: [['investor', '你们那个产品我用过。有空聊聊，我请。', 'I\'ve used that product of yours. Let\'s talk sometime, my treat.']] },
-    { zh: '我只是提了个建议。', en: 'I only made a suggestion.', d: 1, then: [['investor', '好的建议值钱。', 'Good suggestions are worth money.']] },
-    { zh: '是他们团队做得好。', en: 'The team did the work.', d: 2, flag: 'modest', then: [['founder', '他太谦虚了。', 'He\'s being modest.']] },
-    { zh: '（点点头，不说话）', en: '(Nod. Say nothing.)', d: 0, then: [['investor', '话不多，我喜欢。', 'Not a talker. I like that.']] },
-  ] },
-  ['xuan', '今晚庆功，必须来。', 'Celebration tonight. No excuses.'],
-];
-const SCRIPTS = { 'yinuo-flat': () => YINUO, 'xuan-arm': () => XUAN, 'xuan-demo': () => XUAN_DEMO };
-const NAMES = { investor: ['王总', 'Mr Wang'], agent: ['中介', 'Agent'], yinuo: ['程以诺', 'Yinuo'], xuan: ['陆明轩', 'Mingxuan'], founder: ['周学长', 'Zhou'], engineer: ['工程师', 'Engineer'] };
-const WHO = { yinuo: 'yinuo', xuan: 'xuan' };
-
+// ---- the scenes: world/destScripts.js (pure: [who, zh, en] lines and { ask: [...answers] }) ----
 export function createDestinations({ scene, people, hud, audio, getLife, save, player, travel, voice = null }) {
   const groups = {}, lights = [], ppl = {};
   const el = (id) => document.getElementById(id);
@@ -300,19 +240,19 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     if (c.i >= c.script.length) { c.done = true; c.wait = 0; hide(); finishScene(); return; }
     const beat = c.script[c.i++];
     if (Array.isArray(beat)) { c.queue.push(beat); next(); return; }
-    c.ask = beat.ask; c.answerT = 10; c.wait = Infinity;
+    c.ask = answers(getLife(), beat.ask); c.answerT = 10; c.wait = Infinity;
     show(null, '', c.ask.map((a) => T(a.zh, a.en)));
     const box = el('ride-sub'); if (box) box.querySelector('.sp').textContent = T('你', 'You');
   }
   function answer(i) {
     const c = cur; if (!c || !c.ask) return false;
-    const a = c.ask[i]; c.ask = null;
+    const a = c.ask[i]; if (!a) return false;
+    const quiet = i === c.ask.length - 1; c.ask = null;          // the last answer is the silent one
     const l = getLife(), who = WHO[c.P === PLACES.northbund ? 'yinuo' : 'xuan'];
-    if (a.d) nudge(l, who, a.d, `${c.id}:${a.flag || i}`);
-    if (a.flag) (l.flags[`${c.id}Said`] ||= []).push(a.flag);
+    const { gains, ach } = choose(l, c.id, who, a, i);
     if (a.flag === 'fix' && arm) setTimeout(() => { arm.fixed = true; }, 25000);
-    if (a.flag === 'fix') { const r = gainXp(l, 60, 'fix:arm'); const ach = achieve(l, 'fixer'); setTimeout(() => { hud.toast(T(`+${r.xp} 创客经验`, `+${r.xp} Maker XP`), 2.5); if (ach) hud.achievement && hud.achievement(T(ach.zh, ach.en)); }, 1500); }
-    if (i !== 3) { show(null, T(a.zh, a.en)); c.wait = lineSecs(T(a.zh, a.en)); c.speaking = null; }
+    if (gains.length || ach) setTimeout(() => { if (gains.length) hud.toast(gains.map((r) => T(gainText(r).zh, gainText(r).en)).join(T('，', ', ')), 2.8); if (ach) hud.achievement && hud.achievement(T(ach.zh, ach.en)); }, 1500);
+    if (!quiet) { show(null, T(a.zh, a.en)); c.wait = lineSecs(T(a.zh, a.en)); c.speaking = null; }
     else { c.wait = 1.2; hide(); }
     c.queue.push(...a.then);
     save && save(); return true;
@@ -334,7 +274,7 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     if (id === 'lujiazui' && !groups.lujiazui) buildIfc();
     here = id; groups[id].visible = true;
     const inv = info.invite || P.invite;
-    cur = { id, P, invite: inv, script: (SCRIPTS[inv] || SCRIPTS[P.invite])(), i: 0, queue: [], wait: 2.5, ask: null, answerT: 0, done: false, method: info.method || 'wechat' };
+    cur = { id, P, invite: inv, script: (SCRIPTS[inv] || SCRIPTS[P.invite])(getLife()), i: 0, queue: [], wait: 2.5, ask: null, answerT: 0, done: false, method: info.method || 'wechat' };
     if (arm) { arm.t = 0; arm.fixed = inv === 'xuan-demo'; placeOnTray(); }
     if (ppl.investor) ppl.investor.root.visible = inv === 'xuan-demo';
     travel(async () => { player.teleport(P.spawn.x, P.spawn.z, P.spawn.yaw, 0, P.y); }, { line: T(id === 'northbund' ? '北外滩 · 顶层' : '陆家嘴 · 国金中心 32 层', id === 'northbund' ? 'North Bund · the top floor' : 'Lujiazui · IFC, 32nd floor'), hold: 900, to: 'play' });
@@ -379,7 +319,7 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     owns(id) { return id === 'dLift' || id === 'dArm'; },
     interact(id) {
       if (id === 'dLift') leave();
-      else if (id === 'dArm') hud.toast(arm && arm.fixed ? T('换了硅胶指垫以后，一个都没掉。', 'With the silicone pads on, it hasn’t dropped one.') : T(`掉了 ${arm ? arm.drops : 0} 次。每次都在手腕急转的那一下。`, `Dropped ${arm ? arm.drops : 0} so far. Every time on the sharp wrist turn.`), 3.6);
+      else if (id === 'dArm') hud.toast(arm && arm.fixed ? ((n) => T(n.zh, n.en))(armNote(cur && cur.invite === 'xuan-demo' ? getLife() : null)) : T(`掉了 ${arm ? arm.drops : 0} 次。每次都在手腕急转的那一下。`, `Dropped ${arm ? arm.drops : 0} so far. Every time on the sharp wrist turn.`), 3.6);
       return true;
     },
     key(code) { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(code); return i >= 0 && cur && cur.ask ? answer(i) : false; },
@@ -387,7 +327,7 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
       if (!here) return;
       // the scene
       if (cur && !cur.done) {
-        if (cur.ask) { cur.answerT -= dt; if (cur.answerT <= 0) answer(3); }
+        if (cur.ask) { cur.answerT -= dt; if (cur.answerT <= 0) answer(cur.ask.length - 1); }
         else { cur.wait -= dt; if (cur.wait <= 0) next(); }
       }
       // people: face whoever's talking, or you
