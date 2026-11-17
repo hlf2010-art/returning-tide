@@ -11,19 +11,17 @@ import { NodeIO, Accessor } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import * as THREE from 'three';
 
-// what each avatar wears (cm, mesh space). Heights are found from the bones where they can be
+// what each avatar wears (cm, mesh space). A jacket's hem (hemZ) is given: wide trousers fool any measure of it
 export const PARTS = {
   c2: [{ type: 'skirt', chains: 10, segs: 2, blend: 0.85, stiffness: 0.45, drag: 0.16, gravity: 0.35 }, { type: 'hair', blend: 1, stiffness: 0.3, drag: 0.14, gravity: 0.45 }],
   su: [{ type: 'skirt', chains: 8, segs: 1, blend: 0.55, stiffness: 1.0, drag: 0.28, gravity: 0.3, tight: true }],
   c4: [{ type: 'hair', blend: 1, stiffness: 0.3, drag: 0.14, gravity: 0.5 }, { type: 'trousers', blend: 0.7, stiffness: 0.6, drag: 0.2, gravity: 0.45 }],
   p5: [{ type: 'trousers', blend: 0.7, stiffness: 0.6, drag: 0.2, gravity: 0.45 }],
   p2: [{ type: 'hem', depth: 22, chains: 8, blend: 0.8, stiffness: 0.55, drag: 0.18, gravity: 0.4 }],
-  c3: [{ type: 'hem', depth: 12, chains: 8, blend: 0.7, stiffness: 0.75, drag: 0.22, gravity: 0.35 }],
+  c3: [{ type: 'hem', hemZ: 84, depth: 12, chains: 8, blend: 0.7, stiffness: 0.75, drag: 0.22, gravity: 0.35 }],
   c1: [{ type: 'hair', blend: 1, stiffness: 0.3, drag: 0.14, gravity: 0.5 }],
-  c8: [{ type: 'hem', depth: 8, chains: 6, blend: 0.5, stiffness: 1.0, drag: 0.28, gravity: 0.3 }],
-  player: [{ type: 'trousers', blend: 0.75, stiffness: 0.6, drag: 0.2, gravity: 0.45 }, { type: 'hem', depth: 10, chains: 8, blend: 0.6, stiffness: 0.9, drag: 0.26, gravity: 0.35 }],
-  dad: [{ type: 'hem', depth: 12, chains: 6, blend: 0.55, stiffness: 1.0, drag: 0.3, gravity: 0.35 }],
-  lin: [{ type: 'hem', depth: 12, chains: 6, blend: 0.55, stiffness: 1.0, drag: 0.3, gravity: 0.35 }],
+  player: [{ type: 'trousers', blend: 0.75, stiffness: 0.6, drag: 0.2, gravity: 0.45 }, { type: 'hem', hemZ: 96, depth: 9, chains: 8, blend: 0.6, stiffness: 0.9, drag: 0.26, gravity: 0.35 }],
+  gunian: [{ type: 'hair', byColor: true, chains: 3, reach: 60, width: 17, blend: 1, stiffness: 0.35, drag: 0.16, gravity: 0.5 }, { type: 'trousers', blend: 0.75, stiffness: 0.55, drag: 0.2, gravity: 0.45 }, { type: 'hem', hemZ: 89, depth: 10, chains: 8, blend: 0.55, stiffness: 0.9, drag: 0.26, gravity: 0.35 }],
 };
 
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
@@ -102,11 +100,12 @@ export async function addCloth(inFile, outFile, role) {
       ring('skirt', verts, top, hem, cfg, legCols(part.tight ? 0.07 : 0.08, 0.06));
     } else if (part.type === 'hem') {
       // the garment's lowest band: the outermost vertices from its hem up `depth` cm (found: the lowest torso cloth above the thighs' middle)
-      const torso = []; for (let i = 0; i < n; i++) if (used[i] && P[i].z > knees + 8 && P[i].z < pelvis.z + 30 && armDist(P[i]) > 10) torso.push(i);
+      const torso = []; for (let i = 0; i < n; i++) if (used[i] && P[i].z > knees + 8 && P[i].z < pelvis.z + 30 && armDist(P[i]) > 13 && Math.abs(P[i].x - pelvis.x) < 27) torso.push(i);   // (not the arms or hands)
       // the hem: the lowest height where the cloth still wraps outside the legs (radius from the pelvis axis > legs' reach)
       const outer = torso.filter((i) => legDist(P[i]) > 6 && Math.hypot(P[i].x - pelvis.x, P[i].y - pelvis.y) > 12);
-      const hem = Math.min(...outer.map((i) => P[i].z)), z0 = hem + part.depth;
-      const band = outer.filter((i) => P[i].z < z0 + 2);
+      const hem = part.hemZ ?? Math.min(...outer.map((i) => P[i].z)), z0 = hem + part.depth;
+      // (a given hem: the band is the outermost cloth at each angle there, the jacket over the trousers)
+      const band = part.hemZ == null ? outer.filter((i) => P[i].z < z0 + 2) : (() => { const inBand = torso.filter((i) => P[i].z > hem - 1.5 && P[i].z < z0 + 2), cy = inBand.reduce((t, i) => t + P[i].y, 0) / inBand.length, rOf = (i) => Math.hypot(P[i].x - pelvis.x, P[i].y - cy), aOf = (i) => Math.round(Math.atan2(P[i].y - cy, P[i].x - pelvis.x) * 12), mx = {}; for (const i of inBand) mx[aOf(i)] = Math.max(mx[aOf(i)] || 0, rOf(i)); return inBand.filter((i) => rOf(i) > mx[aOf(i)] - 2.5); })();
       console.log(role, 'hem', band.length, 'vertices,', z0.toFixed(1), '→', hem.toFixed(1));
       ring('hem', band, z0, hem, { ...cfg, segs: 1 }, [{ bone: 'Bip01_Pelvis', to: 'Bip01_Spine1', r: 0.11 }, ...legCols(0.085, 0.06)]);
     } else if (part.type === 'trousers') {
@@ -131,9 +130,35 @@ export async function addCloth(inFile, outFile, role) {
         }
       }
     } else if (part.type === 'hair') {
-      // hair at the back, below the crown, beyond the skull: the ponytail
-      const head = jp('Bip01_Head'), c = head.clone().add(new THREE.Vector3(0, 1.5, 4)), verts = [];
-      for (let i = 0; i < n; i++) { const p = P[i]; if (used[i] && hairy[i] && p.y > head.y + 4 && distSeg(p, jp('Bip01_Neck'), head) > 8.5 && p.distanceTo(c) > 10.5 && p.z < head.z + 12 && p.z > head.z - 40 && Math.abs(p.x - head.x) < 10) verts.push(i); }
+      // hair at the back, below the crown, beyond the skull: a ponytail, or long hair down the back
+      if (part.byColor) {   // one material (a generated model): the hair is what's dark in the texture
+        const sharp = (await import('sharp')).default, tex = prims[0].getMaterial().getBaseColorTexture();
+        const { data, info } = await sharp(Buffer.from(tex.getImage())).raw().toBuffer({ resolveWithObject: true }), uv = prims[0].getAttribute('TEXCOORD_0'), e = [];
+        for (let i = 0; i < n; i++) { uv.getElement(i, e); const x = Math.min(info.width - 1, Math.max(0, Math.round(e[0] * (info.width - 1)))), y = Math.min(info.height - 1, Math.max(0, Math.round(e[1] * (info.height - 1)))), o = (y * info.width + x) * info.channels; hairy[i] = (0.3 * data[o] + 0.59 * data[o + 1] + 0.11 * data[o + 2]) / 255 < 0.2 ? 1 : 0; }
+      }
+      const head = jp('Bip01_Head'), c = head.clone().add(new THREE.Vector3(0, 1.5, 4)), verts = [], reach = part.reach || 40, width = part.width || 10;
+      for (let i = 0; i < n; i++) { const p = P[i]; if (used[i] && hairy[i] && p.y > head.y + 4 && distSeg(p, jp('Bip01_Neck'), head) > 8.5 && p.distanceTo(c) > 10.5 && p.z < head.z + 12 && p.z > head.z - reach && Math.abs(p.x - head.x) < width) verts.push(i); }
+      if ((part.chains || 1) > 1 && verts.length >= 60) {
+        // several chains side by side across the hair, each taking the vertices nearest it in x
+        const K = part.chains, xs = verts.map((i) => P[i].x).sort((a, b) => a - b), cut = (q) => xs[Math.floor(q * (xs.length - 1))];
+        const centres = Array.from({ length: K }, (_, k) => cut((k + 0.5) / K)), groups = centres.map(() => []);
+        for (const i of verts) { let b = 0; for (let k = 1; k < K; k++) if (Math.abs(P[i].x - centres[k]) < Math.abs(P[i].x - centres[b])) b = k; groups[b].push(i); }
+        const cols = [{ bone: 'Bip01_Head', r: 0.095 }, { bone: 'Bip01_Neck', to: 'Bip01_Spine2', r: 0.075 }, { bone: 'Bip01_Spine2', to: 'Bip01_Spine1', r: 0.13 }, { bone: 'Bip01_L_Clavicle', to: 'Bip01_L_UpperArm', r: 0.06 }, { bone: 'Bip01_R_Clavicle', to: 'Bip01_R_UpperArm', r: 0.06 }];
+        const chains = groups.map((g, k) => {
+          const top = g.reduce((b, i) => (P[i].z > b.z ? P[i] : b), P[g[0]]).clone(), tip = g.reduce((b, i) => (P[i].z < b.z ? P[i] : b), P[g[0]]).clone();
+          const rootP = new THREE.Vector3(centres[k], Math.max(head.y + 6, top.y - 2), Math.min(top.z, head.z - 2)), mid = rootP.clone().lerp(tip, 0.5);
+          return { rootP, tip, ids: makeChain(`hair${k}`, 'Bip01_Head', [rootP, mid, tip], { ...cfg, segs: 2 }, cols) };
+        });
+        console.log(role, 'long hair', verts.length, 'vertices in', K, 'chains,', chains.map((ch) => `${ch.rootP.z.toFixed(0)}→${ch.tip.z.toFixed(0)}`).join(' '));
+        for (const i of verts) {
+          // the two nearest chains in x, and along each one
+          const order = chains.map((ch, k) => [k, Math.abs(P[i].x - ch.rootP.x)]).sort((a, b) => a[1] - b[1]), [k0, d0] = order[0], [k1, d1] = order[1] || order[0];
+          const w = {}; let f = 0;
+          for (const [k, wt] of [[k0, d1 / (d0 + d1 + 1e-6)], [k1, d0 / (d0 + d1 + 1e-6)]]) { const ch = chains[k], L = ch.tip.distanceTo(ch.rootP), t = Math.max(0, P[i].clone().sub(ch.rootP).dot(ch.tip.clone().sub(ch.rootP)) / (L * L)); const id = t < 0.5 ? ch.ids[0] : ch.ids[1]; w[`n${id}`] = (w[`n${id}`] || 0) + wt; f += wt * smooth(0, 0.25, t); }
+          if (f > 0.01) addW(i, part.blend * f, w);
+        }
+        continue;
+      }
       if (verts.length < 20) { console.log(role, 'hair: no ponytail found'); continue; }
       const rootP = verts.reduce((b, i) => (P[i].z > b.z ? P[i] : b), P[verts[0]]).clone(), tipP = verts.reduce((b, i) => (P[i].z < b.z ? P[i] : b), P[verts[0]]).clone();
       rootP.y -= 2; const mid = rootP.clone().lerp(tipP, 0.5);

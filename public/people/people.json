@@ -6,7 +6,7 @@
    "avatar": "Business_Male_02",
    "sex": "m",
    "file": "lin.glb",
-   "bytes": 3006696
+   "bytes": 3011880
   },
   "su": {
    "avatar": "Business_Female_03",
@@ -42,7 +42,14 @@
    "avatar": "JiBai (Hunyuan3D from his character sheet; Rocketbox Biped rig)",
    "sex": "m",
    "file": "player.glb",
-   "bytes": 5004684
+   "bytes": 5004668
+  },
+  "gunian": {
+   "avatar": "GuNian (Hunyuan3D from her character sheet; Rocketbox Biped rig)",
+   "sex": "f",
+   "named": true,
+   "file": "gunian.glb",
+   "bytes": 5550804
   },
   "p5": {
    "avatar": "Business_Female_02",
@@ -66,7 +73,7 @@
    "avatar": "Female_Adult_14",
    "sex": "f",
    "file": "c3.glb",
-   "bytes": 4492876
+   "bytes": 4492856
   },
   "c4": {
    "avatar": "Business_Female_04",
@@ -96,13 +103,13 @@
    "avatar": "Female_Adult_04",
    "sex": "f",
    "file": "c8.glb",
-   "bytes": 3853820
+   "bytes": 3859252
   },
   "dad": {
    "avatar": "Business_Male_07",
    "sex": "m",
    "file": "dad.glb",
-   "bytes": 2055876
+   "bytes": 2060672
   },
   "k1": {
    "avatar": "Female_Child_01",

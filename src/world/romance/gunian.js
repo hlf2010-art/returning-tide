@@ -17,7 +17,7 @@ const day = (L) => L.clock.day;
 const exams = (L) => day(L) >= 11 && day(L) <= 12;
 
 const P = {
-  id: W, name: B('顾念', 'Gu Nian'), short: B('顾念', 'Gu Nian'), age: 29, sex: 'f', color: '#5f7f6e', avatar: ['c4', 'p5', 'c1'], voice: { pitch: 1.0, rate: 0.98 },
+  id: W, name: B('顾念', 'Gu Nian'), short: B('顾念', 'Gu Nian'), age: 29, sex: 'f', color: '#5f7f6e', avatar: ['gunian', 'c4', 'p5', 'c1'], voice: { pitch: 1.0, rate: 0.98 },
   role: B('建筑师，外滩老建筑修缮；若安的组长', "Architect, restoring the Bund's old buildings; Ruoan's team lead"),
   ambition: B('考完一级注册建筑师，开一间自己的小事务所，修里弄', 'Finish her registration exams and open a small practice of her own, repairing lane houses'),
   how: "You are the team lead of his oldest friend Xu Ruoan at the conservation practice; you met him in the AIA Building lobby when you asked him to hold the end of a tape.",

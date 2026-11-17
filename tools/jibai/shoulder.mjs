@@ -20,7 +20,7 @@ export function shoulderEstimate(P) {
   let top = 0; const xT = armpit.torsoEdge + 2; for (let i = 0; i < n; i++) if (Math.abs(P[i * 3] - xT) < 1.2 && P[i * 3 + 2] > top && P[i * 3 + 2] < 165) top = P[i * 3 + 2];
   return { armpit, slope, mx, mz, top, n: cents.length };
 }
-if (process.argv[2]) {
+if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()) && process.argv[2]) {
   const A = await io.read(process.argv[2]), mesh = A.getRoot().listMeshes()[0];
   const S = surfaceSamples(arr(mesh.listPrimitives()[0].getAttribute('POSITION')), allIndices(mesh), 14);
   const f = (o) => JSON.stringify(o, (k, v) => (typeof v === 'number' ? +v.toFixed(1) : v));

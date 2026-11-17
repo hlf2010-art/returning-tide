@@ -34,7 +34,10 @@ const pos = (i) => new THREE.Vector3().setFromMatrixPosition(Bm[i]);
 
 // ---------- his mesh, in RB mesh space at 182 cm ----------
 const nb = newMeshPositions(B); let H = 0; for (let i = 2; i < nb.P.length; i += 3) H = Math.max(H, nb.P[i]);
-const S = 182 / H; for (let i = 0; i < nb.P.length; i++) nb.P[i] *= S;
+// as tall as the skeleton's own body (182 cm for the Rocketbox man, the woman's own height for hers), so the clips' hip height fits
+const rbHeight = (() => { const m = A.getRoot().listMeshes()[0], a = m.listPrimitives()[0].getAttribute('POSITION'); let h = 0; const e = []; for (let i = 0; i < a.getCount(); i++) h = Math.max(h, a.getElement(i, e)[2]); return h; })();
+const S = rbHeight / H; for (let i = 0; i < nb.P.length; i++) nb.P[i] *= S;
+console.log('height', rbHeight.toFixed(1), 'cm');
 const P = nb.P, N = nb.N, nV = P.length / 3;
 const pts = (f) => { const out = []; for (let i = 0; i < nV; i++) if (f(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])) out.push(new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])); return out; };
 const mean = (a) => a.reduce((s, v) => s.add(v), new THREE.Vector3()).multiplyScalar(1 / Math.max(1, a.length));
@@ -81,7 +84,7 @@ shiftY('Bip01_Neck', headY - rbHeadY - (torsoY - rbTorsoY));
 const estNew = shoulderEstimate(P), rbUp = pos(byName.Bip01_L_UpperArm);
 const sh = { x: estNew.armpit.x - 1.0, z: estNew.armpit.z - 1.0 };
 console.log('shoulder joint', sh.x.toFixed(1), sh.z.toFixed(1), '(RB', rbUp.x.toFixed(1), rbUp.z.toFixed(1) + ')');
-for (const s of ['L', 'R']) { const i = byName[`Bip01_${s}_UpperArm`], p = pos(i), to = new THREE.Vector3(s === 'L' ? sh.x : -sh.x, p.y, sh.z), d = to.clone().sub(p); for (const k of descendants(i)) { const q = new THREE.Vector3().setFromMatrixPosition(fit[k]).add(d); fit[k].setPosition(q); } }
+if (process.env.SHOULDER !== '0') for (const s of ['L', 'R']) { const i = byName[`Bip01_${s}_UpperArm`], p = pos(i), to = new THREE.Vector3(s === 'L' ? sh.x : -sh.x, p.y, sh.z), d = to.clone().sub(p); for (const k of descendants(i)) { const q = new THREE.Vector3().setFromMatrixPosition(fit[k]).add(d); fit[k].setPosition(q); } }
 for (const s of ['L', 'R']) { const up = byName[`Bip01_${s}_UpperArm`]; const shp = new THREE.Vector3().setFromMatrixPosition(fit[up]); const from = rbTip[s].clone().sub(pos(up)).add(shp); fitChain(`Bip01_${s}_UpperArm`, from, tip[s], shp); }
 for (const s of ['L', 'R']) fitChain(`Bip01_${s}_Thigh`, rbAnkle[s], ankle[s]);
 // the palms: turn each forearm (and the hand on it) about its own axis so the bones' hand faces the way his
@@ -103,6 +106,7 @@ for (const s of ['L', 'R']) {
   if (mine.length < 20 || theirs.length < 8) { console.log(s, 'palm: too few points', mine.length, theirs.length); continue; }
   const flat = (n) => n.clone().addScaledVector(axis, -n.dot(axis)).normalize(), a = flat(flatNormal(theirs)), b = flat(flatNormal(mine));
   let ang = Math.atan2(a.clone().cross(b).dot(axis), a.dot(b)); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
+  const MAXR = +(process.env.PALMMAX ?? 20) * Math.PI / 180, raw = ang; ang = Math.max(-MAXR, Math.min(MAXR, ang)); if (raw !== ang) console.log(s, 'palm roll capped from', (raw * 180 / Math.PI).toFixed(1) + '°');
   const q = new THREE.Quaternion().setFromAxisAngle(axis, ang), R = new THREE.Matrix4().makeRotationFromQuaternion(q);
   for (const i of descendants(fo)) { const p = new THREE.Vector3().setFromMatrixPosition(fit[i]).sub(f0).applyQuaternion(q).add(f0), rot = new THREE.Matrix4().extractRotation(fit[i]); fit[i] = R.clone().multiply(rot).setPosition(p); }
   console.log(s, 'palm roll', (ang * 180 / Math.PI).toFixed(1) + '°', `(${mine.length} / ${theirs.length} points)`);
@@ -174,7 +178,7 @@ for (const s of ['L', 'R']) {
 // ---------- write: B's mesh + material, with the RB hierarchy and the fitted skin ----------
 const doc = B, R = doc.getRoot(), buf = R.listBuffers()[0];
 const scene = R.listScenes()[0]; for (const c of scene.listChildren()) scene.removeChild(c);
-const top = doc.createNode('JiBai'); scene.addChild(top);
+const NAME = process.env.NAME || 'JiBai', top = doc.createNode(NAME); scene.addChild(top);
 const M_inv = M.clone().invert(), copy = new Map();
 const worldFit = (i) => M.clone().multiply(fit[i]);                               // fitted joint -> world at bind
 function clone(n, parent) {
@@ -187,9 +191,9 @@ function clone(n, parent) {
   n.listChildren().forEach((k) => { if (!k.getMesh()) clone(k, c); });
 }
 for (const c of sceneRoot.listChildren()) if (!c.getMesh()) clone(c, top);
-const meshNode = doc.createNode('jibai_mesh').setMesh(nb.node.getMesh()).setRotation(meshNodeA.getRotation()).setTranslation(meshNodeA.getTranslation()); top.addChild(meshNode);
+const meshNode = doc.createNode(`${NAME.toLowerCase()}_mesh`).setMesh(nb.node.getMesh()).setRotation(meshNodeA.getRotation()).setTranslation(meshNodeA.getTranslation()); top.addChild(meshNode);
 nb.node.setMesh(null);
-const sk = doc.createSkin('jibai_skin'); for (const j of joints) sk.addJoint(copy.get(j));
+const sk = doc.createSkin(`${NAME.toLowerCase()}_skin`); for (const j of joints) sk.addJoint(copy.get(j));
 const ibmOut = new Float32Array(J * 16); fit.forEach((m, i) => ibmOut.set(m.clone().invert().elements, i * 16));
 sk.setInverseBindMatrices(doc.createAccessor('ibm').setType(Accessor.Type.MAT4).setArray(ibmOut).setBuffer(buf));
 sk.setSkeleton(copy.get(sceneRoot.listChildren().find((c) => c.getName() === 'Bip01')));
@@ -198,7 +202,7 @@ prim.setAttribute('POSITION', doc.createAccessor('pos').setType('VEC3').setArray
 prim.setAttribute('NORMAL', doc.createAccessor('nrm').setType('VEC3').setArray(N).setBuffer(buf));
 prim.setAttribute('JOINTS_0', doc.createAccessor('jnt').setType('VEC4').setArray(JW).setBuffer(buf));
 prim.setAttribute('WEIGHTS_0', doc.createAccessor('wgt').setType('VEC4').setArray(WW).setBuffer(buf));
-const mat = prim.getMaterial(); mat.setName('jibai_body').setRoughnessFactor(0.85).setMetallicFactor(0); for (const e of mat.listExtensions()) mat.setExtension(e.extensionName, null);
+const mat = prim.getMaterial(); mat.setName(`${NAME.toLowerCase()}_body`).setRoughnessFactor(0.85).setMetallicFactor(0); for (const e of mat.listExtensions()) mat.setExtension(e.extensionName, null);
 for (const e of R.listExtensionsUsed()) if (e.extensionName === 'KHR_materials_specular') e.dispose();
 for (const n of R.listNodes()) if (!n.getMesh() && !n.listChildren().length && n.getName() === 'node_0') n.dispose();
 await io.write(OUT, doc);

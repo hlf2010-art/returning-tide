@@ -85,7 +85,7 @@ export function createLjzTraffic({ group, factor = 1 }) {
 const lerp = (a, b, t) => a + (b - a) * t;
 export function createLjzPeople({ group, people }) {
   if (!people) return { update() {}, talkables: () => [], list: [] };
-  const roles = Object.keys(people.manifest.cast).filter((r) => !['lin', 'su', 'player', 'dad', 'k1', 'k2'].includes(r));
+  const roles = Object.keys(people.manifest.cast).filter((r) => !people.manifest.cast[r].named && !['lin', 'su', 'player', 'dad', 'k1', 'k2'].includes(r));
   const phoneMat = new THREE.MeshStandardMaterial({ color: 0x16161a, roughness: 0.3, metalness: 0.5 });
   const ringLoop = (dir, r) => { const pts = []; for (let b = 0; b < 360; b += 10) { const [x, z] = rpolar(dir > 0 ? b : 360 - b, r); pts.push([x, z, RING.y]); } return pts; };
   const lakeLoop = (dir, off) => { const pts = []; for (let i = 0; i < 40; i++) { const t = (dir > 0 ? i : 40 - i) / 40 * 6.2832, [x, z] = fromAP(LOOP.a + (LOOP.ra + off) * Math.cos(t), LOOP.p + (LOOP.rp + off) * Math.sin(t)); pts.push([x, z, CH]); } return pts; };

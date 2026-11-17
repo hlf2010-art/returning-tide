@@ -18,3 +18,11 @@
 
 Dependencies (not the game's): `npm i @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 meshoptimizer@0.22 three sharp`.
 Then update `"bytes"` for `player` in `public/people/people.json`.
+
+## Gu Nian (`public/people/gunian.glb`)
+
+The same, on the Rocketbox woman's skeleton (the c4 model before springs, `git show cbe1775~1:public/people/c4.glb`), at her
+height (173 cm): `NAME=GuNian PALMMAX=12 ADDUCT=0 SHOULDER=0 node rig.mjs c4.glb simple.glb gunian.glb`: her boxy blazer
+has shoulder pads, so the skeleton keeps its own shoulders and the arms aren't drawn in; her small hands give an unreliable
+palm direction, so its turn is capped. Then `tools/cloth/cloth.mjs gunian.glb gunian.glb gunian`. In people.json she is
+`"named": true`, so the crowds never wear her.
