@@ -170,7 +170,7 @@ A game begun before the year existed has none of this (`isYear(L)` is false).
 ## Honest notes
 
 - **Faces.** Only the Rocketbox adults in `public/people/people.json` exist, and the crowd is cast
-  from the same set. Zhiwei is `p5`, Nanxing `c8`, Gu Nian `c4`, Yu'an `c1`, Kexin `c3`. Each has
+  from the same set. Zhiwei is `p5`, Nanxing `c8`, Gu Nian her own model (`gunian`, from her character sheet; `c4` if it is missing), Yu'an `c1`, Kexin `c3`. Each has
   her own, but the same faces walk past in the street, sit in the Jazz Bar (`p5` is also a guest
   there) and stand on the promenade.
 - **Voices.** None of their lines is recorded. They are subtitles, the game's default for new
