@@ -4,7 +4,7 @@
 //   profileView(L, defs, lang) -> { me, skills, project, time, quests, money, rep, items, property, people }
 import { stamp } from '../engine/life.js';
 import { ROMANCE, heart } from '../engine/hearts.js';
-import { isYear, year, career, actOf, dateText, hurt } from '../engine/year.js';
+import { isYear, year, career, actOf, dateText, dateOf, hurt } from '../engine/year.js';
 import { skillsView } from '../engine/skills.js';
 import { hasProduct, summary, rev } from '../engine/studio.js';
 import { maker, BLUEPRINTS } from '../engine/maker.js';
@@ -45,7 +45,7 @@ export function profileView(L, defs = [], lang = 'zh') {
   const project = {
     has: !!S, name: T('夜行云台', 'Night gimbal'), version: S ? rev(L) : 0, grade: S ? S.grade : 0, users: S ? S.hands : 0, list: S ? S.list : 0, price: S ? S.price : 0,
     steps: [{ id: 'validated', zh: '验证过的原型', en: 'A validated prototype', done: !!S && S.grade >= 3 }, ...MILESTONES.map((m) => ({ id: m.id, zh: m.zh, en: m.en, done: !!A.milestones[m.id] }))].map((s) => ({ id: s.id, text: T(s.zh, s.en), done: s.done })),
-    built: Object.keys(maker(L).gadgets || {}).map((id) => (BLUEPRINTS[id] ? T(BLUEPRINTS[id].zh, BLUEPRINTS[id].en) : id)),
+    built: Object.keys(maker(L).gadgets || {}).map((id) => ({ id, name: BLUEPRINTS[id] ? T(BLUEPRINTS[id].zh, BLUEPRINTS[id].en) : id })),
   };
   const time = { hours: Object.fromEntries(USES.map((u) => [u, Math.round(P.hours[u] || 0)])), work: Math.round(P.hours.work || 0), burnout: P.burnout, network: Math.round(A.network), seasons: A.seasons.length };
   // ---- quests ----
@@ -68,8 +68,8 @@ export function profileView(L, defs = [], lang = 'zh') {
     { id: 'network', name: T('人脉', 'Network'), v: Math.round(A.network) },
   ];
   // ---- what he owns ----
-  const items = L.inventory.filter((i) => i.kind !== 'car').map((i) => ({ name: T(i.name || i.id, i.en || i.name || i.id), kind: i.kind || '', from: i.from || '' }));
-  for (const g of project.built) items.unshift({ name: g, kind: 'made', from: T('自己做的', 'Made it himself') });
+  const items = L.inventory.filter((i) => i.kind !== 'car').map((i) => ({ id: i.id, name: T(i.name || i.id, i.en || i.name || i.id), kind: i.kind || '', from: i.from || '' }));
+  for (const g of project.built) items.unshift({ id: g.id, name: g.name, kind: 'made', from: T('自己做的', 'Made it himself') });
   const car = L.flags.car ? { name: T(L.flags.car.name, L.flags.car.en), plate: L.flags.car.plate, hex: L.flags.car.hex } : null;
   const H = Y ? year(L).home : { kind: 'hotel', rent: 0 };
   const listing = H.kind === 'flat' ? Object.values(LISTINGS).find((x) => x.rent === H.rent || x.where === H.where) : null;
@@ -94,3 +94,50 @@ export function profileView(L, defs = [], lang = 'zh') {
   return { me, skills, project, time, quests, money, rep, items, property, people, now: stamp(L) };
 }
 export const GROUPS = { heart: ['感情', 'Romance', '#e07a8f'], family: ['家人', 'Family', '#d9b26a'], friend: ['朋友', 'Friends', '#7fb8e6'], work: ['工作', 'Work', '#9ad0a6'], other: ['其他', 'Others', '#b9b2c9'] };
+
+// ======== the words: the page reads like the game, not a dashboard ========
+const DAY_MS = 86400000;
+// how many days he has been back (he landed on Monday 9 November 2026)
+export function daysBack(L) { const t = dateOf(L); return Math.round((Date.UTC(t.y, t.m - 1, t.d) - Date.UTC(2026, 10, 9)) / DAY_MS) + 1; }
+// a line in his own hand for each skill at each level (the notebook's voice)
+export const SKILL_NOTE = {
+  hw: ['', ['烙铁拿起来手还是抖的。七年没碰了。', "My hand still shakes on the iron. Seven years since I last held one."], ['焊点终于亮了。阿凯说“像样了”。', "The joints finally shine. Kai said: 'Now that's a joint.'"],
+    ['结构、电路、电池，一个晚上能改一版。', 'Mechanism, circuit, battery: a version a night.'], ['可以开始想量产的事：公差、良率、供应商。', 'I can start thinking about production: tolerances, yield, suppliers.'], ['爸看了我的板子，没说话。点了点头。', 'Dad looked at my board and said nothing. Then he nodded.']],
+  ai: ['', ['会写脚本，会看日志。', 'Scripts, logs.'], ['数据比模型重要。先把数据采好。', 'The data matters more than the model. Collect it properly first.'], ['小模型自己训得出来，也知道它哪里会错。', "I can train a small model myself, and I know where it'll go wrong."],
+    ['模型塞进一块指甲大的芯片里，实时跑。这是我在湾区学会的。', 'A model squeezed onto a chip the size of a fingernail, running in real time. That I learned in the Bay.'], ['看得见、听得懂、会动手。下一代东西就长这样。', 'It sees, it understands, it acts. This is what the next things look like.']],
+  product: ['', ['先看人怎么用，别急着说话。', "Watch how people use it before saying anything."], ['把抱怨写成问题。抱怨是礼物。', 'Turn complaints into problems. A complaint is a gift.'], ['一次只改两处，而且知道改哪两处。', 'Change two things at a time, and know which two.'],
+    ['知道它该卖多少钱，卖给谁。', 'I know what it should cost, and who it is for.'], ['从一个人的需要，看见一类人的需要。', "From one person's need, I can see a kind of person's."]],
+};
+// what people say about him, by reputation (low / middling / high)
+export const REP_SAY = {
+  standing: { who: ['贺维安，合伙人', 'Raymond He, partner'], say: [['他人在，心不在。', "He's here, but his mind isn't."], ['还行。再看看。', "He's fine. Let's see."], ['下一个项目让纪白带。', 'Let Ji Bai lead the next one.']] },
+  work: { who: ['行业里', 'In the trade'], say: [['那个从美国回来的？没听说做过什么。', "The one back from America? Haven't heard of anything he's done."], ['听说过，挺扎实的。', "I've heard of him. Solid."], ['做硬件 AI 的，找纪白聊聊。', 'Hardware and AI? Talk to Ji Bai.']] },
+  online: { who: ['网上', 'Online'], say: [['（没有人在讨论他）', '(No one is talking about him)'], ['有人转了他的云台视频。', 'Someone shared his gimbal video.'], ['“求链接！”“哪里能买？”', '"Link please!" "Where can I buy one?"']] },
+  street: { who: ['外滩上', 'On the Bund'], say: [['离那个人远点。', 'Stay away from that one.'], ['（路过的人不会多看他一眼）', '(Passers-by don\'t look twice)'], ['“就是他，晚上借云台给人拍照的那个。”', '"That\'s him. The one who lends people his gimbal at night."']] },
+  network: { who: ['明轩', 'Mingxuan'], say: [['你得多出来见见人。', 'You need to get out and meet people.'], ['我那几个投资人都知道你了。', 'My investors all know who you are now.'], ['你现在的局，比我的还多。', 'You get invited to more than I do these days.']] },
+};
+export const tier = (v) => (v < 40 ? 0 : v < 65 ? 1 : 2);
+// a line he'd write about someone, by who they are to him and how close
+export function personNote(p, lang = 'zh') {
+  const T = pick(lang), c = p.close;
+  if (p.over) return T('都过去了。', "It's over.");
+  if (p.group === 'heart') return c >= 75 ? T('想到她就想快点下班。', 'Thinking of her, I want the day to end.') : c >= 50 ? T('还想再见她。', 'I want to see her again.') : T('还不太了解她。', "I don't know her well yet.");
+  if (p.group === 'family') return c >= 65 ? T('最近说话多了一点。', "We've been talking a bit more.") : c >= 45 ? T('该打个电话了。', "I should call.") : T('上次说话是什么时候？', 'When did we last talk?');
+  if (p.group === 'friend') return c >= 65 ? T('有事第一个想到的人之一。', 'One of the first people I\'d call.') : c >= 45 ? T('老朋友。最近见得少。', "An old friend. We don't see much of each other lately.") : T('有点生疏了。', "We've drifted.");
+  if (p.group === 'work') return c >= 60 ? T('靠得住。', 'Reliable.') : T('工作上的人。', 'Someone from work.');
+  return c >= 60 ? T('点头之交，但他记得我。', 'Barely know him, but he remembers me.') : T('见过几次。', "We've met a few times.");
+}
+// "how he is now", a few lines, from what's true
+export function nowLines(L, V, lang = 'zh') {
+  const T = pick(lang), out = [], c = career(L);
+  out.push(T(`回国第 ${daysBack(L)} 天。`, `Day ${daysBack(L)} back in Shanghai.`));
+  if (c.track === 'consulting') out.push(T(`在${V.me.employer}做顾问。`, `A consultant at ${V.me.employer}.`));
+  else if (c.track === 'startup') out.push(T('在做自己的公司。', 'Running his own company.'));
+  else if (V.me.employer) out.push(T(`在${V.me.employer}。`, `At ${V.me.employer}.`));
+  out.push(V.property.home.rent ? T(`住${V.property.home.name.split('·').pop().trim()}，月租 ¥${V.property.home.rent.toLocaleString('en-US')}。`, `Lives in ${V.property.home.name.split('·').pop().trim()}, ¥${V.property.home.rent.toLocaleString('en-US')} a month.`) : T('住在和平饭店，公司付的。', 'Living at the Peace Hotel, on the firm.'));
+  const lover = V.people.find((p) => p.group === 'heart' && /约会|在一起|Dating|Together/.test(p.stage || ''));
+  if (lover) out.push(T(`和${lover.name}${lover.stage === '在一起' ? '在一起' : '在约会'}。`, `${lover.stage === 'Together' ? 'With' : 'Seeing'} ${lover.name}.`));
+  if (V.me.energy < 35) out.push(T('很累。', 'Tired. Very.'));
+  if (V.project.has) out.push(T(`夜行云台，第 ${V.project.version} 版。`, `The night gimbal, version ${V.project.version}.`));
+  return out;
+}

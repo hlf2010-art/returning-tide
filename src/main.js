@@ -303,7 +303,7 @@ async function boot() {
   if (life.flags.carBuy && ['booked', 'viewed', 'specced'].includes(life.flags.carBuy.stage) && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');   // (met her but not ordered: she's still there)
   // once it's yours: drive it (world/driving.js)
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []) });
-  world = { baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -1015,7 +1015,7 @@ function trySeason() {
   season.open(days, gap, () => { if (mode === 'season') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } saveLife(); });
 }
 // the character page (I): who he is, skills, quests, money, reputation, belongings, people (ui/profile.js)
-const profilePage = createProfile({ getLife: () => life, defs: QUESTS, onClose: () => { if (mode === 'profile') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } } });
+const profilePage = createProfile({ getLife: () => life, defs: QUESTS, getPeople: () => (world && world.people) || null, onClose: () => { if (mode === 'profile') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } } });
 function openProfile(tab = null) {
   if (mode !== 'play') return;
   mode = 'profile'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
