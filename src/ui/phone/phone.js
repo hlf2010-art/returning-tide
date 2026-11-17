@@ -59,6 +59,18 @@ const LOGO_AV = { jd: 'jd', taobao: 'taobao', didi: 'didi', manner: 'manner' };
 // people with a photograph (their character sheets: public/people/<id>/): the rest get a coloured initial
 const PHOTO_AV = { me: './people/jibai/face-neutral.jpg', gunian: './people/gunian/face-smile.jpg' };
 const avatar = (id, size = '') => { const p = person(id); if (LOGO_AV[id]) return `<div class="av logo ${size}" style="background:${BRAND_COLOR[LOGO_AV[id]]}">${appGlyph(LOGO_AV[id], 22)}</div>`; if (PHOTO_AV[id]) return `<div class="av photo ${size}" style="background-image:url('${PHOTO_AV[id]}')"></div>`; return `<div class="av ${size}" style="background:${id === 'me' ? '#2d6cdf' : p.color}">${esc(initial(id))}</div>`; };
+// a notification as iOS draws a messaging app's (WeChat has shown the sender's photo there since late 2025): the
+// sender's round photo (or initial) with the app's icon as a badge, the name as the title, the time on the right
+const NOTE_APPS = { jd: 'jd', taobao: 'taobao', didi: 'didi', manner: 'manner' };
+function noteCard(l, n, { act = 'openThread', hint = '' } = {}) {
+  const mins = Math.max(0, Math.floor((stamp(l) - (n.at || stamp(l)))));
+  const when = mins < 1 ? Z('现在', 'now') : mins < 60 ? Z(`${mins}分钟前`, `${mins}m ago`) : clockText((n.at || 0) % 1440);
+  const app = NOTE_APPS[n.from];
+  const face = app ? `<div class="ic app" style="background:${BRAND_COLOR[app]}">${appGlyph(app, 22)}</div>`
+    : `<div class="ic">${PHOTO_AV[n.from] ? `<div class="pic" style="background-image:url('${PHOTO_AV[n.from]}')"></div>` : `<div class="pic init" style="background:${person(n.from).color}">${esc(initial(n.from))}</div>`}<span class="badge" style="background:${BRAND_COLOR.wechat}">${appGlyph('wechat', 11)}</span></div>`;
+  const group = n.thread === GROUP.id, title = app ? nm(n.from) : group ? GROUP_NAME() : nm(n.from), body = group ? `${short(n.from)}：${X(n.text)}` : X(n.text);
+  return `<div class="ios-note" data-act="${act}" data-id="${esc(n.thread)}">${face}<div class="tx"><div class="hd"><b>${esc(title)}</b><span class="tm">${esc(hint || when)}</span></div><div class="bd">${esc(body)}</div></div></div>`;
+}
 const initial = (id) => { const p = person(id); if (getLang() === 'en') return id === 'me' ? 'J' : (PEOPLE[id] ? shortEn(id, PEOPLE[id]) : '?')[0]; return (id === 'me' ? '白' : p.short || p.name).slice(0, 1); };
 const ago = (L, at) => { const d = stamp(L) - at; if (d < 1) return Z('刚刚', 'now'); if (d < 60) return Z(`${d}分钟前`, `${d} min ago`); return clockText(at); };
 const yuan = (n) => `¥${Math.abs(n).toLocaleString('zh-CN', { maximumFractionDigits: 2 })}`;
@@ -155,7 +167,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
 
   function lockView(l) {
     const yd = isYear(l) ? dateOf(l) : null, d = yd ? new Date(yd.y, yd.m - 1, yd.d) : new Date(2026, 10, 14 + (l.clock.day - 1));   // a year game stands on real dates (engine/year.js)
-    const notes = l.notifications.slice(-5).reverse().map((n) => `<div class="note" data-act="openThread" data-id="${esc(n.thread)}">${avatar(n.from)}<div><div class="t">${SHOP_APPS.includes(n.from) ? esc(nm(n.from)) : `${Z('微信', 'WeChat')} · ${esc(nm(n.from))}`}</div><div class="p">${esc(X(n.text))}</div></div></div>`).join('');
+    const notes = l.notifications.slice(-5).sort((a, b) => (b.at || 0) - (a.at || 0)).map((n) => noteCard(l, n)).join('');   // newest first
     const date = Z(`${d.getMonth() + 1}月${d.getDate()}日 星期${WEEK[d.getDay()]}`, `${DAYS_EN[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`);
     return `<div class="view lock"><div class="date">${date}</div><div class="time">${clockText(l.clock.minute)}</div>
       <div class="notes">${notes}</div>${S.unlocking ? '<div class="face"></div>' : ''}<div class="hint" data-act="unlock" style="cursor:pointer">${Z('轻点或按 Enter 用面容解锁', 'Tap or press Enter to unlock')}</div></div>`;
@@ -522,7 +534,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       const n = l.notifications[l.notifications.length - 1]; lastNote = l.notifications.length;
       if (!S.open) {
         const p = person(n.from);
-        banner.innerHTML = `<div class="av" style="background:${p.color}">${esc(initial(n.from))}</div><div><div class="t">${esc(nm(n.from))}${n.thread === GROUP.id ? ` · ${esc(GROUP_NAME())}` : ''}</div><div class="p">${esc(X(n.text))}</div></div><div class="k">P</div>`;
+        banner.innerHTML = noteCard(l, n, { hint: Z('P 打开', 'P to open') }); void p;
         banner.classList.add('on'); clearTimeout(bannerTimer); bannerTimer = setTimeout(() => banner.classList.remove('on'), 4200);
         if (audio && audio.cue) audio.cue('ping');
         S.lastThread = n.thread;
