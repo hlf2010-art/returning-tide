@@ -31,7 +31,7 @@ Ages and jobs as briefed. All five are women; each has her own Rocketbox avatar 
 |---|---|---|---|---|
 | 许知微 Xu Zhiwei, 28 (`zhiwei`) | The project manager on his first engagement. From Hangzhou, six years at the firm. Sharp, dry, guarded, fair when it costs her | Senior manager before thirty, then partner | She writes at 18:10 on day 1, and brings his pass and laptop to the Peace Hotel lobby that evening (20:20 to 21:35) | Has it out with him if he sees someone else; two unanswered overtures and she stops asking |
 | 沈南星 Shen Nanxing, 26 (`nanxing`) | Independent photographer from Kunming. Shoots the Bund after the lights drop at ten. Awake till four | A first solo show; a three-month residency in Lisbon | At the railing north of Nanjing Road, any night 20:40 to 23:40 through day 10: he walks into her eight-second exposure. She notices the gimbal if he has built it | Doesn't police him, but won't commit to a man who sees others; three unanswered and she stops |
-| 顾念 Gu Nian, 29 (`gunian`) | Architect, Ruoan's team lead at the conservation practice. Shanghai-born. Says what she means | Her registration exams (May), then her own small practice repairing lane houses | In the AIA Building lobby after office hours (18:20 to 20:40, through day 8): she asks him to hold the other end of a tape | Leaves at once if he is seeing someone else. She is nobody's option |
+| 顾念 Gu Nian, 29 (`gunian`) | Tech investor and strategist: a partner at a small early-stage fund upstairs in the AIA Building. Shanghai-born, MBA abroad. Rational across a table, reserved across a dinner. Not one of his friends | A fund of her own (Slow Tide Capital: roadshow in May, first close in June) backing consumer tech for the long run | In the AIA Building lobby after office hours (18:20 to 20:40, through day 8): a start-up's fall-detection camera calls everyone who sits down a fall; she asks him to sit on the sofa for it, and he tells her what's wrong | Leaves at once if he is seeing someone else. She is nobody's option. She will never invest in him while they're together |
 | 林予安 Lin Yu'an, 27 (`yuan`) | Product designer in San Francisco; the two years there they never named | Her green card; a job that isn't finishing other people's work | She writes first, from California, at 01:20 on day 2 (her morning). In person from June (day 13) | Asks him straight; the most patient of the five |
 | 唐可昕 Tang Kexin, 25 (`kexin`) | Lifestyle creator from Suzhou: 180K on Xiaohongshu, 90K on Douyin. Knows Momo | Half a million followers; a small label of her own | Filming in the Jazz Bar on days 1, 3, 5, 7, 9 (20:15 to 23:30): he walks through her shot | Learns things in public; if she learns of someone else from her own comments, she is gone |
 
@@ -49,11 +49,18 @@ Ages and jobs as briefed. All five are women; each has her own Rocketbox avatar 
   the morning; Lisbon comes through, and whether he asks her not to go. IV: the photograph of him
   she took without asking; postcards at his four a.m.; they ask her to stay on. V: Hongqiao
   arrivals, or "don't wait for me".
-- **Gu Nian.** I: the tape; one o'clock at Manner on Hankou Road; the river cruise she has never
-  taken (a fade, then sunset at the pier). II: the Bund from the foundations up, and her question:
-  where will he be after November? III: exams; she says she'll be slow, and why. IV: she passes;
-  a studio of her own; a second key on the table at the Jazz Bar. V: she asks the question a second
-  time. Her ending reads `life.flags.dinnerChoice`.
+- **Gu Nian.** I: the camera in the AIA lobby (Mingxuan writes the next morning: she has asked
+  him who Ji Bai is); one o'clock at Manner on Hankou Road; the river cruise she has never taken
+  (half the reason is a ticketing start-up she's looking at; a fade, then sunset at the pier).
+  II: Lujiazui from the railing, every lit window a bet; "don't show me what you build, not yet";
+  her question: where will he be after November? She tells him she's leaving to raise her own
+  fund and shows him the office, upstairs from his bench in Yangpu. III: the roadshow; she says
+  she'll be slow, and why. IV: first close; a second key on the table at the Jazz Bar (to her flat,
+  never to the office); if he is building a company, she asks for his deck to tell him the worst
+  of it, and won't invest; her fund's first deal is the camera from the night they met. V: she asks
+  the question a second time. Her ending reads `life.flags.dinnerChoice`. Between acts
+  (`src/world/allotEvents.js`), a small batch or a launch brings a message from her: her fund wants
+  a meeting, unless he is seeing her.
 - **Yu'an.** I: "So you really went back." His mug; a voice call from Clement Street about what
   the two years were. II: she is laid off; a Shanghai company wants her to come and look. III: she
   books the flight. IV: three months in Shanghai: the octagon hall, the river, the Jazz Bar, and a
@@ -108,7 +115,7 @@ Ages and jobs as briefed. All five are women; each has her own Rocketbox avatar 
 |---|---|---|
 | Zhiwei | First meeting (Peace Hotel lobby); a seated drink at the Jazz Bar; a walk at the railing; a second seated evening (the ratings), which can end upstairs | 12 beats, 3 invitations, the Singapore decision |
 | Nanxing | First meeting at the railing with her tripod; the lights at ten; a seated evening at the Jazz Bar (can end upstairs); the print at the railing. She is also simply there most nights | 12 beats, 3 invitations, postcards from Lisbon |
-| Gu Nian | First meeting (AIA lobby); coffee at Manner; the cruise pier (tickets, a fade, sunset); the railing at night; the key at the Jazz Bar (seated; can end upstairs). She is at Manner at one every day | 10 beats (one in Ruoan's chat), 3 invitations |
+| Gu Nian | First meeting (AIA lobby); coffee at Manner; the cruise pier (tickets, a fade, sunset); the railing at night; the key at the Jazz Bar (seated; can end upstairs). She is at Manner at one every day | 11 beats (one in Mingxuan's chat), 3 invitations; between acts, a message on his small batch and on his launch |
 | Yu'an | From day 13 only: the octagon hall, the river, a seated evening at the Jazz Bar (can end upstairs), the last night at the river | Acts I to III are phone only: messages, a voice call with answers |
 | Kexin | First meeting in the Jazz Bar; shengjian outside the shop on Nanjing Road; a seated evening at the Jazz Bar after a launch (can end upstairs) | 9 beats, 2 invitations |
 
@@ -169,7 +176,7 @@ A game begun before the year existed has none of this (`isYear(L)` is false).
 - **Voices.** None of their lines is recorded. They are subtitles, the game's default for new
   lines (or the browser's or a local server's speech, if the player has chosen that).
 - **Bodies.** They stand or sit. No walking, no gestures beyond the idle clip and a turned head;
-  Gu Nian "crouching with a tape" is told by the narrator, not shown.
+  the camera Gu Nian is testing, and its beep when he sits down, are told by the narrator, not shown.
 - **The calendar.** Invitations say "tomorrow" in a year where tomorrow can be two months on.
 - **Measurement tools.** With `?q=` none of the five writes or appears unless `&hearts` is given,
   so the existing walk-throughs are unchanged.

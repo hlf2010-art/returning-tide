@@ -26,7 +26,7 @@ export const PEOPLE = {
   // the five he might come to love (world/romance.js and world/romance/*.js have who they are)
   zhiwei:  { name: '许知微', short: '知微', en: 'Xu Zhiwei', role: 'his project manager, Lujiazui', color: '#3d5a80', voice: { pitch: 1.02, rate: 1.1 }, sex: 'f' },
   nanxing: { name: '沈南星', short: '南星', en: 'Shen Nanxing', role: 'independent photographer', color: '#b0623a', voice: { pitch: 1.1, rate: 1.06 }, sex: 'f' },
-  gunian:  { name: '顾念', short: '顾念', en: 'Gu Nian', role: 'architect, Bund restorations', color: '#5f7f6e', voice: { pitch: 1.0, rate: 0.98 }, sex: 'f' },
+  gunian:  { name: '顾念', short: '顾念', en: 'Gu Nian', role: 'tech investor & strategist, early-stage fund', color: '#5f7f6e', voice: { pitch: 1.0, rate: 0.98 }, sex: 'f' },
   yuan:    { name: '林予安', short: '予安', en: "Lin Yu'an", role: 'product designer, San Francisco', color: '#7d6b9e', voice: { pitch: 1.06, rate: 1.04 }, sex: 'f' },
   kexin:   { name: '唐可昕', short: '可昕', en: 'Tang Kexin', role: 'lifestyle creator, 180K on Xiaohongshu', color: '#c0507a', voice: { pitch: 1.14, rate: 1.12 }, sex: 'f' },
   zhou:   { name: '老周', short: '老周', en: 'Old Zhou', role: 'watch-repairer, Hankou Road; missing since 29 October', color: '#8a7656', voice: { pitch: 0.82, rate: 0.9 }, sex: 'm' },

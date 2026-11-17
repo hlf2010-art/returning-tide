@@ -4,12 +4,14 @@
 //   the launch        the good: an offer, a promotion talk (if he told the firm), followers, customers.
 //                     The bad, scaled by how visible it is: a knock-off on Taobao within weeks (he answers:
 //                     open it up, patent it, out-ship it), a colleague's complaint to HR about moonlighting
-//                     (nothing comes of it if he declared it), Mingxuan wanting a share, a big company's call
+//                     (nothing comes of it if he declared it), Mingxuan wanting a share, a big company's call.
+//                     Gu Nian, the investor, hears of the batch and the launch: her fund wants a meeting,
+//                     unless he is seeing her (then he gets her honest opinion, never her money)
 //   the endings       the six stay; two variants are told over them when the year's time says so: "built
 //                     it, but alone" and "wanted everything" (burnt out). And a paragraph for the afterword
 //                     on where the year's evenings went
 import { post, thread, nudge, relation } from '../engine/life.js';
-import { leave, heart, NATURE } from '../engine/hearts.js';
+import { leave, heart, NATURE, inLife, isSeeing } from '../engine/hearts.js';
 import { isYear, career, standing, rep, fact, setTrack } from '../engine/year.js';
 import { allot, profile, USES } from '../engine/allot.js';
 import { PEOPLE as CAST } from './cast.js';
@@ -18,6 +20,19 @@ import { t } from './romance/kit.js';
 const B = (zh, en) => ({ zh, en });
 const name = (id, lang = 'zh') => (CAST[id] ? (lang === 'zh' ? CAST[id].short || CAST[id].name : (CAST[id].en || id).split(' ').pop()) : id);
 function say(L, id, text) { thread(L, id, { title: CAST[id] ? CAST[id].name : id, members: ['me', id] }); post(L, id, { from: id, kind: 'text', text }); }
+// Gu Nian invests in companies like his: if he is seeing her she won't, and says why; if not, her fund is interested
+function guNian(L, what) {
+  if (!isYear(L) || !inLife(L, 'gunian')) return null;
+  const hers = isSeeing(L, 'gunian');
+  if (what === 'batch') say(L, 'gunian', hers
+    ? t('听说明轩的基金要看你的小批量。好事，去见。他们发来的任何文件，找律师看，别找我。', "I hear Mingxuan's fund wants to look at your small batch. Good. Take the meeting. Anything they send you, have a lawyer read it. Not me.")
+    : t('听说你做出了第一批小批量。哪天要融资，材料发我们基金的投资经理，跟所有人一样走流程。我想对你公平，我只知道这一种办法。', "I hear you've made a first small batch. If you ever raise, send the deck to my fund's associate and go through the process like everyone else. I'd like to be fair to you, and that's the only way I know."));
+  if (what !== 'launch') return null;
+  say(L, 'gunian', hers
+    ? t('恭喜。今天有三个人来问我你的公司，我都说不方便谈。这是实话，原因不止一个。', "Congratulations. Three people asked me about your company today, and I told each of them I can't discuss it. That's true for more than one reason.")
+    : t('恭喜产品上市。我们基金想在别人之前见你。这次我会亲自在场。', "Congratulations on the launch. My fund would like to meet you before the others do. This time I'll be in the room myself."));
+  return hers ? null : B('顾念的基金想见你', "Gu Nian's fund wants a meeting");
+}
 
 // a season's events -> lines for the card (B), and the messages that follow
 export function seasonAftermath(L, events) {
@@ -45,6 +60,7 @@ export function seasonAftermath(L, events) {
       const M = { ready: B('样机可以量产了', 'The prototype is production-ready'), batch: B('第一批小批量做出来了', 'A first small batch is made'), launch: B('上市了', 'Launched') }[e.id];
       out.push(M);
       if (e.id === 'batch') say(L, 'xuan', t('听说你那个云台做出小批量了？哪天给我看看，我们基金对硬件一直有兴趣。', "Heard you've made a small batch of that gimbal? Show me some time. The fund's always been interested in hardware."));
+      if (e.id === 'batch') guNian(L, 'batch');
       if (e.id === 'launch') out.push(...launch(L));
     } else if (e.type === 'level') out.push(B(`技能提升：${{ hw: '硬件', ai: '软件与 AI', product: '产品' }[e.track]} ${e.level}`, `Skill up: ${{ hw: 'Hardware', ai: 'Software & AI', product: 'Product' }[e.track]} ${e.level}`));
   }
@@ -69,6 +85,7 @@ export function launch(L) {
     else { standing(L, -12, 'moonlighting'); thread(L, 'hr', { title: '迈芬 HR', members: ['me', 'hr'], kind: 'service' }); post(L, 'hr', { from: 'hr', kind: 'text', text: t('有同事反映你在外面有自己的生意，但没有报备。周一上午十点来一下。', "A colleague has told us you have a business of your own you didn't declare. Ten o'clock Monday, please.") }); out.push(B('有同事向 HR 举报你兼职，你没报备过', "A colleague reported you to HR for moonlighting. You hadn't declared it")); }
   }
   if (relation(L, 'xuan').affinity >= 55 && x >= 0.4) { say(L, 'xuan', t('恭喜！说真的，当初是我介绍你认识投资人的。给我留一点股份，不过分吧？', "Congratulations! Honestly, I introduced you to the investors. A little equity for me isn't too much to ask, is it?")); out.push(B('明轩想要一点股份', 'Mingxuan wants a little equity')); A.events.xuan = 'pending'; }
+  const gu = guNian(L, 'launch'); if (gu) out.push(gu);
   if (A.network >= 50) { out.push(B('一家大厂打来电话：想收购，或者请你过去', 'A big company calls: they want to buy it, or hire you')); A.events.bigco = 'pending'; fact(L, 'offer', { from: 'bigco' }); }
   return out;
 }
