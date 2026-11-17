@@ -132,6 +132,8 @@ export function createRealPedestrians(simPeds, people) {
     update(sim, dt, camPos = null) {
       for (let i = 0; i < list.length; i++) {
         const { person, umb, canopy, phone, scr, cup, face, look } = list[i], p = sim[i], r = person.root;
+        r.visible = !p.hidden;
+        if (p.hidden) { umb.visible = false; phone.visible = false; for (const k in cup) cup[k].visible = false; list[i].flash.visible = false; continue; }
         r.position.set(p.x, pedGround(p.x, p.z), p.z);
         let d = p.heading - r.rotation.y;                                          // turn smoothly, never snap
         while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;

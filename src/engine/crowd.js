@@ -322,7 +322,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
   const key = (i, j) => i * 100003 + j;
   function rebuild() {
     for (const c of grid.values()) c.length = 0;
-    for (const a of agents) { if (a.gone) continue; const k = key(Math.floor(a.x / CELL), Math.floor(a.z / CELL)); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(a); }
+    for (const a of agents) { if (a.gone || a.out) continue; const k = key(Math.floor(a.x / CELL), Math.floor(a.z / CELL)); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(a); }
   }
   // walking together (a couple, a family, a tour group): they keep close and never count as bumping
   const together = (a, o) => o === a.partner || o === a.leader || o.leader === a || (a.leader && o.leader === a.leader) || (a.group && o.group === a.group);
@@ -485,6 +485,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
       clock += dt;
       rebuild();
       for (const a of agents) {
+        if (a.out) continue;                                                // taken out of the scene for now (world/roadReactions.js)
         const boss = a.kind === 'follower' ? a.group.guide : a.leader;
         if (boss && boss.gone && !a.gone) { a.gone = true; continue; }          // they leave together
         if (a.gone) {
@@ -520,8 +521,17 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           if (d > 7) besides(a, l, tx - l.x, tz - l.z);
         } else if (a.state === 'act') {
           a.wait -= dt;
-          if (a.wait <= 0) { a.state = 'walk'; a.act = null; a.gesture = null; a.faceTo = null; if (a.atRail) { a.atRail = false; a.i = Math.min(a.i + 1, a.path.length - 1); } }
+          if (a.wait <= 0) { a.state = 'walk'; a.act = null; a.gesture = null; a.faceTo = null; a.photoAt = null; if (a.atRail) { a.atRail = false; a.i = Math.min(a.i + 1, a.path.length - 1); } }
           tx = a.x; tz = a.z; speed = 0;
+        } else if (a.state === 'goto') {
+          // called over to something (an accident in the road): walk to a spot, then stand and watch
+          const g = a.goal; g.t = (g.t || 0) + dt;
+          tx = g.x; tz = g.z; speed = a.speed * 1.1;
+          if (Math.hypot(tx - a.x, tz - a.z) < 0.55 || g.t > 25) {
+            a.state = 'act'; a.act = g.act || 'look'; a.wait = g.wait || 20; a.goal = null;
+            if (g.face) { a.faceTo = g.face; a.heading = Math.atan2(g.face[0] - a.x, g.face[1] - a.z); a.photoAt = a.act === 'photo' ? g.face : null; }
+            tx = a.x; tz = a.z; speed = 0;
+          }
         } else if (a.state === 'bus') {
           // waiting at the stop; given up after a while (walk off somewhere)
           a.wait -= dt; tx = a.x; tz = a.z; speed = 0;
@@ -570,6 +580,9 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
         // a bump just now: the half-step away, then slower for a moment (engine/flinch.js)
         const fl = a.flinch ? stepFlinch(a, dt) : null;
         if (a.flinch) speed *= flinchSpeed(a);
+        // getting out of a car's way: a quick step or jump aside, their own walking held back meanwhile
+        const sh = a.shove && a.shove.t > 0 ? a.shove : null;
+        if (sh) { speed *= 0.2; sh.t -= dt; if (sh.t <= 0) a.shove = null; }
         const dx = tx - a.x, dz = tz - a.z, d = Math.hypot(dx, dz);
         const moving = d > 0.05 && speed > 0;
         const fx = d > 0.05 ? dx / d : Math.sin(a.heading), fz = d > 0.05 ? dz / d : Math.cos(a.heading);
@@ -646,7 +659,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
         // smooth: people don't change velocity instantly
         const k = Math.min(1, dt * 4);
         a.vx += (vx - a.vx) * k; a.vz += (vz - a.vz) * k;
-        const mx = a.vx + (fl ? fl[0] : 0), mz = a.vz + (fl ? fl[1] : 0);
+        const mx = a.vx + (fl ? fl[0] : 0) + (sh ? sh.vx : 0), mz = a.vz + (fl ? fl[1] : 0) + (sh ? sh.vz : 0);
         let nx = a.x + mx * dt, nz = a.z + mz * dt;
         if (bad(nx, nz)) {
           // slide along whatever it is, keeping the pace (not a crawl into the corner)
@@ -685,6 +698,16 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
       if (a.flinch && a.flinch.t < a.flinch.dur) return null;
       return startFlinch(a, ox, oz, { hard });
     },
+    // pushed aside (dx, dz) over `dur` seconds: out of a car's way (world/roadReactions.js)
+    shove(a, dx, dz, dur = 0.4) { a.shove = { vx: dx / dur, vz: dz / dur, t: dur }; },
+    // called over to watch something at (fx, fz): walk to (x, z), then stand there (act: 'look' or
+    // 'photo', a phone up at it) for `wait` seconds. Only people on their own, on foot, off the road.
+    gather(a, x, z, { face = null, act = 'look', wait = 20 } = {}) {
+      if (a.gone || a.out || a.kind === 'follower' || a.kind === 'guide' || a.kind === 'jogger' || a.leader || !(a.state === 'walk' || a.state === 'act')) return false;
+      if (a.atRail) { a.atRail = false; a.i = Math.min(a.i + 1, a.path.length - 1); }
+      a.state = 'goto'; a.goal = { x, z, face, act, wait }; a.act = null; a.gesture = null;
+      return true;
+    },
     stats,
     get clock() { return clock; },
     // a bus at this stop with its doors open: who was waiting gets on; some get off
@@ -709,12 +732,12 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
     setCars(list) { cars = list || []; },
     onCarriageway() {
       const out = [];
-      for (const a of agents) if (!a.gone && a.x > L.westCurbX - 1.2 && a.x < L.eastCurbX + 1.2 && Math.abs(a.z) < 6) out.push({ x: a.x, z: a.z, vx: a.vx, vz: a.vz, crossing: a.state === 'cross' || onRoad(a.x, a.z), crowd: a.id });
+      for (const a of agents) if (!a.gone && !a.out && a.x > L.westCurbX - 1.2 && a.x < L.eastCurbX + 1.2 && Math.abs(a.z) < 6) out.push({ x: a.x, z: a.z, vx: a.vx, vz: a.vz, crossing: a.state === 'cross' || onRoad(a.x, a.z), crowd: a.id, dodging: !!(a.dodge && a.dodge.makes) });
       return out;
     },
     onHenan() {
       const out = [];
-      for (const a of agents) if (!a.gone && a.x > NJ.henan.x0 - 1.2 && a.x < NJ.henan.x1 + 1.2 && Math.abs(a.z - NJ.zc) < 8) out.push({ x: a.x, z: a.z - NJ.zc, vx: a.vx, vz: a.vz, crossing: a.state === 'cross' || inHenan(a.x, a.z), crowd: a.id });
+      for (const a of agents) if (!a.gone && !a.out && a.x > NJ.henan.x0 - 1.2 && a.x < NJ.henan.x1 + 1.2 && Math.abs(a.z - NJ.zc) < 8) out.push({ x: a.x, z: a.z - NJ.zc, vx: a.vx, vz: a.vz, crossing: a.state === 'cross' || inHenan(a.x, a.z), crowd: a.id });
       return out;
     },
     // for the tests and the minimap

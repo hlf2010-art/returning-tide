@@ -161,7 +161,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
 
   let extraPeople = null;                                                       // the evening crowd (engine/crowd.js) where it meets the road
   function people(player) {
-    const list = peds.map((p) => ({ x: p.x, z: p.z, vx: p.vx, vz: p.vz, crossing: p.crossing, ai: p }));
+    const list = peds.filter((p) => !p.hidden).map((p) => ({ x: p.x, z: p.z, vx: p.vx, vz: p.vz, crossing: p.crossing, ai: p }));
     if (extraPeople) for (const q of extraPeople()) list.push({ ...q, ai: { crossing: q.crossing } });
     if (player) list.push({ x: player.x, z: player.z, vx: player.vx || 0, vz: player.vz || 0, crossing: false, player: true });
     return list;
@@ -356,6 +356,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     if (player) others.push({ x: player.x, z: player.z, vx: player.vx || 0, vz: player.vz || 0, r: 0.36, ref: null });
     for (const o of obstacles) others.push({ x: o.x, z: o.z, vx: 0, vz: 0, r: o.r, ref: null });   // parked things people walk round
     for (const p of peds) {
+      if (p.hidden) { p.vx = p.vz = 0; continue; }                            // taken out of the scene for now (world/roadReactions.js)
       react(p, dt);
       if (p.faceFor > 0) p.faceFor -= dt; else p.faceTo = null;
       // a sight worth a look (a supercar at the kerb): heads turn, some stop for a photo (sights.js)
@@ -432,7 +433,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
         if (p.phoneWalk) p.phoneKind = rng() < 0.55 ? 'video' : 'chat';
       }
       p.phoneW = Math.max(0, Math.min(1, p.phoneW + (p.phoneWalk ? dt : -dt) / 0.6));
-      const sp = blocked && !p.detour ? 0 : base * (1 - 0.15 * p.phoneW) * gawkSpeed(p) * flinchSpeed(p);
+      const sp = blocked && !p.detour ? 0 : base * (1 - 0.15 * p.phoneW) * gawkSpeed(p) * flinchSpeed(p) * (p.shove ? 0.2 : 1);
       // steer round anyone about to be in the way (off the crosswalk lines only a little)
       let vx = dx * sp, vz = dz * sp;
       if (sp > 0 && !p.detour) {

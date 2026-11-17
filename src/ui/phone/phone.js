@@ -7,6 +7,7 @@
 import './phone.css';
 import { stamp, clockText, markRead, unreadTotal, pay, balance, METHODS, preview, post } from '../../engine/life.js';
 import { isYear, dateOf } from '../../engine/year.js';
+import { incidentText } from '../../engine/roadIncident.js';
 import { shortDate, elapsed } from '../../world/career.js';
 import { storyContext } from '../../world/story.js';
 import { reply, respondToInvite } from '../../world/agenda.js';
@@ -406,7 +407,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   async function answerAs(friend, threadId) {
     const l = L(), t = l.threads[threadId], lang = isZh(t.messages.filter((m) => m.from === 'me').slice(-1)[0]?.text) ? 'zh' : 'en';
     const now = clockText(stamp(l));
-    const facts = [l.flags.car ? 'He has just bought a yellow Lamborghini Huracán (everyone knows).' : '', l.flags.hotelKey ? 'He is staying at the Peace Hotel on the Bund, room 612.' : '',
+    const facts = [l.flags.car ? 'He has just bought a yellow Lamborghini Huracán (everyone knows).' : '', l.flags.hotelKey ? 'He is staying at the Peace Hotel on the Bund, room 612.' : '', incidentText(l),
       ...l.invites.filter((i) => i.from === friend).map((i) => `Your invitation to him (${i.title}): ${i.kept ? 'he came' : i.status}.`)].filter(Boolean).join(' ');
     const scene = `It is ${now}. You are not with him: you are wherever you would be at this hour (work, home, out). ${facts} ${storyContext(l, friend)}`;
     const sys = systemPrompt(friend, scene, { lang, texting: true }) + (t.kind === 'group' ? '\nThis is the friends\' group chat 金陵五虎+1; keep it short and in the group\'s joking tone.' : '');

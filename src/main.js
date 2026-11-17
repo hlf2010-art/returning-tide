@@ -82,6 +82,7 @@ import { createJazzBar } from './world/jazzBar.js';
 import { createHailers } from './world/hailers.js';
 import { createDestinations } from './world/destinations.js';
 import { createDriving } from './world/driving.js';
+import { createRoadReactions } from './world/roadReactions.js';
 import { createMakerspace, MAKERS } from './world/makerspace.js';
 import { createPhotoMode } from './world/photoMode.js';
 import { createFriendScenes } from './world/friendScenes.js';
@@ -302,8 +303,10 @@ async function boot() {
   const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode, voice, testDrive: () => driving.testDrive() });
   if (life.flags.carBuy && ['booked', 'viewed', 'specced'].includes(life.flags.carBuy.stage) && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');   // (met her but not ordered: she's still there)
   // once it's yours: drive it (world/driving.js)
-  const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []) });
-  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  // people getting out of its way, and what happens if someone can't (world/roadReactions.js)
+  const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd });
+  const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads });
+  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -1340,6 +1343,7 @@ function frame(now) {
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
   world.dawn.update(mode === 'pause' ? 0 : dt, { dawn: hourState.dawn, eye: camera.position });   // tai chi on the promenade at dawn
   world.moments.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });
+  world.roads.update(mode === 'pause' ? 0 : dt);                                       // people and the car: dodges, shouts, an accident's aftermath
   world.confront.update(mode === 'pause' ? 0 : dt, { mode });                          // the row outside the hotel: its rules, before your own step
   world.cruise.update(mode === 'pause' ? 0 : dt, player);                              // the boat moves, carrying whoever's aboard (before your own step)
   world.metro.pre(mode === 'pause' ? 0 : dt);                                          // so do the trains
