@@ -129,6 +129,7 @@ import { t as tx, tr, getLang, setLang, onLang } from './ui/i18n.js';
 import { createMinimapState, updateMinimap, zoneAt } from './engine/minimapLogic.js';
 import { createWind, WIND_LEVELS } from './world/wind.js';
 import { planterIslands, streetTrees } from './world/layout.js';
+import { icon } from './ui/icons.js';
 import './ui/glass.css';                                    // liquid glass: loaded last, restyles the UI (ui/glass.css)
 
 const params = new URLSearchParams(location.search);
@@ -899,7 +900,7 @@ function updateStory() {
     else if (e.type === 'step') { const c = currentStep(life, QUESTS); if (c && c.quest.id === e.id) hud.toast(tx('questNext', QT(typeof c.step.text === 'function' ? c.step.text(life) : c.step.text)), 3.5); }
   }
   const c = currentStep(life, QUESTS);
-  hud.questObjective(c ? { ...(typeof c.step.text === 'function' ? c.step.text(life) : c.step.text), title: c.quest.title, hint: { zh: 'J 日志', en: 'J journal' } } : null);
+  hud.questObjective(c ? { ...(typeof c.step.text === 'function' ? c.step.text(life) : c.step.text), title: c.quest.title, hint: { zh: '<kbd>J</kbd>' + icon('book', '日志'), en: '<kbd>J</kbd>' + icon('book', 'journal') } } : null);
   if (evs.length) { journal.refresh(); saveLife(); }
 }
 // (first-play tips: created with the settings, above)

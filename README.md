@@ -5,6 +5,15 @@ one short street (Hankou Road), ~155 m of the Bund promenade with two conversing
 
 ![Pudong from the river railing](docs/arrival.png)
 
+## In this build
+
+- **Getting around:** the Bund–Lujiazui ferry from the cruise pier (E at the green ferry board; every 15 min, 06:00–23:00, ¥2) and back from the ferry sign on West Lujiazui Road; Line 2 and DiDi as before.
+- **The Huracán:** E at the parked car starts the purchase (Zhixia sends the dealer's card); Vivian offers a test drive ("Can I take it for a drive?"); a bought car is delivered on day 7 and drives from either side.
+- **Voices:** recorded voices only. A line with no recording is shown as a subtitle; the browser's synthetic speech is never used.
+- **Phone:** voice notes play with a progress bar (↑/↓ and Enter, or click), videos play in the chat, calls play their recorded lines.
+- **Streets:** pedestrians look ahead and pass each other, use kerbs and crossings without sticking, and flinch when they do brush; Manner has two baristas at work; the buses are painted metal with glass and an interior.
+- **UI:** liquid glass (`src/ui/glass.css`, icons in `src/ui/icons.js`), after inZOI's design: frosted panels with hairline edges, pill controls, icons where a word isn't needed.
+
 ## Run
 
 ```bash

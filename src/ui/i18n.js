@@ -1,3 +1,4 @@
+import { icon } from './icons.js';
 // One language at a time. Every interface string lives here (or travels as a { zh, en } pair with
 // the content it belongs to: dialogue, messages, mission text) and is shown in the language the
 // player chose. What belongs to the world itself (street and shop signs, the notice on the lamp
@@ -135,5 +136,6 @@ export function applyStatic(root = typeof document !== 'undefined' ? document : 
   if (!root) return;
   for (const el of root.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
   const keys = root.getElementById ? root.getElementById('keys') : null;
-  if (keys) keys.innerHTML = S.keys.map(([k, v]) => `<span><kbd>${k}</kbd>${tr(v)}</span>`).join('');
+  const KEY_ICON = { WASD: 'walk', Shift: 'run', Space: 'jump', E: 'hand', M: 'map', P: 'phone', J: 'book', Esc: 'menu' };
+  if (keys) keys.innerHTML = S.keys.map(([k, v]) => `<span title="${tr(v)}"><kbd>${k}</kbd>${KEY_ICON[k] ? icon(KEY_ICON[k], tr(v)) : tr(v)}</span>`).join('');
 }

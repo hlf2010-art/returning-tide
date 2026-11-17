@@ -8,6 +8,7 @@ import { relation, clockText, stamp } from '../engine/life.js';
 import { PEOPLE } from '../world/cast.js';
 import { getLang } from './i18n.js';
 import './year.css';
+import { icon } from './icons.js';
 import { ACTS as YEAR_ACTS, isYear, career, rep, year, dateText, actOf } from '../engine/year.js';
 import { shortDate, home, hasFlat, LISTINGS, startup, burn, runway, work, todaysWork, handoff, FIRM, inLimbo } from '../world/career.js';
 import { ROMANCE } from '../engine/hearts.js';
@@ -84,7 +85,7 @@ export function createJournal({ getLife, defs, onWait, onClose, work = null }) {
       ${s.over ? '' : `<div class="hb"><span>${T('吸引', 'Attraction')}</span><span class="bar"><i style="width:${Math.max(2, s.attraction)}%"></i></span><span>${T('信任', 'Trust')}</span><span class="bar"><i style="width:${Math.max(2, s.trust)}%"></i></span></div>`}</div>`).join('')}`;
     root.innerHTML = `<div class="panel">
       <div class="ph"><span>${T('日志', 'Journal')}</span><span class="clock">${isYear(L) ? dateText(L, getLang()) : T(`第 ${L.clock.day} 天`, `Day ${L.clock.day}`)} · ${clockText(L.clock.minute)}</span><button class="x" data-act="close" aria-label="close">✕</button></div>
-      <div class="tabs"><button data-tab="quests" class="${S.tab === 'quests' ? 'on' : ''}">${T('任务', 'Quests')}</button><button data-tab="people" class="${S.tab === 'people' ? 'on' : ''}">${T('人', 'People')}</button>${work ? `<button data-tab="work" class="${S.tab === 'work' ? 'on' : ''}">${T('作品', 'Work')}</button>` : ''}${isYear(L) ? `<button data-tab="year" class="${S.tab === 'year' ? 'on' : ''}">${T('这一年', 'The year')}</button>` : ''}</div>
+      <div class="tabs"><button data-tab="quests" class="${S.tab === 'quests' ? 'on' : ''}" title="${T('任务', 'Quests')}">${icon('flag')}<span>${T('任务', 'Quests')}</span></button><button data-tab="people" class="${S.tab === 'people' ? 'on' : ''}" title="${T('人', 'People')}">${icon('users')}<span>${T('人', 'People')}</span></button>${work ? `<button data-tab="work" class="${S.tab === 'work' ? 'on' : ''}" title="${T('作品', 'Work')}">${icon('aperture')}<span>${T('作品', 'Work')}</span></button>` : ''}${isYear(L) ? `<button data-tab="year" class="${S.tab === 'year' ? 'on' : ''}" title="${T('这一年', 'The year')}">${icon('calendar')}<span>${T('这一年', 'The year')}</span></button>` : ''}</div>
       ${S.tab === 'year' && isYear(L) ? yearHtml(L) : S.tab === 'quests' ? `<div class="cols"><div class="list">${list}</div><div class="detail">${detail}</div></div>` : S.tab === 'work' && work ? work(L) : `<div class="people">${people}${hearts}<p class="hint">${T('你的选择、说的话、有没有赴约，都会改变他们对你的感觉。', 'What you choose, what you say, and whether you turn up all change how they feel about you.')}</p></div>`}
       <div class="foot">${T('J 关闭', 'J to close')}</div></div>`;
   }

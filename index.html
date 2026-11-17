@@ -61,16 +61,16 @@
     <div class="menu-col">
       <div class="kicker"><span class="neon"></span><span data-t="place"></span></div>
       <h1 data-t="paused"></h1>
-      <button id="resume" class="mbtn primary" data-t="resume"></button>
-      <button class="mbtn" data-open-settings data-t="settings"></button>
-      <button class="mbtn" data-open-saves data-t="saves"></button>
+      <button id="resume" class="mbtn primary" data-ico="play" data-t="resume"></button>
+      <button class="mbtn" data-ico="gear" data-open-settings data-t="settings"></button>
+      <button class="mbtn" data-ico="folder" data-open-saves data-t="saves"></button>
     </div>
   </div>
 
   <div id="settings" class="hidden" role="dialog" aria-modal="true">
     <div class="panel">
       <div class="ph"><span data-t="settings"></span><button class="x" data-close-settings aria-label="close">✕</button></div>
-      <div class="tabs" id="set-tabs"><button data-tab="general" class="on" data-t="tabGeneral"></button><button data-tab="graphics" data-t="tabGraphics"></button></div>
+      <div class="tabs" id="set-tabs"><button data-tab="general" class="on ico-only" data-ico="gear" title="General · 通用" data-t="tabGeneral"></button><button data-tab="graphics" class="ico-only" data-ico="monitor" title="Graphics · 画面" data-t="tabGraphics"></button></div>
       <div class="tab-body" data-body="graphics" hidden>
         <div class="row"><span data-t="gPreset"></span><div class="seg" data-setting="g.preset"><button data-v="low" data-t="gLow"></button><button data-v="mac" data-t="gMac"></button><button data-v="high" data-t="gHigh"></button><button data-v="ultra" data-t="gUltra"></button><button data-v="custom" data-t="gCustom" disabled></button></div></div>
         <div class="row"><span data-t="gScale"></span><div class="slide"><input type="range" id="g-scale" min="50" max="150" step="5"><output id="g-scale-v"></output></div></div>
@@ -112,7 +112,7 @@
       <p class="premise" data-t="premise"></p>
       <div class="actions">
         <button id="begin" class="mbtn primary" disabled data-t="loading"></button>
-        <button class="mbtn" data-open-settings data-t="settings"></button>
+        <button class="mbtn ico-only round" data-ico="gear" title="Settings · 设置" data-open-settings data-t="settings"></button>
       </div>
     </div>
     <div class="cityline"><span class="geo">31.2397° N&nbsp;&nbsp;121.4906° E</span><span data-t="district"></span><span data-t="weatherNow"></span><span id="entry-time"></span></div>
