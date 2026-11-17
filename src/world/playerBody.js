@@ -1,4 +1,4 @@
-// The player's own body, seen in first person: a Rocketbox avatar (Male_Adult_07, MIT) with
+// The player's own body, seen in first person: Ji Bai's own model (tools/jibai/: from his character sheet, on the Rocketbox Biped rig) with
 // motion-captured idle / walk / jog / sprint (see tools/rocketbox/convert.mjs, clip set 'player').
 //   - the gait clips are blended by speed and phase-locked to the controller's stride, so the legs
 //     you see, the head bob and the footstep sounds all land on the same beat;
