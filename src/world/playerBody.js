@@ -29,12 +29,13 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
   const root = SkeletonUtils.clone(people.avatars.player);
   root.scale.setScalar(0.01);
   root.name = 'player-body';
+  let separateHead = false;
   root.traverse((o) => {
     if (!o.isMesh) return;
     o.frustumCulled = false; o.castShadow = false; o.receiveShadow = true;
     // head and hair are not drawn at all: collapsed, the hair cards weighted between head and neck
     // stretch into slivers right in front of the eye (the shadow copy keeps them)
-    if (/head|opacity/i.test(o.material.name)) o.visible = false;
+    if (/head|opacity/i.test(o.material.name)) { o.visible = false; separateHead = true; }
   });
   // The eye sits where the head is, so the drawn body has its head bone collapsed to a point: that
   // closes the collar (an invisible head would leave a hole to look down into). Its shadow comes
@@ -74,6 +75,11 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
   const head = bone('Bip01_Head'), shadowHead = shadow.getObjectByName('Bip01_Head');
   const spine = [bone('Bip01_Spine1'), bone('Bip01_Spine2'), bone('Bip01_Neck')];
   const shoulders = [bone('Bip01_L_UpperArm'), bone('Bip01_R_UpperArm')];
+  // one-mesh models (Ji Bai's own): with the head collapsed, the T-shirt's neckline is an open hole to look down
+  // into; a disc the colour of the shirt closes it, square to the neck (the Rocketbox body's collar closes itself)
+  const cap = separateHead ? null : new THREE.Mesh(new THREE.CircleGeometry(0.085, 28), new THREE.MeshStandardMaterial({ color: 0xc4c1bb, roughness: 0.95, side: THREE.DoubleSide }));
+  if (cap) { cap.name = 'collar-cap'; group.add(cap); }
+  const _cn = new THREE.Vector3(), _cs = new THREE.Vector3(), _cz = new THREE.Vector3(0, 0, 1);
 
   // where in each gait clip the left foot is planted (lowest), so stride 0.75 = left footfall
   const plant = {};
@@ -184,6 +190,12 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
       shadow.updateMatrixWorld(true);
       head.scale.setScalar(tune.headScale);
       head.updateMatrixWorld(true);
+      if (cap) {
+        spine[2].getWorldPosition(_cn); spine[1].getWorldPosition(_cs);
+        const up = _cs.sub(_cn).multiplyScalar(-1).normalize();
+        group.worldToLocal(cap.position.copy(_cn).addScaledVector(up, 0.045));
+        cap.quaternion.setFromUnitVectors(_cz, up);
+      }
     },
     setVisible(v) { group.visible = v; },
     // what's in the right hand: { cup, phone } (Manner's cup; the phone while its screen is up)
