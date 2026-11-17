@@ -97,7 +97,7 @@ Purchases, places and other people feed back into what they say.
 
 ## The five he might come to love (`src/engine/hearts.js`, `src/world/romance.js`)
 
-Gu Nian has her own model, from her character sheet (Hunyuan 3D, rigged as Ji Bai's: `public/people/gunian.glb`, `tools/jibai/README.md`): long dark wavy hair, a cream blazer, a silk camisole and wide cream trousers, pointed heels. Her scenes use it (`avatar: ['gunian', ...]`).
+Gu Nian has her own model, from her character sheet (Hunyuan 3D, rigged as Ji Bai's: `public/people/gunian.glb`, `tools/jibai/README.md`): long dark wavy hair, a cream blazer, a silk camisole and wide cream trousers, pointed heels. Her scenes use it (`avatar: ['gunian', ...]`). Her character sheet is `docs/gunian-reference.webp`; its portrait and eight expressions (`public/people/gunian/`) are her phone avatar and her card on the character page's relationship map (her face follows where things stand: serious when they've only met, smiling when they're seeing each other, calm when it's over).
 
 Each has a life, a schedule and ambitions of their own. They write first, ask him out, are busy,
 disagree with him, and leave. Details and what is playable for each: `docs/relationships.md`.

@@ -56,7 +56,9 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const person = (id) => PEOPLE[id] || { name: id === 'me' ? ME.name : id, short: id, color: '#777' };
 const LOGO_AV = { jd: 'jd', taobao: 'taobao', didi: 'didi', manner: 'manner' };
-const avatar = (id, size = '') => { const p = person(id); if (LOGO_AV[id]) return `<div class="av logo ${size}" style="background:${BRAND_COLOR[LOGO_AV[id]]}">${appGlyph(LOGO_AV[id], 22)}</div>`; return `<div class="av ${size}" style="background:${id === 'me' ? '#2d6cdf' : p.color}">${esc(initial(id))}</div>`; };
+// people with a photograph (their character sheets: public/people/<id>/): the rest get a coloured initial
+const PHOTO_AV = { me: './people/jibai/face-neutral.jpg', gunian: './people/gunian/face-smile.jpg' };
+const avatar = (id, size = '') => { const p = person(id); if (LOGO_AV[id]) return `<div class="av logo ${size}" style="background:${BRAND_COLOR[LOGO_AV[id]]}">${appGlyph(LOGO_AV[id], 22)}</div>`; if (PHOTO_AV[id]) return `<div class="av photo ${size}" style="background-image:url('${PHOTO_AV[id]}')"></div>`; return `<div class="av ${size}" style="background:${id === 'me' ? '#2d6cdf' : p.color}">${esc(initial(id))}</div>`; };
 const initial = (id) => { const p = person(id); if (getLang() === 'en') return id === 'me' ? 'J' : (PEOPLE[id] ? shortEn(id, PEOPLE[id]) : '?')[0]; return (id === 'me' ? '白' : p.short || p.name).slice(0, 1); };
 const ago = (L, at) => { const d = stamp(L) - at; if (d < 1) return Z('刚刚', 'now'); if (d < 60) return Z(`${d}分钟前`, `${d} min ago`); return clockText(at); };
 const yuan = (n) => `¥${Math.abs(n).toLocaleString('zh-CN', { maximumFractionDigits: 2 })}`;

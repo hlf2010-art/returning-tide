@@ -197,6 +197,7 @@ const CSS = `
 /* Ⅶ the tide */
 #profile .body.tide { padding: 0; overflow: hidden; } #profile .tidecv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
 #profile .who { position: absolute; right: 8px; top: 18px; width: min(300px, 44%); padding: 18px 20px; background: linear-gradient(rgba(7,11,15,.82), rgba(7,11,15,.66)); border: 1px solid var(--rt-gold-lo); backdrop-filter: blur(6px); }
+#profile .who .ph { float: right; width: 74px; height: 96px; margin: -4px -4px 8px 12px; border-radius: 50% / 44%; background-size: cover; background-position: center 20%; box-shadow: 0 0 0 1px var(--rt-gold), 0 0 0 5px rgba(200,163,90,.15); }
 #profile .who h4 { margin: 0; font-weight: 700; font-size: 26px; color: #f4e6c4; } #profile .who .r { font-size: 13px; color: rgba(236,212,154,.7); margin: 2px 0 10px; }
 #profile .who .st { font: 11px var(--rt-thin); letter-spacing: .35em; color: var(--rt-gold); text-transform: uppercase; } #profile .who .hand { font-size: 21px; margin: 10px 0 6px; }
 #profile .who .k { display: flex; justify-content: space-between; font-size: 13px; color: rgba(236,212,154,.75); border-top: 1px solid rgba(200,163,90,.15); padding-top: 6px; margin-top: 6px; }
@@ -298,9 +299,16 @@ export function createProfile({ getLife, defs = [], getPeople = () => null, onCl
     const sel = V.people.find((p) => p.id === S.sel) || V.people[0];
     S.sel = sel ? sel.id : null;
     return `<canvas class="tidecv"></canvas><div class="hint">${T('越靠近他，越亲近。', 'The nearer him, the closer.')}</div>
-      ${sel ? `<div class="who"><div class="st">${esc(T(GROUPS[sel.group][0], GROUPS[sel.group][1]))}${sel.stage ? ` · ${esc(sel.stage)}` : ''}</div><h4>${esc(sel.full)}</h4><div class="r">${esc(sel.role)}</div><div class="hand">${esc(personNote(sel, getLang()))}</div>
+      ${sel ? `<div class="who">${portraitOf(sel)}<div class="st">${esc(T(GROUPS[sel.group][0], GROUPS[sel.group][1]))}${sel.stage ? ` · ${esc(sel.stage)}` : ''}</div><h4>${esc(sel.full)}</h4><div class="r">${esc(sel.role)}</div><div class="hand">${esc(personNote(sel, getLang()))}</div>
         <div class="k"><span>${T('潮位', 'Tide')}</span><span>${Math.round(sel.close)}</span></div><div class="k"><span>${T('一起的时间', 'Time together')}</span><span>${sel.hours ? T(`${sel.hours} 小时`, `${sel.hours} h`) : '—'}</span></div></div>` : ''}
       <div class="legend">${Object.entries(GROUPS).filter(([g]) => V.people.some((p) => p.group === g)).map(([, g]) => `<span style="color:${g[2]}"><i style="background:${g[2]}"></i><span style="color:rgba(236,212,154,.8)">${esc(T(g[0], g[1]))}</span></span>`).join('')}</div>`;
+  }
+  // a photograph for those who have a character sheet (public/people/<id>/face-*.jpg), her face by where things stand
+  const PORTRAIT = { gunian: { known: 'serious', close: 'neutral', dating: 'smile', together: 'smile', over: 'calm' } };
+  function portraitOf(p) {
+    const P = PORTRAIT[p.id]; if (!P) return '';
+    const st = (getLife().flags.hearts || {})[p.id]?.stage || 'known', face = P[st] || 'neutral';
+    return `<div class="ph" style="background-image:url('./people/${p.id}/face-${face}.jpg')"></div>`;
   }
   const CH = { now, craft, errands, money, name, things, tide: tideHtml };
 
