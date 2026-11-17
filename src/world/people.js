@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { createSprings } from './springs.js';
 
 const ARM = (side) => new RegExp(`^Bip01_${side}_(Clavicle|UpperArm|Forearm|Hand|Finger)`);
 const boneOf = (track) => track.name.slice(0, track.name.lastIndexOf('.'));
@@ -68,6 +69,7 @@ export function createPerson(people, role) {
   root.scale.setScalar(0.01);                                         // centimetres -> metres
   root.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; } });   // skinned bounds don't follow the pose
   const mixer = new THREE.AnimationMixer(root);
+  const springs = createSprings(root);                                   // skirts, hair, hems that swing (tools/cloth/)
   const hand = people.umbrellaHand[sex], armRe = ARM(hand);
   const base = {}, arm = {};
   for (const clip of CLIPS) {
@@ -112,6 +114,7 @@ export function createPerson(people, role) {
   const phoneLayer = phoneClip ? mixer.clipAction(new THREE.AnimationClip('phone:hold', phoneClip.duration, phoneClip.tracks.filter((t) => PHONE_LAYER.test(boneOf(t))))) : null;
   if (phoneLayer) { phoneLayer.play(); phoneLayer.setEffectiveWeight(0); phoneLayer.time = phoneClip.duration * (0.15 + Math.random() * 0.6); }
   return {
+    springs,
     root, mixer, role, sex, speeds, anchors, bones, umbrellaHand: hand, child: !!kid, size: kid ? kid.k : 1,
     // the actions themselves (base: whole body but the umbrella arm; arm: that arm), for posing a
     // person at an exact moment of a clip (the crowd's impostor bake). (mixer.existingAction by name
@@ -170,6 +173,7 @@ export function createPerson(people, role) {
         }
         root.updateMatrixWorld(true);
       }
+      if (springs && dt > 0) springs.update(dt);
       const yaw = _q.setFromEuler(_e.set(0, root.rotation.y, 0));
       for (const [k, b] of [['chest', bones.chest], ['head', bones.head]]) { b.getWorldPosition(anchors[k].position); anchors[k].quaternion.copy(yaw); }
       bones[hand].getWorldPosition(anchors.umbrella.position); anchors.umbrella.quaternion.copy(yaw);

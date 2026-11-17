@@ -9,6 +9,7 @@
 import { cup as makeCup } from './cups.js';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { createSprings } from './springs.js';
 
 const GAITS = ['walk', 'jog', 'sprint'];
 const wrap = (a) => { let r = a; while (r > Math.PI) r -= Math.PI * 2; while (r < -Math.PI) r += Math.PI * 2; return r; };
@@ -69,6 +70,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
   root.remove(shadow);
   const group = new THREE.Group(); group.name = 'player'; group.add(root, shadow);
   const bodyBones = bonesOf(root), shadowBones = bonesOf(shadow);
+  const springs = createSprings(root);
   const head = bone('Bip01_Head'), shadowHead = shadow.getObjectByName('Bip01_Head');
   const spine = [bone('Bip01_Spine1'), bone('Bip01_Spine2'), bone('Bip01_Neck')];
   const shoulders = [bone('Bip01_L_UpperArm'), bone('Bip01_R_UpperArm')];
@@ -171,6 +173,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
         const ex = _v.x - fx * 0.12, ey = _v.y + 0.07, ez = _v.z - fz * 0.12;
         eye.x += (ex - eye.x) * bend; eye.y += (ey - eye.y) * bend; eye.z += (ez - eye.z) * bend;
       }
+      if (springs) springs.update(dt);                              // the jacket's hem, the trouser legs (tools/cloth/)
       // the shadow copy takes the pose, head and all; then the drawn body loses its head
       shadow.position.copy(root.position); shadow.quaternion.copy(root.quaternion);
       for (let i = 0; i < bodyBones.length; i++) {

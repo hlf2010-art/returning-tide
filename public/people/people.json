@@ -6,13 +6,13 @@
    "avatar": "Business_Male_02",
    "sex": "m",
    "file": "lin.glb",
-   "bytes": 3011880
+   "bytes": 3006696
   },
   "su": {
    "avatar": "Business_Female_03",
    "sex": "f",
    "file": "su.glb",
-   "bytes": 3691196
+   "bytes": 3686392
   },
   "p1": {
    "avatar": "Male_Adult_09",
@@ -24,7 +24,7 @@
    "avatar": "Female_Adult_09",
    "sex": "f",
    "file": "p2.glb",
-   "bytes": 3932976
+   "bytes": 3928132
   },
   "p3": {
    "avatar": "Male_Adult_10",
@@ -42,37 +42,37 @@
    "avatar": "JiBai (Hunyuan3D from his character sheet; Rocketbox Biped rig)",
    "sex": "m",
    "file": "player.glb",
-   "bytes": 4995060
+   "bytes": 5004684
   },
   "p5": {
    "avatar": "Business_Female_02",
    "sex": "f",
    "file": "p5.glb",
-   "bytes": 4518552
+   "bytes": 4512800
   },
   "c1": {
    "avatar": "Female_Adult_07",
    "sex": "f",
    "file": "c1.glb",
-   "bytes": 3839304
+   "bytes": 3830120
   },
   "c2": {
    "avatar": "Female_Adult_11",
    "sex": "f",
    "file": "c2.glb",
-   "bytes": 3731288
+   "bytes": 3730388
   },
   "c3": {
    "avatar": "Female_Adult_14",
    "sex": "f",
    "file": "c3.glb",
-   "bytes": 4497488
+   "bytes": 4492876
   },
   "c4": {
    "avatar": "Business_Female_04",
    "sex": "f",
    "file": "c4.glb",
-   "bytes": 3176660
+   "bytes": 3172068
   },
   "c5": {
    "avatar": "Male_Adult_02",
@@ -96,13 +96,13 @@
    "avatar": "Female_Adult_04",
    "sex": "f",
    "file": "c8.glb",
-   "bytes": 3859252
+   "bytes": 3853820
   },
   "dad": {
    "avatar": "Business_Male_07",
    "sex": "m",
    "file": "dad.glb",
-   "bytes": 2060672
+   "bytes": 2055876
   },
   "k1": {
    "avatar": "Female_Child_01",

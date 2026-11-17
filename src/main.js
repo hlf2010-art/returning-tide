@@ -135,6 +135,7 @@ import { createWind, WIND_LEVELS } from './world/wind.js';
 import { planterIslands, streetTrees } from './world/layout.js';
 import { icon } from './ui/icons.js';
 import './ui/glass.css';                                    // liquid glass: loaded last, restyles the UI (ui/glass.css)
+import { setSpringViewer } from './world/springs.js';
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('view');
@@ -148,6 +149,7 @@ THREE.ShaderChunk.fog_pars_fragment = THREE.ShaderChunk.fog_pars_fragment.replac
 THREE.ShaderChunk.fog_fragment = THREE.ShaderChunk.fog_fragment.replace('float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );',
   'float hd = fogDensity * mix(1.18, 0.9, smoothstep(0.0, 160.0, vFogY));\n\tfloat fogFactor = 1.0 - exp( - hd * hd * vFogDepth * vFogDepth );');
 const camera = new THREE.PerspectiveCamera(68, 1, 0.1, 4500);
+setSpringViewer(camera);                                               // cloth and hair hold still beyond 30 m of the view (world/springs.js)
 // graphics settings (engine/gfx.js): picked for this GPU the first time, then whatever you set.
 // ?q=<n> (tools) pins one quality step; ?gfx=<preset> / ?lod=<level> override for a session.
 const gpuName = (() => {
