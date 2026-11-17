@@ -12,6 +12,7 @@
 
 import { noticeSights, gawkSpeed } from './sights.js';
 import { avoid, SOCIAL, DISTRACTED } from './social.js';
+import { stepFlinch, flinchSpeed } from './flinch.js';
 import { startErrand, errandTarget, stepErrand } from './errands.js';
 export const TRAFFIC_CONFIG = {
   vehGreen: 16, vehGreenFlash: 3, yellow: 3,
@@ -364,6 +365,10 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
         p.x += p.shove.x * k; p.z += p.shove.z * k; p.shove.t -= dt;
         if (p.shove.t <= 0) p.shove = null;
       }
+      if (p.flinch) {                                                         // a bump: a half-step away (engine/flinch.js)
+        const st = stepFlinch(p, dt);
+        if (st && !p.crossing) { p.x += st[0] * dt; p.z += st[1] * dt; }
+      }
       if (p.pause > 0 && !p.crossing) {                                      // stopped for a moment (never in the road)
         p.pause -= dt; p.vx = p.vz = 0;
         if (p.faceTo) p.heading = Math.atan2(p.faceTo[0] - p.x, p.faceTo[1] - p.z);
@@ -427,7 +432,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
         if (p.phoneWalk) p.phoneKind = rng() < 0.55 ? 'video' : 'chat';
       }
       p.phoneW = Math.max(0, Math.min(1, p.phoneW + (p.phoneWalk ? dt : -dt) / 0.6));
-      const sp = blocked && !p.detour ? 0 : base * (1 - 0.15 * p.phoneW) * gawkSpeed(p);
+      const sp = blocked && !p.detour ? 0 : base * (1 - 0.15 * p.phoneW) * gawkSpeed(p) * flinchSpeed(p);
       // steer round anyone about to be in the way (off the crosswalk lines only a little)
       let vx = dx * sp, vz = dz * sp;
       if (sp > 0 && !p.detour) {

@@ -8,10 +8,15 @@
 // Each person has a trip: appear at an edge of the map (out of the player's sight), walk to a
 // destination, perhaps stopping on the way at the river railing to photograph Pudong or take a
 // selfie, and leave. Some just linger. Tour groups follow a guide with a flag.
-// Moving: keep to the right of oncoming people, keep a personal space, step round the player and
-// street furniture, never into a wall, a planter or the road.
+// Moving: look ~3 s ahead and step aside early for anyone whose path would come too close (keeping
+// right in a head-on meeting, slowing if it's close: shoulder to shoulder, not into each other), keep
+// a personal space, give you a wider berth, step round street furniture; walls, planters and the kerb
+// (the road is off limits except on the zebra) are seen ahead and walked along, never pushed against.
+// When two people touch anyway, both flinch (engine/flinch.js) and carry on.
 import { L, deckLamps, DECK_LAMP_X, benches, planterIslands, telescope, lions, streetTrees, stall, colliders, groundHeight, roadLamps, ROAD_LAMP_WEST_OFFSET, crossing, NJ, METRO, inHenan } from '../world/layout.js';
 import { BUS_STOPS } from '../world/trafficMix.js';
+import { startFlinch, stepFlinch, flinchSpeed, FLINCH } from './flinch.js';
+import { SOCIAL } from './social.js';
 
 const DECK = L.deckY, CURB = L.curbH;
 const BLOCK = new Set(['customs', 'hsbc', 'north-block', 'aia-block', 'peace-block', 'portico', 'hsbc-centre', 'wall', 'railing', 'planter', 'boundary', 'shop', 'bikes', 'shelter', 'nj-north', 'nj-south', 'metro']);
@@ -53,11 +58,19 @@ export function buildNet(extra = null) {
   const Eat = (z) => `E${EZ.indexOf(z)}`;
   link('SB', Eat(0));
   // across Zhongshan Road on the zebra at Hankou Road (the green man only)
-  node('EK', -3.6, 1.2, 0.6); node('WK', -28.7, 1.2, 0.6);
+  // (the zebra is ~7 m wide: people spread across it and keep right, rather than all aiming at one spot)
+  node('EK', -3.6, 0.5, 1.7); node('WK', -28.7, 0.5, 1.7);
   link(Eat(0), 'EK'); link('EK', 'WK', 'zebra');
   // the west pavement, along the bank fronts (round the bicycles parked by the kerb north of Hankou Road)
   const WZ = [-258, -234, -213.5, -188.5, -162, -138, -114, -90, -66, -42, -22, -11, 7, 18, 42, 66, 92, ...BUS_STOPS.filter((st) => st.dir > 0).flatMap((st) => [st.z - 6, st.z + 6])].sort((a, b) => a - b);
-  WZ.forEach((z, i) => { const tight = (z >= -22 && z <= -11) || westStop(z); node(`W${i}`, tight ? -31.5 : -30.0, z, tight ? 0.25 : 0.6); if (i) link(`W${i - 1}`, `W${i}`); });
+  // (the pavement is 6 m wide: people use the middle of it, two-way, not one file by the kerb; narrower
+  // past the Customs House portico)
+  WZ.forEach((z, i) => {
+    // (past the bicycles north of Hankou Road single file; across the mouth of Hankou Road and round
+    // the corner there, room for both directions without stepping off the edge of the zebra)
+    const tight = (z >= -22 && z < -11) || westStop(z), portico = z > 15 && z < 38, mouth = z === -11 || z === 7;
+    node(`W${i}`, tight ? -31.5 : z === 7 || portico ? -30.0 : -31.0, z, tight ? 0.25 : mouth ? 0.7 : portico ? 0.6 : 1.3); if (i) link(`W${i - 1}`, `W${i}`);
+  });
   const Wat = (z) => `W${WZ.indexOf(z)}`;
   link('WK', Wat(7));
   // waiting at the bus stops: under the shelter roof, by the seat
@@ -72,7 +85,7 @@ export function buildNet(extra = null) {
   // Hankou Road, both pavements to the hoarding
   const HX = [-31.0, -45, -60, -75, -90];
   HX.forEach((x, i) => {
-    node(`HN${i}`, x, -4.6, 0.25); node(`HS${i}`, x, 5.9, 0.25);
+    node(`HN${i}`, x, -5.2, 0.45); node(`HS${i}`, x, 5.9, 0.25);
     if (i) { link(`HN${i - 1}`, `HN${i}`); link(`HS${i - 1}`, `HS${i}`); }
   });
   link('HN0', Wat(-11)); link('HS0', Wat(7));
@@ -104,7 +117,7 @@ export function buildNet(extra = null) {
   link('M7t', `N${last - 1}_0`); link('M7t', `N${last - 1}_1`);
   // Henan Road: across on the zebra (its own signal), and along its pavements a little way
   const h = NJ.henan;
-  node('HE', h.x1 + 0.45, NJ.zc + 1.5, 0.6); node('HW', h.x0 - 0.45, NJ.zc + 1.5, 0.6);
+  node('HE', h.x1 + 0.45, NJ.zc + 1.5, 1.3); node('HW', h.x0 - 0.45, NJ.zc + 1.5, 1.3);
   link(`N${last}_1`, 'HE'); link('HE', 'HW', 'zebra', 'henan');
   node('HNE0', h.x1 + 0.8, -205, 0.3); node('HNE1', h.x1 + 0.8, -214, 0.3); node('HNE2', h.x1 + 2.2, NJ.z0 - h.walkTo + 2, 0.6);
   link(`N${last}_1`, 'HNE0'); link('HNE0', 'HNE1'); link('HNE1', 'HNE2');
@@ -120,6 +133,7 @@ export function buildNet(extra = null) {
   node('HSW0', h.x0 - 2.0, NJ.z1 + 1, 0.6); node('HSW1', h.x0 - 2.2, NJ.z1 + h.walkTo - 2, 0.6);
   link('HW', 'HSW0'); link('NW1', 'HSW0'); link('HSW0', 'HSW1');
   if (extra) extra({ node, link, by });
+  for (const n of nodes) n.kerb = n.links.some((e) => e.kind === 'zebra');   // the ends of a zebra
   return { nodes, edges, by, rail, shops, ends: { E0: Eat(-258), E15: Eat(92), W0: Wat(-258), W16: Wat(92) } };
 }
 
@@ -264,7 +278,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
       if (via && p.indexOf(via) < k) a.via = null;
     }
     a.y = groundHeight(a.x, a.z, 9);
-    a.state = 'walk'; a.wait = 0; a.gone = false;
+    a.state = 'walk'; a.wait = 0; a.gone = false; a.flinch = null; a.stuck = 0;
   }
   // tour groups: a guide and 6-11 followers
   const tours = [];
@@ -299,11 +313,105 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
   for (const t of tours) for (const f of t.members) besides(f, t.guide, -0.6 - rnd() * 0.8, (rnd() - 0.5) * 1.6);
   for (const a of agents) if (a.leader) besides(a, a.leader, 0.6, 0.3);
 
-  // spatial hash for neighbours
-  const CELL = 2.5, grid = new Map();
-  const key = (x, z) => `${Math.floor(x / CELL)},${Math.floor(z / CELL)}`;
-  function rebuild() { grid.clear(); for (const a of agents) { if (a.gone) continue; const k = key(a.x, a.z); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(a); } }
-  function near(x, z, f) { const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const c = grid.get(`${cx + i},${cz + j}`); if (c) for (const o of c) f(o); } }
+  // how close (centre to centre) two people let their paths come when passing: shoulder to shoulder
+  // with a little air between; more for you (you don't give way, and you walk faster)
+  const PASS = 1.3, PASS_YOU = 1.6;
+  // spatial hash for neighbours (numeric keys; the cell arrays are kept and refilled each step)
+  const CELL = 4, grid = new Map(), CONTACT = 0.6 - SOCIAL.contact, TURNS = [0.45, 0.9, 1.35, 1.7];
+  const key = (i, j) => i * 100003 + j;
+  function rebuild() {
+    for (const c of grid.values()) c.length = 0;
+    for (const a of agents) { if (a.gone) continue; const k = key(Math.floor(a.x / CELL), Math.floor(a.z / CELL)); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(a); }
+  }
+  // walking together (a couple, a family, a tour group): they keep close and never count as bumping
+  const together = (a, o) => o === a.partner || o === a.leader || o.leader === a || (a.leader && o.leader === a.leader) || (a.group && o.group === a.group);
+  // somewhere a companion can stand: not in a wall or street furniture, not on the road unless the
+  // one they follow is on it (crossing)
+  const freeSpot = (x, z, onRd) => !blocked(x, z, 0.3) && (onRd || !onRoad(x, z)) && !obs.some(([ox, oz, r]) => Math.abs(x - ox) < r + 0.3 && Math.abs(z - oz) < r + 0.3 && Math.hypot(x - ox, z - oz) < r + 0.3);
+  // where a companion walks: `back` behind the one they follow and `side` to their left; where that
+  // spot is in a wall, a planter or the road (a narrow pavement, the kerb side), the other side, then
+  // single file behind them
+  function slot(boss, back, side) {
+    const fx = Math.sin(boss.heading), fz = Math.cos(boss.heading), onRd = onRoad(boss.x, boss.z);
+    const at = (b, s) => [boss.x - fx * b + fz * s, boss.z - fz * b - fx * s];
+    for (const [b, s] of [[back, side], [back, -side], [Math.max(back, 0.75), 0]]) { const p = at(b, s); if (freeSpot(p[0], p[1], onRd)) return p; }
+    return [boss.x - fx * 0.5, boss.z - fz * 0.5];
+  }
+  const bumpMemo = new Map();                          // pair -> when they last touched
+  let clock = 0;
+  const stats = { bumps: 0, unstuck: 0 };
+  // ---- steering helpers (one walker at a time: `steer` holds who and what so far) ----
+  const steer = { a: null, fx: 0, fz: 1, vx: 0, vz: 0, look: 2.8, lat: 0, brake: 0, cap: 1, sx: 0, sz: 0, lead: null, rescue: false, offRoad: true, tx: 0, tz: 0, tk: 1 };
+  // someone at (px, pz) from me (relative), moving (ovx, ovz): will we pass closer than `need` in
+  // the next few seconds? Then which way to go (lat, + = right), and how much to slow (brake)
+  function predict(px, pz, ovx, ovz, need, keepR, w = 1, rear = 0) {
+    const P = steer, rvx = P.vx - ovx, rvz = P.vz - ovz, rv2 = rvx * rvx + rvz * rvz;
+    if (rv2 < 0.01) return;
+    const dd = Math.hypot(px, pz), ahead = (px * P.fx + pz * P.fz) / (dd || 1);
+    if (ahead < -0.15 && dd > rear) return;                      // behind me: theirs to avoid (unless close: footsteps)
+    const t = (px * rvx + pz * rvz) / rv2;
+    if (t <= 0 || t > P.look) return;                            // drawing apart, or not for a while
+    const cx = px - rvx * t, cz = pz - rvz * t, miss = Math.hypot(cx, cz);
+    if (miss >= need) return;
+    const urg = w * (1 - miss / need) * (1 - 0.65 * t / P.look);
+    const cl = cx * -P.fz + cz * P.fx;                           // + : they'd pass on my right
+    let side = cl > 0 ? -1 : 1;
+    if ((ovx * P.fx + ovz * P.fz) < -0.25 && Math.abs(cl) < keepR * need) side = 1;   // head-on: keep right
+    P.lat += side * urg;
+    if (t < 1.3 && ahead > 0.5) P.brake = Math.max(P.brake, urg * (1 - t / 1.3));
+    // close behind someone slower going my way: fall in at their pace (until there's room to pass)
+    const along = ovx * P.fx + ovz * P.fz;
+    if (along > 0.1 && ahead > 0.85 && dd < 1.1) P.cap = Math.min(P.cap, Math.max(0.25, along));
+  }
+  // (each zebra has its own green man: Zhongshan Road's at Hankou Road, Henan Road's at Nanjing Road)
+  const zebra = (x, z) => (Math.abs(z - 0.5) < 2.9 && x > -28 && x < -4 ? 'bund' : Math.abs(z - NJ.zc - 1.5) < 2.2 && x > NJ.henan.x0 - 0.5 && x < NJ.henan.x1 + 0.5 ? 'henan' : null);
+  // may the current walker stand at (x, z)? Not in anything solid; not on a carriageway, unless
+  // crossing, being rescued off it, or following someone over the zebra on the green man
+  function bad(x, z) {
+    if (blocked(x, z)) return true;
+    const P = steer;
+    if (!P.offRoad || !onRoad(x, z) || P.rescue || P.a.state === 'cross') return false;
+    const zb = P.lead && zebra(x, z);
+    return !(zb && (P.lead.state === 'cross' || state.sig[zb].aspect === 'walk'));
+  }
+  // the nearest free direction to (ux, uz), turning first toward `pref` (+1 right): steer.tx/tz, and
+  // steer.tk how much of the pace that keeps
+  function turnFree(ux, uz, len, pref) {
+    const a = steer.a;
+    for (const th of TURNS) {
+      const c = Math.cos(th), s = Math.sin(th) * pref;
+      let qx = ux * c - uz * s, qz = uz * c + ux * s;
+      if (bad(a.x + qx * len, a.z + qz * len)) { qx = ux * c + uz * s; qz = uz * c - ux * s; if (bad(a.x + qx * len, a.z + qz * len)) continue; }
+      steer.tx = qx; steer.tz = qz; steer.tk = Math.max(0.45, c); return true;
+    }
+    return false;
+  }
+  // someone standing still just ahead of a (within `reach`, toward (tx, tz)): at a kerb, you stop
+  // behind the people already waiting rather than push in among them
+  function queued(a, tx, tz, reach) {
+    const dx = tx - a.x, dz = tz - a.z, d = Math.hypot(dx, dz) || 1, fx = dx / d, fz = dz / d;
+    const cx0 = Math.floor(a.x / CELL), cz0 = Math.floor(a.z / CELL);
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+      const c = grid.get(key(cx0 + i, cz0 + j)); if (!c) continue;
+      for (const o of c) {
+        if (o === a || o.gone || o.v > 0.3 || together(a, o)) continue;
+        const px = o.x - a.x, pz = o.z - a.z, od = Math.hypot(px, pz);
+        if (od < reach && (px * fx + pz * fz) > 0.55 * od) return true;
+      }
+    }
+    return false;
+  }
+  // two people touching (centres closer than two bodies) and moving into each other: both flinch,
+  // glance at each other and carry on; the same two not again for a while
+  function touch(a, o, ux, uz) {
+    const closing = (a.vx * ux + a.vz * uz) - (o.vx * ux + o.vz * uz);
+    if (closing < SOCIAL.closing) return;
+    const pk = a.id * 100003 + o.id;
+    if (clock - (bumpMemo.get(pk) ?? -1e9) < SOCIAL.pairCooldown) return;
+    bumpMemo.set(pk, clock); stats.bumps++;
+    crowd.flinch(a, o.x, o.z, closing); crowd.flinch(o, a.x, a.z, closing);
+  }
+
 
   const state = { pedAspect: 'dont', walkFor: 0, sig: { bund: { aspect: 'dont', walkFor: 0 }, henan: { aspect: 'dont', walkFor: 0 } } };
   // the hour: what share of the crowd is out (each person has a rank), and whether it's the joggers' hour
@@ -314,8 +422,11 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
     const n = net.by[a.path[a.i]], p = net.by[a.path[a.i - 1]] || n;
     let dx = n.x - p.x, dz = n.z - p.z; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
     const right = [-dz, dx];                                         // heading (dx,dz): right-hand side is (-dz, dx)
-    const spread = Math.min(n.w, p.w) * (0.35 + 0.65 * Math.abs(a.off)) * Math.sign(a.off || 1);
-    const keep = Math.min(n.w, p.w) > 0.8 ? 0.45 : 0;                // keep right a little on wide walks
+    // two-way walks: most people on their right-hand half, a few a little left of the middle (so the
+    // two directions mostly pass in their own halves instead of meeting head-on)
+    const spread = Math.min(n.w, p.w) * (0.4 + 0.6 * a.off);
+    const keep = Math.min(n.w, p.w) > 0.8 ? 0.25 : 0;                // and a little more on wide walks
+    if (a.stuck > 1) return [n.x, n.z, n];                           // hemmed in: back to the middle of the lane
     return [n.x + right[0] * (spread + keep), n.z + right[1] * (spread + keep), n];
   }
   function arrive(a, n, dt) {
@@ -370,6 +481,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
     },
     update(dt, { player = null, canSpawnAt = null, others = null } = {}) {
       if (dt <= 0) return;
+      clock += dt;
       rebuild();
       for (const a of agents) {
         const boss = a.kind === 'follower' ? a.group.guide : a.leader;
@@ -393,7 +505,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
             a.heading = a.act === 'selfie' ? -Math.PI / 2 : Math.PI / 2;
           } else {
             a.state = 'walk'; a.act = null;
-            tx = g.x - Math.sin(h) * a.slot.back + Math.cos(h) * a.slot.side; tz = g.z - Math.cos(h) * a.slot.back - Math.sin(h) * a.slot.side;
+            [tx, tz] = slot(g, a.slot.back, a.slot.side);
             // never wait about in the road behind a guide who is already off it
             if ((onRoad(tx, tz) || onRoad(a.x, a.z)) && !onRoad(g.x, g.z)) { tx = g.x; tz = g.z; }
           }
@@ -401,13 +513,13 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           if (d > 9 && !onRoad(g.x, g.z)) besides(a, g, -Math.sin(g.heading) * 1.5, -Math.cos(g.heading) * 1.5);
         } else if (a.leader) {
           const l = a.leader, sd = a.side || 1; a.state = l.state; a.act = a.child && (l.act === 'photo' || l.act === 'selfie') ? 'look' : l.act;
-          tx = l.x + Math.cos(l.heading) * 0.62 * sd; tz = l.z - Math.sin(l.heading) * 0.62 * sd;
+          [tx, tz] = slot(l, 0, 0.62 * sd);
           if (l.state === 'act') a.heading = l.heading;
           const d = Math.hypot(tx - a.x, tz - a.z); speed = onRoad(a.x, a.z) ? 1.5 : d > 1.2 ? l.speed * 1.3 : d > 0.15 ? l.speed : 0;
           if (d > 7) besides(a, l, tx - l.x, tz - l.z);
         } else if (a.state === 'act') {
           a.wait -= dt;
-          if (a.wait <= 0) { a.state = 'walk'; a.act = null; if (a.atRail) { a.atRail = false; a.i = Math.min(a.i + 1, a.path.length - 1); } }
+          if (a.wait <= 0) { a.state = 'walk'; a.act = null; a.gesture = null; a.faceTo = null; if (a.atRail) { a.atRail = false; a.i = Math.min(a.i + 1, a.path.length - 1); } }
           tx = a.x; tz = a.z; speed = 0;
         } else if (a.state === 'bus') {
           // waiting at the stop; given up after a while (walk off somewhere)
@@ -418,7 +530,9 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           if (Math.hypot(tx - a.x, tz - a.z) < 0.7) { a.gone = true; a.hold = 4 + rnd() * 10; a.kind = rnd() < 0.5 ? 'commuter' : 'local'; continue; }
         } else if (a.state === 'kerb') {
           // the green man, and enough of it left to get across (it lasts ~20 s; 23 m at 1.2 m/s)
-          tx = a.x; tz = a.z; speed = 0;
+          // (waiting at the kerb itself, spread along it, not in the middle of the pavement)
+          tx = a.wx ?? a.x; tz = a.wz ?? a.z; speed = Math.hypot(tx - a.x, tz - a.z) > 0.35 && !queued(a, tx, tz, 0.85) ? 0.5 : 0;
+          if (!speed) { a.wx = a.x; a.wz = a.z; }
           const sg = state.sig[a.sig || 'bund'];
           if (sg.aspect === 'walk' && sg.walkFor < 4) { a.state = 'cross'; a.i++; }
         } else {
@@ -436,7 +550,10 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           const d = Math.hypot(tx - a.x, tz - a.z), pv = net.by[a.path[a.i - 1]];
           const passed = pv && ((n.x - a.x) * (n.x - pv.x) + (n.z - a.z) * (n.z - pv.z)) < 0;
           const last = a.i === a.path.length - 1;
-          if (d < (last ? 2 : n.w > 0.65 ? 1.2 : 0.45) || passed) { if (a.state === 'cross') a.state = 'walk'; arrive(a, n, dt); if (a.state !== 'walk' && a.state !== 'cross') { tx = a.x; tz = a.z; speed = 0; } }
+          // coming up to a zebra while people wait there for the green man: join them from behind
+          if (n.kerb && a.state === 'walk' && d < 3.5 && a.path[a.i + 1] && net.by[n.id].links.some((e) => e.to === a.path[a.i + 1] && e.kind === 'zebra') && queued(a, tx, tz, 1.0)) { a.wx = a.x; a.wz = a.z; arrive(a, n, dt); tx = a.x; tz = a.z; speed = 0; }
+          // (the ends of a zebra are reached at the kerb itself: not cut across early, through the people waiting there)
+          else if (d < (last ? 2 : n.kerb ? 0.5 : n.w > 0.65 ? 1.2 : 0.45) || passed) { if (a.state === 'cross') a.state = 'walk'; a.wx = freeSpot(tx, tz, false) ? tx : n.x; a.wz = freeSpot(tx, tz, false) ? tz : n.z; arrive(a, n, dt); if (a.state !== 'walk' && a.state !== 'cross') { tx = a.x; tz = a.z; speed = 0; } }
         }
         // on a carriageway without crossing (pushed off the kerb in a crowd, a partner left behind):
         // back to the nearest kerb at once
@@ -448,66 +565,116 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           else if (a.x < L.westCurbX) tz = a.z < 0 ? -L.street.roadHalfW - 0.4 : L.street.roadHalfW + 0.4, tx = a.x;
           else tx = a.x < (L.westCurbX + L.eastCurbX) / 2 ? L.westCurbX - 0.4 : L.eastCurbX + 0.4;
         }
-        // desired velocity toward the target
-        let dx = tx - a.x, dz = tz - a.z; const d = Math.hypot(dx, dz);
-        let vx = 0, vz = 0;
-        if (d > 0.05 && speed > 0) { vx = dx / d * speed; vz = dz / d * speed; }
-        // personal space: other people, the player, street furniture
-        let sx = 0, sz = 0;
+        // ---- steering ----
+        // a bump just now: the half-step away, then slower for a moment (engine/flinch.js)
+        const fl = a.flinch ? stepFlinch(a, dt) : null;
+        if (a.flinch) speed *= flinchSpeed(a);
+        const dx = tx - a.x, dz = tz - a.z, d = Math.hypot(dx, dz);
+        const moving = d > 0.05 && speed > 0;
         const fx = d > 0.05 ? dx / d : Math.sin(a.heading), fz = d > 0.05 ? dz / d : Math.cos(a.heading);
-        near(a.x, a.z, (o) => {
-          if (o === a || o.gone) return;
-          const ox = a.x - o.x, oz = a.z - o.z, od = Math.hypot(ox, oz);
-          const mine = o === a.partner || o === a.leader || o.leader === a || (a.leader && o.leader === a.leader) || (a.group && o.group === a.group);
-          const rr = mine ? 0.55 : 0.85;
-          if (od < rr && od > 1e-4) { const k = (rr - od) / rr * 1.6; sx += ox / od * k; sz += oz / od * k; }
-          // someone coming the other way, ahead: ease to the right
-          if (!mine && speed > 0 && od < 3.2 && od > 0.3 && (o.vx * fx + o.vz * fz) < -0.3 && (-ox * fx - oz * fz) > 0) { sx += -fz * 0.5; sz += fx * 0.5; }
-        });
+        const stuck = a.stuck > 1;
+        const P = steer;
+        P.a = a; P.fx = fx; P.fz = fz; P.vx = moving ? fx * speed : 0; P.vz = moving ? fz * speed : 0;
+        P.look = a.phone ? 1.1 : 2.8; P.lat = 0; P.brake = 0; P.cap = speed; P.sx = 0; P.sz = 0;
+        // Looking ahead (~3 s; about a second with eyes on a phone) along where I mean to go: anyone I
+        // would pass too close to moves me aside early, keeping right when we meet head-on (as people
+        // do here), and slows me if it's close; we pass shoulder to shoulder. Close up, personal space.
+        const cx0 = Math.floor(a.x / CELL), cz0 = Math.floor(a.z / CELL);
+        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+          const c = grid.get(key(cx0 + i, cz0 + j)); if (!c) continue;
+          for (let q = 0; q < c.length; q++) {
+            const o = c[q];
+            if (o === a || o.gone || Math.abs(o.y - a.y) > 1) continue;
+            const px = o.x - a.x, pz = o.z - a.z, dd2 = px * px + pz * pz;
+            if (dd2 > 36) continue;
+            const mine = together(a, o), dd = Math.sqrt(dd2);
+            const rr = mine ? 0.55 : 0.8;
+            if (dd < rr && dd > 1e-4) {
+              const k = (rr - dd) / rr * 1.6; P.sx -= px / dd * k; P.sz -= pz / dd * k;
+              if (!mine && o.id > a.id && dd < CONTACT) touch(a, o, px / dd, pz / dd);
+            }
+            if (!mine && moving && !stuck) predict(px, pz, o.vx, o.vz, PASS, 0.4);
+          }
+        }
         if (others) for (const o of others) {
-          const ox = a.x - o.x, oz = a.z - o.z; if (Math.abs(ox) > 1.2 || Math.abs(oz) > 1.2) continue;
-          const od = Math.hypot(ox, oz); if (od < 1.0 && od > 1e-4) { const k = (1.0 - od) * 1.8; sx += ox / od * k; sz += oz / od * k; }
+          const px = o.x - a.x, pz = o.z - a.z; if (Math.abs(px) > 6 || Math.abs(pz) > 6) continue;
+          const dd = Math.hypot(px, pz); if (dd < 1.0 && dd > 1e-4) { const k = (1.0 - dd) * 1.8; P.sx -= px / dd * k; P.sz -= pz / dd * k; }
+          if (moving && !stuck) predict(px, pz, o.vx || 0, o.vz || 0, PASS, 0.4);
         }
-        if (player) {
-          const ox = a.x - player.x, oz = a.z - player.z, od = Math.hypot(ox, oz);
-          if (od < 1.4 && od > 1e-4) { const k = (1.4 - od) / 1.4 * 2.4; sx += ox / od * k; sz += oz / od * k; }
-          if (speed > 0 && od < 3 && (-ox * fx - oz * fz) > 0.2) { const side = (-ox * -fz + -oz * fx) > 0 ? -1 : 1; sx += -fz * side * 0.8; sz += fx * side * 0.8; }
+        if (player && Math.abs((player.y ?? a.y) - a.y) < 1.2) {
+          // you: a wider berth, seen coming from further off (you walk faster than anyone here)
+          const px = player.x - a.x, pz = player.z - a.z, dd = Math.hypot(px, pz);
+          if (dd < 10) {
+            if (dd < 1.3 && dd > 1e-4) { const k = (1.3 - dd) / 1.3 * 2.4; P.sx -= px / dd * k; P.sz -= pz / dd * k; }
+            if (moving) { const lk = P.look; P.look = Math.max(lk, a.phone ? 1.8 : 3.2); predict(px, pz, player.vx || 0, player.vz || 0, PASS_YOU, 0.5, 2.2, 3); P.look = lk; }
+          }
         }
-        for (const [ox0, oz0, r] of obs) {
-          const ox = a.x - ox0, oz = a.z - oz0; if (Math.abs(ox) > r + 1 || Math.abs(oz) > r + 1) continue;
-          const od = Math.hypot(ox, oz); if (od < r + 0.4 && od > 1e-4) { const k = (r + 0.4 - od) * 2.2; sx += ox / od * k; sz += oz / od * k; }
+        for (let q = 0; q < obs.length; q++) {
+          const ob = obs[q], ox = a.x - ob[0], oz = a.z - ob[1], r = ob[2]; if (Math.abs(ox) > r + 1 || Math.abs(oz) > r + 1) continue;
+          const od = Math.hypot(ox, oz); if (od < r + 0.4 && od > 1e-4) { const k = (r + 0.4 - od) * 2.2; P.sx += ox / od * k; P.sz += oz / od * k; }
         }
-        vx += sx * (speed > 0 ? 1 : 0.6); vz += sz * (speed > 0 ? 1 : 0.6);
-        const vm = Math.hypot(vx, vz), cap = Math.max(speed * 1.25, 0.6);
-        if (vm > cap) { vx *= cap / vm; vz *= cap / vm; }
-        // smooth: people don't change velocity instantly
-        const k = Math.min(1, dt * 3.2);
-        a.vx += (vx - a.vx) * k; a.vz += (vz - a.vz) * k;
-        let nx = a.x + a.vx * dt, nz = a.z + a.vz * dt;
+        let vx = P.vx, vz = P.vz;
+        if (moving) {
+          const att = a.phone ? 0.5 : 1, lat = Math.max(-1.4, Math.min(1.4, P.lat)) * att;
+          const wx = fx - fz * lat, wz = fz + fx * lat, wl = Math.hypot(wx, wz) || 1;   // (my right-hand side is (-fz, fx))
+          const sp = Math.min(P.cap, speed * (1 - 0.8 * Math.min(1, P.brake) * att));
+          vx = wx / wl * sp; vz = wz / wl * sp;
+        }
+        const sw = stuck ? 0.35 : moving ? 1 : 0.6;
+        vx += P.sx * sw; vz += P.sz * sw;
+        const vm = Math.hypot(vx, vz), vcap = Math.max(speed * 1.25, 0.6);
+        if (vm > vcap) { vx *= vcap / vm; vz *= vcap / vm; }
         // never into a wall, a planter, the railing, a building; never onto the road except crossing
-        // (or following your guide / partner over the zebra while the green man is still on)
-        const lead = a.kind === 'follower' ? a.group.guide : a.leader;
-        // (each zebra has its own green man: Zhongshan Road's at Hankou Road, Henan Road's at Nanjing Road)
-        const zebra = (x, z) => (Math.abs(z - 1.2) < 2.2 && x > -28 && x < -4 ? 'bund' : Math.abs(z - NJ.zc - 1.5) < 2.2 && x > NJ.henan.x0 - 0.5 && x < NJ.henan.x1 + 0.5 ? 'henan' : null);
-        const zb = lead && zebra(nx, nz);
-        const mayCross = rescue || a.state === 'cross' || (zb && (lead.state === 'cross' || state.sig[zb].aspect === 'walk'));
-        const bad = (x, z) => blocked(x, z) || (!mayCross && onRoad(x, z) && !onRoad(a.x, a.z));
+        // (or following your guide / partner over the zebra while the green man is still on). The kerb
+        // is one of these edges: seen ahead and walked along, never pushed against.
+        P.lead = a.kind === 'follower' ? a.group.guide : a.leader; P.rescue = rescue; P.offRoad = !onRoad(a.x, a.z);
+        const vl0 = Math.hypot(vx, vz);
+        if (vl0 > 0.05) {
+          // feelers: if the way ahead is a wall or the kerb, turn along it (toward my target's side)
+          const ux = vx / vl0, uz = vz / vl0, len = 0.3 + vl0 * 0.45;
+          if (bad(a.x + ux * len, a.z + uz * len)) {
+            if (turnFree(ux, uz, len, (ux * fz - uz * fx) >= 0 ? 1 : -1)) { vx = P.tx * vl0 * P.tk; vz = P.tz * vl0 * P.tk; } else { vx *= 0.2; vz *= 0.2; }
+          }
+        }
+        // smooth: people don't change velocity instantly
+        const k = Math.min(1, dt * 4);
+        a.vx += (vx - a.vx) * k; a.vz += (vz - a.vz) * k;
+        const mx = a.vx + (fl ? fl[0] : 0), mz = a.vz + (fl ? fl[1] : 0);
+        let nx = a.x + mx * dt, nz = a.z + mz * dt;
         if (bad(nx, nz)) {
-          const sp = Math.hypot(a.vx, a.vz) * dt || 0.02, ux = a.vx / (Math.hypot(a.vx, a.vz) || 1), uz = a.vz / (Math.hypot(a.vx, a.vz) || 1);
-          if (!bad(nx, a.z)) nz = a.z;
-          else if (!bad(a.x, nz)) nx = a.x;
-          // a corner (both slides blocked): step sideways round it, whichever side is clear
-          else if (!bad(a.x - uz * sp, a.z + ux * sp)) { nx = a.x - uz * sp; nz = a.z + ux * sp; }
-          else if (!bad(a.x + uz * sp, a.z - ux * sp)) { nx = a.x + uz * sp; nz = a.z - ux * sp; }
-          else { nx = a.x; nz = a.z; a.vx *= 0.3; a.vz *= 0.3; }
+          // slide along whatever it is, keeping the pace (not a crawl into the corner)
+          const ml = Math.hypot(mx, mz) || 1e-6, ux = mx / ml, uz = mz / ml;
+          if (turnFree(ux, uz, ml * dt, (ux * fz - uz * fx) >= 0 ? 1 : -1)) {
+            const wv = Math.hypot(a.vx, a.vz) * P.tk;
+            nx = a.x + P.tx * ml * P.tk * dt; nz = a.z + P.tz * ml * P.tk * dt; a.vx = P.tx * wv; a.vz = P.tz * wv;
+            if (bad(nx, nz)) { nx = a.x; nz = a.z; }                // (a corner: the shorter step clipped it)
+          } else { nx = a.x; nz = a.z; a.vx *= 0.3; a.vz *= 0.3; }
+        }
+        // stuck (wanting to walk, going nowhere): first stop giving way so much and head straight for
+        // the middle of the lane (see target()); after a few seconds, ease through whoever is in the way
+        const prog = Math.hypot(nx - a.x, nz - a.z) / dt;
+        if (moving && prog < 0.12) a.stuck = (a.stuck || 0) + dt; else a.stuck = Math.max(0, (a.stuck || 0) - dt * 2);
+        if (a.stuck > 3 && moving) {
+          const ex = a.x + fx * 0.4 * dt, ez = a.z + fz * 0.4 * dt;
+          if (!bad(ex, ez)) { nx = ex; nz = ez; }
+          if (a.stuck - dt <= 3) stats.unstuck++;
         }
         a.x = nx; a.z = nz;
         a.y = groundHeight(a.x, a.z, a.y + 0.5);
         a.v = Math.hypot(a.vx, a.vz);
-        if (a.v > 0.15 && a.state !== 'act') a.heading = Math.atan2(a.vx, a.vz);
+        if (a.v > 0.15 && a.state !== 'act' && !(a.flinch && a.flinch.t < FLINCH.stepFor)) a.heading = Math.atan2(a.vx, a.vz);
         a.phase = (a.phase + a.v * dt / 1.35) % 1;                     // one stride cycle ~1.35 m
       }
+      if (bumpMemo.size > 400) for (const [k2, t2] of bumpMemo) if (clock - t2 > SOCIAL.pairCooldown) bumpMemo.delete(k2);
     },
+    // a bump (here, or with you / someone outside the crowd: world/bumps.js): flinch, a half-step
+    // away, a glance; not again while still flinching
+    flinch(a, ox, oz, hard = 0.6) {
+      if (a.flinch && a.flinch.t < a.flinch.dur) return null;
+      return startFlinch(a, ox, oz, { hard });
+    },
+    stats,
+    get clock() { return clock; },
     // a bus at this stop with its doors open: who was waiting gets on; some get off
     board(stopId, door) {
       let n = 0;

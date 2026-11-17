@@ -60,6 +60,7 @@ import { underCover } from './world/layout.js';
 import { colliders } from './world/layout.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
 import { createTraffic } from './engine/traffic.js';
+import { startFlinch } from './engine/flinch.js';
 import { createVehicles } from './world/vehicles.js';
 import { createSignals } from './world/signals.js';
 import { createPedestrians } from './world/pedestrians.js';
@@ -1114,6 +1115,10 @@ function bumpActors() {
   const out = traffic.peds.map((p) => ({
     id: p.id, persona: p.persona, x: p.x, z: p.z, vx: p.vx, vz: p.vz, r: 0.3, busy: p.phone > 0.5,
     apply(r, other) {
+      // every bump is felt: a flinch, a half-step away, a glance (engine/flinch.js); two passers-by
+      // brushing each other leave it at that
+      if (!p.flinch || p.flinch.t > p.flinch.dur) startFlinch(p, other.x, other.z, { hard: r.hard || 0.6 });
+      if (r.kind === 'brush') { p.faceTo = [other.x, other.z]; p.faceFor = 1.1; return; }
       const dur = REACT_FOR[r.kind] || 1;
       p.faceTo = [other.x, other.z]; p.faceFor = dur + 0.8; p.gesture = r.kind;
       if (r.kind !== 'look') p.pause = p.crossing ? 0 : dur;                // never stop in the road
@@ -1128,10 +1133,16 @@ function bumpActors() {
   if (world.crowdView) for (const a of world.crowdView.nearAgents()) {
     if (Math.abs(a.y - player.body.y) > 1.2) continue;
     const grp = a.group ? `tour${a.group.guide.id}` : a.leader ? `with${a.leader.id}` : a.partner || a.kid ? `with${a.id}` : null;   // (together: they don't bump each other)
-    out.push({ id: `crowd:${a.id}`, group: grp, persona: a.persona, x: a.x, z: a.z, vx: a.vx, vz: a.vz, r: 0.3, busy: a.phone,
+    // (sim: 'crowd': two of the crowd bumping each other is the crowd's own business, engine/crowd.js)
+    out.push({ id: `crowd:${a.id}`, sim: 'crowd', group: grp, persona: a.persona, x: a.x, z: a.z, vx: a.vx, vz: a.vz, r: 0.3, busy: a.phone,
       apply(r, other) {
-        if (r.stagger) { const dx = a.x - other.x, dz = a.z - other.z, d = Math.hypot(dx, dz) || 1; a.vx += dx / d * 0.9; a.vz += dz / d * 0.9; }
-        if (r.kind !== 'look' && a.state === 'walk') { a._saved = { state: 'walk', act: null, wait: 0 }; a.state = 'act'; a.act = 'look'; a.wait = REACT_FOR[r.kind] || 1; a.heading = Math.atan2(other.x - a.x, other.z - a.z); }
+        // the flinch first (shoulder back, half-step away, a glance), then whatever they make of it
+        world.crowd.flinch(a, other.x, other.z, (r.hard || 0.6) + (r.stagger ? 1 : 0));
+        if (r.kind === 'brush') return;
+        if (r.kind !== 'look' && a.state === 'walk' && !a.leader && a.kind !== 'follower') {   // (those walking with someone keep up with them)
+          a.state = 'act'; a.act = 'look'; a.wait = (REACT_FOR[r.kind] || 1) + 0.4; a.gesture = r.kind; a.faceTo = [other.x, other.z];
+          a.heading = Math.atan2(other.x - a.x, other.z - a.z);
+        }
       } });
   }
   const b = player.body;
