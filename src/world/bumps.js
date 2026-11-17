@@ -1,7 +1,10 @@
 // Bumping into people, and what they do about it. Glue between engine/social.js (who bumped whom,
-// how each one reacts), the people who react (crossing pedestrians in the traffic sim, Old Lin and
-// Ms. Su), the HUD (a passing line of speech) and speech (Mandarin / English through the browser's
-// voices when it is free; Shanghainese is subtitle-only, there is no browser voice for it).
+// how each one reacts), the people who react (crossing pedestrians in the traffic sim, the crowd's
+// near people, Old Lin and Ms. Su), the HUD (a passing line of speech) and speech: the recorded voice
+// for that kind of person (engine/voice.js plays public/voice clips; hud.bark asks it for the recording
+// or nothing), never the browser's synthetic voice. Shanghainese is subtitle-only.
+// Every bump is felt in the body: both people flinch, half-step away and glance at each other
+// (engine/flinch.js, through each actor's apply: reaction kind 'brush' between two passers-by).
 import { detectBumps, react, SOCIAL } from '../engine/social.js';
 import { pickBark } from './barks.js';
 
@@ -10,14 +13,12 @@ export const WHO = {
   student: { zh: '学生', en: 'Student' }, elder: { zh: '老伯伯', en: 'Older man' }, visitor: { zh: '游客', en: 'Visitor' },
   lin: { zh: '老林', en: 'Old Lin' }, su: { zh: '苏女士', en: 'Ms. Su' },
 };
-const LANG = { zh: 'zh-CN', en: 'en-GB' };
 const HEAR = 14;                       // m: further than this, you don't catch what was said
 
 export function createBumps({ hud, audio, onPlayerBump = null, rnd = Math.random }) {
   const memo = new Map();              // pair -> last bump time
   const byPlayer = new Map();          // npc id -> times the player bumped them
   const log = [];                      // recent events, for tools / tests
-  const synth = typeof window !== 'undefined' && 'speechSynthesis' in window ? window.speechSynthesis : null;
   let lastBarkAt = -1e9;
   const lastSaid = new Map();          // npc id -> when they last said something about a bump
   const pitch = (id) => { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return 0.93 + (h % 1000) / 1000 * 0.14; };
@@ -36,12 +37,13 @@ export function createBumps({ hud, audio, onPlayerBump = null, rnd = Math.random
     lastBarkAt = t; lastSaid.set(actor.id, t);
   }
 
-  // actors: [{ id, persona, x, z, vx, vz, r, apply(reaction, other) }], with the player as id 'player'
+  // actors: [{ id, persona, x, z, vx, vz, r, apply(reaction, other), group?, sim? }], with the player
+  // as id 'player'. Two actors with the same `sim` are left to it (the crowd sees to its own bumps).
   function update(t, actors, listener) {
-    const events = detectBumps(actors, t, memo).filter((e) => !(e.a.group && e.a.group === e.b.group));
+    const events = detectBumps(actors, t, memo).filter((e) => !(e.a.group && e.a.group === e.b.group) && !(e.a.sim && e.a.sim === e.b.sim));
     for (const e of events) {
-      if (e.a.id !== 'player' && e.b.id !== 'player') {                 // two passers-by: no scene, maybe a glance
-        if (rnd() < 0.3) { const me = e.other; me.apply && me.apply({ kind: 'look', line: null }, e.mover, t); }
+      if (e.a.id !== 'player' && e.b.id !== 'player') {                 // two passers-by: no scene, a flinch and a glance
+        for (const [me, other] of [[e.a, e.b], [e.b, e.a]]) me.apply && me.apply({ kind: 'brush', line: null, hard: e.closing }, other, t);
         log.push({ t, id: e.a.id, kind: 'brush', with: e.b.id }); continue;
       }
       for (const [me, other] of [[e.a, e.b], [e.b, e.a]]) {
@@ -52,7 +54,7 @@ export function createBumps({ hud, audio, onPlayerBump = null, rnd = Math.random
           const times = (byPlayer.get(me.id) || []).filter((x) => t - x < SOCIAL.memory);
           history = times.length; times.push(t); byPlayer.set(me.id, times);
         }
-        const r = react(me, { fault, hard: e.closing, byPlayer: isPlayer, history, busy: !!me.busy }, rnd);
+        const r = { ...react(me, { fault, hard: e.closing, byPlayer: isPlayer, history, busy: !!me.busy }, rnd), hard: e.closing };
         me.apply && me.apply(r, other, t);
         say(t, me, r.line, Math.hypot(me.x - listener.x, me.z - listener.z), isPlayer ? 'player' : other.id);
         log.push({ t, id: me.id, kind: r.kind, fault, hard: +e.closing.toFixed(2), with: other.id, history });

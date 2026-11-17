@@ -7,6 +7,7 @@ import { groundHeight } from './layout.js';
 import { createPerson } from './people.js';
 import { addGlasses } from './glasses.js';
 import { createFace } from './face.js';
+import { flinchPose } from '../engine/flinch.js';
 const _hand = new THREE.Vector3();
 // a phone flash: a hot white blink (bloom does the rest)
 const flashMat = new THREE.SpriteMaterial({ color: new THREE.Color(6, 6, 6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, map: (() => {
@@ -153,7 +154,9 @@ export function createRealPedestrians(simPeds, people) {
         person.setGait(speed);
         person.setUmbrella(state === 'phone' ? 0 : p.umbrella);
         person.setPhoneHold(state === 'walk' || state === 'look' || state === 'idle' ? p.phoneW : 0);
-        person.update(dt, p.faceTo || p.gaze);                                  // heads follow a sight while passing it
+        const fp = p.flinch ? flinchPose(p.flinch) : null;                      // a bump: shoulder back, lean away, a glance
+        person.setFlinch(fp);
+        person.update(dt, (fp && fp.look) || p.faceTo || p.gaze);              // heads follow a sight while passing it
         if (p.photo) raisePhone(person, p.photo.of ? p.faceTo : null, r.rotation.y);
         if (camPos && r.position.distanceToSquared(camPos) < 400) {           // faces only matter up close
           if (p.faceTo) look.set(p.faceTo[0], r.position.y + 1.55, p.faceTo[1]);

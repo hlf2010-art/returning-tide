@@ -12,6 +12,10 @@ import { createPerson } from './people.js';
 import { holdPhone } from './pedestriansReal.js';
 import { twoBone } from './driverPose.js';
 import { L, deckLamps, DECK_LAMP_X } from './layout.js';
+import { flinchPose } from '../engine/flinch.js';
+
+// a reaction to being bumped (engine/social.js kinds, set by main.js on a crowd person) -> clip
+const GESTURE = { sorry: 'wave', fine: 'shrug', scold: 'angry', tut: 'look', look: 'look' };
 
 const COLS = 10, ROWS = 8, CW = 48, CH = 96, GRID = 4;     // per avatar: 8 walk steps + standing + phone, 8 sides
 const FRAME_W = 1.1, FRAME_H = 2.2;                        // the card in metres (people are ~1.6-1.9 m)
@@ -256,13 +260,17 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         root.rotation.y += dh * Math.min(1, dt * 6);
         const moving = a.v > 0.2;
         const act = a.state === 'act' ? a.act : null;
-        b.person.play(moving ? (a.kind === 'jogger' && a.v > 1.6 ? 'jog' : 'walk') : act === 'look' || a.kind === 'guide' ? 'look' : 'idle', 0.35);
+        const gesture = act === 'look' && a.gesture ? GESTURE[a.gesture] : null;
+        b.person.play(moving ? (a.kind === 'jogger' && a.v > 1.6 ? 'jog' : 'walk') : gesture || (act === 'look' || a.kind === 'guide' ? 'look' : 'idle'), 0.35);
         b.person.setGait(a.v);
         const phoneWalk = moving && a.phone;
         b.person.setPhoneHold(phoneWalk ? 1 : 0);
         const u = umbrellaFor(a, dt);
         b.person.setUmbrella(u);
-        b.person.update(dt, Math.hypot(eye.x - a.x, eye.z - a.z) < 3.5 ? [eye.x, eye.z] : null);
+        // a bump: the shoulder swings back, a lean away, a glance at whoever it was (engine/flinch.js)
+        const fp = a.flinch ? flinchPose(a.flinch) : null;
+        b.person.setFlinch(fp);
+        b.person.update(dt, fp && fp.look ? fp.look : a.faceTo || (Math.hypot(eye.x - a.x, eye.z - a.z) < 3.5 ? [eye.x, eye.z] : null));
         b.umb.visible = u > 0.02;
         if (b.umb.visible) {
           b.canopy.material.color.copy(UMB_COLORS[Math.floor(hash(a.id, 3) * UMB_COLORS.length)]);

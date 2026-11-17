@@ -104,6 +104,10 @@ export function createPerson(people, role) {
   const anchors = { chest: new THREE.Object3D(), head: new THREE.Object3D(), umbrella: new THREE.Object3D(), phone: new THREE.Object3D() };
   const _q = new THREE.Quaternion(), _e = new THREE.Euler(), _hq = new THREE.Quaternion(), _hp = new THREE.Quaternion(), _hv = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
   let headYaw = 0;
+  // a flinch (engine/flinch.js) laid over whatever is playing: the torso turning (twist, rad, + =
+  // to the left) and leaning back (lean, rad), shared between the lower and upper spine
+  const spine = [[bone('Bip01_Spine1'), 0.45], [bone('Bip01_Spine2'), 0.55]].filter(([b]) => b);
+  let flinch = null; const _fa = new THREE.Vector3(), _fq = new THREE.Quaternion();
   const phoneClip = CLIPS.find((c) => c.name === 'phone');
   const phoneLayer = phoneClip ? mixer.clipAction(new THREE.AnimationClip('phone:hold', phoneClip.duration, phoneClip.tracks.filter((t) => PHONE_LAYER.test(boneOf(t))))) : null;
   if (phoneLayer) { phoneLayer.play(); phoneLayer.setEffectiveWeight(0); phoneLayer.time = phoneClip.duration * (0.15 + Math.random() * 0.6); }
@@ -129,6 +133,8 @@ export function createPerson(people, role) {
       const d = phoneClip.duration;                                     // stay in the stretch where the phone is up
       if (phoneLayer.time < d * 0.12 || phoneLayer.time > d * 0.88) phoneLayer.time = d * 0.12;
     },
+    // pose: { twist, lean } from engine/flinch.js flinchPose(), or null
+    setFlinch(pose) { flinch = pose; },
     // speed (m/s) drives walk / jog playback so the stride matches the ground
     setGait(speed) {
       if (current === 'walk') base.walk.timeScale = arm.walk.timeScale = THREE.MathUtils.clamp(speed / speeds.walk, 0.55, 1.7);
@@ -138,6 +144,15 @@ export function createPerson(people, role) {
     update(dt, look = null) {
       if (dt > 0) mixer.update(dt);                                       // (nothing moves in no time; see play)
       root.updateMatrixWorld(true);
+      if (flinch && (Math.abs(flinch.twist) > 1e-3 || Math.abs(flinch.lean) > 1e-3)) {
+        const ry = root.rotation.y;
+        for (const [b, k] of spine) {
+          b.parent.getWorldQuaternion(_hp).invert();
+          b.quaternion.premultiply(_fq.setFromAxisAngle(_fa.set(0, 1, 0).applyQuaternion(_hp), flinch.twist * k));
+          b.quaternion.premultiply(_fq.setFromAxisAngle(_fa.set(-Math.cos(ry), 0, Math.sin(ry)).applyQuaternion(_hp), flinch.lean * k));
+          b.updateMatrixWorld(true);
+        }
+      }
       let want = 0;
       if (look) {
         bones.head.getWorldPosition(_hv);

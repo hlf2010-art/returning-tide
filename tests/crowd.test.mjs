@@ -21,12 +21,22 @@ ok(Math.abs(groundHeight(NJ.henan.xc, NJ.zc, 0)) < 0.01 && Math.abs(groundHeight
 const c = createCrowd({ density: 1, rnd, roles: ['p1', 'p2', 'p3', 'p4', 'p5'] });
 ok(c.agents.length >= 200 && c.tours.length >= 2, `${c.agents.length} people, ${c.tours.length} tour groups at medium detail`);
 let inside = 0, redRoad = 0, crossed = 0, maxSpread = 0, rail = 0, waited = 0;
+// stuck: wanting to walk (walking or crossing, or following someone who is on the move) and going
+// nowhere (by where they actually got to, not the velocity they want) for more than 2 s
+const still = new Map(), stuckAt = [];
 for (let f = 0; f < 30 * 180; f++) {
   const t = f / 30;
   c.setSignal(t % 60 < 20 ? 'walk' : 'dont', 1 / 30); c.setSignal(t % 50 < 18 ? 'walk' : 'dont', 1 / 30, 'henan');
+  for (const a of c.agents) { a._px = a.x; a._pz = a.z; }
   c.update(1 / 30, { player: { x: 17, z: -10 } });
+  for (const a of c.agents) a._sp = Math.hypot(a.x - a._px, a.z - a._pz) * 30;
   for (const a of c.agents) {
     if (a.gone) continue;
+    const boss = a.kind === 'follower' ? a.group.guide : a.leader;
+    if (t > 5 && (a.state === 'walk' || a.state === 'cross') && (!boss || boss._sp > 0.3) && a._sp < 0.12) {
+      const s0 = (still.get(a) || 0) + 1 / 30; still.set(a, s0);
+      if (s0 > 2 && s0 - 1 / 30 <= 2) stuckAt.push(`${a.kind} ${a.x.toFixed(1)},${a.z.toFixed(1)}`);
+    } else still.delete(a);
     if (blocked(a.x, a.z, 0)) inside++;
     if (a.x > -100 && t % 60 > 32 && onRoad(a.x, a.z)) redRoad++;
     if (a.state === 'cross') crossed++;
@@ -41,6 +51,8 @@ ok(crossed > 1000, 'people cross on the green man');
 ok(rail > 1000, 'people stop at the railing for photos');
 ok(maxSpread < 15, `tour groups stay together behind the guide (furthest ${maxSpread.toFixed(1)} m)`);
 ok(waited > 0, 'commuters wait at the bus stops');
+ok(stuckAt.length === 0, `nobody stands pinned (against a kerb, a planter, a wall, each other) wanting to walk for more than 2 s: ${stuckAt.length}${stuckAt.length ? ` (${stuckAt.slice(0, 4).join('; ')})` : ''}`);
+ok(c.stats.bumps / 3 < 40, `people mostly see each other coming: ${(c.stats.bumps / 3).toFixed(0)} contacts a minute among ${c.count()} (it was ~120 when they only reacted at arm's length)`);
 const st = BUS_STOPS[0], door = { x: -28.6, z: st.z };
 for (const a of c.agents) if (a.kind === 'commuter' && !a.gone) { a.state = 'bus'; a.busStop = st.id; a.wait = 99; break; }
 ok(c.board(st.id, door) >= 1, 'a bus at the stop takes on whoever was waiting');
