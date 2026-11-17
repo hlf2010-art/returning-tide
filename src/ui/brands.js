@@ -25,10 +25,10 @@ const WORD = {
 export const appGlyph = (slug, size = 30) => (SI[slug] ? mark(slug, '#fff', size) : WORD[slug] || '');
 // a payment method's little logo (the pay sheet, the wallet)
 export function payLogo(method, size = 18) {
-  if (method === 'wechat') return `<span class="pl" style="background:${BRAND_COLOR.wechat}">${mark('wechat', '#fff', size)}</span>`;
-  if (method === 'alipay') return `<span class="pl" style="background:${BRAND_COLOR.alipay}">${mark('alipay', '#fff', size)}</span>`;
-  if (method === 'card') return `<span class="pl" style="background:#1a1f71">${mark('visa', '#fff', size)}</span>`;
-  if (method === 'bank') return `<span class="pl" style="background:${BRAND_COLOR.cmb}"><span class="wm cmb" style="font-size:${Math.round(size * 0.5)}px">招行</span></span>`;
+  if (method === 'wechat') return `<span class="paylogo" style="background:${BRAND_COLOR.wechat}">${mark('wechat', '#fff', size)}</span>`;
+  if (method === 'alipay') return `<span class="paylogo" style="background:${BRAND_COLOR.alipay}">${mark('alipay', '#fff', size)}</span>`;
+  if (method === 'card') return `<span class="paylogo" style="background:#1a1f71">${mark('visa', '#fff', size)}</span>`;
+  if (method === 'bank') return `<span class="paylogo" style="background:${BRAND_COLOR.cmb}"><span class="wm cmb" style="font-size:${Math.round(size * 0.5)}px">招行</span></span>`;
   return '';
 }
 // a mark drawn into a canvas (for textures in the world): slug, colour, background

@@ -152,8 +152,8 @@
 .wm.cmb, .wm.up { font: 700 10px/1 "Noto Sans SC", sans-serif; }
 .av.logo { display: flex; align-items: center; justify-content: center; }
 .av.logo .wm.didi { font-size: 11px; } .av.logo .wm.jd { font-size: 13px; } .av.logo .wm.manner { font-size: 6px; letter-spacing: 0.5px; }
-.pl { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; vertical-align: middle; margin-right: 4px; }
-.pl svg { width: 70%; height: 70%; }
+.paylogo { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; vertical-align: middle; margin-right: 4px; }
+.paylogo svg { width: 70%; height: 70%; }
 
 /* Photos and the Sketchbook */
 .view.photos .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; }
