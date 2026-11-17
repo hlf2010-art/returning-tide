@@ -217,5 +217,14 @@
  "cook": {
   "zh": "zm_041",
   "en": "am_onyx"
+ },
+ "metropa": {
+  "zh": "zf_002",
+  "en": "bf_isabella",
+  "speed": 0.94
+ },
+ "metrostaff": {
+  "zh": "zm_010",
+  "en": "am_adam"
  }
 }

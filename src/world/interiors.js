@@ -236,11 +236,32 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   box(6.4, 0.25, 2.6, brass, doorX, Y0 + 3.6, -211.0);
   for (const x of [doorX - 3, doorX + 3]) add(new THREE.CylinderGeometry(0.06, 0.06, 3.6, 8), brass, x, Y0 + 1.8, -209.9);
   const glowTex = canvasTex(256, 256, (x, w, h) => { const g = x.createRadialGradient(w / 2, h * 0.7, 10, w / 2, h * 0.6, w * 0.7); g.addColorStop(0, '#c9935a'); g.addColorStop(0.5, '#6b4524'); g.addColorStop(1, '#1d130b'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.fillStyle = 'rgba(255,220,160,0.5)'; for (let i = 0; i < 3; i++) x.fillRect(w * (0.2 + i * 0.25), h * 0.08, w * 0.12, h * 0.05); });
-  add(new THREE.PlaneGeometry(4.2, 3.2), new THREE.MeshBasicMaterial({ map: glowTex }), doorX, Y0 + 1.6, -211.93, 0);   // the warm lobby seen through the door
+  void glowTex;
+  // the doorway through the façade (world/bund.js cuts it): granite reveals, a soffit, a step
+  for (const x of [P.door[0], P.door[1]]) box(0.14, 3.2, 0.62, granite, x + (x < doorX ? -0.07 : 0.07), Y0 - 0.01, -212.3);
+  box(4.28, 0.14, 0.62, granite, doorX, Y0 + 3.2, -212.3);
+  box(4.0, 0.02, 1.0, marbleDark, doorX, Y0 - 0.005, -212.1);
+  // the revolving door: a glass drum in bronze, four glass wings with bronze edges and push bars, a lit crown
   const drum = new THREE.Group(); drum.position.set(doorX, Y0, -212.2); group.add(drum);
+  const R = 1.35, H = 2.75;
+  for (const c of [Math.PI / 2, -Math.PI / 2]) {
+    const arc = new THREE.Mesh(new THREE.CylinderGeometry(R, R, H, 28, 1, true, c - 0.95, 1.9), glass); arc.position.y = H / 2; arc.renderOrder = 3; drum.add(arc);
+    for (const a of [c - 0.95, c + 0.95]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, H, 8), brass); post.position.set(Math.sin(a) * R, H / 2, Math.cos(a) * R); drum.add(post); }
+    for (const y of [0.06, 0.95, H - 0.04]) { const rail = new THREE.Mesh(new THREE.TorusGeometry(R, 0.022, 6, 28, 1.9), brass); rail.rotation.set(Math.PI / 2, 0, -(c - 0.95) + Math.PI / 2 - 1.9); rail.position.y = y; drum.add(rail); }
+  }
+  const mat = new THREE.Mesh(new THREE.CircleGeometry(R - 0.02, 32).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x1b1714, roughness: 0.95 })); mat.position.y = 0.012; drum.add(mat);
   const vanes = new THREE.Group(); drum.add(vanes);
-  for (let i = 0; i < 4; i++) { const v = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 2.6), glass); v.position.set(Math.cos(i * Math.PI / 2) * 0.62, 1.3, Math.sin(i * Math.PI / 2) * 0.62); v.rotation.y = -i * Math.PI / 2; vanes.add(v); }
-  const drumTop = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.25, 32), brass); drumTop.position.y = 2.75; drum.add(drumTop);
+  for (let i = 0; i < 4; i++) {
+    const w = new THREE.Group(); w.rotation.y = -i * Math.PI / 2; vanes.add(w);
+    const v = new THREE.Mesh(new THREE.PlaneGeometry(R - 0.08, H - 0.12), glass); v.position.set((R - 0.08) / 2 + 0.04, H / 2, 0); w.add(v);
+    for (const [bx, by, bw, bh] of [[R - 0.06, H / 2, 0.05, H - 0.1], [(R) / 2, 0.08, R - 0.04, 0.07], [(R) / 2, H - 0.08, R - 0.04, 0.06]]) { const f = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.05), brass); f.position.set(bx, by, 0); w.add(f); }
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.7, 8), brass); bar.rotation.z = Math.PI / 2; bar.position.set(R * 0.62, 1.05, 0.07); w.add(bar);
+    const bar2 = bar.clone(); bar2.position.z = -0.07; w.add(bar2);
+  }
+  const post0 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, H, 12), brass); post0.position.y = H / 2; vanes.add(post0);
+  const drumTop = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.06, R + 0.06, 0.3, 32), brass); drumTop.position.y = H + 0.15; drum.add(drumTop);
+  const crown = new THREE.Mesh(new THREE.CircleGeometry(R - 0.1, 32).rotateX(Math.PI / 2), frosted); crown.position.y = H - 0.005; drum.add(crown);
+  lights.push({ x: doorX, y: Y0 + H - 0.2, z: -212.2, intensity: 5, distance: 6, color: new THREE.Color(1.0, 0.8, 0.55) });
   add(new THREE.PlaneGeometry(5.6, 0.7), new THREE.MeshBasicMaterial({ map: signTex([['和 平 饭 店', 70]], { bg: '#00000000', fg: '#d9b46a', w: 800, h: 100 }), transparent: true }), doorX, Y0 + 4.4, -211.86);
   // light: the hall's own lamps join the lighting pool (only the nearest get real lights)
   for (const [x, z] of [[-48, -229], [-56, -218], [-40, -218], [-56, -240], [-40, -238], [-48, -240.5], [-57, -229]]) lights.push({ x, y: Y0 + P.h - 0.4, z, intensity: 14, distance: 11, color: new THREE.Color(1.0, 0.82, 0.58) });
@@ -255,7 +276,32 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   add(new THREE.PlaneGeometry(A.x1 - A.x0, A.z1 - A.z0), new THREE.MeshStandardMaterial({ color: 0xd8d2c6, roughness: 0.8, emissive: 0x1a1814, side: THREE.DoubleSide }), acx, Y0 + A.h, acz, 0, Math.PI / 2);
   const slot = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.85, 0.85, 0.82) });
   for (let x = A.x0 + 2; x < A.x1 - 1; x += 3) add(new THREE.PlaneGeometry(0.12, A.z1 - A.z0 - 2), slot, x, Y0 + A.h - 0.02, acz, 0, Math.PI / 2);   // linear light slots
-  add(new THREE.PlaneGeometry(3.4, 4.4), new THREE.MeshBasicMaterial({ map: glowTex, color: new THREE.Color(0.8, 0.85, 0.9) }), L.facadeX + 0.07, Y0 + 2.2, (A.door[0] + A.door[1]) / 2, Math.PI / 2);   // the lobby seen through the open door
+  // the doorway through the façade (world/bund.js cuts it): granite reveals and soffit; the bronze-and-glass
+  // double doors stand open into the lobby; a bronze fanlight; a lantern either side outside
+  { const zc = (A.door[0] + A.door[1]) / 2, xd = (A.x1 + L.facadeX) / 2, dep = L.facadeX - A.x1 + 0.02;
+    for (const z of A.door) box(dep, 4.75, 0.14, granite, xd, Y0 - 0.01, z + (z < zc ? -0.07 : 0.07));
+    box(dep, 0.16, 3.6, granite, xd, Y0 + 4.75, zc); box(dep + 0.5, 0.03, 3.4, marbleDark, xd + 0.25, Y0 - 0.01, zc);
+    const bronze = new THREE.MeshStandardMaterial({ color: 0x6b4a26, roughness: 0.35, metalness: 0.95, envMapIntensity: 1.3 });
+    box(0.08, 0.12, 3.4, bronze, A.x1 + 0.02, Y0 + 4.18, zc);                                            // the transom bar
+    box(0.02, 0.5, 3.36, glass, A.x1 + 0.02, Y0 + 4.24, zc);                                             // the fanlight: glass in a bronze grille
+    for (let k = -3; k <= 3; k++) box(0.03, 0.5, 0.025, bronze, A.x1 + 0.03, Y0 + 4.24, zc + k * 0.45);
+    box(0.03, 0.025, 3.36, bronze, A.x1 + 0.03, Y0 + 4.5, zc);
+    for (const s of [-1, 1]) {
+      // a leaf (1.7 m wide), hinged at the door's edge, swung open flat into the lobby
+      const z = zc + s * 1.66, leaf = new THREE.Group(); leaf.position.set(A.x1, Y0, z); group.add(leaf);
+      const W = 1.68, Hh = 4.15, fr = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.07), bronze); m.position.set(x, y, 0); leaf.add(m); };
+      fr(W, 0.16, -W / 2, 0.08); fr(W, 0.12, -W / 2, Hh - 0.06); fr(0.12, Hh, -0.06, Hh / 2); fr(0.12, Hh, -W + 0.06, Hh / 2); fr(W, 0.08, -W / 2, 1.05); fr(W, 0.06, -W / 2, 2.7);
+      fr(0.05, Hh - 0.3, -W / 2, Hh / 2);
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.2, Hh - 0.3), glass); pane.position.set(-W / 2, Hh / 2, 0); pane.renderOrder = 3; leaf.add(pane);
+      const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8), brass); pull.position.set(-W + 0.22, 1.15, s * 0.06); leaf.add(pull);
+      // the lantern on the jamb outside
+      const lz = zc + s * 2.45;
+      box(0.06, 0.06, 0.06, bronze, L.facadeX + 0.6, Y0 + 3.4, lz); box(0.36, 0.55, 0.36, new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.2, 0.75) }), L.facadeX + 0.75, Y0 + 2.75, lz);
+      box(0.42, 0.06, 0.42, bronze, L.facadeX + 0.75, Y0 + 3.3, lz); box(0.42, 0.05, 0.42, bronze, L.facadeX + 0.75, Y0 + 2.72, lz);
+      lights.push({ x: L.facadeX + 1.0, y: Y0 + 2.9, z: lz, intensity: 4, distance: 6, color: new THREE.Color(1.0, 0.76, 0.48) });
+    }
+    lights.push({ x: A.x1 - 1.5, y: Y0 + 4.2, z: zc, intensity: 10, distance: 10, color: new THREE.Color(1.0, 0.86, 0.66) });   // the lobby's light, falling out of the door
+  }
   // reception: a long granite desk on the south side; a tenant directory; a visitor QR stand
   rbox(4.2, 1.1, 1.4, 0.05, granite, -38.5, Y0, -139.9);                                                 // reception, south side of the public lobby
   box(4.3, 0.05, 1.5, marbleDark, -38.5, Y0 + 1.1, -139.9);

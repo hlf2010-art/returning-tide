@@ -602,3 +602,7 @@ html[lang="zh-CN"] #ride-card .place { font-family: var(--serif); font-weight: 9
 #ending-card .after { color: rgba(244,241,234,0.72); font-size: 0.95em; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.14); }
 #build .tabs .wk { margin-left: auto; opacity: 1; color: var(--gold); font-weight: 600; }
 @media (max-width: 680px) { #workbook .row3 { grid-template-columns: 1fr; } .wb-sum .nums { grid-template-columns: repeat(2, 1fr); } }
+/* the notebook itself (ui/sketchbook.js): no panel round it, just the book on the dark */
+#workbook.sketch-only .sb-host { display: grid; place-items: center; }
+#workbook.sketch-tab .panel { width: min(1180px, 96vw); max-height: 94vh; }
+#workbook .sb-host.in-tab .sb { width: min(92vw, 1120px, calc(70vh * 1.56)); }

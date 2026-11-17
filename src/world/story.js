@@ -60,7 +60,7 @@ const BASE_QUESTS = [
     start: (L) => !!inv(L, 'momo-gig'),
     fail: (L) => { const i = inv(L, 'momo-gig'); return !!i && (i.status === 'declined' || i.status === 'missed' || lapsed(L, 'momo-gig', i.at + 120)); },
     steps: [
-      { id: 'yes', text: B('在微信上答应他', 'Say yes on WeChat'), done: (L) => (inv(L, 'momo-gig') || {}).status === 'accepted' },
+      { id: 'yes', invite: 'momo-gig', text: B('在微信上答应他', 'Say yes on WeChat'), done: (L) => (inv(L, 'momo-gig') || {}).status === 'accepted' },
       { id: 'there', text: (L) => B('九点半前到爵士吧', 'Be at the Jazz Bar by 9:30 pm'), target: PLACE.jazz, wait: (L) => (inv(L, 'momo-gig') || { at: 0 }).at - 20, done: (L) => kept(L, 'momo-gig') },
     ] },
   // (the robot arm and Dad's offer: the first week's two pulls, still open when the year moves on)
@@ -69,7 +69,7 @@ const BASE_QUESTS = [
     summary: (L) => (L.flags.demoDone ? B('演示成功了。王总想投。', 'The demo went well. Mr Wang wants in.') : B('明轩学长的团队做协作机械臂，原型卡住了，产品经理也跑了。', 'Mingxuan\'s friend Zhou runs a robot-arm start-up. The prototype is stuck and their product lead has quit.')),
     start: (L) => !!inv(L, 'xuan-arm'),
     steps: [
-      { id: 'yes', optional: true, text: B('答应明轩，去看原型', 'Tell Mingxuan you\'ll look at the prototype'), done: (L) => (inv(L, 'xuan-arm') || {}).status === 'accepted' || kept(L, 'xuan-arm'), fail: (L) => ['declined', 'missed'].includes((inv(L, 'xuan-arm') || {}).status) },
+      { id: 'yes', optional: true, invite: 'xuan-arm', text: B('在微信上回复明轩：答应去看原型', 'Reply to Mingxuan on WeChat: say you\'ll look at the prototype'), done: (L) => (inv(L, 'xuan-arm') || {}).status === 'accepted' || kept(L, 'xuan-arm'), fail: (L) => ['declined', 'missed'].includes((inv(L, 'xuan-arm') || {}).status) },
       { id: 'review', optional: true, text: (L) => B(`${dayName(L, 2).zh}下午三点，陆家嘴 IFC 32 楼（滴滴或地铁 2 号线）`, `${cap(dayName(L, 2).en)}, 3 pm: IFC 32F in Lujiazui (DiDi, or Line 2 from East Nanjing Road)`), target: PLACE.didi, wait: (L) => (inv(L, 'xuan-arm') || { at: D(2, 15) }).at - 30, done: (L) => kept(L, 'xuan-arm'), fail: (L) => lapsed(L, 'xuan-arm', ((inv(L, 'xuan-arm') || {}).at || D(2, 15)) + 150) },
       { id: 'build', optional: true, text: B('去杨浦创客空间，把你的手艺练起来（做一件设备）', 'At the Yangpu makerspace, get your hands back in: build a gadget'), target: PLACE.didi, done: (L) => !!(L.flags.maker && L.flags.maker.gadgets && Object.keys(L.flags.maker.gadgets).length), fail: (L) => stamp(L) > D(5, 15) },
       { id: 'demo', optional: true, text: (L) => B(`${dayName(L, 5).zh}下午三点，投资人演示（IFC 32 楼）`, `${cap(dayName(L, 5).en)}, 3 pm: the investor demo (IFC 32F)`), target: PLACE.didi, wait: () => D(5, 14, 30), done: (L) => kept(L, 'xuan-demo'), fail: (L) => lapsed(L, 'xuan-demo', D(5, 17, 30)) },

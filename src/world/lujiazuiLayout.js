@@ -269,7 +269,7 @@ for (const b of COLUMNS) { const [x, z] = rpolar(b, RING.rc); addCircle(x, z, 0.
 for (const m of METRO_LJZ) {                                  // each stairwell: walls on both sides and at the far end
   const rot = Math.atan2(m.dz, m.dx);
   for (const s of [-1, 1]) { const [x, z] = wellPt(m, m.len / 2, s * (m.hw + 0.12)); addBox(x, z, rot, m.len / 2 + 0.24, 0.12, { id: 'metro-wall' }); }
-  const [x, z] = wellPt(m, m.len + 0.12, 0); addBox(x, z, rot, 0.12, m.hw + 0.24, { id: 'metro-wall' });
+  if (m.exit === 1) { const [x, z] = wellPt(m, m.len + 0.12, 0); addBox(x, z, rot, 0.12, m.hw + 0.24, { id: 'metro-wall' }); }   // (6 and 4 go on into the station: world/metroLayout.js)
 }
 const RAD = 0.36;
 function pushBox(p, B, rad) {
@@ -416,9 +416,10 @@ function step(b) {
   // street level (and the metro stairs): buildings, walls, posts
   for (let k = 0; k < 2; k++) {
     let moved = false;
-    for (let i = 0; i < boxes.length; i++) { const B = boxes[i]; if (B.y1 !== undefined && b.y > B.y1) continue; if (pushBox(b, B, RAD)) { moved = true; b.hit = B.id; } }
-    for (let i = 0; i < polys.length; i++) if (pushPoly(b, polys[i], RAD)) { moved = true; b.hit = polys[i].id; }
-    for (let i = 0; i < circles.length; i++) {
+    const deep = b.y < -1.6;                                  // under the street (the station): only the stairwells' walls
+    for (let i = 0; i < boxes.length; i++) { const B = boxes[i]; if (B.y1 !== undefined && b.y > B.y1) continue; if (deep && B.id !== 'metro-wall') continue; if (pushBox(b, B, RAD)) { moved = true; b.hit = B.id; } }
+    if (!deep) for (let i = 0; i < polys.length; i++) if (pushPoly(b, polys[i], RAD)) { moved = true; b.hit = polys[i].id; }
+    if (!deep) for (let i = 0; i < circles.length; i++) {
       const c = circles[i], dx = b.x - c.x, dz = b.z - c.z, rr = c.r + RAD;
       if (dx > rr || dx < -rr || dz > rr || dz < -rr || (c.y1 !== undefined && b.y > c.y1)) continue;
       const d = Math.hypot(dx, dz); if (d < rr && d > 1e-6) { b.x = c.x + dx / d * rr; b.z = c.z + dz / d * rr; moved = true; }

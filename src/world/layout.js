@@ -260,7 +260,8 @@ for (const p of crossing.pedPoles) around(p.x, p.z, 0.1, 0.1, 'signal');
   for (const m of METRO) {
     const open = m.top;                                               // the end you walk in at
     box(m.x0, m.x1, m.z0 - 0.12, m.z0, 'metro'); box(m.x0, m.x1, m.z1, m.z1 + 0.12, 'metro');
-    if (open === m.x1) box(m.x0 - 0.12, m.x0, m.z0, m.z1, 'metro'); else box(m.x1, m.x1 + 0.12, m.z0, m.z1, 'metro');
+    // (the far end opens on to the station's concourse: world/metroLayout.js)
+    void open;
   }
 }
 

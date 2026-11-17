@@ -260,3 +260,8 @@ html[lang="zh-CN"] #pause h1 { font: 700 clamp(40px, 5vw, 66px)/1.05 var(--serif
 /* (no ring at all on the primary: a soft blue glow says it's the one Enter takes) */
 .mbtn.primary:focus, .mbtn.primary:focus-visible, #begin:focus, #begin:focus-visible { box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.9), 0 0 22px rgba(169, 214, 255, 0.45) !important; }
 .mbtn:not(.primary):focus-visible { box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.9), 0 0 16px rgba(169, 214, 255, 0.35) !important; }
+#workbook.sketch-only { background: radial-gradient(ellipse at 50% 55%, rgba(34,27,18,0.5), rgba(3,5,10,0.84)) !important; }   /* the notebook (ui/sketchbook.js): just the book on the dark */
+/* the journal: answering an invitation from its step */
+#journal .steps .inv { display: inline-flex; gap: 8px; margin-left: 12px; vertical-align: middle; }
+#journal .steps .inv button { all: unset; cursor: pointer; font: 600 13px var(--ui); padding: 4px 14px; border-radius: 999px; background: rgba(120, 190, 255, 0.92); color: #0b1a2a; box-shadow: 0 0 0 0.5px rgba(255,255,255,0.7) inset; }
+#journal .steps .inv button.no { background: rgba(255,255,255,0.18); color: #fff; }

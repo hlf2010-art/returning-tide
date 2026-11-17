@@ -25,6 +25,7 @@ export function resolve(p, r = L.radius) {
     for (let i = 0; i < colliders.length; i++) {
       const b = colliders[i];
       if (b.y1 !== undefined && p.y !== undefined && (p.y > b.y1 || p.y + 1.7 < b.y0)) continue;   // on another floor
+      if (b.y1 === undefined && p.y !== undefined && p.y < -1.6 && b.tag !== 'metro') continue;    // underground: the street's things are overhead
       const cx = p.x < b.minX ? b.minX : p.x > b.maxX ? b.maxX : p.x;
       const cz = p.z < b.minZ ? b.minZ : p.z > b.maxZ ? b.maxZ : p.z;
       const dx = p.x - cx, dz = p.z - cz;

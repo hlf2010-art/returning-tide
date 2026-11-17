@@ -507,6 +507,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     get density() { return density; },
     // fixed things in the way (a parked car as a few circles): [{ x, z, r }]
     setObstacles(list) { obstacles = list || []; },
+    get obstacles() { return obstacles; },
     // more people who may be on the carriageway: () => [{ x, z, vx, vz, crossing }]
     setExtraPeople(fn) { extraPeople = fn; },
     // a car moves over into the next lane over `dur` seconds (a cut-in)

@@ -143,7 +143,7 @@ export function createLighting(scene, lanterns, extra = []) {
     get sunShadow() { return sunShadow; },
     // the hour (engine/timeOfDay.js todState); inside: 0..1 how far indoors the player is (rooms keep
     // their own light, not the sky's)
-    setTime(st, inside = 0) {
+    setTime(st, inside = 0, under = 0) {
       T.day = st.daylight; T.lamps = st.lamps; T.sun = st.sun; T.inside = inside;
       const d = st.daylight * (1 - 0.75 * inside), up = Math.max(0, Math.min(1, st.sun.y / 0.25));
       hemi.color.copy(NIGHT.sky).lerp(DEEP.sky, st.night).lerp(DAY.sky, d);
@@ -155,6 +155,7 @@ export function createLighting(scene, lanterns, extra = []) {
         if (!sunShadow) sky.position.set(st.sun.x, Math.max(0.05, st.sun.y), st.sun.z);
         if (!sunShadow) sky.target.position.set(0, 0, 0);
       } else { sky.color.copy(NIGHT.dir); sky.intensity = NIGHT.dirI * (1 - 0.4 * st.night); sky.position.set(0.6, 1, -0.2); sky.target.position.set(0, 0, 0); }
+      if (under > 0) { hemi.intensity *= 1 - under; sky.intensity *= 1 - under; }   // underground (the metro): none of the sky's light
       sky.target.updateMatrixWorld();
       hp.material.color.copy(haloColor).multiplyScalar(st.lamps); hp.visible = st.lamps > 0.01;
       poolMat.color.copy(poolColor).multiplyScalar(st.lamps); poolMesh.visible = st.lamps > 0.01;

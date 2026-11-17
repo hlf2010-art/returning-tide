@@ -509,7 +509,7 @@ export function buildMetro(g, m, lights) {
     for (let i = 0; i < n; i++) { const [x, z] = P((i + 0.5) * tread, 0), y = CH - (i + 1) * rise; obox(steps, x, y - 0.2, z, M.dx, M.dz, tread + 0.02, 0.2 + rise, W); const [sx, sz] = P(i * tread + 0.05, 0); obox(strips, sx, y + rise - 0.004, sz, M.dx, M.dz, 0.04, 0.01, W - 0.3); }
     { const [x, z] = P((M.run + M.len) / 2, 0); obox(tile, x, -M.depth - 0.3, z, M.dx, M.dz, M.len - M.run, 0.3, W); }
     for (const s of [-1, 1]) { const [x, z] = P(M.len / 2, s * (M.hw + 0.06)); obox(walls, x, -M.depth, z, M.dx, M.dz, M.len, M.depth + CH, 0.12); obox(gl, x, CH, z, M.dx, M.dz, M.len, 1.1, 0.03); obox(st, x, CH + 1.1, z, M.dx, M.dz, M.len, 0.05, 0.06); }
-    { const [x, z] = P(M.len + 0.06, 0); obox(walls, x, -M.depth, z, M.dx, M.dz, 0.12, M.depth + CH, W + 0.24); obox(dark, x, CH, z, M.dx, M.dz, 0.14, 3.0, W + 0.24); }
+    { const [x, z] = P(M.len + 0.06, 0); if (M.exit === 1) obox(walls, x, -M.depth, z, M.dx, M.dz, 0.12, M.depth + CH, W + 0.24); else obox(walls, x, -0.8, z, M.dx, M.dz, 0.12, 0.8 + CH, W + 0.24); obox(dark, x, CH, z, M.dx, M.dz, 0.14, 3.0, W + 0.24); }
     { const [x, z] = P(M.len / 2, 0); obox(walls, x, 3.1, z, M.dx, M.dz, M.len + 0.6, 0.12, W + 0.8); obox(gl, x, 3.04, z, M.dx, M.dz, M.len + 0.4, 0.02, W + 0.6); }
     for (const t of [0, M.len]) for (const s of [-1, 1]) { const [x, z] = P(t, s * M.hw); st.box(x, CH, z, 0.1, 3.0, 0.1); }
     const sm = new THREE.MeshBasicMaterial({ map: metroSign(M) }); sm.color.setScalar(1.35); sm.userData.todSkip = true;
@@ -517,7 +517,7 @@ export function buildMetro(g, m, lights) {
     { const [x, z] = P(M.len / 2, M.hw + 0.5), p = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.1), sm); p.position.set(x, 3.6, z); p.rotation.y = Math.atan2(-M.dz, M.dx); g.add(p); const q = p.clone(); const [x2, z2] = P(M.len / 2, -M.hw - 0.5); q.position.set(x2, 3.6, z2); q.rotation.y = Math.atan2(M.dz, -M.dx); g.add(q);
       const [bx, bz] = P(M.len / 2, 0); obox(dark, bx, 3.05, bz, M.dx, M.dz, 4.5, 1.15, W + 0.9); }
     const ls = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.2, (W - 0.2) * 192 / 1024), new THREE.MeshBasicMaterial({ map: lTex })); ls.material.color.setScalar(1.3); ls.material.userData.todSkip = true;
-    { const [x, z] = P(M.len - 0.02, 0); ls.position.set(x, -M.depth + 2.5, z); ls.rotation.y = Math.atan2(-M.dx, -M.dz); g.add(ls);
+    if (M.exit === 1) { const [x, z] = P(M.len - 0.02, 0); ls.position.set(x, -M.depth + 2.5, z); ls.rotation.y = Math.atan2(-M.dx, -M.dz); g.add(ls);
       const door = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.6, 2.2), new THREE.MeshBasicMaterial({ map: cTex })); door.material.userData.todSkip = true; const [dx, dz] = P(M.len - 0.015, 0); door.position.set(dx, -M.depth + 1.1, dz); door.rotation.y = ls.rotation.y; g.add(door); }
     { const [x, z] = P(M.run + 0.8, 0); lights.push({ x, y: -M.depth + 2.6, z, color: new THREE.Color(0.95, 0.97, 1.0), intensity: 2.4, distance: 8 }); const [x2, z2] = P(M.len / 2, 0); lights.push({ x: x2, y: 2.8, z: z2, color: new THREE.Color(0.92, 0.96, 1.0), intensity: 5, distance: 9 }); }
     void ry;

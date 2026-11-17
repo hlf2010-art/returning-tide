@@ -178,7 +178,7 @@ camera.layers.enable(HELD_LAYER); camera.layers.enable(RAIN_LAYER);
 // Weather: clear <-> light drizzle only. Developer toggle F7 (dev builds / ?dev); ?weather=drizzle starts wet.
 const weather = createWeather();
 if (params.get('weather') === 'drizzle') weather.set('drizzle', { instant: true });
-const HAZE_FOG = new THREE.Color(0.072, 0.108, 0.2), FOG_DENSITY = scene.fog.density, HAZE_DENSITY = 0.00028;
+const _metroFog = new THREE.Color(0.32, 0.33, 0.34), HAZE_FOG = new THREE.Color(0.072, 0.108, 0.2), FOG_DENSITY = scene.fog.density, HAZE_DENSITY = 0.00028;
 let weatherTime = 0, suUmbrella = 0, treeLevel = -1;
 // Wind in the trees: a river breeze that rises with the drizzle. Developer control F6 cycles
 // auto / calm / breeze / windy / gale; ?wind=<level> pins it.
@@ -272,7 +272,7 @@ async function boot() {
   const entrances = createEntrances({ scene, camera, list: entranceList({ shopOpen: () => { const m = life.clock.minute; return m >= 390 && m < 1290; }, cruiseOpen: () => { const m = life.clock.minute; return m >= 9 * 60 + 30 && m < 21 * 60 + 30; }, metroOpen: () => hourState.metro }) });
   const lighting = createLighting(scene, street.lanterns, [...entrances.lights, ...dumpling.lights, { ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...buses.lights, ...nanjing.lights, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
   // Lujiazui, across the river (world/lujiazui.js): built when you first go there, hidden while you're on the Bund
-  const ljz = createLujiazui({ scene, camera, M, people, hud, audio, player, travel, skyline, dests, lighting, renderer: R.renderer, getLife: () => life, save: () => saveLife(), metroOpen: () => hourState.metro, trafficFactor: params.has('q') && !params.has('traffic') ? 0.6 : gfxDetail({ ...gfx, lod: bootLod }).traffic });
+  const ljz = createLujiazui({ scene, camera, M, people, hud, audio, player, travel, skyline, dests, lighting, renderer: R.renderer, getLife: () => life, save: () => saveLife(), metroOpen: () => hourState.metro, metroPassage: () => world.metro.fromExit1(), trafficFactor: params.has('q') && !params.has('traffic') ? 0.6 : gfxDetail({ ...gfx, lod: bootLod }).traffic });
   // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
   for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
     g.traverse((o) => {
@@ -299,7 +299,7 @@ async function boot() {
   const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode, voice, testDrive: () => driving.testDrive() });
   if (life.flags.carBuy && ['booked', 'viewed', 'specced'].includes(life.flags.carBuy.stage) && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');   // (met her but not ordered: she's still there)
   // once it's yours: drive it (world/driving.js)
-  const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale });
+  const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []) });
   world = { baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
@@ -315,8 +315,8 @@ async function boot() {
   }
   // the friends in person after the first days (world/friendScenes.js): Ruoan at the AIA, Momo in 612, LiDAR scans
   world.friends = createFriendScenes({ scene, people, hud, audio, voice, getLife: () => life, save: () => saveLife(), player, interiors });
-  // down the metro stairs: one stop to Lujiazui, or through to the other exit (world/metro.js)
-  world.metro = createMetro({ hud, audio, player, travel, getLife: () => life, save: () => saveLife(), arriveAt: (id, info) => world.dest.arrive(id, info), open: () => hourState.metro });
+  // Line 2: down an exit's stairs, through the gates, a real train under the river to Lujiazui and back (world/metro.js)
+  world.metro = createMetro({ scene, camera, renderer: R.renderer, hud, audio, voice, player, people, travel, getLife: () => life, save: () => saveLife(), open: () => hourState.metro, onPudongSoon: () => world.ljz.buildAsync() });
   // the story: a sat-down conversation, and dinner with Dad (world/story.js, world/dinner.js)
   world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], ...MOMENT_NAMES } });
   world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
@@ -429,6 +429,7 @@ function driveMode(m) {
 function sceneText(extra = '') {
   if (world.year && world.year.here) return `${world.year.sceneText(clockOf(life.clock.minute))}${extra ? ` ${extra}` : ''}`;   // at the firm, or in his flat
   const b = player.body, l = life, m = l.clock.minute, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
+  { const ml = world.metro && world.metro.sceneLine(); if (ml) return `${clockOf(m)}, ${ml}.${extra ? ` ${extra}` : ''}`; }   // in the metro
   if (world.ljz && world.ljz.here(b)) return world.ljz.sceneLine(clockOf(m), weather.rain > 0.3, extra);   // in Lujiazui
   const where = world.makerspace && world.makerspace.here ? 'the Yangpu riverside makerspace in an old brick factory: benches, 3D printers humming, a CNC, a whiteboard of sketches' : world.dest && world.dest.here === 'lujiazui' ? 'the 32nd floor of IFC in Lujiazui, a robot-arm start-up\'s office, the Bund lit up across the river'
     : world.dest && world.dest.here === 'northbund' ? 'an empty top-floor show flat on the North Bund, 160 m up, the river and Lujiazui through the glass'
@@ -800,7 +801,7 @@ function interact() {
     world.baristas.greet();
   }
 }
-player.onStep = (surface, running, landing) => audio.step(surface, running, landing);
+player.onStep = (surface, running, landing) => audio.step(world && world.metro && world.metro.under > 0.5 ? 'stone' : surface, running, landing);   // (underground: the station's granite, whatever is overhead)
 // If the browser kept the context suspended despite the Begin click, any later gesture wakes it.
 for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => {
   const c = audio.getContext();
@@ -1003,7 +1004,7 @@ function openWork(where = 'read', tab = null) {
   workbook.open(where, tab);
 }
 const journal = createJournal({
-  getLife: () => life, defs: QUESTS, work: (L) => workSummaryHtml(L),
+  getLife: () => life, defs: QUESTS, work: (L) => workSummaryHtml(L), onAnswer: (inv) => { saveLife(); hud.toast(getLang() === 'zh' ? (inv.status === 'accepted' ? '已接受邀请' : '已婉拒') : (inv.status === 'accepted' ? 'Invitation accepted' : 'Declined'), 2.4); },
   onClose: () => { if (mode === 'journal') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } },
   onWait: (at) => travel(() => { lifeSkipTo(life, at); saveLife(); questIn = 0; }, { line: (yearPassLine(life, at, getLang()) ? `${yearPassLine(life, at, getLang())} · ` : '') + tx('questWait', lifeClock(at % 1440)), hold: 900 }),
 });
@@ -1109,7 +1110,7 @@ function mapBlips() {
 function updateMap(dt) {
   const b = player.body;
   if (waypoint && Math.hypot(waypoint.x - b.x, waypoint.z - b.z) < 6) { waypoint = null; hud.toast(tx('waypointHere'), 2.4); }
-  const obj = mapTarget(), zone = zoneAt(b.x, b.z, L);
+  const obj = mapTarget(), zone = (world.metro && world.metro.areaKey) || zoneAt(b.x, b.z, L);
   updateMinimap(mapState, dt, { mode, moving: player.speed > 0.6, objective: !!obj, zone, held: mapHeld });
   minimap.setShown(mapState.shown);
   document.getElementById('hud').classList.toggle('map-on', mapState.shown);
@@ -1169,7 +1170,8 @@ function updateTraffic(dt) {
     const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others(), ...world.moments.others(), ...world.fieldTest.others()];
     others.push(...world.hearts.others());
     others.push(...world.confront.others());                                        // (the crowd walks round a row, too)
-    cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : b, canSpawnAt, others });
+    cr.setCars(traffic.obstacles);                                                   // the Huracán, parked or driven: walked round, not through
+    cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others });
     world.crowdView.update(dt, eye, { rain: weather.rain });
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
     crowdHear -= dt;
@@ -1222,9 +1224,10 @@ function applyHour(dt, { force = false } = {}) {
   const s = hourState = todState(minute);
   w.sky.setTime(s); w.skyline.setTime(s); w.river.setTime(s); setArchLight(s); applyDayNight(s); setCrowdLight(s);
   const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
-  const inside = world && (world.upper.here || world.dest.here || world.makerspace.here) ? 1 : inR(PEACE) || inR(AIA) ? 0.8 : 0;
-  w.lighting.setTime(s, inside);
-  R.renderer.toneMappingExposure = s.exposure * (1 + 0.25 * inside * s.daylight);
+  const under = world && world.metro ? world.metro.under : 0;                         // down in the metro: its own light, not the sky's
+  const inside = Math.max(under, world && (world.upper.here || world.dest.here || world.makerspace.here) ? 1 : inR(PEACE) || inR(AIA) ? 0.8 : 0);
+  w.lighting.setTime(s, inside, under);
+  R.renderer.toneMappingExposure = THREE.MathUtils.lerp(s.exposure * (1 + 0.25 * inside * s.daylight), 0.92, under);
   R.bloom.strength = s.bloom;
   if (world) {
     if (world.crowd) world.crowd.setActive(s.crowd, { dawn: s.dawn, instant: jump || force });
@@ -1311,6 +1314,7 @@ function frame(now) {
   world.moments.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });
   world.confront.update(mode === 'pause' ? 0 : dt, { mode });                          // the row outside the hotel: its rules, before your own step
   world.cruise.update(mode === 'pause' ? 0 : dt, player);                              // the boat moves, carrying whoever's aboard (before your own step)
+  world.metro.pre(mode === 'pause' ? 0 : dt);                                          // so do the trains
   world.dumpling.update(mode === 'pause' ? 0 : dt, player.body);
   world.baristas.update(mode === 'pause' ? 0 : dt, player.body);
   world.entrances.update(dt, { eye: camera.position, prompting: !!target, active: mode === 'play' || mode === 'ride' });
@@ -1338,11 +1342,13 @@ function frame(now) {
   applyHour(dt);
   scene.fog.density = FOG_DENSITY * hourState.fog + HAZE_DENSITY * weather.haze;
   fogColorAt(hourState, scene.fog.color).lerp(_hazeFog.copy(HAZE_FOG).lerp(DAY_HAZE_FOG, hourState.daylight), weather.haze);
+  if (world.metro.under > 0) { const u = world.metro.under; scene.fog.density = THREE.MathUtils.lerp(scene.fog.density, 0.0026, u); scene.fog.color.lerp(_metroFog, u); }   // a long platform's own haze
   audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye) || world.belongings.umbrellaUp);
   // the light shows (the Pearl's colours, LED façades, boats' strips, screens); debug.freezeShow holds them for tools
   const showT = debug.freezeShow ? 0 : t;
   world.sky.update(t, weather.haze); world.skyline.update(showT); world.river.update(t, dt, showT); world.bund.update(t); world.street.update(t); world.nanjing.update(showT);
   world.ljz.update(mode === 'pause' ? 0 : dt, player.body, { eye: camera.position, hour: hourState, playing: mode === 'play' });   // Lujiazui (only when you're there)
+  world.metro.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });         // Line 2 (only near a station or aboard)
   world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);
   { const tl = params.has('q') ? R.level : treeStep(gfx, R.drop); if (tl !== treeLevel) { treeLevel = tl; world.trees.setQuality(tl); } }
   if (world.playerBody) world.playerBody.shadow.visible = world.lighting.shadowCount > 0;   // the shadow copy only matters with shadows

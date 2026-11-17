@@ -10,15 +10,19 @@ import { towerAtlas } from './skyline.js';
 const FX = L.facadeX;
 const NAMES = ['stone', 'stoneDark', 'flute', 'classic', 'arched', 'rustic', 'deco', 'brick', 'roof', 'copper', 'bronze', 'glassDark'];
 
-export function facade(B, style, ax, az, bx, bz, y0, y1, { bay = 4, floors = 1, f0 = 1, f1 = 0.6, seed = 0 } = {}) {
+export function facade(B, style, ax, az, bx, bz, y0, y1, { bay = 4, floors = 1, f0 = 1, f1 = 0.6, seed = 0, holes = null } = {}) {
   const len = Math.hypot(bx - ax, bz - az);
-  if (style === 'stone' || style === 'stoneDark') {
-    B[style].wall(ax, az, bx, bz, y0, y1, [0, y0 / 2, len / 2, y1 / 2], [f0, f1]);
-    return;
-  }
-  const bays = Math.max(1, Math.round(len / bay));
-  const uo = (seed * 3) % 8, vo = (seed * 5) % 4;
-  B[style].wall(ax, az, bx, bz, y0, y1, [uo / 8, vo / 4, (uo + bays) / 8, (vo + floors) / 4], [f0, f1]);
+  let uv;
+  if (style === 'stone' || style === 'stoneDark') uv = [0, y0 / 2, len / 2, y1 / 2];
+  else { const bays = Math.max(1, Math.round(len / bay)), uo = (seed * 3) % 8, vo = (seed * 5) % 4; uv = [uo / 8, vo / 4, (uo + bays) / 8, (vo + floors) / 4]; }
+  if (!holes || !holes.length) { B[style].wall(ax, az, bx, bz, y0, y1, uv, [f0, f1]); return; }
+  // a face with doorways cut out of it ([t0, t1] along it as fractions, open up to height h): the pieces round them
+  const P = (t) => [ax + (bx - ax) * t, az + (bz - az) * t], U = (t) => uv[0] + (uv[2] - uv[0]) * t;
+  const V = (y) => uv[1] + (uv[3] - uv[1]) * (y - y0) / (y1 - y0), Fl = (y) => f0 + (f1 - f0) * (y - y0) / (y1 - y0);
+  const piece = (t0, t1, ya, yb) => { if (t1 - t0 > 1e-4 && yb - ya > 1e-4) B[style].wall(...P(t0), ...P(t1), ya, yb, [U(t0), V(ya), U(t1), V(yb)], [Fl(ya), Fl(yb)]); };
+  let t = 0;
+  for (const [h0, h1, h] of [...holes].sort((a, b) => a[0] - b[0])) { piece(t, h0, y0, y1); piece(h0, h1, Math.min(y1, Math.max(y0, h)), y1); t = h1; }
+  piece(t, 1, y0, y1);
 }
 
 // Stack of storeys on a rectangular footprint {x0 (west), x1 (east), z0 (north), z1 (south)}.
@@ -32,9 +36,11 @@ export function tiers(B, fp, y0, list, faces = 'ENS', seed = 0, faceGain = {}) {
       const g = faceGain[face] ?? 1;
       return { bay: t.bay || 4, floors: t.floors || 1, f0: (t.f0 ?? 1) * g, f1: (t.f1 ?? 0.62) * g, seed: seed++ };
     };
-    if (faces.includes('E')) facade(B, t.style, x1, z1, x1, z0, y, y1, o('E'));
+    // doorways (fp.holes: { E: [[zA, zB, h]], S: [[xA, xB, h]] } from the ground), in the bottom tier's faces
+    const H = (f) => (fp.holes && fp.holes[f] && y === y0 && !i ? fp.holes[f].map(([a, b, h]) => (f === 'E' ? [(z1 - Math.max(a, b)) / (z1 - z0), (z1 - Math.min(a, b)) / (z1 - z0), h] : [(Math.min(a, b) - x0) / (x1 - x0), (Math.max(a, b) - x0) / (x1 - x0), h])) : null);
+    if (faces.includes('E')) facade(B, t.style, x1, z1, x1, z0, y, y1, { ...o('E'), holes: H('E') });
     if (faces.includes('N')) facade(B, t.style, x1, z0, x0, z0, y, y1, o('N'));
-    if (faces.includes('S')) facade(B, t.style, x0, z1, x1, z1, y, y1, o('S'));
+    if (faces.includes('S')) facade(B, t.style, x0, z1, x1, z1, y, y1, { ...o('S'), holes: H('S') });
     if (faces.includes('W')) facade(B, t.style, x0, z0, x0, z1, y, y1, o('W'));
     if (t.cornice) {
       const c = t.cornice;
@@ -233,9 +239,9 @@ function hankouRoadNorth(B) {
 
 // ---------- the rest of the row ----------
 
-function genericBlock(B, extra, z0, z1, h, { style = 'classic', seed = 0, feature = null, x0 = -84, gain = 1 } = {}) {
+function genericBlock(B, extra, z0, z1, h, { style = 'classic', seed = 0, feature = null, x0 = -84, gain = 1, holes = null } = {}) {
   const base = 7, attic = 4.2, floors = Math.max(1, Math.round((h - base - attic) / 4.4));
-  const y = tiers(B, { x0, x1: FX, z0, z1 }, 0, [
+  const y = tiers(B, { x0, x1: FX, z0, z1, holes }, 0, [
     { h: base, style: style === 'brick' ? 'rustic' : style === 'deco' ? 'deco' : 'rustic', bay: 4.2, f0: 1.05 * gain, f1: 0.85 * gain, cornice: { out: 0.4, h: 0.6 } },
     { h: h - base - attic, style, floors, bay: 4.2, f0: 0.95 * gain, f1: 0.6 * gain, cornice: { out: 0.85, h: 0.9 } },
     { h: attic, style: style === 'deco' ? 'deco' : 'classic', floors: 1, bay: 4.2, inset: 0.5, f0: 0.85 * gain, f1: 0.7 * gain, cornice: { out: 0.4, h: 0.5 } },
@@ -264,7 +270,7 @@ function aiaBuilding(B, extra, z0, z1) {
   // that crown the Bund corners. Its entrance, a tall arched doorway at the centre of the Bund front,
   // opens on the lobby (world/interiors/aia.js).
   const zc = (z0 + z1) / 2;
-  tiers(B, { x0: -84, x1: FX, z0, z1 }, 0, [
+  tiers(B, { x0: -84, x1: FX, z0, z1, holes: { E: [[zc - 1.7, zc + 1.7, 4.75]] } }, 0, [         // the doorway is a real opening (the lobby: world/interiors.js)
     { h: 8.2, style: 'rustic', bay: 4.1, f0: 1.15, f1: 0.95, cornice: { out: 0.45, h: 0.7 } },
   ], 'ENS', 21);
   tiers(B, { x0: -84, x1: FX - 1.2, z0, z1 }, 8.2, [
@@ -293,7 +299,7 @@ function aiaBuilding(B, extra, z0, z1) {
 
 function peaceHotel(B, extra, z0, z1) {
   // Sassoon House: the green copper pyramid that everyone knows
-  genericBlock(B, extra, z0, z1, 40, { style: 'deco', seed: 5 });
+  genericBlock(B, extra, z0, z1, 40, { style: 'deco', seed: 5, holes: { S: [[-50, -46, 3.2]] } });   // the revolving door on Nanjing Road is a real opening (world/interiors.js)
   const zc = z1 - 9;
   const y = tiers(B, { x0: FX - 17, x1: FX - 1, z0: zc - 8, z1: zc + 8 }, 40, [
     { h: 13, style: 'deco', floors: 3, bay: 4, f0: 1.1, f1: 0.85, cornice: { out: 0.4, h: 0.6 } }], 'ENSW', 2);

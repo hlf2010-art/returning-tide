@@ -7,9 +7,11 @@ one short street (Hankou Road), ~155 m of the Bund promenade with two conversing
 
 ## In this build
 
-- **Getting around:** the Bund–Lujiazui ferry from the cruise pier (E at the green ferry board; every 15 min, 06:00–23:00, ¥2) and back from the ferry sign on West Lujiazui Road; Line 2 and DiDi as before.
+- **Metro Line 2 (East Nanjing Road ⇄ Lujiazui), walked and ridden:** down Exit 7 or 2 (Henan Road) or Lujiazui's Exits 6 and 4 into a real concourse; with a bag, security stops you until it's been through the X-ray (E at the belt); E at a gate taps Alipay's transit code (¥3, charged on the way out); escalators (they carry you) or the stair down to an island platform behind screen doors; a real 8-car train every minute each way (5:30–23:00), the alert tone and announcements in Mandarin and English, doors that open on the left; ride it under the river (about 90 s) with the screens over the doors showing the next station. Commuters, riders and staff; procedural station and train sound. See `docs/metro.md`.
+- **Getting around:** the Bund–Lujiazui ferry from the cruise pier (E at the green ferry board; every 15 min, 06:00–23:00, ¥2) and back from the ferry sign on West Lujiazui Road; DiDi as before.
+- **The notebook:** E at the desk in 612 (or N) opens Ji Bai's notebook: handwriting and pen sketches (the first week, the night gimbal before it exists, the robot arm, Dad); ← → turn the pages.
 - **The Huracán:** E at the parked car starts the purchase (Zhixia sends the dealer's card); Vivian offers a test drive ("Can I take it for a drive?"); a bought car is delivered on day 7 and drives from either side.
-- **Voices:** every scripted line is recorded in Mandarin and English (1,461 clips, Kokoro-82M via `tools/voice/generate.py`); only lines made up at runtime (free conversation, lines with live numbers) fall back to subtitles. The browser's synthetic speech is never used.
+- **Voices:** every scripted line is recorded in Mandarin and English (1,491 clips, Kokoro-82M via `tools/voice/generate.py`); only lines made up at runtime (free conversation, lines with live numbers) fall back to subtitles. The browser's synthetic speech is never used.
 - **Phone:** voice notes play with a progress bar (↑/↓ and Enter, or click), videos play in the chat, calls play their recorded lines.
 - **Streets:** pedestrians look ahead and pass each other, use kerbs and crossings without sticking, and flinch when they do brush; Manner has two baristas at work; the buses are painted metal with glass and an interior.
 - **UI:** liquid glass (`src/ui/glass.css`, icons in `src/ui/icons.js`), after inZOI's design: frosted panels with hairline edges, pill controls, icons where a word isn't needed.

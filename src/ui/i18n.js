@@ -123,6 +123,8 @@ export const S = {
 // Lujiazui's areas (world/lujiazuiLayout.js ljzZone)
 Object.assign(S.areas, { ring: { zh: '明珠环 · 人行天桥', en: 'The Mingzhu Ring' }, roundabout: { zh: '陆家嘴环岛', en: 'Lujiazui Roundabout' }, century: { zh: '世纪大道', en: 'Century Avenue' }, ifc: { zh: '国金中心', en: 'Shanghai IFC' },
   apple: { zh: 'Apple 浦东', en: 'Apple Pudong' }, green: { zh: '陆家嘴中心绿地', en: 'Lujiazui Central Green' }, ljzMetro: { zh: '陆家嘴站', en: 'Lujiazui Station' } });
+// Line 2's stations, under the street (world/metro.js areaKey)
+Object.assign(S.areas, { enrConc: { zh: '南京东路站 · 站厅', en: 'East Nanjing Rd · concourse' }, enrPlat: { zh: '南京东路站 · 2号线站台', en: 'East Nanjing Rd · Line 2' }, ljzConc: { zh: '陆家嘴站 · 站厅', en: 'Lujiazui · concourse' }, ljzPlat: { zh: '陆家嘴站 · 2号线站台', en: 'Lujiazui · Line 2' }, metroTrain: { zh: '地铁2号线 · 车厢', en: 'Line 2 · aboard' } });
 
 // a key from S (functions are called with args)
 export function t(key, ...args) {

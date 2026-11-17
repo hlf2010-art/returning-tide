@@ -21,7 +21,17 @@ export function createHuracan(scene) {
     // which way is the front: from the front wheels to the rear ones
     const pos = (n) => { const o = root.getObjectByName(n); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
     const lf = pos('Wheel_02_LF_19'), lr = pos('Wheel_02_LR_20'), rf = pos('Wheel_02_RF_21');
-    for (const n of ['Wheel_02_LF_19', 'Wheel_02_LR_20', 'Wheel_02_RF_21', 'Wheel_02_RR_22']) { const w = root.getObjectByName(n); if (w) S.wheels.push(w); }
+    // each wheel turns about its own axle: the model's wheel nodes have their origin elsewhere (the car's),
+    // so each is hung from a pivot at its hub (the centre of its own bounds), the axle running left to right
+    const axleW = lf && rf ? new THREE.Vector3().subVectors(rf, lf).normalize() : new THREE.Vector3(1, 0, 0);
+    for (const n of ['Wheel_02_LF_19', 'Wheel_02_LR_20', 'Wheel_02_RF_21', 'Wheel_02_RR_22']) {
+      const w = root.getObjectByName(n); if (!w) continue;
+      const parent = w.parent, hub = new THREE.Box3().setFromObject(w).getCenter(new THREE.Vector3());
+      const pivot = new THREE.Object3D(); pivot.name = `${n}-hub`; pivot.position.copy(parent.worldToLocal(hub.clone())); parent.add(pivot); pivot.updateMatrixWorld(true);
+      pivot.attach(w);
+      const q = parent.getWorldQuaternion(new THREE.Quaternion()).invert(), axle = axleW.clone().applyQuaternion(q).normalize();
+      S.wheels.push({ pivot, axle });
+    }
     const fwd = lf && lr ? new THREE.Vector3().subVectors(lf, lr).setY(0).normalize() : new THREE.Vector3(0, 0, 1);
     // stand it on the ground, centred
     const box = new THREE.Box3().setFromObject(root), c = box.getCenter(new THREE.Vector3());
@@ -63,7 +73,7 @@ export function createHuracan(scene) {
     get size() { return S.size || null; },
     // your colour, on delivery (the model's car-paint materials)
     setPaint(hex) { if (S.root) S.root.traverse((o) => { if (o.isMesh && /CarPaint|Coloured/i.test(o.material.name || '')) { o.material.color.setHex(hex); if (o.material.map) o.material.map = null; o.material.needsUpdate = true; } }); },
-    spinWheels(dist) { for (const w of S.wheels) w.rotation.x = dist / 0.34; },
+    spinWheels(dist) { for (const w of S.wheels) w.pivot.quaternion.setFromAxisAngle(w.axle, -dist / 0.34); },
   };
 }
 

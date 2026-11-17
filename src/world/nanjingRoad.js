@@ -281,7 +281,7 @@ export function createNanjingRoad(M) {
     // walls of the well, below the street: white tile; the end wall carries the way in
     for (const z of [m.z0 - 0.06, m.z1 + 0.06]) walls.box((m.x0 + m.x1) / 2, -METRO_DEPTH, z, m.x1 - m.x0, METRO_DEPTH + CH, 0.12);
     const endX = m.top === m.x1 ? m.x0 - 0.06 : m.x1 + 0.06;
-    walls.box(endX, -METRO_DEPTH, zc, 0.12, METRO_DEPTH + CH, wz + 0.24);
+    walls.box(endX, -0.8, zc, 0.12, 0.8 + CH, wz + 0.24);                                                // (below: open on to the concourse)
     P.dark.box(endX, CH, zc, 0.14, 3.0, wz + 0.24);                                                   // above the street: a dark glass panel
     walls.box((m.x0 + m.x1) / 2, 3.1, zc, m.x1 - m.x0 + 0.6, 0.12, wz + 0.8);                         // canopy roof frame
     // glass balustrades (three sides) and the canopy's glass
@@ -295,20 +295,8 @@ export function createNanjingRoad(M) {
     for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(wz + 0.4, (wz + 0.4) / 4), signMat); p.position.set(topX, 3.55, zc); p.rotation.y = s * Math.PI / 2; group.add(p); }
     const side = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.1), signMat); side.position.set((m.x0 + m.x1) / 2, 3.55, m.z1 + 0.42); group.add(side);
     const sb = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1.2, 0.8), new THREE.MeshStandardMaterial({ color: 0x1c1f24, roughness: 0.5 })); sb.position.set((m.x0 + m.x1) / 2, 3.55, m.z1 + 0.0); group.add(sb);
-    // at the bottom: the way in, lit
-    const ls = new THREE.Mesh(new THREE.PlaneGeometry(wz - 0.2, (wz - 0.2) * 192 / 1024), new THREE.MeshBasicMaterial({ map: landingSign() }));
-    ls.material.color.setScalar(1.3); ls.position.set(endX + (m.top === m.x1 ? 0.07 : -0.07), -METRO_DEPTH + 2.5, zc); ls.rotation.y = m.top === m.x1 ? Math.PI / 2 : -Math.PI / 2; group.add(ls);
-    const door = new THREE.Mesh(new THREE.PlaneGeometry(wz - 0.6, 2.2), new THREE.MeshBasicMaterial({ map: concourseTex() })); door.material.color.setScalar(0.95);
-    door.position.set(endX + (m.top === m.x1 ? 0.075 : -0.075), -METRO_DEPTH + 1.1, zc); door.rotation.y = ls.rotation.y; group.add(door);
     lights.push({ x: (lx0 + lx1) / 2, y: -METRO_DEPTH + 2.6, z: zc, color: new THREE.Color(0.95, 0.97, 1.0), intensity: 2.2, distance: 8 });
     lights.push({ x: (m.x0 + m.x1) / 2, y: 2.8, z: zc, color: new THREE.Color(0.92, 0.96, 1.0), intensity: 5, distance: 9 });
-    // on the side wall: the way through the concourse to the other exit
-    const other = METRO.find((o) => o !== m), [tc, tx] = makeCanvas(512, 128);
-    tx.fillStyle = '#16181c'; tx.fillRect(0, 0, 512, 128); tx.fillStyle = '#ffd400'; tx.fillRect(16, 16, 96, 96);
-    tx.fillStyle = '#111'; tx.font = `900 70px ${FONT.sans}`; tx.textAlign = 'center'; tx.textBaseline = 'middle'; tx.fillText(String(other.exit), 64, 66);
-    tx.fillStyle = '#fff'; tx.textAlign = 'left'; tx.font = `800 46px ${FONT.sans}`; tx.fillText(`${other.exit}号口 →`, 136, 48); tx.font = `500 26px ${FONT.sans}`; tx.fillText(`Exit ${other.exit} · 河南中路`, 138, 96);
-    const ts = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.4), new THREE.MeshBasicMaterial({ map: tex(tc, { repeat: false }) }));
-    ts.material.color.setScalar(1.3); ts.position.set((lx0 + lx1) / 2 + (m.top === m.x1 ? 0.6 : -0.6), -METRO_DEPTH + 2.1, m.z0 + 0.01); group.add(ts);
     m.sign = { x: topX, z: zc };
   }
   // LED screens

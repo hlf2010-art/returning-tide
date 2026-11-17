@@ -3,6 +3,7 @@
 // how each of them feels about you. Also the ending card when the story reaches one.
 // In a year game (engine/year.js): the date instead of a day number, and a page for where his life
 // stands: the job, how the firm sees him, pay and rent, the start-up's books, the watch-repairer.
+import { respondToInvite } from '../world/agenda.js';
 import { journal, track, currentStep, txt } from '../engine/quests.js';
 import { relation, clockText, stamp } from '../engine/life.js';
 import { PEOPLE } from '../world/cast.js';
@@ -51,7 +52,7 @@ function yearHtml(L) {
     ${h ? `<h3>${T('修表匠', 'The watch-repairer')}</h3>${row(T('文件袋', 'The pouch'), h.outcome === 'opened' ? T('拆开看过', 'opened and read') : T('封条完好', 'seal intact'))}${W.watch.result ? row(T('后来', 'Afterwards'), W.watch.result === 'saved' ? T('人找到了，摊子保住了', 'found alive; the stall saved') : T('摊子易了主', 'the stall changed hands')) : ''}` : ''}
     <p>${T('工资和房租随月份从银行卡进出；工作日不去上班，是要算账的。这一页只是记录，改变它的是你做的事。', 'Salary and rent move through the bank as the months pass. A working day missed is counted. This page only records: what changes it is what you do.')}</p></div>`;
 }
-export function createJournal({ getLife, defs, onWait, onClose, work = null }) {
+export function createJournal({ getLife, defs, onWait, onClose, work = null, onAnswer = null }) {
   const root = document.createElement('div'); root.id = 'journal'; root.className = 'hidden'; root.setAttribute('role', 'dialog');
   document.body.appendChild(root);
   const card = document.createElement('div'); card.id = 'ending-card'; document.body.appendChild(card);
@@ -69,7 +70,12 @@ export function createJournal({ getLife, defs, onWait, onClose, work = null }) {
     if (sel) {
       const waitAt = sel.tracked && cur && cur.wait && cur.wait > now + 5 ? cur.wait : null;
       detail = `<div class="act">${sel.act ? esc(T(...ACTS[sel.act])) : ''}</div><h2>${esc(sel.title)}</h2><p class="sum">${esc(sel.summary)}</p>
-        <ol class="steps">${sel.steps.map((s) => `<li class="${s.done ? 'done' : s.skipped ? 'skipped' : s.current ? 'current' : ''}">${esc(s.text)}${s.optional ? ` <i>${T('可选', 'optional')}</i>` : ''}</li>`).join('')}</ol>
+        <ol class="steps">${sel.steps.map((s, i) => {
+          // a step that is answering an invitation: answer it here too (the same as the card in WeChat)
+          const def = ((defs.find((q) => q.id === sel.id) || {}).steps || [])[i], inv = def && def.invite && L.invites.find((v) => v.id === def.invite);
+          const ask = inv && inv.status === 'pending' ? `<span class="inv"><button data-act="invite" data-id="${esc(inv.id)}" data-yes="1">${T('接受', 'Accept')}</button><button data-act="invite" data-id="${esc(inv.id)}" data-yes="0" class="no">${T('婉拒', 'Decline')}</button></span>` : '';
+          return `<li class="${s.done ? 'done' : s.skipped ? 'skipped' : s.current ? 'current' : ''}">${esc(s.text)}${s.optional ? ` <i>${T('可选', 'optional')}</i>` : ''}${ask}</li>`;
+        }).join('')}</ol>
         <div class="acts">${sel.status === 'active' && !sel.tracked ? `<button data-act="track" data-id="${sel.id}">${T('追踪', 'Track')}</button>` : ''}
         ${waitAt ? `<button data-act="wait" data-at="${waitAt}">${T(`等到 ${clockText(waitAt)}`, `Wait until ${clockText(waitAt)}`)}</button>` : ''}</div>`;
     }
@@ -95,6 +101,7 @@ export function createJournal({ getLife, defs, onWait, onClose, work = null }) {
     if (b.dataset.tab) { S.tab = b.dataset.tab; render(); return; }
     if (b.dataset.act === 'close') { api.close(); return; }
     if (b.dataset.act === 'track') { track(getLife(), b.dataset.id); render(); return; }
+    if (b.dataset.act === 'invite') { const L = getLife(), inv = respondToInvite(L, b.dataset.id, b.dataset.yes === '1'); if (inv && onAnswer) onAnswer(inv); render(); return; }
     if (b.dataset.act === 'wait') { const at = +b.dataset.at; api.close(); onWait && onWait(at); }
   });
   const api = {

@@ -7,6 +7,7 @@
 // and firmware), or from the journal's Work tab (read only). The clock stands still while it's open;
 // making a version takes its hours through a fade, like the 3D printer does.
 import { getLang } from './i18n.js';
+import { createSketchbook } from './sketchbook.js';
 import { clockText, stamp } from '../engine/life.js';
 import { level, maker, solderJoint, solderWindow } from '../engine/maker.js';
 import { studio, hasProduct, rev, specs, summary, isOpen, eveningOf, todays, quotable, unwritten, canWrite, writePage, knownFixes, revise, setPrice, goesLeft, batteryLeft,
@@ -68,6 +69,8 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
   const S = { open: false, where: 'read', tab: 'tonight', line: null, plan: new Set(), pick: new Set(), solder: null, note: '' };
   const L0 = () => getLife();
   const can = () => S.where !== 'read';
+  const sketch = createSketchbook({ audio });
+  const sketchOn = () => S.open && (!hasProduct(L0()) || S.tab === 'sketch');
 
   function tonightTab(L) {
     const St = studio(L), eve = eveningOf(L), tests = todays(L), qs = quotable(L), cw = canWrite(L), pg = St.pages[eve];
@@ -130,14 +133,19 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
   }
   function render() {
     const L = L0();
-    if (!hasProduct(L)) { root.innerHTML = `<div class="panel"><div class="ph"><span>${T('本子', 'Notebook')}</span><button class="x" data-act="close">✕</button></div><p class="hint">${T('本子是空的。先在杨浦的创客空间把夜行云台做出来。', 'The notebook is empty. Build the night gimbal at the Yangpu makerspace first.')}</p></div>`; return; }
-    const tabs = [['tonight', T('今晚', 'Tonight')], ['issues', T('问题', 'Issues')], ['pages', T('记录', 'Pages')], ['list', T('名单', 'List')]];
+    // before there's anything to work on: the notebook itself, open on the desk (ui/sketchbook.js)
+    root.classList.toggle('sketch-only', !hasProduct(L));
+    if (!hasProduct(L)) { root.innerHTML = `<div class="sb-host"></div>`; sketch.mount(root.firstElementChild, L0); return; }
+    sketch.unmount();
+    const tabs = [['tonight', T('今晚', 'Tonight')], ['issues', T('问题', 'Issues')], ['pages', T('记录', 'Pages')], ['list', T('名单', 'List')], ['sketch', T('手稿', 'Sketches')]];
     const where = { desk: T('612 的书桌', 'the desk in 612'), bench: T('杨浦的工作台', 'your bench in Yangpu'), read: T('翻看', 'reading') }[S.where];
-    const body = S.solder ? solderView(L) : S.tab === 'tonight' ? tonightTab(L) : S.tab === 'issues' ? issuesTab(L) : S.tab === 'pages' ? pagesTab(L) : listTab(L);
+    const body = S.solder ? solderView(L) : S.tab === 'tonight' ? tonightTab(L) : S.tab === 'issues' ? issuesTab(L) : S.tab === 'pages' ? pagesTab(L) : S.tab === 'sketch' ? '<div class="sb-host in-tab"></div>' : listTab(L);
     root.innerHTML = `<div class="panel"><div class="ph"><span>${esc(P(PRODUCT))} · ${T(`第 ${rev(L)} 版`, `version ${rev(L)}`)}</span><span class="wh">${where}</span><button class="x" data-act="close" aria-label="close">✕</button></div>
       <div class="specs">${specLine(L)}</div>
       ${S.solder ? '' : `<div class="tabs">${tabs.map(([id, t]) => `<button data-tab="${id}" class="${S.tab === id ? 'on' : ''}">${t}${id === 'issues' && unwritten(L).length ? `<em>${unwritten(L).length}</em>` : ''}</button>`).join('')}</div>`}
       <div class="body">${body}</div>${S.note ? `<p class="note">${esc(S.note)}</p>` : ''}<div class="foot">${S.solder ? T('空格 焊', 'Space to solder') : T('Esc 合上', 'Esc to close')}</div></div>`;
+    root.classList.toggle('sketch-tab', S.tab === 'sketch' && !S.solder);
+    if (S.tab === 'sketch' && !S.solder) sketch.mount(root.querySelector('.sb-host'), L0);
   }
   function finish(quality) {
     const L = L0(), ids = [...S.pick], r = revise(L, ids, S.where === 'desk' ? 'desk' : 'bench', { quality });
@@ -189,8 +197,9 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
         return true;
       }
       if (code === 'Escape' || code === 'KeyN') { api.close(); return true; }
+      if (sketchOn() && sketch.key(code)) return true;
       const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(code);
-      if (i >= 0) { S.tab = ['tonight', 'issues', 'pages', 'list'][i]; render(); }
+      if (i >= 0 && hasProduct(L0())) { S.tab = ['tonight', 'issues', 'pages', 'list'][i]; render(); }
       return true;
     },
     update(dt) {

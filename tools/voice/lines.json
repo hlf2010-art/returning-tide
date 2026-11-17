@@ -2985,6 +2985,81 @@
   "en": "Hey, Ji Bai! Your bench is waiting. Parts are on the shelf by the door."
  },
  {
+  "who": "metropa",
+  "zh": "开往广兰路方向的列车即将进站，请站在黄色安全线以内候车，先下后上。",
+  "en": "The train to Guanglan Road is arriving. Please stand behind the yellow line, and let passengers off first."
+ },
+ {
+  "who": "metropa",
+  "zh": "开往徐泾东方向的列车即将进站，请站在黄色安全线以内候车，先下后上。",
+  "en": "The train to East Xujing is arriving. Please stand behind the yellow line, and let passengers off first."
+ },
+ {
+  "who": "metropa",
+  "zh": "车门即将关闭，请勿靠近车门。",
+  "en": "The doors are closing. Please stand clear of the doors."
+ },
+ {
+  "who": "metropa",
+  "zh": "欢迎乘坐轨道交通2号线，本次列车开往广兰路方向。下一站，陆家嘴，开左边门。",
+  "en": "Welcome aboard Line 2. This train is bound for Guanglan Road. The next station is Lujiazui. Doors will open on the left."
+ },
+ {
+  "who": "metropa",
+  "zh": "欢迎乘坐轨道交通2号线，本次列车开往徐泾东方向。下一站，南京东路，可换乘10号线，开左边门。",
+  "en": "Welcome aboard Line 2. This train is bound for East Xujing. The next station is East Nanjing Road, interchange with Line 10. Doors will open on the left."
+ },
+ {
+  "who": "metropa",
+  "zh": "陆家嘴站到了。下车的乘客请带好随身物品，从左边门下车。",
+  "en": "We are arriving at Lujiazui. Please take your belongings and leave by the doors on the left."
+ },
+ {
+  "who": "metropa",
+  "zh": "南京东路站到了，可换乘10号线。下车的乘客请带好随身物品，从左边门下车。",
+  "en": "We are arriving at East Nanjing Road, interchange with Line 10. Please take your belongings and leave by the doors on the left."
+ },
+ {
+  "who": "metropa",
+  "zh": "下一站，东昌路。",
+  "en": "The next station is Dongchang Road."
+ },
+ {
+  "who": "metropa",
+  "zh": "下一站，人民广场，可换乘1号线、8号线。",
+  "en": "The next station is People's Square, interchange with Lines 1 and 8."
+ },
+ {
+  "who": "metropa",
+  "zh": "乘坐扶梯时，请紧握扶手，照看好身边的老人和小孩。",
+  "en": "On the escalator, please hold the handrail, and look after children and the elderly."
+ },
+ {
+  "who": "metropa",
+  "zh": "各位乘客，请照看好您的随身物品，注意安全。",
+  "en": "Passengers, please keep an eye on your belongings."
+ },
+ {
+  "who": "metrostaff",
+  "zh": "您好，包放上来过一下安检。",
+  "en": "Hello, put your bag on the belt for the X-ray, please."
+ },
+ {
+  "who": "metrostaff",
+  "zh": "先生，包要过一下安检。",
+  "en": "Sir, your bag needs to go through the X-ray."
+ },
+ {
+  "who": "metrostaff",
+  "zh": "好了，拿好您的包。",
+  "en": "That's fine. Here's your bag."
+ },
+ {
+  "who": "metrostaff",
+  "zh": "这边是出站的，进站走右边。",
+  "en": "That's the way out. The way in is on the right."
+ },
+ {
   "who": "tourist",
   "zh": "不好意思……请问，地铁二号线，南京东路站，怎么走？",
   "en": "Excuse me, sorry. Line 2, East Nanjing Road station, which way is it?"

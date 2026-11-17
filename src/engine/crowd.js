@@ -217,6 +217,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
   const grown = roles ? roles.filter((r) => !/^k\d/.test(r)) : null;
   const rolesFor = (k) => { const a = ROLE_POOL[k].filter((r) => !have || have.has(r)); return a.length ? a : (grown && grown.length ? grown : ['p1']); };
   const obs = obstacles();
+  let cars = [];                              // things that move and stop (the Huracán, parked or driven): [{ x, z, r }]
   const ends = ENDS.map((e) => ({ ...e, id: (net.ends && net.ends[e.id]) || e.id })).filter((e) => net.by[e.id]);
   const stops = BUS_STOPS.map((st) => `BS:${st.id}`).filter((id) => net.by[id]);
   const W = ends.reduce((s, e) => s + e.w * ((areaWeights && areaWeights[e.area]) ?? 1), 0);
@@ -613,6 +614,12 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
           const ob = obs[q], ox = a.x - ob[0], oz = a.z - ob[1], r = ob[2]; if (Math.abs(ox) > r + 1 || Math.abs(oz) > r + 1) continue;
           const od = Math.hypot(ox, oz); if (od < r + 0.4 && od > 1e-4) { const k = (r + 0.4 - od) * 2.2; P.sx += ox / od * k; P.sz += oz / od * k; }
         }
+        // a car in the way (on the zebra, at the kerb): seen from a few metres off and walked round
+        for (let q = 0; q < cars.length; q++) {
+          const ob = cars[q], ox = a.x - ob.x, oz = a.z - ob.z, r = ob.r; if (Math.abs(ox) > r + 3 || Math.abs(oz) > r + 3) continue;
+          const od = Math.hypot(ox, oz); if (od < r + 1.2 && od > 1e-4) { const k = (r + 1.2 - od) * 1.6; P.sx += ox / od * k; P.sz += oz / od * k; }
+          if (moving) predict(-ox, -oz, 0, 0, r + 0.5, 0.6);
+        }
         let vx = P.vx, vz = P.vz;
         if (moving) {
           const att = a.phone ? 0.5 : 1, lat = Math.max(-1.4, Math.min(1.4, P.lat)) * att;
@@ -649,6 +656,11 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
             nx = a.x + P.tx * ml * P.tk * dt; nz = a.z + P.tz * ml * P.tk * dt; a.vx = P.tx * wv; a.vz = P.tz * wv;
             if (bad(nx, nz)) { nx = a.x; nz = a.z; }                // (a corner: the shorter step clipped it)
           } else { nx = a.x; nz = a.z; a.vx *= 0.3; a.vz *= 0.3; }
+        }
+        // and never inside a car, whatever the steering came to (a step out to its side)
+        for (let q = 0; q < cars.length; q++) {
+          const ob = cars[q], ox = nx - ob.x, oz = nz - ob.z, min = ob.r + 0.3, od = Math.hypot(ox, oz);
+          if (od < min) { const k = (min - od) / (od || 1e-3), ex = nx + (od ? ox : 1e-3) * k, ez = nz + oz * k; if (!bad(ex, ez)) { nx = ex; nz = ez; } }
         }
         // stuck (wanting to walk, going nowhere): first stop giving way so much and head straight for
         // the middle of the lane (see target()); after a few seconds, ease through whoever is in the way
@@ -693,6 +705,8 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
       return n;
     },
     // people on or about to step onto the carriageway, for engine/traffic.js
+    // a car (parked or driven) as a few circles along its body: people walk round it
+    setCars(list) { cars = list || []; },
     onCarriageway() {
       const out = [];
       for (const a of agents) if (!a.gone && a.x > L.westCurbX - 1.2 && a.x < L.eastCurbX + 1.2 && Math.abs(a.z) < 6) out.push({ x: a.x, z: a.z, vx: a.vx, vz: a.vz, crossing: a.state === 'cross' || onRoad(a.x, a.z), crowd: a.id });

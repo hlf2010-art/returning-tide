@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import { getLang } from '../ui/i18n.js';
 import { FONT, loadFonts } from './canvas.js';
 import { autoLights } from './dayNight.js';
-import { METRO, METRO_DEPTH, PIER, addDynamicCollider } from './layout.js';
+import { PIER, addDynamicCollider } from './layout.js';
 import { FERRY, nextFerry } from '../engine/ferry.js';
 import { PICKUP } from './didi.js';
 import { stamp, skipTo, pay } from '../engine/life.js';
@@ -31,52 +31,72 @@ import { createLjzTraffic, createLjzPeople } from './lujiazuiLife.js';
 export { LJZ };
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 
-export function createLujiazui({ scene, camera, M, people, hud, audio, player, travel, getLife, save, skyline, dests, lighting, renderer = null, metroOpen = () => true, trafficFactor = 1 }) {
+export function createLujiazui({ scene, camera, M, people, hud, audio, player, travel, getLife, save, skyline, dests, lighting, renderer = null, metroOpen = () => true, metroPassage = null, trafficFactor = 1 }) {
   const root = new THREE.Group(); root.name = 'lujiazui'; root.visible = false; scene.add(root);
   // the fonts' glyphs for the signs, asked for early (in the background) so they are there when the district is built
   loadFonts([[`800 40px ${FONT.sans}`, LJZ_TEXT], [`900 40px ${FONT.sans}`, LJZ_TEXT], [`600 40px ${FONT.sans}`, LJZ_TEXT], [`700 40px ${FONT.sans}`, LJZ_TEXT], [`800 40px ${FONT.serif}`, '陆家嘴中心绿地']]);
   let built = false, active = false, traffic = null, folk = null, heads = null, ent = null, carBoxes = [], stats = null, clock = 0, pending = null;
 
-  const KEEP = new Set(['player', 'sky', 'pudong', 'river', 'bund', 'promenade', 'lighting', 'entrances', 'rain']);
+  const KEEP = new Set(['player', 'sky', 'pudong', 'river', 'bund', 'promenade', 'lighting', 'entrances', 'rain', 'metro']);
   let stowed = [];
+  // the district is made in steps: all at once (build), or a step at a time between frames (buildAsync,
+  // started while you ride Line 2 east, so it's ready when the train comes out under Pudong)
+  let steps = null, building = null;
+  function makeSteps() {
+    const t0 = performance.now(), m = ljzMaterials(M), kit = lampKit(m), trees = [], C = { t0 };
+    return [
+      () => {
+        const G = buildGround(), P = buildMarkings(); C.G = G;
+        const rail = new THREE.MeshStandardMaterial({ map: railTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.3 });
+        for (const [geo, mat, name, cast] of [[G.road, m.road, 'road'], [G.pave, m.pave, 'pave'], [G.grass, m.grass, 'grass'], [G.path, m.path, 'paths'], [G.kerb, m.granite, 'kerbs'], [G.rails, rail, 'rails', true], [P.white, m.paint, 'paint'], [P.yellow, m.yellow, 'paint-yellow']]) {
+          const o = new THREE.Mesh(geo, mat); o.name = `ljz-${name}`; o.matrixAutoUpdate = false; o.receiveShadow = true; o.castShadow = !!cast; if (name === 'kerbs') mat.side = THREE.DoubleSide; root.add(o);
+        }
+        { const far = new THREE.Mesh(new THREE.PlaneGeometry(2600, 2600).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x2c2f33, roughness: 1 })); far.position.set(1000, -12, 300); far.name = 'ljz-far-ground'; root.add(far); }
+      },
+      () => { buildBridge(root, m, kit); buildApple(root, m, kit, trees); },
+      () => { buildIfc(root, m, kit); buildMetro(root, m, kit); },
+      () => { buildGreen(root, m, kit, trees); },
+      () => { buildSurroundings(root, m, kit, trees); },
+      () => { heads = buildStreet(root, m, kit); C.cards = buildTrees(root, trees); kit.finish(root); autoLights(root, 'lamps', 0.3); },
+      () => {
+        // where you can go in, marked as on the Bund (a pool of light, a label when it's in view)
+        const L = LJZ.ifcLobbyDoor, K = LJZ.kerbPickup, AD = LJZ.appleCylinderDoor, toC = dirOf(APPLE.entry);
+        ent = createEntrances({ scene, camera, list: [
+          { id: 'ljz-ifc', name: ['国金中心 · 办公楼', 'IFC · the office tower'], act: ['上楼', 'go up'], x: L.x, z: L.z, nx: L.nx, nz: L.nz, y: CH, w: 5 },
+          { id: 'ljz-apple', name: ['Apple 浦东', 'Apple Pudong'], act: ['进去 · 旋转楼梯', 'in, down the spiral stair'], x: AD.x - toC[0] * 0.4, z: AD.z - toC[1] * 0.4, nx: toC[0], nz: toC[1], y: APPLE.yPlaza, w: 3, glow: false },
+          ...METRO_LJZ.map((W) => ({ id: `ljz-m${W.exit}`, name: [`陆家嘴站 ${W.exit} 号口`, `Lujiazui station, Exit ${W.exit}`], act: ['下楼 · 2号线', 'down to Line 2'], x: W.top[0] - W.dx * 0.8, z: W.top[1] - W.dz * 0.8, nx: -W.dx, nz: -W.dz, y: CH, w: 3, open: metroOpen, glow: false })),
+          { id: 'ljz-ferry', name: ['轮渡 · 东昌路码头', 'Ferry · Dongchang Rd pier'], act: ['回外滩', 'back to the Bund'], x: LJZ.ferrySign.x, z: LJZ.ferrySign.z, nx: Math.sin(65 * Math.PI / 180), nz: -Math.cos(65 * Math.PI / 180), y: CH, w: 3, glow: false },
+          { id: 'ljz-didi', name: ['网约车上下客点', 'Ride-hailing point'], act: ['回外滩', 'a car back to the Bund'], x: K.x, z: K.z, nx: LJZ.ifcLobbyStand.x - K.x, nz: LJZ.ifcLobbyStand.z - K.z, y: CH, w: 3, glow: false },
+        ].map((e) => { const l = Math.hypot(e.nx, e.nz) || 1; return { ...e, nx: e.nx / l, nz: e.nz / l }; }) });
+        kit.push(...ent.lights);
+        // the real lights go to whichever lamps are nearest (world/lighting.js)
+        if (lighting) for (const s of kit) lighting.sources.push({ x: s.x, y: s.y, z: s.z, intensity: s.intensity, distance: s.distance, color: s.color || new THREE.Color(1.0, 0.72, 0.42), angle: s.angle || 1.3, out: !!s.out, on: s.on || null, d: 0, sw: 0 });
+        traffic = createLjzTraffic({ group: root, factor: trafficFactor });
+        carBoxes = traffic.cars.map(() => addDynamicCollider('vehicle'));
+        folk = createLjzPeople({ group: root, people });
+        root.updateMatrixWorld(true);
+      },
+      () => {
+        let tris = 0, meshes = 0; root.traverse((o) => { if (o.isMesh && o.geometry) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
+        stats = { ms: Math.round(performance.now() - C.t0), meshes, tris: Math.round(tris), ground: Math.round(C.G.tris), leafCards: C.cards, lights: kit.length, cars: traffic.cars.length, people: folk.list.length };
+        // compile the district's shaders now, behind the fade, not on the first frame you see it (a stall of a
+        // second or more on some GPUs and drivers, Windows' ANGLE above all)
+        if (renderer) { const was = root.visible; root.visible = true; try { const t1 = performance.now(); renderer.compile(root, camera, scene); stats.compileMs = Math.round(performance.now() - t1); } catch (e) { console.warn('Lujiazui: shader precompile skipped', e); } root.visible = was; }
+        console.info('Lujiazui built', stats);
+      },
+    ];
+  }
   function build() {
-    if (built) return; built = true;
-    const t0 = performance.now(), m = ljzMaterials(M), kit = lampKit(m), trees = [];
-    // the ground
-    const G = buildGround(), P = buildMarkings();
-    const rail = new THREE.MeshStandardMaterial({ map: railTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.3 });
-    for (const [geo, mat, name, cast] of [[G.road, m.road, 'road'], [G.pave, m.pave, 'pave'], [G.grass, m.grass, 'grass'], [G.path, m.path, 'paths'], [G.kerb, m.granite, 'kerbs'], [G.rails, rail, 'rails', true], [P.white, m.paint, 'paint'], [P.yellow, m.yellow, 'paint-yellow']]) {
-      const o = new THREE.Mesh(geo, mat); o.name = `ljz-${name}`; o.matrixAutoUpdate = false; o.receiveShadow = true; o.castShadow = !!cast; if (name === 'kerbs') mat.side = THREE.DoubleSide; root.add(o);
-    }
-    { const far = new THREE.Mesh(new THREE.PlaneGeometry(2600, 2600).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x2c2f33, roughness: 1 })); far.position.set(1000, -12, 300); far.name = 'ljz-far-ground'; root.add(far); }
-    buildBridge(root, m, kit); buildApple(root, m, kit, trees); buildIfc(root, m, kit); buildMetro(root, m, kit);
-    buildGreen(root, m, kit, trees); buildSurroundings(root, m, kit, trees);
-    heads = buildStreet(root, m, kit);
-    const cards = buildTrees(root, trees);
-    kit.finish(root);
-    autoLights(root, 'lamps', 0.3);
-    // where you can go in, marked as on the Bund (a pool of light, a label when it's in view)
-    const L = LJZ.ifcLobbyDoor, K = LJZ.kerbPickup, AD = LJZ.appleCylinderDoor, toC = dirOf(APPLE.entry);
-    ent = createEntrances({ scene, camera, list: [
-      { id: 'ljz-ifc', name: ['国金中心 · 办公楼', 'IFC · the office tower'], act: ['上楼', 'go up'], x: L.x, z: L.z, nx: L.nx, nz: L.nz, y: CH, w: 5 },
-      { id: 'ljz-apple', name: ['Apple 浦东', 'Apple Pudong'], act: ['进去 · 旋转楼梯', 'in, down the spiral stair'], x: AD.x - toC[0] * 0.4, z: AD.z - toC[1] * 0.4, nx: toC[0], nz: toC[1], y: APPLE.yPlaza, w: 3, glow: false },
-      ...METRO_LJZ.map((W) => ({ id: `ljz-m${W.exit}`, name: [`陆家嘴站 ${W.exit} 号口`, `Lujiazui station, Exit ${W.exit}`], act: ['下楼 · 2号线', 'down to Line 2'], x: W.top[0] - W.dx * 0.8, z: W.top[1] - W.dz * 0.8, nx: -W.dx, nz: -W.dz, y: CH, w: 3, open: metroOpen, glow: false })),
-      { id: 'ljz-ferry', name: ['轮渡 · 东昌路码头', 'Ferry · Dongchang Rd pier'], act: ['回外滩', 'back to the Bund'], x: LJZ.ferrySign.x, z: LJZ.ferrySign.z, nx: Math.sin(65 * Math.PI / 180), nz: -Math.cos(65 * Math.PI / 180), y: CH, w: 3, glow: false },
-      { id: 'ljz-didi', name: ['网约车上下客点', 'Ride-hailing point'], act: ['回外滩', 'a car back to the Bund'], x: K.x, z: K.z, nx: LJZ.ifcLobbyStand.x - K.x, nz: LJZ.ifcLobbyStand.z - K.z, y: CH, w: 3, glow: false },
-    ].map((e) => { const l = Math.hypot(e.nx, e.nz) || 1; return { ...e, nx: e.nx / l, nz: e.nz / l }; }) });
-    kit.push(...ent.lights);
-    // the real lights go to whichever lamps are nearest (world/lighting.js)
-    if (lighting) for (const s of kit) lighting.sources.push({ x: s.x, y: s.y, z: s.z, intensity: s.intensity, distance: s.distance, color: s.color || new THREE.Color(1.0, 0.72, 0.42), angle: s.angle || 1.3, out: !!s.out, on: s.on || null, d: 0, sw: 0 });
-    traffic = createLjzTraffic({ group: root, factor: trafficFactor });
-    carBoxes = traffic.cars.map(() => addDynamicCollider('vehicle'));
-    folk = createLjzPeople({ group: root, people });
-    root.updateMatrixWorld(true);
-    let tris = 0, meshes = 0; root.traverse((o) => { if (o.isMesh && o.geometry) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
-    stats = { ms: Math.round(performance.now() - t0), meshes, tris: Math.round(tris), ground: Math.round(G.tris), leafCards: cards, lights: kit.length, cars: traffic.cars.length, people: folk.list.length };
-    // compile the district's shaders now, behind the fade, not on the first frame you see it (a stall of a
-    // second or more on some GPUs and drivers, Windows' ANGLE above all)
-    if (renderer) { const was = root.visible; root.visible = true; try { const t1 = performance.now(); renderer.compile(root, camera, scene); stats.compileMs = Math.round(performance.now() - t1); } catch (e) { console.warn('Lujiazui: shader precompile skipped', e); } root.visible = was; }
-    console.info('Lujiazui built', stats);
+    if (built) return;
+    if (!steps) steps = makeSteps();
+    while (steps.length) steps.shift()();
+    built = true;
+  }
+  function buildAsync() {
+    if (built || building) return building;
+    if (!steps) steps = makeSteps();
+    building = (async () => { while (steps.length && !built) { steps.shift()(); await new Promise((r) => setTimeout(r, 40)); } built = true; })();
+    return building;
   }
   function show(on) {
     if (on === active) return; active = on; root.visible = on;
@@ -125,7 +145,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     travel(async () => { finish(); build(); const p = LJZ.ifcLobbyStand; player.teleport(p.x, p.z, p.yaw, 0, p.y); show(true); save && save(); }, { line: T('国金中心 · 一楼大堂', 'IFC · the ground-floor lobby'), hold: 700, to: 'play' });
     return true;
   };
-  // back to the Bund: a car from the kerb (through the Yan'an East Road tunnel), or Line 2 from any exit
+  // back to the Bund: a car from the kerb (through the Yan'an East Road tunnel), the ferry, or Line 2 (world/metro.js)
   function ferryBack() {
     const l = getLife(), n = nextFerry(l.clock.minute);
     if (n == null) { hud.toast(T('今天的轮渡已经停了。地铁或者叫车都能回外滩。', 'No more ferries today. The metro or a DiDi will take you back.'), 3.6); return; }
@@ -144,32 +164,13 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
       player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0); show(false); save && save();
     }, { line: T(`滴滴快车 · 延安东路隧道 → 外滩 · ¥${back}`, `DiDi Express · the Yan'an East Road tunnel → the Bund · ¥${back}`), hold: 1500, to: 'play' });
   }
-  function metroBack() {
-    if (!metroOpen()) { hud.toast(T('闸机关着。末班车已经开走了，首班车早上五点半左右。', 'The gates are shut. The last train has gone; the first is at about 5:30 am.'), 3.6); return; }
-    const l = getLife(), m = METRO[0];
-    if (l && l.wallet) { const r = pay(l, { method: 'alipay', amount: 3, to: '上海地铁 Shanghai Metro', memo: '2号线 陆家嘴→南京东路', kind: 'transport' }); if (r.ok) r.entry.memoEn = 'Line 2, Lujiazui to East Nanjing Rd'; }
-    audio && audio.cue && audio.cue('chime', 0, 0.4);
-    hud.toast(T('刷码进站 · Metro大都会 · ¥3', 'Through the gates · Metro QR · ¥3'), 2.6);
-    travel(async () => {
-      skipTo(l, stamp(l) + 4);
-      player.teleport(m.bottom + Math.sign(m.bottom - m.top) * 0.9, (m.z0 + m.z1) / 2, m.top > m.bottom ? -Math.PI / 2 : Math.PI / 2, 0, -METRO_DEPTH); show(false); save && save();
-      hud.toast(T(`2号线 · 南京东路站 · ${m.exit}号口`, `Line 2 · East Nanjing Road · Exit ${m.exit}`), 3.4);
-    }, { hold: 1600, line: T('2号线 · 陆家嘴 → 南京东路 · 1站 · 约3分钟', 'Line 2 · Lujiazui → East Nanjing Rd · 1 stop · ~3 min'), to: 'play' });
-  }
-  function metroThrough(W) {
-    const k = METRO_LJZ.indexOf(W), O = METRO_LJZ[(k + 1) % METRO_LJZ.length], [x, z] = wellPt(O, O.run + 0.6);
-    travel(async () => { player.teleport(x, z, Math.atan2(O.dx, O.dz), 0, -O.depth); hud.toast(T(`${O.exit}号口 · ${O.name.zh}`, `Exit ${O.exit} · ${O.name.en}`), 3); }, { hold: 500, to: 'play' });
-  }
-
   // ---- what E does here ----
   const TARGETS = [];
   { const L = LJZ.ifcLobbyDoor; TARGETS.push({ id: 'ljz:lobby', x: L.x, y: CH + 1.5, z: L.z, reach: 4.2, cone: 0.55 }); }
   { const F = LJZ.ferrySign; TARGETS.push({ id: 'ljz:ferry', x: F.x, y: CH + 1.8, z: F.z, reach: 4.0, cone: 0.6 }); }
   { const K = LJZ.kerbPickup, [ux, uz] = dirOf(AVE); TARGETS.push({ id: 'ljz:didi', x: K.x - ux * 3.2, y: CH + 2.2, z: K.z - uz * 3.2, reach: 4.0, cone: 0.6 }); }
-  for (const W of METRO_LJZ) {
-    const [x, z] = wellPt(W, W.len - 0.2), [sx, sz] = wellPt(W, W.run + 0.8, W.hw - 0.1);
-    TARGETS.push({ id: `ljz:metro:${W.exit}:in`, x, y: -W.depth + 1.6, z, reach: 3.2, cone: 0.5, well: W }, { id: `ljz:metro:${W.exit}:thru`, x: sx, y: -W.depth + 2.0, z: sz, reach: 2.6, cone: 0.6, well: W });
-  }
+  // Exits 6 and 4 come down into the station (world/metro.js); Exit 1's way in is a long passage (the fade)
+  for (const W of METRO_LJZ) if (W.exit === 1) { const [x, z] = wellPt(W, W.len - 0.2); TARGETS.push({ id: `ljz:metro:${W.exit}:in`, x, y: -W.depth + 1.6, z, reach: 3.2, cone: 0.5, well: W }); }
   { const [x, z] = applePt(APPLE.tables[1].ang, APPLE.tables[1].r); TARGETS.push({ id: 'ljz:apple:table', x, y: APPLE.yStore + 1.0, z, reach: 2.6, cone: 0.6 }); }
 
   function mapBlips() {
@@ -212,7 +213,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   return {
     LJZ, root,
     get built() { return built; }, get active() { return active; }, get stats() { return stats; }, get traffic() { return traffic; }, get people() { return folk; },
-    build, mapBlips,
+    build, buildAsync, mapBlips,
     // is this body in the district (street level, the ring, the court; not the 32nd floor)
     here(b) { return inPudong(b.x, b.y); },
     zone(b) { return ljzZone(b.x, b.z, b.y); },
@@ -243,16 +244,14 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
       if (id === 'ljz:apple:table') return { target: T('桌上的样机', 'The devices on the table'), action: T('拿起来看看', 'Pick one up') };
       const t = TARGETS.find((q) => q.id === id), W = t && t.well;
       if (!W) return null;
-      if (id.endsWith(':in')) return metroOpen() ? { target: T('陆家嘴站 · 2号线', 'Lujiazui · Line 2'), action: T('坐一站到南京东路（¥3）', 'One stop to East Nanjing Road (¥3)') } : { target: T('陆家嘴站 · 已停运', 'Lujiazui · closed'), action: T('末班车已开走 · 首班车约5:30', 'Last train gone · first train ~5:30') };
-      const O = METRO_LJZ[(METRO_LJZ.indexOf(W) + 1) % METRO_LJZ.length];
-      return { target: T('站厅', 'Concourse'), action: T(`从${O.exit}号口出站（${O.name.zh}）`, `Out by Exit ${O.exit} (${O.name.en})`) };
+      return { target: T('陆家嘴站 · 1号口通道', 'Lujiazui · the Exit 1 passage'), action: T('走通道去站厅', 'Through the passage to the concourse') };
     },
     interact(id) {
       if (id === 'ljz:lobby') goUp();
       else if (id === 'ljz:didi') carBack();
       else if (id === 'ljz:ferry') ferryBack();
       else if (id === 'ljz:apple:table') hud.toast(T('屏幕都亮着，壁纸是今天的外滩。你把它放回了原位。', 'Every screen is lit; the wallpaper is today\'s Bund. You put it back where it was.'), 3.4);
-      else { const t = TARGETS.find((q) => q.id === id); if (t && t.well) { if (id.endsWith(':in')) metroBack(); else metroThrough(t.well); } }
+      else { const t = TARGETS.find((q) => q.id === id); if (t && t.well && metroPassage) metroPassage(); }
       return true;
     },
     // per frame. Nothing happens (and nothing is drawn) unless you are in Pudong.

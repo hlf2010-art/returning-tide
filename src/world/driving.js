@@ -26,7 +26,7 @@ export function onRoad(x, z) {
   return x < L.westCurbX + 0.5 && inSideRoad(x, z);                                                               // Jiujiang Road, Nanjing Road
 }
 
-export function createDriving({ huracan, traffic, camera, player, audio, hud, getLife, save, onMode, carSale }) {
+export function createDriving({ huracan, traffic, camera, player, audio, hud, getLife, save, onMode, carSale, crowdPeople = () => [] }) {
   const engine = createCarAudio(audio);
   const S = { on: false, demo: false, d: null, cam: 'chase', camPos: new THREE.Vector3(), shake: 0, horn: 0, hand: false, lights: false };
   const owned = () => { const l = getLife(); return !!(l.flags.car && l.flags.carBuy && l.flags.carBuy.stage === 'delivered'); };
@@ -60,9 +60,17 @@ export function createDriving({ huracan, traffic, camera, player, audio, hud, ge
       if (Math.hypot(v.x - x, v.z - z) > 9) continue;
       for (const k of [-0.36, 0, 0.36]) if (inside(v.x, v.z + k * v.len, v.width / 2 - 0.1)) return 'car';
     }
-    // people in the road (crossing, stepping out) stop you; people on the pavement are behind the kerb,
-    // which already holds the car off them (the car parks right by the kerb, where people walk)
-    for (const p of traffic.peds) if (Math.hypot(p.x - x, p.z - z) < 4 && onRoad(p.x, p.z) && inside(p.x, p.z, 0.3)) return 'person';
+    // people in the road (crossing, stepping out) stop you, but only someone the car is moving into: ahead
+    // of it the way it's going, and not already against its side (they step away; the car can always pull
+    // away from them, forward or back). People on the pavement are behind the kerb.
+    const d = S.d, way = d ? Math.sign((x - d.x) * c - (z - d.z) * s) : 0;
+    const cur = d ? (qx, qz, r) => { const dx = qx - d.x, dz = qz - d.z, cc = Math.cos(d.yaw), ss = Math.sin(d.yaw), f = dx * cc - dz * ss, l = -dx * ss - dz * cc; return Math.abs(f) < hl + r && Math.abs(l) < hw + r; } : () => false;
+    const ahead = (qx, qz) => { const dx = qx - x, dz = qz - z, f = dx * c - dz * s; return way === 0 || f * way > CAR.length * 0.2; };
+    for (const p of [...traffic.peds, ...crowdPeople()]) {
+      if (Math.hypot(p.x - x, p.z - z) > 4 || !onRoad(p.x, p.z) || !inside(p.x, p.z, 0.3)) continue;
+      if (cur(p.x, p.z, 0.05) || !ahead(p.x, p.z)) continue;
+      return 'person';
+    }
     return false;
   }
 
