@@ -11,7 +11,7 @@ import { markCanvas } from '../ui/brands.js';
 import { LINE_COLOR } from './nanjingRoad.js';
 import {
   C, RC, RING, ARMS, COLUMNS, SPUR, RAMPS, APPLE, METRO_LJZ, IFC, BUILDINGS, GREEN, LAKE, CANOPY, LOOP, BENCHES, YIN, ZEBRAS, CH, AVE, AVE_ROT, LOBBY, PEARL_PARK,
-  dirOf, polar, rpolar, fromAP, toAP, applePt, wellPt, carriage, inDistrict, inLake, inGreen, inPoly, inBuilding, polyDist, loopPt, addBox, addCircle, LJZ,
+  dirOf, polar, rpolar, fromAP, toAP, applePt, wellPt, carriage, inDistrict, inLake, inGreen, inPoly, inBuilding, polyDist, loopPt, addBox, addCircle, LJZ, rampY, stepsY,
 } from './lujiazuiLayout.js';
 import { facadeGlass } from './facade.js';
 import { kindAt, KIND, parkPath } from './lujiazuiGround.js';
@@ -161,16 +161,76 @@ function appleLogo() {
   const s = 512 * 0.8 / 24; x.translate(512 * 0.1, 512 * 0.1); x.scale(s, s); x.fillStyle = '#fff'; x.fill(new Path2D(siApple.path));
   return tex(c, { repeat: false, aniso: 8 });
 }
-export function buildApple(g, m, lights) {
-  const A = APPLE, yP = A.yPlaza, yS = A.yStore, o = A, E = A.entry, yCeil = yP - 1.0;
+export function buildApple(g, m, lights, trees = []) {
+  const A = APPLE, yP = A.yPlaza, yS = A.yStore, o = A, E = A.entry, yCeil = yP - 1.0, T = A.steps, RP = A.ramp;
   const floor = new Tris(1.6), band = new Tris(1.6), ag = new Tris(), seam = new Batch(), st = new Batch(), wood = new Batch(), ceil = new Tris(), storeWall = new Tris(), treads = new Tris(), dark = new Batch(), oak = new Tris(1.2);
-  // ---- the plaza: pale granite at street level, flush with the pavement; darker bands mark the cylinder's sill,
-  // a ring halfway out and the plaza's edge (the reflecting pool that once ringed the cylinder went in the rebuild)
-  floor.arc(o, A.rCyl + 0.6, A.rOut, 0, 360, yP, 90);
-  floor.arc(o, A.rCore, A.rCyl + 0.6, E + A.landing[0], E + A.landing[1], yP, 12);            // the landing inside the cylinder
-  floor.arc(o, A.rCyl, A.rCyl + 0.6, E + A.landing[1], E + 360 + A.landing[0], yP, 40);
-  for (const [r0, r1] of [[A.rCyl - 0.02, A.rCyl + 0.6], [11.7, 12.1], [A.rOut - 0.5, A.rOut]]) band.arc(o, r0, r1, 0, 360, yP + 0.004, 90);
-  for (let i = 0; i < 24; i++) { const b = E + 7.5 + i * 15, [x0, z0] = polar(b, A.rCyl + 0.6, o), [x1, z1] = polar(b, A.rOut - 0.5, o), [dx, dz] = dirOf(b); obox(seam, (x0 + x1) / 2, yP - 0.004, (z0 + z1) / 2, dx, dz, Math.hypot(x1 - x0, z1 - z0), 0.012, 0.05); }
+  const wallT = new Tris(2), gl = new Tris(), deck = new Tris(1.6), fascia = new Tris(), shopT = new Tris(), soil = new Tris(), glassFloor = new Tris(), stone = new Batch();
+  const B = (ang) => E + ang, P3 = (ang, r, y) => { const [x, z] = polar(E + ang, r, o); return [x, y, z]; };
+  // ---- the court's floor: pale granite, darker bands; a ring of glass floor round the cylinder's foot, over the store
+  floor.arc(o, A.rCyl + 1.5, A.rPlaza, 0, 360, yP, 90);
+  floor.arc(o, A.rCore, A.rCyl + 0.6, B(A.landing[0]), B(A.landing[1]), yP, 12);                   // the landing inside the cylinder
+  glassFloor.arc(o, A.rCyl + 0.05, A.rCyl + 1.5, 0, 360, yP + 0.003, 72);
+  floor.arc(o, A.rPlaza, A.rampIn, B(T.wall), B(360 - T.wall), yP, 60);                           // the floor's edge before the shops
+  for (const [r0, r1] of [[A.rCyl + 1.5, A.rCyl + 1.8], [11.7, 12.05], [A.rPlaza - 0.4, A.rPlaza]]) band.arc(o, r0, r1, 0, 360, yP + 0.004, 90);
+  for (let i = 0; i < 24; i++) { const b = E + 7.5 + i * 15, [x0, z0] = polar(b, A.rCyl + 1.8, o), [x1, z1] = polar(b, A.rPlaza - 0.4, o), [dx, dz] = dirOf(b); obox(seam, (x0 + x1) / 2, yP - 0.004, (z0 + z1) / 2, dx, dz, Math.hypot(x1 - x0, z1 - z0), 0.012, 0.05); }
+  // ---- the broad steps down from the street, toward the ring: 38 treads, side walls with glass on top
+  const nS = 38, run = (T.r1 - T.r0) / nS, riseS = (CH - yP) / nS;
+  for (let i = 0; i < nS; i++) { const r0 = T.r0 + i * run, y = yP + (i + 1) * riseS; floor.arc(o, r0, r0 + run, B(-T.wall), B(T.wall), y, 18); wallT.drum(o, r0, B(-T.wall), B(T.wall), y - riseS, y, 18); }
+  for (const sg of [-1, 1]) {
+    const ray = sg * T.wall, yStep = (r) => stepsY(r);
+    for (let i = 0; i < 14; i++) { const r0 = T.r0 + (T.r1 - T.r0) * i / 14, r1 = T.r0 + (T.r1 - T.r0) * (i + 1) / 14, a = P3(ray, r0, 0), b = P3(ray, r1, 0);
+      wallT.quad([a[0], yP, a[2]], [b[0], yP, b[2]], [b[0], CH + 0.4, b[2]], [a[0], CH + 0.4, a[2]]);
+      gl.quad([a[0], yStep(r0) + 0.1, a[2]], [b[0], yStep(r1) + 0.1, b[2]], [b[0], Math.max(CH + 0.4, yStep(r1) + 1.1), b[2]], [a[0], Math.max(CH + 0.4, yStep(r0) + 1.1), a[2]]);
+      gl.quad([a[0], CH + 0.4, a[2]], [b[0], CH + 0.4, b[2]], [b[0], CH + 1.2, b[2]], [a[0], CH + 1.2, a[2]]); }
+    const s0 = P3(ray, T.r0, 0), s1 = P3(ray, T.r1, 0); obox(st, (s0[0] + s1[0]) / 2, CH + 1.2, (s0[2] + s1[2]) / 2, s1[0] - s0[0], s1[2] - s0[2], Math.hypot(s1[0] - s0[0], s1[2] - s0[2]), 0.05, 0.08);
+    // the strip between the steps' wall and the walkway's top: solid, at street level
+    wallT.arc(o, A.rPlaza, A.rail, B(sg > 0 ? T.wall : -RP.a0), B(sg > 0 ? RP.a0 : -T.wall), CH + 0.4, 3);
+  }
+  // planters with trees on the steps
+  for (const p of A.stepTrees) { const [x, z] = applePt(p.ang, p.r), y = stepsY(p.r + p.rr); stone.cyl(x, stepsY(p.r - p.rr) - 0.05, z, p.rr, p.rr, y - stepsY(p.r - p.rr) + 0.5, 20); trees.push({ x, z, y: y + 0.45, h: 6.5, r: 2.4, solid: false }); }
+  // ---- the curved walkways either side: a deck sloping from the street to a landing at the back, a glass
+  // balustrade on the court side, the retaining wall behind; the shops beneath them at the floor
+  const nR = 48;
+  for (const sg of [-1, 1]) for (let i = 0; i < nR; i++) {
+    const a0 = RP.a0 + (180 - RP.a0) * i / nR, a1 = RP.a0 + (180 - RP.a0) * (i + 1) / nR, y0 = rampY(a0), y1 = rampY(a1), b0 = sg * a0, b1 = sg * a1;
+    deck.quad(P3(b0, A.rampIn, y0), P3(b0, A.rampOut + 0.05, y0), P3(b1, A.rampOut + 0.05, y1), P3(b1, A.rampIn, y1));
+    deck.quad(P3(b0, A.rampIn, y0 - 0.4), P3(b1, A.rampIn, y1 - 0.4), P3(b1, A.rampOut, y1 - 0.4), P3(b0, A.rampOut, y0 - 0.4));
+    fascia.quad(P3(b0, A.rampIn, y0 - 1.0), P3(b1, A.rampIn, y1 - 1.0), P3(b1, A.rampIn, y1 + 0.02), P3(b0, A.rampIn, y0 + 0.02));
+    gl.quad(P3(b0, A.rampIn + 0.08, y0), P3(b1, A.rampIn + 0.08, y1), P3(b1, A.rampIn + 0.08, y1 + 1.1), P3(b0, A.rampIn + 0.08, y0 + 1.1));
+    wallT.quad(P3(b0, A.rampOut + 0.05, yP), P3(b1, A.rampOut + 0.05, yP), P3(b1, A.rampOut + 0.05, CH + 0.3), P3(b0, A.rampOut + 0.05, CH + 0.3));
+    if (a0 > T.wall + 2) shopT.quad(P3(b0, A.rShop, yP), P3(b1, A.rShop, yP), P3(b1, A.rShop, y1 - 1.0), P3(b0, A.rShop, y0 - 1.0), [[i / 6, 0], [(i + 1) / 6, 0], [(i + 1) / 6, Math.min(1, (y1 - 1.0 - yP) / 3.6)], [i / 6, Math.min(1, (y0 - 1.0 - yP) / 3.6)]]);
+    { const p0 = P3(b0, A.rampIn + 0.08, y0 + 1.1), p1 = P3(b1, A.rampIn + 0.08, y1 + 1.1), dv = new THREE.Vector3(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]), L = dv.length() + 0.02, geo = new THREE.BoxGeometry(0.07, 0.06, L);
+      geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dv.normalize())); geo.translate((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2); st.push(geo); }
+  }
+  // the rim: glass balustrade round the top of the wall, open where the walkways and the steps begin; the rim walk's paving; the planted bed
+  const open = (ang) => Math.abs(ang) <= T.wall || (Math.abs(ang) >= RP.a0 && Math.abs(ang) <= RP.top);
+  for (let i = 0; i < 120; i++) { const a0 = -180 + i * 3, a1 = a0 + 3; if (open(a0 + 1.5)) continue; gl.drum(o, A.rail, B(a0), B(a1), CH, CH + 1.1, 1); const p0 = P3(a0, A.rail, 0), p1 = P3(a1, A.rail, 0); obox(st, (p0[0] + p1[0]) / 2, CH + 1.1, (p0[2] + p1[2]) / 2, p1[0] - p0[0], p1[2] - p0[2], Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) + 0.02, 0.06, 0.09); }
+  wallT.arc(o, A.rampOut + 0.05, A.rail + 0.05, B(RP.top), B(360 - RP.top), CH + 0.3, 60);
+  floor.arc(o, A.rail, A.rOut, B(T.wall), B(360 - T.wall), CH, 80);
+  for (const sg of [-1, 1]) floor.arc(o, A.rampIn, A.rail, B(sg > 0 ? RP.a0 : -RP.top), B(sg > 0 ? RP.top : -RP.a0), CH, 4);
+  soil.arc(o, A.plant.r0, A.plant.r1, B(A.plant.a0), B(360 - A.plant.a0), CH + 0.55, 60);
+  wallT.drum(o, A.plant.r0, B(A.plant.a0), B(360 - A.plant.a0), CH, CH + 0.55, 60); wallT.drum(o, A.plant.r1, B(A.plant.a0), B(360 - A.plant.a0), CH, CH + 0.55, 60);
+  for (let a = A.plant.a0 + 8; a < 360 - A.plant.a0 - 4; a += 7) { const [x, z] = applePt(a, (A.plant.r0 + A.plant.r1) / 2); soil.arc({ x, z }, 0, 1.2, 0, 360, CH + 1.15, 8); soil.drum({ x, z }, 1.2, 0, 360, CH + 0.55, CH + 1.15, 8); }
+  for (let a = A.plant.a0 + 18; a < 360 - A.plant.a0; a += 26) { const [x, z] = applePt(a, (A.plant.r0 + A.plant.r1) / 2 + 0.5); trees.push({ x, z, y: CH + 0.55, h: 7.5 + (a % 3), r: 2.6, solid: false }); }
+  // lamps on the rim walk: a slim post, a white trumpet of a head
+  for (let a = 62; a <= 298; a += 34) { const [x, z] = applePt(a, A.walk - 0.5); st.cyl(x, CH, z, 0.07, 0.09, 5.6, 10); stone.cyl(x, CH + 5.6, z, 0.12, 0.62, 0.75, 16); lights.push({ x, y: CH + 5.9, z, intensity: 18, distance: 16, color: new THREE.Color(1.0, 0.9, 0.75), out: true }); addCircle(x, z, 0.14, { y1: 3 }); }
+  // planters on the court's floor: stone drums with timber seats round them, a tree in each
+  for (const p of A.planters) { const [x, z] = applePt(p.ang, p.r); stone.cyl(x, yP, z, p.rr, p.rr, 0.42, 24); wood.cyl(x, yP + 0.42, z, p.rr + 0.06, p.rr + 0.06, 0.06, 24); trees.push({ x, z, y: yP + 0.48, h: 6 + (p.r % 2), r: 2.3, solid: false }); }
+  // the shops' names over their fronts: an HSBC branch on the right (as you look in from the steps), a Starbucks
+  // (letters and mark on the walkway's white fascia above each, as in the photographs)
+  const brand = (slug, color, text, ang, w) => { const [c, x] = makeCanvas(1024, 128); x.clearRect(0, 0, 1024, 128); x.drawImage(markCanvas(slug, { color, size: 120, pad: 0.04 }), 10, 4, 120, 120); x.fillStyle = slug === 'hsbc' ? '#222' : color; x.font = `800 92px ${FONT.sans}`; x.textBaseline = 'middle'; x.fillText(text, 150, 68);
+    const mat = new THREE.MeshBasicMaterial({ map: tex(c, { repeat: false, aniso: 8 }), transparent: true, side: THREE.DoubleSide, depthWrite: false }); mat.userData.todSkip = true;
+    const y = rampY(Math.abs(ang)) - 0.5, [px, pz] = applePt(ang, A.rampIn - 0.34), p = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 8), mat); p.position.set(px, y, pz); p.rotation.y = Math.atan2(...dirOf(B(ang) + 180)); p.renderOrder = 2; g.add(p); };
+  brand('hsbc', '#db0011', 'HSBC 汇丰', 112, 6.4); brand('starbucks', '#00704a', 'STARBUCKS', -128, 6.4);
+  // the cylinder's door: a flat glass canopy on a slim stainless frame
+  { const c = P3(0, A.rCyl + 1.1, yP + 3.2), [dx, dz] = dirOf(E), [tx, tz] = dirOf(E + 90); obox(st, c[0], c[1], c[2], tx, tz, 5.0, 0.1, 2.2); const cg = new Tris(); cg.quad([c[0] - tx * 2.4 - dx * 1.0, c[1] + 0.11, c[2] - tz * 2.4 - dz * 1.0], [c[0] + tx * 2.4 - dx * 1.0, c[1] + 0.11, c[2] + tz * 2.4 - dz * 1.0], [c[0] + tx * 2.4 + dx * 1.0, c[1] + 0.11, c[2] + tz * 2.4 + dz * 1.0], [c[0] - tx * 2.4 + dx * 1.0, c[1] + 0.11, c[2] - tz * 2.4 + dz * 1.0]); gl.p.push(...cg.p); gl.n.push(...cg.n); gl.u.push(...cg.u);
+    for (const s2 of [-2.3, 2.3]) { const hx = c[0] + tx * s2 + dx * 1.9, hz = c[2] + tz * s2 + dz * 1.9, ex = c[0] + tx * s2 * 0.9, ez = c[2] + tz * s2 * 0.9, dv = new THREE.Vector3(ex - hx, 2.2, ez - hz), L = dv.length(), geo = new THREE.BoxGeometry(0.02, 0.02, L); geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dv.normalize())); geo.translate((hx + ex) / 2, c[1] + 1.1, (hz + ez) / 2); st.push(geo); } }   // (hung on two rods from the glass)
+  const glassFloorMat = new THREE.MeshPhysicalMaterial({ color: 0x24343a, roughness: 0.05, metalness: 0.2, clearcoat: 1, envMapIntensity: 1.5, emissive: 0x3a3226, emissiveIntensity: 0.6 });
+  const addC = (o2, cast = true) => { o2.castShadow = cast; o2.receiveShadow = true; g.add(o2); return o2; };
+  addC(wallT.mesh(std({ color: 0xcfcbc2, roughness: 0.65 }), 'ljz-apple-court-walls')); addC(deck.mesh(m.stone, 'ljz-apple-walkways')); addC(fascia.mesh(m.white, 'ljz-apple-fascia'));
+  addC(soil.mesh(m.hedge, 'ljz-apple-planting')); addC(stone.mesh(std({ color: 0xd9d6cf, roughness: 0.6 }), 'ljz-apple-planters')); addC(glassFloor.mesh(glassFloorMat, 'ljz-apple-glass-floor'), false);
+  g.add(shopT.mesh(asLight(new THREE.MeshBasicMaterial({ map: shopfronts(), side: THREE.DoubleSide }), 'shops', 0.3), 'ljz-apple-court-shops'));
+  { const gm2 = gl.mesh(m.glass, 'ljz-apple-court-glass'); gm2.renderOrder = 3; g.add(gm2); }
   // ---- the glass cylinder: twelve curved panels butted with no fins or fittings, a stainless ring round the
   // top, and a shallow dome of twelve curved panels meeting a glass disc
   const yTop = yP + A.cylH, doorH = 3.0, rise = 0.55;
@@ -354,6 +414,16 @@ export function buildIfc(g, m, lights) {
       g.add(sign(['国金中心商场 · ifc mall', 'Apple · 浦东丽思卡尔顿酒店 Ritz-Carlton · 地铁2号线 Metro'], { w: 1.0, h: 1.9, x: tx + F.nx * 0.16, y: CH + 1.5, z: tz + F.nz * 0.16, ry, color: '#f2ede2', bg: '#2b2d31', ch: null, gain: 1.1 })); }
     lights.push({ x: ex + F.nx * 3, y: 4.6, z: ez + F.nz * 3, intensity: 22, distance: 16, color: new THREE.Color(1.0, 0.92, 0.8) });
   }
+  // the mall's glass toward the Apple court is braced by a giant steel X in each bay (as the photographs show)
+  { const xb = new Batch(), mem = (a, b) => { const d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), L = d.length(), geo = new THREE.BoxGeometry(0.45, 0.45, L); geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.normalize())); geo.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); xb.push(geo); };
+    for (let i = 0; i < MP.length; i++) {
+      const [x0, z0] = MP[i], [x1, z1] = MP[(i + 1) % MP.length], l = Math.hypot(x1 - x0, z1 - z0); if (l < 6) continue;
+      const nx = (z1 - z0) / l, nz = -(x1 - x0) / l, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, d = Math.hypot(APPLE.x - mx, APPLE.z - mz);
+      if (d > 75 || ((APPLE.x - mx) * nx + (APPLE.z - mz) * nz) / d < 0.25) continue;
+      const nb = Math.max(1, Math.round(l / 16)), o2 = 0.35, Pt = (f, y) => [x0 + (x1 - x0) * f + nx * o2, y, z0 + (z1 - z0) * f + nz * o2];
+      for (let k = 0; k < nb; k++) { const f0 = k / nb, f1 = (k + 1) / nb; mem(Pt(f0, 6.4), Pt(f1, MH - 0.6)); mem(Pt(f1, 6.4), Pt(f0, MH - 0.6)); mem(Pt(f0, 6.4), Pt(f0, MH - 0.6)); }
+    }
+    if (!xb.empty) { const o3 = xb.mesh(m.steel, 'ljz-ifc-mall-braces'); o3.castShadow = true; g.add(o3); } }
   // the same name where the mall meets the avenue
   { const F2 = faceToward(MP, ...fromAP(260, 0)); if (F2) g.add(sign(['ifc mall', '上海国金中心商场'], { w: 16, h: 4.4, x: F2.x + F2.nx * 0.4, y: MH - 8, z: F2.z + F2.nz * 0.4, ry: Math.atan2(F2.nx, F2.nz), color: '#f6f3ec', bg: null, ch: 'signs', gain: 1.4 })); }
   // the north tower's lobby on Century Avenue: a tall glass front, a canopy, revolving doors, the address stone

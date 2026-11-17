@@ -3,9 +3,9 @@
 // this is a private, non-commercial build). Brands Simple Icons doesn't carry (DiDi, JD, NIO, Li Auto,
 // AITO, UnionPay, China Merchants Bank, Manner) appear as their own name in their own colours,
 // a wordmark, not an invented symbol.
-import { siWechat, siAlipay, siTaobao, siStarbucks, siLamborghini, siApplepay, siVisa, siMastercard, siShanghaimetro } from 'simple-icons';
+import { siWechat, siAlipay, siTaobao, siStarbucks, siLamborghini, siApplepay, siVisa, siMastercard, siShanghaimetro, siHsbc } from 'simple-icons';
 
-const SI = { wechat: siWechat, alipay: siAlipay, taobao: siTaobao, starbucks: siStarbucks, lamborghini: siLamborghini, applepay: siApplepay, visa: siVisa, mastercard: siMastercard, shanghaimetro: siShanghaimetro };
+const SI = { wechat: siWechat, alipay: siAlipay, taobao: siTaobao, starbucks: siStarbucks, lamborghini: siLamborghini, applepay: siApplepay, visa: siVisa, mastercard: siMastercard, shanghaimetro: siShanghaimetro, hsbc: siHsbc };
 export const BRAND_COLOR = { wechat: '#07C160', alipay: '#1677FF', taobao: '#FF5000', jd: '#E1251B', didi: '#FF7A00', manner: '#111111', starbucks: '#006241', lamborghini: '#B6A272', unionpay: '#E21836', cmb: '#C8102E' };
 
 // <svg> of a Simple Icons mark (24 x 24 viewBox), in a colour

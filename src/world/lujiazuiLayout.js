@@ -87,20 +87,38 @@ function obb(P) {
   return best;
 }
 
-// Apple Pudong (No. 1, IFC Mall, OSM way 255624910 under the paved round plaza, way 166128036): the
-// plaza at street level, the 13 m glass cylinder (5 m radius, twelve curved panels, a stainless ring and a
-// shallow glass dome since the rebuild) at its centre, and inside it the spiral glass stair, cantilevered
-// off a second glass drum (the lift), down to the store under the plaza. Angles are measured clockwise
-// from the cylinder's door, which faces the Mingzhu Ring and the Pearl.
+// Apple Pudong (No. 1, IFC Mall): a sunken round court one storey down (OSM's paved circle, way 166128036,
+// is its floor; the footway round it, way 166128035, the curved walkways; way 166128038 the broad steps
+// up toward the Mingzhu Ring), and as the photographs show it:
+//  - broad steps down from the street on the side toward the ring, trees in planters on them;
+//  - round the rest of the wall, a curved walkway either side behind a glass balustrade, sloping from
+//    the street at the top of the steps down to a landing at the back (by the mall's door), shops at
+//    the court's floor beneath it (an HSBC branch, a Starbucks);
+//  - on the floor, round planters with timber seats, and the 13 m glass cylinder (5 m radius, twelve
+//    curved panels, a stainless ring and a shallow glass dome since the rebuild), a flat glass canopy
+//    over its door, a ring of glass floor round its foot over the store;
+//  - inside the cylinder the spiral glass stair round the glass lift, down to the store under the court
+//    (OSM: level -2, way 255624910).
+// Angles are measured clockwise from the cylinder's door, which faces the steps, the ring and the Pearl.
 const [APX, APZ, APR] = OSM_POINTS.applePlaza;
 export const APPLE = {
-  x: APX, z: APZ, entry: 316, rPlaza: APR, rOut: APR, yPlaza: CH, yStore: CH - 5.6, rCyl: 5, rCore: 1.7, cylH: 13, storeR: 16.2,
+  x: APX, z: APZ, entry: 316,
+  yPlaza: CH - 5.65, yStore: CH - 5.65 - 5.6,                               // the court's floor (the cylinder stands on it), the store's
+  rPlaza: APR, rShop: 17.9, rampIn: 18.3, rampOut: 21.3, rail: 21.6, walk: 24, rOut: 31,
+  steps: { half: 34, wall: 37, r0: APR, r1: 31 },                          // the broad steps: |angle| <= half, from the floor (r0) up to the street (r1)
+  ramp: { a0: 39, top: 49, yBack: CH - 3.0 },                              // the walkways: in from the street at |angle| 39..49, down to yBack at the back
+  plant: { r0: 25, r1: 28.6, a0: 64 },                                     // the planted bed behind the rim walk
+  rCyl: 5, rCore: 1.7, cylH: 13, storeR: 16.2,
   spiral: { start: 25, total: 400, drop: 5.6, r0: 1.95, r1: 4.35 }, landing: [-40, 25], door: 13.5, foot: [57, 88],
-  // the store's oak tables (each along a radius): an inner ring and an outer one, clear of the stair's foot and the video wall
   tables: [[125, 9], [165, 9], [205, 9], [295, 9], [330, 9], [10, 9.4], [140, 13.4], [185, 13.4], [225, 13.4], [345, 13.4]].map(([ang, r]) => ({ ang, r })),
-  mall: 194,                                                                // the store's back, toward the mall (its lower-ground door)
+  mall: 194,
+  planters: [[62, 11.2], [-62, 11.2], [128, 12.4], [-128, 12.4], [180, 13]].map(([ang, r]) => ({ ang, r, rr: 1.55 })),   // on the court's floor
+  stepTrees: [[-20, 24.5], [20, 24.5], [0, 27.8]].map(([ang, r]) => ({ ang, r, rr: 1.3 })),                                  // on the broad steps
   store: pts2(OSM_AREAS.appleStore),
 };
+// the walkway's height at |angle| a
+export const rampY = (a) => (a <= APPLE.ramp.top ? CH : CH + (APPLE.ramp.yBack - CH) * Math.min(1, (a - APPLE.ramp.top) / (180 - APPLE.ramp.top)));
+export const stepsY = (r) => APPLE.yPlaza + (CH - APPLE.yPlaza) * Math.max(0, Math.min(1, (r - APPLE.steps.r0) / (APPLE.steps.r1 - APPLE.steps.r0)));
 export const appleAng = (x, z) => wrap180(bearingOf(x, z, APPLE) - APPLE.entry);
 export const applePt = (ang, r) => polar(APPLE.entry + ang, r, APPLE);
 
@@ -214,9 +232,13 @@ export function ljzGround(x, z, y = 0) {
   if (!(x > 500 && x < 1500 && z > -260 && z < 780) || y > 60) return null;      // not here (the 32nd floor is destinations.js's)
   const ax = x - APPLE.x, az = z - APPLE.z, ra2 = ax * ax + az * az;
   if (ra2 < APPLE.rOut * APPLE.rOut) {
-    const ra = Math.sqrt(ra2), ang = appleAng(x, z);
-    if (ra < APPLE.rCyl) return spiralY(ang, y);
-    return y < APPLE.yPlaza - 3 && ra < APPLE.storeR + 0.5 ? APPLE.yStore : APPLE.yPlaza;
+    const A = APPLE, ra = Math.sqrt(ra2), ang = appleAng(x, z), aa = Math.abs(ang);
+    if (ra < A.rCyl) return spiralY(ang, y);
+    if (ra <= A.rPlaza) return y < A.yPlaza - 3 && ra < A.storeR + 0.5 ? A.yStore : A.yPlaza;
+    if (aa <= A.steps.wall) return aa <= A.steps.half + 1 ? stepsY(ra) : (ra < A.rail ? A.yPlaza : CH);
+    if (ra < A.rampIn) return A.yPlaza;                                                  // the floor's edge before the shops
+    if (ra <= A.rampOut + 0.1) return aa >= A.ramp.a0 ? rampY(aa) : CH;
+    return CH;
   }
   for (let i = 0; i < METRO_LJZ.length; i++) {
     const m = METRO_LJZ[i], t = (x - m.top[0]) * m.dx + (z - m.top[1]) * m.dz;
@@ -284,35 +306,62 @@ function clampR(p, o, lo, hi) {
 function setAppleAng(p, ang) { const r = Math.hypot(p.x - APPLE.x, p.z - APPLE.z), [x, z] = applePt(ang, r); p.x = x; p.z = z; }
 
 // what the body is on (a bridge stair), remembered from step to step
-const S = { x: NaN, z: NaN, y: 0, ramp: -1 };
+const S = { x: NaN, z: NaN, y: 0, ramp: -1, pit: false };
 export const ljzState = S;
 function infer(b) {
   S.ramp = -1;
+  { const ra = Math.hypot(b.x - APPLE.x, b.z - APPLE.z); S.pit = ra < APPLE.rOut && (b.y < CH - 0.3 || ra < APPLE.rail); }
   for (let i = 0; i < RAMPS.length; i++) { const [t, l] = rampLocal(RAMPS[i], b.x, b.z); if (t >= 0 && t <= RAMPS[i].run && Math.abs(l) < RAMPS[i].hw) S.ramp = i; }
 }
-// Apple Pudong: inside the cylinder and down in the store it has its own walls; out on the plaza only the
-// cylinder's glass (but for its door). True when it has dealt with the body.
+// Apple Pudong's court: once in it (down the broad steps, or on to a walkway from the street) it has its
+// own walls; the street round it has the rim's balustrade and the planted bed behind the rim walk.
 const inStore = (b) => b.y < APPLE.yPlaza - 3 && Math.hypot(b.x - APPLE.x, b.z - APPLE.z) < APPLE.storeR + 1;
-function keepApple(b) {
-  const A = APPLE, yP = A.yPlaza;
+const pushCircle = (b, x, z, r) => { const dx = b.x - x, dz = b.z - z, d = Math.hypot(dx, dz); if (d < r && d > 1e-6) { b.x = x + dx / d * r; b.z = z + dz / d * r; return true; } return false; };
+function keepCourt(b) {
+  const A = APPLE, yP = A.yPlaza, T = A.steps;
   let ra = Math.hypot(b.x - A.x, b.z - A.z), ang = appleAng(b.x, b.z), aa = Math.abs(ang);
-  if (inStore(b)) {                                           // ---- the store, under the plaza
+  if (inStore(b)) {                                           // ---- the store, under the court
     if (ra < A.rCyl + 0.1) {                                  // at the foot of the spiral stair, inside its drum
       clampR(b, A, A.spiral.r0, ang >= A.foot[0] && ang <= A.foot[1] ? 99 : A.spiral.r1);
       if (ang > A.foot[1] || ang < -120) setAppleAng(b, A.foot[1]);
     } else if (ra < A.rCyl + RAD + 0.15 && !(ang >= A.foot[0] && ang <= A.foot[1])) clampR(b, A, A.rCyl + RAD + 0.15, 99);
     clampR(b, A, 0, A.storeR - RAD);
-    for (const t of A.tables) for (const k of [-1, 0, 1]) { const [x, z] = applePt(t.ang, t.r + k * 1.05), dx = b.x - x, dz = b.z - z, d = Math.hypot(dx, dz); if (d < 0.75 + RAD && d > 1e-6) { b.x = x + dx / d * (0.75 + RAD); b.z = z + dz / d * (0.75 + RAD); } }
-    return true;
+    for (const t of A.tables) for (const k of [-1, 0, 1]) { const [x, z] = applePt(t.ang, t.r + k * 1.05); pushCircle(b, x, z, 0.75 + RAD); }
+    return;
   }
   if (ra < A.rCyl) {                                          // ---- inside the glass cylinder
     clampR(b, A, A.spiral.r0, A.rCyl - RAD - 0.1 + (aa < A.door && b.y > yP - 0.4 ? 1.5 : 0));
     if (b.y > yP - 0.25 && ang < A.landing[0]) setAppleAng(b, A.landing[0]);        // the landing's back rail
     if (b.y <= yP - 0.25) clampR(b, A, A.spiral.r0, A.spiral.r1);
-    return true;
+    return;
   }
-  if (ra < A.rCyl + RAD + 0.1 && aa > A.door) clampR(b, A, A.rCyl + RAD + 0.1, 99);   // the glass, but for its door
-  return false;
+  if (b.y > yP + 1.2 && ra >= A.rampIn - 0.3 && aa >= A.ramp.a0 - 1) {   // ---- on a walkway
+    clampR(b, A, A.rampIn + RAD, aa <= A.ramp.top ? 99 : A.rampOut - RAD);
+    if (aa < A.ramp.a0 + RAD) setAppleAng(b, Math.sign(ang || 1) * (A.ramp.a0 + RAD));
+    if (Math.hypot(b.x - A.x, b.z - A.z) > A.rampOut + 0.2) S.pit = false;            // out on to the street at the top
+    return;
+  }
+  // ---- the floor and the broad steps
+  if (ra < A.rCyl + RAD + 0.1 && aa > A.door) clampR(b, A, A.rCyl + RAD + 0.1, 99);    // the glass, but for its door
+  ra = Math.hypot(b.x - A.x, b.z - A.z); ang = appleAng(b.x, b.z); aa = Math.abs(ang);
+  if (ra > A.rShop - RAD && aa > T.half - 0.5) {
+    if (ra < A.rShop + 1.2) clampR(b, A, 0, A.rShop - RAD); else setAppleAng(b, Math.sign(ang || 1) * (T.half - 0.5));
+  }
+  for (const p of A.planters) { const [x, z] = applePt(p.ang, p.r); pushCircle(b, x, z, p.rr + RAD); }
+  for (const p of A.stepTrees) { const [x, z] = applePt(p.ang, p.r); pushCircle(b, x, z, p.rr + RAD); }
+  if (Math.hypot(b.x - A.x, b.z - A.z) > T.r1 + 0.3) S.pit = false;                     // up the steps on to the street
+}
+// at street level round the court: the rim's balustrade, the planted bed; in only by the steps or a walkway's top
+function keepRim(b) {
+  const A = APPLE, T = A.steps, ra = Math.hypot(b.x - A.x, b.z - A.z), ang = appleAng(b.x, b.z), aa = Math.abs(ang);
+  if (ra > A.rOut + 0.5) return;
+  if (aa <= T.half - 0.5) { if (ra < T.r1 + 0.2) S.pit = true; return; }                      // stepping on to the broad steps
+  if (aa >= A.ramp.a0 + 0.5 && aa <= A.ramp.top - 0.5 && ra < A.rail + 0.3) { if (ra < A.rampOut) S.pit = true; return; }   // on to a walkway's top
+  if (ra < T.r1 && aa < T.wall + 0.6) { setAppleAng(b, Math.sign(ang || 1) * (T.wall + 0.6)); }   // the steps' side balustrade
+  const r2 = Math.hypot(b.x - A.x, b.z - A.z);
+  if (r2 < A.rail + RAD && !(aa >= A.ramp.a0 && aa <= A.ramp.top)) clampR(b, A, A.rail + RAD, 999);
+  const a2 = Math.abs(appleAng(b.x, b.z));
+  if (a2 > A.plant.a0 && r2 > A.plant.r0 - RAD && r2 < A.plant.r1 + RAD) clampR(b, A, r2 < (A.plant.r0 + A.plant.r1) / 2 ? 0 : A.plant.r1 + RAD, r2 < (A.plant.r0 + A.plant.r1) / 2 ? A.plant.r0 - RAD : 999);
 }
 function keepRamp(b) {
   const R = RAMPS[S.ramp], [t, l] = rampLocal(R, b.x, b.z);
@@ -348,8 +397,9 @@ export function ljzKeep(b) {
 }
 function step(b) {
   const A = APPLE, ra = Math.hypot(b.x - A.x, b.z - A.z);
-  // Apple: the cylinder, its stair and the store under the plaza
-  if ((inStore(b) || ra < A.rCyl + RAD + 0.2) && keepApple(b)) return;
+  // Apple: the court, the cylinder, its stair, the store; the street round the court
+  if (S.pit || inStore(b)) { keepCourt(b); if (S.pit || inStore(b)) return; }
+  else if (ra < A.rOut + 0.5) keepRim(b);
   // the bridge's stairs
   if (S.ramp >= 0 && keepRamp(b)) return;
   for (let i = 0; i < RAMPS.length; i++) {
@@ -463,7 +513,7 @@ export const LJZ = {
   ifcLobbyStand: P2(LOBBY.x + LOBBY.nx * 2.5, LOBBY.z + LOBBY.nz * 2.5, { y: CH, yaw: yawTo(LOBBY.nx, LOBBY.nz) }),       // where you stand, back to the door
   officeLift: P2(689.9, 55.6, { y: 134.4 }),                                             // the lift on 32F (world/destinations.js PLACES.lujiazui.lift)
   kerbPickup: P2(kerb[0], kerb[1], { y: CH, yaw: yawTo(NX, NZ) }),                       // DiDi set-down and pick-up, Century Avenue's south kerb by Two IFC
-  appleEntrance: P2(...applePt(0, APPLE.rCyl + 7), { y: CH }),                          // on the plaza, in front of the cylinder's door
+  appleEntrance: P2(...applePt(0, APPLE.steps.r1 + 1.5), { y: CH }),                     // at the top of the broad steps down into the court
   appleCylinderDoor: P2(...applePt(0, APPLE.rCyl + 0.8), { y: APPLE.yPlaza }),
   appleStore: P2(...applePt(75, 9), { y: APPLE.yStore }),
   metroExits: METRO_LJZ.map((m) => { const [x, z] = wellPt(m, -1.4), [lx, lz] = wellPt(m, m.len - 1.3); return { exit: m.exit, x, z, y: CH, landing: { x: lx, z: lz, y: -m.depth }, name: m.name }; }),
@@ -479,7 +529,7 @@ export const LJZ = {
 export const inPudong = (x, y = 0) => x > 480 && y < 60;
 // a coarse name for where you are in it
 export function ljzZone(x, z, y = 0) {
-  if (y < APPLE.yPlaza - 3) return 'apple';
+  if (y < APPLE.yPlaza - 3 && Math.hypot(x - APPLE.x, z - APPLE.z) < APPLE.storeR + 1) return 'apple';
   const ra = Math.hypot(x - APPLE.x, z - APPLE.z);
   if (ra < APPLE.rOut) return 'apple';
   for (const m of METRO_LJZ) { const [t, l] = wellLocal(m, x, z); if (t > -3 && t < m.len + 1 && Math.abs(l) < m.hw + 1.5) return 'ljzMetro'; }

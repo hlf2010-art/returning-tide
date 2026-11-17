@@ -33,7 +33,8 @@ point, landing), `metroArrive`, `greenGate`, `greenBenches[]`, `greenLawn`, `rin
 
 ## What is there
 
-![Apple Pudong's plaza, Two IFC and the mall by day](ljz-apple-plaza.png)
+![Apple Pudong from the top of the broad steps](ljz-apple-plaza.png)
+![In the sunken court](ljz-apple-court.png)
 ![The cylinder and the Pearl at dusk](ljz-apple-dusk.png)
 ![Two IFC's lobby: the glass shows the sky and the city](ljz-ifc-glass.png)
 ![From the Mingzhu Ring: the IFC towers, the World Financial Center beyond](ljz-ring-ifc.png)
@@ -61,11 +62,18 @@ point, landing), `metroArrive`, `greenGate`, `greenBenches[]`, `greenLawn`, `rin
   上海国金中心商场 over the doors facing the cylinder and again toward the avenue, a directory totem
   (the mall, Apple, the Ritz-Carlton, Line 2). Two IFC's lobby is on the face toward Century Avenue
   (canopy, revolving doors, address stone): **E** at the door takes the lift to the 32nd floor.
-- **Apple Pudong.** OSM's paved round plaza (r 17.5 m) at street level, the 13 m glass cylinder at
-  its centre (twelve finless curved panels, a stainless ring, a shallow glass dome, the logo hung
-  inside facing the door, which faces the ring and the Pearl; it glows after dark), the spiral glass
-  stair round the glass lift down 5.6 m to the round store under the plaza (oak tables and shelving,
-  a ceiling of light rings, a shopfront to the mall's lower ground, a video wall).
+- **Apple Pudong.** A sunken round court one storey down, as in photographs of it (OSM's paved circle,
+  r 17.5 m, is its floor; the footway round it the walkways; its steps way the broad steps): broad
+  steps down from the street on the side toward the ring and the Pearl, three trees in planters on
+  them; curved walkways either side behind glass balustrades, sloping from the street down to a
+  landing at the back, an HSBC branch and a Starbucks at the floor beneath them, their names on the
+  walkways' white fascia; round stone planters with timber seats and trees on the floor; a glass rim
+  balustrade, the rim walk, a planted bed and trumpet-headed lamps above. The 13 m glass cylinder
+  stands on the court's floor (twelve finless curved panels, a stainless ring, a shallow glass dome,
+  the logo hung inside facing the door; a flat glass canopy hung over the door; a ring of glass floor
+  round its foot; it glows after dark); inside, the spiral glass stair round the glass lift down 5.6 m
+  to the round store under the court (OSM: level −2). Behind it the mall's glass is braced by a giant
+  steel X in each bay, as the photographs show.
 - **Lujiazui station.** Three stairwells at OSM's entrances 1, 4 and 6 with Shanghai Metro's mark, the station's
   name, Line 2 and Line 14 badges, exit numbers. On a landing: **E** at the way in rides one stop back
   to East Nanjing Road (¥3); **E** at the side wall goes through to the next exit.
@@ -108,7 +116,10 @@ Still approximate:
 - Facades are generic per kind (four kinds of glass, three of block) chosen by OSM's material tag,
   height and a hash: they are not the buildings' real facades. The IFC crowns' shape is from memory.
 - Super Brand Mall's sign is placed on its face toward the roundabout; no other building is named.
-- The store under the plaza is drawn round (r 16.2 m) inside OSM's store outline.
+- The court's depth (5.65 m), the walkways' slope and their landing at the back, the steps' extent
+  (±34° of the door's bearing, out to 31 m) and the planters are read from two photographs, not
+  measured. The shops' fronts are a generic texture. The store is drawn round (r 16.2 m) inside OSM's
+  store outline.
 - The game's Bund runs due north-south; this district is laid out to true north, so the two halves
   differ by the few degrees the real Bund is turned.
 

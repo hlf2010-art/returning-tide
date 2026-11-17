@@ -48,7 +48,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
       const o = new THREE.Mesh(geo, mat); o.name = `ljz-${name}`; o.matrixAutoUpdate = false; o.receiveShadow = true; o.castShadow = !!cast; if (name === 'kerbs') mat.side = THREE.DoubleSide; root.add(o);
     }
     { const far = new THREE.Mesh(new THREE.PlaneGeometry(2600, 2600).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x2c2f33, roughness: 1 })); far.position.set(1000, -12, 300); far.name = 'ljz-far-ground'; root.add(far); }
-    buildBridge(root, m, kit); buildApple(root, m, kit); buildIfc(root, m, kit); buildMetro(root, m, kit);
+    buildBridge(root, m, kit); buildApple(root, m, kit, trees); buildIfc(root, m, kit); buildMetro(root, m, kit);
     buildGreen(root, m, kit, trees); buildSurroundings(root, m, kit, trees);
     heads = buildStreet(root, m, kit);
     const cards = buildTrees(root, trees);
@@ -58,7 +58,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     const L = LJZ.ifcLobbyDoor, K = LJZ.kerbPickup, AD = LJZ.appleCylinderDoor, toC = dirOf(APPLE.entry);
     ent = createEntrances({ scene, camera, list: [
       { id: 'ljz-ifc', name: ['国金中心 · 办公楼', 'IFC · the office tower'], act: ['上楼', 'go up'], x: L.x, z: L.z, nx: L.nx, nz: L.nz, y: CH, w: 5 },
-      { id: 'ljz-apple', name: ['Apple 浦东', 'Apple Pudong'], act: ['进去 · 旋转楼梯', 'in, down the spiral stair'], x: AD.x - toC[0] * 0.4, z: AD.z - toC[1] * 0.4, nx: toC[0], nz: toC[1], y: CH, w: 3, glow: false },
+      { id: 'ljz-apple', name: ['Apple 浦东', 'Apple Pudong'], act: ['进去 · 旋转楼梯', 'in, down the spiral stair'], x: AD.x - toC[0] * 0.4, z: AD.z - toC[1] * 0.4, nx: toC[0], nz: toC[1], y: APPLE.yPlaza, w: 3, glow: false },
       ...METRO_LJZ.map((W) => ({ id: `ljz-m${W.exit}`, name: [`陆家嘴站 ${W.exit} 号口`, `Lujiazui station, Exit ${W.exit}`], act: ['下楼 · 2号线', 'down to Line 2'], x: W.top[0] - W.dx * 0.8, z: W.top[1] - W.dz * 0.8, nx: -W.dx, nz: -W.dz, y: CH, w: 3, open: metroOpen, glow: false })),
       { id: 'ljz-didi', name: ['网约车上下客点', 'Ride-hailing point'], act: ['回外滩', 'a car back to the Bund'], x: K.x, z: K.z, nx: LJZ.ifcLobbyStand.x - K.x, nz: LJZ.ifcLobbyStand.z - K.z, y: CH, w: 3, glow: false },
     ].map((e) => { const l = Math.hypot(e.nx, e.nz) || 1; return { ...e, nx: e.nx / l, nz: e.nz / l }; }) });
@@ -80,6 +80,9 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     // river: not drawn while you're here. Its façades, the promenade, the river and the sky stay.
     if (on) { stowed = scene.children.filter((o) => o.visible && o !== root && !KEEP.has(o.name) && !o.isLight && !o.isCamera); for (const o of stowed) o.visible = false; }
     else { for (const o of stowed) o.visible = true; stowed = []; }
+    // the river's surface is one plane reaching far under Pudong (its ground hides it); here the Apple court
+    // and the store go below it, so while you're here it stops at the Pudong bank
+    { const w = scene.getObjectByName('water'); if (w && w.geometry.parameters) { const W = w.geometry.parameters.width; if (!w.userData.home) w.userData.home = { x: w.position.x, sx: w.scale.x }; const x0 = w.userData.home.x - W / 2, x1 = on ? 500 : x0 + W; w.scale.x = (x1 - x0) / W; w.position.x = (x0 + x1) / 2; w.updateMatrix(); w.updateMatrixWorld(true); } }
     if (!on) { for (const b of carBoxes) b.minX = b.maxX = b.minZ = b.maxZ = 1e6; if (ent) ent.update(0.2, { eye: camera.position, active: false }); }
   }
 
@@ -198,7 +201,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     sceneLine(clock, raining, extra = '') {
       const b = player.body, z = ljzZone(b.x, b.z, b.y);
       const where = { ring: 'the Mingzhu Ring, the circular footbridge over the Lujiazui roundabout in Pudong, traffic going round below, the Oriental Pearl Tower just to the north-north-west',
-        apple: b.y < APPLE.yPlaza - 3 ? 'the Apple store under the plaza at IFC in Lujiazui, long oak tables, the spiral glass stair up into the glass cylinder' : 'the plaza of Apple Pudong in front of the IFC mall, the 13-metre glass cylinder with the spiral stair in it, the mall\'s curved glass front behind; the Oriental Pearl Tower across the roundabout',
+        apple: b.y < APPLE.yPlaza - 3 ? 'the Apple store under the sunken court at IFC in Lujiazui, long oak tables, the spiral glass stair up into the glass cylinder' : 'the sunken round court of Apple Pudong in front of the IFC mall: the 13-metre glass cylinder with the spiral stair in it, broad steps up toward the Oriental Pearl Tower, curved walkways round the wall over an HSBC branch and a Starbucks, trees in planters',
         green: 'Lujiazui Central Green, the lawn and the lake in the middle of the towers: Jin Mao, the World Financial Center and the Shanghai Tower to the south-east',
         ljzMetro: 'an exit of Lujiazui metro station (Line 2), by the roundabout', ifc: 'outside Shanghai IFC on Century Avenue in Lujiazui, the office tower\'s lobby behind, taxis at the kerb',
         roundabout: 'the pavement by the Lujiazui roundabout in Pudong, under the ring footbridge, the Oriental Pearl Tower above', century: 'Century Avenue in Lujiazui, Pudong, among the office towers' }[z] || 'Lujiazui, Pudong';
