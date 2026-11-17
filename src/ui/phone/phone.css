@@ -167,3 +167,23 @@
 .view.sketch .xp { margin: 4px 12px; height: 8px; border-radius: 4px; background: #e2d6b8; overflow: hidden; } .view.sketch .xp u, .view.sketch .rl u { display: block; height: 100%; background: #1d3a8a; }
 .view.sketch .rl { display: flex; align-items: center; gap: 8px; padding: 5px 12px; font-size: 12px; } .view.sketch .rl span { width: 70px; } .view.sketch .rl i { flex: 1; height: 6px; border-radius: 3px; background: #e2d6b8; overflow: hidden; }
 .view.sketch .acs { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 12px 20px; } .view.sketch .ac { font-size: 10px; padding: 3px 7px; border-radius: 10px; background: #e8e1cf; color: #aaa; } .view.sketch .ac.got { background: #1d3a8a; color: #fff; }
+
+/* voice notes, video clips (./media.js): what's playing, how far along, what the keyboard has picked */
+#phone .bub.voice { position: relative; overflow: hidden; padding-bottom: 10px; }
+#phone .bub.voice .pi { width: 14px; text-align: center; font-size: 12px; }
+#phone .bub.voice .vt { margin-left: auto; font-variant-numeric: tabular-nums; }
+#phone .bub.voice .prog { position: absolute; left: 10px; right: 10px; bottom: 4px; height: 3px; border-radius: 2px; background: rgba(0,0,0,0.08); }
+#phone .bub.voice .prog u { display: block; height: 100%; width: 0; border-radius: 2px; background: #07c160; }
+#phone .bub.voice .unplayed { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: #fa5151; }
+#phone .bub.vid { position: relative; padding: 0; overflow: hidden; width: 176px; background: #000; cursor: pointer; line-height: 0; }
+#phone .bub.vid canvas { display: block; width: 176px; height: 234px; }
+#phone .bub.vid .vplay { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); width: 46px; height: 46px; border-radius: 50%; background: rgba(0,0,0,0.45); color: #fff; display: grid; place-items: center; font-size: 18px; line-height: 1; padding-left: 3px; box-sizing: border-box; }
+#phone .bub.vid.playing .vplay { display: none; }
+#phone .bub.vid .vbar { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 8px 7px; display: flex; align-items: center; gap: 7px; background: linear-gradient(transparent, rgba(0,0,0,0.6)); line-height: 1; }
+#phone .bub.vid .vt { color: #fff; font-size: 10.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#phone .bub.vid .track { flex: 1; height: 12px; display: flex; align-items: center; cursor: pointer; background: linear-gradient(rgba(255,255,255,0.35), rgba(255,255,255,0.35)) center / 100% 3px no-repeat; }
+#phone .bub.vid .track u { display: block; height: 3px; width: 0; background: #fff; border-radius: 2px; }
+#phone .bub.vcap { margin-top: 4px; font-size: 13.5px; }
+#phone .sel { outline: 2px solid #2d6cdf; outline-offset: 2px; }
+#phone [data-nav]:focus-visible { outline: 2px solid #2d6cdf; outline-offset: 2px; }
+#phone .bub.voice .pi { display: inline-flex; justify-content: center; gap: 3px; } #phone .bub.voice .pi i { width: 3px; height: 11px; background: currentColor; border-radius: 1px; }

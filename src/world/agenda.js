@@ -16,7 +16,19 @@ export function setupThreads(L) {
     ['dad', 'dad', '落地了说一声。'], ['ruoan', 'ruoan', '航班号发我一下'], ['ruoan', 'me', 'UA857，下午三点多到浦东'],
   ]) { const m = post(L, t, { from, kind: 'text', text }, { notify: false }); m.at -= 600; m.read = true; }
   for (const t of Object.values(L.threads)) t.unread = 0;
+  addVoicemail(L);
   L.flags.t0 = stamp(L);
+}
+// Old Zhou's voicemail, the one that brought you to the Bund: nine seconds, mostly river wind. Nobody
+// has recorded his voice, so the phone plays the wind and shows the words (ui/phone/media.js).
+// atEnd: an older save gets it at the bottom of the chats instead of the top.
+export function addVoicemail(L, { atEnd = false } = {}) {
+  if (L.threads.zhou) return null;
+  thread(L, 'zhou', { title: PEOPLE.zhou.name, members: ['me', 'zhou'], kind: 'person' });
+  const m = post(L, 'zhou', { from: 'zhou', kind: 'voice', text: '到外滩来。海关钟下面……', meta: { voicemail: true, secs: 9, ambience: 'wind' } }, { notify: false });
+  m.at = 18 * 60 + 3; m.read = true; L.threads.zhou.unread = 0;   // the evening of 29 October, before he vanished
+  if (atEnd) L.order = [...L.order.filter((x) => x !== 'zhou'), 'zhou'];
+  return m;
 }
 
 // beats: { id, at (minutes after t0) or when(L), run(L) }
