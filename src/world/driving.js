@@ -1,4 +1,4 @@
-// Your Huracán, once it's been delivered (engine/carPurchase.js): get in at the driver's door and drive
+// Your Huracán, once it's been delivered (engine/carPurchase.js): get in (E at the car) and drive
 // it on the roads that are here (Hankou Road, Zhongshan Road along the Bund, the side streets to
 // Nanjing Road), then park it wherever you stop and get out (it stays there, saved).
 //   W / S     throttle / brake (S again once stopped: reverse)     A / D   steer
@@ -6,11 +6,15 @@
 // engine/drive.js is the car; engine/carAudio.js the V10. The road's edges are its kerbs (you can't
 // mount the pavement), and other cars and people stop it: you can bump into a car, never run anyone
 // over. The traffic sees you as a car (they queue behind you); people step round it, and look.
+// Before it's yours: Vivian's demo car takes the same controls on a test drive (world/carSale.js; E once
+// stopped puts it back on Hankou Road), and E at the parked car says how to get one (at first, Zhixia
+// passes on Vivian's card).
 import * as THREE from 'three';
 import { L, inSideRoad } from './layout.js';
 import { HURACAN_SPOT } from './huracan.js';
 import { createDrive, stepDrive, footprint, kmh, CAR } from '../engine/drive.js';
 import { createCarAudio } from '../engine/carAudio.js';
+import { lead } from '../engine/carPurchase.js';
 import { getLang } from '../ui/i18n.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -24,7 +28,7 @@ export function onRoad(x, z) {
 
 export function createDriving({ huracan, traffic, camera, player, audio, hud, getLife, save, onMode, carSale }) {
   const engine = createCarAudio(audio);
-  const S = { on: false, d: null, cam: 'chase', camPos: new THREE.Vector3(), shake: 0, horn: 0, hand: false, lights: false };
+  const S = { on: false, demo: false, d: null, cam: 'chase', camPos: new THREE.Vector3(), shake: 0, horn: 0, hand: false, lights: false };
   const owned = () => { const l = getLife(); return !!(l.flags.car && l.flags.carBuy && l.flags.carBuy.stage === 'delivered'); };
   const park = () => getLife().flags.carPark || { x: HURACAN_SPOT.x, z: HURACAN_SPOT.z, yaw: 0 };
   const fwdOf = (yaw) => [Math.cos(yaw), -Math.sin(yaw)], leftOf = (yaw) => [-Math.sin(yaw), -Math.cos(yaw)];
@@ -56,13 +60,15 @@ export function createDriving({ huracan, traffic, camera, player, audio, hud, ge
       if (Math.hypot(v.x - x, v.z - z) > 9) continue;
       for (const k of [-0.36, 0, 0.36]) if (inside(v.x, v.z + k * v.len, v.width / 2 - 0.1)) return 'car';
     }
-    for (const p of traffic.peds) if (Math.hypot(p.x - x, p.z - z) < 4 && inside(p.x, p.z, 0.3)) return 'person';
+    // people in the road (crossing, stepping out) stop you; people on the pavement are behind the kerb,
+    // which already holds the car off them (the car parks right by the kerb, where people walk)
+    for (const p of traffic.peds) if (Math.hypot(p.x - x, p.z - z) < 4 && onRoad(p.x, p.z) && inside(p.x, p.z, 0.3)) return 'person';
     return false;
   }
 
-  function start() {
+  function start(demo = false) {
     const p = park();
-    S.on = true; S.d = createDrive({ x: huracan.group.position.x || p.x, z: huracan.group.position.z || p.z, yaw: huracan.group.rotation.y || p.yaw });
+    S.on = true; S.demo = demo; S.d = createDrive({ x: huracan.group.position.x || p.x, z: huracan.group.position.z || p.z, yaw: huracan.group.rotation.y || p.yaw });
     S.cam = 'chase'; S.camPos.set(S.d.x - Math.cos(S.d.yaw) * 6, 2.2, S.d.z + Math.sin(S.d.yaw) * 6);
     place(S.d.x, S.d.z, S.d.yaw); huracan.setLights(true);
     player.yaw = 0; player.pitch = -0.04;
@@ -75,6 +81,12 @@ export function createDriving({ huracan, traffic, camera, player, audio, hud, ge
     if (!S.on) return false;
     if (Math.abs(S.d.v) > 0.6) { hud.toast(T('先停车', 'Stop first'), 1.6); return true; }
     const d = S.d; S.on = false;
+    if (S.demo) {                                     // the test drive: the demo car goes back by the kerb, and Vivian takes over
+      S.demo = false; place(HURACAN_SPOT.x, HURACAN_SPOT.z, 0); huracan.setLights(false); engine.stop(); dial.classList.remove('on');
+      if (audio && audio.cue) audio.cue('door', 0, 0.6);
+      if (carSale) carSale.afterDrive(); else onMode && onMode('play');
+      return true;
+    }
     getLife().flags.carPark = { x: +d.x.toFixed(2), z: +d.z.toFixed(2), yaw: +d.yaw.toFixed(3) }; save && save();
     place(d.x, d.z, d.yaw); huracan.setLights(false); engine.stop(); dial.classList.remove('on');
     if (audio && audio.cue) audio.cue('door', 0, 0.6);
@@ -90,14 +102,32 @@ export function createDriving({ huracan, traffic, camera, player, audio, hud, ge
     get driving() { return S.on; },
     get state() { return S.d; },
     owned,
+    // E anywhere round the car (from the pavement too): yours, Drive; not yet yours, how to get it
     candidates() {
-      if (S.on || !owned() || !huracan.loaded || (carSale && carSale.present)) return [];
-      const g = huracan.group, yaw = g.rotation.y, [lx, lz] = leftOf(yaw), [fx, fz] = fwdOf(yaw);
-      return [{ id: 'drive', x: g.position.x + lx * 1.05 - fx * 0.2, y: 0.95, z: g.position.z + lz * 1.05 - fz * 0.2, reach: 2.4, cone: 0.55 }];
+      if (S.on || !huracan.loaded || (carSale && carSale.present)) return [];
+      const g = huracan.group;
+      return [{ id: owned() ? 'drive' : 'car', x: g.position.x, y: 0.9, z: g.position.z, reach: 3.3, cone: 0.5 }];
     },
-    prompt(id) { return id === 'drive' ? { target: T('你的 Huracán', 'Your Huracán'), action: T('开车', 'Drive') } : null; },
-    owns(id) { return id === 'drive'; },
-    interact(id) { if (id === 'drive') start(); return true; },
+    prompt(id) {
+      if (id === 'drive') return { target: T('你的 Huracán', 'Your Huracán'), action: T('开车', 'Drive') };
+      if (id !== 'car') return null;
+      const st = (getLife().flags.carBuy || {}).stage || 'none';
+      return { target: T('兰博基尼 Huracán', 'Lamborghini Huracán'), action: st === 'none' ? T('拍给知夏', 'Send Zhixia a photo') : T('看看', 'Look') };
+    },
+    owns(id) { return id === 'drive' || id === 'car'; },
+    interact(id) {
+      if (id === 'drive') { start(); return true; }
+      const L = getLife(), b = L.flags.carBuy, st = (b && b.stage) || 'none';
+      if (st === 'none') {                            // the lead: she knows the consultant whose demo car this is
+        L.flags.carCurious = true; lead(L); save && save();
+        hud.toast(T('你拍了一张发给知夏。她回了一张名片：Vivian，兰博基尼的销售顾问。按 P 打开微信加她，约试驾。', 'You send Zhixia a photo. She sends back a contact card: Vivian, a Lamborghini sales consultant. P for the phone: add her in WeChat to book a test drive.'), 7);
+      } else if (st === 'lead') hud.toast(T('Vivian 的名片在微信里知夏的聊天中：P 打开手机，加她，约试驾。', "Vivian's card is in your WeChat chat with Zhixia: P for the phone, add her, book a test drive."), 6);
+      else if (st === 'booked' || st === 'contacted') hud.toast(T(`Vivian ${Math.floor(b.at / 60) % 24}:${String(b.at % 60).padStart(2, '0')} 在这里等你，带你试驾。`, `Vivian meets you here at ${Math.floor(b.at / 60) % 24}:${String(b.at % 60).padStart(2, '0')} for the test drive.`), 5);
+      else hud.toast(T('你的车已经订了，Vivian 会在微信上跟你确认交车。', "Yours is on order: Vivian will be in touch on WeChat about delivery."), 5);
+      return true;
+    },
+    // Vivian's demo car, at the appointment (world/carSale.js): you drive, she rides along
+    testDrive() { if (S.on || !huracan.loaded) return false; start(true); return true; },
     exit,
     key(code) {
       if (!S.on) return false;

@@ -131,6 +131,7 @@ export const EN = {
   '尾款收到！我们准备交车～': "Balance received! We're getting her ready for delivery.",
   '好消息，这次沪牌拍到了！': 'Good news: we won a Shanghai plate this time!',
   '恭喜提车！以后有什么问题随时找我～': "Congratulations on your new car! Any questions at all, just message me.",
+  '我到汉口路了，车停在海关大楼旁边的路边，我在车旁等您。可以开一圈～': "I'm on Hankou Road: the car's at the kerb by the Customs House and I'm beside it. You can take it for a drive.",
   '车到了！明天下午我们把车开到汉口路给您交车，您看几点方便？': "She's arrived! We'll bring her to Hankou Road for the handover. I'll be there with the key.",
   '银行余额不够全款……要不做金融？首付三成就行。': "The account doesn't cover paying in full... Shall we do finance? Just 30% down.",
   '？？？白白提车了？？？': '??? Baibai bought a CAR???', '我就说吧😎 周末天马，带上它。': 'Told you 😎 Tianma this weekend, bring it.', '……你爸知道吗': '...Does your dad know?',
