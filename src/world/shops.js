@@ -46,19 +46,75 @@ export function createManner(curbH, { x = MANNER.x, zWall = MANNER.zWall } = {})
     c.fillStyle = 'rgba(255,255,255,0.6)'; c.textAlign = 'left'; c.font = `500 ${h * 0.022}px ${UI}`; c.fillText('自带杯减5元 · bring your own cup −¥5', w * 0.1, h * 0.375);
   }, { emissive: 0.32, px: 512 });
   tiles.position.set(x, y0 + 1.5, zWall + 0.02); g.add(tiles);
-  // counter, espresso machine, grinder, cups
-  add(new THREE.BoxGeometry(W - 0.3, 1.0, 0.45), black, x, y0 + 0.5, zWall + 0.3);
-  add(new THREE.BoxGeometry(W - 0.3, 0.04, 0.5), white, x, y0 + 1.02, zWall + 0.3);
-  const steel = std({ color: 0xc8cacc, roughness: 0.25, metalness: 1 });
-  add(new THREE.BoxGeometry(0.8, 0.42, 0.4), steel, x + 0.7, y0 + 1.25, zWall + 0.28);
-  for (const dx of [-0.2, 0.2]) add(new THREE.CylinderGeometry(0.035, 0.035, 0.08, 10), black, x + 0.7 + dx, y0 + 1.08, zWall + 0.47);
-  add(new THREE.CylinderGeometry(0.08, 0.1, 0.42, 12), black, x + 1.4, y0 + 1.25, zWall + 0.25);       // grinder
-  for (let i = 0; i < 4; i++) { const c = makeCup('manner'); c.position.set(x - 0.9 + i * 0.12, y0 + 1.04, zWall + 0.42); c.rotation.y = (i % 2 ? 0.3 : -0.2); g.add(c); }   // cups waiting on the pass
+  // the back counter (slim: the baristas work in the aisle between it and the window), the
+  // espresso machine, grinders, knock box, tamping mat, cups and lids, syrups
+  const CT = y0 + 0.93, zc = zWall + 0.38;                                     // counter top, counter front
+  add(new THREE.BoxGeometry(W - 0.3, 0.9, 0.36), black, x, y0 + 0.45, zWall + 0.2);
+  add(new THREE.BoxGeometry(W - 0.3, 0.03, 0.4), white, x, CT - 0.015, zWall + 0.21);
+  add(new THREE.BoxGeometry(W - 0.2, 0.01, D - 0.1), std({ color: 0x2a2b2c, roughness: 0.8 }), x, y0 + 0.005, zWall + D / 2);   // the floor behind the counter
+  const steel = std({ color: 0xc8cacc, roughness: 0.22, metalness: 1 });
+  const brushed = std({ color: 0xaeb2b6, roughness: 0.4, metalness: 1 });
+  const rubber = std({ color: 0x151515, roughness: 0.85 });
+  const porcelain = std({ color: 0xf6f5f1, roughness: 0.3 });
+  const mx = x + 0.75;                                                         // the espresso machine: two groups, steam wands, cup warmer
+  add(new THREE.BoxGeometry(0.78, 0.4, 0.3), brushed, mx, CT + 0.22, zWall + 0.2);
+  add(new THREE.BoxGeometry(0.74, 0.17, 0.012), black, mx, CT + 0.33, zWall + 0.355);                // front panel
+  for (const dx of [-0.18, 0.18]) {
+    add(new THREE.CylinderGeometry(0.03, 0.03, 0.01, 16).rotateX(Math.PI / 2), white, mx + dx, CT + 0.35, zWall + 0.363);   // pressure gauges
+    add(new THREE.CylinderGeometry(0.045, 0.04, 0.05, 16), steel, mx + dx, CT + 0.17, zWall + 0.33);    // group heads
+    add(new THREE.CylinderGeometry(0.04, 0.035, 0.035, 14), steel, mx + dx, CT + 0.13, zWall + 0.33);   // portafilters locked in
+    add(new THREE.CylinderGeometry(0.012, 0.012, 0.14, 8).rotateX(Math.PI / 2 - 0.25), black, mx + dx, CT + 0.11, zWall + 0.42);   // their handles
+    add(new THREE.BoxGeometry(0.07, 0.03, 0.02), black, mx + dx, CT + 0.29, zWall + 0.37);             // shot buttons
+  }
+  for (const dx of [-0.36, 0.36]) add(new THREE.CylinderGeometry(0.007, 0.007, 0.2, 8).rotateX(0.35), steel, mx + dx, CT + 0.2, zWall + 0.38);   // steam wands
+  add(new THREE.BoxGeometry(0.66, 0.025, 0.14), steel, mx, CT + 0.015, zWall + 0.33);                 // drip tray
+  add(new THREE.BoxGeometry(0.74, 0.012, 0.26), steel, mx, CT + 0.425, zWall + 0.2);                  // cup warmer
+  for (let i = 0; i < 8; i++) add(new THREE.CylinderGeometry(0.035, 0.028, 0.06, 12), porcelain, mx - 0.3 + (i % 4) * 0.2 + (i > 3 ? 0.08 : 0), CT + 0.46, zWall + 0.14 + (i > 3 ? 0.11 : 0));
+  const beans = std({ color: 0x3a2214, roughness: 0.6 }), hopper = std({ color: 0x9a7a5a, roughness: 0.1, transparent: true, opacity: 0.55, depthWrite: false });
+  for (const [gx, k] of [[x + 1.5, 1], [x + 1.82, 0.82]]) {                    // two grinders: the house blend and the single origin
+    add(new THREE.BoxGeometry(0.17 * k, 0.06, 0.24 * k), black, gx, CT + 0.03, zWall + 0.22);
+    add(new THREE.BoxGeometry(0.15 * k, 0.32 * k, 0.18 * k), black, gx, CT + 0.06 + 0.16 * k, zWall + 0.2);
+    add(new THREE.BoxGeometry(0.04, 0.04, 0.06), brushed, gx, CT + 0.06 + 0.12 * k, zWall + 0.32);     // spout
+    add(new THREE.CylinderGeometry(0.085 * k, 0.04 * k, 0.17 * k, 14), hopper, gx, CT + 0.06 + 0.32 * k + 0.085 * k, zWall + 0.2);
+    add(new THREE.CylinderGeometry(0.07 * k, 0.04 * k, 0.1 * k, 14), beans, gx, CT + 0.06 + 0.32 * k + 0.05 * k, zWall + 0.2);
+  }
+  add(new THREE.BoxGeometry(0.16, 0.12, 0.16), rubber, x + 0.15, CT + 0.06, zWall + 0.24);             // knock box
+  add(new THREE.CylinderGeometry(0.01, 0.01, 0.16, 8).rotateZ(Math.PI / 2), brushed, x + 0.15, CT + 0.11, zWall + 0.24);
+  add(new THREE.BoxGeometry(0.2, 0.012, 0.16), rubber, x + 0.36, CT + 0.006, zWall + 0.27);             // tamping mat, tamper, a spare portafilter
+  add(new THREE.CylinderGeometry(0.028, 0.028, 0.02, 14), steel, x + 0.33, CT + 0.022, zWall + 0.27);
+  add(new THREE.CylinderGeometry(0.012, 0.016, 0.07, 10), black, x + 0.33, CT + 0.067, zWall + 0.27);
+  add(new THREE.CylinderGeometry(0.04, 0.035, 0.03, 14), steel, x + 0.43, CT + 0.027, zWall + 0.25);
+  // cups waiting on the pass, stacks of cups and lids, the syrups
+  for (let i = 0; i < 3; i++) { const c = makeCup('manner'); c.position.set(x - 0.5 + i * 0.13, CT, zWall + 0.3); c.rotation.y = (i % 2 ? 0.3 : -0.2); g.add(c); }
+  for (let i = 0; i < 3; i++) {
+    const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.3, 14), porcelain); stack.position.set(x - 1.12 + i * 0.12, CT + 0.15, zWall + 0.14); g.add(stack);
+  }
+  add(new THREE.CylinderGeometry(0.048, 0.048, 0.12, 14), black, x - 0.78, CT + 0.06, zWall + 0.14);   // lids
+  const syrups = [0x6b3a1f, 0xc79a3b, 0x8a1f2c, 0xe7d9b8];
+  syrups.forEach((col, i) => { add(new THREE.CylinderGeometry(0.03, 0.03, 0.24, 10), std({ color: col, roughness: 0.15, transparent: true, opacity: 0.85 }), x - 1.85 + i * 0.08, CT + 0.12, zWall + 0.12); add(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 8), black, x - 1.85 + i * 0.08, CT + 0.27, zWall + 0.12); });
+  // the milk fridge under the counter (its steel door) and a towel over the rail
+  add(new THREE.BoxGeometry(0.8, 0.7, 0.01), brushed, x + 0.75, y0 + 0.42, zc + 0.006);
+  add(new THREE.BoxGeometry(0.3, 0.2, 0.01), std({ color: 0xe9e4d8, roughness: 0.9 }), x - 0.2, CT - 0.12, zc + 0.008);
   // glass, and the open hatch you order at
   const glass = std({ color: 0x9fb3bd, roughness: 0.05, metalness: 0.3, transparent: true, opacity: 0.16, depthWrite: false });
   add(new THREE.BoxGeometry(W - 0.2, 2.1, 0.02), glass, x + 0.45, y0 + 1.95, zf - 0.02).scale.x = 0.78;
   add(new THREE.BoxGeometry(0.05, 2.1, 0.06), black, x - 1.05, y0 + 1.95, zf - 0.02);               // hatch post
   add(new THREE.BoxGeometry(1.0, 0.04, 0.3), white, x - 1.55, y0 + 1.06, zf + 0.08);               // hatch ledge, outside
+  add(new THREE.BoxGeometry(1.0, 0.04, 0.12), white, x - 1.55, y0 + 1.06, zf - 0.07);               // and its sill inside
+  // the order code on the ledge: a little acrylic stand with the QR you scan
+  const qr = panel(0.1, 0.14, (c, w, h) => {
+    c.fillStyle = '#fff'; c.fillRect(0, 0, w, h); c.fillStyle = '#111';
+    const n = 21, s = w * 0.8 / n, ox = w * 0.1, oy = w * 0.1;
+    let seed = 7; const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const finder = (a, b) => i >= a && i < a + 7 && j >= b && j < b + 7;
+      const f = finder(0, 0) || finder(n - 7, 0) || finder(0, n - 7);
+      const on = f ? (() => { const a = i < 7 ? i : i - (n - 7), b = j < 7 ? j : j - (n - 7); return a === 0 || a === 6 || b === 0 || b === 6 || (a > 1 && a < 5 && b > 1 && b < 5); })() : r() > 0.5;
+      if (on) c.fillRect(ox + i * s, oy + j * s, s, s);
+    }
+    c.font = `700 ${h * 0.09}px ${FONT.sans}`; c.textAlign = 'center'; c.fillText('扫码点单', w / 2, h * 0.92);
+  }, { emissive: 0.2, px: 160 });
+  qr.position.set(x - 1.9, y0 + 1.16, zf + 0.12); qr.rotation.x = -0.15; g.add(qr);
   // the sign: the name set in type, white on black, lit
   const name = panel(W, 0.5, (c, w, h) => {
     c.fillStyle = '#0d0d0d'; c.fillRect(0, 0, w, h);
@@ -87,5 +143,12 @@ export function createManner(curbH, { x = MANNER.x, zWall = MANNER.zWall } = {})
     queue: [{ x: x - 1.55, z: zf + 0.5 }, { x: x - 2.35, z: zf + 0.75 }, { x: x - 3.1, z: zf + 0.9 }],
     pickup: { x: x - 0.4, z: zf + 0.45 },
     light: { x, y: y0 + 2.7, z: zf + 1.1 },                                     // out over the pavement: a wash, not a hotspot on the tiles
+    // where the baristas work (world/baristas.js): the aisle behind the window, the machine, the pass
+    work: {
+      y0, top: CT, zc, aisle: zWall + 0.6, zf,
+      machine: mx, grinder: x + 1.5, tamp: x + 0.36, pass: x - 0.1, hatch: x - 1.45, qr: x - 1.9,
+      sill: { y: y0 + 1.08, z: zf - 0.08 }, ledge: { x: x - 1.6, y: y0 + 1.08, z: zf + 0.06 },
+      pitcherRest: { x: mx + 0.5, z: zWall + 0.28 },
+    },
   };
 }
