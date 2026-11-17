@@ -586,8 +586,8 @@
  },
  {
   "who": "dad",
-  "zh": "钱的事你自己有数。专利那笔钱，别全扔在车上。有空回南京一趟，厂里的事我们当面谈。",
-  "en": "You know your own mind about money. Don't throw all the patent money at a car. Come back to Nanjing when you can. We'll talk about the factory in person."
+  "zh": "钱的事你自己有数。你在美国攒的那点钱，别全扔在车上。有空回南京一趟，厂里的事我们当面谈。",
+  "en": "You know your own mind about money. Don't throw everything you saved in America at a car. Come back to Nanjing when you can. We'll talk about the factory in person."
  },
  {
   "who": "dad",
@@ -596,8 +596,53 @@
  },
  {
   "who": "carPurchase.js",
-  "zh": "你好，我是知夏的朋友沈既白，想了解一下 Huracán。",
+  "zh": "你好，我是知夏的朋友纪白，想了解一下 Huracán。",
   "en": "me"
+ },
+ {
+  "who": "momo",
+  "zh": "昨晚和平饭店门口那事，吧台的小妹说是你？可以啊纪白。",
+  "en": "That business outside the Peace Hotel last night. The girl on the bar says it was you? Not bad, Ji Bai."
+ },
+ {
+  "who": "momo",
+  "zh": "她说那人后来自己走了，没动手。难得。",
+  "en": "She says he walked off in the end and nobody threw a punch. That takes some doing."
+ },
+ {
+  "who": "momo",
+  "zh": "保安跟我说你昨晚是被救护车拉走的？？醒了回个话。",
+  "en": "Security tells me you left in an ambulance last night?? Message me when you're up."
+ },
+ {
+  "who": "momo",
+  "zh": "听说昨晚你在和平饭店门口跟人动手了？？人没事吧",
+  "en": "I hear you got into it with someone outside the Peace Hotel last night?? Are you all right?"
+ },
+ {
+  "who": "zhixia",
+  "zh": "[视频] 这是不是纪白？？昨晚南京路",
+  "en": "[video] Is this Ji Bai?? Nanjing Road, last night"
+ },
+ {
+  "who": "xuan",
+  "zh": "……是他。",
+  "en": "…That's him."
+ },
+ {
+  "who": "zhixia",
+  "zh": "[视频] 这个被推了都不还手的，是不是纪白",
+  "en": "[video] The one who gets shoved and doesn't shove back. Is that Ji Bai?"
+ },
+ {
+  "who": "momo",
+  "zh": "是他！！评论区说“情绪稳定天花板”哈哈哈哈",
+  "en": "It is!! Top comment: \"the calmest man in Shanghai\" hahaha"
+ },
+ {
+  "who": "ruoan",
+  "zh": "你脸怎么了？谁告诉我的不重要。冰敷，别热敷。",
+  "en": "What happened to your face? Never mind who told me. Ice, not heat."
  },
  {
   "who": "店员",
@@ -610,9 +655,14 @@
   "en": "Hi! Scan the code by the window to order."
  },
  {
+  "who": "zhou",
+  "zh": "到外滩来。海关钟下面……",
+  "en": "Come to the Bund. Under the Customs clock..."
+ },
+ {
   "who": "zhixia",
-  "zh": "喂，沈既白，听说你那个手套专利的钱到账了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？",
-  "en": "Hey, Shen Jibai, heard the money for your glove patent came through? ...Don't play dumb, Ruoan told me. Come to Tianma this weekend, I'll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?"
+  "zh": "喂，纪白，听说你硅谷那家公司的股票套现了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？",
+  "en": "Hey, Ji Bai, heard you cashed out your stock from that Valley company? ...Don't play dumb, Ruoan told me. Come to Tianma this weekend, I'll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?"
  },
  {
   "who": "zhixia",
@@ -631,13 +681,18 @@
  },
  {
   "who": "vivian",
-  "zh": "沈先生？我是Vivian。这台是我们的试驾车，Huracán LP610-4，5.2升V10自然吸气，您随便看。",
-  "en": "Mr Shen? I'm Vivian. This is our demo car, the Huracán LP610-4: 5.2-litre naturally aspirated V10. Have a good look."
+  "zh": "纪先生？我是Vivian。这台是我们的试驾车，Huracán LP610-4，5.2升V10自然吸气，您随便看。",
+  "en": "Mr Ji? I'm Vivian. This is our demo car, the Huracán LP610-4: 5.2-litre naturally aspirated V10. Have a good look."
  },
  {
   "who": "vivian",
   "zh": "（她探身进去按了启动键。V10先是一声吼，然后低低地怠速。路边好几个人回头。）",
   "en": "(She leans in and presses start. The V10 barks, then settles into a low idle. Several people on the pavement turn round.)"
+ },
+ {
+  "who": "vivian",
+  "zh": "怎么样？在外滩开这台车，整条路的人都在看您。",
+  "en": "Well? Drive this along the Bund and the whole street watches you."
  },
  {
   "who": "vivian",
@@ -663,6 +718,1411 @@
   "who": "vivian",
   "zh": "好的，有问题随时微信我。",
   "en": "Of course. Message me any time."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "你好……你认识这个摊子的老板吗？我是他女儿。我爸十月底就联系不上了。派出所立了案，可这边有人说，摊子已经“转让”了。",
+  "en": "Excuse me... do you know the man who keeps this stall? I'm his daughter. Nobody has been able to reach my father since the end of October. The police have opened a file, but people here tell me the stall has been \"transferred\"."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "三十一号……那不是他签的。他二十九号晚上坐车去昆山我姑妈家，人没到。",
+  "en": "The thirty-first... then he didn't sign it. On the evening of the twenty-ninth he took the coach to my aunt's in Kunshan, and he never arrived."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "你愿意把这些写下来，签个名字吗？我拿去派出所。",
+  "en": "Would you write that down and sign it? I'll take it to the police station."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "……好。谢谢。要是想起什么，这是我的电话。",
+  "en": "...All right. Thank you. If anything comes back to you, here's my number."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "家属？我就是家属。我没托过任何人。……袋子里是什么？",
+  "en": "The family? I am the family. I asked nobody to do anything. ...What was in it?"
+ },
+ {
+  "who": "zhoumin",
+  "zh": "老林在哪儿？",
+  "en": "Where is this Old Lin?"
+ },
+ {
+  "who": "zhoumin",
+  "zh": "……好。谢谢。",
+  "en": "...All right. Thank you."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "一期的使用率是三成四。理赔员宁可自己翻材料，也不点“采纳建议”。",
+  "en": "Adoption in phase one was thirty-four per cent. The adjusters would sooner go through the papers themselves than click 'accept'."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "两周没有产出，Raymond 会问。我替你顶着。",
+  "en": "Two weeks without a deliverable and Raymond will ask. I'll hold him off."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "排名。他们会点的，点完照样不信。",
+  "en": "A ranking. They will click, then. And go on not trusting it."
+ },
+ {
+  "who": "partner",
+  "zh": "还有件事。南京有家做精密加工的要做数字化评估，八十万的案子。纪氏精工。……是你家的厂吧？",
+  "en": "One more thing. A precision-machining company in Nanjing wants a digital-transformation assessment. An eight-hundred-thousand engagement. Ji's Precision Works. ...That would be your family's, wouldn't it?"
+ },
+ {
+  "who": "partner",
+  "zh": "规矩人。行，我让邵峰去。",
+  "en": "A man for the rules. Very well. I shall send Shao Feng."
+ },
+ {
+  "who": "partner",
+  "zh": "有意思。你写个提纲给邵峰。",
+  "en": "Interesting. Write Shao Feng an outline."
+ },
+ {
+  "who": "partner",
+  "zh": "好。成本数据你最清楚，报价就好谈。",
+  "en": "Good. You know their costs better than anyone, which makes the price easy to argue."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "你那两周的笔记我看了。“它从不说自己不确定。”这一条，客户的理赔组长原话？",
+  "en": "I read your notes from the two weeks. \"It never says when it isn't sure.\" Is that the claims team leader's own words?"
+ },
+ {
+  "who": "zhiwei",
+  "zh": "看板上线一个月，采纳率到了八成。抽查发现，一半是不看就点。",
+  "en": "A month of the dashboard and the acceptance rate is eighty per cent. The spot check says half of those are clicked without reading."
+ },
+ {
+  "who": "partner",
+  "zh": "下个月行业峰会，“保险业的 AI 转型”，主讲我想放你。去了就是公司的脸。可知微说，交付这边离不开你。",
+  "en": "The industry summit next month: \"AI transformation in insurance\". I want you as the keynote. You would be the face of the firm. But Zhiwei says delivery cannot spare you."
+ },
+ {
+  "who": "partner",
+  "zh": "……错在哪儿。你把稿子先给我看。",
+  "en": "...Where we went wrong. I shall see the draft first."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "……你把台子让给我？",
+  "en": "...You are giving me the stage?"
+ },
+ {
+  "who": "zhiwei",
+  "zh": "他是真的更会讲。",
+  "en": "He really is the better speaker."
+ },
+ {
+  "who": "partner",
+  "zh": "好。",
+  "en": "Good."
+ },
+ {
+  "who": "feng",
+  "zh": "工作台的效果我认。结案六天半了。所以理赔中心明年编制减四十个人，方案你们来写，写成“AI 提效的自然结果”。",
+  "en": "I grant you the workbench works. Six and a half days to close. So the claims centre loses forty posts next year, and you will write the plan. Call it 'the natural result of AI efficiency'."
+ },
+ {
+  "who": "feng",
+  "zh": "……把数算清楚。算得过来，我拿去董事会。",
+  "en": "...Get the numbers straight. If they add up I will take it to the board."
+ },
+ {
+  "who": "feng",
+  "zh": "那就把数据给我。",
+  "en": "Then give me the data."
+ },
+ {
+  "who": "partner",
+  "zh": "这就是二期的续约。",
+  "en": "And there is our renewal for phase two."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "我的评语只写了一句：“他会让客户听到他们不想听的话，然后把事情做成。”",
+  "en": "My comment on you was one sentence: \"He will make a client hear what they don't want to hear, and then get the thing done.\""
+ },
+ {
+  "who": "partner",
+  "zh": "明年新加坡那边要人，轮岗一年。去不去，过完年给我答复。",
+  "en": "Singapore wants people next year. A year's rotation. Give me your answer after the holiday."
+ },
+ {
+  "who": "partner",
+  "zh": "应该的。",
+  "en": "As you should."
+ },
+ {
+  "who": "partner",
+  "zh": "也行。",
+  "en": "As you wish."
+ },
+ {
+  "who": "gu",
+  "zh": "欢迎。这儿没有 deck，只有版本号。产品叫“排产助手”：中小工厂的计划员，每天早上靠 Excel 和电话排当天的生产，我们想让他问一句话就行。",
+  "en": "Welcome. No decks here, only version numbers. The product is the scheduling assistant: in a mid-sized factory the planner builds the day's production every morning out of Excel and phone calls. We want that to be one question."
+ },
+ {
+  "who": "sheng",
+  "zh": "七月有工博会。我要一个能在展台上跑的演示，要炫。",
+  "en": "There is the industry fair in July. I want a demo that runs on the stand, and I want it to dazzle."
+ },
+ {
+  "who": "sheng",
+  "zh": "两周？……顾磊说你就是这种人。去吧，昆山那家注塑厂。",
+  "en": "Two weeks? ...Gu Lei said this is what you're like. Go on, then. The injection-moulding plant in Kunshan."
+ },
+ {
+  "who": "sheng",
+  "zh": "这才对。",
+  "en": "That's more like it."
+ },
+ {
+  "who": "gu",
+  "zh": "销售的线索表你看一眼。……第十七行，南京，纪氏精工。",
+  "en": "Have a look at the sales leads. ...Row seventeen. Nanjing. Ji's Precision Works."
+ },
+ {
+  "who": "qin",
+  "zh": "小伙子，我问一句：插单你们怎么处理？我们厂一天插三回单，系统排的计划到中午就是废纸。",
+  "en": "Young man, one question. Rush orders: what do you do with them? We get three a day. Whatever the system planned is waste paper by noon."
+ },
+ {
+  "who": "qin",
+  "zh": "……小白？！长这么高了。你爸知道你在这儿？",
+  "en": "...Little Bai?! Look at the height of you. Does your father know you're here?"
+ },
+ {
+  "who": "qin",
+  "zh": "行，我不为难你。回去我跟你爸说，他儿子做的东西，问得倒是在点子上。",
+  "en": "All right, I won't make it awkward. I'll tell your father his son's product at least asks the right questions."
+ },
+ {
+  "who": "qin",
+  "zh": "有点意思。留个电话，我回去跟我们老板说。",
+  "en": "Now that's something. Give me a number. I'll tell my boss."
+ },
+ {
+  "who": "gu",
+  "zh": "昆山出事了。排产助手把周四的急单全压到了夜班，夜班少两个人，模具温度没跟上，废了一批。",
+  "en": "Kunshan has gone wrong. The assistant put all of Thursday's rush orders onto the night shift. The night shift was two people short, the mould temperature didn't keep up, and a batch is scrap."
+ },
+ {
+  "who": "planner",
+  "zh": "（电话）我当时点了“不同意”，系统让我填理由，填完它还是按自己的排。那我还填它干什么？",
+  "en": "(On the phone) I clicked \"disagree\". It made me type a reason, and then scheduled its own way regardless. So what was I typing for?"
+ },
+ {
+  "who": "sheng",
+  "zh": "“全自动排产”是我们的卖点。加一个人工否决，卖点就没了。",
+  "en": "\"Fully automatic scheduling\" is what we sell. Add a human veto and there is nothing left to sell."
+ },
+ {
+  "who": "sheng",
+  "zh": "……顾磊，你招的人，跟你一个脾气。给你们一个版本的时间。",
+  "en": "...Gu Lei, you hired a man with your own temper. You have one release to prove it."
+ },
+ {
+  "who": "gu",
+  "zh": "规则能挡住这一次。下一次是我们想不到的。",
+  "en": "A rule stops this one. The next one will be something we never thought of."
+ },
+ {
+  "who": "planner",
+  "zh": "（电话已经挂了。）",
+  "en": "(He has already hung up.)"
+ },
+ {
+  "who": "sheng",
+  "zh": "明年融 A+ 轮。给你千分之八的期权，四年归属。条件是签三年。",
+  "en": "We raise a series A-plus next year. I am offering you options over 0.8 per cent, vesting over four years. The condition is that you sign for three."
+ },
+ {
+  "who": "gu",
+  "zh": "那明年的路线图，咱俩这周定。",
+  "en": "Then you and I settle next year's roadmap this week."
+ },
+ {
+  "who": "sheng",
+  "zh": "月底。",
+  "en": "The end of the month."
+ },
+ {
+  "who": "founder",
+  "zh": "靠窗这两张桌子归你。网、打印机、咖啡机随便用。房租你别提，等你有了收入，请我们吃顿好的。",
+  "en": "The two desks by the window are yours. Network, printer, coffee machine: help yourself. Don't mention rent. When you have revenue, buy us all a good dinner."
+ },
+ {
+  "who": "xuan",
+  "zh": "营业执照我找人三天办下来。公司叫什么？",
+  "en": "I can get the business licence done in three days. What is the company called?"
+ },
+ {
+  "who": "xuan",
+  "zh": "岸线。行，像个正经公司。",
+  "en": "Shoreline. Fine. Sounds like a proper company."
+ },
+ {
+  "who": "xuan",
+  "zh": "工坊。投资人会以为你做手工皂。……行吧。",
+  "en": "Works. Investors will think you make soap. ...Fine."
+ },
+ {
+  "who": "founder",
+  "zh": "这个好。我们学校校训旁边就刻着这句。",
+  "en": "I like that one. It's carved beside our university motto."
+ },
+ {
+  "who": "xuan",
+  "zh": "注册资本认缴一百万，先实缴三十万进公司账户。这是你自己的钱，想好。",
+  "en": "Registered capital of a million, three hundred thousand of it paid in now, into the company account. It is your own money. Be sure."
+ },
+ {
+  "who": "xuan",
+  "zh": "然后是最要紧的：做什么？",
+  "en": "And then the thing that matters most. What does it make?"
+ },
+ {
+  "who": "founder",
+  "zh": "我们的机械臂末端正好缺一双眼睛。",
+  "en": "The end of our arm happens to be missing a pair of eyes."
+ },
+ {
+  "who": "xuan",
+  "zh": "制造业，客单价高，回款慢。你爸那边……算了，你自己定。",
+  "en": "Manufacturing: big tickets, slow payers. Your father's place... never mind. Your call."
+ },
+ {
+  "who": "xuan",
+  "zh": "保险公司采购要走半年。你的钱够烧到那时候吗？",
+  "en": "An insurer takes six months to buy anything. Does your money last that long?"
+ },
+ {
+  "who": "founder",
+  "zh": "那我就是你第一个客户了。先说好，我们也没钱。",
+  "en": "Then I am your first customer. Fair warning: we haven't any money either."
+ },
+ {
+  "who": "founder",
+  "zh": "八万……行。先付三万，交付再付五万。",
+  "en": "Eighty thousand... all right. Thirty now, fifty on delivery."
+ },
+ {
+  "who": "engineer",
+  "zh": "终于不用我半夜改示教程序了。",
+  "en": "At last I can stop rewriting the teach program at midnight."
+ },
+ {
+  "who": "dad",
+  "zh": "（电话）……免费的东西我不要。老秦说检测工位天天误判，你来看。看得好，按市价给。",
+  "en": "(On the phone) ...I don't take things for free. Old Qin says the inspection station misjudges parts every day. Come and look at it. If you fix it, I pay the market price."
+ },
+ {
+  "who": "xuan",
+  "zh": "你爸比我见过的大多数投资人都上道。",
+  "en": "Your father has better instincts than most investors I meet."
+ },
+ {
+  "who": "xuan",
+  "zh": "三十万是好单子。三个月是你要自己扛的。",
+  "en": "Three hundred thousand is a good contract. The three months you carry yourself."
+ },
+ {
+  "who": "xuan",
+  "zh": "……产品是客户骂出来的，不是关起门做出来的。这句话还是你跟我说的。",
+  "en": "...A product is what customers shout it into being, not what you build with the door shut. You were the one who told me that."
+ },
+ {
+  "who": "xuan",
+  "zh": "第二件事。你一个人撑不了多久。",
+  "en": "Second thing. You won't last long on your own."
+ },
+ {
+  "who": "taoke",
+  "zh": "（电话）……真的吗？我明天就能到。纪白，谢谢你。",
+  "en": "(On the phone) ...Really? I can be there tomorrow. Ji Bai. Thank you."
+ },
+ {
+  "who": "engineer",
+  "zh": "两边的活我都干得过来。",
+  "en": "I can manage both jobs."
+ },
+ {
+  "who": "xuan",
+  "zh": "四万五。你的跑道一下短了一半。",
+  "en": "Forty-five thousand. Your runway just halved."
+ },
+ {
+  "who": "xuan",
+  "zh": "那你就是公司的全部风险。",
+  "en": "Then you are the whole of the company's risk."
+ },
+ {
+  "who": "wang",
+  "zh": "小纪，机械臂演示那回我就说要请你吃饭。直说吧：两百万，占两成。条件是三年内营收到三千万，到不了，你的股份补给我。",
+  "en": "Ji Bai. I said I'd buy you dinner back at the arm demo. Plainly, then: two million for twenty per cent. The condition is thirty million in revenue within three years. Miss it and the difference comes out of your shares."
+ },
+ {
+  "who": "wang",
+  "zh": "……有脾气。行，一百万，一成。我投的是你这个人。",
+  "en": "...Spirit. Very well: one million, ten per cent. It is you I am investing in."
+ },
+ {
+  "who": "wang",
+  "zh": "痛快。",
+  "en": "A man who decides."
+ },
+ {
+  "who": "xuan",
+  "zh": "（小声）三千万。你知道那是多少条产线吗。",
+  "en": "(Quietly) Thirty million. Do you know how many production lines that is?"
+ },
+ {
+  "who": "wang",
+  "zh": "有骨气的我见多了，活下来的不多。活下来了，再来找我。",
+  "en": "I have met plenty with backbone. Fewer who survived. Survive, and come and find me."
+ },
+ {
+  "who": "dad",
+  "zh": "（电话）……账号发我。借条要写。",
+  "en": "(On the phone) ...Send me the account number. And you write me a proper note for it."
+ },
+ {
+  "who": "dad",
+  "zh": "（电话）试点到期了。老秦说要留。按市价，二十万一年，合同你发过来。……发票开专票。",
+  "en": "(On the phone) The pilot has run out. Old Qin says keep it. Market price: two hundred thousand a year. Send the contract. ...And a proper VAT invoice."
+ },
+ {
+  "who": "founder",
+  "zh": "机械臂明年量产。操作台跟着臂一起卖，每台给你分成。这个合同，比八万大。",
+  "en": "The arm goes into production next year. The console ships with every arm and you take a share of each. That contract is bigger than eighty thousand."
+ },
+ {
+  "who": "xuan",
+  "zh": "东澜的合同盖章了。三十万，首款十五万，今天到账。",
+  "en": "Donglan has stamped the contract. Three hundred thousand, half of it up front, in the account today."
+ },
+ {
+  "who": "xuan",
+  "zh": "四个月了，还是没有客户。我说句难听的：这是个项目，还不是公司。",
+  "en": "Four months and still no customer. I will say the hard thing: this is a project. It is not yet a company."
+ },
+ {
+  "who": "founder",
+  "zh": "跟我们做臂一个路子。慢，但是活着。",
+  "en": "The way we build the arm. Slow, and alive."
+ },
+ {
+  "who": "xuan",
+  "zh": "这句话我爱听。BP 我帮你改。",
+  "en": "That is what I like to hear. I'll help you redo the deck."
+ },
+ {
+  "who": "xuan",
+  "zh": "停不丢人。先别今天定，吃完那顿饭再说。",
+  "en": "There is no shame in stopping. Only do not decide today. Have that dinner first."
+ },
+ {
+  "who": "dad",
+  "zh": "这是新线，做电驱壳体。设备两千万，MES 系统两百万。你自己看。",
+  "en": "The new line. Electric-drive housings. Twenty million in machines, two million in the MES. See for yourself."
+ },
+ {
+  "who": "qin",
+  "zh": "系统说我们上个月合格率 99.2%。实际返工的件堆了半个车间。它只认扫码，不认人拿去返修又放回来。",
+  "en": "The system says our pass rate last month was 99.2 per cent. In fact the rework is stacked across half the shop. It only knows a scan. It doesn't know a man took the part away, reworked it and put it back."
+ },
+ {
+  "who": "dad",
+  "zh": "你在外面给别人做这个。给自己家做，会不会？",
+  "en": "You do this for other people out there. Can you do it for your own family?"
+ },
+ {
+  "who": "qin",
+  "zh": "跟夜班？你爸当年也跟过。",
+  "en": "The night shift? Your father worked it once, too."
+ },
+ {
+  "who": "dad",
+  "zh": "……工作服去仓库领。",
+  "en": "...Get overalls from the stores."
+ },
+ {
+  "who": "qin",
+  "zh": "又是报告。",
+  "en": "Another report."
+ },
+ {
+  "who": "dad",
+  "zh": "两百万，我签的字。你回来第一天，就说我签错了。",
+  "en": "Two million. I signed for it. And on your first day back you tell me I signed wrong."
+ },
+ {
+  "who": "qin",
+  "zh": "视觉检测工位，昨天把好件判废了四十个，线停了三回。夜班的人拿胶带把相机贴上了。",
+  "en": "The vision inspection station scrapped forty good parts yesterday and stopped the line three times. The night shift have put tape over the camera."
+ },
+ {
+  "who": "operator",
+  "zh": "不贴，这个月的计件就没了。纪工，你说怎么办。",
+  "en": "If we don't, there go this month's piece rates. Engineer Ji, you tell us what to do."
+ },
+ {
+  "who": "dad",
+  "zh": "两百万的设备，贴胶带。谁贴的，报上来。",
+  "en": "A two-million machine with tape on it. I want the names of whoever did it."
+ },
+ {
+  "who": "dad",
+  "zh": "……三天。三天以后还误判，胶带你自己去贴。",
+  "en": "...Three days. And if it is still misjudging after three days, you can put the tape on yourself."
+ },
+ {
+  "who": "operator",
+  "zh": "纪工，夜里标定我留下帮你。",
+  "en": "Engineer Ji, I'll stay on tonight and help you calibrate."
+ },
+ {
+  "who": "qin",
+  "zh": "照开，今晚又要停线。",
+  "en": "Keep it running and the line stops again tonight."
+ },
+ {
+  "who": "operator",
+  "zh": "……行。",
+  "en": "...Right."
+ },
+ {
+  "who": "dad",
+  "zh": "主机厂来审核了。九十天之内，每个壳体要能追到哪台机床、哪把刀、哪个人、哪一炉料。做不到，订单给韩家。",
+  "en": "The carmaker's auditors have been. Within ninety days every housing must trace back to its machine, its tool, its operator and its melt. If we cannot, the order goes to the Hans."
+ },
+ {
+  "who": "qin",
+  "zh": "你原来那家公司来报过价。八百万，十个月。",
+  "en": "That firm you used to work for sent a quotation. Eight million. Ten months."
+ },
+ {
+  "who": "dad",
+  "zh": "……土办法。我那时候追料，是拿粉笔在毛坯上写炉号。",
+  "en": "...Rough and ready. In my day we traced a melt by chalking the heat number on the blank."
+ },
+ {
+  "who": "qin",
+  "zh": "平板别买太贵的，车间油大。",
+  "en": "Don't buy dear tablets. The shop is oily."
+ },
+ {
+  "who": "dad",
+  "zh": "十个月。九十天，你拿什么交？",
+  "en": "Ten months. What do you hand over at ninety days?"
+ },
+ {
+  "who": "qin",
+  "zh": "一个人写，出了问题半夜找谁？",
+  "en": "One man writes it, and who do we ring at midnight when it breaks?"
+ },
+ {
+  "who": "dad",
+  "zh": "（夜班，二楼办公室。他没开大灯。）这半年你做的，我都看着。",
+  "en": "(Night shift, the upstairs office. He has not put the main light on.) I have watched everything you did these six months."
+ },
+ {
+  "who": "dad",
+  "zh": "下个月去上海，嘉定有个供应商要见。到时候吃顿饭，把以后的事说定。",
+  "en": "Next month I am in Shanghai to see a supplier in Jiading. We will have dinner then and settle what comes next."
+ },
+ {
+  "who": "dad",
+  "zh": "副总的牌子我让人做了。挂不挂，你自己说。",
+  "en": "I've had a deputy general manager's nameplate made. Whether it goes up is for you to say."
+ },
+ {
+  "who": "dad",
+  "zh": "……嗯。",
+  "en": "...Mm."
+ },
+ {
+  "who": "mum",
+  "zh": "（电话）你爸刚才给我打电话，一句话没说，就笑。",
+  "en": "(On the phone) Your father rang me just now. Didn't say a word. Just laughed."
+ },
+ {
+  "who": "dad",
+  "zh": "……别家。韩家的活你也接？",
+  "en": "...Other people's. The Hans' too?"
+ },
+ {
+  "who": "dad",
+  "zh": "吃饭那天，你把账算给我看。",
+  "en": "At that dinner, show me the sums."
+ },
+ {
+  "who": "dad",
+  "zh": "行。牌子放我抽屉里。",
+  "en": "All right. The plate stays in my drawer."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "纪白？我是许知微，这个项目的 PM。工牌和电脑在你桌上，IT 十点来装 VPN。",
+  "en": "Ji Bai? Xu Zhiwei. I'm the engagement manager on this one. Your badge and laptop are on your desk. IT will be round at ten to set up the VPN."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "先说项目。客户是东澜保险，做理赔的 AI 助手：理赔员上传病历和发票，模型读材料、对条款、给建议。合同签到明年三月。",
+  "en": "The project first. The client is Donglan Insurance. An AI assistant for claims: the adjuster uploads the medical records and the invoices, the model reads them, checks them against the policy and makes a recommendation. The contract runs to March."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "团队四个人。陶可，分析师，去年复旦毕业。邵峰，高级顾问，比你早来三年。合伙人是 Raymond，贺维安，你面试见过。",
+  "en": "Four of us. Tao Ke, analyst, out of Fudan last year. Shao Feng, senior consultant, three years ahead of you. The partner is Raymond, He Wei'an. You met him at interview."
+ },
+ {
+  "who": "taoke",
+  "zh": "纪老师好！你在湾区做的那个产品，发布会我看了两遍。",
+  "en": "Hello! That product you worked on in the Bay Area: I watched the launch twice."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "欢迎。硅谷回来的，正好，我们的 deck 还缺几个英文单词。",
+  "en": "Welcome. Back from the Valley. Perfect: our decks are a few English words short."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "好。陶可，把评测表发他。",
+  "en": "Good. Tao Ke, send him the evaluation sheet."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "行，开得起玩笑，能处。",
+  "en": "All right. He can take a joke. We'll get on."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "这儿不一样。客户买的是我们的结论，不是功能。先看一周。",
+  "en": "It's different here. The client buys our conclusions, not features. Watch for a week first."
+ },
+ {
+  "who": "partner",
+  "zh": "小纪到了？好。东澜是我们今年在华东最重要的 AI 案子。做成了，后面还有三家保险公司在排队。",
+  "en": "Ji Bai's here? Good. Donglan is our most important AI engagement in East China this year. Get it right and there are three more insurers in the queue."
+ },
+ {
+  "who": "partner",
+  "zh": "知微，下周三 kick-off 的材料，周五给我过一遍。",
+  "en": "Zhiwei, take me through the material for next Wednesday's kick-off on Friday."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "好的，Raymond。",
+  "en": "Will do, Raymond."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "陶可那张评测表有四千多行，是模型在历史案卷上的对错。本来该有人逐条抽查，一直没人有空。",
+  "en": "Tao Ke's evaluation sheet has four thousand-odd rows: where the model was right and wrong on past claim files. Someone should have been spot-checking it. Nobody has had the time."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "第一天就揽活。行，周五告诉我你看到了什么。",
+  "en": "Taking work on, on day one. All right. Tell me on Friday what you found."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "做产品的习惯。周三 kick-off 之后，我给你约他们的顾工。",
+  "en": "A product person's habit. I'll get you time with their Mr Gu after Wednesday's kick-off."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "对了，三点到四点我跟客户通电话，你有事自己安排。六点半以后没人拦你下班，不过也没人六点半走。",
+  "en": "By the way, I'm on a call with the client from three to four, so that hour is yours. Nobody will stop you leaving after six thirty. Nobody leaves at six thirty either."
+ },
+ {
+  "who": "feng",
+  "zh": "贺总，客套话不说了。我们理赔中心三百二十个人，去年平均结案十一天，同业是六天。董事会给我的数，是明年年中降到七天。",
+  "en": "Mr He, let's skip the pleasantries. Three hundred and twenty people in our claims centre. Last year a claim took eleven days to close. The industry does it in six. The board's number for me is seven by the middle of next year."
+ },
+ {
+  "who": "partner",
+  "zh": "冯总放心，我们的方案……",
+  "en": "Ms Feng, rest assured, our proposal..."
+ },
+ {
+  "who": "feng",
+  "zh": "方案我看过了。我要的是春节前，一月十二号，给我们董事长现场演示。真案卷，不是你们挑过的。",
+  "en": "I've read the proposal. What I want is a live demonstration for our chairman before Spring Festival, on the twelfth of January. Real files, not ones you've picked."
+ },
+ {
+  "who": "partner",
+  "zh": "没问题。",
+  "en": "No problem."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "（压低声音）两个月。现在连数据脱敏都没做完。",
+  "en": "(Under her breath) Two months. We haven't even finished anonymising the data."
+ },
+ {
+  "who": "feng",
+  "zh": "这位是新来的？硅谷回来的那位？你说说，两个月够不够。",
+  "en": "You're the new one? The one back from Silicon Valley? You tell me. Is two months enough?"
+ },
+ {
+  "who": "feng",
+  "zh": "……一个险种。贺总，你们的人比你敢说。行，就住院医疗。但一月十二号，一天不能晚。",
+  "en": "...One line. Mr He, your people are bolder than you are. Fine: inpatient medical. But the twelfth of January, and not a day later."
+ },
+ {
+  "who": "partner",
+  "zh": "（笑）年轻人，说话直。",
+  "en": "(Laughs) The young speak plainly."
+ },
+ {
+  "who": "feng",
+  "zh": "好。这句话我记住了。",
+  "en": "Good. I'll remember you said so."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "（散会后）“够”这个字，下次说之前先看我一眼。",
+  "en": "(Afterwards) Next time, before you say \"enough\", look at me first."
+ },
+ {
+  "who": "feng",
+  "zh": "那你们签合同的时候怎么不说？",
+  "en": "Then why didn't you say so when you signed the contract?"
+ },
+ {
+  "who": "partner",
+  "zh": "冯总，他刚来，情况还不熟。时间我来保证。",
+  "en": "Ms Feng, he has only just joined and doesn't know the ground yet. The date is my guarantee."
+ },
+ {
+  "who": "partner",
+  "zh": "够的，冯总。",
+  "en": "It's enough, Ms Feng."
+ },
+ {
+  "who": "gu",
+  "zh": "（散会后）我是顾磊，理赔系统是我带人维护的。说句实话：我们的历史案卷，有三成是手写病历拍的照片。你们的模型认得出吗？",
+  "en": "(Afterwards) Gu Lei. My team keeps the claims system running. To be honest with you: thirty per cent of our past files are photographs of handwritten hospital notes. Can your model read those?"
+ },
+ {
+  "who": "gu",
+  "zh": "越差越好。头一回有乙方这么跟我要东西。周五发你。",
+  "en": "The worse the better. That's the first time a vendor has asked me for that. You'll have them on Friday."
+ },
+ {
+  "who": "gu",
+  "zh": "……行。你们都这么说。",
+  "en": "...Right. You all say that."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "你下午要出去？",
+  "en": "You're going out this afternoon?"
+ },
+ {
+  "who": "zhiwei",
+  "zh": "去吧。纪要十点前发我。",
+  "en": "Go on. Minutes to me by ten."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "随你。",
+  "en": "Up to you."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "……所以我的建议是分两层：先用规则把条款拆成可以逐条检查的条件，模型只负责读材料、填条件。这样每一个结论都能追到条款原文。",
+  "en": "...so my proposal is two layers. Rules first, to break the policy wording into conditions that can be checked one by one. The model only reads the documents and fills the conditions in. That way every conclusion traces back to the wording itself."
+ },
+ {
+  "who": "partner",
+  "zh": "这个思路好。邵峰，这页放进 kick-off 之后的第一版方案，署你的名字。",
+  "en": "I like this. Shao Feng, put this page into the first version of the design after kick-off, under your name."
+ },
+ {
+  "who": "partner",
+  "zh": "哦？那就两个人。小纪，下次自己的东西自己讲。",
+  "en": "Oh? Both names, then. Ji Bai, next time present your own work yourself."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "……当然，本来就是一起讨论的。",
+  "en": "...Of course. We discussed it together anyway."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "……行，算我欠你一次。在这儿，会讲的人才有项目做。你早晚也得学。",
+  "en": "...All right. I owe you one. Round here the ones who can present are the ones who get the projects. You will have to learn it sooner or later."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "我知道，群消息我都看。Raymond 不看群。这种事还会有第二次，到时候你自己开口。",
+  "en": "I know. I read the chat. Raymond doesn't. There will be a second time, and then you open your own mouth."
+ },
+ {
+  "who": "taoke",
+  "zh": "你看这一列。测试集里有六百多条，案卷号跟训练集是重的。我导数据的时候可能没去重。",
+  "en": "Look at this column. Six hundred-odd rows in the test set have the same file numbers as the training set. I may not have de-duplicated when I exported."
+ },
+ {
+  "who": "taoke",
+  "zh": "要是真的，那 94% 的准确率就是虚的。我不敢跟知微姐说，周三刚跟客户报过这个数。",
+  "en": "If that's right, the 94 per cent isn't real. I daren't tell Zhiwei. We gave the client that number on Wednesday."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "……78。比我怕的好，比我们报的差。这事我去跟 Raymond 说，你们把去重脚本留好。",
+  "en": "...Seventy-eight. Better than I feared, worse than we reported. I'll take it to Raymond. Keep the de-duplication script safe, both of you."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "纪白，谢谢你没让她一个人扛。",
+  "en": "Ji Bai. Thank you for not leaving her to carry it alone."
+ },
+ {
+  "who": "taoke",
+  "zh": "……好。我周末想想怎么说。",
+  "en": "...OK. I'll think over the weekend about how to say it."
+ },
+ {
+  "who": "taoke",
+  "zh": "好……没事，周一。",
+  "en": "OK... no problem. Monday."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "第一周。说说你的感觉。",
+  "en": "Your first week. Tell me how it seems to you."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "……这句话你写下来。下周我要用。",
+  "en": "...Write that sentence down. I'm going to need it next week."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "绕，是因为每句话都有人要负责。慢慢你也会绕。",
+  "en": "They circle because somebody is answerable for every sentence. Give it time. You will too."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "嗯。周一见。",
+  "en": "Mm. See you Monday."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "晚上团队吃饭，人均两百的那种，公司报销。来不来随你。",
+  "en": "Team dinner tonight, the two-hundred-a-head kind, on the firm. Come or don't, as you like."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "……明天演示。你现在告诉我。",
+  "en": "...The demonstration is tomorrow. And you are telling me now."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "明天的 deck 第三页还写着 94%。Raymond 的意思是不改：“演示看的是效果，不是数字。”",
+  "en": "Page three of tomorrow's deck still says 94 per cent. Raymond's view is that it stays. \"A demonstration is about what they see, not the number.\""
+ },
+ {
+  "who": "partner",
+  "zh": "（电话里）……你知道这个数拿出去，冯玉兰会怎么压我们的尾款吗？行，改。出了事，你坐我旁边。",
+  "en": "(On the phone) ...Do you know what Feng Yulan will do to our final payment with that number in her hand? Fine. Change it. And if it goes wrong, you sit next to me."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "折中。行，你讲。",
+  "en": "A compromise. All right. You present it."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "……好。",
+  "en": "...Fine."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "那就不改了。",
+  "en": "Then it stays as it is."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "明天谁来操作？我建议我来，客户那边我熟。",
+  "en": "Who drives tomorrow? I'd suggest me. I know the client's people."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "行。邵峰坐客户旁边。",
+  "en": "All right. Shao Feng sits beside the client."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "放心。",
+  "en": "Leave it to me."
+ },
+ {
+  "who": "feng",
+  "zh": "郑董，这就是我跟您说的理赔助手。今天的案卷是早上我们自己从库里抽的，他们没见过。",
+  "en": "Chairman Zheng, this is the claims assistant I told you about. This morning's files we pulled from the archive ourselves. They haven't seen them."
+ },
+ {
+  "who": "chair",
+  "zh": "嗯。肯报真数的乙方不多。",
+  "en": "Mm. Not many vendors offer the real number."
+ },
+ {
+  "who": "partner",
+  "zh": "准确率 94%，行业领先。",
+  "en": "Accuracy of 94 per cent. Ahead of the industry."
+ },
+ {
+  "who": "gu",
+  "zh": "……我们的条款没有 14.3 条。",
+  "en": "...Our policy has no clause 14.3."
+ },
+ {
+  "who": "chair",
+  "zh": "这是真人的身份证号吧？",
+  "en": "That is a real person's ID number, isn't it?"
+ },
+ {
+  "who": "chair",
+  "zh": "……至少有人说人话。冯总，这个东西，在他们说清楚之前，一单都不许上生产。",
+  "en": "...At least somebody here speaks plainly. Ms Feng, until they have explained themselves, this does not touch a single live claim."
+ },
+ {
+  "who": "feng",
+  "zh": "（对贺维安）贺总，一周之内，我要书面说明。",
+  "en": "(To Raymond) Mr He. A written account, within the week."
+ },
+ {
+  "who": "gu",
+  "zh": "（看着你）……早上的案卷是我亲手抽的。",
+  "en": "(Looking at you) ...I pulled this morning's files myself."
+ },
+ {
+  "who": "chair",
+  "zh": "顾工？",
+  "en": "Mr Gu?"
+ },
+ {
+  "who": "gu",
+  "zh": "……是真案卷，郑董。",
+  "en": "...They are real files, Chairman."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "呃，这个……可能是版本的问题……",
+  "en": "Er, this... it may be a version problem..."
+ },
+ {
+  "who": "chair",
+  "zh": "贺总，你们自己知道它在说什么吗？",
+  "en": "Mr He. Do your own people know what it is saying?"
+ },
+ {
+  "who": "partner",
+  "zh": "都回公司。知微，今晚把事故经过写出来：谁抽的测试集，谁签的上线检查，一条一条写。",
+  "en": "Everyone back to the office. Zhiwei, write up what happened, tonight. Who drew the test set, who signed the release checklist. Line by line."
+ },
+ {
+  "who": "taoke",
+  "zh": "（小声）上线检查是我签的……",
+  "en": "(Quietly) I signed the release checklist..."
+ },
+ {
+  "who": "partner",
+  "zh": "东澜没有解约，但尾款扣着。冯玉兰开了条件：三月一号试点上线，季度末之前，理赔中心人均结案量提两成。",
+  "en": "Donglan hasn't terminated, but they are holding the final payment. Feng Yulan has set her terms: the pilot goes live on the first of March, and cases closed per head go up by a fifth before the end of the quarter."
+ },
+ {
+  "who": "partner",
+  "zh": "她要的做法是：模型置信度高的，直接出结论，不过人。包括拒赔。",
+  "en": "The way she wants it done: where the model is confident, it issues the decision itself, with nobody in between. Rejections included."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "技术上没问题。置信度九成以上的案子，错的不到百分之三。",
+  "en": "No technical problem. Above ninety per cent confidence, fewer than three in a hundred are wrong."
+ },
+ {
+  "who": "partner",
+  "zh": "另外，整改报告里的准确率，写“经验证样本上 92%”。那两百个样本是知微他们一条条核过的，数是真的。",
+  "en": "And in the remediation report the accuracy reads \"92 per cent on a validated sample\". Zhiwei's people checked those two hundred cases one by one. The number is real."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "那两百条是挑过的，Raymond。全是打印件。",
+  "en": "Those two hundred were chosen, Raymond. Every one of them is a typed document."
+ },
+ {
+  "who": "partner",
+  "zh": "所以才叫“经验证样本”。小纪，报告的技术部分你来签。",
+  "en": "Which is why it says \"validated sample\". Ji Bai, you sign the technical section."
+ },
+ {
+  "who": "partner",
+  "zh": "绕过合伙人直接写给客户合规，你知道在这一行叫什么吗？",
+  "en": "Going round the partner, straight to the client's compliance people. Do you know what that is called in this business?"
+ },
+ {
+  "who": "zhiwei",
+  "zh": "叫留痕，Raymond。他写，我也签。",
+  "en": "It's called a paper trail, Raymond. If he writes it, I sign it too."
+ },
+ {
+  "who": "partner",
+  "zh": "……好。你们两个的名字，我记下了。",
+  "en": "...Very well. I have both your names."
+ },
+ {
+  "who": "partner",
+  "zh": "……复核会吃掉一半的效率。",
+  "en": "...Review will eat half the gain."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "也会吃掉全部的投诉。",
+  "en": "And all of the complaints."
+ },
+ {
+  "who": "partner",
+  "zh": "行。附录里写，正文不动。",
+  "en": "Fine. In an appendix. The main text stays as it is."
+ },
+ {
+  "who": "partner",
+  "zh": "好。这才是做项目。",
+  "en": "Good. That is how an engagement is run."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "没有一天了，报告今晚发。……我签吧，我是 PM。",
+  "en": "There isn't a day. The report goes tonight. ...I'll sign it. I'm the manager."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "你清高。尾款要是拿不回来，年底大家的奖金你出？",
+  "en": "You can afford principles. If the final payment doesn't come in, are you paying everyone's bonus at the end of the year?"
+ },
+ {
+  "who": "shaofeng",
+  "zh": "……话都让你说了。",
+  "en": "...You've an answer for everything."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "……行吧。附录的数据我帮你拉。",
+  "en": "...All right. I'll pull the data for your appendix."
+ },
+ {
+  "who": "taoke",
+  "zh": "（茶水间）纪白……那百分之三里面的人，会有人帮他们再看一遍吗？",
+  "en": "(In the pantry) Ji Bai... the people in that three per cent. Will anyone look at theirs again?"
+ },
+ {
+  "who": "taoke",
+  "zh": "我也觉得不会。",
+  "en": "I didn't think so either."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "试点两周。自动通过的那一半，结案从十一天降到四天。拒赔的全部过了人，复核组驳回了模型三十七单。",
+  "en": "Two weeks of the pilot. The half that is approved automatically has gone from eleven days to four. Every rejection went past a person, and the review team overturned the model on thirty-seven."
+ },
+ {
+  "who": "feng",
+  "zh": "（电话免提）那三十七单要是发出去了，我现在就在监管局喝茶。……尾款这周走流程。",
+  "en": "(On speaker) If those thirty-seven had gone out, I would be taking tea at the regulator's by now. ...Your final payment goes into process this week."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "看热搜了吗？“七旬老人髋关节手术被 AI 拒赔”。东澜的客服电话被打爆了。是试点第二周的单子。",
+  "en": "Have you seen what's trending? \"Seventy-year-old's hip operation rejected by AI.\" Donglan's hotline is jammed. It is a case from the second week of the pilot."
+ },
+ {
+  "who": "partner",
+  "zh": "总部风险委员会下周到。在那之前，谁都不许对外说一个字。",
+  "en": "The risk committee from head office arrives next week. Until then nobody says a word outside this room."
+ },
+ {
+  "who": "partner",
+  "zh": "一月演示的事故报告，总部要一个“根本原因”。上线检查是陶可签的，测试集也是她导的。",
+  "en": "On the January incident, head office wants a \"root cause\". Tao Ke signed the release checklist, and she exported the test set."
+ },
+ {
+  "who": "taoke",
+  "zh": "……是我的错。",
+  "en": "...It was my mistake."
+ },
+ {
+  "who": "partner",
+  "zh": "……你倒是不怕。行，写“流程”。总部问流程是谁的，是我的。",
+  "en": "...You are not easily frightened. Very well: \"process\". And when head office asks whose process, it is mine."
+ },
+ {
+  "who": "partner",
+  "zh": "写“流程”，总部会问流程是谁的。是我的。……先这样报。",
+  "en": "Write \"process\" and head office will ask whose process. Mine. ...Report it that way for now."
+ },
+ {
+  "who": "partner",
+  "zh": "那就这么写。",
+  "en": "Then that is how it is written."
+ },
+ {
+  "who": "gu",
+  "zh": "（电话）纪白，说个事，先别外传。我四月离开东澜，去屿深科技，做工厂排产软件的。他们要建 AI 产品线，缺一个负责人。我第一个想到你。",
+  "en": "(On the phone) Ji Bai, something for you, and keep it to yourself for now. I'm leaving Donglan in April for Yushen Technology. They make production-scheduling software for factories, they're building an AI product line, and they need someone to run it. You were the first person I thought of."
+ },
+ {
+  "who": "gu",
+  "zh": "好。四月我再问。",
+  "en": "Good. I'll ask again in April."
+ },
+ {
+  "who": "gu",
+  "zh": "明白。门给你留着。",
+  "en": "Understood. The door stays open."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "邮件都看到了。总部把中国区的 AI 业务并到新加坡，上海这边“优化”三成。名单周二下午出。",
+  "en": "You have all seen the email. Head office is folding the China AI practice into Singapore, and Shanghai is to be \"optimised\" by thirty per cent. The list comes out on Tuesday afternoon."
+ },
+ {
+  "who": "shaofeng",
+  "zh": "三成。我们组四个人，那就是一个多一点。",
+  "en": "Thirty per cent. There are four of us. So one, and a bit."
+ },
+ {
+  "who": "partner",
+  "zh": "（把你叫进小会议室）东澜续了二期，点名要你。可名单是按职级和司龄排的，你入职不到半年。",
+  "en": "(Calling you into the small meeting room) Donglan has signed a second phase and asked for you by name. But the list goes by grade and length of service, and you have been here less than six months."
+ },
+ {
+  "who": "partner",
+  "zh": "（把你叫进小会议室）东澜被监管约谈了，回头要追我们的责任。风险委员会要一份“经验教训”备忘录，要有人签字。",
+  "en": "(Calling you into the small meeting room) The regulator has had Donglan in, and Donglan will come after us. The risk committee wants a \"lessons learned\" memorandum, and it wants a signature on it."
+ },
+ {
+  "who": "partner",
+  "zh": "那明天下午，你自己看名单。",
+  "en": "Then tomorrow afternoon you can read the list for yourself."
+ },
+ {
+  "who": "partner",
+  "zh": "明智。六月的晋升名单，我会写你。",
+  "en": "Sensible. Your name will be on my promotion list in June."
+ },
+ {
+  "who": "partner",
+  "zh": "明天中午之前。",
+  "en": "Before noon."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "他找你谈过了。我不问你怎么答的。你自己睡得着就行。",
+  "en": "He has talked to you. I'm not asking what you answered. So long as you can sleep."
+ },
+ {
+  "who": "hr",
+  "zh": "纪白，请坐。公司的决定你应该听说了。今天谈的是你个人的安排。",
+  "en": "Ji Bai, have a seat. You'll have heard what the firm has decided. Today is about your own arrangements."
+ },
+ {
+  "who": "partner",
+  "zh": "好。东澜二期周四排期。",
+  "en": "Good. We schedule Donglan phase two on Thursday."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "那周四的排期，你先跟我过一遍。",
+  "en": "Then take me through Thursday's schedule first."
+ },
+ {
+  "who": "partner",
+  "zh": "名单是总部批的，不是我。",
+  "en": "Head office approved the list. Not I."
+ },
+ {
+  "who": "hr",
+  "zh": "协议在这儿。你看完再签。",
+  "en": "Here is the agreement. Read it through before you sign."
+ },
+ {
+  "who": "hr",
+  "zh": "……主动辞职是没有补偿的，你确定？",
+  "en": "...There is no compensation if you resign. You are sure?"
+ },
+ {
+  "who": "zhiwei",
+  "zh": "辞职信别写太长。……你走了，会议室的白板谁擦。",
+  "en": "Don't make the letter long. ...With you gone, who wipes the whiteboard in the meeting room."
+ },
+ {
+  "who": "partner",
+  "zh": "你想清楚。你不在名单上。",
+  "en": "Think. You are not on the list."
+ },
+ {
+  "who": "hr",
+  "zh": "……流程上可以。我去改。",
+  "en": "...It can be done, procedurally. I will change it."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "签字之前把条款看完。竞业那一条，让他们划掉。",
+  "en": "Read every clause before you sign. And make them strike out the non-compete."
+ },
+ {
+  "who": "hr",
+  "zh": "好。工牌和电脑周五前交还。",
+  "en": "Good. Badge and laptop back by Friday."
+ },
+ {
+  "who": "partner",
+  "zh": "……顾磊。行，好聚好散。",
+  "en": "...Gu Lei. Well. Let us part on good terms."
+ },
+ {
+  "who": "zhiwei",
+  "zh": "屿深。顾磊倒是会挑人。交接清单发我。",
+  "en": "Yushen. Gu Lei knows how to pick them. Send me the handover list."
+ },
+ {
+  "who": "partner",
+  "zh": "那就照旧。",
+  "en": "Then we carry on as before."
+ },
+ {
+  "who": "hr",
+  "zh": "协议你带回去看，周五前签。",
+  "en": "Take the agreement home and read it. Sign by Friday."
+ },
+ {
+  "who": "dad",
+  "zh": "坐。菜我点好了，都是你小时候爱吃的。",
+  "en": "Sit down. I've ordered. The things you liked as a boy."
+ },
+ {
+  "who": "dad",
+  "zh": "嘉定有个供应商，顺路。",
+  "en": "A supplier in Jiading. It was on the way."
+ },
+ {
+  "who": "dad",
+  "zh": "嗯。",
+  "en": "Mm."
+ },
+ {
+  "who": "dad",
+  "zh": "一年了。你妈说你瘦了。",
+  "en": "A year. Your mother says you've lost weight."
+ },
+ {
+  "who": "dad",
+  "zh": "你们公司来厂里报过价，带队的是你。厂里的成本，他们怎么知道得那么清楚？",
+  "en": "Your firm came to the works with a quotation, and you led them. How did they know our costs so exactly?"
+ },
+ {
+  "who": "dad",
+  "zh": "你们公司来厂里报价，老秦说你自己回避了。规矩是对的。",
+  "en": "Your firm came to quote at the works. Old Qin says you kept yourself out of it. That was the proper thing."
+ },
+ {
+  "who": "dad",
+  "zh": "报告上的数是真是假，做厂的人最清楚。……这件事你做得对。",
+  "en": "Whether the number on a report is true: nobody knows better than a man who runs a works. ...You did right."
+ },
+ {
+  "who": "dad",
+  "zh": "活下来是本事。活成什么样，是另一回事。",
+  "en": "Staying alive is a skill. What you become by it is another matter."
+ },
+ {
+  "who": "dad",
+  "zh": "……知道就好。",
+  "en": "...So long as you know it."
+ },
+ {
+  "who": "dad",
+  "zh": "知道就好。",
+  "en": "So long as you know it."
+ },
+ {
+  "who": "dad",
+  "zh": "听说你四月把工作辞了。没跟家里说。",
+  "en": "I hear you resigned in April. And said nothing at home."
+ },
+ {
+  "who": "dad",
+  "zh": "……这个字不签是对的。可下回，先跟家里说一声。",
+  "en": "...Not signing was right. But next time, tell us first."
+ },
+ {
+  "who": "dad",
+  "zh": "不想做就不做。你今年二十八了。",
+  "en": "Had enough, so you stopped. You are twenty-eight this year."
+ },
+ {
+  "who": "dad",
+  "zh": "听说你们公司四月裁员，有你。你妈是从明轩他妈那儿听来的。",
+  "en": "I hear your firm laid people off in April and you were one. Your mother heard it from Mingxuan's mother."
+ },
+ {
+  "who": "dad",
+  "zh": "……（他看了你很久。）你妈知道了要骂你傻。我不骂。",
+  "en": "...(He looks at you for a long time.) Your mother will call you a fool when she hears. I won't."
+ },
+ {
+  "who": "dad",
+  "zh": "厂里那年也裁过人。被裁的不丢人，裁人的才睡不着。",
+  "en": "We had to let men go at the works one year. No shame for the ones let go. It is the one who does it who cannot sleep."
+ },
+ {
+  "who": "dad",
+  "zh": "……跟班。嗯。",
+  "en": "...On the floor. Mm."
+ },
+ {
+  "who": "dad",
+  "zh": "说了算，出了事也是你担。",
+  "en": "Yours to decide, and yours to answer for."
+ },
+ {
+  "who": "dad",
+  "zh": "瞒着自己家的人做生意。",
+  "en": "Doing business with your own family behind a mask."
+ },
+ {
+  "who": "dad",
+  "zh": "……挣来的钱，一块是一块。",
+  "en": "...Earned money. Every yuan of it counts as one."
+ },
+ {
+  "who": "dad",
+  "zh": "肯说实话。做厂的头三年，我也是这样。",
+  "en": "You tell me the truth. For my first three years at the works it was the same."
+ },
+ {
+  "who": "dad",
+  "zh": "对赌。……那不是投资，是借高利贷。",
+  "en": "A ratchet. ...That is not investment. That is a loan shark."
+ },
+ {
+  "who": "dad",
+  "zh": "别人肯拿真钱出来，说明不是你一个人觉得行。",
+  "en": "Another man putting in real money means you are not the only one who thinks it can work."
+ },
+ {
+  "who": "dad",
+  "zh": "……你肯听他们说话，他们才肯教你。",
+  "en": "...They teach you because you are willing to hear them."
+ },
+ {
+  "who": "dad",
+  "zh": "嗯。不急。",
+  "en": "Mm. No hurry."
+ },
+ {
+  "who": "dad",
+  "zh": "明轩他爸跟我说过。去年你帮他们看的那个机械臂，在投资人面前演示得不错。",
+  "en": "Mingxuan's father told me. That robot arm you looked at for them last year did well in front of the investor."
+ },
+ {
+  "who": "dad",
+  "zh": "租的房子住得惯吗？一个月多少？",
+  "en": "The flat you rent: are you comfortable there? How much a month?"
+ },
+ {
+  "who": "dad",
+  "zh": "自己挣的钱付房租，踏实。",
+  "en": "Rent paid out of money you earned yourself. That is solid ground."
+ },
+ {
+  "who": "dad",
+  "zh": "在饭店住了一年。",
+  "en": "A year, living in a hotel."
+ },
+ {
+  "who": "dad",
+  "zh": "厂里的事，今天说定：你是帮我这半年，还是接下去。",
+  "en": "The works. We settle it today: were you helping me for six months, or are you carrying on."
+ },
+ {
+  "who": "dad",
+  "zh": "你那个公司，做得下去就做。做不下去，厂里那层楼还在。",
+  "en": "That company of yours: if it can go on, go on with it. If it cannot, the floor at the works is still there."
+ },
+ {
+  "who": "dad",
+  "zh": "我五十六了。不想再一个人撑着。",
+  "en": "I'm fifty-six. I don't want to carry it on my own any more."
+ },
+ {
+  "who": "dad",
+  "zh": "……把合同和报价发给老秦。按市价，不许打折。",
+  "en": "...Send Old Qin the contract and the price. Market price. No discount."
+ },
+ {
+  "who": "dad",
+  "zh": "……别家的活。行。账分开算，厂里的事不许耽误。",
+  "en": "...Other people's work. Very well. Separate books, and the works is never kept waiting."
+ },
+ {
+  "who": "dad",
+  "zh": "……让你们销售来报价。你回避，这是规矩。",
+  "en": "...Have your sales people quote. You stand aside. That is the rule."
+ },
+ {
+  "who": "dad",
+  "zh": "……把方案发给我。下周带他们来厂里看看。",
+  "en": "...Send me the proposal. Bring them to the works next week."
+ },
+ {
+  "who": "dad",
+  "zh": "……那就做好。别让人看笑话。钱不够，跟我说。",
+  "en": "...Then do it properly. Don't let anyone laugh at you. If money's short, tell me."
+ },
+ {
+  "who": "dad",
+  "zh": "……随你。",
+  "en": "...Suit yourself."
+ },
+ {
+  "who": "dad",
+  "zh": "……好。你妈会高兴的。",
+  "en": "...Good. Your mother will be happy."
+ },
+ {
+  "who": "dad",
+  "zh": "你拿什么让我信？先把你自己的事做成再说。",
+  "en": "What have you got to make me believe it? Get your own thing working first."
+ },
+ {
+  "who": "dad",
+  "zh": "两边跑，就是两边都不沾。先把你自己的事做成再说。",
+  "en": "Between the two is in neither. Get your own thing standing first."
+ },
+ {
+  "who": "dad",
+  "zh": "你还是没想好。没关系。想好了，告诉我。",
+  "en": "You still haven't decided. That's all right. When you have, tell me."
+ },
+ {
+  "who": "dad",
+  "zh": "吃吧，菜要凉了。",
+  "en": "Eat. The food's getting cold."
  },
  {
   "who": "guide",
@@ -771,8 +2231,8 @@
  },
  {
   "who": "agent",
-  "zh": "沈先生是吧？程小姐在里面等您。这套是顶层，三百二十平，整层就这一户。",
-  "en": "Mr Shen? Ms Cheng's inside. Top floor, three hundred and twenty square metres, the only flat on the floor."
+  "zh": "纪先生是吧？程小姐在里面等您。这套是顶层，三百二十平，整层就这一户。",
+  "en": "Mr Ji? Ms Cheng's inside. Top floor, three hundred and twenty square metres, the only flat on the floor."
  },
  {
   "who": "yinuo",
@@ -871,8 +2331,8 @@
  },
  {
   "who": "founder",
-  "zh": "你好你好。明轩说你在旧金山做过硬件。",
-  "en": "Hi, hi. Mingxuan says you did hardware in San Francisco."
+  "zh": "你好你好。明轩说你在湾区做过产品。",
+  "en": "Hi, hi. Mingxuan says you built products in the Bay Area."
  },
  {
   "who": "founder",
@@ -956,8 +2416,8 @@
  },
  {
   "who": "founder",
-  "zh": "王总，这位就是沈既白，指垫的主意是他出的。",
-  "en": "Mr Wang, this is Shen Jibai. The pads were his idea."
+  "zh": "王总，这位就是纪白，指垫的主意是他出的。",
+  "en": "Mr Wang, this is Ji Bai. The pads were his idea."
  },
  {
   "who": "investor",
@@ -966,8 +2426,8 @@
  },
  {
   "who": "investor",
-  "zh": "那个专利我看过。有空聊聊，我请。",
-  "en": "I've read that patent. Let's talk sometime, my treat."
+  "zh": "你们那个产品我用过。有空聊聊，我请。",
+  "en": "I've used that product of yours. Let's talk sometime, my treat."
  },
  {
   "who": "investor",
@@ -1015,6 +2475,391 @@
   "en": "Take care now!"
  },
  {
+  "who": "drunk",
+  "zh": "加个微信怎么了？我又不是坏人！",
+  "en": "Add me on WeChat, what's the harm? I'm not a bad guy!"
+ },
+ {
+  "who": "girl",
+  "zh": "我说了不加。你让一下。",
+  "en": "I said no. Let me past."
+ },
+ {
+  "who": "drunk",
+  "zh": "哎哟，还挺有脾气。走什么走，话还没讲完呢！",
+  "en": "Ooh, a temper on her. Where're you going? I'm not done talking!"
+ },
+ {
+  "who": "girl",
+  "zh": "你别拉我！",
+  "en": "Don't grab me!"
+ },
+ {
+  "who": "drunk",
+  "zh": "陪我喝一杯，就一杯，喝完就让你走。",
+  "en": "One drink with me. Just one. Then you can go."
+ },
+ {
+  "who": "girl",
+  "zh": "我车马上到了，你松手。",
+  "en": "My car's nearly here. Let go of me."
+ },
+ {
+  "who": "drunk",
+  "zh": "看什么看？关你屁事啊？",
+  "en": "What're you looking at? This any of your damn business?"
+ },
+ {
+  "who": "girl",
+  "zh": "我不认识他。他拦着我不让走。",
+  "en": "I don't know him. He won't let me leave."
+ },
+ {
+  "who": "girl",
+  "zh": "他撞了我，还不让我走。",
+  "en": "He walked into me, and now he won't let me go."
+ },
+ {
+  "who": "drunk",
+  "zh": "你谁啊你？我跟小姑娘讲话，轮得到你插嘴？",
+  "en": "Who the hell are you? I'm talking to the young lady. Nobody asked you."
+ },
+ {
+  "who": "drunk",
+  "zh": "我今天签了两千万的单子，你晓得吧？两千万！",
+  "en": "I signed a twenty-million deal today, you know that? Twenty million!"
+ },
+ {
+  "who": "drunk",
+  "zh": "……叫什么车，我自己会叫。",
+  "en": "…I can get my own car."
+ },
+ {
+  "who": "drunk",
+  "zh": "我跟你讲，我是被那帮人灌的。我平时不这样。",
+  "en": "I'm telling you, that lot kept filling my glass. I'm not like this."
+ },
+ {
+  "who": "drunk",
+  "zh": "行了行了，没意思。走了。",
+  "en": "All right, all right. Forget it. I'm off."
+ },
+ {
+  "who": "girl",
+  "zh": "谢谢你……真的谢谢。",
+  "en": "Thank you… really. Thank you."
+ },
+ {
+  "who": "drunk",
+  "zh": "拍？拍什么拍！",
+  "en": "Filming? What're you filming for!"
+ },
+ {
+  "who": "drunk",
+  "zh": "行，你有种。今天算我倒霉。",
+  "en": "Fine. You've got some nerve. Just my luck tonight."
+ },
+ {
+  "who": "girl",
+  "zh": "谢谢。吓死我了。",
+  "en": "Thanks. That scared the life out of me."
+ },
+ {
+  "who": "drunk",
+  "zh": "试试就试试！",
+  "en": "Go on then! Let's see!"
+ },
+ {
+  "who": "drunk",
+  "zh": "来啊！你不是很能吗？",
+  "en": "Come on! Thought you were the big man?"
+ },
+ {
+  "who": "drunk",
+  "zh": "怂了吧？哈！",
+  "en": "Lost your nerve? Ha!"
+ },
+ {
+  "who": "drunk",
+  "zh": "……人呢？",
+  "en": "…Where'd she go?"
+ },
+ {
+  "who": "drunk",
+  "zh": "没劲。",
+  "en": "Boring."
+ },
+ {
+  "who": "drunk",
+  "zh": "哟，英雄救美是吧？",
+  "en": "Oh, a hero, is it?"
+ },
+ {
+  "who": "drunk",
+  "zh": "你算老几？",
+  "en": "Who d'you think you are?"
+ },
+ {
+  "who": "film",
+  "zh": "哎哎哎，别动手啊！我录着呢！",
+  "en": "Hey, hey, hands off him! I'm recording this!"
+ },
+ {
+  "who": "drunk",
+  "zh": "录！你录！……",
+  "en": "Record it! Go on! …"
+ },
+ {
+  "who": "drunk",
+  "zh": "……神经病。一个两个都是神经病。",
+  "en": "…Lunatics. The lot of you."
+ },
+ {
+  "who": "girl",
+  "zh": "你没事吧？他推了你两下。",
+  "en": "Are you all right? He pushed you twice."
+ },
+ {
+  "who": "drunk",
+  "zh": "你敢推我？！",
+  "en": "You push ME?!"
+ },
+ {
+  "who": "drunk",
+  "zh": "我今天非教教你不可！",
+  "en": "I'm going to teach you something tonight!"
+ },
+ {
+  "who": "drunk",
+  "zh": "报警？手机给我放下！",
+  "en": "Police? Put that phone down!"
+ },
+ {
+  "who": "drunk",
+  "zh": "叫保安？你叫啊！我在里面一晚上花了八千！",
+  "en": "Security? Go on, call them! I spent eight thousand in there tonight!"
+ },
+ {
+  "who": "guard",
+  "zh": "先生，先生。有话好好说，别在门口闹。",
+  "en": "Sir. Sir. Let's talk about it. Not out here on the door."
+ },
+ {
+  "who": "guard",
+  "zh": "这位小姐不想跟您说话。您再这样，我们只能报警了。",
+  "en": "The lady doesn't want to talk to you. Carry on and we'll have to call the police."
+ },
+ {
+  "who": "drunk",
+  "zh": "……行，你们和平饭店了不起。",
+  "en": "…Fine. The mighty Peace Hotel."
+ },
+ {
+  "who": "guard",
+  "zh": "我送您到路口，帮您叫车。这边请。",
+  "en": "I'll walk you to the corner and get you a car. This way, please."
+ },
+ {
+  "who": "girl",
+  "zh": "谢谢你帮我叫人。我腿都软了。",
+  "en": "Thank you for fetching him. My legs have gone."
+ },
+ {
+  "who": "op",
+  "zh": "110，请讲。",
+  "en": "110. Go ahead."
+ },
+ {
+  "who": "me",
+  "zh": "南京东路外滩口，和平饭店门口。有个喝醉的男的拉着一个女生不让走。",
+  "en": "Nanjing Road East at the Bund, outside the Peace Hotel. A drunk man's got hold of a young woman and won't let her leave."
+ },
+ {
+  "who": "op",
+  "zh": "位置收到，民警马上到。请注意自身安全，不要和对方发生冲突。",
+  "en": "Location received. Officers are on their way. Keep yourself safe and don't get into it with him."
+ },
+ {
+  "who": "drunk",
+  "zh": "报警？……神经病，多管闲事。",
+  "en": "The police? …Lunatic. Mind your own business."
+ },
+ {
+  "who": "drunk",
+  "zh": "走走走，没你的事！",
+  "en": "Go on, off you go. Nothing to do with you!"
+ },
+ {
+  "who": "girl",
+  "zh": "哎，你……",
+  "en": "Wait, you…"
+ },
+ {
+  "who": "cop",
+  "zh": "谁报的警？",
+  "en": "Who made the call?"
+ },
+ {
+  "who": "cop",
+  "zh": "好。两位留个电话，做个登记。",
+  "en": "Right. I'll take a number from each of you for the record."
+ },
+ {
+  "who": "cop",
+  "zh": "以后碰到这种事，报警是对的。别自己上手。",
+  "en": "Next time something like this happens, calling us is the right thing. Don't step in yourself."
+ },
+ {
+  "who": "girl",
+  "zh": "谢谢你。要不是你，我真不知道怎么办。",
+  "en": "Thank you. I don't know what I'd have done."
+ },
+ {
+  "who": "drunk",
+  "zh": "来啊！",
+  "en": "Come on, then!"
+ },
+ {
+  "who": "film",
+  "zh": "打起来了打起来了！",
+  "en": "They're fighting! They're fighting!"
+ },
+ {
+  "who": "drunk",
+  "zh": "哎哟……",
+  "en": "Agh…"
+ },
+ {
+  "who": "drunk",
+  "zh": "你……你等着……",
+  "en": "You… you just wait…"
+ },
+ {
+  "who": "drunk",
+  "zh": "行行行，不打了，不打了！",
+  "en": "All right, all right! Enough! I'm done!"
+ },
+ {
+  "who": "film",
+  "zh": "人家都说不打了！",
+  "en": "He said he'd had enough!"
+ },
+ {
+  "who": "drunk",
+  "zh": "你等着……我记住你了。",
+  "en": "You wait… I'll remember you."
+ },
+ {
+  "who": "film",
+  "zh": "我可都拍下来了啊。是你先动的手。",
+  "en": "I got all of that, you know. You hit him first."
+ },
+ {
+  "who": "film",
+  "zh": "我都拍下来了。是他先动的手。",
+  "en": "I got all of it. He swung first."
+ },
+ {
+  "who": "drunk",
+  "zh": "不打了……喘不上气……",
+  "en": "No more… can't breathe…"
+ },
+ {
+  "who": "film",
+  "zh": "可以啊兄弟，一下都没还手。",
+  "en": "Fair play, mate. You never hit him once."
+ },
+ {
+  "who": "film",
+  "zh": "哎，人倒了！别打了！",
+  "en": "Hey, he's down! Stop!"
+ },
+ {
+  "who": "film",
+  "zh": "谁打个 120……我报警了啊。",
+  "en": "Somebody call an ambulance… I'm calling the police."
+ },
+ {
+  "who": "drunk",
+  "zh": "跑什么跑！回来！",
+  "en": "Where're you running to! Get back here!"
+ },
+ {
+  "who": "film",
+  "zh": "别打了别打了！人都倒了！",
+  "en": "Stop! Stop it! He's down!"
+ },
+ {
+  "who": "guard",
+  "zh": "住手！已经报警了！",
+  "en": "That's enough! The police have been called!"
+ },
+ {
+  "who": "guard",
+  "zh": "够了！都住手！",
+  "en": "Enough! Both of you, stop!"
+ },
+ {
+  "who": "guard",
+  "zh": "已经报警了。谁也别走。",
+  "en": "The police are on their way. Nobody leaves."
+ },
+ {
+  "who": "cop",
+  "zh": "醒了？你在南京路上被人打倒了，120 送来的。",
+  "en": "Awake? You were knocked down on Nanjing Road. The ambulance brought you in."
+ },
+ {
+  "who": "cop",
+  "zh": "缝针之前先问你一句：谁先动的手？",
+  "en": "One question before they stitch you: who threw the first punch?"
+ },
+ {
+  "who": "cop",
+  "zh": "都别动。身份证。",
+  "en": "Nobody move. ID cards."
+ },
+ {
+  "who": "cop",
+  "zh": "谁先动的手？",
+  "en": "Who threw the first punch?"
+ },
+ {
+  "who": "cop",
+  "zh": "你跟我们回所里做个笔录，很快。",
+  "en": "Come back to the station and give a statement. It won't take long."
+ },
+ {
+  "who": "cop",
+  "zh": "没有探头拍到，他喝成这样也说不清。算互殴，回所里调解。",
+  "en": "No camera caught it and he's too drunk to say. We'll call it an affray and mediate at the station."
+ },
+ {
+  "who": "cop",
+  "zh": "他先动的手不假。可你也动了手，这就叫互殴。",
+  "en": "He swung first, true. But you swung too, and that makes it an affray. Both of you."
+ },
+ {
+  "who": "cop",
+  "zh": "回所里调解。这次口头警告，再有下次就不是说两句的事了。",
+  "en": "We'll mediate at the station. A verbal warning this time. Next time it won't end with a talking-to."
+ },
+ {
+  "who": "cop",
+  "zh": "殴打他人，还不说实话。回所里，按《治安管理处罚法》处理，罚款五百。",
+  "en": "Striking another person, and not telling the truth about it. Back to the station. Under the Public Security Administration Punishments Law, a five-hundred-yuan fine."
+ },
+ {
+  "who": "cop",
+  "zh": "认得倒是痛快。殴打他人，回所里处理。态度好，从轻，罚款两百。",
+  "en": "At least you own up to it. Striking another person: back to the station. You've been straight with us, so it's the lighter end. Two hundred yuan."
+ },
+ {
+  "who": "cop",
+  "zh": "殴打他人。回所里，按《治安管理处罚法》处理，罚款五百。",
+  "en": "Striking another person. Back to the station. Under the Public Security Administration Punishments Law, a five-hundred-yuan fine."
+ },
+ {
   "who": "ruoan",
   "zh": "……你知道这省了我们多少事吗？两周的测绘。下次请你吃饭，我请。",
   "en": "...Do you know how much work that just saved us? Two weeks of measuring. Dinner's on me next time."
@@ -1056,13 +2901,13 @@
  },
  {
   "who": "门童",
-  "zh": "晚上好，沈先生。",
-  "en": "Good evening, Mr Shen."
+  "zh": "晚上好，纪先生。",
+  "en": "Good evening, Mr Ji."
  },
  {
   "who": "前台",
-  "zh": "沈先生，晚上好，欢迎回来。这是您的房卡，612，江景房。",
-  "en": "Good evening, Mr Shen, welcome back. Here's your key card: 612, a river-view room."
+  "zh": "纪先生，晚上好，欢迎回来。这是您的房卡，612，江景房。",
+  "en": "Good evening, Mr Ji, welcome back. Here's your key card: 612, a river-view room."
  },
  {
   "who": "前台",
@@ -1081,8 +2926,8 @@
  },
  {
   "who": "保安",
-  "zh": "沈先生，六楼南边在装修，您那间不受影响。",
-  "en": "Mr Shen. The south end of six is being refitted, sir; your room's not affected."
+  "zh": "纪先生，六楼南边在装修，您那间不受影响。",
+  "en": "Mr Ji. The south end of six is being refitted, sir; your room's not affected."
  },
  {
   "who": "前台",
@@ -1126,7 +2971,7 @@
  },
  {
   "who": "maker",
-  "zh": "可以啊小沈，焊点很漂亮。",
+  "zh": "可以啊小纪，焊点很漂亮。",
   "en": "Nice one. Those joints are clean."
  },
  {
@@ -1136,8 +2981,8 @@
  },
  {
   "who": "maker",
-  "zh": "小沈来啦！你的工作台给你留着，零件在门口那个架子上。",
-  "en": "Hey, Shen! Your bench is waiting. Parts are on the shelf by the door."
+  "zh": "小纪来啦！你的工作台给你留着，零件在门口那个架子上。",
+  "en": "Hey, Ji Bai! Your bench is waiting. Parts are on the shelf by the door."
  },
  {
   "who": "tourist",
@@ -1240,19 +3085,314 @@
   "en": "You're a good one. Thanks, really!"
  },
  {
-  "who": "dad",
-  "zh": "坐。菜我点好了，都是你小时候爱吃的。",
-  "en": "Sit down. I've ordered. The things you liked as a boy."
+  "who": "gunian.js",
+  "zh": "昨天谢谢你帮我按卷尺。汉口路那家 Manner，我每天一点在。今天也在。",
+  "en": "Thank you for holding the tape yesterday. I'm at the Manner on Hankou Road at one every day. Today as well."
  },
  {
-  "who": "dad",
-  "zh": "嘉定有个供应商，顺路。",
-  "en": "A supplier in Jiading. It was on the way."
+  "who": "gunian.js",
+  "zh": "今天回去以后我量了和平饭店的八角厅，抬头看了很久那个玻璃顶。想到你住在它楼上。",
+  "en": "After we parted I went and measured the octagon hall at the Peace Hotel and stood a long time looking up at the glass. It occurred to me that you live above it."
  },
  {
-  "who": "dad",
-  "zh": "嗯。",
-  "en": "Mm."
+  "who": "gunian.js",
+  "zh": "这周末我搬画图桌，从我妈家搬到新租的工作室：虹口，一个石库门的二楼。不是请你帮忙搬。是想让你第一个看。",
+  "en": "I'm moving my drawing table this weekend, from my mother's to the studio I've rented: Hongkou, the first floor of a lane house. I'm not asking you to carry it. I'd like you to be the first to see the place."
+ },
+ {
+  "who": "gunian.js",
+  "zh": "下个月考最后三门。考前我晚上都在画图，不太回消息。不是冷淡，是在考试。先跟你说一声。",
+  "en": "Last three papers next month. Until then I'm drawing every evening and slow to answer. It isn't coldness. It's an exam. I wanted you to know beforehand."
+ },
+ {
+  "who": "gunian.js",
+  "zh": "过了。九门全过。",
+  "en": "I passed. All nine papers."
+ },
+ {
+  "who": "gunian.js",
+  "zh": "第一个自己签字的项目：山阴路一栋里弄，三户人家，住了五十年。业主是个八十岁的阿婆，她问我，修完还认不认得出来。",
+  "en": "The first job under my own signature: a lane house on Shanyin Road, three households, fifty years in it. The owner is eighty. She asked me whether she would still recognise it when I had finished."
+ },
+ {
+  "who": "gunian.js",
+  "zh": "下个月你跟你爸吃那顿饭。我问第二遍：之后，你人在哪儿？",
+  "en": "Next month is your dinner with your father. I'm asking a second time: afterwards, where will you be?"
+ },
+ {
+  "who": "kexin.js",
+  "zh": "视频发了。你那两秒，评论区有人问“这个路人是谁”😂 我回的是“路人”。",
+  "en": "The video is up. Your two seconds: someone in the comments asked \"who's the passer-by\" 😂 I answered \"a passer-by\"."
+ },
+ {
+  "who": "kexin.js",
+  "zh": "发了。小猫贴纸的点赞比我的脸还多，我有点受伤😂",
+  "en": "Posted. The cat sticker got more likes than my face. I'm a little hurt 😂"
+ },
+ {
+  "who": "kexin.js",
+  "zh": "昨天那条我真剪了。成片里没有你，安心上班。",
+  "en": "I really did cut it. You're not in the finished video. Go to work in peace."
+ },
+ {
+  "who": "kexin.js",
+  "zh": "今天掉了四百个粉。就因为我说了一句那个面霜不值那个价。品牌方打电话骂了我二十分钟。",
+  "en": "I lost four hundred followers today. All because I said that face cream wasn't worth the price. The brand rang and shouted at me for twenty minutes."
+ },
+ {
+  "who": "kexin.js",
+  "zh": "今天直播有人问“你是不是恋爱了”。我说“是”。——然后才想起来没问你。对不起。",
+  "en": "On the stream today someone asked \"are you in love\". I said \"yes\". — And only then remembered I hadn't asked you. Sorry."
+ },
+ {
+  "who": "kexin.js",
+  "zh": "杭州一家 MCN 要签我，包装成“沪上精致生活”的头部。条件是搬去杭州，两年，内容他们定。",
+  "en": "A Hangzhou agency wants to sign me and build me into the top \"refined Shanghai life\" account. The terms: move to Hangzhou, two years, they decide the content."
+ },
+ {
+  "who": "kexin.js",
+  "zh": "[图片] 二十件，四十分钟卖完。我在仓库地上坐着哭了十分钟，妆全花了，没拍。",
+  "en": "[Photo] Twenty pieces, sold out in forty minutes. I sat on the warehouse floor and cried for ten. My make-up was everywhere. I didn't film it."
+ },
+ {
+  "who": "kexin.js",
+  "zh": "下个月你跟你爸吃饭那天，我什么都不发。那天是你的。",
+  "en": "The day of your dinner with your father next month, I'm posting nothing at all. That day is yours."
+ },
+ {
+  "who": "kexin.js",
+  "zh": "没签。牌子的名字想好了，叫“昕”。第一批二十件，九月上。",
+  "en": "I didn't sign. The label has a name: \"Xin\". Twenty pieces in the first run, out in September."
+ },
+ {
+  "who": "kexin.js",
+  "zh": "你那百分之五还作数。小程序什么时候给我？",
+  "en": "Your five per cent still stands. When do I get my mini-program?"
+ },
+ {
+  "who": "kexin.js",
+  "zh": "签了。下个月搬杭州。上海的夜景，替我多看两眼。",
+  "en": "I've signed. I move to Hangzhou next month. Look at the Shanghai lights twice for me."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "[图片] 八秒。你是左边那道灰的。比我想的好看。",
+  "en": "[Photo] Eight seconds. You're the grey streak on the left. Better than I expected."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "[图片] 海关的钟，十点零一秒。左下角那个肩膀是你的。我不裁。",
+  "en": "[Photo] The Customs clock at one second past ten. The shoulder bottom left is yours. I'm not cropping it."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "这两天在崇明拍候鸟，岛上没信号。别找我，明天傍晚回。",
+  "en": "On Chongming for two days shooting the winter birds. No signal on the island. Don't look for me. Back tomorrow evening."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "[图片] 回来了。四千张，手冻裂了。你这两天干了什么，一件一件说。",
+  "en": "[Photo] Back. Four thousand frames and split knuckles. What have you been doing these two days? One thing at a time."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "睡了吗？",
+  "en": "Are you asleep?"
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "没事。就是冲出来一张片子，想第一个给你看。",
+  "en": "It's nothing. I've just developed a picture and wanted you to be the first to see it."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "里斯本的驻留批了。七月走，三个月。告诉你一声。",
+  "en": "The Lisbon residency came through. I leave in July, for three months. Just so you know."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "走之前要交“十点以后”的最后一张。我选了你那张：你靠着栏杆等我，没发现我在拍。要展出，得你签个字。",
+  "en": "Before I go I have to hand in the last picture for \"After Ten\". I've chosen yours: you leaning on the railing waiting for me, with no idea I was shooting. To show it I need your signature."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "[图片] 里斯本，二十八路电车。这里晚上十点天还亮着，我有点不习惯。",
+  "en": "[Photo] Lisbon, the number 28 tram. It's still light here at ten at night. I can't get used to it."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "他们想让我再留三个月，带一个工作坊。我还没回。",
+  "en": "They've asked me to stay another three months and run a workshop. I haven't answered."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "虹桥，刚落地。里斯本十点天还亮着，我受不了。今晚老地方，你当墙。",
+  "en": "Hongqiao. Just landed. In Lisbon it's still light at ten and I couldn't stand it. Our place tonight. You're the wall."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "我续了，再三个月，也许更久。纪白，别等我。——这句话我只说一次。",
+  "en": "I've extended. Another three months, maybe longer. Don't wait for me, Ji Bai. — I'll only say that once."
+ },
+ {
+  "who": "nanxing.js",
+  "zh": "[图片] 我续了三个月。这张是这里的十点。回上海的时候给你带一张明信片，如果我回的话。",
+  "en": "[Photo] I've extended for three months. This is ten o'clock here. I'll bring you a postcard when I'm back in Shanghai, if I come back."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "看到你朋友圈了。外滩。",
+  "en": "Saw your Moments. The Bund."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "所以你真的回去了。",
+  "en": "So you really went back."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "[图片] 你的马克杯还在我这儿。印着 GO BEARS 那个。寄给你，还是扔了？",
+  "en": "[Photo] Your mug is still here. The GO BEARS one. Shall I post it to you, or throw it out?"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "名单这次有我了。早上十点开的会，十点十五电脑就登不进去了。",
+  "en": "This time my name was on the list. The meeting was at ten. By a quarter past I couldn't log in."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "有家上海的公司找我，做 AI 产品的设计负责人。让我六月过去，先待三个月，算试用。我还没答应。",
+  "en": "A Shanghai company has approached me: design lead on their AI products. They want me over in June for three months, as a trial. I haven't said yes."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "机票订了。六月五号到浦东。别来接，我自己会坐磁悬浮。",
+  "en": "Flight's booked. I land at Pudong on the fifth of June. Don't meet me. I can manage the maglev by myself."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "我在你那个饭店的大堂。你以前说它像老电影。——确实像。",
+  "en": "I'm in the lobby of that hotel of yours. You used to say it was like an old film. — It is."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "单程。公司的 offer 我签了。静安，租了个朝南的。你的杯子我带回来了。",
+  "en": "One-way. I've signed the offer. A south-facing flat in Jing'an. I brought your mug back with me."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "[图片] 旧金山，雾。到了。我在收尾：退租，卖车，跟律师谈绿卡。明年春天见，如果你那句话还作数。",
+  "en": "[Photo] San Francisco, fog. I'm here. Closing things up: the lease, the car, a talk with the lawyer about the green card. See you in the spring, if that sentence of yours still stands."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "[图片] 到了。雾还是那片雾。纪白，谢谢你这次把话说完了。",
+  "en": "[Photo] Landed. The same old fog. Thank you, Ji Bai, for finishing your sentence this time."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "到旧金山了。保重，纪白。",
+  "en": "I'm back in San Francisco. Take care, Ji Bai."
+ },
+ {
+  "who": "yuan.js",
+  "zh": "[图片] 回旧金山了。Clement 街那家点心店还开着。下次你来，我请。",
+  "en": "[Photo] Back in San Francisco. The dim sum place on Clement is still open. Next time you are over, my treat."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "纪白？我是许知微，你这个项目的 PM。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。",
+  "en": "Ji Bai? Xu Zhiwei. I'm the PM on your project. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "你住和平饭店？我回浦西顺路，把门禁卡和电脑带给你。九点半之前我在大堂。",
+  "en": "You're at the Peace Hotel? It's on my way back to Puxi. I'll bring your pass and laptop. I'll be in the lobby until half nine."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "东西放前台了。明早别迟到。",
+  "en": "I've left them at the front desk. Don't be late tomorrow."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "今天你讲数据流那一页，客户 CTO 追问了三次，你都接住了。不错。",
+  "en": "Your data-flow slide today: the client's CTO came back at you three times and you held. Not bad."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "别得意。",
+  "en": "Don't let it go to your head."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "帮个忙。明早八点要交客户周报，我妈今晚突然来上海，我得去虹桥接她。初稿你能替我写吗？就这一次。",
+  "en": "I need a favour. The client's weekly report is due at eight tomorrow, and my mother has turned up in Shanghai tonight without warning. I have to fetch her from Hongqiao. Could you write the first draft for me? Just this once."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "周报我一个字没改就发了。客户回了两个字：“清楚”。他上一次夸人是去年。",
+  "en": "I sent the report without changing a word. The client replied with one: \"Clear.\" The last time he praised anyone was last year."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "这周你没掉链子。我说话算话：新人撑过第一周，我请一杯。",
+  "en": "You didn't drop anything this week. I keep my word: a new hire who survives week one gets a drink."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "今天给合伙人过方案，你做的那个评估模型，我说的是“我们组做的”。Vincent 以为是我做的，我没纠正。",
+  "en": "At the partner review today I called your evaluation model \"the team's work\". Vincent assumed it was mine. I didn't correct him."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "想了一晚上。还是该告诉你。",
+  "en": "I've thought about it all evening. You should hear it from me."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "还在加班。从我这层能看到你住的那栋楼的绿顶。",
+  "en": "Still at the office. From this floor I can see the green roof of your hotel."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "今天在电梯里你看了我三秒。小周看见了。——三秒太长。",
+  "en": "You looked at me for three seconds in the lift today. Xiao Zhou saw. — Three seconds is too long."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "评级出来了。高级经理，是我。",
+  "en": "The ratings are out. Senior manager. It's me."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "下一期项目的名单今天报上去了。我报了你。组里有人问我为什么，我说：因为他会当面跟我说不。",
+  "en": "The staffing list for the next phase went up today. I put you on it. Someone on the team asked me why. I said: because he tells me no to my face."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "新加坡办公室要人去带亚太的 AI 业务。Vincent 推了我。年底走，两年。",
+  "en": "The Singapore office needs someone to run AI for Asia-Pacific. Vincent put my name forward. I'd leave at the end of the year. Two years."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "我跟 Vincent 说了，新加坡我不去。不是为你。——有一部分是。",
+  "en": "I've told Vincent I'm not taking Singapore. Not for you. — Partly for you."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "机票订了，十二月二十号。两年，每个月我回来一次。春节你来新加坡，我带你吃肉骨茶。",
+  "en": "The flight's booked: the twentieth of December. Two years, and I'm back once a month. Come to Singapore at Spring Festival. I'll take you for bak kut teh."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "十二月走。纪白，我们差一点。——差的那一点，是我没等，还是你没追，我分不清。",
+  "en": "I leave in December. We nearly had it, Ji Bai. — Whether the missing part was me not waiting or you not coming after me, I can't tell."
+ },
+ {
+  "who": "zhiwei.js",
+  "zh": "十二月去新加坡。走之前，把你那页数据流图教给新人。那是你留在这个项目上最好的东西。",
+  "en": "I'm off to Singapore in December. Before I go, teach the new hire your data-flow slide. It's the best thing you've left on this project."
  },
  {
   "who": "dad",
@@ -1295,38 +3435,163 @@
   "en": "I'm fifty-five. I don't want to carry it on my own any more."
  },
  {
-  "who": "dad",
-  "zh": "……那就做好。别让人看笑话。钱不够，跟我说。",
-  "en": "...Then do it properly. Don't let anyone laugh at you. If money's short, tell me."
+  "who": "mum",
+  "zh": "白白，你爸昨天问我，你在上海是不是在做什么东西。他不好意思自己问你。",
+  "en": "Baibai, your father asked me yesterday whether you're making something in Shanghai. He can't bring himself to ask you."
  },
  {
   "who": "dad",
-  "zh": "……随你。",
-  "en": "...Suit yourself."
+  "zh": "（他拿起来，翻过去看了看底，又在手里掂了掂。）",
+  "en": "(He picks it up, turns it over to look at the base, weighs it in his hand.)"
  },
  {
   "who": "dad",
-  "zh": "……好。你妈会高兴的。",
-  "en": "...Good. Your mother will be happy."
+  "zh": "第一版。",
+  "en": "The first version."
  },
  {
   "who": "dad",
-  "zh": "……把方案发给我。下周带他们来厂里看看。",
-  "en": "...Send me the proposal. Bring them to the works next week."
+  "zh": "有人用过吗？",
+  "en": "Has anyone used it?"
+ },
+ {
+  "who": "work.js",
+  "zh": "还没有。",
+  "en": "Not yet."
  },
  {
   "who": "dad",
-  "zh": "你拿什么让我信？先把你自己的事做成再说。",
-  "en": "What have you got to make me believe it? Get your own thing working first."
+  "zh": "没人用过的东西，厂里叫样件，不叫产品。",
+  "en": "A thing nobody has used: at the works we call that a sample. Not a product."
  },
  {
   "who": "dad",
-  "zh": "你还是没想好。没关系。想好了，告诉我。",
-  "en": "You still haven't decided. That's all right. When you have, tell me."
+  "zh": "少了点。比没有强。",
+  "en": "Not many. Better than none."
  },
  {
   "who": "dad",
-  "zh": "吃吧，菜要凉了。",
-  "en": "Eat. The food's getting cold."
+  "zh": "……一个一个借的。",
+  "en": "...One at a time."
+ },
+ {
+  "who": "dad",
+  "zh": "这个销子是打印的。磨两个月就旷了。得车一个，淬火。",
+  "en": "This pin's printed. Two months of wear and it'll be sloppy. It wants turning in steel, and hardening."
+ },
+ {
+  "who": "work.js",
+  "zh": "江边有个退休的老车工，也是这么说的。",
+  "en": "There's a retired lathe hand down by the river who said exactly that."
+ },
+ {
+  "who": "dad",
+  "zh": "……那他是内行。",
+  "en": "...Then he knows his trade."
+ },
+ {
+  "who": "dad",
+  "zh": "轴向有旷量。你自己晃晃。",
+  "en": "There's play along the axis. Rock it yourself."
+ },
+ {
+  "who": "work.js",
+  "zh": "都记着。",
+  "en": "All written down."
+ },
+ {
+  "who": "dad",
+  "zh": "……挑不出大毛病。公差是塑料的公差，别的没什么。",
+  "en": "...I can't find much wrong with it. The tolerances are plastic's tolerances. Otherwise, nothing."
+ },
+ {
+  "who": "dad",
+  "zh": "有人要吗？",
+  "en": "Does anyone want one?"
+ },
+ {
+  "who": "dad",
+  "zh": "那就还不是生意。",
+  "en": "Then it isn't a business yet."
+ },
+ {
+  "who": "dad",
+  "zh": "付了钱的才算数。……有一个，也是数。",
+  "en": "Only the ones who've paid count. ...One is still a number."
+ },
+ {
+  "who": "dad",
+  "zh": "留名字不是给钱。不过，是个开头。",
+  "en": "A name isn't money. Still, it's a start."
+ },
+ {
+  "who": "dad",
+  "zh": "卖多少？成本多少？",
+  "en": "What do you sell it for? What does it cost you?"
+ },
+ {
+  "who": "dad",
+  "zh": "单台就不亏。量上去还能降。账你算过了。",
+  "en": "It doesn't lose money even one at a time, and volume brings it down. You've done the sums."
+ },
+ {
+  "who": "dad",
+  "zh": "这东西，是用的人一句一句教你改出来的。……你在那边学的，原来是这个。",
+  "en": "The people who use this taught you how to make it, one remark at a time. ...So that is what you learned over there."
+ },
+ {
+  "who": "dad",
+  "zh": "改了几版，有人用，有人要。……像回事了。",
+  "en": "Several versions. People using it, people wanting it. ...It's starting to look like something."
+ },
+ {
+  "who": "dad",
+  "zh": "改了几版，有人用过，毛病一条一条在改。……像回事了。",
+  "en": "Several versions, people have had it in their hands, the faults coming out one at a time. ...It's starting to look like something."
+ },
+ {
+  "who": "dad",
+  "zh": "才开了个头。开了头，就别放下。",
+  "en": "It's a beginning. Now you've begun, don't put it down."
+ },
+ {
+  "who": "dad",
+  "zh": "一年，一台样件。",
+  "en": "One year. One sample."
+ },
+ {
+  "who": "dad",
+  "zh": "一个星期，一台样件。",
+  "en": "One week. One sample."
+ },
+ {
+  "who": "dad",
+  "zh": "你妈说，你在上海做了个拍照用的东西。带来了吗？",
+  "en": "Your mother says you've made something in Shanghai. For taking photographs. Did you bring it?"
+ },
+ {
+  "who": "dad",
+  "zh": "……不想给我看，就算了。",
+  "en": "...If you'd rather not show me, never mind."
+ },
+ {
+  "who": "dad",
+  "zh": "那个臂的图纸发我。厂里一下午的事。",
+  "en": "Send me the drawing for that arm. It's an afternoon's work for the shop."
+ },
+ {
+  "who": "dad",
+  "zh": "那个东西带回去。厂里有地方，接着做。",
+  "en": "Bring that thing with you. There's room at the works. Keep at it."
+ },
+ {
+  "who": "dad",
+  "zh": "你那个云台的臂，图纸一起带来。",
+  "en": "And bring the drawing for the arm of that gimbal of yours."
+ },
+ {
+  "who": "dad",
+  "zh": "机械臂是别人的事。桌上这个，才是你的。先把它做成。",
+  "en": "The robot arm is someone else's affair. The thing on this table is yours. Make that work first."
  }
 ]
