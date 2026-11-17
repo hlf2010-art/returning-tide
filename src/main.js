@@ -103,6 +103,7 @@ import { createFieldTest, SPOTS as WORK_SPOTS } from './world/fieldTest.js';
 import { createWorkDesk } from './world/workDesk.js';
 import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
 import { createSeasonPlan } from './ui/season.js';
+import { createProfile } from './ui/profile.js';
 import { timeVariant, timeAfterword } from './world/allotEvents.js';
 import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText } from './engine/year.js';
 import { runRomance, romanceCallChoice, guardTalk, ROMANCE_CALLS } from './world/romance.js';   // the five he might come to love (engine/hearts.js)
@@ -750,6 +751,7 @@ window.addEventListener('keydown', (e) => {
   }
   if (mode === 'journal') { if (k === 'KeyJ' || k === 'Escape') { journal.close(); e.preventDefault(); } return; }
   if (mode === 'season') { season.key(k); e.preventDefault(); return; }
+  if (mode === 'profile') { profilePage.key(k); e.preventDefault(); return; }
   if (mode === 'work') { workbook.key(k); e.preventDefault(); return; }                 // the notebook has the keys
   if (mode === 'map') { if (k === 'KeyM' || k === 'Escape') worldMap.close(); else worldMap.key(k); e.preventDefault(); return; }
   if (mode === 'drive') { if (world.driving.key(k)) e.preventDefault(); else if (k === 'Escape' && noLock) pause(); return; }
@@ -768,7 +770,8 @@ window.addEventListener('keydown', (e) => {
     if (world.dest.key(k)) return;
     if (k === 'KeyG') { world.photo.toggle(); e.preventDefault(); return; }
     if (k === 'KeyJ') { openJournal(); e.preventDefault(); return; }
-    if (k === 'KeyN') { openWork('read'); e.preventDefault(); return; }               // your notebook, to read (you write at a desk)
+    if (k === 'KeyN') { openWork('read'); e.preventDefault(); return; }
+    if (k === 'KeyI') { openProfile(); e.preventDefault(); return; }               // the character page               // your notebook, to read (you write at a desk)
     if (k === 'KeyM') { openMap(); e.preventDefault(); return; }
     if (k === 'KeyT' && world.ambient.opener) { const o = world.ambient.opener; world.ambient.clearOpener(); startTalk(o.talkable, { opener: o.line }); e.preventDefault(); return; }
     if (k === 'KeyT' && talkTarget) { startTalk(talkTarget); e.preventDefault(); return; }
@@ -1010,6 +1013,14 @@ function trySeason() {
   mode = 'season'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
   try { document.exitPointerLock(); } catch { /* not locked */ }
   season.open(days, gap, () => { if (mode === 'season') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } saveLife(); });
+}
+// the character page (I): who he is, skills, quests, money, reputation, belongings, people (ui/profile.js)
+const profilePage = createProfile({ getLife: () => life, defs: QUESTS, onClose: () => { if (mode === 'profile') { mode = 'play'; player.enabled = true; player.clearInput(); lock(); } } });
+function openProfile(tab = null) {
+  if (mode !== 'play') return;
+  mode = 'profile'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
+  try { document.exitPointerLock(); } catch { /* not locked */ }
+  profilePage.open(tab);
 }
 function openWork(where = 'read', tab = null) {
   if (mode !== 'play') return;
@@ -1475,7 +1486,7 @@ R.renderer.setAnimationLoop(frame);
 
 // Small handle for automated checks and console poking; not used by the game itself.
 debug.workbook = workbook; debug.openWork = (w, t) => openWork(w, t); debug.goesLeft = () => goesLeft(life);
-debug.setLang = setLang; debug.getLang = getLang; debug.voice = voice; debug.llm = llm; debug.talk = talk; debug.journal = journal; debug.QUESTS = QUESTS; debug.updateStory = () => updateStory();
+debug.setLang = setLang; debug.getLang = getLang; debug.voice = voice; debug.llm = llm; debug.talk = talk; debug.journal = journal; debug.profile = profilePage; debug.season = season; debug.openSeason = openSeason; debug.QUESTS = QUESTS; debug.updateStory = () => updateStory();
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   player, camera, scene, R, audio, wind,

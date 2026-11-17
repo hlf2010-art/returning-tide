@@ -79,7 +79,7 @@ export const S = {
   placeSub: { zh: '十一月 · 16:20', en: 'November · 16:20' }, month: { zh: '十一月', en: 'November' },
   keys: [
     ['WASD', { zh: '走', en: 'walk' }], ['Shift', { zh: '快走', en: 'hurry' }], ['Space', { zh: '跳', en: 'jump' }],
-    ['E', { zh: '互动', en: 'interact' }], ['M', { zh: '地图', en: 'map' }], ['P', { zh: '手机', en: 'phone' }], ['J', { zh: '日志', en: 'journal' }],
+    ['E', { zh: '互动', en: 'interact' }], ['M', { zh: '地图', en: 'map' }], ['P', { zh: '手机', en: 'phone' }], ['J', { zh: '日志', en: 'journal' }], ['I', { zh: '人物', en: 'character' }],
     ['Esc', { zh: '菜单', en: 'menu' }],
   ],
   // toasts

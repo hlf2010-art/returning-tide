@@ -1,0 +1,25 @@
+// The character page's data (world/profileView.js): who he is, skills, quests, money, reputation, things, people.
+import { createLife, nudge, own } from '../src/engine/life.js';
+import { initYear } from '../src/engine/year.js';
+import { meet, setStage } from '../src/engine/hearts.js';
+import { QUESTS } from '../src/world/story.js';
+import { updateQuests } from '../src/engine/quests.js';
+import { profileView, GROUPS } from '../src/world/profileView.js';
+let failed = 0;
+const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
+const L = createLife(); initYear(L); updateQuests(L, QUESTS, 0);
+meet(L, 'nanxing'); setStage(L, 'nanxing', 'dating'); nudge(L, 'dad', 10, 't'); nudge(L, 'ruoan', 4, 't');
+own(L, { kind: 'umbrella', id: 'umbrella', name: '自动折叠伞 黑色', en: 'Automatic folding umbrella, black', from: '京东' });
+const zh = profileView(L, QUESTS, 'zh'), en = profileView(L, QUESTS, 'en');
+ok(zh.me.name === '纪白' && en.me.name === 'Ji Bai' && en.me.job === 'Consultant' && en.me.employer === 'Marlowe Finch', `who: ${en.me.name}, ${en.me.job} at ${en.me.employer}, ${en.me.date}`);
+ok(en.skills.length === 3 && en.skills.every((s) => s.level >= 0), 'three skills');
+ok(en.quests.active.length >= 1 && en.quests.active[0].title, `quests: ${en.quests.active.length} active ("${en.quests.active[0].title}")`);
+ok(en.money.net === 6800 + 12400 + 1850000 && en.money.cardLimit === 3000000, `money: ¥${en.money.net} net`);
+ok(en.rep.length === 5 && en.rep.every((r) => r.v >= 0 && r.v <= 100), 'reputation: five measures');
+ok(en.items.some((i) => /umbrella/.test(i.name)) && zh.items.some((i) => /伞/.test(i.name)), 'things he owns, in both languages');
+ok(/Peace Hotel/.test(en.property.home.name) && !en.property.car, 'property: the Peace Hotel, no car yet');
+const nx = en.people.find((p) => p.id === 'nanxing'), dad = en.people.find((p) => p.id === 'dad');
+ok(nx && nx.group === 'heart' && nx.stage === 'Dating' && dad && dad.group === 'family' && dad.close === 60, `people: Nanxing (${nx && nx.stage}, ${nx && nx.close}), Dad (${dad && dad.close})`);
+ok(!en.people.some((p) => p.id === 'gunian' || p.id === 'didi'), 'only people he has met; no apps');
+ok(en.people.every((p) => GROUPS[p.group]) && zh.people.find((p) => p.id === 'ruoan').role === '建筑师，外滩老楼修缮', 'every person has a group; roles in Chinese');
+console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);

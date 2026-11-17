@@ -7,6 +7,9 @@ one short street (Hankou Road), ~155 m of the Bund promenade with two conversing
 
 ## In this build
 
+- **Time is the resource:** between the acts, weeks pass in a night, and you plan how the evenings went: making things, one person, friends and family, business, rest. A preview says what that will come to before you commit; energy and burnout; the gimbal's road to a launch (production-ready, a small batch, launched) and what a launch brings both ways (an offer, a promotion, followers; a Taobao knock-off, an HR complaint, a friend wanting equity, a big company's call). Two ending variants: "built it, but alone" and "wanted everything". See `docs/time.md`.
+- **The character page (I):** who Ji Bai is today, his three skills and what he's made, quests in progress, money, reputation, his things, home, car and company, and everyone he knows on a relationship map.
+- **Ji Bai's AI side in the story:** the robot-arm review and the investor demo follow what he proposed (log the data, a slip sensor and a model on the controller, a vision model, new pads); at the consultancy he builds a real reconciliation agent or mocks one up, decides where the bank's model runs, and fixes the redaction model.
 - **The day starts at 4:20 pm:** the low sun on the Bund, the sunset at about 4:55, the floodlights from 5:10; time enough to cross to Lujiazui by Line 2 or the ferry first.
 
 - **Metro Line 2 (East Nanjing Road ⇄ Lujiazui), walked and ridden:** down Exit 7 or 2 (Henan Road) or Lujiazui's Exits 6 and 4 into a real concourse; with a bag, security stops you until it's been through the X-ray (E at the belt); E at a gate taps Alipay's transit code (¥3, charged on the way out); escalators (they carry you) or the stair down to an island platform behind screen doors; a real 8-car train every minute each way (5:30–23:00), the alert tone and announcements in Mandarin and English, doors that open on the left; ride it under the river (about 90 s): over every door a screen and a lit strip map of the whole line (this station red, the next green), printed line maps above the windows; individual stainless seats with the orange priority seats (爱心专座) at the car ends. Crowds follow the hour (a full car in the rush) (the morning and evening rush, a quiet midday); the stations shut their shutters after the last train (about 23:15 to 5:15). Commuters, riders and staff; procedural station and train sound. See `docs/metro.md`.
@@ -54,6 +57,7 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | C | subtitles on / off |
 | M | the map (click a place for a waypoint) · **Shift+M** sound on / off |
 | J | the journal: quests, their steps, waiting until a quest's time, the people in your life, and (the Work tab) where your own gimbal stands |
+| I | the character page: overview, skills, quests, money, reputation, belongings and property, the people (a relationship map); ← → or 1-7 change tabs, I or Esc closes |
 | N | your notebook, to read anywhere (you write in it at a desk: E at the desk in room 612, or at your bench in Yangpu); 1-4 turn its pages, Esc closes |
 | E (looking at someone taking a photo, after dark) | lend them the night gimbal, once you've built it |
 | Gamepad | left stick walk, right stick look, A act, B back, X jump, Y phone, LB journal, RB map, d-pad 1-4, Menu pause |
