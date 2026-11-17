@@ -20,12 +20,18 @@ export const PARTS = {
   canbus: { zh: 'CAN 总线收发模块', en: 'CAN bus transceiver', price: 39 },
   tof: { zh: 'ToF 激光测距模组（多点）', en: 'Multi-zone ToF laser ranging module', price: 899 },
   servo: { zh: '微型舵机', en: 'Micro servo', price: 35 },
+  cam: { zh: '星光级摄像头模组', en: 'Starlight camera module', price: 59 },
+  npu: { zh: '端侧 AI 模组（NPU）', en: 'Edge-AI module (NPU)', price: 189 },
 };
 export const BLUEPRINTS = {
   gimbal: { zh: '夜行云台', en: 'Night gimbal', level: 1, xp: 120, parts: { esp32: 1, imu: 1, gimbalMotor: 3, lipo: 1, pla: 1 },
     use: { zh: '三轴稳定：夜里也能拍清楚。解锁拍照模式（G）和外滩夜景挑战。', en: 'Three-axis stabilised: sharp photos at night. Unlocks photo mode (G) and the Bund-after-dark challenges.' } },
   lidar: { zh: '口袋激光雷达', en: 'Pocket LiDAR', level: 2, xp: 200, parts: { tof: 1, esp32: 1, lipo: 1, servo: 1, pla: 1 },
     use: { zh: '扫描建筑细节，生成点云。若安修复外滩老楼用得上。', en: 'Scans architectural detail into a point cloud. Ruoan could use it for her Bund restorations.' } },
+  // hardware and software at once: a camera and an NPU on one small board, and a model he trains on
+  // Ruoan's own photographs of the Bund's old façades (Software & AI 4)
+  crackcam: { zh: '裂缝识别相机', en: 'Crack-spotting camera', level: 2, ai: 4, xp: 220, parts: { esp32: 1, cam: 1, npu: 1, lipo: 1, pla: 1 },
+    use: { zh: '对着外滩老楼的立面一扫，模型在板子上就把裂缝和空鼓标出来。若安修缮用得上：她拍的照片就是训练数据。', en: "Pan it across an old Bund façade and the model on the board marks the cracks and the hollow render. Ruoan's restorations could use it: her own photographs are the training data." } },
   telemetry: { zh: '赛道数据记录仪', en: 'Race telemetry logger', level: 2, xp: 160, parts: { esp32: 1, gps: 1, imu: 1, canbus: 1, pla: 1 },
     use: { zh: '记录圈速、G 值、刹车点。知夏的天马赛车用。', en: 'Logs lap times, g-forces, braking points. For Zhixia\'s car at Tianma.' } },
 };
@@ -52,6 +58,8 @@ export function maker(L) {
   return (L.flags.maker ||= { xp: 0, parts: {}, gadgets: {}, builds: [], photos: [], shot: {}, achievements: [], followers: 3412, log: [] });
 }
 export const level = (M) => LEVELS.filter((x) => M.xp >= x).length;
+// Software & AI's level (engine/skills.js keeps it; read here without importing it: he lands at 650 xp)
+const aiLevel = (L) => LEVELS.filter((x) => (((L.flags.skills || {}).ai) ?? 650) >= x).length;
 export const nextLevelAt = (M) => LEVELS[level(M)] ?? null;
 
 // returns what changed: { xp, levelUp, achievement? }
@@ -87,6 +95,7 @@ export function canBuild(L, id) {
   const M = maker(L), B = BLUEPRINTS[id]; if (!B) return { ok: false, reason: 'blueprint' };
   if (M.gadgets[id]) return { ok: false, reason: 'built' };
   if (level(M) < B.level) return { ok: false, reason: 'level', need: B.level };
+  if (B.ai && aiLevel(L) < B.ai) return { ok: false, reason: 'ai', need: B.ai };
   const miss = missing(L, id);
   return Object.keys(miss).length ? { ok: false, reason: 'parts', missing: miss } : { ok: true };
 }

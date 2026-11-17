@@ -109,6 +109,14 @@ function gripper() {
     g(`<path d="M44 94 q-2 -3 0 -6 M30 116 q-2 -4 1 -6" />`, { ink: RED, w: 0.35 }) +
     g(`<path d="M70 36 q10 -2 14 8" marker-end="url(#sbArrow)"/>`, { ink: INK, w: 0.3 }));
 }
+function pipeline() {
+  // clips -> labels -> train -> int8 -> NPU -> on the gimbal; under it, accuracy against latency, three models
+  const box = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`, arr = (x1, y1, x2, y2) => `<path d="M${x1} ${y1} L${x2} ${y2}" marker-end="url(#sbArrow)"/>`;
+  return sk(g(`${box(6, 14, 22, 12)}${box(39, 14, 22, 12)}${box(72, 14, 22, 12)}${box(72, 38, 22, 12)}${box(39, 38, 22, 12)}${box(6, 38, 22, 12)}`) +
+    g(`${arr(28, 20, 38, 20)}${arr(61, 20, 71, 20)}${arr(83, 26, 83, 37)}${arr(72, 44, 62, 44)}${arr(39, 44, 29, 44)}`, { ink: INK, w: 0.32 }) +
+    g(`<path d="M12 120 L12 72 M12 120 L92 120"/>`, { w: 0.35 }) + g(`<rect x="12" y="74" width="40" height="22" fill="none" stroke-dasharray="1.6 1.2"/>`, { ink: '#2d7a2d', w: 0.35 }) +
+    g(`<circle cx="22" cy="104" r="1.6"/><circle cx="40" cy="90" r="1.6"/><circle cx="74" cy="80" r="1.6"/>`, { w: 0.5 }) + g(`<ellipse cx="40" cy="90" rx="5" ry="4"/>`, { ink: RED, w: 0.4 }));
+}
 function clock() {
   // the Customs House's clock tower, quickly
   return sk(g(`<path d="M38 120 V70 h24 V120"/><path d="M41 70 V56 h18 V70"/><circle cx="50" cy="63" r="5"/><path d="M50 63 L50 60 M50 63 L52.4 64.2"/>
@@ -142,6 +150,16 @@ function spreads(L) {
     hw(19, 60, T('航向', 'Yaw'), { size: 3.4, seed: 19 }) + hw(79, 63, T('横滚', 'Roll'), { size: 3.4, seed: 20 }) + hw(58, 87, T('俯仰', 'Pitch'), { size: 3.4, seed: 21 }) +
     hw(16, 94, T('约 142', '≈ 142'), { size: 3.2, seed: 22 }) + hw(56, 121.6, T('手机夹 62–88', 'clamp 62–88'), { size: 3.2, seed: 23 }) +
     hw(58, 99, T('← 电池放手柄里，\n   重心低，手不累', '← battery in the handle:\n   low CoG, light on the wrist'), { size: 3.6, cls: 'red', seed: 24 }),
+  ]);
+  out.push([
+    hw(10, 9, T('跟随模型 · 给夜行云台', 'A tracking model · for the night gimbal'), { size: 5.0, cls: 'pen', seed: 51 }) +
+    hw(10, 22, T('它只会稳，不会跟。\n人一走动，尤其在暗处，就丢了。\n手机厂会做的事，我一个人也能做：\n一个小模型，跑在云台自己的板子上。', "It only steadies; it doesn't follow.\nOnce people walk, in the dark above all,\nit loses them. What phone makers do,\none person can do: a small model, on\nthe gimbal's own board."), { size: 4.0, seed: 52 }) +
+    hw(10, 66, T('数据：江边借人试的时候录\n（先问，同意了才录）。\n夜里的素材才有用。', 'Data: record it as people try it\n(ask first; only if they say yes).\nOnly night footage is any use.'), { size: 4.0, seed: 53 }) +
+    hw(10, 96, T('不上云：人脸不出这块板子。', 'Not in the cloud: faces never leave the board.'), { size: 4.2, cls: 'red', seed: 54 }),
+    pipeline() + hw(8, 9, T('素材', 'clips'), { size: 3.3, seed: 55 }) + hw(42, 9, T('标注', 'labels'), { size: 3.3, seed: 56 }) + hw(75, 9, T('训练', 'train'), { size: 3.3, seed: 57 }) +
+    hw(74, 52, T('int8 量化', 'int8'), { size: 3.2, seed: 58 }) + hw(42, 52, 'NPU', { size: 3.3, seed: 59 }) + hw(8, 52, T('上云台', 'on it'), { size: 3.3, seed: 60 }) +
+    hw(14, 64, T('准确率', 'accuracy'), { size: 3.2, seed: 61 }) + hw(74, 121, T('延迟', 'latency'), { size: 3.2, seed: 62 }) +
+    hw(18, 108, 'tiny', { size: 3.0, seed: 63 }) + hw(44, 84, 'small', { size: 3.0, cls: 'red', seed: 64 }) + hw(77, 74, 'base', { size: 3.0, seed: 65 }) + hw(54, 98, T('≥80%，≤50ms\n这一格里才跟得住', '≥80%, ≤50 ms:\nonly in this box\ndoes it keep up'), { size: 3.2, seed: 66 }),
   ]);
   if (arm) out.push([
     hw(10, 9, T('机械臂 · 明轩学长的团队', "The robot arm · Mingxuan's senior"), { size: 5.2, cls: 'pen', seed: 31 }) +

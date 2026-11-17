@@ -10,7 +10,8 @@ import { getLang } from './i18n.js';
 import { createSketchbook } from './sketchbook.js';
 import { clockText, stamp } from '../engine/life.js';
 import { level, maker, solderJoint, solderWindow } from '../engine/maker.js';
-import { studio, hasProduct, rev, specs, summary, isOpen, eveningOf, todays, quotable, unwritten, canWrite, writePage, knownFixes, revise, setPrice, goesLeft, batteryLeft,
+import { gainSkill, skillLevel } from '../engine/skills.js';
+import { aiState, predictRun, canTrain, train, deploy, ACC_OK, LAT_OK, studio, hasProduct, rev, specs, summary, isOpen, eveningOf, todays, quotable, unwritten, canWrite, writePage, knownFixes, revise, setPrice, goesLeft, batteryLeft,
   FIXES, PRICES, MAX_PER_SESSION, HEAVY_AT, RUNTIME_OK } from '../engine/studio.js';
 import { PRODUCT, ISSUE_TEXT, FIX_TEXT, REG, PERSONA_NAME, quoteOf, speakerOf, tonightLines } from '../world/work.js';
 
@@ -66,7 +67,7 @@ export function workSummaryHtml(L) {
 export function createWorkbook({ getLife, save, hud, audio = null, onClose = null, pass = null }) {
   const root = document.createElement('div'); root.id = 'workbook'; root.className = 'hidden'; root.setAttribute('role', 'dialog');
   document.body.appendChild(root);
-  const S = { open: false, where: 'read', tab: 'tonight', line: null, plan: new Set(), pick: new Set(), solder: null, note: '' };
+  const S = { open: false, where: 'read', tab: 'tonight', line: null, plan: new Set(), pick: new Set(), solder: null, note: '', ai: { label: 'careful', size: 'small', precision: 'int8' } };
   const L0 = () => getLife();
   const can = () => S.where !== 'read';
   const sketch = createSketchbook({ audio });
@@ -102,16 +103,34 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
       const fx = !f.noted ? `<div class="fx no">${T('还没写下来。先写今天的记录，才知道怎么改。', "Not written up yet. Write today's page first; then you'll know what to do about it.")}</div>`
         : mine.map((x) => {
           const done = x.can.reason === 'done', ok = x.can.ok, why = { where: T('要去杨浦的工作台', 'needs the bench in Yangpu'), level: T(`要创客 ${x.can.need} 级`, `needs Maker ${x.can.need}`), money: T('微信余额不够', 'not enough in WeChat Pay'), works: T('自己做不了', "can't be made here") }[x.can.reason] || '';
-          const d = [x.at === 'works' ? '' : hoursText(x.hours), x.cost ? `¥${x.cost}` : '', x.grams ? `${x.grams > 0 ? '+' : '−'}${Math.abs(x.grams)} g` : '', x.minutes ? T(`+${x.minutes} 分钟`, `+${x.minutes} min`) : '', x.at === 'desk' ? T('固件', 'firmware') : x.at === 'bench' ? T('硬件', 'hardware') : ''].filter(Boolean).join(' · ');
+          const d = [x.at === 'works' ? '' : hoursText(x.hours), x.cost ? `¥${x.cost}` : '', x.grams ? `${x.grams > 0 ? '+' : '−'}${Math.abs(x.grams)} g` : '', x.minutes ? T(`${x.minutes > 0 ? '+' : '−'}${Math.abs(x.minutes)} 分钟`, `${x.minutes > 0 ? '+' : '−'}${Math.abs(x.minutes)} min`) : '', x.at === 'desk' ? T('固件', 'firmware') : x.at === 'bench' ? T('硬件', 'hardware') : ''].filter(Boolean).join(' · ');
           return `<div class="fx${done ? ' done' : ok ? '' : ' no'}">${can() && ok ? `<button class="tg${S.pick.has(x.id) ? ' on' : ''}" data-pick="${x.id}">${S.pick.has(x.id) ? '✓' : '+'}</button>` : `<span class="mk">${done ? '✓' : '·'}</span>`}<span class="fn">${esc(P(FIX_TEXT[x.id]))}<small>${d}${why && !done ? ` · ${why}` : ''}</small></span></div>`;
         }).join('');
       return `<div class="iss ${open ? 'open' : 'ok'}"><div class="ih"><b>${esc(P(ISSUE_TEXT[i].name))}</b><span>${open ? T(`${f.n} 个人说过`, `${f.n} ${f.n === 1 ? 'person' : 'people'} said so`) : T('改好了', 'put right')}</span></div>
-        <p>${esc(P(ISSUE_TEXT[i].note(sp)))} <i>${f.by === 'me' ? T('你自己发现的', 'You found this one yourself') : `${T('最先说的：', 'First from: ')}${esc(whoName(f.by))}`}</i></p>${fx}</div>`;
+        <p>${esc(P(ISSUE_TEXT[i].note(sp)))} <i>${f.by === 'me' ? T('你自己发现的', 'You found this one yourself') : `${T('最先说的：', 'First from: ')}${esc(whoName(f.by))}`}</i></p>${fx}${i === 'track' && f.noted ? `<div class="fx"><span class="mk">→</span><span class="fn">${T('然后在“模型”页训练一个跟随模型，部署到 NPU 上', 'Then train a tracking model on the Model page, and ship it to the NPU')}<small>${T('软件与 AI', 'Software & AI')}</small></span></div>` : ''}</div>`;
     }).join('');
     const ids = [...S.pick], hrs = ids.reduce((a, id) => a + FIXES[id].hours, 0), cost = ids.reduce((a, id) => a + FIXES[id].cost, 0);
     const bar = !can() ? '' : `<div class="make">${ids.length ? `<span>${T(`第 ${rev(L) + 1} 版 · ${hoursText(hrs)}${cost ? ` · ¥${cost}` : ''}`, `Version ${rev(L) + 1} · ${hoursText(hrs)}${cost ? ` · ¥${cost}` : ''}`)}</span><button class="go" data-act="make">${T('做这一版', 'Make this version')}</button>`
       : `<span>${T(`一次最多改 ${MAX_PER_SESSION} 处：改多了，不知道是哪一处起的作用。${S.where === 'desk' ? '这张书桌上只能改固件。' : ''}`, `Change ${MAX_PER_SESSION} things at most at a sitting, or you won't know which one did the work.${S.where === 'desk' ? ' At this desk, firmware only.' : ''}`)}</span>`}</div>`;
     return rows + bar;
+  }
+  // the AI: the clips you have, three choices that pull against each other, what a run would come to,
+  // the runs so far and which is on the gimbal (engine/studio.js train / deploy)
+  function aiTab(L) {
+    const A = aiState(L), lv = skillLevel(L, 'ai'), npu = studio(L).fixes.some((f) => f.id === 'npu'), ship = A.shipped;
+    const o = S.ai, pr = predictRun(L, { ...o, aiLevel: lv }), c = canTrain(L, o, lv);
+    const row = (key, label, opts) => `<div class="pl"><span class="pk">${label}</span>${opts.map(([v, t, sub]) => `<button class="tg${o[key] === v ? ' on' : ''}" data-ai="${key}:${v}">${t}${sub ? `<small>${sub}</small>` : ''}</button>`).join('')}</div>`;
+    const pct = (x) => `${Math.round(x * 100)}%`;
+    const head = `<div class="hd">${T(`素材 ${A.clips.length} 段（夜里，经本人同意） · NPU ${npu ? '已焊上' : '还没装'} · 软件与 AI ${lv} 级`, `${A.clips.length} clips (at night, with consent) · NPU ${npu ? 'on the board' : 'not fitted yet'} · Software & AI ${lv}`)}</div>`;
+    const why = { data: T(`素材不够：至少 ${c.need} 段。天黑以后去江边，借给人试的时候录下来。`, `Not enough clips: at least ${c.need}. After dark on the promenade, record them as people try it.`), level: T(`要软件与 AI ${c.need} 级`, `needs Software & AI ${c.need}`), money: T('支付宝余额不够付 GPU', 'not enough on Alipay for the GPU time'), unwritten: T('先把“跟不住人”写进今天的记录', "Write \"it doesn't follow you\" into today's page first") }[c.reason] || '';
+    const form = `${row('label', T('标注', 'Labels'), [['quick', T('快', 'Quick'), T('1 小时 · 框画得糙', '1 h · rough boxes')], ['careful', T('细', 'Careful'), T('3 小时', '3 h')]])}
+      ${row('size', T('模型', 'Model'), [['tiny', 'tiny', T('快、省电', 'fast, frugal')], ['small', 'small', ''], ['base', 'base', T('准、慢、费电', 'accurate, slow, hungry')]])}
+      ${row('precision', T('精度', 'Precision'), [['int8', 'int8', T('量化，给 NPU', 'quantised, for the NPU')], ['fp16', 'fp16', T('不量化', 'unquantised')]])}
+      <div class="pred"><span>${T('预计', 'Expect')}: <b class="${pr.acc >= ACC_OK ? 'g' : 'b'}">${T('夜间识别', 'night accuracy')} ${pct(pr.acc)}</b> · <b class="${pr.ms <= LAT_OK ? 'g' : 'b'}">${pr.ms} ms</b> · ${T(`−${pr.battery} 分钟续航`, `−${pr.battery} min battery`)} · ${T(`GPU ¥${pr.gpu} · ${hoursText(pr.hours)}`, `GPU ¥${pr.gpu} · ${hoursText(pr.hours)}`)}</span>
+      <small>${T(`跟得住人要 ≥ ${pct(ACC_OK)}、≤ ${LAT_OK} ms（人走得快，慢了就跟丢）`, `To follow someone: ≥ ${pct(ACC_OK)} and ≤ ${LAT_OK} ms (people walk; slower than that and it loses them)`)}</small></div>
+      ${can() ? `<div class="make">${c.ok ? `<span>${T('在云上训练，用没见过的素材打分', 'Train in the cloud; scored on clips it never saw')}</span><button class="go" data-act="train">${T('训练', 'Train')}</button>` : `<span>${why}</span>`}</div>` : ''}`;
+    const runs = A.runs.map((r, i) => `<div class="fx${ship === i ? ' done' : ''}"><span class="mk">${ship === i ? '●' : r.ok ? '✓' : '·'}</span><span class="fn">${r.size} · ${r.precision} · ${r.label === 'careful' ? T('细标', 'careful labels') : T('快标', 'quick labels')} · ${T(`${r.clips} 段`, `${r.clips} clips`)}<small>${pct(r.acc)} · ${r.ms} ms · −${r.battery} min${r.ok ? '' : T(' · 跟不住', " · won't keep up")}</small></span>${can() && ship !== i ? `<button class="tg" data-ship="${i}" ${npu ? '' : 'disabled'}>${T('部署', 'Ship')}</button>` : ship === i ? `<small>${T('在云台上', 'on the gimbal')}</small>` : ''}</div>`).join('');
+    return head + form + (runs ? `<div class="hd">${T('训练过的', 'Runs')}</div>${runs}${npu ? '' : `<p class="hint">${T('要先在杨浦的工作台把 NPU 焊上，模型才有地方跑。', 'Solder the NPU on at the bench in Yangpu first: the model needs somewhere to run.')}</p>`}` : '');
   }
   function pagesTab(L) {
     const pages = Object.keys(studio(L).pages).map(Number).sort((a, b) => b - a);
@@ -137,9 +156,9 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
     root.classList.toggle('sketch-only', !hasProduct(L));
     if (!hasProduct(L)) { root.innerHTML = `<div class="sb-host"></div>`; sketch.mount(root.firstElementChild, L0); return; }
     sketch.unmount();
-    const tabs = [['tonight', T('今晚', 'Tonight')], ['issues', T('问题', 'Issues')], ['pages', T('记录', 'Pages')], ['list', T('名单', 'List')], ['sketch', T('手稿', 'Sketches')]];
+    const tabs = [['tonight', T('今晚', 'Tonight')], ['issues', T('问题', 'Issues')], ...(studio(L).found.track ? [['ai', T('模型', 'Model')]] : []), ['pages', T('记录', 'Pages')], ['list', T('名单', 'List')], ['sketch', T('手稿', 'Sketches')]];
     const where = { desk: T('612 的书桌', 'the desk in 612'), bench: T('杨浦的工作台', 'your bench in Yangpu'), read: T('翻看', 'reading') }[S.where];
-    const body = S.solder ? solderView(L) : S.tab === 'tonight' ? tonightTab(L) : S.tab === 'issues' ? issuesTab(L) : S.tab === 'pages' ? pagesTab(L) : S.tab === 'sketch' ? '<div class="sb-host in-tab"></div>' : listTab(L);
+    const body = S.solder ? solderView(L) : S.tab === 'tonight' ? tonightTab(L) : S.tab === 'issues' ? issuesTab(L) : S.tab === 'pages' ? pagesTab(L) : S.tab === 'ai' ? aiTab(L) : S.tab === 'sketch' ? '<div class="sb-host in-tab"></div>' : listTab(L);
     root.innerHTML = `<div class="panel"><div class="ph"><span>${esc(P(PRODUCT))} · ${T(`第 ${rev(L)} 版`, `version ${rev(L)}`)}</span><span class="wh">${where}</span><button class="x" data-act="close" aria-label="close">✕</button></div>
       <div class="specs">${specLine(L)}</div>
       ${S.solder ? '' : `<div class="tabs">${tabs.map(([id, t]) => `<button data-tab="${id}" class="${S.tab === id ? 'on' : ''}">${t}${id === 'issues' && unwritten(L).length ? `<em>${unwritten(L).length}</em>` : ''}</button>`).join('')}</div>`}
@@ -158,13 +177,27 @@ export function createWorkbook({ getLife, save, hud, audio = null, onClose = nul
     else done();
   }
   root.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-tab],[data-act],[data-plan],[data-pick],[data-price],[data-line]'); if (!b) { if (e.target === root && !S.solder) api.close(); return; }
+    const b = e.target.closest('[data-tab],[data-act],[data-plan],[data-pick],[data-price],[data-line],[data-ai],[data-ship]'); if (!b) { if (e.target === root && !S.solder) api.close(); return; }
     const L = L0();
     if (b.dataset.tab) { S.tab = b.dataset.tab; S.note = ''; render(); return; }
     if (b.dataset.line != null) { S.line = +b.dataset.line; render(); return; }
     if (b.dataset.plan) { const i = b.dataset.plan; if (S.plan.has(i)) S.plan.delete(i); else if (S.plan.size < MAX_PER_SESSION) S.plan.add(i); render(); return; }
     if (b.dataset.pick) { const i = b.dataset.pick; if (S.pick.has(i)) S.pick.delete(i); else if (S.pick.size < MAX_PER_SESSION) S.pick.add(i); else S.note = T(`一次最多改 ${MAX_PER_SESSION} 处。`, `${MAX_PER_SESSION} changes at a sitting, no more.`); render(); return; }
     if (b.dataset.price) { setPrice(L, +b.dataset.price); save && save(); render(); return; }
+    if (b.dataset.ai) { const [k, v] = b.dataset.ai.split(':'); S.ai[k] = v; render(); return; }
+    if (b.dataset.act === 'train') {
+      const r = train(L, S.ai, skillLevel(L, 'ai')); if (!r.ok) return;
+      const g = gainSkill(L, 'ai', 30 + Math.round(r.run.acc * 40), 'train'); save && save();
+      const done = () => { render(); hud && hud.toast(T(`训练完了：夜间 ${Math.round(r.run.acc * 100)}% · ${r.run.ms} ms${r.run.ok ? ' · 跟得住' : ' · 还跟不住'} · +${g.xp} 软件与 AI${g.levelUp ? ` · 升到 ${g.levelUp} 级` : ''}`, `Trained: ${Math.round(r.run.acc * 100)}% at night · ${r.run.ms} ms${r.run.ok ? ' · it keeps up' : " · it won't keep up"} · +${g.xp} Software & AI${g.levelUp ? ` · level ${g.levelUp}` : ''}`), 5); };
+      if (pass) { root.classList.add('hidden'); pass(Math.round(r.run.hours * 60), T(`标注、训练 · ${hoursText(r.run.hours)}`, `Labelling, training · ${hoursText(r.run.hours)}`), () => { if (S.open) root.classList.remove('hidden'); done(); }); } else done();
+      return;
+    }
+    if (b.dataset.ship != null) {
+      const d = deploy(L, +b.dataset.ship); if (!d.ok) return;
+      const g = gainSkill(L, 'ai', 50, 'ship'), gp = d.solves ? gainSkill(L, 'product', 25, 'ship') : null; save && save();
+      hud && hud.toast(T(`第 ${d.rev} 版：跟随模型上了板子${d.solves ? '。今晚去江边，让人走着拍试试。' : '，但它还跟不住人。'} · +${g.xp} 软件与 AI${gp ? ` · +${gp.xp} 产品` : ''}`, `Version ${d.rev}: the tracking model is on the board${d.solves ? '. Tonight, on the promenade, have someone walk with it.' : ", but it still won't keep up."} · +${g.xp} Software & AI${gp ? ` · +${gp.xp} Product` : ''}`), 5);
+      render(); return;
+    }
     if (b.dataset.act === 'close') { api.close(); return; }
     if (b.dataset.act === 'write') {
       const w = writePage(L, { line: S.line, plan: [...S.plan] }); if (!w.ok) return;

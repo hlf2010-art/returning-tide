@@ -31,6 +31,7 @@ export const ISSUE_TEXT = {
   drift: { name: B('暗处画面会飘', 'It drifts in the dark'), note: () => B('灯一暗，地平线就慢慢歪。只有夜里看得出来。', 'When the light drops the horizon creeps. You only see it at night.') },
   fold: { name: B('放不进口袋', "Doesn't fit a pocket"), note: () => B('不能折。没背包的人不会带它出门。', "It doesn't fold. Nobody without a bag will take it out with them.") },
   wet: { name: B('接口怕水', 'The port lets water in'), note: () => B('充电口朝上敞着，一场小雨就进水。', 'The charging port faces up, open. One drizzle and it has water in it.') },
+  track: { name: B('跟不住人', "It doesn't follow you"), note: () => B('它只会稳住，不会跟。人一走动，尤其在暗处，画面就把人丢了。要一个认得人的模型，跑在板子上。', "It only steadies; it doesn't follow. Once someone walks, and in the dark above all, the frame loses them. It needs a model that knows a person, running on the board.") },
 };
 export const FIX_TEXT = {
   lighten: B('把支臂掏空，壳体减到 1.2 毫米', 'Hollow the arm; thin the shell to 1.2 mm'),
@@ -44,6 +45,7 @@ export const FIX_TEXT = {
   quiet: B('固件：把 PWM 调到耳朵听不见的频率', 'Firmware: move the PWM out of hearing'),
   filter: B('固件：重调姿态滤波', 'Firmware: retune the attitude filter'),
   alloy: B('铝合金支臂（要精密机加工，自己做不了）', "An aluminium arm (precision machining: not something you can make yourself)"),
+  npu: B('焊一块端侧 AI 模组（NPU）到主板上，给跟随模型用', 'Solder an edge-AI module (NPU) on to the board, for a tracking model to run on'),
 };
 // what a passer-by says with it in their hands, two ways each
 export const QUOTES = {
@@ -56,6 +58,7 @@ export const QUOTES = {
   drift: [B('亮的地方挺稳，往暗处一转就慢慢歪了。', 'Steady where it\'s bright. Turn to the dark and it slowly tips.'), B('你看这条地平线，是斜的。', "Look at the horizon in this one. It's crooked.")],
   fold: [B('挺好用，可这个我没地方放啊。', 'It works well, but where would I put it?'), B('能折起来就好了，放不进口袋。', "If only it folded. It won't go in a pocket.")],
   wet: [B('这个口是敞着的？下雨怎么办。', "This port's just open? What about rain?"), B('外滩的雨说下就下，这个不防水吧。', "It rains without warning down here. This isn't sealed, is it?")],
+  track: [B('我一边走一边拍，它就不管我了。稳是稳，人不在画面里。', "I walk while I film and it forgets me. Steady, sure, but I'm not in the frame."), B('天一黑它就找不到我的脸了。现在的手机都会跟人，你这个不会？', "Once it's dark it can't find my face. Phones follow you these days. Yours doesn't?")],
   like: [B('诶，这个真稳。哪里有卖？', 'Oh, that is steady. Where can I get one?'), B('拍出来不糊了！你自己做的？出了告诉我。', "They're not blurry any more! You made this? Tell me when it's out.")],
   dear: [(p) => B(`东西是好东西……${p} 块？我再想想。`, `It's a good thing... ¥${p}? I'll think about it.`), (p) => B(`${p}？有点贵了，便宜点我就要。`, `¥${p}? Bit steep. Cheaper and I'd have one.`)],
   day: [B('大白天的，手机自己就够稳了吧。', "In broad daylight? A phone's steady enough on its own."), B('白天看不出区别。天黑了再来吧。', "Can't tell the difference in daylight. Try me after dark.")],
@@ -95,12 +98,14 @@ export const REG = {
     says: {
       clamp: B('我这手机带着镜头壳，你这夹子夹不住。客人的手机要是掉了，我赔不起。', "My phone lives in a lens case and your clamp won't hold it. If a client's phone hits the ground, I'm the one who pays."),
       drift: B('你看回放。走到暗的地方，地平线慢慢歪了。客人看不出来，我看得出来。', "Watch the playback. Into the dark and the horizon tips, slowly. A client won't see it. I do."),
+      track: B('我得倒着走，跟着客人。它不跟人，我就得一只手转它。暗一点的地方它根本认不出人。', "I walk backwards in front of the client. It won't follow them, so I'm turning it by hand. Somewhere dim and it can't tell there's a person at all."),
       battery: B('我一晚上拍三个小时，这个撑不到一半。挂着充电宝拍？线会进画面的。', "I shoot three hours a night and this won't do half. Hang a power bank off it? The cable ends up in shot."),
       hum: B('视频里有吱吱声。我后期得一条一条去掉，没那个工夫。', "There's a whine on the video. I'd have to clean every clip in the edit. I haven't the time."),
     },
     noticed: {
       clamp: B('夹住了，甩都甩不掉。', "That holds. I couldn't shake it off if I tried."),
       drift: B('这回地平线是平的。', 'The horizon stays level this time.'),
+      track: B('它自己跟着客人转了，暗处也跟得上。你这是自己训的模型？', "It turns with the client by itself, even in the dim bits. You trained that model yourself?"),
       battery: B('拍了一整场，还剩两格。可以。', "A whole session and two bars left. That'll do."),
       hum: B('安静了。', 'Quiet now.'),
     },
@@ -121,12 +126,14 @@ export const REG = {
       battery: B('我一播三个小时。它半场就亮红灯了。', 'I stream three hours at a go. It went red before half-time.'),
       wet: B('上礼拜下小雨，我原来那个充电口进了水，直接黑屏。你这个口也是敞着的。', "Last week in the drizzle, water got in my old one's port and it just went black. Yours is wide open too."),
       fold: B('收工了我得骑车回去。这个塞不进包。', "I cycle home after. This won't go in my bag."),
+      track: B('我边走边播，它不跟我。观众看半天看的是江，主播没了。', "I stream while I walk and it won't follow me. Chat spends ages looking at the river. The streamer's gone."),
     },
     noticed: {
       hum: B('没声了！直播间没人问了。', "Silent! Nobody in chat's asking now."),
       battery: B('播完了还有电。', "Stream's over and it's still got charge."),
       wet: B('加了个塞子，这就对了。', "A plug on the port. That's the way."),
       fold: B('能折，进包了。', "Folds. It's in the bag."),
+      track: B('它跟着我走！家人们看，我转身它也转。', "It follows me! Look, everyone, I turn and it turns."),
     },
     promise: B('我八点以后在这头播。改了再来，哥。', "I'm streaming up this end from eight. Come back when it's sorted, mate."),
     same: B('还是那一版啊？那我先用自己的。', "Same version? I'll stick with my own for now."),

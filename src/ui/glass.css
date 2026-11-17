@@ -265,3 +265,7 @@ html[lang="zh-CN"] #pause h1 { font: 700 clamp(40px, 5vw, 66px)/1.05 var(--serif
 #journal .steps .inv { display: inline-flex; gap: 8px; margin-left: 12px; vertical-align: middle; }
 #journal .steps .inv button { all: unset; cursor: pointer; font: 600 13px var(--ui); padding: 4px 14px; border-radius: 999px; background: rgba(120, 190, 255, 0.92); color: #0b1a2a; box-shadow: 0 0 0 0.5px rgba(255,255,255,0.7) inset; }
 #journal .steps .inv button.no { background: rgba(255,255,255,0.18); color: #fff; }
+#journal .sk { padding: 12px 0; border-bottom: 0.5px solid rgba(255,255,255,0.18); }
+#journal .sk .sn { display: flex; justify-content: space-between; font-size: 15px; } #journal .sk .sw { opacity: 0.7; font-size: 12px; margin: 2px 0 6px; }
+#journal .sk .bar { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.18); overflow: hidden; } #journal .sk .bar i { display: block; height: 100%; background: rgba(150, 210, 255, 0.95); }
+#journal .sk .sp { font-size: 12px; margin-top: 6px; opacity: 0.85; }

@@ -110,7 +110,8 @@ export function createFieldTest({ scene, people, player, hud, audio = null, voic
       : res.kind === 'again' ? T(`又一个人说：${P(ISSUE_TEXT[res.issue].name)}（${studio(L).found[res.issue].n} 人）`, `Someone else says: ${P(ISSUE_TEXT[res.issue].name).toLowerCase()} (${studio(L).found[res.issue].n} now)`)
         : res.kind === 'like' && res.listed ? T(`名单 +${res.units || 1}${res.deposit ? ` · 收到定金 ¥${res.deposit}` : ''}`, `On the list: +${res.units || 1}${res.deposit ? ` · deposit received, ¥${res.deposit}` : ''}`)
           : res.kind === 'dear' ? T('喜欢，但嫌贵（名单页可以改价钱）', 'Liked it, but not the price (you can change it on the List page)') : '';
-    const left = goesLeft(L), more = left > 0 ? T(` · 电还够借 ${left} 次`, ` · ${left} more ${left === 1 ? 'go' : 'goes'} in the battery`) : T(' · 电快没了', ' · the battery is nearly flat');
+    const clip = res.clip ? T(' · 录了一段素材（经同意，给跟随模型用）', ' · a clip recorded (with consent, for the tracking model)') : '';
+    const left = goesLeft(L), more = clip + (left > 0 ? T(` · 电还够借 ${left} 次`, ` · ${left} more ${left === 1 ? 'go' : 'goes'} in the battery`) : T(' · 电快没了', ' · the battery is nearly flat'));
     S.note = note ? { text: note + more, good: res.kind === 'like' } : null;
     audio && audio.cue && audio.cue(res.kind === 'like' ? 'chime' : 'ping', 0, 0.3);
     save && save();

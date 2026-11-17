@@ -10,6 +10,8 @@ import { PEOPLE } from '../world/cast.js';
 import { getLang } from './i18n.js';
 import './year.css';
 import { icon } from './icons.js';
+import { skillsView } from '../engine/skills.js';
+import { LEVELS } from '../engine/maker.js';
 import { ACTS as YEAR_ACTS, isYear, career, rep, year, dateText, actOf } from '../engine/year.js';
 import { shortDate, home, hasFlat, LISTINGS, startup, burn, runway, work, todaysWork, handoff, FIRM, inLimbo } from '../world/career.js';
 import { ROMANCE } from '../engine/hearts.js';
@@ -52,6 +54,16 @@ function yearHtml(L) {
     ${h ? `<h3>${T('修表匠', 'The watch-repairer')}</h3>${row(T('文件袋', 'The pouch'), h.outcome === 'opened' ? T('拆开看过', 'opened and read') : T('封条完好', 'seal intact'))}${W.watch.result ? row(T('后来', 'Afterwards'), W.watch.result === 'saved' ? T('人找到了，摊子保住了', 'found alive; the stall saved') : T('摊子易了主', 'the stall changed hands')) : ''}` : ''}
     <p>${T('工资和房租随月份从银行卡进出；工作日不去上班，是要算账的。这一页只是记录，改变它的是你做的事。', 'Salary and rent move through the bank as the months pass. A working day missed is counted. This page only records: what changes it is what you do.')}</p></div>`;
 }
+// what Ji Bai can do (engine/skills.js): three tracks, their levels, what the level means
+function skillsHtml(L) {
+  const T = (zh, en) => (getLang() === 'zh' ? zh : en), lang = getLang();
+  const rows = skillsView(L, lang).map((k) => {
+    const pct = k.next ? Math.round(100 * (k.xp - (LEVELS[k.level - 1] || 0)) / (k.next - (LEVELS[k.level - 1] || 0))) : 100;
+    return `<div class="sk"><div class="sn"><b>${esc(k.name)}</b><span>${T(`${k.level} 级`, `Level ${k.level}`)}</span></div><div class="sw">${esc(k.what)}</div>
+      <span class="bar"><i style="width:${Math.max(3, pct)}%"></i></span>${k.perk ? `<div class="sp">${esc(k.perk)}</div>` : ''}</div>`;
+  }).join('');
+  return `<div class="people">${rows}<p class="hint">${T('三样都要：模型跑在板子上，板子做成人愿意用的东西。工作台练硬件，书桌上训模型、写代码，在江边看人用它练产品。时间有限，花在哪里，你自己定。', 'All three, together: the model runs on the board, the board becomes something people want. The bench for hardware; the desk for models and code; the riverside, watching people use it, for product. Time is short; where it goes is up to you.')}</p></div>`;
+}
 export function createJournal({ getLife, defs, onWait, onClose, work = null, onAnswer = null }) {
   const root = document.createElement('div'); root.id = 'journal'; root.className = 'hidden'; root.setAttribute('role', 'dialog');
   document.body.appendChild(root);
@@ -91,8 +103,8 @@ export function createJournal({ getLife, defs, onWait, onClose, work = null, onA
       ${s.over ? '' : `<div class="hb"><span>${T('吸引', 'Attraction')}</span><span class="bar"><i style="width:${Math.max(2, s.attraction)}%"></i></span><span>${T('信任', 'Trust')}</span><span class="bar"><i style="width:${Math.max(2, s.trust)}%"></i></span></div>`}</div>`).join('')}`;
     root.innerHTML = `<div class="panel">
       <div class="ph"><span>${T('日志', 'Journal')}</span><span class="clock">${isYear(L) ? dateText(L, getLang()) : T(`第 ${L.clock.day} 天`, `Day ${L.clock.day}`)} · ${clockText(L.clock.minute)}</span><button class="x" data-act="close" aria-label="close">✕</button></div>
-      <div class="tabs"><button data-tab="quests" class="${S.tab === 'quests' ? 'on' : ''}" title="${T('任务', 'Quests')}">${icon('flag')}<span>${T('任务', 'Quests')}</span></button><button data-tab="people" class="${S.tab === 'people' ? 'on' : ''}" title="${T('人', 'People')}">${icon('users')}<span>${T('人', 'People')}</span></button>${work ? `<button data-tab="work" class="${S.tab === 'work' ? 'on' : ''}" title="${T('作品', 'Work')}">${icon('aperture')}<span>${T('作品', 'Work')}</span></button>` : ''}${isYear(L) ? `<button data-tab="year" class="${S.tab === 'year' ? 'on' : ''}" title="${T('这一年', 'The year')}">${icon('calendar')}<span>${T('这一年', 'The year')}</span></button>` : ''}</div>
-      ${S.tab === 'year' && isYear(L) ? yearHtml(L) : S.tab === 'quests' ? `<div class="cols"><div class="list">${list}</div><div class="detail">${detail}</div></div>` : S.tab === 'work' && work ? work(L) : `<div class="people">${people}${hearts}<p class="hint">${T('你的选择、说的话、有没有赴约，都会改变他们对你的感觉。', 'What you choose, what you say, and whether you turn up all change how they feel about you.')}</p></div>`}
+      <div class="tabs"><button data-tab="quests" class="${S.tab === 'quests' ? 'on' : ''}" title="${T('任务', 'Quests')}">${icon('flag')}<span>${T('任务', 'Quests')}</span></button><button data-tab="people" class="${S.tab === 'people' ? 'on' : ''}" title="${T('人', 'People')}">${icon('users')}<span>${T('人', 'People')}</span></button><button data-tab="skills" class="${S.tab === 'skills' ? 'on' : ''}" title="${T('能力', 'Skills')}">${icon('gear')}<span>${T('能力', 'Skills')}</span></button>${work ? `<button data-tab="work" class="${S.tab === 'work' ? 'on' : ''}" title="${T('作品', 'Work')}">${icon('aperture')}<span>${T('作品', 'Work')}</span></button>` : ''}${isYear(L) ? `<button data-tab="year" class="${S.tab === 'year' ? 'on' : ''}" title="${T('这一年', 'The year')}">${icon('calendar')}<span>${T('这一年', 'The year')}</span></button>` : ''}</div>
+      ${S.tab === 'year' && isYear(L) ? yearHtml(L) : S.tab === 'skills' ? skillsHtml(L) : S.tab === 'quests' ? `<div class="cols"><div class="list">${list}</div><div class="detail">${detail}</div></div>` : S.tab === 'work' && work ? work(L) : `<div class="people">${people}${hearts}<p class="hint">${T('你的选择、说的话、有没有赴约，都会改变他们对你的感觉。', 'What you choose, what you say, and whether you turn up all change how they feel about you.')}</p></div>`}
       <div class="foot">${T('J 关闭', 'J to close')}</div></div>`;
   }
   root.addEventListener('click', (e) => {

@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { createLife, stamp, skipTo, save, load, relation, nudge, balance } from '../src/engine/life.js';
 import { maker, buyPart, startBuild, finishBuild, missing, gainXp } from '../src/engine/maker.js';
-import { studio, hasProduct, rev, specs, isOpen, fieldTest, anonTester, regularTester, batteryLeft, goesLeft, canWrite, writePage, canFix, knownFixes, revise, setPrice, summary, tonight, unwritten, quotable, machined, eveningOf,
+import { hear, aiState, train, deploy, predictRun, canTrain, clipsCount, studio, hasProduct, rev, specs, isOpen, fieldTest, anonTester, regularTester, batteryLeft, goesLeft, canWrite, writePage, canFix, knownFixes, revise, setPrice, summary, tonight, unwritten, quotable, machined, eveningOf,
   ISSUES, FIXES, REGULARS, BASE, BOM1, HEAVY_AT, TEST_MINUTES } from '../src/engine/studio.js';
 import { ISSUE_TEXT, FIX_TEXT, QUOTES, REG, quoteOf, WORK_QUESTS, runWork, EN_WORK, dinnerWork, dinnerAfter, epilogue, workContext, needsArm } from '../src/world/work.js';
 import { updateQuests, questState } from '../src/engine/quests.js';
@@ -58,7 +58,7 @@ const w = writePage(L, { line: 0, plan: ['heavy', 'battery', 'fold'] });
 ok(w.ok && w.page.hands === 3 && w.page.heard.length === 3 && w.page.line.issue === 'heavy' && w.page.plan.length === 2 && w.xp === 40, `the page: 3 people, 3 new things, a line underlined, two things for tomorrow (+${w.xp} XP)`);
 ok(canWrite(L).reason === 'written' && quoteOf(w.page.line, L).zh === QUOTES.heavy[w.page.line.v].zh, 'one page an evening; the underlined line is what was said');
 { const M = load(save(L)); skipTo(M, stamp(M) + 20); M.flags.studio.used = 0; const more = go(M, anon('youngMan')); const c = canWrite(M), w2 = writePage(M);
-  ok(more.issue === 'drift' && c.ok && c.more && w2.ok && w2.xp === 10 && w2.page.heard.length === 4 && w2.page.line.issue === 'heavy' && canWrite(M).reason === 'written', 'something heard after you wrote: it goes onto the same page (the line you underlined stays)'); }
+  ok(more.issue === 'track' && c.ok && c.more && w2.ok && w2.xp === 10 && w2.page.heard.length === 4 && w2.page.line.issue === 'heavy' && canWrite(M).reason === 'written', 'something heard after you wrote: it goes onto the same page (the line you underlined stays)'); }
 ok(canFix(L, 'lighten').ok && canFix(L, 'cell').ok && canFix(L, 'alloy').reason === 'works' && canFix(L, 'hinge').reason === 'level', 'now the fixes are open: the aluminium arm isn\'t his to make, the hinge needs Maker 3');
 ok(canFix(L, 'lighten', 'desk').reason === 'where' && knownFixes(L).length === 5, 'hardware needs the bench');
 
@@ -107,7 +107,11 @@ ok(c3.late && studio(L).people.chen.stood === 1, 'a day late: he waited, and say
 {
   const M = load(save(L));                                                  // (a branch of this week)
   setPrice(M, 499);
-  // everything Xiao Ye cares about is fixed in M: clamp, drift, battery (the real cell); hum isn't
+  // (and in this branch he has done the AI: the NPU on the board, a model trained on twenty clips, shipped)
+  { hear(M, 'track', 'ye'); M.flags.studio.found.track.noted = true; M.flags.studio.fixes.push({ id: 'npu', rev: rev(M), eve: eveningOf(M) }); aiState(M).clips.push(...Array.from({ length: 20 }, () => ({ eve: 0, who: 'anon', night: true })));
+    M.flags.studio.used = 0; const t = train(M, { label: 'careful', size: 'small', precision: 'int8' }, 4); const d = deploy(M, t.index); M.flags.studio.used = 0;
+    ok(t.ok && t.run.ok && d.ok && d.solves && !isOpen(M, 'track'), `the tracking model: ${Math.round(t.run.acc * 100)}% at night, ${t.run.ms} ms on the NPU: it follows people now`); }
+  // everything Xiao Ye cares about is fixed in M: clamp, drift, battery (the real cell), tracking; hum isn't
   ok(go(M, regularTester('ye'), { minute: 19 * 60 }).issue === 'hum', 'her last complaint: the whine');
   writePage(M); revise(M, ['quiet'], 'desk');
   const b0 = balance(M, 'wechat');
@@ -224,5 +228,28 @@ function week(diligent) {
   ok(idle.grade === 1 && idle.rev === 1 && idle.hands === 0, 'build it and leave it: version 1, nobody\'s hands');
   ok(hard.grade >= 3 && hard.rev >= 5 && hard.pages === 4 && hard.hands >= 12 && hard.solved.length >= 5, `work at it every evening: version ${hard.rev}, ${hard.hands} hands, ${hard.solved.length} things put right, ${hard.open.length} still open, ${hard.list} on the list (grade ${hard.grade})`);
   ok(hard.list >= 1, 'and by the dinner somebody wants one');
+}
+
+// ---- the AI loop: clips, a model, the NPU ----
+{
+  const L = createLife(); build(L); at(L, 2, 19);
+  ok(canTrain(L, {}, 4).reason === 'unknown', 'no model before anyone has said it loses them');
+  hear(L, 'track', 'ye');
+  ok(canTrain(L, {}, 4).reason === 'unwritten', '...nor before it is written down');
+  L.flags.studio.found.track.noted = true;
+  ok(canTrain(L, {}, 4).reason === 'data', 'and it needs clips: at least four');
+  let clips = 0; for (let k = 0; k < 12; k++) { L.flags.studio.used = 0; const r = fieldTest(L, anon('office'), { rnd: seq(0.1, 0.5) }); if (r.clip) clips++; }
+  ok(clips >= 10 && clipsCount(L) === clips, `every go on the promenade adds a clip if they agree (${clips} of 12)`);
+  const tiny = predictRun(L, { size: 'tiny', precision: 'int8', aiLevel: 4 }), base = predictRun(L, { size: 'base', precision: 'fp16', aiLevel: 4 }), small = predictRun(L, { size: 'small', precision: 'int8', aiLevel: 4 });
+  ok(tiny.acc < small.acc && small.acc < base.acc && tiny.ms < small.ms && small.ms < base.ms && tiny.battery < base.battery, 'bigger is more accurate, slower and hungrier');
+  ok(!tiny.ok && !base.ok && small.ok, `the trade-off: tiny misses people (${Math.round(tiny.acc * 100)}%), base at fp16 is too slow (${base.ms} ms), small int8 is right`);
+  ok(predictRun(L, { label: 'careful', aiLevel: 4 }).acc > predictRun(L, { label: 'quick', aiLevel: 4 }).acc, 'careful labelling beats quick');
+  ok(canTrain(L, { precision: 'int8' }, 3).reason === 'level', 'quantising for the NPU takes Software & AI 4');
+  const a0 = balance(L, 'alipay'), t = train(L, { size: 'small', precision: 'int8' }, 4);
+  ok(t.ok && a0 - balance(L, 'alipay') === t.run.gpu, `a run costs cloud GPU time (¥${t.run.gpu})`);
+  ok(deploy(L, t.index).reason === 'npu' && isOpen(L, 'track'), 'no NPU on the board: nothing to run it on');
+  L.flags.studio.fixes.push({ id: 'npu', rev: rev(L), eve: eveningOf(L) });
+  const m0 = specs(L).minutes, d = deploy(L, t.index);
+  ok(d.ok && d.solves && !isOpen(L, 'track') && specs(L).minutes === m0 - t.run.battery, `shipped as version ${d.rev}: it follows people; it costs ${t.run.battery} minutes of battery`);
 }
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);

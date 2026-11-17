@@ -30,7 +30,7 @@ export const BOM1 = Object.entries(BLUEPRINTS.gimbal.parts).reduce((s, [k, n]) =
 export const BATCH_FACTOR = 0.62;                                 // what fifty sets of parts cost against one (Dad's kind of number)
 
 // what can be wrong with it (found in the field, never listed up front)
-export const ISSUES = ['heavy', 'battery', 'grip', 'clamp', 'boot', 'hum', 'drift', 'fold', 'wet'];
+export const ISSUES = ['heavy', 'battery', 'grip', 'clamp', 'boot', 'hum', 'drift', 'fold', 'wet', 'track'];
 // what can be done about it. at: 'bench' (hardware: Yangpu only) | 'desk' (firmware: the bench or
 // the desk in 612) | 'works' (precision machining: not something he can make himself)
 export const FIXES = {
@@ -45,19 +45,22 @@ export const FIXES = {
   quiet: { solves: 'hum', at: 'desk', hours: 1.5, cost: 0 },
   filter: { solves: 'drift', at: 'desk', hours: 2, cost: 0 },
   alloy: { solves: 'heavy', at: 'works', hours: 0, cost: 0, grams: -38 },
+  // the AI: an NPU module on the board (hardware), then a tracking model trained and shipped to it
+  // (software: see train() / deploy() below). The model's own cost to the battery is the run's.
+  npu: { solves: 'track', at: 'bench', hours: 2, cost: 189, bom: 189, grams: 12, minutes: -6, solder: true, level: 2, part: true },
 };
 // the people who are there every evening (world/fieldTest.js puts them on the promenade)
 export const REGULARS = {
   chen: { cares: ['heavy', 'boot', 'grip', 'fold'], wtp: 299, from: 17 * 60 + 15, to: 19 * 60 + 45 },
-  ye: { cares: ['clamp', 'drift', 'battery', 'hum'], wtp: 499, pro: true, from: 18 * 60 + 30, to: 21 * 60 + 45, order: 2, deposit: 200 },
-  zhe: { cares: ['hum', 'battery', 'wet', 'fold'], wtp: 299, from: 20 * 60, to: 22 * 60 + 40 },
+  ye: { cares: ['clamp', 'drift', 'battery', 'track', 'hum'], wtp: 499, pro: true, from: 18 * 60 + 30, to: 21 * 60 + 45, order: 2, deposit: 200 },
+  zhe: { cares: ['hum', 'battery', 'wet', 'track', 'fold'], wtp: 299, from: 20 * 60, to: 22 * 60 + 40 },
 };
 // passers-by, by the kind of person the crowd says they are
 const ANON = {
   visitor: { cares: ['fold', 'clamp', 'heavy'], wtp: 399 },
   elder: { cares: ['heavy', 'grip', 'boot'], wtp: 199 },
   office: { cares: ['fold', 'boot', 'clamp'], wtp: 299 },
-  youngMan: { cares: ['drift', 'hum', 'battery'], wtp: 399 },
+  youngMan: { cares: ['track', 'drift', 'hum', 'battery'], wtp: 399 },
   student: { cares: ['clamp', 'heavy', 'wet'], wtp: 199 },
 };
 export function anonTester(persona, rnd = Math.random) {
@@ -82,6 +85,7 @@ export function specs(L) {
   const S = studio(L), g = gadget(L), q = g ? g.quality ?? 0.6 : 0.6;
   let grams = BASE.grams, minutes = BASE.minutes, bom = BOM1;
   for (const f of S.fixes) { const F = FIXES[f.id]; grams += F.grams || 0; minutes += F.minutes || 0; bom += F.bom ?? F.cost ?? 0; }
+  const m = shipped(L); if (m) minutes -= m.battery;                      // the model running costs battery
   const steady = Math.max(0, Math.min(1, 0.4 + 0.3 * q + (has(S, 'filter') ? 0.3 : 0)));
   return { grams, minutes, steady: +steady.toFixed(2), bom, usbc: has(S, 'usbc'), batch: Math.round((bom * BATCH_FACTOR) / 5) * 5 };
 }
@@ -91,6 +95,7 @@ export function isOpen(L, issue, { strict = false } = {}) {
   if (issue === 'heavy') return sp.grams > HEAVY_AT;
   if (issue === 'battery') return sp.minutes < RUNTIME_OK && !(sp.usbc && !strict);
   if (issue === 'drift') return sp.steady < STEADY_OK;
+  if (issue === 'track') { const m = shipped(L); return !(has(S, 'npu') && m && m.ok); }
   return !S.fixes.some((f) => FIXES[f.id].solves === issue);
 }
 export const foundIssues = (L) => Object.keys(studio(L).found);
@@ -130,6 +135,7 @@ export function fieldTest(L, tester, { minute = L.clock.minute, rain = 0, rnd = 
     return { ...out, kind: 'dead', issue: 'battery', first };
   }
   S.used += TEST_MINUTES;
+  if (S.found.track && rnd() < CONSENT) { const A = aiState(L); A.clips.push({ eve, who: tester.id === 'anon' ? tester.persona : tester.id, night: true }); out.clip = true; }
   const cares = [...(rain > 0.3 ? ['grip', 'wet'] : []), ...tester.cares];
   if (specs(L).grams > HEAVY_FOR_ALL) cares.push('heavy');
   const issue = cares.find((i) => isOpen(L, i, { strict: tester.pro }));
@@ -236,4 +242,66 @@ export function summary(L) {
 export function tonight(L) {
   const S = studio(L), eve = eveningOf(L);
   return Object.entries(REGULARS).map(([id, R]) => { const p = S.people[id]; return { id, from: R.from, to: R.to, met: !!p, promised: !!p && p.promised != null && p.promised <= eve, overdue: !!p && p.promised != null && p.promised < eve, tried: p ? p.rev : 0 }; });
+}
+
+// ---- the AI: data, a model, the NPU ----
+// Once someone has said it loses them in the dark, every go on the promenade can be recorded (if they
+// say yes: about three in four do). At a desk, the clips are labelled and a model trained (cloud GPU
+// time, paid for), with three choices that pull against each other:
+//   label      quick (1 h, noisier boxes) | careful (3 h)
+//   size       tiny | small | base: accuracy against how fast it runs and what it costs the battery
+//   precision  int8 (quantised for the NPU: fast, a little less accurate) | fp16 (slower, a bit more accurate)
+// A run is judged on clips it didn't see: accuracy at night, latency on the NPU, battery. Shipped
+// (a firmware version) it solves 'track' only if it's good enough to follow someone walking in the
+// dark (ACC_OK, LAT_OK) and the NPU is on the board. Software & AI skill: training needs level 3,
+// int8 on the NPU level 4; experience comes from every run and every shipped model.
+export const CONSENT = 0.75, ACC_OK = 0.8, LAT_OK = 50;
+export const MODEL = {
+  tiny: { acc: 0.66, ms: 14, battery: 6, gpu: 12, hours: 1 },
+  small: { acc: 0.75, ms: 28, battery: 12, gpu: 38, hours: 2 },
+  base: { acc: 0.81, ms: 62, battery: 26, gpu: 140, hours: 4 },
+};
+export const LABEL = { quick: { acc: -0.03, hours: 1 }, careful: { acc: 0.03, hours: 3 } };
+export const PRECISION = { int8: { acc: -0.015, ms: 1, battery: 1, ai: 4 }, fp16: { acc: 0, ms: 1.9, battery: 1.6, ai: 3 } };
+export function aiState(L) { const S = studio(L); return (S.ai ||= { clips: [], runs: [], shipped: null }); }
+export const clipsCount = (L) => aiState(L).clips.length;
+export const shipped = (L) => { const A = (studio(L).ai || null); return A && A.shipped != null ? A.runs[A.shipped] || null : null; };
+// what a run would come to (no randomness: the same choices on the same data give the same model)
+export function predictRun(L, { label = 'careful', size = 'small', precision = 'int8', aiLevel = 3 } = {}) {
+  const n = clipsCount(L), M = MODEL[size], P = PRECISION[precision], Lb = LABEL[label];
+  const data = 0.14 * (1 - Math.exp(-n / 10));                          // more clips, better, with diminishing returns
+  const acc = Math.max(0.3, Math.min(0.97, M.acc + data + Lb.acc + P.acc + 0.01 * Math.max(0, aiLevel - 3)));
+  const ms = Math.round(M.ms * P.ms), battery = Math.round(M.battery * P.battery);
+  return { acc: +acc.toFixed(3), ms, battery, gpu: M.gpu, hours: M.hours + Lb.hours, clips: n, ok: acc >= ACC_OK && ms <= LAT_OK };
+}
+export function canTrain(L, opts = {}, aiLevel = 3) {
+  if (!hasProduct(L)) return { ok: false, reason: 'none' };
+  if (!studio(L).found.track) return { ok: false, reason: 'unknown' };
+  if (!studio(L).found.track.noted) return { ok: false, reason: 'unwritten' };
+  if (clipsCount(L) < 4) return { ok: false, reason: 'data', need: 4 };
+  if (aiLevel < 3) return { ok: false, reason: 'level', need: 3 };
+  if (opts.precision === 'int8' && aiLevel < PRECISION.int8.ai) return { ok: false, reason: 'level', need: PRECISION.int8.ai };
+  if (MODEL[opts.size || 'small'].gpu > balance(L, 'alipay')) return { ok: false, reason: 'money' };
+  return { ok: true };
+}
+// train one: pays for the GPU time, logs the run -> { ok, run, index }
+export function train(L, opts = {}, aiLevel = 3) {
+  const c = canTrain(L, opts, aiLevel); if (!c.ok) return c;
+  const r = predictRun(L, { ...opts, aiLevel }), p = pay(L, { method: 'alipay', amount: r.gpu, to: '云 GPU', memo: `训练 · ${opts.size || 'small'} · ${r.clips} 段素材`, kind: 'purchase' });
+  if (!p.ok) return { ok: false, reason: 'money' };
+  p.entry.memoEn = `Training · ${opts.size || 'small'} · ${r.clips} clips`;
+  const A = aiState(L), run = { ...r, label: opts.label || 'careful', size: opts.size || 'small', precision: opts.precision || 'int8', at: stamp(L), eve: eveningOf(L) };
+  A.runs.push(run);
+  return { ok: true, run, index: A.runs.length - 1 };
+}
+// ship a run to the gimbal as a firmware version (the NPU must be on the board to run it)
+export function deploy(L, index) {
+  const A = aiState(L), run = A.runs[index], S = studio(L), g = gadget(L);
+  if (!run || !g) return { ok: false, reason: 'run' };
+  if (!has(S, 'npu')) return { ok: false, reason: 'npu' };
+  if (A.shipped === index) return { ok: false, reason: 'done' };
+  A.shipped = index; g.version = (g.version || 1) + 1;
+  S.revs.push({ rev: g.version, at: stamp(L), eve: eveningOf(L), where: 'desk', fixes: ['model'], model: index });
+  S.usedEve = eveningOf(L); S.used = 0;
+  return { ok: true, rev: g.version, run, solves: run.ok };
 }

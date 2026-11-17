@@ -137,7 +137,7 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
     if (S.tab === 'plans') body = Object.entries(BLUEPRINTS).map(([id, B]) => {
       const c = canBuild(l, id), have = m.gadgets[id];
       const parts = Object.entries(B.parts).map(([k, n]) => { const got = k === 'pla' ? n : Math.min(n, m.parts[k] || 0); return `<span class="${got >= n ? 'ok' : 'no'}">${esc(T(PARTS[k].zh, PARTS[k].en))} ${got}/${n}</span>`; }).join('');
-      const why = have ? T('已做好', 'Built') : c.reason === 'level' ? T(`需要创客 ${c.need}`, `Needs Maker ${c.need}`) : c.reason === 'parts' ? T('缺零件', 'Missing parts') : '';
+      const why = have ? T('已做好', 'Built') : c.reason === 'level' ? T(`需要创客 ${c.need}`, `Needs Maker ${c.need}`) : c.reason === 'ai' ? T(`需要软件与 AI ${c.need}`, `Needs Software & AI ${c.need}`) : c.reason === 'parts' ? T('缺零件', 'Missing parts') : '';
       return `<div class="bp ${have ? 'done' : ''}"><div class="n">${esc(T(B.zh, B.en))}<small>${T('创客', 'Maker')} ${B.level} · +${B.xp} XP</small></div><div class="u">${esc(T(B.use.zh, B.use.en))}</div><div class="ps">${parts}</div>
         ${c.ok ? `<button data-b="build:${id}">${T('开始制作', 'Build it')}</button>` : `<div class="why">${why}</div>`}</div>`;
     }).join('');
