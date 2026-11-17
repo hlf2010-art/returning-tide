@@ -7,8 +7,9 @@
 // head, z forward; car 0 leads.
 import * as THREE from 'three';
 import { Batch } from './geo.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CAR } from './metroLayout.js';
-import { liveryTex, seatTex, carFloorTex, carScreenTex, printedMapTex, L2, makeCanvas, tex } from './metroTextures.js';
+import { liveryTex, carFloorTex, carScreenTex, printedMapTex, L2, makeCanvas, tex } from './metroTextures.js';
 
 export const FLOOR = 1.08;                    // the car floor above the rail head (level with the platform)
 const HALF = CAR.len / 2 - 0.3, W = CAR.halfW, IN = W - 0.08, ROOF = 3.62, CEIL = FLOOR + CAR.ceil;
@@ -35,6 +36,22 @@ function destTex() {
   return tex(c, { repeat: false });
 }
 
+// a seat's pan and back: rounded, a little dished (the pan's front edge rolls down)
+const SEAT_PAN = new RoundedBoxGeometry(0.42, 0.045, 0.43, 3, 0.018), SEAT_BACK = new RoundedBoxGeometry(0.035, 0.5, 0.43, 3, 0.015);
+function prioTex() {
+  const [c, x] = makeCanvas(512, 256);
+  x.fillStyle = '#e8572a'; x.fillRect(0, 0, 512, 256);
+  x.fillStyle = '#fff'; x.font = '900 64px "Noto Sans SC", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('爱心专座', 256, 64);
+  x.font = '600 26px "Noto Sans SC", sans-serif'; x.fillText('Priority seats · 请为有需要的乘客让座', 256, 116);
+  // the four: someone old with a stick, someone pregnant, someone with a child, someone in a wheelchair
+  const ic = (cx, draw) => { x.save(); x.translate(cx, 186); x.strokeStyle = '#fff'; x.fillStyle = '#fff'; x.lineWidth = 7; x.lineCap = 'round'; draw(); x.restore(); };
+  ic(96, () => { x.beginPath(); x.arc(0, -40, 10, 0, 7); x.fill(); x.beginPath(); x.moveTo(0, -28); x.lineTo(-4, 8); x.lineTo(-12, 40); x.moveTo(-4, 8); x.lineTo(6, 40); x.moveTo(-2, -16); x.lineTo(18, -2); x.lineTo(20, 40); x.stroke(); });
+  ic(208, () => { x.beginPath(); x.arc(0, -40, 10, 0, 7); x.fill(); x.beginPath(); x.moveTo(0, -28); x.quadraticCurveTo(22, -6, 2, 10); x.lineTo(-6, 40); x.moveTo(2, 10); x.lineTo(8, 40); x.stroke(); });
+  ic(320, () => { x.beginPath(); x.arc(-8, -40, 10, 0, 7); x.fill(); x.beginPath(); x.moveTo(-8, -28); x.lineTo(-10, 10); x.lineTo(-16, 40); x.moveTo(-10, 10); x.lineTo(-2, 40); x.stroke(); x.beginPath(); x.arc(16, -8, 7, 0, 7); x.fill(); x.beginPath(); x.moveTo(16, 0); x.lineTo(16, 22); x.moveTo(-8, -14); x.lineTo(14, -2); x.stroke(); });
+  ic(432, () => { x.beginPath(); x.arc(-4, -42, 10, 0, 7); x.fill(); x.beginPath(); x.moveTo(-4, -30); x.lineTo(-6, 0); x.lineTo(16, 0); x.lineTo(22, 22); x.stroke(); x.beginPath(); x.arc(-2, 22, 18, 0, 7); x.stroke(); });
+  return tex(c, { repeat: false });
+}
+
 export function createTrainSet(root, { slots = 3 } = {}) {
   const std = (o) => new THREE.MeshStandardMaterial(o);
   const M = {
@@ -44,7 +61,9 @@ export function createTrainSet(root, { slots = 3 } = {}) {
     dark: std({ color: 0x24272a, roughness: 0.7, metalness: 0.3 }),
     panel: std({ color: 0xdfe2e3, roughness: 0.45 }),
     floor: std({ map: carFloorTex(), roughness: 0.75 }),
-    seat: std({ map: seatTex(), color: 0xd8dde0, roughness: 0.22, metalness: 0.85 }),
+    seat: std({ color: 0xc9ced3, roughness: 0.2, metalness: 0.9 }),
+    prio: std({ color: 0xe0612f, roughness: 0.35, metalness: 0.25 }),
+    prioSign: Object.assign(new THREE.MeshBasicMaterial({ map: prioTex(), color: new THREE.Color(1.05, 1.05, 1.05) }), { userData: { todSkip: true } }),
     steel: std({ color: 0xd6dadc, roughness: 0.18, metalness: 0.95 }),
     rubber: std({ color: 0x1d1f21, roughness: 0.6 }),
     yellow: std({ color: 0xe7c11c, roughness: 0.5 }),
@@ -92,10 +111,18 @@ export function createTrainSet(root, { slots = 3 } = {}) {
   bx('panel', -0.35, 0.35, CEIL - 0.1, CEIL, -HALF, HALF);                             // the air duct down the middle
   for (const s of [-1, 1]) bx('light', s * 0.36, s * 0.6, CEIL - 0.012, CEIL, -HALF + 0.3, HALF - 0.3);
   for (const s of [-1, 1]) for (const [z0, z1] of SEATS) {
-    const xi = s * IN, xs = s * (IN - 0.44);
-    bx('seat', Math.min(xi, xs), Math.max(xi, xs), FLOOR + 0.4, FLOOR + 0.45, z0, z1);
-    bx('seat', Math.min(xi, s * (IN - 0.06)), Math.max(xi, s * (IN - 0.06)), FLOOR + 0.45, FLOOR + 0.95, z0, z1);
-    bx('dark', Math.min(s * (IN - 0.04), s * (IN - 0.4)), Math.max(s * (IN - 0.04), s * (IN - 0.4)), FLOOR, FLOOR + 0.4, z0 + 0.05, z1 - 0.05);
+    const xi = s * IN;
+    // one seat each (dished stainless steel, a slim gap between): the ones at the car's ends are the
+    // priority seats (爱心专座), in orange, the sticker on the wall above them
+    const prio = z0 < -HALF + 1 || z1 > HALF - 1, n = Math.max(1, Math.floor((z1 - z0) / 0.46)), sw = (z1 - z0) / n;
+    for (let k = 0; k < n; k++) {
+      const zc = z0 + (k + 0.5) * sw, mk = prio ? 'prio' : 'seat';
+      b(mk).add(SEAT_PAN, { x: s * (IN - 0.23), y: FLOOR + 0.43, z: zc });
+      b(mk).add(SEAT_BACK, { x: s * (IN - 0.05), y: FLOOR + 0.72, z: zc, rz: -s * 0.1 });
+    }
+    bx('steel', Math.min(s * (IN - 0.02), s * (IN - 0.44)), Math.max(s * (IN - 0.02), s * (IN - 0.44)), FLOOR + 0.36, FLOOR + 0.4, z0, z1);   // the frame under them
+    bx('dark', Math.min(s * (IN - 0.04), s * (IN - 0.4)), Math.max(s * (IN - 0.04), s * (IN - 0.4)), FLOOR, FLOOR + 0.36, z0 + 0.05, z1 - 0.05);
+    if (prio) { const g = new THREE.PlaneGeometry(0.42, 0.21); g.rotateY(-s * Math.PI / 2); g.translate(s * (IN - 0.03), WIN0 + 0.22, (z0 + z1) / 2); b('prioSign').push(g); }
     for (const ze of [z0, z1]) {
       if (Math.abs(ze) > HALF - 0.6) continue;
       bx('glass', Math.min(xi, s * (IN - 0.5)), Math.max(xi, s * (IN - 0.5)), FLOOR + 0.48, FLOOR + 1.72, ze - 0.01, ze + 0.01);

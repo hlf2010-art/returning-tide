@@ -37,6 +37,7 @@ await at(E, PLAT.a0 + 30, 0, Y.P, PLAT.a1, 0, Y.P + 1.6); await shot('enr-platfo
 await at(E, DOOR_AS[17], 7.4, Y.P, DOOR_AS[17] + 8, 7.6, Y.P + 1.5); await shot('car-inside', 4000);
 await at(E, DOOR_AS[18] - 0.2, 7.2, Y.P, DOOR_AS[18], 9.2, Y.P + 1.95); await shot('car-door-display', 3000);
 await at(E, DOOR_AS[18] + 2.2, 7.65, Y.P, DOOR_AS[18] + 2.2, 9.3, Y.P + 1.95); await shot('car-printed-map', 2500);
+await at(E, DOOR_AS[19] - 1.5, 7.0, Y.P, DOOR_AS[19] + 2.0, 8.9, Y.P + 0.8); await shot('car-priority', 2500);
 const t0 = standing(0, 1, 9);
 for (let k = 1; k <= 14; k++) { await clockTo(t0 + k * 0.4); await p.waitForTimeout(500); }
 await shot('car-tunnel', 1500);

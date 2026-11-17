@@ -19,7 +19,7 @@ import { STATIONS, Y, PLAT, GATE, gateP, SEC, ESC, COLS, DOOR_AS, CAR } from './
 import { carToWorld, worldToCar, CAR_IN, CAR_SEATS, FLOOR } from './metroTrain.js';
 
 const ROLES = ['p1', 'p2', 'p3', 'p4', 'p5', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'];
-const POOL = 46;
+const POOL = 52;
 // how busy the metro is at a minute of the day (0 shut .. 1 the rush): Shanghai's two peaks, a quiet
 // middle of the day, an evening that thins out; nobody new comes in after the last train (about 23:00)
 export function busyAt(min) {
@@ -188,9 +188,20 @@ export function createMetroFolk({ root, people, metro }) {
       // the cars near you
       for (let k = 0; k < cs.length; k++) {
         const c = cs[k], dk = Math.hypot(c.x - pp.x, c.z - pp.z);
-        const want = ridingThis ? Math.abs(k - metro.stats.ride.k) <= 1 : dk < 40;
+        const want = ridingThis ? Math.abs(k - metro.stats.ride.k) <= 1 : dk < 26;
         const key = `${tr.id}:${k}`;
-        if (want && !S.seeded.has(key)) { S.seeded.add(key); const n = Math.round((ridingThis && k === metro.stats.ride.k ? 4 + 12 * busy : 2 + 5 * busy)); for (let j = 0; j < n; j++) rider(tr, k, rnd() < 0.55); }
+        if (want && !S.seeded.has(key)) { S.seeded.add(key); const n = Math.round((ridingThis && k === metro.stats.ride.k ? 0 : 2 + 7 * busy)); for (let j = 0; j < n; j++) rider(tr, k, rnd() < 0.55); }
+      }
+      // your own car: kept as full as the hour says (people you can't see are borrowed for it)
+      if (ridingThis) {
+        const K = metro.stats.ride.k, want = Math.round(8 + 22 * busy), have = agents.filter((a) => a.ride && a.ride.tr === tr.id && a.ride.k === K).length;
+        for (let j = 0, need = Math.min(14, want - have); j < need; j++) {
+          if (!pool.some((q) => q.free)) {
+            const spare = agents.find((a) => (a.ride ? a.ride.tr !== tr.id || Math.abs(a.ride.k - K) > 1 : Math.hypot(a.x - pp.x, a.z - pp.z) > 30));
+            if (!spare) break; free(spare);
+          }
+          rider(tr, K, rnd() < 0.5);
+        }
       }
       if (tr.phase === 'dwell' && st && tr.station === STATIONS.indexOf(st) && tr.dwellT > 3.6 && tr.dwellT < 14 && !S.alit.has(`${tr.id}:${tr.station}`)) {
         S.alit.add(`${tr.id}:${tr.station}`);
@@ -213,7 +224,7 @@ export function createMetroFolk({ root, people, metro }) {
     // only the nearest are drawn (a person is a dozen draw calls): the rest stand hidden where they are
     const live = [...agents.filter((a) => a.body.person.root.visible || a.drawn != null)];
     live.sort((u, v) => Math.hypot(u.x - pp.x, u.z - pp.z) - Math.hypot(v.x - pp.x, v.z - pp.z));
-    const VISIBLE = Math.round(9 + 11 * busy);                 // (a person is a dozen draw calls: more of them in the rush)
+    const VISIBLE = Math.round(10 + 12 * busy + (metro.riding ? 6 : 0));                 // (a person is a dozen draw calls: more of them in the rush)
     live.forEach((a, i) => { const on = i < VISIBLE && Math.hypot(a.x - pp.x, a.z - pp.z) < 45 && !(a.delay > 0); a.drawn = on; a.body.person.root.visible = on; if (!on) { a.body.phone.visible = false; a.body.bag.visible = a.bagOn && Math.hypot(a.x - pp.x, a.z - pp.z) < 30; } });
     for (const s of staff) {
       const [x, z] = s.st.F.toW(s.a, s.p); s.x = x; s.z = z; s.heading = headingOf(s.st, s.face[0], s.face[1]);

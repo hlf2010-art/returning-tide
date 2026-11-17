@@ -12,7 +12,7 @@
 //   outbox     events for the world to act on (a parcel arrives, a car is delivered, a call rings)
 // Story beats and reactions live in world/agenda.js; this module is the bookkeeping.
 export const TIME_RATE = 4;                       // game seconds per real second
-export const START = { day: 1, minute: 17 * 60 + 42 };
+export const START = { day: 1, minute: 16 * 60 + 20 };   // 4:20 pm: the low sun on the Bund, the sunset (about 4:55), then the floodlights at 5:10
 
 export function createLife(seed = {}) {
   return {
