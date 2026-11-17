@@ -79,6 +79,7 @@ export const EN = {
   "可以，摄影师上线了": "Look at you, the photographer",
   // history
   '下周谁有空，天马跑两圈': 'Who\'s free next week? A few laps at Tianma', '我周末要飞深圳': 'I\'m flying to Shenzhen this weekend', '[视频]': '[Video]',
+  '到外滩来。海关钟下面……': 'Come to the Bund. Under the Customs clock...',
   '落地了说一声。': 'Let me know when you land.', '航班号发我一下': 'Send me your flight number', 'UA857，下午三点多到浦东': 'UA857, lands at Pudong just after 3 pm',
   // first evening
   '白白落地了没？？': 'Has Baibai landed??', '下午就到了，我让他先去外滩吹吹风，倒倒时差': 'Got in this afternoon. I told him to go stand on the Bund and shake off the jet lag',

@@ -1,6 +1,8 @@
 // The protagonist's life: clock, money, chats, invitations, friends acting on their own. npm test.
 import { createLife, advance, stamp, pay, balance, topUp, receive, post, unreadTotal, markRead, answerInvite, lapse, own, save, load, emit, drain, clockText, TIME_RATE } from '../src/engine/life.js';
-import { setupThreads, runAgenda, reply, react, deliverFollowUps, respondToInvite } from '../src/world/agenda.js';
+import { setupThreads, runAgenda, reply, react, deliverFollowUps, respondToInvite, addVoicemail } from '../src/world/agenda.js';
+import { isVideo, videoCaption, videoLength, videoStyle, videoNotes, voiceSecs } from '../src/ui/phone/media.js';
+import { readFileSync } from 'node:fs';
 import { rng } from './util-rng.mjs';
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
@@ -56,6 +58,25 @@ const play = (L, realSecs, step = 1, r = rng(1)) => { for (let s = 0; s < realSe
   const L2 = load(save(L));
   ok(L2 && L2.inventory.length === 1 && L2.wallet.wechat === L.wallet.wechat && L2.threads.ruoan.messages.length === L.threads.ruoan.messages.length && stamp(L2) === stamp(L), 'everything survives a save and load');
   ok(load('{"v":99}') === null && load('nonsense') === null, 'a bad or old save is refused, not half-loaded');
+}
+// the phone's media (ui/phone/media.js): Old Zhou's voicemail, video clips, and no synthetic speech
+{
+  const L = createLife(); setupThreads(L);
+  const vm = L.threads.zhou && L.threads.zhou.messages[0];
+  ok(vm && vm.kind === 'voice' && vm.meta.voicemail && voiceSecs(vm) === 9 && /海关钟/.test(vm.text), "a new game has Old Zhou's nine-second voicemail");
+  ok(L.order[0] === 'zhou' && unreadTotal(L) === 0, 'it heads the chats, already seen but not played');
+  ok(addVoicemail(L) === null && L.threads.zhou.messages.length === 1, 'only once');
+  const old = createLife(); setupThreads(old); delete old.threads.zhou; old.order = old.order.filter((x) => x !== 'zhou');
+  addVoicemail(old, { atEnd: true }); ok(old.order.at(-1) === 'zhou', 'an older save gets it at the bottom of the chats');
+  const momo = { id: 'mv1', from: 'momo', kind: 'text', text: '[视频] 今天排练的，这段solo我自己都想哭' }, street = { id: 'mv2', from: 'zhixia', kind: 'text', text: '[视频] 这是不是纪白？？昨晚南京路' };
+  ok(isVideo(momo) && isVideo({ id: 'x', from: 'momo', kind: 'text', text: '[视频]' }) && !isVideo({ kind: 'text', text: '看这个视频' }), 'a [视频] message is a clip');
+  ok(videoCaption(momo.text) === '今天排练的，这段solo我自己都想哭' && videoCaption('[Video] Hi') === 'Hi', 'its caption is the rest of the message');
+  ok(videoStyle(momo) === 'music' && videoStyle(street) === 'street', "Momo's rehearsal is music; a clip of you on Nanjing Road is the street");
+  const len = videoLength(momo), notes = videoNotes(momo);
+  ok(len >= 9 && len <= 15 && len === videoLength(momo), `a clip runs a steady ${len} s`);
+  ok(notes.length > 10 && notes.every(([t, k]) => t >= 0 && t < len && k >= 0 && k <= 13), `the solo has ${notes.length} notes inside the clip, on the keyboard drawn`);
+  const src = ['src/ui/phone/phone.js', 'src/ui/phone/media.js', 'src/ui/phone/didiApp.js', 'src/ui/phone/shopApp.js'].map((f) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8').replace(/\/\/.*$/gm, '')).join('\n');
+  ok(!/speechSynthesis|SpeechSynthesisUtterance/.test(src), 'the phone never uses the browser\'s synthetic speech');
 }
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);

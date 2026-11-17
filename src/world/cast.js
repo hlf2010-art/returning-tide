@@ -29,6 +29,7 @@ export const PEOPLE = {
   gunian:  { name: '顾念', short: '顾念', en: 'Gu Nian', role: 'architect, Bund restorations', color: '#5f7f6e', voice: { pitch: 1.0, rate: 0.98 }, sex: 'f' },
   yuan:    { name: '林予安', short: '予安', en: "Lin Yu'an", role: 'product designer, San Francisco', color: '#7d6b9e', voice: { pitch: 1.06, rate: 1.04 }, sex: 'f' },
   kexin:   { name: '唐可昕', short: '可昕', en: 'Tang Kexin', role: 'lifestyle creator, 180K on Xiaohongshu', color: '#c0507a', voice: { pitch: 1.14, rate: 1.12 }, sex: 'f' },
+  zhou:   { name: '老周', short: '老周', en: 'Old Zhou', role: 'watch-repairer, Hankou Road; missing since 29 October', color: '#8a7656', voice: { pitch: 0.82, rate: 0.9 }, sex: 'm' },
   mum:    { name: '妈', short: '妈', en: 'Mum (Zhou Lan)', role: 'cardiologist, Gulou Hospital, Nanjing', color: '#b56576', voice: { pitch: 1.05, rate: 0.98 }, sex: 'f' },
 };
 // the working year (world/career.js): colleagues, a client, the agent, the watch-repairer's daughter

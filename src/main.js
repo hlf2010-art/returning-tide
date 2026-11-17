@@ -121,7 +121,7 @@ import { createShop } from './engine/errands.js';
 import { manner as mannerSpec, stall as stallSpot } from './world/layout.js';
 import { createMinimap } from './ui/minimap.js';
 import { createLife, advance as lifeAdvance, lapse as lifeLapse, drain as lifeDrain, save as lifeSave, clockText as lifeClock, load as lifeLoad, post as lifePost, stamp as lifeStamp, thread as lifeThread, nudge as lifeNudge, skipTo as lifeSkipTo } from './engine/life.js';
-import { setupThreads, runAgenda, deliverFollowUps, react as lifeReact, CALLS } from './world/agenda.js';
+import { setupThreads, addVoicemail, runAgenda, deliverFollowUps, react as lifeReact, CALLS } from './world/agenda.js';
 import { createPhone } from './ui/phone/phone.js';
 import { t as tx, tr, getLang, setLang, onLang } from './ui/i18n.js';
 import { createMinimapState, updateMinimap, zoneAt } from './engine/minimapLogic.js';
@@ -834,7 +834,7 @@ let pedBoxes = [], crowdBoxes = [], bumps = null;
 const LIFE_KEY = slotKey(currentSlot());   // the slot you're playing (ui/saves.js); slot 1 is the original save
 let life = null;
 try { life = params.has('fresh') ? null : lifeLoad(localStorage.getItem(LIFE_KEY)); } catch { life = null; }
-if (!life) { life = createLife(); setupThreads(life); initYear(life); }   // a new game is a year long (engine/year.js); older saves keep their six days
+if (!life) { life = createLife(); setupThreads(life); initYear(life); } else addVoicemail(life, { atEnd: true });   // a new game is a year long (engine/year.js); older saves keep their six days (and get Old Zhou's voicemail)
 if (params.has('legacy') && params.has('fresh')) delete life.flags.year;   // tools: a new six-day game, as before the year existed
 if (params.has('hour')) { const [h, m] = params.get('hour').split(':').map(Number); if (h >= 0 && h < 24) { life.clock.minute = h * 60 + (m || 0); life.clock.sec = 0; } }
 let saves = null;

@@ -11,7 +11,7 @@ import { shortDate, elapsed } from '../../world/career.js';
 import { storyContext } from '../../world/story.js';
 import { reply, respondToInvite } from '../../world/agenda.js';
 import { PEOPLE, GROUP, ME } from '../../world/cast.js';
-import { shape } from '../../engine/delivery.js';
+import { createPhoneMedia, isVideo, videoCaption, videoLength, voiceSecs, fmtTime } from './media.js';
 import { getLang, onLang } from '../i18n.js';
 import { enText } from '../../world/agendaEn.js';
 import { createShopApp } from './shopApp.js';
@@ -43,8 +43,9 @@ function threadTitle(t) {
   return t.title;
 }
 function previewOf(m) {
-  const secs = Math.max(2, Math.round((m.text || '').length / 4));
+  const secs = voiceSecs(m);
   if (m.kind === 'voice') return Z(`[语音] ${secs}″`, `[Voice] ${secs}″`);
+  if (isVideo(m)) return Z(`[视频] ${videoCaption(m.text)}`, `[Video] ${videoCaption(X(m.text))}`).trim();
   if (m.kind === 'card') return Z('[名片]', '[Contact card]');
   if (m.kind === 'invite') return Z(`[邀请] ${m.meta && m.meta.title}`, `[Invitation] ${X(m.meta && m.meta.title)}`);
   return X(m.text);
@@ -75,10 +76,24 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   const host = root.querySelector('.host'), statusEl = root.querySelector('.status'), island = root.querySelector('.island'), homebar = root.querySelector('.homebar');
   const S = { open: false, unlocked: false, stack: [{ s: 'lock' }], call: null, sheet: null, playing: null, liveText: '' };
   let bannerTimer = 0, lastNote = 0, statusKey = '', islandHtml = null;
+  // voice notes, videos and the other side of a call (./media.js): recorded voices, never synthetic speech
+  const media = createPhoneMedia({ audio, voice, enText, onChange: () => refreshMedia() });
+  // what's playing, shown in place (a full redraw would replay the screen's slide-in)
+  function refreshMedia() {
+    if (!S.open) return;
+    for (const el of host.querySelectorAll('[data-act="playVoice"], [data-act="playVideo"]')) {
+      const on = media.isPlaying(el.dataset.id), m = findMsg(L(), el.dataset.id);
+      el.classList.toggle('playing', on);
+      const pi = el.querySelector('.pi'); if (pi) pi.innerHTML = on ? '<i></i><i></i>' : '▶';
+      const vp = el.querySelector('.vplay'); if (vp) vp.textContent = on ? '' : '▶';
+      if (m && m.played) el.querySelector('.unplayed')?.remove();
+      if (!on && m && m.kind === 'voice') { const vt = el.querySelector('.vt'), u = el.querySelector('.prog u'); if (vt) vt.textContent = `${voiceSecs(m)}″`; if (u) u.style.width = '0'; }
+    }
+  }
 
   const L = () => getLife();
   const top = () => S.stack[S.stack.length - 1];
-  const go = (s, arg = {}) => { S.stack.push({ s, ...arg }); render(); };
+  const go = (s, arg = {}) => { S.stack.push({ s, ...arg }); S.sel = null; render(); };
   const shopApp = createShopApp({ L: () => getLife(), Z, esc, yuan, go: (s, arg) => go(s, arg), render: () => render(), top: () => top(), openSheet: (sh) => { S.sheet = sh; render(); } });
   const didiApp = createDidiApp({
     L: () => getLife(), Z, esc, go: (s, arg) => go(s, arg), render: () => render(), top: () => top(),
@@ -88,12 +103,12 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   const back = () => {
     if (S.sheet) { S.sheet = null; render(); return; }
     if (S.call) return;                                                     // hang up with the red button
-    if (S.stack.length > 1) { S.stack.pop(); render(); } else close();
+    if (S.stack.length > 1) { S.stack.pop(); S.sel = null; render(); } else close();
   };
 
   function setOpen(v) {
     if (S.open === v) return;
-    S.open = v; root.classList.toggle('up', v);
+    S.open = v; root.classList.toggle('up', v); S.sel = null;
     if (v) { banner.classList.remove('on'); if (document.pointerLockElement) document.exitPointerLock(); }
     if (onChange) onChange(v);
     render();
@@ -127,8 +142,12 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (t.s === 'call') html = callView(l);
     else if (shopApp.views[t.s]) html = shopApp.views[t.s](l, t);
     else if (didiApp.views[t.s]) html = didiApp.views[t.s](l, t);
+    if (media.isPlaying() && (t.s !== 'chat' || !S.open || (S.lastChat && S.lastChat !== t.id))) media.stop();      // a voice note or a clip plays while its chat is open
+    const keep = t.s === 'chat' ? host.querySelector('.msgs') : null, atEnd = !keep || keep.scrollHeight - keep.scrollTop - keep.clientHeight < 40, was = keep ? keep.scrollTop : 0;
     host.innerHTML = html + (S.sheet ? sheetView(l) : '');
-    if (t.s === 'chat') { const m = host.querySelector('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
+    if (t.s === 'chat') { const m = host.querySelector('.msgs'); if (m) m.scrollTop = atEnd || S.lastChat !== t.id ? m.scrollHeight : was; S.lastChat = t.id; } else S.lastChat = null;
+    media.paint(host, (id) => findMsg(L(), id));
+    markSel();
   }
 
   function lockView(l) {
@@ -175,8 +194,13 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       const mine = m.from === 'me';
       let bub;
       if (m.kind === 'voice') {
-        const secs = Math.max(2, Math.round((m.text || '').length / 4)), bars = Array.from({ length: 9 }, (_, i) => `<i style="height:${4 + ((i * 7 + secs) % 11)}px"></i>`).join('');
-        bub = `<div class="bub voice ${S.playing === m.id ? 'playing' : ''}" data-act="playVoice" data-id="${m.id}"><span>▶</span><span class="wave">${bars}</span><span>${secs}″</span></div>${m.transcribed ? `<div class="trans">${esc(X(m.text))}</div>` : `<div class="sys" data-act="transcribe" data-id="${m.id}" style="cursor:pointer;align-self:flex-start">${Z('转文字', 'Transcribe')}</div>`}`;
+        const secs = voiceSecs(m), bars = Array.from({ length: 9 }, (_, i) => `<i style="height:${4 + ((i * 7 + secs) % 11)}px"></i>`).join(''), on = media.isPlaying(m.id);
+        const label = m.meta && m.meta.voicemail ? Z('语音留言', 'Voicemail') : Z('语音', 'Voice message');
+        bub = `<div class="bub voice ${on ? 'playing' : ''}" data-act="playVoice" data-id="${m.id}" data-nav="1" role="button" tabindex="0" aria-label="${esc(`${label} ${secs}″`)}" style="min-width:${Math.min(200, 96 + secs * 6)}px"><span class="pi">${on ? '<i></i><i></i>' : '▶'}</span><span class="wave">${bars}</span><span class="vt" data-ptime="${m.id}">${secs}″</span>${!mine && !m.played ? '<span class="unplayed"></span>' : ''}<span class="prog"><u data-prog="${m.id}"></u></span></div>${m.transcribed ? `<div class="trans">${esc(X(m.text))}</div>` : `<div class="sys" data-act="transcribe" data-id="${m.id}" style="cursor:pointer;align-self:flex-start">${Z('转文字', 'Transcribe')}</div>`}`;
+      } else if (isVideo(m)) {                                                    // a clip: plays in the bubble (./media.js draws it)
+        const on = media.isPlaying(m.id), cap = videoCaption(X(m.text)), dur = videoLength(m);
+        bub = `<div class="bub vid ${on ? 'playing' : ''}" data-act="playVideo" data-id="${m.id}" data-nav="1" role="button" tabindex="0" aria-label="${esc(Z('视频', 'Video'))} ${fmtTime(dur)}"><canvas data-vid="${m.id}" width="352" height="468"></canvas><span class="vplay">${on ? '' : '▶'}</span>
+          <div class="vbar"><span class="vt" data-ptime="${m.id}" data-kind="video">0:00 / ${fmtTime(dur)}</span><span class="track" data-act="seekVideo" data-id="${m.id}"><u data-prog="${m.id}"></u></span></div></div>${cap ? `<div class="bub vcap">${esc(cap)}</div>` : ''}`;
       } else if (m.kind === 'invite') {
         const inv = l.invites.find((i) => i.id === m.meta.invite) || {};
         const dayDiff = m.meta.at != null ? elapsed(l, l.clock.day, Math.floor(m.meta.at / 1440)) : 0;                 // real days (weeks can lie between playable days)
@@ -252,7 +276,8 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   }
   function recentsView(l) {
     const rows = (l.flags.calls || []).slice().reverse().map((c) => `<div class="row">${avatar(c.from)}<div class="mid"><div class="n" style="${c.missed ? 'color:#e33' : ''}">${esc(nm(c.from))}</div><div class="pv">${c.missed ? Z('未接来电', 'Missed call') : Z('微信语音通话', 'Voice call')}</div></div><div class="tm">${clockText(c.at)}</div></div>`).join('');
-    return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>${Z('最近通话', 'Recents')}</div><div class="scroll">${rows || `<div class="row"><div class="mid"><div class="pv">${Z('没有通话记录', 'No calls yet')}</div></div></div>`}</div></div>`;
+    const vm = l.threads.zhou ? l.threads.zhou.messages.filter((m) => m.kind === 'voice' && m.meta && m.meta.voicemail).map((m) => `<div class="row" data-act="openThread" data-id="zhou" style="cursor:pointer">${avatar(m.from)}<div class="mid"><div class="n">${esc(nm(m.from))}</div><div class="pv">${Z('语音留言', 'Voicemail')} · ${voiceSecs(m)}″${m.played ? '' : ` · ${Z('未听', 'not played')}`}</div></div><div class="tm">${clockText(m.at)}</div></div>`).join('') : '';
+    return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>${Z('最近通话', 'Recents')}</div><div class="scroll">${vm}${rows || (vm ? '' : `<div class="row"><div class="mid"><div class="pv">${Z('没有通话记录', 'No calls yet')}</div></div></div>`)}</div></div>`;
   }
   function mannerView(l, t) {
     if (t.done) return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>MANNER COFFEE</div><div class="ok"><div class="big">☕</div><div>${Z('下单成功', 'Order placed')}</div><div class="num">${t.done.num}</div><div style="color:#888;font-size:13px">${esc(Z(t.done.item.name, t.done.item.en))} · ${Z(`约 ${t.done.wait} 分钟`, `about ${t.done.wait} min`)}<br>${Z('做好会通知你，到窗口旁取', 'We\'ll message you when it\'s ready to collect')}</div></div></div>`;
@@ -275,32 +300,15 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     // your turn: what they just said stays on screen above your answers
     const prev = c.script.lines.slice(0, c.i).reverse().find((x) => x.who !== 'me');
     const body = !line ? '' : line.who === 'me'
-      ? `${prev ? `<div class="line">${esc(X(prev.text))}</div>` : ''}<div class="choices">${line.choices.map((ch, i) => `<button class="chip" data-act="say" data-i="${i}">${esc(X(ch.text))}</button>`).join('')}</div>`
+      ? `${prev ? `<div class="line">${esc(X(prev.text))}</div>` : ''}<div class="choices">${line.choices.map((ch, i) => `<button class="chip" data-act="say" data-i="${i}" data-nav="1">${esc(X(ch.text))}</button>`).join('')}</div>`
       : `<div class="line">${esc(X(line.text))}</div>`;
     const mm = Math.floor(c.secs / 60), ss = String(Math.floor(c.secs % 60)).padStart(2, '0');
-    return `<div class="view call">${avatar(c.from)}<div class="nm">${esc(nm(c.from))}</div><div class="kind">${mm}:${ss}</div>${c.said ? `<div class="line"><span class="me">${esc(X(c.said))}</span></div>` : ''}${body}
+    return `<div class="view call">${avatar(c.from)}<div class="nm">${esc(nm(c.from))}</div><div class="kind" data-calltime="1">${mm}:${ss}</div>${c.said ? `<div class="line"><span class="me">${esc(X(c.said))}</span></div>` : ''}${body}
       <div class="btns"><button class="rb red" data-act="hangup">✕</button></div></div>`;
   }
 
-  // ---- voices (browser speech, phrase by phrase; subtitles always) ----
-  function speak(text, who, done) {
-    // their own recorded voice down a phone line (engine/voice.js); the browser's speech only if that fails
-    if (voice) { voice.say({ zh: text, en: enText(text), who, phone: true, onEnd: done }); return; }
-    const prof = (PEOPLE[who] && PEOPLE[who].voice) || { pitch: 1, rate: 1 };
-    const synth = window.speechSynthesis, phrases = shape(text, prof);
-    let i = 0;
-    const next = () => {
-      if (i >= phrases.length) { if (done) done(); return; }
-      const ph = phrases[i++], est = Math.max(0.4, ph.text.length / 4.5) * 1000;
-      if (!synth) { setTimeout(next, est + ph.pauseAfter * 1000); return; }
-      const u = new SpeechSynthesisUtterance(ph.text); u.lang = 'zh-CN'; u.rate = Math.max(0.5, Math.min(1.6, ph.rate)); u.pitch = Math.max(0.1, Math.min(2, ph.pitch));
-      let fired = false; const after = () => { if (fired) return; fired = true; setTimeout(next, ph.pauseAfter * 1000); };
-      u.onend = after; u.onerror = () => setTimeout(after, est);
-      setTimeout(after, est * 2.5);                                         // never hang on a silent engine
-      try { synth.speak(u); } catch { setTimeout(after, est); }
-    };
-    next();
-  }
+  // ---- voices: the caller's own recorded voice down a phone line, subtitles always (./media.js) ----
+  function speak(text, who, done) { media.say(text, who, done); }
 
   // ---- calls ----
   function ring(scriptId) {
@@ -315,11 +323,19 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     if (audio && audio.cue) audio.cue('ring');
     return true;
   }
+  // the call's clock runs on screen (by the wall clock: a call goes on whatever the frame rate)
+  function callClock() {
+    const c = S.call; if (!c || c.state !== 'active') return;
+    c.secs = (performance.now() - c.started) / 1000;
+    const k = S.open && host.querySelector('[data-calltime]'), txt = `${Math.floor(c.secs / 60)}:${String(Math.floor(c.secs % 60)).padStart(2, '0')}`;
+    if (k && k.textContent !== txt) k.textContent = txt;
+  }
+  setInterval(callClock, 500);
   function logCall(missed) { const l = L(); (l.flags.calls ||= []).push({ from: S.call.from, script: S.call.scriptId || null, at: stamp(l), missed }); }
   function advanceCall() {
     const c = S.call; if (!c) return;
     const line = c.script.lines[c.i];
-    if (!line) { setTimeout(() => { logCall(false); S.call = null; render(); if (onEvent) onEvent({ type: 'call-ended' }); }, 900); render(); return; }
+    if (!line) { setTimeout(() => { if (S.call !== c) return; media.callEnd(); logCall(false); S.call = null; render(); if (onEvent) onEvent({ type: 'call-ended' }); }, 900); render(); return; }
     render();
     if (line.who !== 'me') speak(line.text, line.who, () => { if (S.call === c && c.script.lines[c.i] === line) { c.i++; c.said = ''; advanceCall(); } });
   }
@@ -352,13 +368,15 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       render();
     }
     else if (act === 'transcribe') { const m = findMsg(l, id); if (m) { m.transcribed = true; render(); } }
-    else if (act === 'playVoice') { const m = findMsg(l, id); if (m && !S.playing) { S.playing = m.id; render(); speak(m.text, m.from, () => { S.playing = null; render(); }); } }
+    else if (act === 'playVoice') { const m = findMsg(l, id); if (m) { const had = !!m.transcribed; media.toggleVoice(m); if (!!m.transcribed !== had) render(); else refreshMedia(); } }   // (no recording: the transcript opens)
+    else if (act === 'seekVideo') { const m = findMsg(l, id), r = el.getBoundingClientRect(); if (m) { media.seek(m, (e.clientX - r.left) / Math.max(1, r.width)); refreshMedia(); } }
+    else if (act === 'playVideo') { const m = findMsg(l, id); if (m) { media.playVideo(m); refreshMedia(); } }
     else if (act === 'mannerAdd') { const item = MANNER_MENU.find((m) => m.id === id); S.sheet = { to: 'Manner', amount: item.price, memo: item.name, memoEn: item.en, method: 'wechat', item }; render(); }
     else if (act === 'method') { const order = ['wechat', 'alipay', 'card']; S.sheet.method = order[(order.indexOf(S.sheet.method) + 1) % order.length]; S.sheet.error = ''; render(); }
     else if (act === 'confirmPay') confirmPay();
-    else if (act === 'accept') { S.call.state = 'active'; render(); advanceCall(); }
-    else if (act === 'decline') { logCall(true); const from = S.call.from; S.call = null; render(); if (onEvent) onEvent({ type: 'call-declined', from }); }
-    else if (act === 'hangup') { logCall(false); S.call = null; render(); if (window.speechSynthesis) window.speechSynthesis.cancel(); }
+    else if (act === 'accept') { if (!S.call || S.call.state !== 'ringing') return; S.call.state = 'active'; S.call.started = performance.now(); banner.classList.remove('on'); media.callStart(); render(); advanceCall(); }
+    else if (act === 'decline') { if (!S.call) return; logCall(true); const from = S.call.from; S.call = null; media.callEnd(); render(); if (onEvent) onEvent({ type: 'call-declined', from }); }
+    else if (act === 'hangup') { if (!S.call) return; logCall(false); S.call = null; media.callEnd(); render(); }
     else if (act === 'say') { const c = S.call, line = c.script.lines[c.i], ch = line.choices[+el.dataset.i]; c.said = ch.text; if (onEvent) onEvent({ type: 'call-choice', from: c.from, choice: ch }); c.i++; advanceCall(); }
   });
   // ---- writing to a friend in your own words: they answer in character (engine/llm.js) ----
@@ -433,11 +451,45 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     }, 900);
   }
 
+  // the keyboard: ↑ / ↓ pick a voice note, a clip or an answer; Enter takes it (or the obvious action:
+  // an unheard voice note first, then a reply); Space plays / pauses; 1-9 pick an answer
+  const navEls = () => [...host.querySelectorAll('[data-nav]')];
+  const selKey = (el) => `${el.dataset.act}|${el.dataset.id || ''}|${el.dataset.i || ''}`;
+  function markSel() {
+    for (const el of host.querySelectorAll('.sel')) el.classList.remove('sel');
+    if (!S.sel) return;
+    const el = navEls().find((x) => selKey(x) === S.sel);
+    if (el) { el.classList.add('sel'); el.scrollIntoView({ block: 'nearest' }); } else S.sel = null;
+  }
+  const mediaEls = () => navEls().filter((el) => el.dataset.act === 'playVoice' || el.dataset.act === 'playVideo');
   function key(e) {
     if (!S.open) return false;
-    if (e.code === 'Escape' || e.code === 'Backspace') { e.preventDefault(); if (S.call && S.call.state === 'ringing') root.querySelector('[data-act="decline"]').click(); else back(); return true; }
+    const typing = e.target && e.target.tagName === 'INPUT';
+    if ((e.code === 'Escape' || e.code === 'Backspace') && !typing) { e.preventDefault(); if (S.call && S.call.state === 'ringing') root.querySelector('[data-act="decline"]').click(); else back(); return true; }
+    if (typing && e.code === 'Escape') { e.target.blur(); return true; }
+    if (typing && e.code !== 'Enter') return true;                          // typed into the message box, not walked on (the key still types)
+    if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
+      const list = navEls(); if (!list.length) return false;
+      e.preventDefault();
+      const i = list.findIndex((x) => selKey(x) === S.sel), n = i < 0 ? (e.code === 'ArrowUp' ? list.length - 1 : 0) : Math.max(0, Math.min(list.length - 1, i + (e.code === 'ArrowUp' ? -1 : 1)));
+      S.sel = selKey(list[n]); markSel(); return true;
+    }
+    if (e.code === 'Space') {
+      const sel = navEls().find((x) => selKey(x) === S.sel), m = sel && /^play/.test(sel.dataset.act) ? sel : mediaEls().pop();
+      if (!m) return false;
+      e.preventDefault(); m.click(); return true;
+    }
+    if (/^Digit[1-9]$/.test(e.code) && !S.sheet) {
+      const chips = [...host.querySelectorAll('.chip')], c = chips[+e.code.slice(5) - 1];
+      if (!c) return false;
+      e.preventDefault(); c.click(); return true;
+    }
     if (e.code === 'Enter') {
       e.preventDefault();
+      const sel = !typing && navEls().find((x) => selKey(x) === S.sel);
+      if (sel) { sel.click(); return true; }
+      const unheard = !typing && !media.isPlaying() && mediaEls().filter((el) => { const m = findMsg(L(), el.dataset.id); return m && m.from !== 'me' && !m.played; }).pop();
+      if (unheard) { unheard.click(); return true; }
       const first = host.querySelector('[data-act="accept"], [data-act="confirmPay"], [data-act="unlock"], .chip, .btn.go');
       if (first) first.click();
       return true;
@@ -454,7 +506,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       if (k !== rideKey) { rideKey = k; if (getLife().threads.didi) getLife().threads.didi.unread = 0; render(); }
     }
     const l = L();
-    if (S.call && S.call.state === 'active') S.call.secs += dt;
+    if (S.call && S.call.state === 'active') callClock();
     if (S.call && S.call.state === 'ringing') {
       S.call.ringFor += dt;
       if (S.call.ringFor > 22) { logCall(true); const from = S.call.from; S.call = null; banner.classList.remove('on'); render(); if (onEvent) onEvent({ type: 'call-declined', from }); }
@@ -482,5 +534,6 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     open, close, ring, key, update, render,
     openManner() { open(); unlock(() => { S.stack = [{ s: 'home' }]; go('manner'); }); },
     setLive(text) { S.liveText = text || ''; },
+    media,                                                                  // (verification hooks: what's playing, stats)
   };
 }
