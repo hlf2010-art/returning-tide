@@ -3725,18 +3725,6 @@
  },
  {
   "who": "gunian.js",
-  "zh": "我跟合伙人们说了：我要出来，自己募一支基金。办公室看好了，杨浦滨江一个老厂房的楼上，楼下就是创客空间。不是请你帮忙搬东西。是想让你第一个看。",
-  "en": "I've told my partners: I'm leaving to raise a fund of my own. I've found the office, upstairs in an old factory on the Yangpu riverside, right above the makerspace. I'm not asking you to carry anything. I'd like you to be the first to see it.",
-  "status": "VO_PENDING"
- },
- {
-  "who": "gunian.js",
-  "zh": "下个月出去路演：香港、新加坡、北京，三周见二十六个出资人。这之前我晚上都在改材料，不太回消息。不是冷淡，是在募资。先跟你说一声。",
-  "en": "Next month I take the fund on the road: Hong Kong, Singapore, Beijing, twenty-six investors in three weeks. Until then I'm rewriting the deck every evening and slow to answer. It isn't coldness. It's fundraising. I wanted you to know beforehand.",
-  "status": "VO_PENDING"
- },
- {
-  "who": "gunian.js",
   "zh": "首关了。两亿，比我定的目标多两千万。",
   "en": "First close. Two hundred million yuan, twenty million more than I aimed for.",
   "status": "VO_PENDING"
@@ -3745,12 +3733,6 @@
   "who": "gunian.js",
   "zh": "明轩说，你在做的东西越来越像一家公司了。把材料发我。不是要投你，是想让你先从我这儿听到最难听的那部分。",
   "en": "Mingxuan says what you're building is starting to look like a company. Send me your deck. Not so that I can invest: so that you hear the worst of it from me first.",
-  "status": "VO_PENDING"
- },
- {
-  "who": "gunian.js",
-  "zh": "慢潮资本的第一笔投资签了：就是那台摄像头。他没跟我解释，他去修了：拿一百个真实家庭的晚上重新录数据，让模型看前后两秒，不只看一帧。尽调的时候，我在同一个大堂、同样的灯下坐了三十次，又在两户老人家里各看了一晚，一次误报都没有。他问我，当初是谁先指出问题的。我没告诉他。",
-  "en": "Slow Tide's first investment is signed: that camera. He didn't explain it to me. He fixed it: new data from evenings in a hundred real homes, and a model that watches the two seconds either side, not one frame. For the due diligence I sat down thirty times in the same lobby under the same lights, and watched it for a night in two old people's homes. Not one false alarm. He asked me who first spotted the problem. I didn't tell him.",
   "status": "VO_PENDING"
  },
  {
@@ -3769,24 +3751,6 @@
   "who": "yuan.js",
   "zh": "[图片] 你那只 GO BEARS 的马克杯，两年前被我顺手装进箱子带回来了，一直在我工位上。还你，还是我接着用？",
   "en": "[Photo] Your GO BEARS mug came home in my suitcase two years ago. It has been on my desk ever since. Do you want it back, or shall I keep using it?",
-  "status": "VO_PENDING"
- },
- {
-  "who": "yuan.js",
-  "zh": "反对意见我交上去了：那条弄堂不能只留一张皮，把住在里面的人掏空。组长说我会后悔。",
-  "en": "I've filed my dissent: that lane can't be kept as a skin with the people scooped out of it. My team lead says I'll regret it.",
-  "status": "VO_PENDING"
- },
- {
-  "who": "yuan.js",
-  "zh": "旧金山来信了：以前合作过的那家城市研究所，请我回去带一个社区更新的项目，两年。九月要答复。我还没想好。",
-  "en": "A letter from San Francisco: the urban-research institute I worked with wants me back to lead a community-renewal project. Two years. They want an answer by September. I haven't decided.",
-  "status": "VO_PENDING"
- },
- {
-  "who": "yuan.js",
-  "zh": "决定下来了：方案改了，居民可以留下来。改过的那一页上，有我的名字。",
-  "en": "The decision is in: the scheme has changed, and the residents can stay. My name is on the page that changed.",
   "status": "VO_PENDING"
  },
  {
@@ -3841,6 +3805,42 @@
   "who": "zhiwei.js",
   "zh": "我跟 Raymond 说了，新加坡我不去。不是为你。——有一部分是。",
   "en": "I've told Raymond I'm not taking Singapore. Not for you. — Partly for you.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "有件事一月就定了，现在可以说了：我要出来，自己募一支人民币基金。合伙人们一月就知道了，交接做到三月底，新项目的投委会我已经回避了。基石是杨浦区的引导基金，条件是基金注册在杨浦、一部分钱投在杨浦，所以办公室就在杨浦滨江一个老厂房的楼上，楼下就是创客空间。不是请你帮忙搬东西。是想让你第一个看。",
+  "en": "Something was decided in January, and now I can say it: I'm leaving to raise an RMB fund of my own. My partners have known since January; I'm handing over until the end of March, and I've already stepped out of the investment committee for new deals. The anchor is the Yangpu district guidance fund, on condition that the fund is registered in Yangpu and puts part of its money there. So the office is upstairs in an old factory on the Yangpu riverside, right above the makerspace. I'm not asking you to carry anything. I'd like you to be the first to see it.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "下个月出去路演：香港、新加坡见家族办公室，北京见母基金，三周见二十六个出资人。这之前我晚上都在改材料，不太回消息。不是冷淡，是在募资。先跟你说一声。",
+  "en": "Next month I take the fund on the road: family offices in Hong Kong and Singapore, a fund of funds in Beijing, twenty-six investors in three weeks. Until then I'm rewriting the deck every evening and slow to answer. It isn't coldness. It's fundraising. I wanted you to know beforehand.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "gunian.js",
+  "zh": "慢潮资本的第一笔投资签了：就是那台摄像头。他没跟我解释，他去修了：征得同意，在一百个真实家庭里录了晚上的数据，模型改成看前后两秒，不只看一帧，而且全在设备上算，视频不出家门。尽调的时候，我在同一个大堂、同样的灯下坐了三十次，又请康复医院的治疗师在垫子上真摔了两百次：误报我要看，漏报更要看。两户老人家里各看了一晚。他问我，当初是谁先指出问题的。我没告诉他。",
+  "en": "Slow Tide's first investment is signed: that camera. He didn't explain it to me. He fixed it: with their consent, evenings recorded in a hundred real homes, and a model that watches the two seconds either side, not one frame, all of it worked out on the device so no video leaves the house. For the due diligence I sat down thirty times in the same lobby under the same lights, and had therapists from a rehabilitation hospital take two hundred real falls on mats: I wanted the false alarms, and even more the falls it missed. Then a night each in two old people's homes. He asked me who first spotted the problem. I didn't tell him.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "反对意见我交上去了：那条弄堂要留房，也要留人，不能只留一张皮，把住在里面的人都迁走。下个月居民意愿征询。组长说我会后悔。",
+  "en": "I've filed my dissent: that lane has to keep its houses and its people. It can't be kept as a skin with everyone moved out. The residents' consultation is next month. My team lead says I'll regret it.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "旧金山来信了：以前那家城市研究所，请我回去带一个社区更新的项目，两年。我回国满两年了，签证上那条回国两年的限制刚好到期；他们是大学下属的，也不用抽签。九月要答复。我还没想好。",
+  "en": "A letter from San Francisco: my old urban-research institute wants me back to lead a community-renewal project. Two years. I've been home two years now, so the two-year rule on my old visa has just run out, and they're university-affiliated, so there's no lottery. They want an answer by September. I haven't decided.",
+  "status": "VO_PENDING"
+ },
+ {
+  "who": "yuan.js",
+  "zh": "征询结果出来了：方案改成留房留人，愿意留下的居民都可以留下。改过的那一页上，有我的名字。",
+  "en": "The consultation is in: the scheme now keeps the houses and the people, and every resident who wants to stay can. My name is on the page that changed.",
   "status": "VO_PENDING"
  }
 ]

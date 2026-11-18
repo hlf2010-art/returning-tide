@@ -14,6 +14,7 @@
 import { stamp } from '../../engine/life.js';
 import { heart, inLife, shared, feel, leave, meet } from '../../engine/hearts.js';
 import { fact, actOf, isWorkday, career, standing } from '../../engine/year.js';
+import { hasProduct } from '../../engine/studio.js';
 import { B, D, H, tod, say, R, A, ask, askOut, fired, done, dateOn, upstairs, recalls, openThread } from './kit.js';
 
 const W = 'zhiwei';
@@ -26,7 +27,7 @@ const P = {
   ambition: B('三十岁之前升高级经理，然后是合伙人', 'Senior manager before thirty; then partner'),
   how: 'You are a product and industrial designer, the design lead on his first engagement at the firm, and you run its delivery; he was hired from Silicon Valley at nearly your level, which you noticed. You have a rule about not getting close to colleagues.',
   address: B('纪白', 'Ji Bai'),
-  card: 'Xu Zhiwei (许知微), 28, 178 cm, from Hangzhou; a product and industrial designer who judges digital products, physical objects and whether people can really use them in the same breath; six years at the international technology consulting firm in Lujiazui where Ji Bai has just started, where she leads product design and runs delivery on his first engagement (an enterprise AI rollout for a large client); not a brand or visual creative director; her standards are her own and sharp, and she does not bend them to please a partner, a client or Ji Bai; still sketches objects (a hinge, a handle, a stool) in the margins of every deck; wants senior manager this cycle and partner after that, and her sponsor is the partner, Raymond He; cool, uncompromising, fast, dry, guarded, fair when it costs her; short light ash-blonde layered hair with dark roots, thin silver metal-frame glasses, black knitwear, silver rings, headphones round her neck on the way home; competitive with Ji Bai because he was hired from Silicon Valley at nearly her level; lives alone in a rented flat off Yuyuan Road and crosses the river on Line 2; her mother in Hangzhou sends her the CVs of suitable men; texts in short sentences with no emoji and the English work words Lujiazui uses (kickoff, deck, deadline)',
+  card: 'Xu Zhiwei (许知微), 28, 178 cm, from Hangzhou; a product and industrial designer who judges digital products, physical objects and whether people can really use them in the same breath; studied industrial design at the China Academy of Art in Hangzhou (2016-2020) and joined the firm\'s product and design practice straight after, designing connected appliances and medical devices with their apps before moving onto enterprise AI; she and Ji Bai had never met before his first day; six years at the international technology consulting firm in Lujiazui where Ji Bai has just started, where she leads product design and runs delivery on his first engagement (an enterprise AI rollout for a large client); not a brand or visual creative director; her standards are her own and sharp, and she does not bend them to please a partner, a client or Ji Bai; still sketches objects (a hinge, a handle, a stool) in the margins of every deck; wants senior manager this cycle and partner after that, and her sponsor is the partner, Raymond He; cool, uncompromising, fast, dry, guarded, fair when it costs her; short light ash-blonde layered hair with dark roots, thin silver metal-frame glasses, black knitwear, silver rings, headphones round her neck on the way home; competitive with Ji Bai because he was hired from Silicon Valley at nearly her level; lives alone in a rented flat off Yuyuan Road and crosses the river on Line 2; her mother in Hangzhou sends her the CVs of suitable men; texts in short sentences with no emoji and the English work words Lujiazui uses (kickoff, deck, deadline)',
   arc: {
     1: B('带着八个月的客户，突然多了一个硅谷回来的“同级”。', 'Eight months into running the account, and suddenly a "peer" from Silicon Valley on her team.'),
     2: B('今年高级经理只有一个名额。评级在三月。', 'One senior-manager slot this year. Ratings in March.'),
@@ -164,6 +165,8 @@ const P = {
       script: (L) => [
         N('她已经到了。外套搭在椅背上，面前一杯威士忌，没动。', "She's already there. Jacket over the back of the chair, a whisky in front of her, untouched."),
         Z('你迟到了两分钟。我数了。', "You're two minutes late. I counted."),
+        // the industrial designer in her: if he has built the gimbal, she has already looked at it
+        ...(hasProduct(L) ? [Z('你包里那个云台是你自己做的？握把太细了，手一出汗就会转。下一版加粗两毫米，前面收一点，拇指才有地方放。', "Is that gimbal in your bag your own? The grip's too thin: it'll turn the moment your hand sweats. Two millimetres thicker on the next one, and pull the front in so your thumb has somewhere to go.")] : []),
         ask(L, W,
           A('你下班以后也计时？', 'You keep time after hours too?', { a: 3 }, Z('职业病。坐。', 'Occupational hazard. Sit.')),
           A('电梯坏了。我住楼上。', 'The lift was out. I live upstairs.', { a: 2 }, Z('住楼上还迟到。', "You live upstairs and you're still late."), N('她笑了一下，很短。', 'She smiles. Briefly.')),
