@@ -5,6 +5,15 @@
 // minimap until you get there), click it again to clear it. M or Esc closes.
 import { paint, mapExtras } from './minimap.js';
 import { getLang } from './i18n.js';
+import { LINE_PTS } from '../engine/metroLine.js';
+import { STATIONS, PLAT } from '../world/metroLayout.js';
+
+// Metro Line 2 (Shanghai's light green), underground: its route between the two stations you can ride,
+// and each station's roundel and name (the exits are the red numbered places)
+const LINE2 = '#8cc63f';
+const LINE_PATH = LINE_PTS.filter((_, i) => i % 8 === 0);
+const STOPS = STATIONS.map((S) => { const [x, z] = S.F.toW(PLAT.ac, 0); return { x, z, name: S.name }; });
+export const metroStops = () => STOPS;
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 const B = { X0: -570, X1: 1340, Z0: -310, Z1: 500 }, P = 2;     // painted bounds (metres), pixels per metre
@@ -48,6 +57,21 @@ export function createWorldMap({ getState, onClose, onWaypoint }) {
     if (!ground) ground = paintGround();
     const [ox, oy] = toScreen(B.X0, B.Z0), k = V.s / P;
     g.imageSmoothingEnabled = true; g.drawImage(ground.c, ox, oy, ground.c.width * k, ground.c.height * k);
+    // Line 2 under the streets and the river, the two stations on it
+    g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+    const line = (w, col, dash) => { g.strokeStyle = col; g.lineWidth = w; g.setLineDash(dash); g.beginPath(); LINE_PATH.forEach(([x, z], i) => { const [a, b] = toScreen(x, z); if (i) g.lineTo(a, b); else g.moveTo(a, b); }); g.stroke(); };
+    line(7, 'rgba(7,11,15,0.75)', []); line(4, LINE2, [10, 6]);
+    g.setLineDash([]);
+    for (const st of STOPS) {
+      const [a, b] = toScreen(st.x, st.z);
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(a, b, 13, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = LINE2; g.lineWidth = 4; g.beginPath(); g.arc(a, b, 11, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = '#1b1b1b'; g.font = '800 12px "Noto Sans SC", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('2', a, b + 0.5);
+      g.font = '600 13px "Noto Sans SC", sans-serif'; g.textAlign = 'left'; g.lineWidth = 3; g.strokeStyle = 'rgba(7,11,15,0.85)';
+      const label = T(`${st.name.zh}站 · 地铁2号线`, `${st.name.en} · Metro Line 2`);
+      g.strokeText(label, a + 18, b - 14); g.fillStyle = '#e9f5d8'; g.fillText(label, a + 18, b - 14);
+    }
+    g.restore();
     // names
     for (const l of LABELS) {
       const [a, b] = toScreen(l.x, l.z); g.save(); g.translate(a, b); if (l.rot && V.s < 4) g.rotate(l.rot);

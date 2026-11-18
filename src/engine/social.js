@@ -92,6 +92,8 @@ export function detectBumps(agents, now, memo, { contact = SOCIAL.contact, closi
 // they apologise even when it wasn't them; dialect: what they say it in.
 export const PERSONAS = {
   office:  { temper: 0.25, polite: 0.8, dialect: 'zh', lines: 'office' },     // office worker, earbuds in
+  officeMan: { temper: 0.3, polite: 0.75, dialect: 'zh', lines: 'office' },  // the same, a man
+  visitorF: { temper: 0.05, polite: 0.9, dialect: 'en', lines: 'visitor' },  // a visitor from abroad, a woman
   student: { temper: 0.2, polite: 0.6, dialect: 'zh', lines: 'young' },
   youngMan:{ temper: 0.45, polite: 0.45, dialect: 'zh', lines: 'young' },
   visitor: { temper: 0.05, polite: 0.9, dialect: 'en', lines: 'visitor' },

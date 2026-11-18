@@ -14,6 +14,7 @@ import { noticeSights, gawkSpeed } from './sights.js';
 import { avoid, SOCIAL, DISTRACTED } from './social.js';
 import { stepFlinch, flinchSpeed } from './flinch.js';
 import { startErrand, errandTarget, stepErrand } from './errands.js';
+import { roleSex, personaFor } from './streetPeople.js';
 export const TRAFFIC_CONFIG = {
   vehGreen: 16, vehGreenFlash: 3, yellow: 3,
   allRedVeh: 2, vehClearMax: 20,       // all-red after yellow; held while a vehicle is still in the box
@@ -149,7 +150,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
       rain: sp.rain || 'umbrella', react: 'none', path: [], jog: false, umbrella: 0, phone: 0, side: 0,
       // how they take a bump (engine/social.js), and a reaction in progress: stop for a moment,
       // turn to the other person, be knocked a little off line
-      persona: sp.persona || 'office', pause: 0, faceTo: null, faceFor: 0, gesture: null, shove: null,
+      persona: personaFor(sp.persona || 'office', roleSex(sp.id)), pause: 0, faceTo: null, faceFor: 0, gesture: null, shove: null,
       // eyes on a phone while walking (messages, short videos, a drama episode): decided leg by leg
       phoneHabit: sp.phoneHabit ?? 0.2, phoneWalk: false, phoneKind: 'chat', phoneW: 0,
       coffee: sp.coffee || 0, errand: null, cup: sp.startCup || 0, cupBrand: sp.startCup ? 'starbucks' : 'manner',   // some arrive with a coffee from elsewhere                          // a coffee run now and then (errands.js)

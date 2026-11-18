@@ -155,5 +155,48 @@ def generate():
     print(f'done: {done} new clips, {len(man["clips"])} in all')
 
 
+# Lines anyone in the street might say (a bump, a near miss, a guide, the 10 pm lights): the person saying
+# it can be a man or a woman, so each is also voiced in both (keys 'zh-m|text', 'zh-f|text'; engine/voice.js
+# clipUrl(lang, text, sex) takes the speaker's own first). who -> {sex: (zh voice, en voice)}
+YOUNG = {'m': ('zm_010', 'am_adam'), 'f': ('zf_017', 'af_bella')}
+OLDER = {'m': ('zm_034', 'bm_daniel'), 'f': ('zf_006', 'af_nicole')}
+ADULT = {'m': ('zm_062', 'am_liam'), 'f': ('zf_032', 'af_nova')}
+ANYONE = {
+    'bump:office': ADULT, 'bump:young': YOUNG, 'bump:elder': OLDER, 'bump:auntie': OLDER,
+    'bump:visitor': {'m': ('zm_096', 'am_puck'), 'f': ('zf_022', 'af_sky')},
+    'passerby': ADULT, 'witness': ADULT, 'victim': ADULT, 'onlooker': YOUNG,
+    'guide': {'m': ('zm_052', 'am_eric'), 'f': ('zf_077', 'af_nova')}, 'student': YOUNG, 'auntie': OLDER,
+}
+
+
+def generate_anyone():
+    lines = json.load(open(HERE / 'lines.json'))
+    man_path = OUT / 'manifest.json'
+    man = json.load(open(man_path))
+    done = 0
+    for l in lines:
+        vs = ANYONE.get(l['who'])
+        if not vs:
+            continue
+        for lang in ('zh', 'en'):
+            text = l['zh'] if lang == 'zh' else l['en']
+            if not text:
+                continue
+            for sex, pair in vs.items():
+                key = voice_key(f'{lang}-{sex}', text)
+                f = OUT / f'{key}.mp3'
+                if key in man['clips'] and f.exists():
+                    continue
+                a = synth(lang, text, pair[0 if lang == 'zh' else 1], 1.0)
+                to_mp3(a, f)
+                man['clips'][key] = [f.name, round(len(a) / SR, 2)]
+                done += 1
+                if done % 40 == 0:
+                    json.dump(man, open(man_path, 'w'))
+                    print(f'anyone: {done} clips', flush=True)
+    json.dump(man, open(man_path, 'w'))
+    print(f'anyone: {done} new clips, {len(man["clips"])} in all')
+
+
 if __name__ == '__main__':
-    probe() if '--probe' in sys.argv else generate()
+    probe() if '--probe' in sys.argv else (generate(), generate_anyone())

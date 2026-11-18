@@ -131,7 +131,11 @@ export function createVoice({ audio, getLang, camera = null }) {
     setServer(on) { set('bund.voiceServerOn', on ? '1' : '0'); serverChecked = 0; if (on) checkServer(); },
     get stats() { return { clips: S.clipHits, server: S.serverHits, synth: S.synthHits, loaded: !!manifest, size: manifest ? Object.keys(manifest.clips).length : 0, last: S.last, serverUp: server }; },
     has(lang, text) { return !!(manifest && manifest.clips[voiceKey(lang, text)]); },
-    clipUrl(lang, text) { const c = manifest && manifest.clips[voiceKey(lang, text)]; return c ? `./voice/${c[0]}` : null; },
+    // sex: a passer-by's line exists in a man's and a woman's voice (keys 'zh-m|…', 'zh-f|…'): theirs first
+    clipUrl(lang, text, sex = null) {
+      const c = manifest && ((sex && manifest.clips[voiceKey(`${lang}-${sex}`, text)]) || manifest.clips[voiceKey(lang, text)]);
+      return c ? `./voice/${c[0]}` : null;
+    },
     langFor,
     update() { listener(); for (const h of S.active) if (h.at && h.pan && h.follow) { const p = h.follow(); if (p) { h.pan.positionX.value = p[0]; h.pan.positionY.value = p[1]; h.pan.positionZ.value = p[2]; } } },
     stopAll() { for (const h of [...S.active]) h.stop(); S.active.clear(); },
@@ -144,7 +148,7 @@ export function createVoice({ audio, getLang, camera = null }) {
       if (!text) { o.onEnd && o.onEnd(); return null; }
       S.last = { lang, text: text.slice(0, 40), who: o.who };
       if (!bus()) return o.noSynth ? silent(text, lang, o) : synthSay(text, lang, o);
-      const url = this.clipUrl(lang, text);
+      const url = this.clipUrl(lang, text, o.sex);
       try {
         if (url) { const b = await buffer(url); S.clipHits++; return play(b, o); }
         if (await checkServer()) {

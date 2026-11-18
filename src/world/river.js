@@ -79,7 +79,7 @@ export function createRiver() {
   mat.uniforms.tReflect.value = target.texture;
   mat.uniforms.texMatrix.value = texMatrix;      // UniformsUtils.merge clones; point back at the live matrix
 
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(1700, 3200), mat);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(1700, 4600), mat);
   water.rotation.x = -Math.PI / 2;
   water.position.set(L.deckEdgeX + 850 - 4, L.waterY, 0);
   water.name = 'water';

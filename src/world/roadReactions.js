@@ -12,6 +12,7 @@
 //     pedestrian's costs are paid; it goes on the record. They get up, and walk off, slowly.
 // Nobody is shown badly hurt. The victim is a stand-in of the same person (their own avatar) while
 // the original is taken out of the crowd / the crossing; they come back where the stand-in leaves.
+import { sexOf } from '../engine/streetPeople.js';
 import * as THREE from 'three';
 import { createPerson } from './people.js';
 import { twoBone, turn } from './driverPose.js';
@@ -82,11 +83,11 @@ export function createRoadReactions({ scene, people, hud, audio, traffic, player
   const near = (w, x, z) => Math.hypot(w.x - x, w.z - z);
 
   // ---- speech ----
-  function say(line, at, speaker, { seconds = 3, force = false, id = null } = {}) {
+  function say(line, at, speaker, { seconds = 3, force = false, id = null, sex = null } = {}) {
     if (!line) return false;
     if (!force && (S.t - S.lastBark < 1.4 || (id && S.t - (S.said.get(id) ?? -1e9) < 12))) return false;
     S.lastBark = S.t; if (id) S.said.set(id, S.t);
-    hud.bark({ speaker, text: { zh: line.zh, en: line.en }, gloss: line.gloss, lang: line.lang, who: line.who, at: at ? [at[0], 1.6, at[1]] : null, seconds });
+    hud.bark({ speaker, text: { zh: line.zh, en: line.en }, gloss: line.gloss, lang: line.lang, who: line.who, at: at ? [at[0], 1.6, at[1]] : null, seconds, sex });
     S.log.push({ t: +S.t.toFixed(2), who: line.who, zh: line.zh });
     while (S.log.length > 40) S.log.shift();
     return true;
@@ -114,7 +115,7 @@ export function createRoadReactions({ scene, people, hud, audio, traffic, player
     else if (p.state === 'walk' && !p.leader && p.kind !== 'follower') { p.state = 'act'; p.act = 'look'; p.wait = 1.8; p.gesture = tier === 'glare' ? 'look' : 'scold'; p.faceTo = carAt; p.heading = Math.atan2(carAt[0] - p.x, carAt[1] - p.z); }
     else if (!p.faceTo) { p.faceTo = carAt; S.faced.push({ a: p, until: S.t + 2.2 }); }
     if (tier === 'glare') return;
-    say(shoutFor(tier, w.persona), [w.x, w.z], speakerOf(w), { id: w.id });
+    say(shoutFor(tier, w.persona), [w.x, w.z], speakerOf(w), { id: w.id, sex: sexOf(w.persona) });
   }
   // a close one at speed: horns, and someone says they'll report you (and the zebra's camera)
   function scare(x, z, kmh, zebra, skip = null) {
@@ -126,7 +127,7 @@ export function createRoadReactions({ scene, people, hud, audio, traffic, player
     after(2.4, () => {
       if (S.H) return;
       const at = wit ? [wit.x, wit.z] : [x, z];
-      say(lineFor(LINES.report), at, wit ? speakerOf(wit) : NAMES.witness, { force: true, seconds: 3.4 });
+      say(lineFor(LINES.report), at, wit ? speakerOf(wit) : NAMES.witness, { force: true, seconds: 3.4, sex: wit ? sexOf(wit.persona) : null });
       const L = getLife(), res = applyIncident(L, 'scare', { kmh, zebra });
       save && save();
       after(3.2, () => hud.toast(res.ticketed
@@ -281,11 +282,11 @@ export function createRoadReactions({ scene, people, hud, audio, traffic, player
     const wit = others[0] || null, wit2 = others[1] || wit;
     const at = (o) => (o ? [o.ref.x, o.ref.z] : [x, z]);
     const vAt = () => (H.victim ? [H.victim.x, H.victim.z] : [x, z]);
-    after(0.6, () => say(lineFor(LINES.hitShout), at(wit), speakerOf(wit), { force: true }));
-    after(2.8, () => say(lineFor(LINES.victim), vAt(), NAMES.victim, { force: true }));
-    after(5.4, () => say(lineFor(LINES.witness), at(wit2), speakerOf(wit2), { force: true, seconds: 3.6 }));
-    after(8.4, () => say(LINES.call[0] && lineFor([LINES.call[Math.random() < 0.5 ? 0 : 1]]), at(wit), speakerOf(wit), { force: true, seconds: 4 }));
-    after(11.6, () => { if (H.filmed) say(lineFor(LINES.filming), H.gathered[0] ? [H.gathered[0].x, H.gathered[0].z] : [x, z], NAMES.onlooker, { force: true }); });
+    after(0.6, () => say(lineFor(LINES.hitShout), at(wit), speakerOf(wit), { force: true, sex: wit && sexOf(wit.persona) }));
+    after(2.8, () => say(lineFor(LINES.victim), vAt(), NAMES.victim, { force: true, sex: sexOf(w.persona) }));
+    after(5.4, () => say(lineFor(LINES.witness), at(wit2), speakerOf(wit2), { force: true, seconds: 3.6, sex: wit2 && sexOf(wit2.persona) }));
+    after(8.4, () => say(LINES.call[0] && lineFor([LINES.call[Math.random() < 0.5 ? 0 : 1]]), at(wit), speakerOf(wit), { force: true, seconds: 4, sex: wit && sexOf(wit.persona) }));
+    after(11.6, () => { if (H.filmed) say(lineFor(LINES.filming), H.gathered[0] ? [H.gathered[0].x, H.gathered[0].z] : [x, z], NAMES.onlooker, { force: true, sex: H.gathered[0] ? sexOf(H.gathered[0].persona) : null }); });
     after(6, () => honk(x, z, 1));
     after(ROAD.policeAfter, () => officerComes(H));
     S.log.push({ t: +S.t.toFixed(2), hit: Math.round(kmh), who: w.id, filmed: !!H.filmed });
@@ -311,8 +312,8 @@ export function createRoadReactions({ scene, people, hud, audio, traffic, player
     H.phase = 'talk';
     const c = () => (H.cop ? [H.cop.x, H.cop.z] : [H.car.x, H.car.z]), vAt = () => (H.victim ? [H.victim.x, H.victim.z] : [H.x, H.z]);
     if (H.cop) { H.cop.anim = 'talk2'; H.cop.goal = null; }
-    const seq = [[0, LINES.cop[0], c, NAMES.cop], [2.6, LINES.cop[1], c, NAMES.cop], [5.4, LINES.victimOk[0], vAt, NAMES.victim], [8.6, LINES.copAfter[0], c, NAMES.cop], [11.4, LINES.copAfter[1], c, NAMES.cop], [14.2, LINES.copAfter[2], c, NAMES.cop]];
-    for (const [t, l, at, sp] of seq) after(t, () => say(lineFor([l]), at(), sp, { force: true, seconds: 3.4 }));
+    const seq = [[0, LINES.cop[0], c, NAMES.cop], [2.6, LINES.cop[1], c, NAMES.cop], [5.4, LINES.victimOk[0], vAt, NAMES.victim, sexOf(H.w.persona)], [8.6, LINES.copAfter[0], c, NAMES.cop], [11.4, LINES.copAfter[1], c, NAMES.cop], [14.2, LINES.copAfter[2], c, NAMES.cop]];
+    for (const [t, l, at, sp, sex] of seq) after(t, () => say(lineFor([l]), at(), sp, { force: true, seconds: 3.4, sex }));
     after(14.6, () => consequences(H));
     after(18.5, () => { if (H.victim) { H.victim.sitTo = 0; } });
     after(21, () => wrapUp(H));

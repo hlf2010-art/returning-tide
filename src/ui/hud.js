@@ -38,9 +38,9 @@ export function createHud() {
       $('prompt').classList.toggle('on', !!on); $('reticle').classList.toggle('on', !!on);
     },
     // bark({ speaker, text, gloss, lang }): someone nearby says something in passing
-    bark({ speaker = '', text = '', gloss = null, lang = 'zh', seconds = 3.2, voice = true, at = null, who = null, rate = 1 } = {}) {
+    bark({ speaker = '', text = '', gloss = null, lang = 'zh', seconds = 3.2, voice = true, at = null, who = null, rate = 1, sex = null } = {}) {
       // and said aloud, in the speaker's own recorded voice (engine/voice.js), unless the caller voices it
-      if (voice && this.voice && lang !== 'wuu') this.voice.say({ zh: typeof text === 'object' ? text.zh : text, en: typeof text === 'object' ? text.en : text, who: who || (typeof speaker === 'object' ? speaker.zh : speaker), at, rate, noSynth: true });
+      if (voice && this.voice && lang !== 'wuu') this.voice.say({ zh: typeof text === 'object' ? text.zh : text, en: typeof text === 'object' ? text.en : text, who: who || (typeof speaker === 'object' ? speaker.zh : speaker), at, rate, sex, noSynth: true });
       const el = $('bark');
       // speaker / text / gloss may be { zh, en } pairs. Shanghainese: Chinese readers get the words
       // and a Mandarin gloss; English readers get the English, marked as said in Shanghainese.

@@ -1,4 +1,5 @@
 import '@fontsource/noto-serif-sc/500.css';
+import { roleSex } from './engine/streetPeople.js';
 import '@fontsource/noto-serif-sc/900.css';
 import '@fontsource/noto-sans-sc/500.css';
 import '@fontsource/noto-sans-sc/700.css';
@@ -19,6 +20,7 @@ import { createMaterials } from './world/materials.js';
 import { createSky, FOG_COLOR, fogColorAt } from './world/sky.js';
 import { createSkyline } from './world/skyline.js';
 import { createRiver } from './world/river.js';
+import { createBridges } from './world/bridges.js';
 import { createBund } from './world/bund.js';
 import { createPromenade } from './world/promenade.js';
 import { createStreet } from './world/street.js';
@@ -179,7 +181,234 @@ llm.warm();
 const HEARTS_ON = !params.has('q') || params.has('hearts');   // measurement tools: none of the five writes or turns up unless asked
 guardTalk(llm, () => life, getLang);   // when one of the five is being played, the model is told the validated state and nothing else (world/romance.js)
 
-let mode = 'boot';
+let mode = 'boot';              // boot -> entry -> play <-> pause / inspect / dialogue / pouch
+let noLock = params.has('nolock');
+let subtitlesOn = params.get('subs') !== '0';
+let world = null, clueRead = false, t = 0, last = performance.now();
+let dialogueAudio = null, conversation = null, mission1 = null, traffic = null;
+// Temporary developer controls for Mission One (F8 start, F9 reset): dev server or ?dev only.
+const devControls = import.meta.env.DEV || params.has('dev');
+camera.layers.enable(HELD_LAYER); camera.layers.enable(RAIN_LAYER);
+// Weather: clear <-> light drizzle only. Developer toggle F7 (dev builds / ?dev); ?weather=drizzle starts wet.
+const weather = createWeather();
+if (params.get('weather') === 'drizzle') weather.set('drizzle', { instant: true });
+const _metroFog = new THREE.Color(0.32, 0.33, 0.34), HAZE_FOG = new THREE.Color(0.072, 0.108, 0.2), FOG_DENSITY = scene.fog.density, HAZE_DENSITY = 0.00028;
+let weatherTime = 0, suUmbrella = 0, treeLevel = -1;
+// Wind in the trees: a river breeze that rises with the drizzle. Developer control F6 cycles
+// auto / calm / breeze / windy / gale; ?wind=<level> pins it.
+const wind = createWind();
+const TREE_SPOTS = [...streetTrees, ...planterIslands.map((p) => ({ x: (p.x0 + p.x1) / 2, z: (p.z0 + p.z1) / 2 }))];
+if (params.get('wind') in WIND_LEVELS) wind.setOverride(params.get('wind'));
+const _pairPos = new THREE.Vector3(npcLayout.pairFocus.x, npcLayout.pairFocus.y, npcLayout.pairFocus.z);
+
+async function boot() {
+  await loadFonts([
+    [`900 40px ${FONT.serif}`, ALL_TEXT], [`500 40px ${FONT.serif}`, ALL_TEXT],
+    [`700 40px ${FONT.sans}`, ALL_TEXT], [`40px ${FONT.hand}`, ALL_TEXT],
+  ]);
+  const M = createMaterials();
+  usePhotoSurfaces(M, R.renderer).then((r) => { if (r) console.info('photo surfaces', r); });   // CC0 photographed stone and asphalt, swapped in when loaded
+  const sky = createSky(), skyline = createSkyline(), river = createRiver(), bridges = createBridges();   // the Garden, Nanpu and Yangpu bridges (world/bridges.js)
+  river.setMirrorSize(gfx.mirror);
+  const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
+  // real people (Microsoft Rocketbox, MIT) when their files load; the hand-built figures otherwise
+  let people = null;
+  try { people = await loadPeople('./people/'); } catch (err) { console.warn('people assets unavailable, using simple figures', err); }
+  const npcs = people ? createRealNpcs(people) : createNpcs(M);
+  // the player's own body, seen when looking down (?body=0 to leave it out)
+  const playerBody = people && people.avatars.player && params.get('body') !== '0' ? createPlayerBody(people, { walk: WALK_SPEED, run: RUN_SPEED }) : null;
+  if (playerBody) scene.add(playerBody.root);
+  const pouch = createPouch();
+  const rain = createRain();
+  // the signal-controlled crossing: one controller, through traffic, background pedestrians
+  // how much traffic: the level of detail; tools (?q=) keep the crossing's own seven unless ?traffic=<factor>
+  const vehSpecs = params.has('traffic') ? trafficSpecs(Number(params.get('traffic'))) : params.has('q') ? crossing.vehicles : trafficSpecs(gfxDetail({ ...gfx, lod: bootLod }).traffic);
+  traffic = createTraffic({ geom: crossing, vehicles: vehSpecs, peds: crossing.peds, shop: createShop({ queue: mannerSpec.queue, pickup: mannerSpec.pickup }) });
+  const vehicles = createVehicles(vehSpecs), signals = createSignals();
+  // Nanjing Road East to Henan Road, the metro's Exits 7 and 2 (world/nanjingRoad.js), Henan Road's traffic
+  const nanjing = createNanjingRoad(M); scene.add(nanjing.group);
+  const henan = createHenanTraffic({ scene, factor: params.has('q') && !params.has('traffic') ? 0.35 : gfxDetail({ ...gfx, lod: bootLod }).traffic, addCollider: addDynamicCollider });
+  // the city buses and their stops (world/buses.js); they let the crowd's commuters on and off
+  // the bus's kerbside announcement as the doors open / as it pulls away, if you're near enough to hear
+  const announce = (v, what) => {
+    if (Math.hypot(v.x - player.body.x, v.z - player.body.z) > 30) return;
+    const [who, zh, en] = what === 'arrive' ? BUS_LINES[Math.random() < 0.6 ? 0 : 1] : BUS_LINES[2];
+    voice.say({ zh, en, who, at: [v.x, 2.2, v.z], gain: 0.8, lang: 'zh' });
+  };
+  const buses = createBuses({ scene, traffic, vehicles, audio, announce, crowd: { board: (...a) => (world && world.crowd ? world.crowd.board(...a) : 0), alight: (...a) => (world && world.crowd ? world.crowd.alight(...a) : 0) } });
+  for (const st of BUS_STOPS) {                                   // the shelters are solid: their back wall and the sign pole
+    const back = st.dir > 0 ? -1 : 1, bx = (st.dir > 0 ? L.westCurbX - 1.5 : L.eastCurbX + 1.5) + back * 0.75, b = addDynamicCollider('shelter');
+    b.minX = bx - 0.12; b.maxX = bx + 0.12; b.minZ = st.z - 3.75; b.maxZ = st.z + 3.75;
+    const px = (st.dir > 0 ? L.westCurbX - 1.5 : L.eastCurbX + 1.5) - back * 0.9, q = addDynamicCollider('shelter');
+    q.minX = px - 0.1; q.maxX = px + 0.1; q.minZ = st.z - 3.9; q.maxZ = st.z - 3.5;
+  }
+  const pedestrians = people ? createRealPedestrians(traffic.peds, people) : createPedestrians(traffic.peds);
+  const vehicleBoxes = traffic.vehicles.map(() => addDynamicCollider('vehicle'));
+  // the crossing's pedestrians are solid to the player (they steer round you; you can still walk into them)
+  pedBoxes = traffic.peds.map((p) => { const b = addDynamicCollider('npc'); b.id = p.id; return b; });
+  traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(vehSpecs[i].model); });   // petrol engines get an engine note
+  scene.add(sky.mesh, skyline.group, bridges.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
+    vehicles.group, signals.group, pedestrians.group, rain.mesh, buses.group);
+  // trees: London planes on Hankou Road (November: turning, some twigs already bare), camphor
+  // laurels in the promenade planters
+  const trees = createTrees([
+    ...streetTrees.map((t, i) => ({ x: t.x, y: L.curbH, z: t.z, h: 8.4 + (i % 2) * 0.7, species: 'plane', seed: 31 + i, bare: 0.12, away: [0, -Math.sign(t.z)] })),
+    ...planterIslands.map((p, i) => ({ x: (p.x0 + p.x1) / 2, y: L.deckY + 0.5, z: (p.z0 + p.z1) / 2 + (i % 2 ? 1.5 : -1.5), h: 4.2 + (i % 3) * 0.3, species: 'camphor', seed: 1 + i })),
+  ], { wetBoost: weatherUniforms.wetBoost });
+  scene.add(trees.group);
+  // Manner Coffee's takeaway front on Hankou Road (world/shops.js), lit from inside
+  const manner = createManner(L.curbH); scene.add(manner.group);
+  const baristas = createBaristas({ scene, people, work: manner.work });   // and the two making the coffee in it (world/baristas.js)
+  // a Lamborghini parked on Hankou Road (loads in the background; world/huracan.js)
+  const huracan = createHuracan(scene);
+  huracan.ready.then((r) => {
+    if (!r) return;
+    traffic.setSights([{ id: 'huracan', x: HURACAN_SPOT.x, z: HURACAN_SPOT.z }]);                        // passers-by look; some take a photo
+    traffic.setObstacles([-1.5, 0, 1.5].map((dx) => ({ x: HURACAN_SPOT.x + dx, z: HURACAN_SPOT.z, r: 1.15 })));   // and walk round it
+  });
+  // the Peace Hotel's ground floor and the AIA lobby (world/interiors.js); their lamps join the light pool
+  const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp() });
+  // up the lifts: the sixth floor and room 612 (world/hotelUpper.js)
+  const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });
+  // the Jazz Bar off the hall: the trio, Momo's night (world/jazzBar.js)
+  // places a DiDi takes you that you can walk into (the North Bund flat, IFC 32F)
+  const dests = createDestinations({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, voice });
+  // the Yangpu makerspace: build things (world/makerspace.js, engine/maker.js)
+  const makers = createMakerspace({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: buildMode, onWork: () => openWork('bench') });
+  const jazz = createJazzBar({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, onMode: seatMode });
+  // places (phase 4.4): a shengjian shop on Nanjing Road (world/dumpling.js) and the river cruise from a
+  // pier on the promenade (world/cruise.js)
+  const dumpling = createDumpling({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), onMode: shopMode });
+  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); }, ferryTo: (info) => world.dest.arrive('lujiazui', info),
+    roles: people ? Object.keys(people.manifest.cast).filter((r) => !people.manifest.cast[r].named && !['lin', 'su', 'player', 'dad'].includes(r)) : [],
+    clock: () => (PIN_HOUR ? 17 * 60 + 42 : life.clock.minute + life.clock.sec / 60) });   // (measurement tools: alongside, as at 5:42 pm)
+  // where you can go in: a pool of light at each open door, a label over it when it's in view
+  const entrances = createEntrances({ scene, camera, list: entranceList({ shopOpen: () => { const m = life.clock.minute; return m >= 390 && m < 1290; }, cruiseOpen: () => { const m = life.clock.minute; return m >= 9 * 60 + 30 && m < 21 * 60 + 30; }, metroOpen: () => hourState.metro }) });
+  const lighting = createLighting(scene, street.lanterns, [...entrances.lights, ...dumpling.lights, { ...manner.light, intensity: 7, distance: 10, color: new THREE.Color(1.0, 0.92, 0.8) }, ...buses.lights, ...nanjing.lights, ...interiors.lights, ...upper.lights, ...jazz.lights, ...dests.lights, ...makers.lights]);
+  // Lujiazui, across the river (world/lujiazui.js): built when you first go there, hidden while you're on the Bund
+  const ljz = createLujiazui({ scene, camera, M, people, hud, audio, player, travel, skyline, dests, lighting, renderer: R.renderer, getLife: () => life, save: () => saveLife(), metroOpen: () => hourState.metro, metroPassage: () => world.metro.fromExit1(), trafficFactor: params.has('q') && !params.has('traffic') ? 0.6 : gfxDetail({ ...gfx, lod: bootLod }).traffic });
+  // shadows: everything solid at street level casts and receives (not the sky, skyline, river, rain or glows)
+  for (const g of [bund.group, promenade.group, street.group, npcs.group, vehicles.group, signals.group, pedestrians.group]) {
+    g.traverse((o) => {
+      if (!o.isMesh) return;
+      const m = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!m || m.transparent || m.blending === THREE.AdditiveBlending) return;
+      o.castShadow = true; o.receiveShadow = true;
+    });
+  }
+  // the hour's part in the lights (world/dayNight.js): outdoors, whatever glows is a lamp unless it
+  // has a role of its own (skyline, Nanjing Road, the boats set theirs)
+  for (const g of [bund.group, promenade.group, street.group]) autoLights(g, 'lamps', 0.3);
+  scene.updateMatrixWorld(true);
+  world0 = { sky, skyline, river, lighting };
+  applyHour(0, { force: true });
+  captureEnvironment(R.renderer, scene);
+  // what you buy: the courier at the kerb, parcels, the umbrella, headphones (world/belongings.js)
+  const belongings = createBelongings({ scene, people, camera, hud, audio, getLife: () => life, save: () => saveLife() });
+  // DiDi: a car from the traffic comes to the kerb; you ride in it (world/didi.js, world/rideFlow.js)
+  const didi = createDidi({ scene, people, traffic, vehicles, camera, player, renderer: R.renderer });
+  const rideFlow = createRideFlow({ getLife: () => life, didi, hud, audio, save: () => saveLife(), onMode: rideMode, voice, arriveAt: (d, info) => world.dest.arrive(d.id, info) || world.makerspace.arrive(d.id, info) });
+  document.querySelector('#ride-card .go').addEventListener('click', () => { if (!closeInfoCard()) rideFlow.closeCard(); });
+  // buying it: Vivian, the consultant, at the car (world/carSale.js, engine/carPurchase.js)
+  const carSale = createCarSale({ scene, people, huracan, hud, audio, camera, player, getLife: () => life, save: () => saveLife(), onMode: saleMode, voice, testDrive: () => driving.testDrive() });
+  if (life.flags.carBuy && ['booked', 'viewed', 'specced'].includes(life.flags.carBuy.stage) && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');   // (met her but not ordered: she's still there)
+  // once it's yours: drive it (world/driving.js)
+  // people getting out of its way, and what happens if someone can't (world/roadReactions.js)
+  const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd });
+  const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads });
+  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
+  // tools (?q=) run a light one unless ?crowd=<density> says otherwise
+  if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
+    const roles = Object.keys(people.manifest.cast).filter((r) => !people.manifest.cast[r].named && !['lin', 'su', 'player', 'dad'].includes(r));
+    const det = gfxDetail({ ...gfx, lod: bootLod });
+    const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0 : det.crowd;   // tools: none unless asked
+    world.crowd = createCrowd({ density, roles });
+    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, camera });
+    traffic.setExtraPeople(() => world.crowd.onCarriageway());
+    henan.traffic.setExtraPeople(() => world.crowd.onHenan());
+    crowdBoxes = Array.from({ length: (params.has('q') ? 5 : det.nearPeople) + 2 }, () => addDynamicCollider('npc'));
+  }
+  // the friends in person after the first days (world/friendScenes.js): Yu'an at the AIA, Momo in 612, LiDAR scans
+  world.friends = createFriendScenes({ scene, people, hud, audio, voice, getLife: () => life, save: () => saveLife(), player, interiors });
+  // Line 2: down an exit's stairs, through the gates, a real train under the river to Lujiazui and back (world/metro.js)
+  world.metro = createMetro({ scene, camera, renderer: R.renderer, hud, audio, voice, player, people, travel, getLife: () => life, save: () => saveLife(), open: () => hourState.metro, onPudongSoon: () => world.ljz.buildAsync() });
+  // the story: a sat-down conversation, and dinner with Dad (world/story.js, world/dinner.js)
+  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], ...MOMENT_NAMES } });
+  world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
+  // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
+  world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
+    getHour: () => life.clock.minute, isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active, enabled: !!people && (!params.has('q') || params.has('moments')) });
+  // something of your own (engine/studio.js): lending the gimbal on the promenade at dusk, the desk in 612
+  world.fieldTest = createFieldTest({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), getCrowdView: () => world.crowdView, getRain: () => weather.rain,
+    isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active, enabled: !!people });
+  world.workDesk = createWorkDesk({ scene, player, getLife: () => life, onOpen: () => openWork('desk') });
+  // the year (world/yearWorld.js): Marlowe Finch on IFC 28F, the flat he rents, days played as a card, the stall; arrivals at Lujiazui go through it
+  world.year = createYearWorld({ scene, people, player, hud, audio, voice, travel, sceneTalk: world.sceneTalk, dests, getLife: () => life, save: () => saveLife(), lifeOn: params.get('life') !== '0',
+    freeze: (on) => { player.enabled = !on && mode === 'play'; if (on) { player.clearInput(); hud.prompt(false); } }, onWork: () => openWork('desk'), onSeason: (days, gap) => openSeason(days, gap) });
+  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk];
+  places.push(world.year);
+  // the five he might come to love, where their own days put them (world/romanceScenes.js): off for measurement tools unless ?hearts
+  world.hearts = createRomanceScenes({ scene, people, player, hud, audio, sceneTalk: world.sceneTalk, travel, jazz, dinner: world.dinner, getLife: () => life, save: () => saveLife(),
+    isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active && !world.fieldTest.busy, enabled: !!people && HEARTS_ON });
+  places.push(world.hearts);
+  // a late-evening row outside the Peace Hotel, once a game (world/confrontation.js, engine/fight.js): off for measurement tools unless ?fight
+  world.confront = createConfrontation({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, onMode: fightMode, getPlayerBody: () => world.playerBody,
+    isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active && !world.fieldTest.busy, enabled: !!people && (!params.has('q') || params.has('fight')) });
+  places.push(world.confront);
+  // what a row sets off elsewhere: the people in his life hear of it (or saw it); if it was filmed, so does the office
+  world.confront.onOutcome((R, L) => { try { if (R.blows) { if (R.companion) romanceEvent(L, R.companion.id, 'saw-fight', { outcome: R.outcome }); else romanceEvent(L, null, 'heard-fight', { outcome: R.outcome }); if (R.filmed) careerEvent(L, 'fight-seen', { where: 'the Peace Hotel' }); } saveLife(); } catch (e) { console.warn('fight outcome', e); } });
+  world.ljz = ljz; places.push(ljz);
+  // photo mode with the gimbal you built (world/photoMode.js): G
+  world.photo = createPhotoMode({ camera, renderer: R.renderer, player, hud, audio, getLife: () => life, save: () => saveLife(), onMode: photoMode,
+    getDynamic: () => ({ car: life.flags.car && world.huracan.loaded ? world.huracan.group.position : null, boats: world.river.boats.map((b) => b.g.position) }) });
+  // new conversations among the people around you, and now and then to you (world/ambient.js)
+  world.ambient = createAmbient({ llm, voice, hud, getLife: () => life, sceneText: () => sceneText(),
+    convExchanges: T.dialogue.exchanges,
+    getPeople: () => ({ linSu: { x: npcLayout.pairFocus.x, z: npcLayout.pairFocus.z }, pairs: [...world.interiors.talkPairs(), ...world.jazz.talkPairs()], talkables }) });
+  // bumping into people: their reactions, a passing remark, a jolt for you
+  bumps = createBumps({ hud, audio, onPlayerBump: ({ closing }) => { player.head.dipV -= 0.1 + 0.05 * Math.min(4, closing); player.head.roll += (Math.random() - 0.5) * 0.04; } });
+  // wet-ground reflections: deck, pavements and carriageways, each with its own per-pixel mask
+  const reflectors = [];
+  scene.traverse((o) => { if (o.isMesh && (o.material === M.deck || o.material === M.sidewalk || o.material === M.asphalt)) { o.userData.ssrMask = ssrMask(o.material); reflectors.push(o); } });
+  if (params.get('ssr') !== '0') R.setReflectors(reflectors);
+  dialogueAudio = createDialogueAudio({
+    speakLive: (line, onEnd) => { const p = npcs.getSpeakerPosition(line.speaker); voice.say({ zh: line.text, en: line.en, who: line.speaker, at: p ? [p.x, p.y, p.z] : null, onEnd }).then((h) => { if (!h && onEnd) onEnd(); }); },
+    clipFor: (line) => voice.clipUrl(voice.langFor(line.speaker, line.text, line.en), voice.langFor(line.speaker, line.text, line.en) === 'zh' ? line.text : line.en),
+    audio,
+    camera,
+    getSpeakerPosition: (id) => npcs.getSpeakerPosition(id),
+    refDistance: npcLayout.audibility.refDistance,
+    maxDistance: npcLayout.audibility.maxDistance,
+  });
+  // the listener's 嗯 at a natural pause in the other's line: a murmur and a nod
+  dialogueAudio.delivery.onBackchannel = (speaker) => {
+    if (Math.random() > 0.55) return;
+    const listener = speaker === 'lin' ? 'su' : 'lin';
+    if (npcs.nod) npcs.nod(listener);
+    const d = _pairPos.distanceTo(camera.position);
+    if (d < npcLayout.audibility.maxDistance) audio.cue('hum', 0, Math.max(0.15, Math.min(1, 3 / Math.max(1, d))));
+  };
+  conversation = createConversation({
+    exchanges: T.dialogue.exchanges,
+    greetings: T.dialogue.greetings,
+    audio: dialogueAudio,
+    getPlayerDistance: () => _pairPos.distanceTo(camera.position),
+    maxAudibleDist: npcLayout.audibility.maxDistance,
+  });
+  mission1 = createMissionOne({
+    hud, audio, pouch, npcs,
+    isClueRead: () => clueRead,
+    onViewClosed: () => { if (mode === 'pouch') exitInteraction(); },
+  });
+  mission1.mission.on('complete', ({ outcome }) => { world.year.handoff(outcome); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
+  document.getElementById('inspect-paper').appendChild(clue.canvas);
+  player.update(0);
+  R.renderer.compile(scene, camera);
+  mode = 'entry';
+  hud.ready(lifeClock(life.clock.minute));
+  titleScreen.ready();
+}
 
 // ---- mode changes ----
 function lock() {
@@ -1004,7 +1233,7 @@ function updateTraffic(dt) {
       if (d > 22) { tour.said = 3; continue; }
       const pool = g.state === 'act' ? [1, 2, 4, 5, 6] : [0, 3, 7];
       const [who, zh, en] = GUIDE_LINES[pool[Math.floor(Math.random() * pool.length)]];
-      voice.say({ zh, en, who, at: [g.x, g.y + 1.6, g.z], gain: 0.9, lang: 'zh' });
+      voice.say({ zh, en, who, at: [g.x, g.y + 1.6, g.z], gain: 0.9, lang: 'zh', sex: roleSex(g.role) });
       if (d < 9) hud.bark && hud.bark({ speaker: getLang() === 'zh' ? '导游' : 'Tour guide', text: getLang() === 'zh' ? zh : en, voice: false });
       tour.said = 18 + Math.random() * 20;
     }
@@ -1073,7 +1302,7 @@ function lateNight() {
   hud.toast(tx('lateNightLights'), 5);
   if (world.crowd && world.crowdView) {
     const near = world.crowdView.nearAgents().filter((a) => Math.hypot(a.x - b.x, a.z - b.z) < 18).slice(0, 2);
-    near.forEach((a, i) => setTimeout(() => { const [who, zh, en] = LATE_LINES[(i + Math.floor(Math.random() * 2)) % LATE_LINES.length]; voice.say({ zh, en, who, at: [a.x, a.y + 1.6, a.z], gain: 0.9 }); }, 1200 + i * 2600));
+    near.forEach((a, i) => setTimeout(() => { const [who, zh, en] = LATE_LINES[(i + Math.floor(Math.random() * 2)) % LATE_LINES.length]; voice.say({ zh, en, who, at: [a.x, a.y + 1.6, a.z], gain: 0.9, sex: roleSex(a.role) }); }, 1200 + i * 2600));
   }
 }
 debug.setHour = (h, m = 0) => {   // (tools: load with ?hour= or ?tod so the hour isn't pinned)

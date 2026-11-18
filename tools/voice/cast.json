@@ -15,11 +15,11 @@
   "speed": 0.92
  },
  "su": {
-  "zh": "zf_046",
+  "zh": "zf_040",
   "en": "bf_emma"
  },
  "bump:su": {
-  "zh": "zf_046",
+  "zh": "zf_040",
   "en": "bf_emma"
  },
  "dad": {
@@ -38,7 +38,7 @@
   "speed": 1.08
  },
  "driver:liu-jie": {
-  "zh": "zf_019",
+  "zh": "zf_051",
   "en": "af_sarah",
   "speed": 1.02
  },
@@ -76,7 +76,7 @@
   "speed": 1.05
  },
  "auntie": {
-  "zh": "zf_079",
+  "zh": "zf_006",
   "en": "af_nicole"
  },
  "店员": {
@@ -145,8 +145,9 @@
   "en": "af_river"
  },
  "yuan": {
-  "zh": "zf_022",
-  "en": "af_river"
+  "zh": "zf_002",
+  "en": "af_aoede",
+  "speed": 0.98
  },
  "vivian": {
   "zh": "zf_005",
@@ -154,9 +155,8 @@
   "speed": 1.02
  },
  "carPurchase.js": {
-  "zh": "zf_005",
-  "en": "af_heart",
-  "speed": 1.02
+  "zh": "zm_013",
+  "en": "am_michael"
  },
  "founder": {
   "zh": "zm_045",
@@ -236,18 +236,13 @@
   "en": "af_sarah"
  },
  "gunian": {
-  "zh": "zf_099",
+  "zh": "zf_024",
   "en": "bf_isabella",
   "speed": 0.97
  },
  "nanxing": {
   "zh": "zf_028",
   "en": "af_sky"
- },
- "yuan": {
-  "zh": "zf_002",
-  "en": "af_aoede",
-  "speed": 0.98
  },
  "kexin": {
   "zh": "zf_072",
@@ -260,7 +255,7 @@
  },
  "witness": {
   "zh": "zf_048",
-  "en": "af_alloy"
+  "en": "af_nicole"
  },
  "partner": {
   "zh": "zm_052",
@@ -282,5 +277,83 @@
  "shaofeng": {
   "zh": "zm_009",
   "en": "bm_lewis"
+ },
+ "zhoumin": {
+  "zh": "zf_044",
+  "en": "af_sarah",
+  "speed": 0.96
+ },
+ "feng": {
+  "zh": "zf_085",
+  "en": "bf_isabella",
+  "speed": 0.97
+ },
+ "taoke": {
+  "zh": "zf_071",
+  "en": "af_bella",
+  "speed": 1.03
+ },
+ "girl": {
+  "zh": "zf_001",
+  "en": "af_jessica",
+  "speed": 1.04
+ },
+ "gu": {
+  "zh": "zm_062",
+  "en": "am_eric"
+ },
+ "sheng": {
+  "zh": "zm_033",
+  "en": "am_fenrir",
+  "speed": 1.04
+ },
+ "qin": {
+  "zh": "zm_034",
+  "en": "bm_daniel",
+  "speed": 0.95
+ },
+ "planner": {
+  "zh": "zm_031",
+  "en": "am_echo"
+ },
+ "operator": {
+  "zh": "zm_014",
+  "en": "bm_fable"
+ },
+ "chair": {
+  "zh": "zm_029",
+  "en": "bm_george",
+  "speed": 0.93
+ },
+ "wang": {
+  "zh": "zm_053",
+  "en": "am_onyx",
+  "speed": 0.97
+ },
+ "drunk": {
+  "zh": "zm_010",
+  "en": "am_adam",
+  "speed": 1.06
+ },
+ "film": {
+  "zh": "zm_096",
+  "en": "am_puck",
+  "speed": 1.08
+ },
+ "guard": {
+  "zh": "zm_052",
+  "en": "bm_lewis"
+ },
+ "op": {
+  "zh": "zf_032",
+  "en": "af_nova"
+ },
+ "bump:officeMan": {
+  "zh": "zm_062",
+  "en": "am_liam"
+ },
+ "bump:visitorF": {
+  "zh": "zf_022",
+  "en": "af_sky"
  }
 }

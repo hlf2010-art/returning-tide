@@ -1,6 +1,5 @@
-// When the minimap is on screen: pure, node-tested. It should be there when it helps (a mission
-// with somewhere to go, a new place, finding your way) and gone when it doesn't (talking, reading,
-// standing taking in the view).
+// When the minimap is on screen: pure, node-tested. Always while you play; gone while you talk,
+// read or pause. (It used to step aside when you stood still with no mission, which read as missing.)
 //   update(s, dt, ctx) with ctx = { mode, moving, objective, zone, held }
 //     mode: 'play' | 'dialogue' | 'inspect' | 'pause' | 'entry' | 'pouch'
 //     moving: the player is walking; objective: a mission target exists; zone: a named area id;
@@ -14,12 +13,9 @@ export function updateMinimap(s, dt, { mode = 'play', moving = false, objective 
   s.idle = moving ? 0 : s.idle + dt;
   if (zone !== s.zone) { if (s.zone !== null) s.zoneFor = MAP.zoneShow; s.zone = zone; }
   s.zoneFor = Math.max(0, s.zoneFor - dt);
-  let want;
-  if (mode !== 'play') want = false;                                     // talking, reading, paused: out of the way
-  else if (held) want = true;
-  else if (s.zoneFor > 0) want = true;                                   // just arrived somewhere new
-  else if (objective && (moving || s.idle < MAP.idleHide)) want = true;  // on the way to something
-  else want = moving && s.idle < 0.5 && s.shown;                          // keep it while you keep walking
+  // always there while you play (the owner wants it like any open-world game's); out of the way only
+  // while talking, reading or paused
+  const want = mode === 'play';
   // a short hysteresis so a step's pause doesn't make it flicker
   s.since += dt;
   if (want !== s.shown && (s.since > MAP.settle || mode !== 'play' || held)) { s.shown = want; s.since = 0; }

@@ -43,6 +43,7 @@ const LINE_PTS = (() => {
   return out;
 })();
 export const LENGTH = LINE_PTS.length - 1;
+export { LINE_PTS };   // (the map draws the line: ui/worldMap.js)
 // where each platform's centre (the trains stop with their middle there) falls on the line
 const nearestS = (x, z) => { let best = 0, bd = Infinity; for (let i = 0; i < LINE_PTS.length; i++) { const d = (LINE_PTS[i][0] - x) ** 2 + (LINE_PTS[i][1] - z) ** 2; if (d < bd) { bd = d; best = i; } } return best; };
 export const STOP_S = [nearestS(...E.F.toW(PLAT.ac, 0)), nearestS(...L.F.toW(PLAT.ac, 0))];

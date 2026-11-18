@@ -6,6 +6,7 @@
 //   People: a few on the ring (stopping to photograph the Pearl), office people along the avenue, a
 //   jogger and strollers round the lake, someone by the Apple cylinder. Skinned people are the dearest
 //   thing to draw: there are about ten, made only when you first come to Pudong, drawn within ~90 m.
+import { roleSex, personaFor } from '../engine/streetPeople.js';
 import * as THREE from 'three';
 import { createVehicles } from './vehicles.js';
 import { createPerson } from './people.js';
@@ -104,11 +105,11 @@ export function createLjzPeople({ group, people }) {
     { kind: 'visitor', persona: 'student', speed: 0, pts: [[...fromAP(372, -160), CH]], stand: fromAP(432, -188), start: 0 },
   ];
   const list = PLANS.map((P, i) => {
-    const person = createPerson(people, roles[(i * 3 + 1) % roles.length]); person.root.visible = false;
+    const role = roles[(i * 3 + 1) % roles.length], person = createPerson(people, role); person.root.visible = false;
     person.root.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     group.add(person.root);
     const phone = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.15, 0.009), phoneMat); phone.visible = false; group.add(phone);
-    const s = P.start % P.pts.length, w = { ...P, id: `ljzp${i}`, person, phone, i: (s + 1) % P.pts.length, x: P.pts[s][0], z: P.pts[s][1], y: P.pts[s][2], act: 0, heading: 0, next: 12 + i * 5, held: false };
+    const s = P.start % P.pts.length, w = { ...P, persona: personaFor(P.persona, roleSex(role)), id: `ljzp${i}`, person, phone, i: (s + 1) % P.pts.length, x: P.pts[s][0], z: P.pts[s][1], y: P.pts[s][2], act: 0, heading: 0, next: 12 + i * 5, held: false };
     return w;
   });
   return {

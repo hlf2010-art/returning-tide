@@ -17,6 +17,7 @@ import { L, deckLamps, DECK_LAMP_X, benches, planterIslands, telescope, lions, s
 import { BUS_STOPS } from '../world/trafficMix.js';
 import { startFlinch, stepFlinch, flinchSpeed, FLINCH } from './flinch.js';
 import { SOCIAL } from './social.js';
+import { FEMALE_ROLES, roleSex, personaFor } from './streetPeople.js';
 
 const DECK = L.deckY, CURB = L.curbH;
 const BLOCK = new Set(['customs', 'hsbc', 'north-block', 'aia-block', 'peace-block', 'portico', 'hsbc-centre', 'wall', 'railing', 'planter', 'boundary', 'shop', 'bikes', 'shelter', 'nj-north', 'nj-south', 'metro']);
@@ -209,8 +210,8 @@ const ROLE_POOL = {
   elder: ['p5', 'p4'],
 };
 const pick = (a, rnd) => a[Math.floor(rnd() * a.length)];
-// which of the avatars are women (tools/rocketbox/convert.mjs CAST): for pairing couples
-const FEMALE = new Set(['su', 'p2', 'p5', 'c1', 'c2', 'c3', 'c4', 'c8', 'k1']);
+// which of the avatars are women: for pairing couples, and for who each one is (engine/streetPeople.js)
+const FEMALE = FEMALE_ROLES;
 
 export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, roles = null, areaWeights = null, groups = null } = {}) {
   const have = roles ? new Set(roles) : null;
@@ -241,6 +242,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
       group: null, slot: null, phone: kind === 'local' && rnd() < 0.45, persona: abroad ? 'visitor' : kind === 'elder' ? 'elder' : kind === 'local' ? (rnd() < 0.5 ? 'office' : 'youngMan') : (rnd() < 0.5 ? 'student' : 'youngMan'),
       gone: false, hold: 0, scale: 0.95 + rnd() * 0.1, rank: rnd(), ...extra,
     };
+    a.persona = personaFor(a.persona, roleSex(a.role));                     // a man's voice for a man
     agents.push(a);
     return a;
   };

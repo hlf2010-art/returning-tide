@@ -7,6 +7,7 @@
 //   couple       two together on the promenade, slow, close
 // Simulated (and drawn) only within ~80 m of you; when one finishes, a new one starts out of sight.
 // They step round you, look at you if you stand in their way, and keep to the right of each other.
+import { roleSex, personaFor } from '../engine/streetPeople.js';
 import * as THREE from 'three';
 import { createPerson } from './people.js';
 import { holdPhone } from './pedestriansReal.js';
@@ -53,7 +54,7 @@ export function createWalkers({ scene, people, count = 12, rnd = Math.random }) 
     group.add(person.root);
     const phone = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.15, 0.009), phoneMat); phone.visible = false; group.add(phone);
     const bags = [bagMesh(), bagMesh()]; for (const b of bags) { b.visible = false; group.add(b); }
-    const w = { person, phone, bags, kind: kinds[i % kinds.length], route: null, i: 0, x: 0, z: 0, y: 0, act: 0, actKind: null, done: true, wait: rnd() * 6, buddy: null };
+    const w = { role: ROLES[i % ROLES.length], person, phone, bags, kind: kinds[i % kinds.length], route: null, i: 0, x: 0, z: 0, y: 0, act: 0, actKind: null, done: true, wait: rnd() * 6, buddy: null };
     list.push(w);
   }
   // couples: pair walker 7 with the one after it
@@ -78,7 +79,7 @@ export function createWalkers({ scene, people, count = 12, rnd = Math.random }) 
     talkables() {
       return list.filter((w) => !w.done && w.person.root.visible).map((w) => {
         const opts = PERSONA[w.kind] || ['office'];
-        return { key: w.id, persona: opts[w.pick % opts.length], x: w.x, y: w.y + 1.62, z: w.z,
+        return { key: w.id, persona: personaFor(opts[w.pick % opts.length], roleSex(w.role)), x: w.x, y: w.y + 1.62, z: w.z,
           hold(on, pp) { if (on) { w.act = 999; w.actKind = 'chat'; w.heading = Math.atan2(pp.x - w.x, pp.z - w.z); } else { w.act = 0.2; w.actKind = null; } } };
       });
     },

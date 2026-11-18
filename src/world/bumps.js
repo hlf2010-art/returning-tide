@@ -7,9 +7,10 @@
 // (engine/flinch.js, through each actor's apply: reaction kind 'brush' between two passers-by).
 import { detectBumps, react, SOCIAL } from '../engine/social.js';
 import { pickBark } from './barks.js';
+import { sexOf } from '../engine/streetPeople.js';
 
 export const WHO = {
-  auntie: { zh: '阿姨', en: 'Older woman' }, office: { zh: '路人', en: 'Passer-by' }, youngMan: { zh: '小伙子', en: 'Young man' },
+  auntie: { zh: '阿姨', en: 'Older woman' }, office: { zh: '路人', en: 'Passer-by' }, youngMan: { zh: '小伙子', en: 'Young man' }, officeMan: { zh: '路人', en: 'Passer-by' }, visitorF: { zh: '游客', en: 'Visitor' },
   student: { zh: '学生', en: 'Student' }, elder: { zh: '老伯伯', en: 'Older man' }, visitor: { zh: '游客', en: 'Visitor' },
   lin: { zh: '老林', en: 'Old Lin' }, su: { zh: '苏女士', en: 'Ms. Su' },
 };
@@ -33,7 +34,7 @@ export function createBumps({ hud, audio, onPlayerBump = null, rnd = Math.random
     log.push({ t, id: actor.id, persona: actor.persona, line, text: b.text, lang: b.lang });
     if (dist > HEAR) return;
     const who = WHO[actor.persona] || WHO.office;
-    hud.bark({ speaker: who, text: { zh: b.zh, en: b.en }, gloss: b.gloss, lang: b.lang, toPlayer: other === 'player', who: `bump:${actor.persona}`, at: [actor.x, 1.6, actor.z], rate: pitch(actor.id) });
+    hud.bark({ speaker: who, text: { zh: b.zh, en: b.en }, gloss: b.gloss, lang: b.lang, toPlayer: other === 'player', who: `bump:${actor.persona}`, at: [actor.x, 1.6, actor.z], rate: pitch(actor.id), sex: sexOf(actor.persona) });
     lastBarkAt = t; lastSaid.set(actor.id, t);
   }
 
