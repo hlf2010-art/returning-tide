@@ -97,7 +97,17 @@ export function createSeasonPlan({ getLife, save, hud }) {
   const S = { open: false, days: 0, gap: '', plan: null, step: 'plan', lines: [], done: null };
   void hud;
 
+  // the last season's split, scaled to this one (most seasons follow another within a night or two)
+  function asBefore(L) {
+    const last = allot(L).seasons.slice(-1)[0]; if (!last) return null;
+    const B = seasonBudget(L, S.days), tot = USES.reduce((s, u) => s + (last.plan[u] || 0), 0) || 1, p = { lover: candidates(L).includes(last.plan.lover) ? last.plan.lover : null };
+    for (const u of USES) p[u] = Math.floor(B.evenings * (last.plan[u] || 0) / tot);
+    if (!p.lover) { p.rest += p.love; p.love = 0; }
+    p.rest += B.evenings - USES.reduce((s, u) => s + p[u], 0);
+    return p;
+  }
   function defaults(L) {
+    const before = asBefore(L); if (before) return before;
     const B = seasonBudget(L, S.days), e = B.evenings, who = candidates(L), seeing = who.find((id) => ['dating', 'together'].includes((L.flags.hearts || {})[id]?.stage));
     const p = { make: 0, love: 0, friends: 0, business: 0, rest: 0, lover: seeing || who[0] || null };
     const share = hasProduct(L) ? { make: 0.3, love: who.length ? 0.2 : 0, friends: 0.15, business: 0.15, rest: 0.2 } : { make: 0.15, love: who.length ? 0.25 : 0, friends: 0.2, business: 0.15, rest: 0.25 };
@@ -144,7 +154,7 @@ export function createSeasonPlan({ getLife, save, hud }) {
       <div class="tower">${towerHtml(B)}</div>
       <div class="ctl">
         <div class="budget"><b>${B.evenings}</b><span>${T('个晚上', 'EVENINGS')}</span>${B.overtime ? `<span>${T(`另有 ${B.overtime} 晚加班`, `+ ${B.overtime} OVERTIME`)}</span>` : ''}<span class="left ${left === 0 ? 'zero' : left < 0 ? 'over' : ''}">${left === 0 ? T('都安排好了', 'All placed') : left > 0 ? T(`还有 ${left} 个晚上没着落`, `${left} still unplaced`) : T(`多了 ${-left} 个`, `${-left} too many`)}</span></div>
-        <div class="inks">${USES.map(ink).join('')}<div class="presets">${T('或者', 'Or')}: <button data-p="make">${T('全力做东西', 'all in on making')}</button>·<button data-p="love">${T('把时间给人', 'time for people')}</button>·<button data-p="biz">${T('跑生意', 'chase the business')}</button>·<button data-p="even">${T('平均', 'even')}</button></div></div>
+        <div class="inks">${USES.map(ink).join('')}<div class="presets">${T('或者', 'Or')}: ${allot(L).seasons.length ? `<button data-p="before">${T('照旧', 'as before')}</button>·` : ''}<button data-p="make">${T('全力做东西', 'all in on making')}</button>·<button data-p="love">${T('把时间给人', 'time for people')}</button>·<button data-p="biz">${T('跑生意', 'chase the business')}</button>·<button data-p="even">${T('平均', 'even')}</button></div></div>
         <div class="note"><div class="h">${T('会 怎 样', 'W H A T   C O M E S   O F   I T')}</div>${pv.lines.map((l) => `<div class="l ${l.tone}"><b>${MARK[l.tone]}</b>${l.id ? `${esc(nm(l.id))}：` : ''}${esc(T(l.zh, l.en))}</div>`).join('')}</div>
         <div class="bottom">${employed ? `<label class="decl"><input type="checkbox" data-decl ${allot(L).declared ? 'checked disabled' : ''}>${T('向公司报备自己在做产品', 'Declare the side project to the firm')}</label>` : '<span></span>'}<button class="go" data-go ${left !== 0 ? 'disabled' : ''}>${T('就这样过', 'SO IT WENT')}<small>ENTER</small></button></div>
       </div>`;
@@ -161,6 +171,7 @@ export function createSeasonPlan({ getLife, save, hud }) {
     const L = getLife();
     if (b.dataset.d) { const [u, d0] = b.dataset.d.split(':'); const d = +d0 * (e.shiftKey ? 5 : 1), left = seasonBudget(L, S.days).evenings - used(); S.plan[u] = Math.max(0, (S.plan[u] || 0) + (d > 0 ? Math.min(d, Math.max(0, left)) : d)); render(); return; }
     if (b.dataset.who) { S.plan.lover = b.dataset.who; render(); return; }
+    if (b.dataset.p === 'before') { const p = asBefore(L); if (p) S.plan = p; render(); return; }
     if (b.dataset.p) { preset(b.dataset.p); render(); return; }
     if (b.dataset.decl != null) { if (b.checked) { allot(L).declared = true; standing(L, -3, 'declared'); save && save(); } render(); return; }
     if (b.dataset.go != null) { const r = applySeason(L, S.plan, S.days); if (!r.ok) return; S.lines = seasonAftermath(L, r.events); S.step = 'result'; save && save(); render(); return; }

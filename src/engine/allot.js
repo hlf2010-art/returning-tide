@@ -13,7 +13,7 @@
 //   network        the people who could back him, buy from him, vouch for him: built by business evenings
 // Everything is in life.flags.allot, so it saves with the rest.
 import { stamp, relation, nudge } from './life.js';
-import { heart, feel, inLife, isSeeing, ROMANCE, NATURE } from './hearts.js';
+import { heart, feel, inLife, isSeeing, shared, ROMANCE, NATURE } from './hearts.js';
 import { gainSkill, skillLevel } from './skills.js';
 import { studio, summary, hasProduct } from './studio.js';
 import { isYear, career, standing } from './year.js';
@@ -66,7 +66,13 @@ export function previewSeason(L, plan, days) {
   // the person
   for (const id of candidates(L)) {
     const h = heart(L, id), mine = plan.lover === id ? n('love') : 0, per = mine / weeks, seeing = isSeeing(L, id), pat = (NATURE[id] || {}).patience || 3;
-    if (mine) out.push({ kind: 'love', id, tone: per >= 1 ? 'good' : 'neutral', zh: per >= 1 ? '每周都见：关系会往前走' : `${Math.round(weeks / Math.max(1, mine))} 周见一次：慢慢来`, en: per >= 1 ? 'Every week: it moves forward' : `Once every ${Math.round(weeks / Math.max(1, mine))} weeks: slowly` });
+    if (mine) {
+      // what time together can do, and what only he can (asking her, committing: in person, in the playable days)
+      const often = per >= 1, how = often ? { zh: '每周都见', en: 'Every week' } : { zh: `${Math.round(weeks / Math.max(1, mine))} 周见一次`, en: `Once every ${Math.round(weeks / Math.max(1, mine))} weeks` };
+      const next = h.stage === 'known' ? { zh: '会熟起来', en: "you'll grow close" } : h.stage === 'close' ? { zh: '会更亲近；要不要往前一步，得你当面说', en: 'closer still; whether to take the next step, you must say to her face' }
+        : h.stage === 'dating' ? { zh: '感情会更稳；要不要在一起，得你当面说', en: 'steadier; whether to commit, you must say in person' } : { zh: '你们会好好的', en: "you'll be good together" };
+      out.push({ kind: 'love', id, tone: often ? 'good' : 'neutral', zh: `${how.zh}：${next.zh}`, en: `${how.en}: ${next.en}` });
+    }
     else if (seeing) out.push({ kind: 'love', id, tone: 'bad', zh: weeks > pat * 2 ? `${Math.round(weeks)} 周不见：她可能会走` : `${Math.round(weeks)} 周不见：她会觉得被冷落`, en: weeks > pat * 2 ? `${Math.round(weeks)} weeks without seeing her: she may leave` : `${Math.round(weeks)} weeks without seeing her: she'll feel neglected` });
     else if (h.stage === 'close') out.push({ kind: 'love', id, tone: 'neutral', zh: '不见：会慢慢淡下去', en: 'Not seeing her: it will fade' });
   }
@@ -119,7 +125,13 @@ export function applySeason(L, plan, days) {
   // the one person (and everyone else he's seeing or close to, who wasn't chosen)
   for (const id of candidates(L)) {
     const mine = plan.lover === id ? n('love') : 0, seeing = isSeeing(L, id), pat = (NATURE[id] || {}).patience || 3;
-    if (mine) { const k = Math.min(1, mine / weeks); feel(L, id, { attraction: Math.round(6 * k * y), trust: Math.round(8 * k) }, 'season-together'); events.push({ type: 'love', id, evenings: mine }); }
+    if (mine) {
+      const k = Math.min(1, mine / weeks); feel(L, id, { attraction: Math.round(6 * k * y), trust: Math.round(8 * k) }, 'season-together');
+      // every few evenings together is something that happened between them (and can carry them from known to close)
+      const n = A.seasons.length, outings = Math.min(3, Math.floor(mine / 3));   // (a stray evening isn't a story)
+      for (let o = 0; o < outings; o++) shared(L, id, 'outing', `season-${n}-${o}`);
+      events.push({ type: 'love', id, evenings: mine, stage: heart(L, id).stage });
+    }
     else if (seeing) { feel(L, id, { attraction: -6, trust: -Math.round(4 + weeks) }, 'season-apart'); events.push({ type: 'apart', id, weeks, risk: weeks > pat * 2 }); }
     else if (heart(L, id).stage === 'close') feel(L, id, { attraction: -2, trust: -2 }, 'season-apart');
     if (mine) { const w = (A.who[id] ||= { hours: 0, last: null }); w.hours += mine * EVENING; w.last = stamp(L); }
