@@ -75,6 +75,8 @@ DIRECTION = {
 STABILITY = {'dad': 0.7}
 # pitch a voice down (ratio < 1) after it's made, the tempo kept: Dad lower than any premade voice
 PITCH = {'dad': 0.915}
+# and a little quicker (tempo ratio, the pitch kept)
+TEMPO = {'dad': 1.08}
 DIRECTION_WHO = {'xuan': ('[warm, hearty]', None, None), 'zhixia': ('[rapid-fire, excited]', '[pleading, playful]', None)}
 
 
@@ -155,7 +157,8 @@ def main():
                 t.write(data)
             f = OUT / f'{key}.mp3'
             r = PITCH.get(l['who'])
-            af = ['-af', f'asetrate=44100*{r},aresample=44100,atempo={1 / r:.4f}'] if r else []
+            tp = TEMPO.get(l['who'], 1.0)
+            af = ['-af', f'asetrate=44100*{r},aresample=44100,atempo={tp / r:.4f}'] if r else (['-af', f'atempo={tp}'] if tp != 1.0 else [])
             subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', t.name, *af, '-ac', '1', '-ar', '24000', '-b:a', '56k', str(f)], check=True)
             os.unlink(t.name)
             secs = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', str(f)], capture_output=True, text=True).stdout.strip())
