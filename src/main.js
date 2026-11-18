@@ -29,6 +29,8 @@ import { createDialogueAudio } from './engine/dialogueAudio.js';
 import { createConversation, computeDistanceGain } from './engine/conversation.js';
 import { createHud } from './ui/hud.js';
 import { createTitleScreen } from './ui/titleScreen.js';
+import { createWorldMusic } from './world/music.js';
+import { TRACKS as MUSIC_TRACKS, LICENCE as MUSIC_LICENCE } from './engine/speakers.js';
 import { createVoice } from './engine/voice.js';
 import { createLLM } from './engine/llm.js';
 import { createTalk } from './ui/talk.js';
@@ -164,6 +166,7 @@ const bootLod = gfx.lod;                                         // crowd and tr
 const R = createRenderer(canvas, scene, camera, { fixedLevel: params.has('q') ? Number(params.get('q')) : null, gfx });
 const player = createPlayer(camera, canvas);
 const audio = createAudio();
+const worldMusic = createWorldMusic(audio);   // music in the world: Manner's playlist, Nanjing Road's shop doors, a DiDi's radio (world/music.js)
 const hud = createHud();
 const titleScreen = createTitleScreen();   // the painted Bund behind the title; its gold line is the loading bar
 // people's voices: recorded clips per character (engine/voice.js); barks speak through the HUD
@@ -633,10 +636,12 @@ function syncSettings() {
     const c = llm.conf();
     const k = seg.dataset.setting;
     const cur = k.startsWith('g.') ? String(typeof gfx[k.slice(2)] === 'boolean' ? +gfx[k.slice(2)] : gfx[k.slice(2)])
-      : { lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.newLines === 'server' ? 'server' : voice.newLines, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
+      : { music: worldMusic.on ? 'on' : 'off', lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.newLines === 'server' ? 'server' : voice.newLines, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
     for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
   }
   syncGfx();
+  // the music's credits (CC BY: title, artist, a link to the work, the licence), every track the game ships with
+  { const ul = document.querySelector('#music-credits ul'); if (ul && !ul.childElementCount) ul.innerHTML = Object.values(MUSIC_TRACKS).map((t) => `<li>“${t.title}” · ${t.artist} · <a href="${t.page}" target="_blank" rel="noopener">ccMixter</a> · <a href="${MUSIC_LICENCE.url}" target="_blank" rel="noopener">${MUSIC_LICENCE.name}</a></li>`).join(''); }
   const c = llm.conf(), sv = document.getElementById('ai-server'), md = document.getElementById('ai-model');
   if (sv && document.activeElement !== sv) sv.value = c.server; if (md && document.activeElement !== md) md.value = c.model;
   const st = document.getElementById('ai-status'), vs = voice.stats;
@@ -682,6 +687,7 @@ document.addEventListener('click', (e) => {
     if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
     if (k === 'voices') voice.setMode(v);
     if (k === 'tips') tips.setOn(v === 'on');
+    if (k === 'music') worldMusic.setOn(v === 'on');
     if (k === 'voiceServer') voice.setNewLines(v);
     if (k === 'ai') llm.configure({ ai: v === 'browser' ? 'browser' : v, aiBrowser: v === 'browser' ? 1 : 0 }).then(syncSettings);
     syncSettings(); return;
@@ -826,6 +832,7 @@ for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => {
 // ---- frame ----
 let target = null, boundaryCooldown = 0, talkTarget = null;   // target: { id, dist, cos } or null
 const debug = { noReflect: false, freezeTraffic: false };   // freezeTraffic: screenshot tool only
+debug.music = worldMusic;                                     // music in the world: what plays where (tools)
 const _v = new THREE.Vector3(), _d = new THREE.Vector3();
 
 function wrapAngle(a) {
@@ -1344,8 +1351,10 @@ function frame(now) {
   if (mode !== 'pause') world.ambient.update(dt, player.body, { talking: talk.open });
   if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
   else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
-  { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1; audio.setInside(world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : world.dumpling.inside ? 0.3 : 0); }
-  if (world.year.here) audio.setInside(1);
+  { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
+    const ins = world.year.here || world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : world.dumpling.inside ? 0.3 : 0;
+    audio.setInside(world.year.here ? 1 : world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : world.dumpling.inside ? 0.3 : 0);
+    worldMusic.update(dt, b, { minute: life ? life.clock.minute : 0, inside: ins, ride: mode === 'ride', paused: mode === 'pause' || mode === 'entry' }); }
   if (player.body.z < -30) world.walkers.update(mode === 'pause' ? 0 : dt, player.body);   // people with somewhere to be, on the northern Bund
   world.dawn.update(mode === 'pause' ? 0 : dt, { dawn: hourState.dawn, eye: camera.position });   // tai chi on the promenade at dawn
   world.moments.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });

@@ -352,3 +352,11 @@ html[lang="zh-CN"] #entry .tagline { font-weight: 700; letter-spacing: 0.16em; m
    to the title, its line and the menu. The place and the hour arrive in play (the place card, the year
    chip). The element stays (main.js keeps its clock), so this one rule brings it back. */
 #entry .cityline { display: none !important; }
+
+/* Settings: the music's credits, folded under its switch */
+#settings .credits { margin: 2px 2px 8px; font: 400 12px/1.6 var(--ui); color: var(--muted); }
+#settings .credits summary { cursor: pointer; font: 500 12px var(--rt-serif); letter-spacing: 0.14em; color: var(--gold); padding: 6px 0; list-style: none; }
+#settings .credits summary::before { content: '◆'; font-size: 7px; margin-right: 8px; vertical-align: 2px; color: var(--gold-deep); }
+#settings .credits[open] summary::before { color: var(--gold); }
+#settings .credits ul { margin: 2px 0 6px; padding-left: 16px; }
+#settings .credits a { color: var(--gold-2); text-decoration: none; border-bottom: 1px solid var(--hair-strong); }
