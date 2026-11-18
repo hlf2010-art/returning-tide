@@ -292,27 +292,36 @@ export function rollover(L) {
 }
 
 // ---- Mission One's pouch, remembered (main.js tells us when it is handed over) ----
-export function recordHandoff(L, outcome) {
+// extra: { saw (he watched the man who left it walk off: engine/witness.js), string ('wound' |
+// 'rewound' | 'unwound': what the string looked like when Lin got it) }
+export function recordHandoff(L, outcome, extra = {}) {
   if (L.flags.handoff || !['sealed', 'opened'].includes(outcome)) return L.flags.handoff || null;
-  L.flags.handoff = { outcome, at: stamp(L), day: L.clock.day };
-  if (isYear(L)) { rep(L, 'street', outcome === 'sealed' ? 3 : -2); fact(L, 'handoff', { outcome }, ['lin']); }
+  L.flags.handoff = { outcome, at: stamp(L), day: L.clock.day, saw: !!extra.saw, string: extra.string || 'wound' };
+  if (isYear(L)) { rep(L, 'street', outcome === 'sealed' ? 3 : -2); fact(L, 'handoff', { outcome, saw: !!extra.saw }, ['lin']); }
   return L.flags.handoff;
 }
 export const handoff = (L) => L.flags.handoff || null;
 // his daughter is at the stall from January to April (world/yearWorld.js puts her there)
 export const zhouMinHere = (L) => isYear(L) && !!handoff(L) && L.clock.day >= 7 && L.clock.day <= 12 && !work(L).watch.met && L.clock.minute >= 8 * 60 && L.clock.minute < 20 * 60 + 30;
 export function zhouMinScript(L) {
-  const W = work(L).watch, opened = handoff(L).outcome === 'opened';
+  const W = work(L).watch, opened = handoff(L).outcome === 'opened', saw = !!handoff(L).saw;
+  // what he saw on Hankou Road: the man walking off from the counter with a red 申礼 carrier
+  // (world/nephew.js). It is her cousin; she knows at once. It is not proof of the forgery (only the
+  // date is), but it is enough for the police to stop the transfer: the stall is held, not saved.
+  const SAW = { zh: '放袋子的人我看见了：一个三十来岁的男人，从柜台边走开，过了马路，手里拎着个红纸袋，上面印着“申礼”。', en: 'And I saw the man who left it: thirty-odd, walking off from the counter and across the road, carrying a red paper bag printed "Shenli".' };
+  const COUSIN = ['zhoumin', '申礼……我堂哥就在申礼，管开新店。上个月他还问我爸，这个摊位卖不卖。', "Shenli... My cousin works for Shenli, opening their new shops. Only last month he was asking my father whether he'd sell this pitch."];
   const told = (how, street) => () => { W.met = stamp(L); W.told = how; if (street) rep(L, 'street', street); fact(L, 'watch', { what: 'met-daughter', told: how }, ['zhoumin']); };
   const wire = (a) => { let done = false; return { zh: a.zh, en: a.en, get then() { if (!done) { done = true; a.fx(); } return a.then; } }; };
   return [
     ['zhoumin', '你好……你认识这个摊子的老板吗？我是他女儿。我爸十月底就联系不上了。派出所立了案，可这边有人说，摊子已经“转让”了。', 'Excuse me... do you know the man who keeps this stall? I\'m his daughter. Nobody has been able to reach my father since the end of October. The police have opened a file, but people here tell me the stall has been "transferred".'],
     { ask: (opened ? [
-      { zh: '十一月，我替江边的老林从这个摊子取过一个文件袋。我拆开看了：一份摊位转让协议，签的是你父亲的名字，日期是十月三十一号。受让人那一栏是空的。', en: "In November I fetched a pouch from this stall for Old Lin, down by the river. I opened it. It was an agreement to transfer the stall, signed in your father's name and dated the thirty-first of October. The line for the new holder was blank.", fx: told('date', 4),
-        then: [['zhoumin', '三十一号……那不是他签的。他二十九号晚上坐车去昆山我姑妈家，人没到。', "The thirty-first... then he didn't sign it. On the evening of the twenty-ninth he took the coach to my aunt's in Kunshan, and he never arrived."], ['zhoumin', '你愿意把这些写下来，签个名字吗？我拿去派出所。', 'Would you write that down and sign it? I\'ll take it to the police station.'], [null, '（你在她的本子上写了半页，签了名，留了电话。）', '(You write half a page in her notebook, sign it, and leave your number.)']] },
+      { zh: `十一月，我替江边的老林从这个摊子取过一个文件袋。我拆开看了：一份摊位转让协议，签的是你父亲的名字，日期是十月三十一号。受让人那一栏是空的。${saw ? SAW.zh : ''}`, en: `In November I fetched a pouch from this stall for Old Lin, down by the river. I opened it. It was an agreement to transfer the stall, signed in your father's name and dated the thirty-first of October. The line for the new holder was blank.${saw ? ` ${SAW.en}` : ''}`, fx: told('date', 4),
+        then: [['zhoumin', '三十一号……那不是他签的。他二十九号晚上坐车去昆山我姑妈家，人没到。', "The thirty-first... then he didn't sign it. On the evening of the twenty-ninth he took the coach to my aunt's in Kunshan, and he never arrived."], ...(saw ? [COUSIN] : []), ['zhoumin', '你愿意把这些写下来，签个名字吗？我拿去派出所。', 'Would you write that down and sign it? I\'ll take it to the police station.'], [null, '（你在她的本子上写了半页，签了名，留了电话。）', '(You write half a page in her notebook, sign it, and leave your number.)']] },
       { zh: '我帮人从这儿取过一个袋子。别的不清楚。', en: "I collected a pouch from here for someone. I don't know more than that.", fx: told('little', 0),
         then: [['zhoumin', '……好。谢谢。要是想起什么，这是我的电话。', "...All right. Thank you. If anything comes back to you, here's my number."]] },
     ] : [
+      ...(saw ? [{ zh: `十一月，我替江边的老林从这个摊子取过一个文件袋，封着的，我没拆。${SAW.zh.replace('放袋子的人我看见了', '但放袋子的人我看见了')}`, en: `In November I fetched a pouch from this stall for Old Lin, down by the river. It was sealed; I didn't open it. ${SAW.en.replace('And I saw', 'But I saw')}`, fx: told('saw', 3),
+        then: [COUSIN, ['zhoumin', '“家属托付”……他也算家属。我爸不会托他的。', '"From the family"... He is family, I suppose. My father would never have asked him.'], ['zhoumin', '你愿意把看见的写下来，签个名字吗？我拿去派出所。', "Would you write down what you saw and sign it? I'll take it to the police station."], [null, '（你在她的本子上写了半页：时间，那个人，那个红纸袋。签了名，留了电话。）', '(You write half a page in her notebook: the time, the man, the red carrier. You sign it and leave your number.)']] }] : []),
       { zh: '十一月，我替江边的老林从这个摊子取过一个文件袋。封着的，标签上写：“家属托付，交林先生”。我没有拆。', en: 'In November I fetched a pouch from this stall for Old Lin, down by the river. It was sealed. The label said: "From the family, for Mr Lin." I didn\'t open it.', fx: told('sealed', 2),
         then: [['zhoumin', '家属？我就是家属。我没托过任何人。……袋子里是什么？', "The family? I am the family. I asked nobody to do anything. ...What was in it?"], [null, '（你不知道。封条交出去的时候是完好的。）', "(You don't know. The seal was whole when you handed it over.)"], ['zhoumin', '老林在哪儿？', 'Where is this Old Lin?'], [null, '（你指了指江边栏杆的方向。）', '(You point toward the river railing.)']] },
       { zh: '我帮人从这儿取过一个袋子。别的不清楚。', en: "I collected a pouch from here for someone. I don't know more than that.", fx: told('little', 0),
@@ -320,7 +329,8 @@ export function zhouMinScript(L) {
     ]).map(wire) },
   ];
 }
-// how it came out, once the year has got there: 'saved' only if he read the date and told her
+// how it came out, once the year has got there: 'saved' only if he read the date and told her;
+// 'held' if he kept the seal but saw who left the pouch and told her that; otherwise 'lost'
 export function watchResult(L) { const h = handoff(L); if (!h || !isYear(L)) return null; const W = work(L).watch; return W.result || null; }
 
 // ---- messages (each once; kept in life.fired like world/agenda.js's) ----
@@ -420,6 +430,10 @@ const BEATS = [
     text: m('我爸找到了。十月二十九号晚上，他在昆山的长途车站中风，身上没带证件，在医院当了五个月的“无名氏”。转让协议是我堂哥仿的签名，想把摊位卖给做纪念品的连锁店。派出所说，要不是有人记得协议上的日期比他失踪还晚两天，这案子立不住。摊子保住了。他说等能走路了，给你那块表换个新机芯，不收钱。',
       'My father has been found. On the evening of the twenty-ninth of October he had a stroke at the coach station in Kunshan with no papers on him, and for five months the hospital had him down as "name unknown". The transfer agreement was my cousin forging his signature, to sell the pitch to a souvenir chain. The police say that if somebody had not remembered the date on it was two days after he vanished, there would have been no case. The stall is saved. He says that when he can walk again he will put a new movement in that watch of yours, and not take a fen for it.'),
     run: (L) => { const W = work(L).watch; W.result = 'saved'; rep(L, 'street', 5); fact(L, 'watch', { what: 'stall-saved' }, ['zhoumin']); } },
+  { id: 'c-watch-held', when: (L) => !!handoff(L) && work(L).watch.told === 'saw' && at(L, D(13, 19, 0)), thread: 'zhoumin', from: 'zhoumin',
+    text: m('我爸找到了，在昆山的医院。十月二十九号晚上在长途车站中风，身上没证件，当了五个月的“无名氏”。人还在，会慢慢好。派出所照你写的去问了我堂哥：袋子是他放的，他认了；签字是不是他仿的，还在鉴定。申礼那边的转让被叫停了，摊位先冻结，等法院判。摊子还关着，可没有换主人。我爸说，等能走路了，要亲眼看看那张纸上写的是哪一天。',
+      'My father has been found, in a hospital in Kunshan. He had a stroke at the coach station on the evening of the twenty-ninth of October, with no papers on him, and for five months he was "name unknown". He is alive and he will mend, slowly. The police went to my cousin with what you wrote: he admits he left the pouch; whether he forged the signature is still with the handwriting people. The transfer to Shenli has been stopped and the pitch frozen until the court decides. The stall is still shut, but it has not changed hands. My father says that when he can walk he wants to see with his own eyes what date is on that page.'),
+    run: (L) => { const W = work(L).watch; W.result = 'held'; rep(L, 'street', 3); fact(L, 'watch', { what: 'stall-held' }, ['zhoumin']); } },
   { id: 'c-watch-lost', when: (L) => !!handoff(L) && ['sealed', 'little'].includes(work(L).watch.told) && at(L, D(13, 19, 0)), thread: 'zhoumin', from: 'zhoumin',
     text: m('我爸找到了，在昆山的医院。中风，当了五个月的“无名氏”。人还在，会慢慢好。摊子没保住：转让去年十一月就办完了。签字是我堂哥仿的，可街道说手续齐全，现在只能打官司。老林说，他也是被骗的。',
       'My father has been found, in a hospital in Kunshan. A stroke; five months as "name unknown". He is alive and he will mend, slowly. The stall is gone: the transfer went through last November. My cousin forged the signature, but the street office says the paperwork was in order, so now it is a matter for the courts. Old Lin says he was taken in as well.'),

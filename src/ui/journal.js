@@ -51,7 +51,7 @@ function yearHtml(L) {
     ${row(T('住在', 'Living at'), esc(hasFlat(L) && LISTINGS[H.id] ? T(LISTINGS[H.id].zh, LISTINGS[H.id].en) : T('和平饭店 612', 'Peace Hotel, room 612')))}
     ${row(T('每月', 'A month'), H.rent ? yuan(H.rent) : T('公司安置（到 12 月 9 日）', "the firm's allowance (to 9 December)"))}
     ${row(T('银行存款', 'In the bank'), yuan(L.wallet.bank))}
-    ${h ? `<h3>${T('修表匠', 'The watch-repairer')}</h3>${row(T('文件袋', 'The pouch'), h.outcome === 'opened' ? T('拆开看过', 'opened and read') : T('封条完好', 'seal intact'))}${W.watch.result ? row(T('后来', 'Afterwards'), W.watch.result === 'saved' ? T('人找到了，摊子保住了', 'found alive; the stall saved') : T('摊子易了主', 'the stall changed hands')) : ''}` : ''}
+    ${h ? `<h3>${T('修表匠', 'The watch-repairer')}</h3>${row(T('文件袋', 'The pouch'), h.outcome === 'opened' ? T('拆开看过', 'opened and read') : T('封条完好', 'seal intact'))}${h.saw ? row(T('柜台边', 'At the counter'), T('看见了放袋子的人', 'saw who left it')) : ''}${W.watch.result ? row(T('后来', 'Afterwards'), W.watch.result === 'saved' ? T('人找到了，摊子保住了', 'found alive; the stall saved') : W.watch.result === 'held' ? T('人找到了，摊位冻结，等法院判', 'found alive; the pitch frozen until the court decides') : T('摊子易了主', 'the stall changed hands')) : ''}` : ''}
     <p>${T('工资和房租随月份从银行卡进出；工作日不去上班，是要算账的。这一页只是记录，改变它的是你做的事。', 'Salary and rent move through the bank as the months pass. A working day missed is counted. This page only records: what changes it is what you do.')}</p></div>`;
 }
 // what Ji Bai can do (engine/skills.js): three tracks, their levels, what the level means

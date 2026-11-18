@@ -48,23 +48,42 @@ function rig() {
 {
   const { m, count } = rig();
   m.start(); m.pickUp();
+  ok(m.breakSeal() === false && m.sealed, 'the seal cannot be torn while the string is still wound over it');
+  ok(m.unwind() === true && m.string === 'unwound', 'the string comes off first');
   ok(m.breakSeal() === true && !m.sealed && m.step === 'carry', 'break seal while carrying -> still carrying, unsealed');
-  ok(m.breakSeal() === false && count('change') === 3, 'seal can only break once');
+  ok(m.breakSeal() === false && count('change') === 4, 'seal can only break once');
+  ok(m.rewind() === false && m.unwind() === false, 'once the seal is torn the string no longer matters');
   ok(m.handOver() === 'opened' && m.outcome === 'opened', 'hand over opened -> complete / opened');
   ok(m.snapshot().sealed === false, 'snapshot records the broken seal');
 }
 
 // 4. restart from every step, then replay to the other ending
 {
-  for (const steps of [[], ['start'], ['start', 'pickUp'], ['start', 'pickUp', 'breakSeal'], ['start', 'pickUp', 'handOver']]) {
+  for (const steps of [[], ['start'], ['start', 'pickUp'], ['start', 'pickUp', 'unwind', 'breakSeal'], ['start', 'pickUp', 'handOver']]) {
     const { m, count } = rig();
     for (const s of steps) m[s]();
     m.reset();
-    ok(m.step === 'idle' && m.sealed && m.outcome === null && count('reset') === 1, `reset after [${steps.join(', ') || 'nothing'}] returns a clean idle mission`);
+    ok(m.step === 'idle' && m.sealed && m.string === 'wound' && !m.witnessed && m.outcome === null && count('reset') === 1, `reset after [${steps.join(', ') || 'nothing'}] returns a clean idle mission`);
     m.start(); m.pickUp();
-    const outcome = steps.includes('breakSeal') ? m.handOver() : (m.breakSeal(), m.handOver());
+    const outcome = steps.includes('breakSeal') ? m.handOver() : (m.unwind(), m.breakSeal(), m.handOver());
     ok(outcome === (steps.includes('breakSeal') ? 'sealed' : 'opened'), '...and it can be completed again on the other branch');
   }
+}
+
+// 4b. the string is reversible but leaves a trace; seeing the courier is recorded once, at the stall
+{
+  const { m, log } = rig();
+  ok(m.unwind() === false && m.witness() === false, 'nothing to unwind or witness before the mission starts');
+  m.start('lin');
+  ok(m.witness() === true && m.witnessed && m.witness() === false, 'seeing who left the pouch is recorded once');
+  ok(m.unwind() === true && m.rewind() === true && m.string === 'rewound', 'unwound on the counter and wound back: rewound, not wound');
+  ok(m.rewind() === false, 'a wound string cannot be rewound again');
+  m.pickUp();
+  ok(m.witness() === false, 'once you have the pouch there is no one left to see');
+  ok(m.unwind() === true && m.rewind() === true && m.string === 'rewound', 'the string can be played with while carrying, too');
+  ok(m.handOver() === 'sealed', 'a rewound string is still a sealed pouch');
+  const done = log.filter((e) => e[0] === 'complete').at(-1)[1];
+  ok(done.string === 'rewound' && done.witnessed === true, "the completion payload says how the string looked and whether he saw the courier");
 }
 
 // 5. a throwing listener cannot wedge the mission

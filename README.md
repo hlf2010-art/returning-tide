@@ -68,19 +68,30 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 
 Old Lin asks you to fetch a sealed document pouch that Zhou's family supposedly left on the counter of
 Zhou's shuttered watch-repair stall on Hankou Road. The label is written in red marker, in Shanghainese,
-in the same hand as the threat scrawled over Zhou's missing-person notice. Take it sealed, or select "break the seal" and hold **E**
-to break the seal: inside is a stall-transfer agreement signed in Zhou's name and dated **31 October**,
+in the same hand as the threat scrawled over Zhou's missing-person notice. The close-up is an object, not a menu: **A / D** (or the mouse) turns the
+pouch over. On the front, the label; on the back, the flap, a string wound figure-of-eight round two buttons and a
+signed paper seal. Take it as it is, or unwind the string (reversible: wind it back, but never as neatly, and Old Lin
+sees it was undone), then hold **E** to tear the seal: inside is a stall-transfer agreement signed in Zhou's name and dated **31 October**,
 two days after he was last seen (29 October, per the notice and Lin), with the new holder's name left
 blank. Opening it is permanent: the torn seal shows in your hand, in Lin's hands, and Lin remarks on it.
+
+**Someone to see.** As you come up Hankou Road, a man in his thirties leaves Zhou's counter, crosses to the south
+pavement with a red 申礼 (Shenli, a souvenir chain) paper carrier, and walks off past you toward the Bund. Nothing
+marks him. If you turn from the pouch and keep him in view (within 12 m, ~1.2 s, phone down: `src/engine/witness.js`),
+Ji Bai remembers him; if not, a thought afterwards says someone walked away. In the working year this is one more true
+thing he can tell Zhou's daughter: with the seal intact it is enough to freeze the forged transfer (the stall *held*),
+though only the date saves it.
 
 | Step | Where | How |
 |---|---|---|
 | Offer | Old Lin, river railing | **E** talk → "Agree" highlighted, **E** confirms (**S** + **E** "Not now", or **Esc**: he asks again next time) |
 | Collect | Zhou's stall, north side of Hankou Road | look at the pouch on the counter, **E** |
-| Decide | close-up view | **E** "Take it, sealed" · **S** then hold **E** ~1 s "Break the seal" · **Esc** leave it |
+| (See) | Hankou Road, on the way | look at the man walking off from the counter; or don't |
+| Decide | close-up view | **A/D** turn it over · **E** "Take it, sealed" · on the back: "Unwind the string" (then "Wind it back", or hold **E** ~1 s "Break the seal") · **Esc** leave it |
 | Deliver | Old Lin | **E** hand over → completion card, Lin keeps the pouch, closing thought |
 
-Outcomes: `sealed` (agreement kept, contents unknown) or `opened` (discrepancy known, tampering visible).
+Outcomes: `sealed` (agreement kept, contents unknown) or `opened` (discrepancy known, tampering visible); the
+completion payload also carries `string` ('wound' | 'rewound') and `witnessed`.
 Greeting Lin before the pickup gets a reminder; the stall has nothing on it before the mission starts.
 
 **Temporary developer controls** (dev server, or any build with `?dev`): **F8** restart Mission One from

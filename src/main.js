@@ -91,6 +91,8 @@ import { createPhotoMode } from './world/photoMode.js';
 import { createFriendScenes } from './world/friendScenes.js';
 import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
+import { createNephew } from './world/nephew.js';
+import { createWitness, WITNESS } from './engine/witness.js';
 import { createCrowd } from './engine/crowd.js';
 import { trafficSpecs, BUS_STOPS } from './world/trafficMix.js';
 import { createBuses } from './world/buses.js';
@@ -179,6 +181,7 @@ llm.warm();
 const HEARTS_ON = !params.has('q') || params.has('hearts');   // measurement tools: none of the five writes or turns up unless asked
 guardTalk(llm, () => life, getLang);   // when one of the five is being played, the model is told the validated state and nothing else (world/romance.js)
 
+let nephewSeen = null;          // Mission One: looking time at the man who left the pouch
 let mode = 'boot';              // boot -> entry -> play <-> pause / inspect / dialogue / pouch
 let noLock = params.has('nolock');
 let subtitlesOn = params.get('subs') !== '0';
@@ -399,7 +402,11 @@ async function boot() {
     isClueRead: () => clueRead,
     onViewClosed: () => { if (mode === 'pouch') exitInteraction(); },
   });
-  mission1.mission.on('complete', ({ outcome }) => { world.year.handoff(outcome); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
+  // Mission One's courier and whether he is seen (engine/witness.js: attention as a choice)
+  world.nephew = createNephew({ scene, people });
+  nephewSeen = createWitness();
+  mission1.mission.on('reset', () => { world.nephew.reset(); nephewSeen.reset(); });
+  mission1.mission.on('complete', ({ outcome, witnessed, string }) => { world.year.handoff(outcome, { saw: !!witnessed, string }); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
   document.getElementById('inspect-paper').appendChild(clue.canvas);
   player.update(0);
   R.renderer.compile(scene, camera);
@@ -714,7 +721,8 @@ document.addEventListener('pointerlockerror', () => {
 //   4. an open interaction owns E, W/S (arrows, wheel) and Esc:
 //        inspect  E or Esc closes
 //        dialogue W/S moves the highlighted answer; E confirms it (or steps back); Esc steps back
-//        pouch    W/S moves the highlight; E confirms / hold E on "break the seal"; Esc leaves it
+//        pouch    A/D (or the mouse) turns it over; W/S moves the highlight; E confirms / hold E on
+//                 "break the seal"; Esc leaves it
 //   5. walking about: E acts on the single selected target, if there is one
 const CHOICE_KEYS = { KeyW: -1, ArrowUp: -1, KeyS: 1, ArrowDown: 1 };
 window.addEventListener('keydown', (e) => {
@@ -749,6 +757,7 @@ window.addEventListener('keydown', (e) => {
   }
   if (mode === 'pouch') {
     if (k in CHOICE_KEYS) { mission1.viewMove(CHOICE_KEYS[k]); e.preventDefault(); }
+    else if (k === 'KeyA' || k === 'KeyD' || k === 'ArrowLeft' || k === 'ArrowRight') { mission1.viewFlip(); e.preventDefault(); }
     else if (k === 'KeyE') mission1.viewPress(true);
     else if (k === 'Escape' && noLock) closePouch();
     return;
@@ -795,6 +804,8 @@ window.addEventListener('keydown', (e) => {
   }
 });
 window.addEventListener('keyup', (e) => { if (e.code === 'KeyE' && mission1) mission1.viewPress(false); });
+// the pouch close-up: moving the mouse sideways turns the pouch over (pointer locked, or dragging)
+window.addEventListener('mousemove', (e) => { if (mode === 'pouch' && mission1 && (document.pointerLockElement || e.buttons)) mission1.viewDrag(e.movementX || 0); });
 window.addEventListener('wheel', (e) => {
   const d = Math.sign(e.deltaY);
   if (!d) return;
@@ -1428,6 +1439,7 @@ function frame(now) {
   world.belongings.update(mode === 'pause' ? 0 : dt, player.body, player);
   if (world.playerBody) { world.playerBody.setHold({ cup: cupFor > 0 && !world.belongings.holdingParcel, phone: phone.isOpen }); world.playerBody.placeProps(camera.position); }
   world.pouch.update(camera, t);
+  if (world.nephew) world.nephew.update(mode === 'pause' ? 0 : dt, player.body, !!mission1 && mission1.collecting);
 
   // interactables: ONE target at a time - within reach, in view, not hidden behind a wall or a person
   camera.getWorldDirection(_d);
@@ -1445,6 +1457,12 @@ function frame(now) {
     if (world.rideFlow.canBoard()) { const d = world.didi.doorFocus(); if (d) cands.push({ id: 'didi', ...d, reach: 2.8, cone: 0.6 }); }
     cands.push({ id: 'manner', x: mannerSpec.queue[0].x + 0.2, y: L.curbH + 1.15, z: mannerSpec.zWall + mannerSpec.depth - 0.1, reach: 2.6, cone: 0.7 });
     target = pickTarget(camera.position, _d, cands, colliders);
+    // the man walking off from Zhou's counter: seen only if you look at him (no prompt, no marker)
+    const nv = mission1 && mission1.collecting && world.nephew.seenFrom();
+    if (nv && nephewSeen && !nephewSeen.done) {
+      const hit = !phone.isOpen && pickTarget(camera.position, _d, [{ id: 'nephew', x: nv.x, y: nv.y, z: nv.z, reach: WITNESS.reach, cone: WITNESS.cone }], colliders);
+      if (nephewSeen.step(dt, !!hit)) mission1.witness();
+    }
     const tl = talkables(), tc = tl.map((q, i) => ({ id: String(i), x: q.x, y: q.y, z: q.z, reach: 4.0, cone: 0.82 }));
     const tp = pickTarget(camera.position, _d, tc, colliders);
     talkTarget = tp ? tl[Number(tp.id)] : null;

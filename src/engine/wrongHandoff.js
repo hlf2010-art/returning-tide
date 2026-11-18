@@ -6,6 +6,13 @@
 //                                            │  ▲
 //                                    breakSeal() (once; sealed -> opened)
 //
+// The pouch is an object with two closures, and they behave differently on purpose:
+//   the string   figure-of-eight round two buttons. unwind() / rewind() as often as you like: it
+//                is reversible, but a rewound string is never the neat figure-of-eight it was
+//                (string: 'wound' -> 'unwound' -> 'rewound'), and Old Lin can see that.
+//   the seal     signed over the flap. breakSeal() needs the string off first, and is for good.
+// witness() records that he saw who left the pouch on the counter (engine/witness.js decides).
+//
 // Integration surface (also on window.__bund.mission):
 //   start(source)  begin from idle; returns false otherwise
 //   reset()        back to idle from anywhere (developer reset / chapter restart)
@@ -17,13 +24,15 @@ export const STEPS = ['idle', 'collect', 'carry', 'complete'];
 export function createWrongHandoff({ now = () => Date.now() / 1000 } = {}) {
   let step = 'idle';
   let sealed = true;
+  let string = 'wound';        // 'wound' | 'unwound' | 'rewound'
+  let witnessed = false;
   let outcome = null;
   let source = null;
   let startedAt = 0;
   let seconds = 0;
   const listeners = { start: new Set(), change: new Set(), complete: new Set(), reset: new Set() };
 
-  const snapshot = () => ({ step, sealed, outcome, source, seconds });
+  const snapshot = () => ({ step, sealed, string, witnessed, outcome, source, seconds });
   function emit(type, payload = snapshot()) {
     for (const fn of [...listeners[type]]) {
       try { fn(payload); } catch (err) { console.error(err); }   // a broken listener must not wedge the mission
@@ -34,7 +43,7 @@ export function createWrongHandoff({ now = () => Date.now() / 1000 } = {}) {
   return {
     start(from = 'game') {
       if (step !== 'idle') return false;
-      sealed = true; outcome = null; source = from; startedAt = now(); seconds = 0;
+      sealed = true; string = 'wound'; witnessed = false; outcome = null; source = from; startedAt = now(); seconds = 0;
       go('collect');
       emit('start');
       return true;
@@ -44,8 +53,21 @@ export function createWrongHandoff({ now = () => Date.now() / 1000 } = {}) {
       go('carry');
       return true;
     },
+    // the string: before the pickup (still on the counter) or while carrying it, never after
+    unwind() {
+      if ((step !== 'collect' && step !== 'carry') || !sealed || string === 'unwound') return false;
+      string = 'unwound'; emit('change'); return true;
+    },
+    rewind() {
+      if ((step !== 'collect' && step !== 'carry') || !sealed || string !== 'unwound') return false;
+      string = 'rewound'; emit('change'); return true;
+    },
+    witness() {
+      if (step !== 'collect' || witnessed) return false;
+      witnessed = true; emit('change'); return true;
+    },
     breakSeal() {
-      if (step !== 'carry' || !sealed) return false;
+      if (step !== 'carry' || !sealed || string !== 'unwound') return false;
       sealed = false;
       emit('change');
       return true;
@@ -59,7 +81,7 @@ export function createWrongHandoff({ now = () => Date.now() / 1000 } = {}) {
       return outcome;
     },
     reset() {
-      step = 'idle'; sealed = true; outcome = null; source = null; seconds = 0;
+      step = 'idle'; sealed = true; string = 'wound'; witnessed = false; outcome = null; source = null; seconds = 0;
       emit('reset');
       emit('change');
     },
@@ -71,6 +93,8 @@ export function createWrongHandoff({ now = () => Date.now() / 1000 } = {}) {
     snapshot,
     get step() { return step; },
     get sealed() { return sealed; },
+    get string() { return string; },
+    get witnessed() { return witnessed; },
     get outcome() { return outcome; },
     get active() { return step === 'collect' || step === 'carry'; },
     get carrying() { return step === 'carry'; },

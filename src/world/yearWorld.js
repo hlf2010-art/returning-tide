@@ -396,7 +396,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     OFFICE, FLATS, rules: { todaysWork, arriveAtWork, playScene, workFull, rollover, runCareer },   // (the pure rules, for tools: tools/yearwalk.mjs plays the days it doesn't walk through with them)
     get here() { return here; }, get flat() { return flatId; }, get card() { return card; }, get running() { return running ? running.def.id : null; },
     arrive: route, enter(what, info) { return what === 'firm' ? enterFirm(info) : what === 'flat' ? enterFlat(info) : false; },
-    handoff(outcome) { const h = recordHandoff(L0(), outcome); save && save(); return h; },
+    handoff(outcome, extra) { const h = recordHandoff(L0(), outcome, extra); save && save(); return h; },
     sceneText(clock) { return here === 'firm' ? `${clock}. The 28th floor of IFC Tower 2 in Lujiazui: the open-plan Shanghai office of Marlowe Finch, a technology consulting firm; desks, screens, a glass meeting room, the Bund across the river through the west windows.` : `${clock}. Ji Bai's rented flat (${LISTINGS[flatId] ? LISTINGS[flatId].en : 'a small flat'}).`; },
     talkables() { if (here !== 'firm' || running) return []; return ['taoke', 'shaofeng', 'partner', 'zhiwei', 'feng', 'gu'].filter((k) => ppl[k] && ppl[k].root.visible).map((k) => ({ key: `firm:${k}`, persona: k, x: ppl[k].root.position.x, y: ppl[k].root.position.y + 1.62, z: ppl[k].root.position.z, hold() {} })); },
     candidates() { return targets().map((t) => ({ ...t, cone: 0.6 })); },

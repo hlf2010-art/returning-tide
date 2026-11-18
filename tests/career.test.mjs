@@ -195,14 +195,23 @@ ok([...FIRM_SCENES.map((s) => s.id), ...Object.values(ROADS).flat().map((s) => s
 {
   const opened = playYear({ pouch: 'opened', tell: null });
   // (the scene itself is played in the world; here its script is run as the game would)
-  const play = (outcome, pick) => { const L = createLife(); setupThreads(L); initYear(L); recordHandoff(L, outcome); const tick = () => { runCareer(L); deliverFollowUps(L); updateQuests(L, QUESTS, stamp(L), { player: { x: 0, y: 0, z: 0 } }); };
+  const play = (outcome, pick, extra) => { const L = createLife(); setupThreads(L); initYear(L); recordHandoff(L, outcome, extra); const tick = () => { runCareer(L); deliverFollowUps(L); updateQuests(L, QUESTS, stamp(L), { player: { x: 0, y: 0, z: 0 } }); };
     skipTo(L, D(8, 12, 0)); rollover(L); tick(); const here = zhouMinHere(L); const s = zhouMinScript(L); const a = s.find((b) => !Array.isArray(b)).ask[pick]; void a.then; tick();
     skipTo(L, D(13, 19, 30)); rollover(L); tick(); tick(); return { L, here }; };
   const a = play('opened', 0), b = play('sealed', 0), c = play('opened', 1);
   ok(a.here && work(a.L).watch.result === 'saved' && /摊子保住了/.test(a.L.threads.zhoumin.messages.at(-1).text) && rep(a.L, 'street') > rep(b.L, 'street'), 'seal broken, and he tells her the date on the page: the forged transfer is undone and the stall saved');
   ok(work(b.L).watch.result === 'lost' && /摊子没保住/.test(b.L.threads.zhoumin.messages.at(-1).text), 'seal intact: he can only say that he carried it; the stall is lost');
   ok(work(c.L).watch.result === 'lost', 'seal broken but he keeps what he read to himself: lost as well');
+  // he saw the man who left the pouch (Mission One's courier): one more true thing he can say
+  const d = play('sealed', 0, { saw: true }), e = play('sealed', 1, { saw: true }), f = play('opened', 0, { saw: true });
+  const askOf = (outcome, extra) => { const L = createLife(); setupThreads(L); initYear(L); recordHandoff(L, outcome, extra); skipTo(L, D(8, 12, 0)); rollover(L); return zhouMinScript(L).find((b) => !Array.isArray(b)).ask; };
+  ok(askOf('sealed', { saw: true }).length === 3 && askOf('sealed').length === 2 && askOf('opened', { saw: true }).length === 2, 'seeing him adds an answer to a sealed pouch; an opened one folds it into the date');
+  ok(/申礼/.test(askOf('opened', { saw: true })[0].zh) && !/申礼/.test(askOf('opened')[0].zh), '...which then mentions the red Shenli carrier too');
+  ok(work(d.L).watch.result === 'held' && /冻结/.test(d.L.threads.zhoumin.messages.at(-1).text) && rep(d.L, 'street') > rep(b.L, 'street'), 'seal intact but he saw and told: the transfer is frozen, the stall held (between saved and lost)');
+  ok(work(e.L).watch.result === 'lost', 'seal intact, saw him, but chose to tell her about the seal only: still lost');
+  ok(work(f.L).watch.result === 'saved', 'opened and saw: the date saves it, as before');
   const q = (L) => journal(L, QUESTS, 'en').find((x) => x.id === 'watch-repairer');
+  ok(/frozen/.test(q(d.L).summary), 'the journal says the pitch is frozen');
   ok(q(a.L) && !q(a.L).main && q(a.L).status === 'done' && /stall is saved/.test(q(a.L).summary) && /stall is gone/.test(q(b.L).summary), 'the journal keeps it as a side story, with how it came out');
   ok(work(opened.L).watch.result === 'lost' && work(opened.L).watch.unmet && /new sign/.test(q(opened.L).summary), 'never going back to the stall: it simply changes hands');
   const old = createLife(); recordHandoff(old, 'sealed'); updateQuests(old, QUESTS, stamp(old), { player: { x: 0, y: 0, z: 0 } });
