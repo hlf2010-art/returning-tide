@@ -4,13 +4,14 @@
 // Dev lab: the player's own body holding the cup, lit and close, from a few angles (tools/lab/hand.html)
 import * as THREE from 'three';
 import { loadPeople } from '/src/world/people.js';
-import { createPlayerBody } from '/src/world/playerBody.js';
+import { createPlayerBody, setFpSign, CUP_SOCKET, FP_ACROSS } from '/src/world/playerBody.js';
+const Q = new URLSearchParams(location.search); if (Q.has('across')) Q.get('across').split(',').forEach((v, i) => { FP_ACROSS[i] = +v; }); if (Q.has('sock')) Q.get('sock').split(',').forEach((v, i) => { CUP_SOCKET[i] = +v; }); if (Q.has('sign') || Q.has('up')) setFpSign(+(Q.get('sign') || 1), +(Q.get('up') || 1));
 const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(960, 540); document.body.appendChild(r.domElement);
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9aa4ad);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.2)); const d = new THREE.DirectionalLight(0xffffff, 2.5); d.position.set(2, 4, 3); scene.add(d);
 const cam = new THREE.PerspectiveCamera(40, 960 / 540, 0.01, 50);
 const people = await loadPeople('/people/');
-const pb = createPlayerBody(people); scene.add(pb.root);
+const pb = createPlayerBody(people, Q.has('role') ? { fpRole: Q.get('role') } : {}); scene.add(pb.root);
 const player = { body: { x: 0, y: 0, z: 0, vx: 0, vz: 0 }, yaw: Math.PI, pitch: -0.6, speed: 0, stride: 0, head: null };
 pb.setHold({ cup: !new URLSearchParams(location.search).has('nocup'), phone: false });
 const eye = new THREE.Vector3(0, 1.62, 0);

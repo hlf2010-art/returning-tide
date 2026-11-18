@@ -62,7 +62,7 @@ export function todState(minute) {
     metro: t >= H(5, 30) && t < H(23),
     dawn: t >= H(5, 45) && t < H(8, 15),
     exposure: 1.15 - 0.37 * daylight, bloom: 0.24 - 0.14 * daylight,
-    fog: 1 - 0.68 * daylight,                      // clear, sunny days: the far bank sharp
+    fog: 1 - 0.85 * daylight,                      // clear, sunny days: the far bank sharp
     sun: sunDir(t),
   };
 }

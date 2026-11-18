@@ -14,15 +14,46 @@ export function createHud() {
     if (isReady) $('begin').textContent = t('begin');
     lastSubKey = ''; if (lastStep) { lastObjKey = ''; hud.objective(lastStep); }
   });
+  // ---- one thing at a time: the titles (the chapter, the place, the quest and achievement banners) go
+  // through a queue, each up only once the one before has dissolved; while it runs (and through the opening)
+  // the toasts and the phone's banners wait and the quest panel and minimap stay out of the way ----
+  let opening = false, busy = false, startAt = 0;
+  const queue = [], held = [];
+  const GAP = 500;
+  function pump() {
+    if (busy || performance.now() < startAt) return;
+    if (!queue.length) {
+      if (opening) { opening = false; document.body.classList.remove('opening'); setTimeout(release, 1400); }
+      else release();
+      return;
+    }
+    queue.sort((a, b) => a.prio - b.prio || a.n - b.n);
+    const it = queue.shift(); busy = true; document.body.classList.add('titling');
+    it.show();
+    setTimeout(() => { it.hide(); setTimeout(() => { busy = false; document.body.classList.remove('titling'); pump(); }, (it.fade || 1600) + GAP); }, it.dur);
+  }
+  function release() { while (!busy && !opening && !queue.length && held.length) held.shift()(); }
+  let seqN = 0;
+  setInterval(pump, 250);
+  const quiet = () => busy || opening || queue.length > 0;
   const hud = {
+    // a title on the queue: { show(), hide(), dur (ms up), fade (ms to dissolve), prio (lower first) }
+    present(it) { queue.push({ prio: 5, fade: 1600, ...it, n: seqN++ }); pump(); },
+    get quiet() { return !quiet(); },
+    // something that should wait for the titles to finish (a toast, a phone banner)
+    whenQuiet(fn) { if (!quiet()) fn(); else held.push(fn); },
     ready(time) { if (time && $('entry-time')) $('entry-time').textContent = time; const b = $('begin'); isReady = true; b.disabled = false; b.removeAttribute('data-t'); b.textContent = t('begin'); b.focus(); },
     fail(err) { $('begin').removeAttribute('data-t'); $('begin').textContent = t('failed'); console.error(err); },
     begin(time) {
       placeTime = time || null; placeSub();
       $('entry').classList.add('leaving'); $('hud').classList.remove('hidden');
       setTimeout(() => $('entry').classList.add('hidden'), 1500);
-      setTimeout(() => $('place').classList.add('on'), 900);
-      setTimeout(() => $('place').classList.remove('on'), 7500);
+      // the opening, one title at a time: the chapter (world/yearWorld.js, centred) first, then the place
+      // name and the quest banner once it has dissolved
+      // (the quest panel, the minimap, the phone's banners and the toasts wait for the end: one thing at a time)
+      document.body.classList.add('opening'); opening = true;
+      startAt = performance.now() + 2200;                 // (the entry fades; the chapter title has time to be queued: it goes first)
+      hud.present({ prio: 1, dur: 4200, fade: 1600, show: () => $('place').classList.add('on'), hide: () => $('place').classList.remove('on') });
       setTimeout(() => $('keys').classList.add('faded'), 14000);
     },
     show(id, on) { $(id).classList.toggle('hidden', !on); },
@@ -53,6 +84,7 @@ export function createHud() {
     },
     // a milestone: a banner across the top, once
     achievement(text, kicker = null) {
+      if (!this._direct) { hud.present({ prio: 2, dur: 3800, fade: 700, show: () => { this._direct = true; hud.achievement(text, kicker); this._direct = false; }, hide: () => { const e = document.getElementById('achv'); if (e) e.classList.remove('on'); } }); return; }
       let el = document.getElementById('achv'); if (!el) { el = document.createElement('div'); el.id = 'achv'; document.body.appendChild(el); }
       el.innerHTML = `<small></small><b></b>`; el.querySelector('small').textContent = kicker || (getLang() === 'zh' ? '成就解锁' : 'Achievement unlocked'); el.querySelector('b').textContent = text;
       el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
@@ -68,6 +100,7 @@ export function createHud() {
       el.classList.toggle('on', !!show); el.classList.toggle('low', k < 0.25 && !out); el.classList.toggle('out', !!out);
     },
     toast(text, seconds = 2.5) {
+      if (quiet()) { held.push(() => hud.toast(text, seconds)); return; }
       const el = $('toast'); el.textContent = tr(text); el.classList.add('on');
       clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), seconds * 1000);
     },

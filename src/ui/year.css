@@ -1,8 +1,15 @@
 /* The year on screen (world/yearWorld.js, ui/journal.js): the date chip, the scene card for days
    played as a conversation, the journal's "year" page. */
-#year-chip { position: fixed; top: 20px; right: 20px; padding: 5px 12px; border-radius: 999px; background: rgba(8, 10, 14, 0.42); color: #e9e2d2;
-  font: 500 12px/1.4 var(--ui, "Inter", "Noto Sans SC", sans-serif); letter-spacing: 0.06em; opacity: 0; transition: opacity 0.6s; pointer-events: none; z-index: 6; white-space: nowrap; }
-#year-chip.on { opacity: 0.92; }
+/* the chapter title (yearWorld.js showChapter): centred, no panel; up over 1.6 s, held, dissolved over 2.4 s */
+#chapter-card { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 7;
+  color: #f4ead6; opacity: 0; transition: opacity 2.4s ease, letter-spacing 7s ease-out; letter-spacing: 0.02em; white-space: nowrap;
+  text-shadow: 0 0 22px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.9); }
+#chapter-card.on { opacity: 1; transition: opacity 1.6s ease, letter-spacing 7s ease-out; letter-spacing: 0.06em; }
+#chapter-card .cc-num { font: 600 12px var(--rt-thin, var(--rt-serif, serif)); letter-spacing: 0.5em; text-transform: uppercase; color: var(--gold-2, #e7c98a); margin-bottom: 10px; }
+#chapter-card .cc-title { font: 500 38px/1.1 var(--rt-serif, "Cormorant Garamond", "Noto Serif SC", serif); }
+#chapter-card .cc-rule { width: 120px; height: 1px; margin: 16px auto 12px; background: linear-gradient(90deg, transparent, rgba(231, 201, 138, 0.9), transparent); }
+#chapter-card .cc-date { font: 400 12px var(--rt-serif, serif); letter-spacing: 0.24em; opacity: 0.85; }
+body.year-card #chapter-card { visibility: hidden; }
 #year-card { position: fixed; inset: 0; z-index: 30; display: none; align-items: flex-start; justify-content: center; pointer-events: none;
   background: radial-gradient(ellipse at 50% 30%, #1b222c 0%, #0b0d11 70%); }
 #year-card.on { display: flex; pointer-events: auto; }

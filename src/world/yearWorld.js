@@ -319,7 +319,16 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
   const expected32 = (L) => L.invites.find((i) => ['xuan-arm', 'xuan-demo'].includes(i.id) && Math.abs(stamp(L) - i.at) <= 120 && i.status !== 'declined' && !i.kept);
 
   // ================= the new day, on screen =================
-  const chip = document.createElement('div'); chip.id = 'year-chip'; (document.getElementById('hud') || document.body).appendChild(chip);
+  // the chapter title, as the Uncharted games do it: centred, no panel, it fades up as an act begins (and
+  // when you come back to the game), holds, and dissolves; nothing else on screen is covered for long
+  const chip = document.createElement('div'); chip.id = 'chapter-card'; (document.getElementById('hud') || document.body).appendChild(chip);
+  let chapterKey = null;
+  function showChapter(L) {
+    const a = actOf(L); if (!a) return;
+    const [num, title] = T(a.zh, a.en).split(' · ');
+    chip.innerHTML = `<div class="cc-num">${num}</div><div class="cc-title">${title || ''}</div><div class="cc-rule"></div><div class="cc-date">${shortDate(L, getLang())}</div>`;
+    hud.present({ prio: 0, dur: 4400, fade: 2400, show: () => { chip.classList.remove('on'); void chip.offsetWidth; chip.classList.add('on'); }, hide: () => chip.classList.remove('on') });
+  }
   const yuan = (n) => `¥${Math.round(n).toLocaleString('en-US')}`;
   function announce(r) {
     const L = L0(), lang = getLang(), sum = (type) => r.paid.filter((p) => p.type === type).reduce((s, p) => s + p.amount, 0);
@@ -418,11 +427,15 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     // with the clock (main.js updateLife): the new day, the messages, the date
     tick(dt) {
       const L = L0();
-      if (!isYear(L)) { if ((chipIn -= dt) <= 0) { chipIn = 2; chip.classList.remove('on'); syncDestinations(L); } return; }
+      if (!isYear(L)) { if ((chipIn -= dt) <= 0) { chipIn = 2; syncDestinations(L); } return; }
       const r = rollover(L); if (r) announce(r);
       if (hintAt && performance.now() > hintAt) { hintAt = 0; todayHint(); }
       if ((beatIn -= dt) <= 0) { beatIn = 0.5; if (lifeOn) { if (runCareer(L).length) save && save(); } syncDestinations(L); zhouMin(zhouMinHere(L) || (!!running && running.def.id === 'zhoumin')); }
-      if ((chipIn -= dt) <= 0) { chipIn = 1; const a = actOf(L); chip.textContent = `${shortDate(L, getLang())}${a ? ` · ${T(a.zh, a.en)}` : ''}`; chip.classList.add('on'); }
+      if ((chipIn -= dt) <= 0) {
+        chipIn = 1; const a = actOf(L), key = a ? a.id : null;
+        // a new act (or the first moment of play): its title, once the scene cards are out of the way
+        if (key && key !== chapterKey && !document.body.classList.contains('year-card')) { chapterKey = key; showChapter(L); }
+      }
     },
   };
   work(L0());

@@ -11,6 +11,12 @@ import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { createSprings } from './springs.js';
 import { twoBone } from './driverPose.js';
+import { createFpHand } from './fpHand.js';
+export const FP_ROLE = 'p1';   // whose hand holds things in first person (world/fpHand.js)
+export const CUP_SOCKET = [0.06, 0.045, 0];   // the cup's axis in the first-person hand's frame (m): toward the knuckles, out of the palm
+let FP_SIGN = 1, FP_UP = 1;
+export const FP_ACROSS = [0.9, 0.3];   // the fingers' direction: leftward, back toward the camera
+export const setFpSign = (s, u = FP_UP) => { FP_SIGN = s; FP_UP = u; };
 
 const GAITS = ['walk', 'jog', 'sprint'];
 const wrap = (a) => { let r = a; while (r > Math.PI) r -= Math.PI * 2; while (r < -Math.PI) r += Math.PI * 2; return r; };
@@ -26,7 +32,7 @@ export function gaitWeights(speed, walk, run) {
   return { idle, walk: moving * (1 - wj), jog: moving * wj * (1 - js), sprint: moving * wj * js };
 }
 
-export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
+export function createPlayerBody(people, { walk = 2.2, run = 5.0, fpRole = FP_ROLE } = {}) {
   const root = SkeletonUtils.clone(people.avatars.player);
   root.scale.setScalar(0.01);
   root.name = 'player-body';
@@ -104,7 +110,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
   const FING = [1, 2, 3, 4].map((k) => [R(`Bip01_R_Finger${k}`), R(`Bip01_R_Finger${k}1`), R(`Bip01_R_Finger${k}2`)]);
   const THMB = [R('Bip01_R_Finger0'), R('Bip01_R_Finger01'), R('Bip01_R_Finger02')];
   const CURL = [0.95, 1.0, 0.75], TCURL = [0, 0, 0];   // (the four fingers move as one on the middle finger's bones; the thumb stays: fingers.mjs)
-  const HOLD = { fwd: 0.4, right: 0.0, down: 0.26 };          // where the hand goes, from the eye (m)
+  const HOLD = { fwd: 0.43, right: 0.14, down: 0.185 };          // in the camera's frame: out, right, down (m)          // where the hand goes, from the eye (m)
   const gF = new THREE.Vector3(), gR = new THREE.Vector3(), gT = new THREE.Vector3(), gPole = new THREE.Vector3(), gA = new THREE.Vector3(), gB = new THREE.Vector3(), gC = new THREE.Vector3();
   const fDes = new THREE.Vector3(), nDes = new THREE.Vector3(), _hq = new THREE.Quaternion();
   function curlChain(chain, angles, w) {
@@ -117,13 +123,18 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
       turnWorld(b, gB.normalize(), angles[i] * w);
     });
   }
-  function gripCup(w, eye, viewYaw) {
+  function gripCup(w, eye, viewYaw, camYaw = 0, camPitch = 0) {
     grip.ok = false;
     if (!rHand || !knuckle || !thumb0 || !upperR || !foreR || w <= 0) return;
     gF.set(Math.sin(viewYaw), 0, Math.cos(viewYaw)); gR.crossVectors(gF, UP).normalize();
-    // 1. the arm: the hand to its place (blended in with w), the elbow down and out
+    // 1. the arm: the hand to its place in the VIEW (as shooters place their viewmodel: fixed against the
+    //    camera, so the cup sits in the same spot on screen wherever you look), blended in with w
     rHand.getWorldPosition(gh);
-    gT.copy(eye).addScaledVector(gF, HOLD.fwd).addScaledVector(gR, HOLD.right).addScaledVector(UP, -HOLD.down);
+    { const cp = Math.cos(camPitch), sp = Math.sin(camPitch);
+      gC.set(-Math.sin(camYaw) * cp, sp, -Math.cos(camYaw) * cp);                                   // the camera's forward
+      gB.set(Math.cos(camYaw), 0, -Math.sin(camYaw));                                               // its right
+      gA.crossVectors(gB, gC).normalize();                                                          // its up
+      gT.copy(eye).addScaledVector(gC, HOLD.fwd).addScaledVector(gB, HOLD.right).addScaledVector(gA, -HOLD.down); }
     gT.lerpVectors(gh, gT, w);
     gPole.copy(UP).multiplyScalar(-1).addScaledVector(gR, 0.7).normalize();
     twoBone(upperR, foreR, rHand, gT, gPole);
@@ -140,18 +151,29 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
     // 3. the hand settles: fingers forward, palm to the cup (a small bend at the wrist now)
     frame(); _hq.setFromUnitVectors(gf, fDes);
     { const ax = new THREE.Vector3(_hq.x, _hq.y, _hq.z), s = ax.length(); grip.ha = 2 * Math.atan2(s, _hq.w); if (s > 1e-5) turnWorld(rHand, ax.divideScalar(s), 2 * Math.atan2(s, _hq.w) * w); }
-    // 4. close the hand
-    for (const ch of FING) curlChain(ch, CURL, w);
-    curlChain(THMB, TCURL, w);
-    // the cup in the curl: from the palm's middle out by its radius
-    const len = frame();
-    grip.centre.copy(gh).addScaledVector(gf, len * 0.6).addScaledVector(gp, 0.05);
+    // 4. the hand itself: a properly rigged one (world/fpHand.js) takes the place of his, closed round the cup
+    if (fp) {
+      rHand.scale.setScalar(1); rHand.updateMatrixWorld(true);
+      const fd = gB.copy(gR).multiplyScalar(-FP_ACROSS[0]).addScaledVector(gF, -FP_ACROSS[1]).normalize();   // the fingers across the near face of the cup, toward the left (as in the street photos)
+      fp.update(rHand, knuckle, w, FP_SIGN, fd, FP_UP); fp.setVisible(true);
+      rHand.scale.setScalar(0.001); rHand.updateMatrixWorld(true);                   // his own hand, folded into the wrist
+      // the cup on its socket: a fixed grip offset in the hand bone's frame (x toward the knuckles, y out of
+      // the palm), the way a weapon's pivot is set to its grip
+      fp.hand.updateMatrixWorld(true); gA.set(...CUP_SOCKET).multiplyScalar(100);   // (the hand's frame is in cm)
+      grip.centre.copy(gA).applyMatrix4(fp.hand.matrixWorld);
+    } else {
+      for (const ch of FING) curlChain(ch, CURL, w);
+      const len = frame();
+      grip.centre.copy(gh).addScaledVector(gf, len * 0.6).addScaledVector(gp, 0.05);
+    }
     grip.ok = true;
   }
 
   const bone = (n) => root.getObjectByName(n);
   root.remove(shadow);
   const group = new THREE.Group(); group.name = 'player'; group.add(root, shadow);
+  const fp = people.avatars[fpRole] ? createFpHand(people, fpRole) : null;
+  if (fp) { fp.setVisible(false); group.add(fp.root); }
   const bodyBones = bonesOf(root), shadowBones = bonesOf(shadow);
   const springs = createSprings(root);
   const head = bone('Bip01_Head'), shadowHead = shadow.getObjectByName('Bip01_Head');
@@ -266,7 +288,8 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
         const ex = _v.x - fx * 0.12, ey = _v.y + 0.07, ez = _v.z - fz * 0.12;
         eye.x += (ex - eye.x) * bend; eye.y += (ey - eye.y) * bend; eye.z += (ez - eye.z) * bend;
       }
-      if (want.cup && !want.phone && holdW > 0.05) gripCup(Math.min(1, holdW), eye || head.getWorldPosition(new THREE.Vector3()), yaw);
+      if (fp && !(want.cup && !want.phone && holdW > 0.05)) { fp.setVisible(false); if (rHand) rHand.scale.setScalar(1); }
+      if (want.cup && !want.phone && holdW > 0.05) gripCup(Math.min(1, holdW), eye || head.getWorldPosition(new THREE.Vector3()), yaw, player.yaw, player.pitch);
       if (springs) springs.update(dt);                              // the jacket's hem, the trouser legs (tools/cloth/)
       // the shadow copy takes the pose, head and all; then the drawn body loses its head
       shadow.position.copy(root.position); shadow.quaternion.copy(root.quaternion);

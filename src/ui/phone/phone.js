@@ -537,7 +537,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     status();
     const isl = S.call ? `<span>${esc(short(S.call.from))}</span><span class="dot"></span>` : S.liveText ? `<span>${esc(S.liveText)}</span><span class="dot"></span>` : '';
     if (isl !== islandHtml) { islandHtml = isl; island.innerHTML = isl; island.classList.toggle('live', !!isl); }   // only when it changes
-    if (l.notifications.length > lastNote) {
+    if (l.notifications.length > lastNote && !document.body.classList.contains('opening') && !document.body.classList.contains('titling')) {   // (not over a title: one thing at a time)
       const n = l.notifications[l.notifications.length - 1]; lastNote = l.notifications.length;
       if (!S.open) {
         const p = person(n.from);

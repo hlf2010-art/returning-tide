@@ -7,7 +7,7 @@ import * as THREE from 'three';
 export const SKY = { day: { value: 0 }, night: { value: 0 }, glow: { value: 1 }, side: { value: -1 }, haze: { value: 0 }, sunDir: { value: new THREE.Vector3(0, -1, 0) } };
 
 export const FOG_COLOR = new THREE.Color(0.062, 0.105, 0.22);
-const FOG_NIGHT = new THREE.Color(0.04, 0.045, 0.065), FOG_DAY = new THREE.Color(0.6, 0.71, 0.86);   // clear air: a pale blue distance, not grey
+const FOG_NIGHT = new THREE.Color(0.04, 0.045, 0.065), FOG_DAY = new THREE.Color(0.5, 0.66, 0.9);   // clear air: a pale blue distance, not grey
 // the fog's colour at an hour: the blue hour's, the deep night's, the day's haze
 export function fogColorAt(s, out = new THREE.Color()) { return out.copy(FOG_COLOR).lerp(FOG_NIGHT, s.night).lerp(FOG_DAY, s.daylight); }
 export const REFLECT_LAYER = 1;   // far scenery that the river mirrors
@@ -35,9 +35,9 @@ export function createSky() {
         vec3 d = normalize(vDir);
         float h = max(d.y, 0.0);
         // blue hour -> deep night (city glow) -> day (haze)
-        vec3 zenith = mix(mix(vec3(0.006, 0.017, 0.07), vec3(0.004, 0.007, 0.02), night), vec3(0.09, 0.27, 0.66), day);
-        vec3 mid = mix(mix(vec3(0.02, 0.058, 0.2), vec3(0.016, 0.022, 0.045), night), vec3(0.25, 0.46, 0.8), day);
-        vec3 horizon = mix(mix(vec3(0.085, 0.15, 0.32), vec3(0.075, 0.062, 0.07), night), vec3(0.6, 0.72, 0.88), day);
+        vec3 zenith = mix(mix(vec3(0.006, 0.017, 0.07), vec3(0.004, 0.007, 0.02), night), vec3(0.04, 0.2, 0.62), day);
+        vec3 mid = mix(mix(vec3(0.02, 0.058, 0.2), vec3(0.016, 0.022, 0.045), night), vec3(0.14, 0.38, 0.82), day);
+        vec3 horizon = mix(mix(vec3(0.085, 0.15, 0.32), vec3(0.075, 0.062, 0.07), night), vec3(0.44, 0.63, 0.9), day);
         vec3 col = mix(horizon, mid, smoothstep(0.0, 0.22, h));
         col = mix(col, zenith, smoothstep(0.18, 0.95, h));
         vec2 flat2 = normalize(d.xz + 1e-5);

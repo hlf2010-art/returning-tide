@@ -31,7 +31,7 @@
 }
 
 /* ---- the material: a night panel, a gold rule, and a second finer rule just inside it ---- */
-#prompt, #toast, #subtitle, #bark, #objective, #minimap, #tip, #achv, #year-chip, #talk, #build,
+#prompt, #toast, #subtitle, #bark, #objective, #minimap, #tip, #achv, #talk, #build,
 #settings .panel, #journal .panel, #saves .panel, #workbook .panel, #shop-menu .in, #worldmap .wm-legend,
 #entrance-labels .ent, #mission-card, #ride-card, #ride-sub .ch span, #drive-hud, .glass {
   background: var(--deco-bg) !important;
@@ -129,7 +129,6 @@ input[type=range]::-moz-range-thumb { width: 11px; height: 11px; border: 0; bord
 #mission-card .mc-kicker { color: var(--gold) !important; letter-spacing: 0.26em !important; font: 500 12px var(--rt-thin) !important; text-transform: uppercase; }
 #mission-card .mc-title { font-family: var(--rt-serif) !important; font-weight: 700 !important; letter-spacing: 0.06em !important; }
 #achv { padding: 10px 26px 12px !important; }
-#year-chip { padding: 6px 14px !important; font: 500 12px var(--rt-serif) !important; letter-spacing: 0.1em; color: var(--gold-2); }
 #entrance-labels .ent i { background: var(--gold-fill) !important; color: var(--accent-ink) !important; border-radius: 1px !important; }
 #stamina { background: rgba(11, 14, 22, 0.6) !important; box-shadow: inset 0 0 0 1px var(--hair-strong) !important; border-radius: 1px !important; }
 #stamina i { background: var(--gold-fill) !important; border-radius: 0 !important; }
@@ -360,3 +359,17 @@ html[lang="zh-CN"] #entry .tagline { font-weight: 700; letter-spacing: 0.16em; m
 #settings .credits[open] summary::before { color: var(--gold); }
 #settings .credits ul { margin: 2px 0 6px; padding-left: 16px; }
 #settings .credits a { color: var(--gold-2); text-decoration: none; border-bottom: 1px solid var(--hair-strong); }
+
+/* the quest panel: a light veil, not a slab (it stays up the whole time; the world shows through it by day) */
+#objective { background: linear-gradient(180deg, rgba(14, 30, 36, 0.42) 0%, rgba(8, 16, 20, 0.5) 100%) !important;
+  -webkit-backdrop-filter: blur(3px) !important; backdrop-filter: blur(3px) !important; box-shadow: none !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); }
+
+/* the place name (hud.begin): smaller, with a deeper shadow to read against a bright sky */
+#place .name { font-size: clamp(24px, 2.8vw, 38px) !important; text-shadow: 0 0 20px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.9) !important; }
+#place .kicker { text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85); }
+/* the opening: the titles one at a time; the quest panel, the minimap and the key hints come in after */
+body.opening #objective, body.opening #minimap, body.opening #keys { opacity: 0 !important; transition: opacity 1.2s ease; }
+#objective, #keys { transition: opacity 1.2s ease; }
+
+/* tips: up near the top, clear of the middle of the view (where the held cup and the people you look at are) */
+#tip { top: 132px !important; bottom: auto !important; }

@@ -37,7 +37,7 @@ export function createTips({ isFree }) {
     update(dt) {
       if (left > 0) { left -= dt; if (left <= 0) { el.classList.remove('on'); gap = 2.5; } return; }
       if (gap > 0) { gap -= dt; return; }
-      if (!queue.length || !isFree()) return;
+      if (!queue.length || !isFree() || document.body.classList.contains('opening') || document.body.classList.contains('titling')) return;   // (one thing at a time: not over a title)
       const id = queue.shift(); seen[id] = true; remember();
       const [zh, en] = TIPS[id];
       el.innerHTML = `<small>${T('提示', 'Tip')}</small><span></span>`; el.querySelector('span').textContent = T(zh, en);
