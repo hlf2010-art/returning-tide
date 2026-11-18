@@ -21,7 +21,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Y, CONC, PLAT, GATE, gateP, SEC, ESC, TVM, SERVICE, COLS, DOOR_AS, STATIONS, rampY } from './metroLayout.js';
 import { LENGTH, trackAt, STOP_S } from '../engine/metroLine.js';
 import {
-  graniteTex, panelTex, ceilingTex, trackWallTex, tunnelTex, signTex, nameTex, lineMapTex, psdHeaderTex, doorMarkTex, tactileTex,
+  graniteTex, panelTex, ceilingTex, trackWallTex, tunnelTex, signTex, nameTex, colNameTex, lineMapTex, psdHeaderTex, doorMarkTex, tactileTex,
   tvmTex, gateTopTex, posterTex, IDX, makeCanvas, tex,
 } from './metroTextures.js';
 
@@ -259,8 +259,8 @@ export function buildStation(root, S, m) {
   for (const s of [-1, 1]) box('black', A0, A1, -6.4, -6.3, Math.min(s * PLAT.edge, s * PLAT.wall), Math.max(s * PLAT.edge, s * PLAT.wall));
   for (const s of [-1, 1]) box('dark', A0, A1, yPc - 0.6, -6.3, s * PLAT.edge - 0.05, s * PLAT.edge + 0.05);
   // columns: round, stainless, the name on two sides
-  const colName = signMat(nameTex(S, { w: 512, h: 512, dark: false }), 1.05);
-  for (const [a, p] of COLS.plat) { cyl('steel', a, p, yP, yPc - yP, 0.36, 18); cyl('dark', a, p, yP, 0.12, 0.38, 18); pic(colName, a, yP + 1.65, p + Math.sign(p) * 0.37, 0.5, 0.5, 0, Math.sign(p)); pic(colName, a, yP + 1.65, p - Math.sign(p) * 0.37, 0.5, 0.5, 0, -Math.sign(p)); }
+  const colName = signMat(colNameTex(S), 1.05);   // (an upright panel sized to the column: the old square one cut the name off)
+  for (const [a, p] of COLS.plat) { cyl('steel', a, p, yP, yPc - yP, 0.36, 18); cyl('dark', a, p, yP, 0.12, 0.38, 18); pic(colName, a, yP + 1.65, p + Math.sign(p) * 0.37, 0.36, 0.6, 0, Math.sign(p)); pic(colName, a, yP + 1.65, p - Math.sign(p) * 0.37, 0.36, 0.6, 0, -Math.sign(p)); }
   // benches between the columns
   for (const [a, p] of COLS.plat) if (Math.abs(p) > 0 && a + 6 < A1 - 6 && (a + 6 < ESC.aT - 3 || a + 6 > ESC.aB + 5)) { box('steel', a + 4.8, a + 7.2, yP + 0.42, yP + 0.46, p - 0.22, p + 0.22); box('dark', a + 5.0, a + 5.1, yP, yP + 0.42, p - 0.15, p + 0.15); box('dark', a + 6.9, a + 7.0, yP, yP + 0.42, p - 0.15, p + 0.15); }
   // the ends: walls with a staff door

@@ -107,6 +107,20 @@ export function nameTex(st, { w = 2048, h = 512, dark = true } = {}) {
   badge(x, w - 60 - h * 0.5, h * 0.2, h * 0.5);
   return tex(c, { repeat: false });
 }
+// the station's name on a platform column: a narrow upright panel, everything stacked and sized to fit
+export function colNameTex(st, { w = 384, h = 640 } = {}) {
+  const [c, x] = makeCanvas(w, h);
+  x.fillStyle = '#f3f3f0'; x.fillRect(0, 0, w, h);
+  x.fillStyle = L2; x.fillRect(0, h - 22, w, 22);
+  const l = markCanvas('shanghaimetro', { color: '#EC1C24', bg: '#ffffff', size: 256, pad: 0.12 }); x.drawImage(l, w / 2 - 60, 34, 120, 120);
+  x.fillStyle = '#1b1d20'; x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  const fit = (text, weight, size, maxW) => { let f = size; do { x.font = `${weight} ${f}px ${FONT.sans}`; f -= 4; } while (x.measureText(text).width > maxW && f > 12); };
+  const zh = st.name.zh, rows = zh.length > 3 ? [zh.slice(0, Math.ceil(zh.length / 2)), zh.slice(Math.ceil(zh.length / 2))] : [zh];
+  rows.forEach((r, i) => { fit(r, 900, 120, w - 40); x.fillText(r, w / 2, 285 + i * 118 - (rows.length - 1) * 30); });
+  fit(st.name.en, 600, 40, w - 36); x.fillText(st.name.en, w / 2, h - 132);
+  badge(x, w / 2 - 34, h - 112, 68);
+  return tex(c, { repeat: false });
+}
 // Line 2's strip map, this station marked; dir: which way the trains on this side go (for the arrow)
 export function lineMapTex(here, dir = 0, { w = 2048, h = 320 } = {}) {
   const [c, x] = makeCanvas(w, h);

@@ -14,7 +14,7 @@ import * as THREE from 'three';
 import { getLang } from '../ui/i18n.js';
 import { movers } from './layout.js';
 import { STATIONS, HOOK, Y, PLAT, GATE, gateP, SEC, ESC, CONC, CAR, metroZone, stationAt } from './metroLayout.js';
-import { trainsAt, trainClock, carAt, trackAt, lineAt, LENGTH, RUN, DOORS } from '../engine/metroLine.js';
+import { trainsAt, trainClock, carAt, trackAt, lineAt, LENGTH, RUN, DOORS, STOP_S } from '../engine/metroLine.js';
 import { createMetroAudio } from '../engine/metroAudio.js';
 import { metroMaterials, buildStation, buildTunnels } from './metroBuild.js';
 import { createTrainSet, carToWorld, worldToCar, CAR_IN, CAR_SEATS, FLOOR } from './metroTrain.js';
@@ -277,6 +277,19 @@ export function createMetro({ scene, camera, renderer = null, hud, audio, voice,
     S.ride = h ? { id: h.tr.id, k: h.k, lx: h.lx, lz: h.lz, h: h.c.heading, dy: Math.max(0, b.y - (h.c.y + FLOOR)) } : null;
     S.rideTrain = h ? h.tr : null;
     if (h && !was) S.rides++;
+    // carried on past the last station the game builds (west of East Nanjing Road toward Jing'an Temple, east of
+    // Lujiazui toward Dongchang Road): off at the next stop, the train back the other way, and you're on the
+    // platform you left, a quarter of an hour later
+    if (h && !S.overrun) {
+      const tr = h.tr, past = tr.dir < 0 ? tr.s < STOP_S[0] - 70 : tr.s > STOP_S[1] + 70;
+      if (past) {
+        S.overrun = true;
+        const st = STATIONS[tr.dir < 0 ? 0 : 1], next = tr.dir < 0 ? T('人民广场', "People's Square") : T('东昌路', 'Dongchang Road');
+        const go = () => { const L = getLife(); if (L) { L.clock.minute = (L.clock.minute + 14) % 1440; } const [x, z] = st.F.toW(PLAT.ac - 6, tr.dir < 0 ? 2.5 : -2.5); player.teleport(x, z, player.yaw, 0, Y.P); S.ride = null; S.rideTrain = null; S.overrun = false; save && save(); };
+        const line = T(`坐过了站 · 在${next}下车，坐反方向回来`, `You missed your stop · off at ${next}, and back the other way`);
+        if (travel) travel(async () => go(), { hold: 1400, line, to: 'play' }); else { go(); hud && hud.toast(line, 4); }
+      }
+    }
     S.zone = h ? null : metroZone(b.x, b.z, b.y);
     // underground: how far (the stairwells fade you in)
     const deep = h || S.zone || (b.y < -1.6 && distToLine(b) < 12);
