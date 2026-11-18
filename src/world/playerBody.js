@@ -152,15 +152,10 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0, fpRole = FP_RO
     frame(); _hq.setFromUnitVectors(gf, fDes);
     { const ax = new THREE.Vector3(_hq.x, _hq.y, _hq.z), s = ax.length(); grip.ha = 2 * Math.atan2(s, _hq.w); if (s > 1e-5) turnWorld(rHand, ax.divideScalar(s), 2 * Math.atan2(s, _hq.w) * w); }
     // 4. the hand itself: a properly rigged one (world/fpHand.js) takes the place of his, closed round the cup
-    if (fp) {
-      rHand.scale.setScalar(1); rHand.updateMatrixWorld(true);
-      const fd = gB.copy(gR).multiplyScalar(-FP_ACROSS[0]).addScaledVector(gF, -FP_ACROSS[1]).normalize();   // the fingers across the near face of the cup, toward the left (as in the street photos)
-      fp.update(rHand, knuckle, w, FP_SIGN, fd, FP_UP); fp.setVisible(true);
-      rHand.scale.setScalar(0.001); rHand.updateMatrixWorld(true);                   // his own hand, folded into the wrist
-      // the cup on its socket: a fixed grip offset in the hand bone's frame (x toward the knuckles, y out of
-      // the palm), the way a weapon's pivot is set to its grip
-      fp.hand.updateMatrixWorld(true); gA.set(...CUP_SOCKET).multiplyScalar(100);   // (the hand's frame is in cm)
-      grip.centre.copy(gA).applyMatrix4(fp.hand.matrixWorld);
+    if (fp && fp.ready !== undefined && (rHand.scale.setScalar(1), rHand.updateMatrixWorld(true), fp.update(rHand, knuckle, w, gB.copy(gR).multiplyScalar(-FP_ACROSS[0]).addScaledVector(gF, -FP_ACROSS[1]).normalize(), FP_UP))) {
+      // his own hand folds into the wrist (the first-person hand, world/fpHand.js, is in its place)
+      fp.setVisible(true); rHand.scale.setScalar(0.001); rHand.updateMatrixWorld(true);
+      fp.socket(grip.centre); grip.base = true;
     } else {
       for (const ch of FING) curlChain(ch, CURL, w);
       const len = frame();
@@ -172,7 +167,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0, fpRole = FP_RO
   const bone = (n) => root.getObjectByName(n);
   root.remove(shadow);
   const group = new THREE.Group(); group.name = 'player'; group.add(root, shadow);
-  const fp = people.avatars[fpRole] ? createFpHand(people, fpRole) : null;
+  const fp = createFpHand(people, fpRole);
   if (fp) { fp.setVisible(false); group.add(fp.root); }
   const bodyBones = bonesOf(root), shadowBones = bonesOf(shadow);
   const springs = createSprings(root);
@@ -288,7 +283,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0, fpRole = FP_RO
         const ex = _v.x - fx * 0.12, ey = _v.y + 0.07, ez = _v.z - fz * 0.12;
         eye.x += (ex - eye.x) * bend; eye.y += (ey - eye.y) * bend; eye.z += (ez - eye.z) * bend;
       }
-      if (fp && !(want.cup && !want.phone && holdW > 0.05)) { fp.setVisible(false); if (rHand) rHand.scale.setScalar(1); }
+      if (fp && !(want.cup && !want.phone && holdW > 0.05)) { fp.setVisible(false); if (rHand) rHand.scale.setScalar(1); if (foreR) foreR.scale.setScalar(1); }
       if (want.cup && !want.phone && holdW > 0.05) gripCup(Math.min(1, holdW), eye || head.getWorldPosition(new THREE.Vector3()), yaw, player.yaw, player.pitch);
       if (springs) springs.update(dt);                              // the jacket's hem, the trouser legs (tools/cloth/)
       // the shadow copy takes the pose, head and all; then the drawn body loses its head
@@ -329,7 +324,8 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0, fpRole = FP_RO
       hand.getWorldPosition(_v); const palm = _v.clone();
       if (finger) { finger.getWorldPosition(_v); palm.add(_v).multiplyScalar(0.5); }
       if (props.cup.visible) {                                             // in the curl of the right hand: the cup sits on the palm side (toward the body)
-        if (grip.ok) { group.worldToLocal(props.cup.position.copy(grip.centre)); const gr = props.cup.children[0].userData.grip; props.cup.position.y -= (gr ? gr.position.y : 0.06) * 0.9; }
+        if (grip.ok && grip.base) group.worldToLocal(props.cup.position.copy(grip.centre));                    // (the solved grip gives the cup's base)
+        else if (grip.ok) { group.worldToLocal(props.cup.position.copy(grip.centre)); const gr = props.cup.children[0].userData.grip; props.cup.position.y -= (gr ? gr.position.y : 0.06) * 0.9; }
         else { props.cup.position.copy(palm); props.cup.position.y -= 0.03; }
         props.cup.rotation.set(0, yaw, 0);
       }

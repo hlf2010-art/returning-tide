@@ -4,6 +4,7 @@
 // Dev lab: the player's own body holding the cup, lit and close, from a few angles (tools/lab/hand.html)
 import * as THREE from 'three';
 import { loadPeople } from '/src/world/people.js';
+window.__fpArmUrl = '/people/fp-arm.glb';
 import { createPlayerBody, setFpSign, CUP_SOCKET, FP_ACROSS } from '/src/world/playerBody.js';
 const Q = new URLSearchParams(location.search); if (Q.has('across')) Q.get('across').split(',').forEach((v, i) => { FP_ACROSS[i] = +v; }); if (Q.has('sock')) Q.get('sock').split(',').forEach((v, i) => { CUP_SOCKET[i] = +v; }); if (Q.has('sign') || Q.has('up')) setFpSign(+(Q.get('sign') || 1), +(Q.get('up') || 1));
 const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(960, 540); document.body.appendChild(r.domElement);
@@ -15,7 +16,7 @@ const pb = createPlayerBody(people, Q.has('role') ? { fpRole: Q.get('role') } : 
 const player = { body: { x: 0, y: 0, z: 0, vx: 0, vz: 0 }, yaw: Math.PI, pitch: -0.6, speed: 0, stride: 0, head: null };
 pb.setHold({ cup: !new URLSearchParams(location.search).has('nocup'), phone: false });
 const eye = new THREE.Vector3(0, 1.62, 0);
-for (let i = 0; i < 60; i++) { pb.update(1 / 30, player, eye.clone()); pb.placeProps(eye); }
+await new Promise((r) => setTimeout(r, 4000)); for (let i = 0; i < 60; i++) { pb.update(1 / 30, player, eye.clone()); pb.placeProps(eye); }
 window.view = (name) => {
   const hand = pb.root.getObjectByName('Bip01_R_Hand').getWorldPosition(new THREE.Vector3());
   const V = { fp: [eye.x, eye.y, eye.z], front: [hand.x, hand.y + 0.05, hand.z + 0.45], side: [hand.x - 0.45, hand.y + 0.05, hand.z], top: [hand.x, hand.y + 0.45, hand.z + 0.05], out: [hand.x + 0.45, hand.y + 0.05, hand.z] }[name];
