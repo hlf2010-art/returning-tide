@@ -149,10 +149,24 @@ export function applyIncident(L, tier, { kmh = 0, zebra = true, filmed = false, 
   return res;
 }
 
+// How far a hit travels (world/roadFallout.js acts on it). 0 nobody saw it but the police and the
+// street; 1 a video goes round group chats and Xiaohongshu; 2 it trends ("Lamborghini hits pedestrian
+// on the Bund"); 3 it makes the news. Filming carries it; speed and doing it again carry it further.
+//   filmed, kmh (at the hit), hits (his hits so far, this one included)
+export const VIRAL = { trendKmh: 60, newsKmh: 75 };
+export function virality({ filmed = false, kmh = 0, hits = 1 } = {}) {
+  if (hits >= 3) return 3;
+  if (!filmed) return hits >= 2 ? 1 : 0;
+  if (kmh >= VIRAL.newsKmh || hits >= 2 && kmh >= VIRAL.trendKmh) return 3;
+  if (kmh >= VIRAL.trendKmh || hits >= 2) return 2;
+  return 1;
+}
+const VIRAL_EN = ['', ' A video of it went round group chats.', ' The video trended online ("Lamborghini hits pedestrian on the Bund").', ' It made the news, and the video trended online.'];
+
 // a line for whoever he talks to, if it has happened (empty otherwise)
 export function incidentText(L) {
   const F = L.flags || {};
-  if (F.carHits) return `He knocked down a pedestrian on the zebra on the Bund in his Lamborghini (they were shaken, not badly hurt); the traffic police fined him and he has ${F.carPoints || 0} points on his licence.`;
+  if (F.carHits) return `He knocked down a pedestrian on the zebra on the Bund in his Lamborghini (they were shaken, not badly hurt); the traffic police fined him and he has ${F.carPoints || 0} points on his licence.${VIRAL_EN[F.carViral || 0] || ''}`;
   if (F.carWarnings) return 'He has frightened pedestrians on the Bund crossing by driving his Lamborghini too fast; someone said they would report him.';
   return '';
 }

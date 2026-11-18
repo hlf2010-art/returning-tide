@@ -43,6 +43,7 @@ Object.assign(PEOPLE, {
   gu:       { name: '顾磊', short: '顾磊', en: 'Gu Lei', role: 'claims systems, Donglan; later Yushen', color: '#4f7a7a', voice: { pitch: 0.92, rate: 1.0 }, sex: 'm' },
   feng:     { name: '冯玉兰', short: '冯总', en: 'Feng Yulan', role: 'VP operations, Donglan Insurance', color: '#8a4a5a', voice: { pitch: 1.0, rate: 1.02 }, sex: 'f' },
   agent:    { name: '中介小吴', short: '小吴', en: 'Wu (letting agent)', role: 'letting agent', color: '#a07a3a', voice: { pitch: 1.05, rate: 1.15 }, sex: 'm' },
+  news:     { name: '新闻推送', short: '新闻', en: 'News alerts', role: 'news app', color: '#b0302a', voice: { pitch: 1, rate: 1 } },
   zhoumin:  { name: '周敏', short: '周敏', en: 'Zhou Min', role: "the watch-repairer's daughter", color: '#7a5a8a', voice: { pitch: 1.06, rate: 0.98 }, sex: 'f' },
 });
 export const FRIENDS = ['xuan', 'yuan', 'momo', 'zhixia', 'yinuo'];

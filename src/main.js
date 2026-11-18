@@ -88,6 +88,7 @@ import { createHailers } from './world/hailers.js';
 import { createDestinations } from './world/destinations.js';
 import { createDriving } from './world/driving.js';
 import { createRoadReactions } from './world/roadReactions.js';
+import { carFallout, runCarFallout } from './world/roadFallout.js';
 import { createMakerspace, MAKERS } from './world/makerspace.js';
 import { createPhotoMode } from './world/photoMode.js';
 import { createFriendScenes } from './world/friendScenes.js';
@@ -318,7 +319,7 @@ async function boot() {
   if (life.flags.carBuy && ['booked', 'viewed', 'specced'].includes(life.flags.carBuy.stage) && lifeStamp(life) >= life.flags.carBuy.at - 5) carSale.appear('viewing');   // (met her but not ordered: she's still there)
   // once it's yours: drive it (world/driving.js)
   // people getting out of its way, and what happens if someone can't (world/roadReactions.js)
-  const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd });
+  const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd, onHit: (L, info) => carFallout(L, info) });
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads });
   world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
@@ -1088,7 +1089,7 @@ function withTime(a) { const t = timeAfterword(life); if (!t) return a; return a
 function updateLife(dt) {
   if (mode !== 'play' && mode !== 'ride' && mode !== 'sale' && mode !== 'sale-seat' && mode !== 'dialogue' && mode !== 'inspect' && mode !== 'pouch') return;
   lifeAdvance(life, dt);
-  if (params.get('life') !== '0') { runAgenda(life); runWork(life); deliverFollowUps(life); }   // ?life=0: nobody gets in touch (measurement tools)
+  if (params.get('life') !== '0') { runAgenda(life); runWork(life); runCarFallout(life); deliverFollowUps(life); }   // ?life=0: nobody gets in touch (measurement tools)
   if (params.get('life') !== '0' && HEARTS_ON) runRomance(life);
   for (const inv of lifeLapse(life)) lifeReact(life, { type: 'invite', id: inv.id, status: 'missed', from: inv.from, thread: inv.thread });
   const events = lifeDrain(life);

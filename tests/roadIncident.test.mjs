@@ -93,4 +93,45 @@ ok(consequence('startle').total === 0 && consequence('glare').total === 0, 'star
   ok(a.lang === 'wuu' && a.gloss && v.lang === 'en' && o && o.zh, 'Shanghainese for the aunties (subtitled), English for visitors, a fallback for anyone');
   ok(lineFor(LINES.cop).who === 'cop', 'the officer speaks as the cop');
 }
+// ---- what it does to his name and the people in his life (world/roadFallout.js) ----
+{
+  const { virality } = await import('../src/engine/roadIncident.js');
+  const { carFallout, runCarFallout } = await import('../src/world/roadFallout.js');
+  const { setupThreads, deliverFollowUps } = await import('../src/world/agenda.js');
+  const { enText } = await import('../src/world/agendaEn.js');
+  const { relation, skipTo, stamp } = await import('../src/engine/life.js');
+  const { heart, meet } = await import('../src/engine/hearts.js');
+  const { rep, factsAbout, career } = await import('../src/engine/year.js');
+  ok(virality({ filmed: false, kmh: 40 }) === 0 && virality({ filmed: true, kmh: 40 }) === 1, 'unfilmed: no further; filmed: a video goes round');
+  ok(virality({ filmed: true, kmh: 65 }) === 2 && virality({ filmed: true, kmh: 80 }) === 3, 'filmed and fast: it trends; very fast: the news');
+  ok(virality({ filmed: false, kmh: 40, hits: 2 }) === 1 && virality({ filmed: true, kmh: 40, hits: 2 }) === 2 && virality({ kmh: 35, hits: 3 }) === 3, 'doing it again carries it further');
+  const fresh = () => { const L = createLife(); setupThreads(L); initYear(L); for (const w of ['gunian', 'kexin', 'yuan']) meet(L, w); return L; };
+  // unfilmed: the people he might love hear of it; the group chat doesn't have a video
+  let L = fresh(); L.flags.carHits = 1;
+  const t0 = heart(L, 'gunian').trust, k0 = (L.threads.kexin ? L.threads.kexin.messages.length : 0);
+  ok(carFallout(L, { kmh: 40, filmed: false }).level === 0, 'no video: level 0');
+  ok(heart(L, 'gunian').trust < t0 && L.threads.kexin.messages.length === k0 + 1, 'she hears of it: trust drops, she writes');
+  ok(heart(L, 'zhiwei').stage === 'stranger' && !(L.threads.zhiwei && L.threads.zhiwei.messages.length), 'nobody he has not met is told');
+  skipTo(L, stamp(L) + 120); ok(deliverFollowUps(L) === 0, 'no video: nothing in the group chat');
+  // filmed, fast: the chat within the hour; the next morning it trends, work and Dad hear
+  L = fresh(); L.flags.carHits = 1;
+  const on0 = rep(L, 'online'), st0 = career(L).standing, d0 = relation(L, 'dad').affinity, f0 = relation(L, 'momo').affinity;
+  ok(carFallout(L, { kmh: 66, filmed: true }).level === 2, 'filmed at 66 km/h: it trends');
+  ok(heart(L, 'kexin').memories.some((x) => x.key === 'car-hit-seen'), 'she remembers the video');
+  ok(relation(L, 'momo').affinity < f0, 'friends cool a little');
+  skipTo(L, stamp(L) + 60); deliverFollowUps(L);
+  const wuhu = L.threads.wuhu.messages.slice(-3);
+  ok(wuhu.length === 3 && wuhu[0].from === 'momo' && /兰博/.test(wuhu[0].text), 'Momo posts the video in the group chat');
+  ok(wuhu.every((x) => enText(x.text) !== x.text), 'every chat line has its English');
+  skipTo(L, (L.clock.day + 1) * 1440 + 8 * 60 + 5); ok(runCarFallout(L) === 1, 'the next morning it lands');
+  ok(rep(L, 'online') <= on0 - 8 && career(L).standing < st0 && relation(L, 'dad').affinity < d0, 'his name online, his standing at work and Dad all take it');
+  skipTo(L, stamp(L) + 30); deliverFollowUps(L);
+  ok(L.threads.dad.messages.at(-1).from === 'dad' && /视频/.test(L.threads.dad.messages.at(-1).text), 'Dad writes: an aunt sent him the video');
+  ok(!L.threads.news, 'trending, not news: no news alert');
+  ok(/trended/.test(incidentText(L)), 'whoever he talks to knows it trended');
+  // the news
+  L = fresh(); L.flags.carHits = 1; carFallout(L, { kmh: 82, filmed: true }); skipTo(L, (L.clock.day + 1) * 1440 + 8 * 60 + 1); runCarFallout(L);
+  ok(L.threads.news && L.threads.news.messages.length === 1 && enText(L.threads.news.messages[0].text) !== L.threads.news.messages[0].text, 'at 82 km/h on film: a news alert (with its English)');
+  ok(/news/.test(incidentText(L)) && factsAbout(L, null, 'car-viral').length === 1, 'on the record: it made the news');
+}
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);

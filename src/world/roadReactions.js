@@ -62,7 +62,7 @@ function groundSit(person, k, h, ground) {
   }
 }
 
-export function createRoadReactions({ scene, people, hud, audio, traffic, player, getLife, save, getCrowd = () => null }) {
+export function createRoadReactions({ scene, people, hud, audio, traffic, player, getLife, save, getCrowd = () => null, onHit = null }) {
   const S = { t: 0, timers: [], lastBark: -1e9, said: new Map(), lastHorn: -1e9, lastScare: -1e9, dodging: new Map(), faced: [], H: null, log: [] };
   const after = (sec, fn) => S.timers.push({ t: sec, fn });
   const crowd = () => getCrowd && getCrowd();
@@ -324,6 +324,7 @@ export function createRoadReactions({ scene, people, hud, audio, traffic, player
     if (S.driving && S.driving.driving) S.driving.forceExit();
     if (S.driving) S.driving.toKerb();
     const L = getLife(), res = applyIncident(L, 'hit', { kmh: H.kmh, zebra: H.zebra, filmed: !!H.filmed });
+    if (onHit) { try { onHit(L, { kmh: H.kmh, zebra: H.zebra, filmed: !!H.filmed }); } catch (e) { console.warn('road fallout', e); } }   // world/roadFallout.js
     save && save();
     hud.toast(summaryText(res), 11);
     H.res = res;

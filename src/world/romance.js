@@ -44,6 +44,8 @@ const GENERIC = {
   'he-took-credit': B('她的工作，功劳记在了他名下，他没有纠正。', "Her work went down under his name and he didn't correct it."),
   'shared-credit': B('他在人前把功劳分给了她。', 'In front of other people he gave her her share of the credit.'),
   'covered-for': B('她出岔子的时候，他替她顶了一次。', 'When she slipped, he covered for her.'),
+  'car-hit': B('她听说他开车在外滩撞倒了一个行人。', 'She heard he knocked down a pedestrian on the Bund in his car.'),
+  'car-hit-seen': B('她看了他开车在外滩斑马线撞倒行人的视频。', 'She watched the video of him knocking down a pedestrian on the Bund zebra crossing in his car.'),
   'seen-online': B('她在网上刷到了关于他的东西。', 'Something about him came up in her feed.'),
   'stood-up': B('他答应了却没有来。', "He said he'd come, and didn't."),
 };
@@ -258,12 +260,30 @@ export function askToMeet(L, who) {
 //   'career-change'  data.track: 'resigned' | 'laidoff' | 'startup' | 'family' | 'switched'
 //   'posted-online'  data: { by, couple, bad }: something with him in it is online
 //   'promoted'       he was promoted          'hurt'          he's visibly hurt
+//   'car-hit'        data: { level 0-3 }: he knocked someone down in the car (world/roadFallout.js)
 // -> what each of them did about it
 const FEEL = {
   'saw-fight': { zhiwei: [-1, -6], nanxing: [2, -3], gunian: [-4, -10], yuan: [0, -5], kexin: [-1, -4] },     // [attraction, trust]
   'heard-fight': { zhiwei: [0, -3], nanxing: [1, -1], gunian: [-2, -5], yuan: [0, -2], kexin: [0, -2] },
+  'car-hit': { zhiwei: [-2, -6], nanxing: [-1, -4], gunian: [-4, -10], yuan: [-1, -5], kexin: [-2, -4] },
   career: { zhiwei: { resigned: [2, 0], startup: [3, 0], laidoff: [0, 3], family: [-3, 0], switched: [1, -2] }, nanxing: { startup: [4, 0], resigned: [2, 0] }, gunian: { family: [0, -2], startup: [1, 2] }, yuan: { laidoff: [0, 4], startup: [2, 0] }, kexin: { startup: [2, 0] } },
 };
+// he knocked someone down in the car (world/roadFallout.js): 'heard' (no video), 'seen' (a video going
+// round), 'trending' (only Kexin says something different: it's her world)
+const CAR = {
+  zhiwei: { heard: B('听说你的车在外滩被拖走了，还有人受了伤？……你先把这事处理干净。', "I hear your car was towed off the Bund, and someone was hurt? ...Deal with it properly first."),
+    seen: B('视频我看了。斑马线，兰博基尼，外滩。你知道这三个词放一起客户会怎么想吗？人没事就好。别再那样开车。', "I watched the video. A zebra crossing, a Lamborghini, the Bund. Do you know what a client makes of those three together? I'm glad they're all right. Don't drive like that again.") },
+  nanxing: { heard: B('听说你开车撞了人。我以前跑社会新闻，这种事见多了，从没想过会是你。', "I hear you hit someone with the car. I used to cover local news; I've seen plenty of these. I never thought it would be you."),
+    seen: B('那条视频我看了三遍。拍的人手很稳，你不太稳。被你撞的那个人还好吗？', "I watched that video three times. Whoever shot it had a steady hand. You didn't. Is the person you hit all right?") },
+  gunian: { heard: B('明轩说你开车撞了人。人没事吧？我想听你自己说。', "Mingxuan says you hit someone with the car. Are they all right? I'd like to hear it from you."),
+    seen: B('我看到视频了。先问一句：那个人怎么样了？……你是怎么想的，在外滩开那么快。', 'I saw the video. First: how is the person? ...What were you thinking, driving that fast on the Bund?') },
+  yuan: { heard: B('听说你车出事了？撞到人了？你给我打个电话。', 'I hear something happened with the car? You hit someone? Call me.'),
+    seen: B('纪白。视频都传到我们所的群里了。你没事吧？那个行人呢？你在湾区连黄灯都不抢的。', "Ji Bai. The video's reached our office chat. Are you all right? And the pedestrian? In the Bay Area you wouldn't even run an amber light.") },
+  kexin: { heard: B('听说你在外滩撞了人？还好没人拍，不然你就火了。', "I hear you hit someone on the Bund? Lucky nobody filmed it, or you'd be famous."),
+    seen: B('有人在小红书发了你的车和斑马线，还没火。我认识几个号，能压就压。但你得保证没有第二次。', "Someone posted your car and the zebra crossing on Xiaohongshu. It hasn't taken off yet. I know a few accounts; I'll keep it down if I can. But promise me there won't be a second time."),
+    trending: B('你上热搜了，不是好的那种。“外滩兰博基尼撞人”。别发声明，别删评论。先去看看那个人，带点东西。拍不拍随你。', "You're trending, and not the good way. 'Lamborghini hits pedestrian on the Bund'. No statement, don't delete comments. Go and see the person first, take something. Whether you film it is up to you.") },
+};
+for (const who of Object.keys(CAR)) for (const l of Object.values(CAR[who])) t(l.zh, l.en);
 export function romanceEvent(L, id, type, data = {}) {
   if (!isYear(L)) return [];
   const out = [], f = (who, d, why) => feel(L, who, { attraction: d[0], trust: d[1] }, why);
@@ -280,6 +300,11 @@ export function romanceEvent(L, id, type, data = {}) {
     else if (type === 'career-change') { const d = (FEEL.career[who] || {})[data.track]; if (d) f(who, d, `career:${data.track}`); if (who === 'zhiwei' && data.track !== 'consulting') heart(L, who).said.free = stamp(L); if (lines.career[data.track]) tell(who, lines.career[data.track]); }
     else if (type === 'promoted') { if (who === 'zhiwei') { f(who, [1, -2], type); tell(who, LINES.promoted); } }
     else if (type === 'hurt') { f(who, [0, 1], type); tell(who, lines.hurt); }
+    else if (type === 'car-hit') {                                      // data: { level 0-3 } (engine/roadIncident.js virality)
+      const lv = data.level || 0, base = FEEL['car-hit'][who];
+      f(who, [base[0] - (lv >= 2 ? 1 : 0), base[1] - (lv >= 2 ? 2 : 0)], type); remember(L, who, lv ? 'car-hit-seen' : 'car-hit');
+      const c = CAR[who]; tell(who, lv >= 2 && c.trending ? c.trending : lv ? c.seen : c.heard);
+    }
     else if (type === 'posted-online') {
       if (data.by === who) continue;                                    // her own post: she knows
       if (data.by === 'kexin' && data.couple && isSeeing(L, who)) { voice(L, foundOut(L, who, 'online'), out); continue; }
