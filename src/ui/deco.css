@@ -336,3 +336,9 @@ html[lang="zh-CN"] #entry .actions .mbtn { font-size: 15px !important; letter-sp
 #entry .topbar .seg button.on::before, #entry .topbar .seg button.on + button::before { opacity: 0; }   /* the lozenge only between two unchosen halves */
 #entry .topbar .seg button:not(.on):hover { color: #f4e6c4; background: rgba(200, 163, 90, 0.1); }
 #entry .topbar .seg button.on { clip-path: var(--cut); }
+
+/* the title card: a poster line, then the logline under it */
+#entry .tagline { white-space: nowrap; margin: 14px auto 0; font: 500 clamp(20px, 2.15vw, 28px)/1.25 var(--rt-serif); letter-spacing: 0.04em; color: #f4e6c4; text-shadow: 0 2px 18px rgba(4, 7, 14, 0.85); }
+@media (max-width: 640px) { #entry .tagline { white-space: normal; } }
+html[lang="zh-CN"] #entry .tagline { font-weight: 700; letter-spacing: 0.16em; margin-right: -0.16em; }
+#entry .premise { max-width: 34rem; margin-top: 12px; font-size: 14.5px; color: rgba(244, 230, 196, 0.78); }
