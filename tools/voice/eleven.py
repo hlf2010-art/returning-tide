@@ -76,7 +76,7 @@ STABILITY = {'dad': 0.7}
 # pitch a voice down (ratio < 1) after it's made, the tempo kept: Dad lower than any premade voice
 PITCH = {'dad': 0.915}
 # and a little quicker (tempo ratio, the pitch kept)
-TEMPO = {'dad': 1.08}
+TEMPO = {'dad': 1.12}
 DIRECTION_WHO = {'xuan': ('[warm, hearty]', None, None), 'zhixia': ('[rapid-fire, excited]', '[pleading, playful]', None)}
 
 
