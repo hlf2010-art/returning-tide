@@ -14,6 +14,10 @@ let lang = (() => {
   return typeof navigator !== 'undefined' && /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
 })();
 
+// the page says its language from the start, not only after a switch, so the zh-CN rules in the CSS apply
+// on a first load in Chinese too (the title's weight and spacing, the menus' letter-spacing)
+if (typeof document !== 'undefined') document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+
 export const getLang = () => lang;
 export function setLang(l) {
   if (l !== 'zh' && l !== 'en' || l === lang) return;

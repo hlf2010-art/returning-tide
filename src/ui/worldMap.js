@@ -38,13 +38,13 @@ export function createWorldMap({ getState, onClose, onWaypoint }) {
     const base = paint(B, P), c = base.c, x = c.getContext('2d');
     // the Pudong bank across the water
     if (mapExtras.length) return base;                        // (Lujiazui paints its own ground: world/lujiazui.js)
-    x.fillStyle = '#2a2e36'; x.fillRect(base.px(470), 0, c.width - base.px(470), c.height);
-    x.fillStyle = '#3c414c'; for (const [tx, tz, w, d] of [[640, -42, 30, 30], [700, 40, 40, 40], [520, -120, 36, 40], [540, 70, 30, 60]]) if (tx - w / 2 < B.X1) x.fillRect(base.px(tx - w / 2), base.pz(tz - d / 2), w * P, d * P);
+    x.fillStyle = '#132328'; x.fillRect(base.px(470), 0, c.width - base.px(470), c.height);
+    x.fillStyle = '#1d343b'; for (const [tx, tz, w, d] of [[640, -42, 30, 30], [700, 40, 40, 40], [520, -120, 36, 40], [540, 70, 30, 60]]) if (tx - w / 2 < B.X1) x.fillRect(base.px(tx - w / 2), base.pz(tz - d / 2), w * P, d * P);
     return base;
   }
   function draw() {
     const s = getState(), r = dpr();
-    g.setTransform(r, 0, 0, r, 0, 0); g.fillStyle = '#0e1116'; g.fillRect(0, 0, innerWidth, innerHeight);
+    g.setTransform(r, 0, 0, r, 0, 0); g.fillStyle = '#070b0f'; g.fillRect(0, 0, innerWidth, innerHeight);
     if (!ground) ground = paintGround();
     const [ox, oy] = toScreen(B.X0, B.Z0), k = V.s / P;
     g.imageSmoothingEnabled = true; g.drawImage(ground.c, ox, oy, ground.c.width * k, ground.c.height * k);

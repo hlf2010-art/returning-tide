@@ -135,7 +135,8 @@ import { createMinimapState, updateMinimap, zoneAt } from './engine/minimapLogic
 import { createWind, WIND_LEVELS } from './world/wind.js';
 import { planterIslands, streetTrees } from './world/layout.js';
 import { icon } from './ui/icons.js';
-import './ui/glass.css';                                    // liquid glass: loaded last, restyles the UI (ui/glass.css)
+import './ui/fonts.js';                                     // the display type and colour tokens the theme uses (also loaded by profile.js / season.js)
+import './ui/deco.css';                                     // Bund Deco: loaded last, restyles the UI in the title screen's manner (ui/deco.css)
 import { setSpringViewer } from './world/springs.js';
 
 const params = new URLSearchParams(location.search);

@@ -19,7 +19,7 @@ one short street (Hankou Road), ~155 m of the Bund promenade with two conversing
 - **Voices:** every scripted line is recorded in Mandarin and English (1,491 clips, Kokoro-82M via `tools/voice/generate.py`); only lines made up at runtime (free conversation, lines with live numbers) fall back to subtitles. The browser's synthetic speech is never used.
 - **Phone:** voice notes play with a progress bar (↑/↓ and Enter, or click), videos play in the chat, calls play their recorded lines.
 - **Streets:** pedestrians look ahead and pass each other, use kerbs and crossings without sticking, and flinch when they do brush; Manner has two baristas at work; the buses are painted metal with glass and an interior.
-- **UI:** liquid glass (`src/ui/glass.css`, icons in `src/ui/icons.js`), after inZOI's design: frosted panels with hairline edges, pill controls, icons where a word isn't needed.
+- **UI:** Bund Deco (`src/ui/deco.css`, on the shared tokens in `src/ui/fonts.js`; icons in `src/ui/icons.js`), in the manner of the title screen, the character page and the season screen: river-night panels with a gold double rule, chamfered gold plaques for the main action, Cormorant / Noto Serif lettering spaced wide, Poiret One for small labels. It replaced the earlier liquid-glass layer; the phone keeps its own glass, as a 2026 phone would. Icons stand in where a word isn't needed.
 
 ## Run
 
