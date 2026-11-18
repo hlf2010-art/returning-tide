@@ -1,0 +1,209 @@
+{
+ "model": "eleven_v3",
+ "clips": {
+  "bff4a335": {
+   "who": "zhiwei",
+   "lang": "zh",
+   "voice": "XrExE9yKIg1WjnnlVkGX",
+   "text": "两周没有产出，Raymond 会问。我替你顶着。"
+  },
+  "b5053aef": {
+   "who": "zhiwei",
+   "lang": "en",
+   "voice": "XrExE9yKIg1WjnnlVkGX",
+   "text": "Two weeks without a deliverable and Raymond will ask. I'll hold him off."
+  },
+  "8d6cf1ed": {
+   "who": "gunian",
+   "lang": "zh",
+   "voice": "pFZP5JQG7iQjIQuC4Bku",
+   "text": "昨天谢谢你替我坐下。汉口路那家 Manner，我每天一点在。今天也在。"
+  },
+  "49c1d5ef": {
+   "who": "gunian",
+   "lang": "en",
+   "voice": "pFZP5JQG7iQjIQuC4Bku",
+   "text": "Thank you for sitting down for me yesterday. I'm at the Manner on Hankou Road at one every day. Today as well."
+  },
+  "e1ebee7b": {
+   "who": "nanxing",
+   "lang": "zh",
+   "voice": "EXAVITQu4vr4xnSDxMaL",
+   "text": "没事。就是冲出来一张片子，想第一个给你看。"
+  },
+  "33990f45": {
+   "who": "nanxing",
+   "lang": "en",
+   "voice": "EXAVITQu4vr4xnSDxMaL",
+   "text": "It's nothing. I've just developed a picture and wanted you to be the first to see it."
+  },
+  "52939f33": {
+   "who": "yuan",
+   "lang": "zh",
+   "voice": "SAz9YHcvj6GT2YYXdXww",
+   "text": "所以你真的回去了。"
+  },
+  "427493b3": {
+   "who": "yuan",
+   "lang": "en",
+   "voice": "SAz9YHcvj6GT2YYXdXww",
+   "text": "So you really went back."
+  },
+  "d5eb47f8": {
+   "who": "kexin",
+   "lang": "zh",
+   "voice": "cgSgspJ2msm6clMCkdW9",
+   "text": "发了。小猫贴纸的点赞比我的脸还多，我有点受伤😂"
+  },
+  "fc820686": {
+   "who": "kexin",
+   "lang": "en",
+   "voice": "cgSgspJ2msm6clMCkdW9",
+   "text": "Posted. The cat sticker got more likes than my face. I'm a little hurt 😂"
+  },
+  "672f818a": {
+   "who": "ruoan",
+   "lang": "zh",
+   "voice": "Xb7hH8MSUJpSbSDYk0k2",
+   "text": "来啦。准时，难得。"
+  },
+  "ad338463": {
+   "who": "ruoan",
+   "lang": "en",
+   "voice": "Xb7hH8MSUJpSbSDYk0k2",
+   "text": "You came. On time, for once."
+  },
+  "2692dc92": {
+   "who": "yinuo",
+   "lang": "zh",
+   "voice": "hpp4J3VqNfWAUOO0d1Us",
+   "text": "你还是这样，看东西先看毛病。"
+  },
+  "f7af85cf": {
+   "who": "yinuo",
+   "lang": "en",
+   "voice": "hpp4J3VqNfWAUOO0d1Us",
+   "text": "You haven't changed. You always see the faults first."
+  },
+  "8a2b3044": {
+   "who": "dad",
+   "lang": "zh",
+   "voice": "pqHfZKP75CvOlQylNhV4",
+   "text": "嗯。你妈让你按时吃饭。挂了。"
+  },
+  "dd7ae107": {
+   "who": "dad",
+   "lang": "en",
+   "voice": "pqHfZKP75CvOlQylNhV4",
+   "text": "Mm. Your mother says eat properly. Bye."
+  },
+  "fac39300": {
+   "who": "dad",
+   "lang": "zh",
+   "voice": "pqHfZKP75CvOlQylNhV4",
+   "text": "……你自己的事，你自己想清楚。钱够不够？"
+  },
+  "7ed9ffc9": {
+   "who": "dad",
+   "lang": "en",
+   "voice": "pqHfZKP75CvOlQylNhV4",
+   "text": "...Your life, you think it through. Do you have enough money?"
+  },
+  "5a583990": {
+   "who": "mum",
+   "lang": "zh",
+   "voice": "XrExE9yKIg1WjnnlVkGX",
+   "text": "白白，妈妈看到你朋友圈了，那个车……你爸还不知道。你自己注意安全，按时吃饭。"
+  },
+  "d73578d4": {
+   "who": "mum",
+   "lang": "en",
+   "voice": "XrExE9yKIg1WjnnlVkGX",
+   "text": "Baibai, Mum saw your Moments. That car... your father doesn't know yet. Be careful, and eat properly."
+  },
+  "ddb83121": {
+   "who": "lin",
+   "lang": "zh",
+   "voice": "JBFqnCBsd6RMkjVDRZzb",
+   "text": "十一月就这样，白天看着还暖和，一过五点天就暗下来了。"
+  },
+  "a2ed31cd": {
+   "who": "lin",
+   "lang": "en",
+   "voice": "JBFqnCBsd6RMkjVDRZzb",
+   "text": "That's November. Looks warm in the daytime, then after five it's dark."
+  },
+  "6ddd8cfa": {
+   "who": "su",
+   "lang": "zh",
+   "voice": "hpp4J3VqNfWAUOO0d1Us",
+   "text": "对岸东方明珠刚才亮灯那一下，江面上全倒映出来了。"
+  },
+  "964db413": {
+   "who": "su",
+   "lang": "en",
+   "voice": "hpp4J3VqNfWAUOO0d1Us",
+   "text": "The Pearl Tower lights came on just now. The whole river lit up with it."
+  },
+  "7f6ec5dc": {
+   "who": "momo",
+   "lang": "zh",
+   "voice": "TX3LPaxmHKxFdv7VOQHJ",
+   "text": "昨晚和平饭店门口那事，吧台的小妹说是你？可以啊纪白。"
+  },
+  "0c1d2d7a": {
+   "who": "momo",
+   "lang": "en",
+   "voice": "TX3LPaxmHKxFdv7VOQHJ",
+   "text": "That business outside the Peace Hotel last night. The girl on the bar says it was you? Not bad, Ji Bai."
+  },
+  "a1e48278": {
+   "who": "founder",
+   "lang": "zh",
+   "voice": "iP95p4xoKVk53GoZ742B",
+   "text": "我们的机械臂末端正好缺一双眼睛。"
+  },
+  "43f5bc4c": {
+   "who": "founder",
+   "lang": "en",
+   "voice": "iP95p4xoKVk53GoZ742B",
+   "text": "The end of our arm happens to be missing a pair of eyes."
+  },
+  "a9d93aad": {
+   "who": "vivian",
+   "lang": "zh",
+   "voice": "FGY2WhTYpPnrIDTdsKH5",
+   "text": "怎么样？在外滩开这台车，整条路的人都在看您。"
+  },
+  "7489ddb8": {
+   "who": "vivian",
+   "lang": "en",
+   "voice": "FGY2WhTYpPnrIDTdsKH5",
+   "text": "Well? Drive this along the Bund and the whole street watches you."
+  },
+  "b3e6c31f": {
+   "who": "xuan",
+   "lang": "zh",
+   "voice": "cjVigY5qzO86Huf0OWal",
+   "text": "白白！来来来。这是周学长，我们学校机械系的，现在做协作机械臂。"
+  },
+  "ce547453": {
+   "who": "xuan",
+   "lang": "en",
+   "voice": "cjVigY5qzO86Huf0OWal",
+   "text": "Baibai! Come in. This is Zhou, a senior from our university, mechanical engineering. Cobots now."
+  },
+  "f2a2f943": {
+   "who": "zhixia",
+   "lang": "zh",
+   "voice": "FGY2WhTYpPnrIDTdsKH5",
+   "text": "白白，帮个忙。我想给赛车做个数据记录仪：CAN总线读转速和刹车压力，GPS记圈速，再加个陀螺仪看G值。你会做吧？零件我出，送到你那个创客空间。"
+  },
+  "a6569b51": {
+   "who": "zhixia",
+   "lang": "en",
+   "voice": "FGY2WhTYpPnrIDTdsKH5",
+   "text": "Baibai, a favour. I want a data logger for my race car: revs and brake pressure off the CAN bus, GPS for lap times, a gyro for the g-forces. You can build that, right? I'll pay for the parts and send them to your makerspace."
+  }
+ }
+}
