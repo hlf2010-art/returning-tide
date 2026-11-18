@@ -61,7 +61,7 @@ export function createTrainSet(root, { slots = 3 } = {}) {
     dark: std({ color: 0x24272a, roughness: 0.7, metalness: 0.3 }),
     panel: std({ color: 0xdfe2e3, roughness: 0.45 }),
     floor: std({ map: carFloorTex(), roughness: 0.75 }),
-    seat: std({ color: 0xc9ced3, roughness: 0.2, metalness: 0.9 }),
+    seat: std({ color: 0x1f63d6, roughness: 0.32, metalness: 0.05 }),   // Line 2's newer cars: blue moulded seats (the owner's photo)
     prio: std({ color: 0xe0612f, roughness: 0.35, metalness: 0.25 }),
     prioSign: Object.assign(new THREE.MeshBasicMaterial({ map: prioTex(), color: new THREE.Color(1.05, 1.05, 1.05) }), { userData: { todSkip: true } }),
     steel: std({ color: 0xd6dadc, roughness: 0.18, metalness: 0.95 }),
@@ -112,7 +112,7 @@ export function createTrainSet(root, { slots = 3 } = {}) {
   for (const s of [-1, 1]) bx('light', s * 0.36, s * 0.6, CEIL - 0.012, CEIL, -HALF + 0.3, HALF - 0.3);
   for (const s of [-1, 1]) for (const [z0, z1] of SEATS) {
     const xi = s * IN;
-    // one seat each (dished stainless steel, a slim gap between): the ones at the car's ends are the
+    // one seat each (dished, blue, a slim gap between): the ones at the car's ends are the
     // priority seats (爱心专座), in orange, the sticker on the wall above them
     const prio = z0 < -HALF + 1 || z1 > HALF - 1, n = Math.max(1, Math.floor((z1 - z0) / 0.46)), sw = (z1 - z0) / n;
     for (let k = 0; k < n; k++) {
