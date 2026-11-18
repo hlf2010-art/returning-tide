@@ -30,7 +30,7 @@ export function createAudio() {
   const loops = [];                                          // every looping source ever started (for the duplicate check)
   // the crowd's murmur (tools/voice/walla.py: many people talking at once, recorded voices): fetched
   // and decoded as the page loads, so the loop is there the moment the graph is built
-  let murmurBuf = null, murmur = null, lastCrowd = -1, boat = null, lastBoat = -1;
+  let murmurBuf = null, murmur = null, lastCrowd = -1, lastStreet = -1, boat = null, lastBoat = -1;
   if (typeof window !== 'undefined' && window.OfflineAudioContext && typeof fetch === 'function') {
     fetch('./ambience/murmur.mp3').then((r) => (r.ok ? r.arrayBuffer() : null))
       .then((ab) => ab && new window.OfflineAudioContext(1, 1, 24000).decodeAudioData(ab))
@@ -45,6 +45,15 @@ export function createAudio() {
     }
     split.connect(lp).connect(g).connect(env);
     murmur = { g, lp };
+    // Nanjing Road's din: four more copies of the crowd, offset, a little faster and slower, on top of the
+    // ordinary murmur (setStreet), for a pedestrian street packed wall to wall
+    const sg = gainNode(0), slp = filt('lowpass', 7000, 0.5), ss = ctx.createChannelMerger(2);
+    [[1.03, 0.13, 0], [0.965, 0.31, 1], [1.012, 0.62, 0], [0.99, 0.83, 1]].forEach(([rate, off, ch]) => {
+      const s = ctx.createBufferSource(); s.buffer = murmurBuf; s.loop = true; s.playbackRate.value = rate;
+      s.connect(ss, 0, ch); s.start(0, off * murmurBuf.duration + Math.random() * 2); loops.push(s);
+    });
+    ss.connect(slp).connect(sg).connect(env);
+    murmur.street = sg;
   }
   const voices = new Map();                                  // vehicle id -> voice
   const stats = { startCalls: 0, cues: { collect: 0, tear: 0 }, steps: { stone: 0, asphalt: 0 }, landings: 0, horns: 0 };
@@ -433,6 +442,14 @@ export function createAudio() {
       murmur.lp.frequency.setTargetAtTime(2200 + 4500 * Math.min(1, v), t, 0.9);   // a few people far off: duller
     },
     get crowdLevel() { return murmur ? murmur.g.gain.value : 0; },
+    // on Nanjing Road: 0..1 how much of its din you're in
+    setStreet(level) {
+      if (!ctx || !murmur || !murmur.street) return;
+      const v = Math.round(Math.max(0, Math.min(1, level)) * 20) / 20;
+      if (v === lastStreet) return;
+      lastStreet = v;
+      murmur.street.gain.setTargetAtTime(0.55 * v, ctx.currentTime, 1.2);
+    },
     setPaused(p) {
       paused = !!p;
       if (!ctx) return;

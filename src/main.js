@@ -13,7 +13,7 @@ import { createRenderer } from './engine/renderer.js';
 import { loadGfx, saveGfx, tweak as gfxTweak, detail as gfxDetail, shouldDraw, treeStep, resolve as gfxResolve } from './engine/gfx.js';
 import { createPlayer } from './engine/player.js';
 import { createAudio } from './engine/audio.js';
-import { L, npcs as npcLayout } from './world/layout.js';
+import { L, NJ, npcs as npcLayout } from './world/layout.js';
 import { FONT, loadFonts } from './world/canvas.js';
 import { T, ALL_TEXT } from './world/text.js';
 import { createMaterials } from './world/materials.js';
@@ -635,6 +635,7 @@ function devMission(start) {
 }
 
 document.getElementById('begin').addEventListener('click', begin);
+
 document.getElementById('resume').addEventListener('click', () => { lock(); if (noLock) play(); });
 // ---- settings: language, subtitles, sound (title screen and pause menu) ----
 // first-play tips (ui/tips.js): once each, when you're free; off for measurement tools unless ?tips
@@ -880,6 +881,16 @@ if (!life) { life = createLife(); setupThreads(life); initYear(life); } else add
 if (params.has('legacy') && params.has('fresh')) delete life.flags.year;   // tools: a new six-day game, as before the year existed
 if (params.has('hour')) { const [h, m] = params.get('hour').split(':').map(Number); if (h >= 0 && h < 24) { life.clock.minute = h * 60 + (m || 0); life.clock.sec = 0; } }
 let saves = null;
+// a saved game is picked up where it was left (so its clock is its own, not the new game's 3:30 pm): the title
+// says so on the button, and offers a new game beside it
+function titleChoice() { const ng = document.getElementById('new-game'), saved = (() => { try { return !!localStorage.getItem(LIFE_KEY); } catch { return false; } })();
+  if (ng && saved && !params.has('fresh')) {
+    const label = () => { ng.textContent = getLang() === 'zh' ? '新的开始' : 'New game'; };
+    label(); onLang(label); ng.style.display = '';
+    const wait = setInterval(() => { const b = document.getElementById('begin'); if (b && !b.disabled) { clearInterval(wait); b.textContent = getLang() === 'zh' ? `继续 · 第 ${life.clock.day} 天 ${lifeClock(life.clock.minute)}` : `Continue · day ${life.clock.day}, ${lifeClock(life.clock.minute)}`; } }, 300);
+    ng.addEventListener('click', () => { if (!confirm(getLang() === 'zh' ? '从头开始？现在的存档会被清掉。' : 'Start over? The saved game will be cleared.')) return; try { localStorage.removeItem(LIFE_KEY); } catch { /* */ } location.reload(); });
+  } }
+titleChoice();
 const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); if (saves) saves.touched(); } catch { /* private mode: no saving */ } };
 // the pause menu's saves panel: three slots, copy / load / export / import
 saves = createSaves({ getLife: () => life, serialize: lifeSave, deserialize: lifeLoad,
@@ -1235,7 +1246,8 @@ function updateTraffic(dt) {
     world.crowdView.update(dt, eye, { rain: weather.rain });
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
     crowdHear -= dt;
-    if (crowdHear <= 0) { crowdHear = 0.5; let k = 0; for (const a of cr.agents) if (!a.gone) { const d = Math.hypot(a.x - b.x, a.z - b.z, (a.y - b.y) * 1.5); if (d < 24) k += 1 - d / 24; } audio.setCrowd(k / 12); }
+    if (crowdHear <= 0) { crowdHear = 0.5; let k = 0; for (const a of cr.agents) if (!a.gone) { const d = Math.hypot(a.x - b.x, a.z - b.z, (a.y - b.y) * 1.5); if (d < 24) k += 1 - d / 24; } audio.setCrowd(Math.max(k / 12, nanjingDin(b) * 0.85));
+      audio.setStreet(nanjingDin(b)); }
     // tour guides talk to their groups now and then (you hear them when you're near)
     for (const tour of cr.tours) {
       const g = tour.guide; tour.said = (tour.said || 0) - dt;
@@ -1267,6 +1279,13 @@ function updateTraffic(dt) {
 
 // ---- the hour (engine/timeOfDay.js): one state from the clock, handed to everything it lights ----
 const PIN_HOUR = params.has('q') && !params.has('hour') && !params.has('tod');
+// how far into Nanjing Road's din you are: the pedestrian street from the Bund to Henan Road, through its
+// opening hours (the evening crowd's curve, engine/timeOfDay.js), fading out over the last 30 m at either end
+function nanjingDin(b) {
+  if (b.y < -1 || !(b.z > NJ.z0 - 6 && b.z < NJ.z1 + 6) || b.x > L.facadeX + 30 || b.x < NJ.xWest) return 0;
+  const ends = Math.min(1, (L.facadeX + 30 - b.x) / 30);
+  return ends * (0.55 + 0.45 * (hourState.crowd ?? 1));
+}
 let crowdHear = 0, envCaptures = 0, world0 = null, hourState = todState(17 * 60 + 42), hourAt = -1, hourTick = 0, envAt = null, envWait = 0, lastHourMin = null;
 const _hazeFog = new THREE.Color(), DAY_HAZE_FOG = new THREE.Color(0.64, 0.66, 0.68);
 // tools: ?hour=HH:MM sets today's clock at load (the screenshots of the day); debug.setHour too

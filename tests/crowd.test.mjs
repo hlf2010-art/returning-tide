@@ -31,7 +31,7 @@ for (let f = 0; f < 30 * 180; f++) {
   c.update(1 / 30, { player: { x: 17, z: -10 } });
   for (const a of c.agents) a._sp = Math.hypot(a.x - a._px, a.z - a._pz) * 30;
   for (const a of c.agents) {
-    if (a.gone) continue;
+    if (a.gone || a.inside) continue;                                    // (in a shop on Nanjing Road: out of sight, behind its doorway)
     const boss = a.kind === 'follower' ? a.group.guide : a.leader;
     if (t > 5 && (a.state === 'walk' || a.state === 'cross') && (!boss || boss._sp > 0.3) && a._sp < 0.12) {
       const s0 = (still.get(a) || 0) + 1 / 30; still.set(a, s0);

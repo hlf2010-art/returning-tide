@@ -89,7 +89,7 @@ export const S = {
   controls: { zh: '操作', en: 'Controls' },
   close: { zh: '关闭', en: 'Close' },
   place: { zh: '外滩 · 汉口路', en: 'The Bund · Hankou Road' },
-  placeSub: { zh: '十一月 · 15:00', en: 'November · 15:00' }, month: { zh: '十一月', en: 'November' },
+  placeSub: { zh: '十一月 · 15:30', en: 'November · 15:30' }, month: { zh: '十一月', en: 'November' },
   keys: [
     ['WASD', { zh: '走', en: 'walk' }], ['Shift', { zh: '快走', en: 'hurry' }], ['Space', { zh: '跳', en: 'jump' }],
     ['E', { zh: '互动', en: 'interact' }], ['M', { zh: '地图', en: 'map' }], ['P', { zh: '手机', en: 'phone' }], ['J', { zh: '日志', en: 'journal' }], ['I', { zh: '人物', en: 'character' }],

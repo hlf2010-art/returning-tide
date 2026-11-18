@@ -24,6 +24,26 @@ const SHOP_TYPES = [['丝绸', 'SILK'], ['钟表', 'WATCHES'], ['工艺美术', 
   ['酒家', 'RESTAURANT'], ['眼镜', 'OPTICIAN'], ['食品', 'FOOD HALL'], ['时装', 'FASHION'], ['箱包', 'LUGGAGE'], ['生煎', 'FRIED BUNS'], ['纪念品', 'SOUVENIRS'], ['数码', 'DIGITAL']];
 const SYL = ['华', '美', '新', '恒', '永', '丰', '德', '益', '昌', '兴', '和', '泰', '瑞', '鸿', '宝', '光', '大', '协'];
 const NEON = ['#ff3b3b', '#ffd23a', '#ffffff', '#3bd1ff', '#ff4fd8', '#5bff8f', '#ff8a2a'];
+// an open shop doorway: warm light, the doors folded back, the floor inside and shelves in silhouette
+function doorTexture() {
+  const [c, x] = makeCanvas(128, 160);
+  const g = x.createLinearGradient(0, 0, 0, 160); g.addColorStop(0, '#fff3d6'); g.addColorStop(1, '#e8c890');
+  x.fillStyle = g; x.fillRect(0, 0, 128, 160);
+  x.fillStyle = 'rgba(120,90,60,0.35)'; for (let i = 0; i < 4; i++) x.fillRect(14 + i * 26, 30, 16, 80);          // shelves in the back
+  x.fillStyle = '#b89a70'; x.fillRect(0, 128, 128, 32);                                                       // the floor
+  x.fillStyle = '#2a2622'; x.fillRect(0, 0, 128, 6); x.fillRect(0, 0, 5, 160); x.fillRect(123, 0, 5, 160);     // the frame
+  x.fillStyle = 'rgba(40,40,44,0.5)'; x.fillRect(5, 6, 10, 154); x.fillRect(113, 6, 10, 154);                 // the glass doors, open
+  return tex(c, { repeat: false });
+}
+// a flagship's name over its front
+function brandSign({ sign: [main, sub], fg, bg }) {
+  const [c, x] = makeCanvas(1024, 226);
+  x.fillStyle = bg; x.fillRect(0, 0, 1024, 226);
+  x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = `700 ${/[一-鿿]/.test(main) ? 104 : 118}px ${FONT.sans}`; x.fillText(main, 512, 96, 980);
+  x.font = `500 34px ${FONT.sans}`; x.globalAlpha = 0.85; x.fillText(sub, 512, 186, 980);
+  return tex(c, { repeat: false, aniso: 8 });
+}
 function signAtlas(seed = 7) {
   const r = rng(seed), [c, x] = makeCanvas(2048, 2048);
   x.fillStyle = '#000'; x.fillRect(0, 0, 2048, 2048);
@@ -170,12 +190,12 @@ export function createNanjingRoad(M) {
     g.computeVertexNormals(); batch.push(g);
   };
   // one building: footprint along the street, its street face at zf facing `dir` (+1 south, -1 north)
-  function building(xa, xb, zf, dir, seed) {
+  function building(xa, xb, zf, dir, seed, opts = {}) {
     const rr = rng(seed), w = xb - xa, kind = rr();
     const depth = 18, fp = dir > 0 ? { x0: xa, x1: xb, z0: zf - depth, z1: zf } : { x0: xa, x1: xb, z0: zf, z1: zf + depth };
     const face = dir > 0 ? 'S' : 'N', gain = { [face]: 1, E: 0.55, W: 0.55 };
-    const base = 5.4, style = kind < 0.4 ? 'classic' : kind < 0.65 ? 'deco' : kind < 0.85 ? 'arched' : 'brick';
-    const up = 12 + Math.floor(rr() * 5) * 3.6, top = rr() < 0.5;
+    const base = 5.4, style = opts.style || (kind < 0.4 ? 'classic' : kind < 0.65 ? 'deco' : kind < 0.85 ? 'arched' : 'brick');
+    const up = opts.up || 12 + Math.floor(rr() * 5) * 3.6, top = opts.top ?? rr() < 0.5;
     tiers(B, fp, 0, [
       { h: base, style: 'rustic', bay: 4, f0: 0.55, f1: 0.45, cornice: { out: 0.3, h: 0.45 } },
       { h: up, style, floors: Math.round(up / 3.6), bay: style === 'deco' ? 3 : 4, f0: 0.5, f1: 0.28, cornice: { out: 0.55, h: 0.7 } },
@@ -187,6 +207,14 @@ export function createNanjingRoad(M) {
       const a = xa + (w * i) / bays + 0.35, b = xa + (w * (i + 1)) / bays - 0.35, k = Math.floor(rr() * 8);
       quad(shops, dir > 0 ? a : b, zg, dir > 0 ? b : a, zg, CH + 0.3, 4.1, [k / 8, 0, (k + 1) / 8, 1]);
     }
+    // the way in: a doorway at each spot the crowd goes in by (engine/crowd.js: every 13 m from x -46), the
+    // shop's light spilling out, its doors standing open
+    for (let dx = -46; dx > xa; dx -= 13) if (dx > xa + 1.4 && dx < xb - 1.4) {
+      const zd = zf + dir * 0.1;
+      quad(doors, dir > 0 ? dx - 1.2 : dx + 1.2, zd, dir > 0 ? dx + 1.2 : dx - 1.2, zd, CH + 0.02, 3.1, [0, 0, 1, 1]);
+      doorList.push({ x: dx, z: zf, dir });
+    }
+    if (opts.signs === false) return base + up + (top ? 3.6 : 0);
     // the fascia sign over the shopfront, sometimes two
     const nSigns = w > 22 ? 2 : 1;
     for (let i = 0; i < nSigns; i++) {
@@ -203,6 +231,24 @@ export function createNanjingRoad(M) {
     return base + up + (top ? 3.6 : 0);
   }
   let seed = 11;
+  const doors = new Batch(), doorList = [];
+  // the flagship stores of this stretch (between Henan Road and Jiangxi Road), as they stand: Apple in the
+  // Henderson Metropolitan building and New World Daimaru on the south side; Samsung's largest Chinese store
+  // in Hongyi Plaza and Huawei's global flagship in the 1930s Nanjing Building on the north
+  const LANDMARKS = [
+    { side: 1, x0: -492, x1: -452, style: 'deco', up: 28.8, top: false, glass: true, sign: ['SAMSUNG', '宏伊国际广场  HONGYI PLAZA'], fg: '#ffffff', bg: '#1428a0' },
+    { side: 1, x0: -448, x1: -404, style: 'deco', up: 21.6, top: true, sign: ['HUAWEI  华为', '全球旗舰店 · 南京大楼'], fg: '#ffffff', bg: '#c7000b' },
+    { side: -1, x0: -492, x1: -460, style: 'classic', up: 25.2, top: false, glass: true, sign: ['Apple', '南京东路'], fg: '#f5f5f7', bg: '#1d1d1f' },
+    { side: -1, x0: -456, x1: -404, style: 'classic', up: 28.8, top: true, glass: true, sign: ['新世界大丸百货', 'SHANGHAI NEW WORLD DAIMARU'], fg: '#2b2b2b', bg: '#f3efe6' },
+  ];
+  const lmSigns = [];
+  function landmark(lm, zf, dir) {
+    const hgt = building(lm.x0, lm.x1, zf, dir, seed++, { style: lm.style, up: lm.up, top: lm.top, signs: false });
+    const w = lm.x1 - lm.x0, cx = (lm.x0 + lm.x1) / 2;
+    if (lm.glass) quad(shops, dir > 0 ? lm.x0 + 0.6 : lm.x1 - 0.6, zf + dir * 0.08, dir > 0 ? lm.x1 - 0.6 : lm.x0 + 0.6, zf + dir * 0.08, 4.1, 5.3, [0, 0, 1, 0.3]);   // a second storey of shop glass
+    lmSigns.push({ lm, x: cx, z: zf + dir * 0.16, dir, y: 5.5, w: Math.min(w * 0.5, 12) });
+    return hgt;
+  }
   const runs = [[-84, NJ.cross[0].x1], [NJ.cross[0].x0, NJ.cross[1].x1], [NJ.cross[1].x0, h.x1 + 5], [h.x0 - 5, NJ.xWest - 2]];
   const screens = [];
   // the shengjian shop's building (world/dumpling.js does its ground floor): storeys above an open shopfront
@@ -220,8 +266,12 @@ export function createNanjingRoad(M) {
     const end = Math.min(ea, eb);
     while (x - end > 6) {
       if (dir < 0 && Math.abs(x - DUMPLING.x1) < 0.01) { shopBuilding(DUMPLING.x0, DUMPLING.x1, zf); x = DUMPLING.x0; continue; }
+      const lmHere = LANDMARKS.find((l) => l.side === dir && Math.abs(x - l.x1) < 0.01);
+      if (lmHere) { landmark(lmHere, zf, dir); x = lmHere.x0; continue; }
       let w = Math.min(x - end, 16 + r() * 22);
       if (dir < 0 && x > DUMPLING.x1 && x - w < DUMPLING.x1 + 0.01) w = x - DUMPLING.x1;    // stop at the shop
+      const lmNext = LANDMARKS.find((l) => l.side === dir && x > l.x1 + 0.01 && x - w < l.x1 + 0.01);
+      if (lmNext) w = x - lmNext.x1;                                                          // stop at a flagship
       const hgt = building(x - w, x, zf, dir, seed++);
       if (r() < 0.12 && w > 18) screens.push({ x: x - w / 2, z: zf + dir * 0.2, dir, y: Math.min(hgt - 4, 14), w: Math.min(w * 0.6, 12) });
       x -= w;
@@ -306,7 +356,14 @@ export function createNanjingRoad(M) {
   flush(B, M, group, 'nj-');
   const signMat = new THREE.MeshBasicMaterial({ map: atlas.texture }); signMat.color.setScalar(1.55); asLight(signMat, 'signs', 0.5);   // unlit by day: painted signs
   const bladeMat = new THREE.MeshBasicMaterial({ map: atlas.texture, side: THREE.DoubleSide }); bladeMat.color.setScalar(1.7); asLight(bladeMat, 'signs', 0.5);
-  const shopMat = new THREE.MeshBasicMaterial({ map: shopTex }); shopMat.color.setScalar(0.95); asLight(shopMat, 'shops', 0.32);   // closed: dark
+  // the shop windows: open (10 am to 10 pm) they're lit bright enough to read as lit in daylight too
+  const shopMat = new THREE.MeshBasicMaterial({ map: shopTex }); shopMat.color.setScalar(2.1); asLight(shopMat, 'shops', 0.32);   // closed: dark
+  const doorMat = asLight(new THREE.MeshBasicMaterial({ map: doorTexture() }), 'shops', 0.25); doorMat.color.setScalar(2.2);
+  group.add(doors.mesh(doorMat, 'nj-doors'));
+  for (const sgn of lmSigns) {
+    const m = new THREE.MeshBasicMaterial({ map: brandSign(sgn.lm) }); m.color.setScalar(1.25); asLight(m, 'screens', 0.9);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(sgn.w, sgn.w * 0.2), m); p.position.set(sgn.x, sgn.y + sgn.w * 0.1, sgn.z); if (sgn.dir < 0) p.rotation.y = Math.PI; group.add(p);
+  }
   group.add(shops.mesh(shopMat, 'nj-shops'), signs.mesh(signMat, 'nj-signs'), blades.mesh(bladeMat, 'nj-blades'));
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
@@ -317,7 +374,7 @@ export function createNanjingRoad(M) {
   group.add(P.dark.mesh(new THREE.MeshStandardMaterial({ color: 0x15181c, roughness: 0.15, metalness: 0.6 }), 'metro-panels'));
   group.add(glassB.mesh(glassMat, 'metro-glass'), strips.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.6, 1.7) }), 'metro-strips'));
   return {
-    group, lights,
+    group, lights, doors: doorList,
     update(t) { scrTex.offset.y = (Math.floor(t / 6) % 4) * 0.25; },
   };
 }

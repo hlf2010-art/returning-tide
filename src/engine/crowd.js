@@ -161,7 +161,7 @@ export const ENDS = [
   { id: 'E0', w: 2, area: 'east' }, { id: 'E15', w: 2, area: 'east' },
   { id: 'W0', w: 2, area: 'west' }, { id: 'W16', w: 2, area: 'west' },
   { id: 'HN4', w: 1, area: 'hankou' }, { id: 'HS4', w: 1, area: 'hankou' },
-  { id: 'M7b', w: 12, area: 'nanjing' }, { id: 'M2b', w: 8, area: 'nanjing' }, { id: 'NW4', w: 5, area: 'nanjing' },
+  { id: 'M7b', w: 24, area: 'nanjing' }, { id: 'M2b', w: 16, area: 'nanjing' }, { id: 'NW4', w: 12, area: 'nanjing' },
   { id: 'HNE2', w: 1.5, area: 'nanjing' }, { id: 'HSE1', w: 1.5, area: 'nanjing' }, { id: 'HNW2', w: 1.5, area: 'nanjing' }, { id: 'HSW1', w: 1.5, area: 'nanjing' },
 ];
 
@@ -210,6 +210,7 @@ const ROLE_POOL = {
   elder: ['p5', 'p4'],
 };
 const pick = (a, rnd) => a[Math.floor(rnd() * a.length)];
+const SHOP_IN = 0.5;   // of those who stop at a shop front on Nanjing Road, how many go in
 // which of the avatars are women: for pairing couples, and for who each one is (engine/streetPeople.js)
 const FEMALE = FEMALE_ROLES;
 
@@ -324,7 +325,7 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
   const key = (i, j) => i * 100003 + j;
   function rebuild() {
     for (const c of grid.values()) c.length = 0;
-    for (const a of agents) { if (a.gone || a.out) continue; const k = key(Math.floor(a.x / CELL), Math.floor(a.z / CELL)); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(a); }
+    for (const a of agents) { if (a.gone || a.out || a.inside) continue; const k = key(Math.floor(a.x / CELL), Math.floor(a.z / CELL)); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(a); }
   }
   // walking together (a couple, a family, a tour group): they keep close and never count as bumping
   const together = (a, o) => o === a.partner || o === a.leader || o.leader === a || (a.leader && o.leader === a.leader) || (a.group && o.group === a.group);
@@ -434,6 +435,13 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
   }
   function arrive(a, n, dt) {
     // reached a node: an act at the railing, the zebra, or on to the next
+    if (n.id.startsWith('S') && a.via === n.id && !a.leader && !a.partner && !a.kid && a.kind !== 'follower' && rnd() < SHOP_IN) {
+      // into the shop: through its doorway (world/nanjingRoad.js draws one at every shop spot), a while
+      // inside, and back out the same way to carry on
+      const side = n.z < NJ.zc ? -1 : 1;
+      a.via = null; a.state = 'shop'; a.shop = { phase: 'in', step: { x: n.x, z: (side < 0 ? NJ.z0 : NJ.z1) - side * 0.45 }, door: { x: n.x, z: (side < 0 ? NJ.z0 : NJ.z1) + side * 1.4 }, out: { x: n.x, z: n.z }, wait: 18 + rnd() * 50 };
+      return;
+    }
     if (n.id.startsWith('S') && a.via === n.id) {                     // at a shop window: facing it
       a.via = null; a.state = 'act'; a.atRail = true; a.heading = n.z < NJ.zc ? Math.PI : 0;
       a.act = rnd() < 0.3 ? 'photo' : rnd() < 0.4 ? 'phone' : 'look';
@@ -533,6 +541,18 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
             a.state = 'act'; a.act = g.act || 'look'; a.wait = g.wait || 20; a.goal = null;
             if (g.face) { a.faceTo = g.face; a.heading = Math.atan2(g.face[0] - a.x, g.face[1] - a.z); a.photoAt = a.act === 'photo' ? g.face : null; }
             tx = a.x; tz = a.z; speed = 0;
+          }
+        } else if (a.state === 'shop') {
+          const sh = a.shop;
+          if (sh.phase === 'inside') { sh.wait -= dt; tx = a.x; tz = a.z; speed = 0; if (sh.wait <= 0) { sh.phase = 'outward'; sh.t = 0; a.x = sh.step.x; a.z = sh.step.z; a.inside = false; } }   // (out of the door on to the step)
+          else {
+            const g = sh.phase === 'in' ? sh.step : sh.out;                // to the doorstep (then through it), or back out
+            tx = g.x; tz = g.z; speed = 1.0;
+            sh.t = (sh.t || 0) + dt;
+            if (Math.hypot(tx - a.x, tz - a.z) < 0.45 || sh.t > 12) {
+              if (sh.phase === 'in') { sh.phase = 'inside'; sh.t = 0; a.inside = true; a.x = sh.door.x; a.z = sh.door.z; }   // (through the doorway: out of sight)
+              else { a.state = 'walk'; a.shop = null; a.inside = false; a.i = Math.min(a.i + 1, a.path.length - 1); }
+            }
           }
         } else if (a.state === 'bus') {
           // waiting at the stop; given up after a while (walk off somewhere)

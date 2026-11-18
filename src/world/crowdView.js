@@ -240,7 +240,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
       if (rankT <= 0) {
         rankT = 0.25;
         const cand = [];
-        for (const a of crowd.agents) if (!a.gone && !a.out) { const d = Math.hypot(a.x - eye.x, a.z - eye.z, (a.y - eye.y) * 2); if (d < 44) cand.push([d - (nearSet.has(a.id) ? 4 : 0), a]); }
+        for (const a of crowd.agents) if (!a.gone && !a.out && !a.inside) { const d = Math.hypot(a.x - eye.x, a.z - eye.z, (a.y - eye.y) * 2); if (d < 44) cand.push([d - (nearSet.has(a.id) ? 4 : 0), a]); }
         cand.sort((p, q) => p[0] - q[0]);
         nearSet = new Set(cand.slice(0, nearCount).map(([, a]) => a.id));
         for (const [id, b] of live) if (!nearSet.has(id)) { b.agent = null; b.person.root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); }
@@ -254,7 +254,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
       // full people
       for (const [id, b] of live) {
         const a = crowd.agents[id], root = b.person.root;
-        if (a.gone || a.out) { b.agent = null; root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); nearSet.delete(id); continue; }
+        if (a.gone || a.out || a.inside) { b.agent = null; root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); nearSet.delete(id); continue; }
         root.position.set(a.x, a.y, a.z);
         let dh = a.heading - root.rotation.y; while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2;
         root.rotation.y += dh * Math.min(1, dt * 6);
@@ -287,7 +287,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
       // the guides' flags: in the hand when near, held up above the card when far
       crowd.tours.forEach((t, i) => {
         const g = t.guide, f = flags[i], b = live.get(g.id);
-        f.visible = !g.gone;
+        f.visible = !g.gone && !g.inside;
         if (b) { b.person.bones.R.getWorldPosition(_h); f.position.copy(_h); }
         else f.position.set(g.x + Math.cos(g.heading) * 0.25, g.y + 1.25, g.z - Math.sin(g.heading) * 0.25);
         f.rotation.y = g.heading + Math.PI / 2 + Math.sin(performance.now() / 600 + i) * 0.25;
@@ -295,7 +295,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
       // the far crowd
       let n = 0, nu = 0;
       for (const a of crowd.agents) {
-        if (a.gone || a.out || live.has(a.id)) continue;
+        if (a.gone || a.out || a.inside || live.has(a.id)) continue;
         const dx = a.x - eye.x, dz = a.z - eye.z;
         if (dx * dx + dz * dz > 330 * 330) continue;
         const c = atlas.cells[a.role] || [0, 0];
