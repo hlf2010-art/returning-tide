@@ -125,6 +125,13 @@ father vanished); in June she writes that the forged transfer was undone and the
 the seal was whole he can only say he carried it, and the stall is lost (Old Lin trusted him more
 for it). If he says little, or never goes back, the stall changes hands.
 
+If on Hankou Road he watched the man walk off from the counter (Mission One's courier, `world/nephew.js`,
+`engine/witness.js`; the save keeps `flags.handoff.saw`), he can say so. It is her cousin (Zhou's nephew, a Zhou
+too, which is how "from the family" got past Old Lin), who opens shops for the souvenir chain 申礼 Shenli. With the
+seal intact, that answer gets the transfer stopped and the pitch frozen until the court decides (`watch.result`
+'held': shut, not sold); it proves nothing about the signature, which only the date does. With the seal broken, it
+is folded into telling her the date, and the stall is saved as before.
+
 ## Free conversation
 
 `storyContext` now gives every friend, colleague and client `lifeContext(L)` and

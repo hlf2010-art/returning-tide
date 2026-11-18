@@ -337,6 +337,14 @@ export function createAudio() {
       }
       burst(t + 0.03, { f: 2400, q: 0.5, gain: 0.07, attack: 0.25, decay: 0.4 });
       burst(t + 0.72, { buffer: buf, type: 'lowpass', f: 500, q: 0.7, gain: 0.22, attack: 0.01, decay: 0.15, rate: 1.6 });
+    } else if (name === 'string') {
+      // a string drawn round a card button: three soft rasps, each catching on the button's edge
+      stats.cues.string = (stats.cues.string || 0) + 1;
+      for (let i = 0; i < 3; i++) {
+        const tt = t + i * 0.22 + Math.random() * 0.03;
+        burst(tt, { f: rnd(1100, 1500), q: 1.2, gain: 0.09, attack: 0.05, decay: 0.12, pan: rnd(-0.15, 0.15) });
+        burst(tt + 0.13, { buffer: buf, type: 'lowpass', f: 700, q: 0.8, gain: 0.08, attack: 0.004, decay: 0.05, rate: 1.4 });
+      }
     }
   }
 

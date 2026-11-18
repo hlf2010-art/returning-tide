@@ -1,7 +1,12 @@
 // Mission One's single item: a sealed kraft document pouch left on Zhou's stall counter.
-// Placeholder geometry (one thin box) wearing procedural canvas faces: sealed, torn, and
-// the page inside. The same mesh appears in three places: on the counter, held in front
-// of the camera, and in Old Lin's hand after the handoff.
+// Placeholder geometry (one thin box) wearing procedural canvas faces. It has two sides, and the
+// close-up (missionOne.js) lets you turn it over:
+//   front  the red-marker label, "from the family, for Mr Lin, do not open" (up on the counter)
+//   back   the flap: a string wound figure-of-eight round two buttons, and a paper seal signed
+//          across the flap's edge. Its states: wound (as left), unwound, rewound (wound back by
+//          you: a plain wrap, never the neat figure-of-eight; Old Lin can tell), torn (opened).
+// The same mesh appears on the counter (front up), held in front of the camera and in Old Lin's
+// hand after the handoff (back out: what you did to it shows).
 import * as THREE from 'three';
 import { L, stall } from './layout.js';
 import { makeCanvas, tex, grain, rng, FONT } from './canvas.js';
@@ -45,7 +50,19 @@ function label(ctx) {
   ctx.restore();
 }
 
-export function drawPouch(torn = false) {
+// the front: plain kraft and the label
+export function drawPouchFront() {
+  const [c, ctx] = makeCanvas(PW, PH);
+  kraft(ctx, PW, PH, 17);
+  ctx.save(); ctx.translate(-330, -250); label(ctx); ctx.restore();
+  grain(ctx, PW, PH, 12, 61);
+  return c;
+}
+
+// the back: state 'wound' | 'unwound' | 'rewound' | 'torn'
+export function drawPouch(state = 'wound') {
+  if (state === true) state = 'torn'; else if (state === false) state = 'wound';
+  const torn = state === 'torn';
   const [c, ctx] = makeCanvas(PW, PH);
   kraft(ctx, PW, PH, 31);
   const flapY = 300, tipX = PW / 2, tipY = 360;
@@ -69,13 +86,20 @@ export function drawPouch(torn = false) {
   const b1 = [tipX, flapY + 18], b2 = [tipX, flapY + 150];
   button(ctx, ...b1); button(ctx, ...b2);
   ctx.strokeStyle = '#e8dcc0'; ctx.lineWidth = 5; ctx.lineCap = 'round';
-  if (!torn) {
+  if (state === 'wound') {
     for (let i = 0; i < 3; i++) {                                    // figure-of-eight, three turns
       ctx.beginPath();
       ctx.moveTo(b1[0] - 18 + i * 6, b1[1]); ctx.bezierCurveTo(b1[0] - 60, b1[1] + 60, b2[0] + 60, b2[1] - 60, b2[0] + 18 - i * 6, b2[1]);
       ctx.moveTo(b1[0] + 18 - i * 6, b1[1]); ctx.bezierCurveTo(b1[0] + 60, b1[1] + 60, b2[0] - 60, b2[1] - 60, b2[0] - 18 + i * 6, b2[1]);
       ctx.stroke();
     }
+  } else if (state === 'rewound') {                                  // wound back in a hurry: a plain wrap, slack, the tail loose
+    ctx.lineWidth = 5;
+    for (let i = 0; i < 2; i++) {
+      ctx.beginPath(); ctx.moveTo(b1[0] + 20, b1[1] + 4 + i * 5); ctx.quadraticCurveTo(b1[0] + 70 + i * 12, (b1[1] + b2[1]) / 2, b2[0] + 22, b2[1] - 6 + i * 6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(b1[0] - 20, b1[1] + 6 + i * 4); ctx.quadraticCurveTo(b1[0] - 52 - i * 16, (b1[1] + b2[1]) / 2 + 10, b2[0] - 22, b2[1] - 4 + i * 5); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(b2[0], b2[1] + 24); ctx.bezierCurveTo(b2[0] + 40, b2[1] + 70, b2[0] - 30, b2[1] + 110, b2[0] + 30, b2[1] + 150); ctx.stroke();
   } else {                                                           // unwound, hanging loose
     ctx.beginPath(); ctx.moveTo(b2[0], b2[1]); ctx.bezierCurveTo(b2[0] + 80, b2[1] + 90, b2[0] - 40, b2[1] + 160, b2[0] + 60, PH - 30); ctx.stroke();
   }
@@ -112,7 +136,6 @@ export function drawPouch(torn = false) {
     ctx.fillText(T.mission.sealSign, 0, 0);
     ctx.restore();
   }
-  label(ctx);
   grain(ctx, PW, PH, 12, 77);
   return c;
 }
@@ -155,22 +178,26 @@ export function drawDocument() {
 }
 
 export function createPouch() {
-  const canvases = { sealed: drawPouch(false), torn: drawPouch(true), doc: drawDocument() };
-  const maps = { sealed: tex(canvases.sealed, { repeat: false, aniso: 8 }), torn: tex(canvases.torn, { repeat: false, aniso: 8 }) };
-  const face = new THREE.MeshStandardMaterial({ map: maps.sealed, emissive: 0xffffff, emissiveMap: maps.sealed, emissiveIntensity: 0.3, roughness: 0.85 });
+  const BACKS = ['wound', 'unwound', 'rewound', 'torn'];
+  const canvases = { front: drawPouchFront(), doc: drawDocument() };
+  for (const b of BACKS) canvases[b] = drawPouch(b);
+  canvases.sealed = canvases.wound;                                 // (older names)
+  const maps = Object.fromEntries(['front', ...BACKS].map((k) => [k, tex(canvases[k], { repeat: false, aniso: 8 })]));
+  const paper = (m) => new THREE.MeshStandardMaterial({ map: m, emissive: 0xffffff, emissiveMap: m, emissiveIntensity: 0.3, roughness: 0.85 });
+  const front = paper(maps.front), face = paper(maps.wound);       // face: the back, whose look changes
   const edge = new THREE.MeshStandardMaterial({ color: 0x8e6a3e, roughness: 0.9, emissive: 0x1e1408 });
   const geo = new THREE.BoxGeometry(SIZE.w, SIZE.h, SIZE.d);
   // the held copy draws over nearby walls instead of clipping into them (convex box + back-face
   // culling, so it stays correct without a depth test)
   const faceHeld = face.clone(), edgeHeld = edge.clone();
   for (const m of [faceHeld, edgeHeld]) { m.depthTest = false; m.depthWrite = false; m.fog = false; }
-  const make = (name, f = face, e = edge) => {
-    const m = new THREE.Mesh(geo, [e, e, f, e, e, e]);              // +y carries the pouch face
+  const make = (name, f = face, e = edge, under = e) => {
+    const m = new THREE.Mesh(geo, [e, e, f, under, e, e]);          // +y carries the face you see
     m.name = name; m.visible = false; return m;
   };
 
-  // 1. on Zhou's stall counter, angled toward the pavement
-  const onStall = make('pouch-on-stall');
+  // 1. on Zhou's stall counter, angled toward the pavement: label up, the flap underneath
+  const onStall = make('pouch-on-stall', front, edge, face);
   const counterY = L.curbH + 1.05;
   onStall.position.set(stall.x + 0.22, counterY + SIZE.h / 2 + 0.001, stall.z + 0.08);
   onStall.rotation.y = 0.18;
@@ -191,15 +218,17 @@ export function createPouch() {
   atLin.position.set(0.02, 0.17, 0.155);
   atLin.rotation.set(Math.PI / 2 - 0.12, 0, 0.14);
 
-  let sealed = true;
+  let look = 'wound';
   return {
     canvases, focus, meshes: [onStall, held, atLin],
     attachToLin(npcs) { const lin = npcs.byId.lin; if (lin && atLin.parent !== lin.torso) lin.torso.add(atLin); },
-    setSealed(s) {
-      if (s === sealed) return; sealed = s;
-      const m = s ? maps.sealed : maps.torn;
-      for (const f of [face, faceHeld]) { f.map = m; f.emissiveMap = m; }
+    // the back's look: 'wound' | 'unwound' | 'rewound' | 'torn'
+    setLook(k) {
+      if (!maps[k] || k === look) return; look = k;
+      for (const f of [face, faceHeld]) { f.map = maps[k]; f.emissiveMap = maps[k]; f.needsUpdate = true; }
     },
+    setSealed(s) { this.setLook(s ? (look === 'torn' ? 'wound' : look) : 'torn'); },
+    get look() { return look; },
     // where: 'none' | 'stall' | 'held' | 'lin'
     show(where) { onStall.visible = where === 'stall'; held.visible = where === 'held'; atLin.visible = where === 'lin'; },
     update(camera, t) {

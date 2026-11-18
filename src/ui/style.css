@@ -97,6 +97,17 @@ kbd { display: inline-block; min-width: 1.7em; padding: 0.12em 0.45em; border: 1
 #inspect .scrawl em { color: #ff8f80; font-size: 17px; }
 #inspect .close { margin-top: 24px; font: 500 13px var(--sans); letter-spacing: 0.06em; opacity: 0.85; }
 #pouch-paper canvas { width: min(52vw, 640px); height: auto; display: block; box-shadow: 0 20px 70px rgba(0,0,0,0.7); transform: rotate(-1.5deg); }
+/* the pouch as an object you turn over (missionOne.js): two faces on one card, A/D or the mouse flips it */
+#pouch-paper { perspective: 1500px; }
+#pouch-paper .pouch-flip { --tear: 0; position: relative; width: min(52vw, 640px); aspect-ratio: 1024 / 720; transform-style: preserve-3d; transform: rotateX(9deg) rotateY(-9deg) rotateZ(-1.5deg); transition: transform 0.6s cubic-bezier(0.2, 0.75, 0.2, 1); }
+#pouch-paper .pouch-flip[data-face="back"] { transform: rotateX(9deg) rotateY(171deg) rotateZ(1.5deg); }
+#pouch-paper .pf { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 22px 70px rgba(0,0,0,0.7), 0 0 0 1px rgba(60,38,16,0.5); }
+#pouch-paper .pf-back { transform: rotateY(180deg); }
+#pouch-paper .pf canvas { width: 100%; height: 100%; transform: none; box-shadow: none; }
+#pouch-paper .pf::before { content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; background: radial-gradient(ellipse at 34% -10%, rgba(255,226,170,0.22), transparent 62%), linear-gradient(135deg, rgba(255,240,210,0.06), transparent 40%, rgba(0,0,0,0.16)); }
+/* holding E on "break the seal": the tear opens across the seal strip */
+#pouch-paper .pf-back::after { content: ""; position: absolute; left: 23.1%; top: 47%; height: 3px; width: calc(9.2% * var(--tear)); background: #fbf6ea; box-shadow: 0 0 6px rgba(255,240,210,0.9); transform: rotate(-2deg); transform-origin: left center; }
+@media (prefers-reduced-motion: reduce) { #pouch-paper .pouch-flip { transition: none; } }
 #pouch aside { max-width: 23rem; font: 500 15px/1.7 var(--serif); }
 #pouch h2 { font: 700 13px var(--sans); letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin: 0 0 14px; }
 #pouch h2 span { letter-spacing: 0.1em; color: var(--ink); margin-left: 8px; }

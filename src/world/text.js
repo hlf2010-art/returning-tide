@@ -85,6 +85,7 @@ export const T = {
       accept: { id: 'm1-accept', speaker: 'lin', text: '汉口路往西，老周的修表摊，柜台上有个封好的文件袋。原样拿回来给我，别拆。', en: "West along Hankou Road, Old Zhou's watch stall. There's a sealed document pouch on the counter. Bring it back as it is. Don't open it." },
       remind: { id: 'm1-remind', speaker: 'lin', text: '就在汉口路北边，修表摊的柜台上。封好的那个。', en: 'North side of Hankou Road, on the counter of the watch stall. The sealed one.' },
       sealed: { id: 'm1-sealed', speaker: 'lin', text: '封得好好的，辛苦你了。他家里人会放心的。', en: 'Sealed, just as it should be. Thank you. His family will be relieved.' },
+      sealedRewound: { id: 'm1-sealed-rewound', speaker: 'lin', text: '绳子松过，又绕回去了。……封条还在就好。辛苦你了。', en: "The string's been undone and wound back. ...The seal's still whole, and that's what matters. Thank you." },
       opened: { id: 'm1-opened', speaker: 'lin', text: '封条破了。……你看过了。那上面的日子，别跟别人提。', en: "The seal's broken. ...You've read it. The date on that page, don't mention it to anyone." },
       afterSealed: { id: 'm1-after-sealed', speaker: 'lin', text: '又碰到你了。上回那件事办妥了，多谢。', en: 'We meet again. That business went fine. Thank you.' },
       afterOpened: { id: 'm1-after-opened', speaker: 'lin', text: '还在这儿？江边风大，早点回去吧。', en: "Still here? The wind's strong by the river. Get home early." },
