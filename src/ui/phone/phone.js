@@ -332,7 +332,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     S.call = { from: script.from, script, scriptId, i: 0, secs: 0, state: 'ringing', ringFor: 0 };
     // it rings in your pocket: a banner and the ringtone; P brings the phone up to answer
     const p = person(script.from);
-    banner.innerHTML = `<div class="av" style="background:${p.color}">${esc(initial(script.from))}</div><div><div class="t">${esc(nm(script.from))}</div><div class="p">${Z('微信语音通话', 'Incoming voice call')}</div></div><div class="k">${Z('P 接听', 'P to answer')}</div>`;
+    banner.innerHTML = noteCard(getLife(), { from: script.from, thread: script.from, text: Z('微信语音通话', 'WeChat voice call'), at: stamp(getLife()) }, { hint: Z('P 接听', 'P to answer') }); void p;
     banner.classList.add('on'); clearTimeout(bannerTimer);
     if (S.open) render();
     if (audio && audio.cue) audio.cue('ring');
@@ -545,6 +545,8 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   onLang(() => { statusKey = ''; islandHtml = null; if (S.open) render(); });
   return {
     get isOpen() { return S.open; }, get inCall() { return !!S.call; },
+    // a call still ringing (not answered) put back for later: its script id, or null (main.js: the season plan comes first)
+    holdRing() { if (!S.call || S.call.state !== 'ringing') return null; const id = S.call.scriptId; S.call = null; banner.classList.remove('on'); render(); return id; },
     toggle() { if (S.open) close(); else if (S.call) { banner.classList.remove('on'); setOpen(true); } else { open(); if (S.lastThread && S.unlocked && banner.classList.contains('on')) { S.stack = [{ s: 'home' }, { s: 'chats' }]; go('chat', { id: S.lastThread }); } } },
     open, close, ring, key, update, render,
     openManner() { open(); unlock(() => { S.stack = [{ s: 'home' }]; go('manner'); }); },

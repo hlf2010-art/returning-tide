@@ -173,7 +173,18 @@ llm.warm();
 const HEARTS_ON = !params.has('q') || params.has('hearts');   // measurement tools: none of the five writes or turns up unless asked
 guardTalk(llm, () => life, getLang);   // when one of the five is being played, the model is told the validated state and nothing else (world/romance.js)
 
-let mode = 'boot';              // boot -> entry -> play <-> pause / inspect / dialogue / pouch
+let mode = 'boot';
+// loading: how much of Shanghai has arrived (the people, the car, the textures: everything three.js loads), on the
+// begin button and a hairline under it, so a slow connection doesn't look like a hang
+{
+  const btn = document.getElementById('begin'), bar = document.querySelector('#load-bar i'); let shown = 0;
+  THREE.DefaultLoadingManager.onProgress = (url, loaded, total) => {
+    if (mode !== 'boot' || !total) return;
+    shown = Math.max(shown, Math.min(99, Math.round((loaded / total) * 100)));
+    if (btn && btn.disabled) btn.textContent = `${tx('loading')} ${shown}%`;
+    if (bar) bar.style.width = `${shown}%`;
+  };
+}              // boot -> entry -> play <-> pause / inspect / dialogue / pouch
 let noLock = params.has('nolock');
 let subtitlesOn = params.get('subs') !== '0';
 let world = null, clueRead = false, t = 0, last = performance.now();
@@ -1013,7 +1024,8 @@ const season = createSeasonPlan({ getLife: () => life, save: () => saveLife(), h
 let pendingSeason = null;
 function openSeason(days, gap) { pendingSeason = { days, gap }; }
 function trySeason() {
-  if (!pendingSeason || mode !== 'play' || phone.inCall) return;
+  if (!pendingSeason || mode !== 'play') return;
+  if (phone.inCall) { const held = phone.holdRing(); if (!held) return; pendingCalls.unshift({ script: held }); }   // ringing, unanswered: it rings again after
   const { days, gap } = pendingSeason; pendingSeason = null;
   mode = 'season'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
   try { document.exitPointerLock(); } catch { /* not locked */ }
@@ -1060,7 +1072,9 @@ function updateLife(dt) {
   if (world && world.carSale) updateCarSale(events);
   // calls wait until you're not in the middle of something else
   trySeason();
-  if (pendingCalls.length && mode === 'play' && !phone.inCall) { const c = pendingCalls.shift(); phone.ring(c.script); }
+  // a night that crossed weeks: how they went comes first (the season plan), then whoever's ringing
+  const yearDue = isYear(life) && life.flags.year.work && life.flags.year.work.through < life.clock.day;
+  if (pendingCalls.length && mode === 'play' && !phone.inCall && !pendingSeason && !yearDue) { const c = pendingCalls.shift(); phone.ring(c.script); }
   const mo = life.flags.mannerOrder;
   if (mo && !mo.notified && lifeStamp(life) >= mo.ready) {
     mo.notified = true;
@@ -1492,7 +1506,7 @@ R.renderer.setAnimationLoop(frame);
 
 // Small handle for automated checks and console poking; not used by the game itself.
 debug.workbook = workbook; debug.openWork = (w, t) => openWork(w, t); debug.goesLeft = () => goesLeft(life);
-debug.setLang = setLang; debug.getLang = getLang; debug.voice = voice; debug.llm = llm; debug.talk = talk; debug.journal = journal; debug.profile = profilePage; debug.season = season; debug.openSeason = openSeason; debug.QUESTS = QUESTS; debug.updateStory = () => updateStory();
+debug.setLang = setLang; debug.getLang = getLang; debug.voice = voice; debug.llm = llm; debug.talk = talk; debug.journal = journal; debug.profile = profilePage; debug.season = season; debug.openSeason = openSeason; debug.seasonState = () => ({ pending: pendingSeason, mode, inCall: phone.inCall }); debug.QUESTS = QUESTS; debug.updateStory = () => updateStory();
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   player, camera, scene, R, audio, wind,

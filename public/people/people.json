@@ -6,123 +6,123 @@
    "avatar": "Business_Male_02",
    "sex": "m",
    "file": "lin.glb",
-   "bytes": 3011880
+   "bytes": 1923856
   },
   "su": {
    "avatar": "Business_Female_03",
    "sex": "f",
    "file": "su.glb",
-   "bytes": 3686392
+   "bytes": 2454572
   },
   "p1": {
    "avatar": "Male_Adult_09",
    "sex": "m",
    "file": "p1.glb",
-   "bytes": 3195968
+   "bytes": 2109604
   },
   "p2": {
    "avatar": "Female_Adult_09",
    "sex": "f",
    "file": "p2.glb",
-   "bytes": 3928132
+   "bytes": 2786192
   },
   "p3": {
    "avatar": "Male_Adult_10",
    "sex": "m",
    "file": "p3.glb",
-   "bytes": 3291444
+   "bytes": 2094992
   },
   "p4": {
    "avatar": "Male_Adult_03",
    "sex": "m",
    "file": "p4.glb",
-   "bytes": 3863416
+   "bytes": 2506928
   },
   "player": {
    "avatar": "JiBai (Hunyuan3D from his character sheet; Rocketbox Biped rig)",
    "sex": "m",
    "file": "player.glb",
-   "bytes": 5004668
+   "bytes": 4402504
   },
   "gunian": {
    "avatar": "GuNian (Hunyuan3D from her character sheet; Rocketbox Biped rig)",
    "sex": "f",
    "named": true,
    "file": "gunian.glb",
-   "bytes": 5550804
+   "bytes": 4883096
   },
   "p5": {
    "avatar": "Business_Female_02",
    "sex": "f",
    "file": "p5.glb",
-   "bytes": 4512800
+   "bytes": 3013068
   },
   "c1": {
    "avatar": "Female_Adult_07",
    "sex": "f",
    "file": "c1.glb",
-   "bytes": 3830120
+   "bytes": 2654580
   },
   "c2": {
    "avatar": "Female_Adult_11",
    "sex": "f",
    "file": "c2.glb",
-   "bytes": 3730388
+   "bytes": 2731116
   },
   "c3": {
    "avatar": "Female_Adult_14",
    "sex": "f",
    "file": "c3.glb",
-   "bytes": 4492856
+   "bytes": 3069260
   },
   "c4": {
    "avatar": "Business_Female_04",
    "sex": "f",
    "file": "c4.glb",
-   "bytes": 3172068
+   "bytes": 2243732
   },
   "c5": {
    "avatar": "Male_Adult_02",
    "sex": "m",
    "file": "c5.glb",
-   "bytes": 3369476
+   "bytes": 2243380
   },
   "c6": {
    "avatar": "Male_Adult_12",
    "sex": "m",
    "file": "c6.glb",
-   "bytes": 2194904
+   "bytes": 1796964
   },
   "c7": {
    "avatar": "Male_Adult_04",
    "sex": "m",
    "file": "c7.glb",
-   "bytes": 3660052
+   "bytes": 2408476
   },
   "c8": {
    "avatar": "Female_Adult_04",
    "sex": "f",
    "file": "c8.glb",
-   "bytes": 3859252
+   "bytes": 2763488
   },
   "dad": {
    "avatar": "Business_Male_07",
    "sex": "m",
    "file": "dad.glb",
-   "bytes": 2060672
+   "bytes": 1709072
   },
   "k1": {
    "avatar": "Female_Child_01",
    "sex": "f",
    "file": "k1.glb",
-   "bytes": 2324352,
+   "bytes": 1956308,
    "child": true
   },
   "k2": {
    "avatar": "Male_Child_01",
    "sex": "m",
    "file": "k2.glb",
-   "bytes": 2231444,
+   "bytes": 1887000,
    "child": true
   }
  },

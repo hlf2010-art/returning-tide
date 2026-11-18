@@ -15,7 +15,7 @@ export function createHud() {
     lastSubKey = ''; if (lastStep) { lastObjKey = ''; hud.objective(lastStep); }
   });
   const hud = {
-    ready(time) { if (time && $('entry-time')) $('entry-time').textContent = time; const b = $('begin'); isReady = true; b.disabled = false; b.removeAttribute('data-t'); b.textContent = t('begin'); b.focus(); },
+    ready(time) { if (time && $('entry-time')) $('entry-time').textContent = time; const b = $('begin'); isReady = true; b.disabled = false; b.removeAttribute('data-t'); b.textContent = t('begin'); b.focus(); const lb = $('load-bar'); if (lb) { lb.firstElementChild.style.width = '100%'; setTimeout(() => lb.classList.add('done'), 500); } },
     fail(err) { $('begin').removeAttribute('data-t'); $('begin').textContent = t('failed'); console.error(err); },
     begin(time) {
       placeTime = time || null; placeSub();

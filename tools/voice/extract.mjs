@@ -35,6 +35,8 @@ for (const c of Object.values(CALLS)) for (const l of c.lines) if (l.text && l.w
 
 // ---- inline lines in the source ----
 const FILE_SPEAKER = { 'carSale.js': 'vivian' }, LINE_FNS = new Set(['T', 'B']);
+// the five's own files (src/world/romance/*.js) name their speaker by a variable: say(W, ...) is her
+const HER_FILE = /^(zhiwei|nanxing|gunian|yuan|kexin)\.js$/;
 const lit = (n) => (n && n.type === 'Literal' && typeof n.value === 'string' ? n.value : n && n.type === 'TemplateLiteral' && n.expressions.length === 0 ? n.quasis[0].value.cooked : null);
 const tCall = (n) => (n && n.type === 'CallExpression' && n.callee.type === 'Identifier' && LINE_FNS.has(n.callee.name) && n.arguments.length >= 2 ? [lit(n.arguments[0]), lit(n.arguments[1])] : null);
 const whoOf = (n) => { const t = tCall(n); if (t) return t[0]; const l = lit(n); if (l) return l; if (n && n.type === 'ObjectExpression') { const z = n.properties.find((p) => p.key && (p.key.name === 'zh' || p.key.value === 'zh')); return z ? lit(z.value) : null; } return null; };
@@ -49,7 +51,7 @@ for (const f of files('src')) {
       if (name === 'say' && n.arguments.length >= 3) {
         // say(who, zh, en) or say(label, whoKey, zh, en): the first Chinese literal is the line
         const args = n.arguments.map(lit), i = args.findIndex((x) => x && cjk.test(x) && x.length > 2 && !/^[\u4e00-\u9fff]{1,5}$/.test(x));
-        if (i >= 1) add(i >= 2 && args[i - 1] && /^[a-z]+$/.test(args[i - 1]) ? args[i - 1] : whoOf(n.arguments[0]) || base, args[i], args[i + 1]);
+        if (i >= 1) add(i >= 2 && args[i - 1] && /^[a-z]+$/.test(args[i - 1]) ? args[i - 1] : whoOf(n.arguments[0]) || (HER_FILE.test(base) ? base.slice(0, -3) : base), args[i], args[i + 1]);
       }
       if (name === 'bark' && n.arguments[0] && n.arguments[0].type === 'ObjectExpression') {
         const p = (k) => n.arguments[0].properties.find((q) => q.key && q.key.name === k);

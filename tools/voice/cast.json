@@ -226,5 +226,57 @@
  "metrostaff": {
   "zh": "zm_010",
   "en": "am_adam"
+ },
+ "zhiwei": {
+  "zh": "zf_007",
+  "en": "af_sarah"
+ },
+ "gunian": {
+  "zh": "zf_099",
+  "en": "bf_isabella",
+  "speed": 0.97
+ },
+ "nanxing": {
+  "zh": "zf_028",
+  "en": "af_sky"
+ },
+ "yuan": {
+  "zh": "zf_002",
+  "en": "af_aoede",
+  "speed": 0.98
+ },
+ "kexin": {
+  "zh": "zf_072",
+  "en": "af_jessica",
+  "speed": 1.06
+ },
+ "passerby": {
+  "zh": "zm_029",
+  "en": "am_puck"
+ },
+ "witness": {
+  "zh": "zf_048",
+  "en": "af_alloy"
+ },
+ "partner": {
+  "zh": "zm_052",
+  "en": "bm_daniel",
+  "speed": 0.96
+ },
+ "cop": {
+  "zh": "zm_053",
+  "en": "am_echo"
+ },
+ "victim": {
+  "zh": "zf_086",
+  "en": "af_nicole"
+ },
+ "onlooker": {
+  "zh": "zm_095",
+  "en": "am_liam"
+ },
+ "shaofeng": {
+  "zh": "zm_009",
+  "en": "bm_lewis"
  }
 }
