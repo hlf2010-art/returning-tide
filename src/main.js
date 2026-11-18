@@ -21,7 +21,7 @@ import { createSky, FOG_COLOR, fogColorAt } from './world/sky.js';
 import { createSkyline } from './world/skyline.js';
 import { createRiver } from './world/river.js';
 import { createBridges } from './world/bridges.js';
-import { createBund } from './world/bund.js';
+import { createBund, loadBundKit } from './world/bund.js';
 import { createPromenade } from './world/promenade.js';
 import { createStreet } from './world/street.js';
 import { createLighting, captureEnvironment } from './world/lighting.js';
@@ -213,6 +213,7 @@ async function boot() {
   usePhotoSurfaces(M, R.renderer).then((r) => { if (r) console.info('photo surfaces', r); });   // CC0 photographed stone and asphalt, swapped in when loaded
   const sky = createSky(), skyline = createSkyline(), river = createRiver(), bridges = createBridges();   // the Garden, Nanpu and Yangpu bridges (world/bridges.js)
   river.setMirrorSize(gfx.mirror);
+  await loadBundKit();                                                   // the Bund's columns and cornices, modelled in Blender (world/bund.js)
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
   // real people (Microsoft Rocketbox, MIT) when their files load; the hand-built figures otherwise
   let people = null;

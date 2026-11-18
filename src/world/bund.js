@@ -6,6 +6,31 @@ import { L, lions } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT } from './canvas.js';
 import { towerAtlas } from './skyline.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// ---- the classical kit, modelled in Blender (tools/blender/bund_kit.py, public/models/bund-kit.glb): an Attic
+// base, a fluted shaft, a Roman Doric capital, a moulded cornice, a vase baluster. Loaded before the Bund is built
+// (main.js); without it the columns and cornices are the plain shapes they were ----
+let KIT = null;
+export async function loadBundKit(url = './models/bund-kit.glb') {
+  try {
+    const g = await new GLTFLoader().loadAsync(url), kit = {};
+    g.scene.updateMatrixWorld(true);
+    g.scene.traverse((o) => {
+      if (!o.isMesh) return;
+      const geo = o.geometry.clone().applyMatrix4(o.matrixWorld);
+      if (!geo.attributes.uv) {                                  // (stone tiles by metre: a simple wrap is enough at this scale)
+        const p = geo.attributes.position, uv = new Float32Array(p.count * 2);
+        for (let i = 0; i < p.count; i++) { uv[i * 2] = (p.getX(i) + p.getZ(i)) * 0.5; uv[i * 2 + 1] = p.getY(i) * 0.5; }
+        geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      }
+      if (!geo.attributes.normal) geo.computeVertexNormals();
+      kit[o.name] = geo;
+    });
+    KIT = kit.colShaft && kit.colBase && kit.colCap ? kit : null;
+  } catch (e) { console.warn('bund kit unavailable, plain columns', e); KIT = null; }
+  return !!KIT;
+}
 
 const FX = L.facadeX;
 const NAMES = ['stone', 'stoneDark', 'flute', 'classic', 'arched', 'rustic', 'deco', 'brick', 'roof', 'copper', 'bronze', 'glassDark'];
@@ -46,6 +71,15 @@ export function tiers(B, fp, y0, list, faces = 'ENS', seed = 0, faceGain = {}) {
       const c = t.cornice;
       // a ring round the edges, not a slab through the building (interiors live inside some of them)
       const fl = { flood: (t.f1 ?? 0.62) + 0.25 }, d = 2 * c.out + 1.2, W = x1 - x0 + 2 * c.out, D = z1 - z0 + 2 * c.out, yy = y1 - c.h;
+      if (KIT && KIT.cornice) {
+        // the kit's moulded cornice along each face, its back on the wall, run past the corners to close them
+        const o = c.out + 0.15, f = fl.flood, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+        B.stone.add(KIT.cornice, { x: cx, y: yy, z: z0, ry: 0, sx: W + 2 * o, sy: c.h, sz: o, flood: f });
+        B.stone.add(KIT.cornice, { x: cx, y: yy, z: z1, ry: Math.PI, sx: W + 2 * o, sy: c.h, sz: o, flood: f });
+        B.stone.add(KIT.cornice, { x: x1, y: yy, z: cz, ry: -Math.PI / 2, sx: D + 2 * o, sy: c.h, sz: o, flood: f });
+        B.stone.add(KIT.cornice, { x: x0, y: yy, z: cz, ry: Math.PI / 2, sx: D + 2 * o, sy: c.h, sz: o, flood: f });
+        y = y1; continue;
+      }
       B.stone.box((x0 + x1) / 2, yy, z0 - c.out + d / 2, W, c.h, d, fl); B.stone.box((x0 + x1) / 2, yy, z1 + c.out - d / 2, W, c.h, d, fl);
       B.stone.box(x0 - c.out + d / 2, yy, (z0 + z1) / 2, d, c.h, D - 2 * d, fl); B.stone.box(x1 + c.out - d / 2, yy, (z0 + z1) / 2, d, c.h, D - 2 * d, fl);
     }
@@ -61,6 +95,14 @@ function colonnade(B, x, zA, zB, n, y0, h, r, fluted = true) {
   const lit = (bx, by, bz, nx) => (0.62 + 0.55 * Math.max(0, nx)) * (1.2 - 0.5 * ((by - y0) / h));
   for (let i = 0; i < n; i++) {
     const z = n === 1 ? zA : zA + ((zB - zA) * i) / (n - 1);
+    if (KIT) {
+      // the kit's column: Attic base and capital at the shaft's scale, the fluted shaft stretched between them
+      const bh = 1.26 * r, ch = 0.98 * r, sh = h - bh - ch;
+      B.stone.add(KIT.colBase, { x, y: y0, z, sx: r, sy: r, sz: r, flood: 1.1 });
+      B.stone.add(KIT.colShaft, { x, y: y0 + bh, z, sx: r, sy: sh, sz: r, flood: lit });
+      B.stone.add(KIT.colCap, { x, y: y0 + bh + sh, z, sx: r, sy: r, sz: r, flood: 0.9 });
+      continue;
+    }
     B.stone.box(x, y0, z, r * 2.7, 0.45, r * 2.7, { flood: 1.1 });
     (fluted ? B.flute : B.stone).cyl(x, y0 + 0.45, z, r * 0.86, r, h - 1.1, 18, { flood: lit, tileU: 1.5, tileV: 1, open: true });
     B.stone.box(x, y0 + h - 0.65, z, r * 2.9, 0.65, r * 2.9, { flood: 0.9 });
