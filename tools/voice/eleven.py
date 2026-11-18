@@ -25,7 +25,7 @@ VOICES = {
     'mum': 'XrExE9yKIg1WjnnlVkGX',      # Matilda
     'su': 'hpp4J3VqNfWAUOO0d1Us',       # Bella
     'vivian': 'FGY2WhTYpPnrIDTdsKH5',   # Laura
-    'dad': 'pqHfZKP75CvOlQylNhV4',      # Bill: wise, mature
+    'dad': 'nPczCjzI2devNBz1zQrb',      # Brian: deep, resonant (pitched down a little more: PITCH)
     'lin': 'JBFqnCBsd6RMkjVDRZzb',      # George: warm storyteller
     'momo': 'TX3LPaxmHKxFdv7VOQHJ',     # Liam: energetic creator
     'xuan': 'cjVigY5qzO86Huf0OWal',     # Eric: smooth
@@ -62,8 +62,8 @@ DIRECTION = {
     '发了。小猫贴纸的点赞比我的脸还多，我有点受伤😂': ('[laughs]', '[mock-hurt]', None),
     '来啦。准时，难得。': ('[teasing]', None, None),
     '你还是这样，看东西先看毛病。': ('[sighs] [with a wry laugh]', None, None),
-    '嗯。你妈让你按时吃饭。挂了。': ('[calm, steady, even pace]', None, '[short pause]'),
-    '……你自己的事，你自己想清楚。钱够不够？': ('[calm, steady, even pace]', '[short pause]', None),
+    '嗯。你妈让你按时吃饭。挂了。': ('[very low, deep voice] [a short low hum from the chest]', None, '[short pause] [calm, steady, even pace]'),
+    '……你自己的事，你自己想清楚。钱够不够？': ('[very low, deep voice] [calm, steady, even pace]', '[short pause]', None),
     '白白，妈妈看到你朋友圈了，那个车……你爸还不知道。你自己注意安全，按时吃饭。': ('[worried, hushed]', '[gently]', None),
     '十一月就这样，白天看着还暖和，一过五点天就暗下来了。': ('[chatty, unhurried]', None, None),
     '对岸东方明珠刚才亮灯那一下，江面上全倒映出来了。': ('[delighted]', None, None),
@@ -73,6 +73,8 @@ DIRECTION = {
 }
 # how steady each voice is (ElevenLabs stability: higher = calmer, more even); the rest 0.35
 STABILITY = {'dad': 0.7}
+# pitch a voice down (ratio < 1) after it's made, the tempo kept: Dad lower than any premade voice
+PITCH = {'dad': 0.915}
 DIRECTION_WHO = {'xuan': ('[warm, hearty]', None, None), 'zhixia': ('[rapid-fire, excited]', '[pleading, playful]', None)}
 
 
@@ -152,7 +154,9 @@ def main():
             with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as t:
                 t.write(data)
             f = OUT / f'{key}.mp3'
-            subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', t.name, '-ac', '1', '-ar', '24000', '-b:a', '56k', str(f)], check=True)
+            r = PITCH.get(l['who'])
+            af = ['-af', f'asetrate=44100*{r},aresample=44100,atempo={1 / r:.4f}'] if r else []
+            subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', t.name, *af, '-ac', '1', '-ar', '24000', '-b:a', '56k', str(f)], check=True)
             os.unlink(t.name)
             secs = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', str(f)], capture_output=True, text=True).stdout.strip())
             man['clips'][key] = [f.name, round(secs, 2)]
