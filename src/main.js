@@ -641,7 +641,7 @@ function syncSettings() {
   }
   syncGfx();
   // the music's credits (CC BY: title, artist, a link to the work, the licence), every track the game ships with
-  { const ul = document.querySelector('#music-credits ul'); if (ul && !ul.childElementCount) ul.innerHTML = Object.values(MUSIC_TRACKS).map((t) => `<li>“${t.title}” · ${t.artist} · <a href="${t.page}" target="_blank" rel="noopener">ccMixter</a> · <a href="${MUSIC_LICENCE.url}" target="_blank" rel="noopener">${MUSIC_LICENCE.name}</a></li>`).join(''); }
+  { const ul = document.querySelector('#music-credits ul'); if (ul && !ul.childElementCount) ul.innerHTML = Object.values(MUSIC_TRACKS).map((t) => `<li>“${t.title}” · ${t.artist} · <a href="${t.page}" target="_blank" rel="noopener">OpenGameArt</a> · <a href="${MUSIC_LICENCE.url}" target="_blank" rel="noopener">${MUSIC_LICENCE.name}</a></li>`).join(''); }
   const c = llm.conf(), sv = document.getElementById('ai-server'), md = document.getElementById('ai-model');
   if (sv && document.activeElement !== sv) sv.value = c.server; if (md && document.activeElement !== md) md.value = c.model;
   const st = document.getElementById('ai-status'), vs = voice.stats;

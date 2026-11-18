@@ -4,30 +4,37 @@
 // Road plays a low-key playlist all day, the stores on Nanjing Road push something brighter out of their
 // doors while they are open, a DiDi driver has the radio on.
 //
-// The tracks: modern instrumentals released by their artists under Creative Commons Attribution 3.0 on
-// ccMixter (each checked on its own upload record, 18 Nov 2026). CC BY: free to use and to ship in the
-// game, with credit to the artist, a link to the work and the licence (docs/music.md, and in the game:
-// Settings). The files go in public/music/ under `file`; any that are missing are simply skipped, so
-// nothing plays rather than anything breaking. Local Shanghai and Chinese artists are being asked for
-// permission (Notion: the request letter); their tracks join these playlists as permission comes in.
+// The tracks: modern instrumentals their composers put in the public domain (CC0 1.0) on OpenGameArt:
+// no licence conditions and no royalties, free to ship in the game. Each was checked on its own page
+// (18 Nov 2026): CC0 the only licence; an original composition (one candidate, a re-arrangement of
+// Coltrane's "Giant Steps", was left out: a CC0 on an arrangement does not clear the tune). They are credited
+// anyway, as a courtesy (Settings, and docs/music.md). Levelled to -18 LUFS, mono, 80 kbps (public/music/).
+// Local Shanghai and Chinese artists are being asked for permission (Notion: the request letter); their
+// tracks join these playlists as permission comes in.
+const OGA = (slug) => `https://opengameart.org/content/${slug}`;
 export const TRACKS = {
-  nightwalk:  { title: 'nightWalk', artist: 'airtone', page: 'https://ccmixter.org/files/airtone/56520', file: 'airtone-nightwalk.mp3', source: 'airtone_-_nightWalk.mp3', secs: 280 },
-  purple:     { title: 'Purple Nurple', artist: 'Alex Beroza', page: 'https://ccmixter.org/files/AlexBeroza/27187', file: 'alexberoza-purple-nurple.mp3', source: 'AlexBeroza_-_Purple_Nurple.mp3', secs: 191 },
-  shiro:      { title: 'Shiro (Kirkoid Mix)', artist: 'Kirkoid', page: 'https://ccmixter.org/files/Kirkoid/43938', file: 'kirkoid-shiro.mp3', source: 'Kirkoid_-_Shiro_(Kirkoid_Mix)_1.mp3', secs: 123 },
-  rain:       { title: 'Reflections in the Rain', artist: 'Mana Junkie', page: 'https://ccmixter.org/files/mana_junkie/34419', file: 'manajunkie-reflections-in-the-rain.mp3', source: 'mana_junkie_-_Reflections_in_the_Rain.mp3', secs: 233 },
-  tube:       { title: 'Warm Vacuum Tube', artist: 'Admiral Bob', page: 'https://ccmixter.org/files/admiralbob77/59533', file: 'admiralbob-warm-vacuum-tube.mp3', source: 'admiralbob77_-_Warm_Vacuum_Tube_.mp3', secs: 213 },
-  emerge:     { title: 'Emerge', artist: 'Alex Beroza', page: 'https://ccmixter.org/files/AlexBeroza/30132', file: 'alexberoza-emerge.mp3', source: 'AlexBeroza_-_Emerge.mp3', secs: 226 },
-  toronto:    { title: 'Toronto Is My Beat', artist: 'Whitewolf', page: 'https://ccmixter.org/files/Whitewolf225/60181', file: 'whitewolf-toronto-is-my-beat.mp3', source: 'Whitewolf225_-_Toronto_Is_My_Beat.mp3', secs: 202 },
-  nightcall:  { title: 'The night is calling', artist: 'Kraftamt', page: 'https://ccmixter.org/files/Karstenholymoly/62739', file: 'kraftamt-the-night-is-calling.mp3', source: 'Karstenholymoly_-_The_night_is_calling.mp3', secs: 214 },
-  renovation: { title: 'reNovation', artist: 'airtone', page: 'https://ccmixter.org/files/airtone/60674', file: 'airtone-renovation.mp3', source: 'airtone_-_reNovation_1.mp3', secs: 211 },
+  chill:     { title: 'Chill lofi inspired', artist: 'omfgdude', page: OGA('chill-lofi-inspired'), file: 'chill-lofi-inspired.mp3', secs: 123 },
+  jam:       { title: 'Funky Hip Hop Lofi Jam', artist: 'omfgdude', page: OGA('funky-hip-hop-lofi-jam'), file: 'funky-hip-hop-lofi-jam.mp3', secs: 189 },
+  mocha:     { title: 'Mocha Frapp', artist: 'Pro Sensory', page: OGA('mocha-frapp'), file: 'mocha-frapp.mp3', secs: 130 },
+  stride:    { title: 'Slow Stride', artist: 'isaiah658', page: OGA('slow-stride'), file: 'slow-stride.mp3', secs: 131 },
+  lofi:      { title: 'lofi Compilation', artist: 'TAD', page: OGA('lofi-compilation'), file: 'lofi-compilation.mp3', secs: 169 },
+  disco:     { title: 'Funky Disco Beats to Boogie/Woogie to', artist: 'Fupi', page: OGA('funky-disco-beats-to-boogiewoogie-to'), file: 'funky-disco-beats.mp3', secs: 133 },
+  garden:    { title: 'Rhythm Garden', artist: 'congusbongus', page: OGA('rhythm-garden'), file: 'rhythm-garden.mp3', secs: 207 },
+  wednesday: { title: 'Wednesday Night [Funk Fusion]', artist: 'Zane Little Music', page: OGA('wednesday-night-funk-fusion'), file: 'wednesday-night.mp3', secs: 177 },
+  redmoon:   { title: 'Red Moon', artist: 'Pro Sensory', page: OGA('red-moon'), file: 'red-moon.mp3', secs: 138 },
+  djfunk:    { title: 'DJ Synth Wave / Funk', artist: 'Pro Sensory', page: OGA('dj-synth-wave-funk'), file: 'dj-synth-wave-funk.mp3', secs: 297 },
+  midnight:  { title: 'After midnight', artist: 'dant-e', page: OGA('after-midnight'), file: 'after-midnight.mp3', secs: 454 },
+  void:      { title: 'Melancholic Void', artist: 'Gena Sealov', page: OGA('melancholic-void'), file: 'melancholic-void.mp3', secs: 182 },
+  undefined: { title: 'Undefined Emotion', artist: 'Gena Sealov', page: OGA('undefined-emotion'), file: 'undefined-emotion.mp3', secs: 146 },
+  jamie:     { title: 'Jamie', artist: 'lifeasaghost', page: OGA('jamie'), file: 'jamie.mp3', secs: 140 },
 };
-export const LICENCE = { name: 'CC BY 3.0', url: 'https://creativecommons.org/licenses/by/3.0/' };
-export const credit = (id) => { const t = TRACKS[id]; return `“${t.title}” by ${t.artist} (${t.page}), licensed under ${LICENCE.name} (${LICENCE.url})`; };
+export const LICENCE = { name: 'CC0 1.0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' };
+export const credit = (id) => { const t = TRACKS[id]; return `“${t.title}” by ${t.artist} (${t.page}), dedicated to the public domain (${LICENCE.name}, ${LICENCE.url})`; };
 
 export const PLAYLISTS = {
-  cafe: ['nightwalk', 'rain', 'shiro', 'purple'],          // low-key: a takeaway coffee window
-  shop: ['tube', 'emerge', 'toronto'],                     // brighter, pushed out of a store's door
-  radio: ['nightcall', 'renovation', 'nightwalk', 'emerge'], // a driver's evening station
+  cafe: ['chill', 'mocha', 'stride', 'jam', 'lofi'],                 // low-key: a takeaway coffee window
+  shop: ['disco', 'wednesday', 'garden', 'redmoon', 'djfunk'],       // brighter, pushed out of a store's door
+  radio: ['midnight', 'void', 'jamie', 'undefined'],                 // a driver's evening station
 };
 
 const H = (h, m = 0) => h * 60 + m;

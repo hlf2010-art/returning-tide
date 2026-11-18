@@ -8,10 +8,11 @@ const V = Object.fromEntries(VENUES.map((v) => [v.id, v]));
 
 // the tracks and their credits
 const ids = Object.keys(TRACKS), files = ids.map((id) => TRACKS[id].file);
-ok(ids.every((id) => TRACKS[id].title && TRACKS[id].artist && /^https:\/\/ccmixter\.org\/files\//.test(TRACKS[id].page) && TRACKS[id].secs > 60 && /^[a-z0-9-]+\.mp3$/.test(TRACKS[id].file)), 'every track has a title, an artist, its ccMixter page, a length and a plain file name');
+ok(ids.every((id) => TRACKS[id].title && TRACKS[id].artist && /^https:\/\/opengameart\.org\/content\//.test(TRACKS[id].page) && TRACKS[id].secs > 60 && /^[a-z0-9-]+\.mp3$/.test(TRACKS[id].file)), 'every track has a title, an artist, its OpenGameArt page, a length and a plain file name');
+ok(!ids.some((id) => /giant steps/i.test(TRACKS[id].title)), 'no arrangement of a copyrighted tune (a CC0 on an arrangement does not clear the composition)');
 ok(new Set(files).size === files.length, 'no two tracks share a file');
 ok(Object.values(PLAYLISTS).every((p) => p.length >= 3 && p.every((id) => TRACKS[id])), 'every playlist has at least three tracks, all of them known');
-ok(LICENCE.url === 'https://creativecommons.org/licenses/by/3.0/' && /“nightWalk” by airtone \(https:\/\/ccmixter\.org\/files\/airtone\/56520\), licensed under CC BY 3\.0/.test(credit('nightwalk')), 'a credit names the work, the artist, links it, and names and links the licence (CC BY)');
+ok(LICENCE.url === 'https://creativecommons.org/publicdomain/zero/1.0/' && /“After midnight” by dant-e \(https:\/\/opengameart\.org\/content\/after-midnight\), dedicated to the public domain \(CC0 1\.0/.test(credit('midnight')), 'public domain (CC0): no conditions, but each is credited anyway with its work, artist and link');
 ok(VENUES.every((v) => PLAYLISTS[v.playlist]) && VENUES.filter((v) => v.cabin).length === 1, 'every venue has a playlist; one of them is a car radio');
 
 // the schedule: real time, round and round, skipping what isn't there
