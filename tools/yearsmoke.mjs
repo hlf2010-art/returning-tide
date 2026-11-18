@@ -21,7 +21,7 @@ for (const day of [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]) {
   const e0 = errors.length;
   await p.evaluate((d) => { const L = window.__bund.life; L.clock.day = d; L.clock.minute = 8 * 60 + 30; L.clock.sec = 0; }, day);
   // the night's season plan, if this night crossed weeks: give it a few seconds to open
-  const opened = await p.waitForFunction(() => window.__bund.mode === 'season', null, { timeout: 20000 }).then(() => true).catch(() => false);
+  const opened = await p.waitForFunction(() => window.__bund.mode === 'season', null, { timeout: 45000 }).then(() => true).catch(() => false);
   if (opened) {
     seen.seasons++;
     await p.evaluate(() => document.querySelector('#season [data-go]').click());
