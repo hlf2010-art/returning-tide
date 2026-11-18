@@ -24,7 +24,7 @@ export function createLighting(scene, lanterns, extra = []) {
   Object.assign(sky.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 500 });
   const NIGHT = { sky: new THREE.Color(0x5578c8), ground: new THREE.Color(0x2a221c), hemi: 0.55, dir: new THREE.Color(0x6f8fd8), dirI: 0.35 };
   const DEEP = { sky: new THREE.Color(0x34466e), ground: new THREE.Color(0x2a221c), hemi: 0.42 };
-  const DAY = { sky: new THREE.Color(0xc4d0de), ground: new THREE.Color(0x7a6e60), hemi: 1.35, sun: new THREE.Color(1.0, 0.93, 0.82), low: new THREE.Color(1.0, 0.66, 0.42), sunI: 1.9 };
+  const DAY = { sky: new THREE.Color(0xa9c6ea), ground: new THREE.Color(0x857462), hemi: 1.25, sun: new THREE.Color(1.0, 0.95, 0.86), low: new THREE.Color(1.0, 0.7, 0.45), sunI: 2.7 };   // a clear, sunny day
   const T = { day: 0, lamps: 1, sun: { x: 0, y: -1, z: 0 }, inside: 0 };
   let sunShadow = false;
 

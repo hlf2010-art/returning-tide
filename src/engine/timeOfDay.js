@@ -1,7 +1,7 @@
 // What the hour does to the city: one pure function of the clock (minute of the day, 0-1439) that
 // the sky, the lamps, the façades, Lujiazui's LED walls, the shops, the crowd and the traffic read.
 // Mid-November in Shanghai (31.2° N): sunrise about 6:25, sunset about 4:55 pm, dark by 5:40.
-//   daylight   0 at night .. 1 in the (usually hazy) day
+//   daylight   0 at night .. 1 in the (clear, sunny) day
 //   glow       the twilight band on the horizon (1 = the blue hour the game opens in, at 5:42 pm)
 //   side       where that glow is: -1 west at dusk (behind the Bund), +1 east at dawn (over Pudong)
 //   night      0 in the blue hour .. 1 in the deep night (a city sky: never black, a brown-orange glow)
@@ -62,7 +62,7 @@ export function todState(minute) {
     metro: t >= H(5, 30) && t < H(23),
     dawn: t >= H(5, 45) && t < H(8, 15),
     exposure: 1.15 - 0.37 * daylight, bloom: 0.24 - 0.14 * daylight,
-    fog: 1 + 0.2 * daylight,
+    fog: 1 - 0.68 * daylight,                      // clear, sunny days: the far bank sharp
     sun: sunDir(t),
   };
 }
