@@ -267,6 +267,17 @@ export function createAudio() {
     } else if (name === 'chime') {
       // an achievement: three rising bell notes
       [1047, 1319, 1568].forEach((f, i) => ping(t + i * 0.11, f, 0.06 * level, 0.5));
+    } else if (name === 'buzz') {
+      // the phone vibrating in your pocket: two short buzzes, a low motor hum with the case's rattle
+      stats.cues.buzz = (stats.cues.buzz || 0) + 1;
+      for (const t0 of [t, t + 0.42]) {
+        const g = ctx.createGain(), lp = ctx.createBiquadFilter(), o = ctx.createOscillator(), am = ctx.createOscillator(), amg = ctx.createGain();
+        lp.type = 'lowpass'; lp.frequency.value = 420; o.type = 'sawtooth'; o.frequency.value = 158;
+        am.type = 'square'; am.frequency.value = 31; amg.gain.value = 0.35;   // the rattle
+        o.connect(lp).connect(g).connect(sfx); am.connect(amg).connect(g.gain);
+        g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.16 * level, t0 + 0.03); g.gain.setValueAtTime(0.16 * level, t0 + 0.26); g.gain.linearRampToValueAtTime(0, t0 + 0.31);
+        o.start(t0); am.start(t0); o.stop(t0 + 0.33); am.stop(t0 + 0.33);
+      }
     } else if (name === 'ping') {
       // a message: two soft notes, a fourth apart
       ping(t, 1318, 0.05 * level, 0.12); ping(t + 0.09, 1760, 0.04 * level, 0.16);

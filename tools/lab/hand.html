@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><title>hand lab</title>
+<style>body{margin:0;background:#888}canvas{display:block}</style>
+<script type="module">
+// Dev lab: the player's own body holding the cup, lit and close, from a few angles (tools/lab/hand.html)
+import * as THREE from 'three';
+import { loadPeople } from '/src/world/people.js';
+import { createPlayerBody } from '/src/world/playerBody.js';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(960, 540); document.body.appendChild(r.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9aa4ad);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.2)); const d = new THREE.DirectionalLight(0xffffff, 2.5); d.position.set(2, 4, 3); scene.add(d);
+const cam = new THREE.PerspectiveCamera(40, 960 / 540, 0.01, 50);
+const people = await loadPeople('/people/');
+const pb = createPlayerBody(people); scene.add(pb.root);
+const player = { body: { x: 0, y: 0, z: 0, vx: 0, vz: 0 }, yaw: Math.PI, pitch: -0.6, speed: 0, stride: 0, head: null };
+pb.setHold({ cup: !new URLSearchParams(location.search).has('nocup'), phone: false });
+const eye = new THREE.Vector3(0, 1.62, 0);
+for (let i = 0; i < 60; i++) { pb.update(1 / 30, player, eye.clone()); pb.placeProps(eye); }
+window.view = (name) => {
+  const hand = pb.root.getObjectByName('Bip01_R_Hand').getWorldPosition(new THREE.Vector3());
+  const V = { fp: [eye.x, eye.y, eye.z], front: [hand.x, hand.y + 0.05, hand.z + 0.45], side: [hand.x - 0.45, hand.y + 0.05, hand.z], top: [hand.x, hand.y + 0.45, hand.z + 0.05], out: [hand.x + 0.45, hand.y + 0.05, hand.z] }[name];
+  cam.position.set(...V); cam.lookAt(hand); if (name === 'fp') cam.fov = 70; else cam.fov = 40; cam.updateProjectionMatrix();
+  pb.update(1 / 30, player, eye.clone()); pb.placeProps(eye); r.render(scene, cam);
+};
+window.ready = true;
+</script>

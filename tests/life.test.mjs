@@ -9,8 +9,8 @@ const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) fail
 const play = (L, realSecs, step = 1, r = rng(1)) => { for (let s = 0; s < realSecs; s += step) { advance(L, step); runAgenda(L, r); deliverFollowUps(L); lapse(L).forEach((inv) => react(L, { type: 'invite', id: inv.id, status: 'missed', from: inv.from, thread: inv.thread })); } };
 {
   const L = createLife();
-  ok(clockText(L.clock.minute) === '16:20' && L.clock.day === 1, 'starts on day 1 at 16:20, before the sunset');
-  advance(L, 60); ok(L.clock.minute === 16 * 60 + 20 + TIME_RATE, `a real minute is ${TIME_RATE} game minutes`);
+  ok(clockText(L.clock.minute) === '15:00' && L.clock.day === 1, 'starts on day 1 at 15:00, in the afternoon light, before the sunset');
+  advance(L, 60); ok(L.clock.minute === 15 * 60 + TIME_RATE, `a real minute is ${TIME_RATE} game minutes`);
   // money
   const w0 = balance(L, 'wechat');
   ok(pay(L, { method: 'wechat', amount: 15, to: 'Manner', memo: '拿铁' }).ok && balance(L, 'wechat') === w0 - 15, 'paying for a latte takes ¥15 from WeChat Pay');

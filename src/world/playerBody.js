@@ -62,10 +62,52 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
   act.idle.setEffectiveWeight(1);
   // holding something up in the right hand (a cup, the phone): the texting clip's right arm only
   // (the camera owns the head), layered over whatever the legs are doing
-  const holdClip = clips.phone ? new THREE.AnimationClip('hold', clips.phone.duration, clips.phone.tracks.filter((t) => /^Bip01_R_(Clavicle|UpperArm|Forearm|Hand|Finger)/.test(t.name))) : null;
+  const holdClip = clips.phone ? new THREE.AnimationClip('hold', clips.phone.duration, clips.phone.tracks.filter((t) => /^Bip01_R_(Clavicle|UpperArm|Forearm|Hand)\b/.test(t.name) && !/Finger/.test(t.name))) : null;
   const hold = holdClip ? mixer.clipAction(holdClip) : null;
   if (hold) { hold.play(); hold.setEffectiveWeight(0); hold.time = holdClip.duration * 0.3; }
+  // a cup: the right arm of the umbrella clip (a fist round an upright handle, thumb up, at the chest),
+  // when the men's clip set raises the right hand; the fingers are closed in code (gripCup)
+  const umb = people.umbrellaHand && people.umbrellaHand.m === 'R' && (people.clips.m || []).find((c) => c.name === 'umbrella');
+  const cupClip = umb ? new THREE.AnimationClip('cupHold', umb.duration, umb.tracks.filter((t) => /^Bip01_R_(Clavicle|UpperArm|Forearm|Hand)\b/.test(t.name) && !/Finger/.test(t.name))) : null;
+  const cupHold = cupClip ? mixer.clipAction(cupClip) : null;
+  if (cupHold) { cupHold.play(); cupHold.setEffectiveWeight(0); cupHold.time = cupClip.duration * 0.3; }
   let holdW = 0, want = { cup: false, phone: false };
+
+
+  // ---- a cup in the right hand: carried on the open palm (the umbrella clip's arm, palm up) ----
+  // (the phone clip's finger tracks don't suit this rig's fingers and mangled the hand: none are used;
+  // where the cup goes comes from the bones: f along the palm to the knuckles)
+  const R = (n) => root.getObjectByName(n);
+  const rHand = R('Bip01_R_Hand'), knuckle = R('Bip01_R_Finger2'), thumb0 = R('Bip01_R_Finger0');
+  const gf = new THREE.Vector3(), gp = new THREE.Vector3(), ga = new THREE.Vector3(), gh = new THREE.Vector3(), gt = new THREE.Vector3(), gn = new THREE.Vector3();
+  const _wq = new THREE.Quaternion(), _lq = new THREE.Quaternion(), _la = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
+  const grip = { centre: new THREE.Vector3(), ok: false };
+  // turn bone b about a world axis by angle (its children follow)
+  function turnWorld(b, axis, angle) {
+    b.parent.getWorldQuaternion(_wq);
+    _la.copy(axis).applyQuaternion(_wq.invert());
+    b.quaternion.premultiply(_lq.setFromAxisAngle(_la, angle));
+    b.updateMatrixWorld(true);
+  }
+  function frame() {
+    rHand.getWorldPosition(gh); knuckle.getWorldPosition(gf); thumb0.getWorldPosition(gt);
+    gf.sub(gh); const len = gf.length(); gf.normalize();
+    gp.copy(gt).sub(gh); gp.addScaledVector(gf, -gp.dot(gf)).normalize();       // palm side, toward the thumb
+    ga.crossVectors(gf, gp).normalize();                                          // the curl axis: + closes the hand
+    return len;
+  }
+  function gripCup(w) {
+    grip.ok = false;
+    if (!rHand || !knuckle || !thumb0 || w <= 0) return;
+    frame();
+    const len = frame();
+    // the fingers stay as they are: this rig's finger weights tear the mesh when they bend, so the cup
+    // rests in the upturned palm, its base on the palm between the wrist and the knuckles
+    // the palm faces the chest (thumb up): out that way by the cup's radius, the fingers round its middle
+    gn.crossVectors(gp, gf).normalize();
+    grip.centre.copy(gh).addScaledVector(gf, len * 0.5).addScaledVector(gn, 0.043).addScaledVector(gp, -0.005);
+    grip.ok = true;
+  }
 
   const bone = (n) => root.getObjectByName(n);
   root.remove(shadow);
@@ -142,8 +184,13 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
         a.time = (reverse ? 1 - ph : ph) * d;
       }
       holdW += ((want.cup || want.phone ? 1 : 0) - holdW) * Math.min(1, dt * 5);
+      const cupping = want.cup && !want.phone && cupHold;
+      if (cupHold) {
+        cupHold.setEffectiveWeight(cupping && holdW > 0.01 ? holdW * holdW * 12 : 0);
+        const d = cupClip.duration; if (cupHold.time < d * 0.2 || cupHold.time > d * 0.8) cupHold.time = d * 0.2;
+      }
       if (hold) {
-        hold.setEffectiveWeight(holdW > 0.01 ? holdW * holdW * 12 : 0);
+        hold.setEffectiveWeight(!cupping && holdW > 0.01 ? holdW * holdW * 12 : 0);
         const d = holdClip.duration; if (hold.time < d * 0.12 || hold.time > d * 0.88) hold.time = d * 0.12;
       }
       mixer.update(dt);
@@ -179,6 +226,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
         const ex = _v.x - fx * 0.12, ey = _v.y + 0.07, ez = _v.z - fz * 0.12;
         eye.x += (ex - eye.x) * bend; eye.y += (ey - eye.y) * bend; eye.z += (ez - eye.z) * bend;
       }
+      if (want.cup && !want.phone && holdW > 0.05) gripCup(Math.min(1, holdW));
       if (springs) springs.update(dt);                              // the jacket's hem, the trouser legs (tools/cloth/)
       // the shadow copy takes the pose, head and all; then the drawn body loses its head
       shadow.position.copy(root.position); shadow.quaternion.copy(root.quaternion);
@@ -218,7 +266,9 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
       hand.getWorldPosition(_v); const palm = _v.clone();
       if (finger) { finger.getWorldPosition(_v); palm.add(_v).multiplyScalar(0.5); }
       if (props.cup.visible) {                                             // in the curl of the right hand: the cup sits on the palm side (toward the body)
-        props.cup.position.copy(palm); props.cup.position.y -= 0.03; props.cup.position.x -= Math.cos(yaw) * 0.042; props.cup.position.z += Math.sin(yaw) * 0.042; props.cup.rotation.set(0, yaw, 0);
+        if (grip.ok) { group.worldToLocal(props.cup.position.copy(grip.centre)); const gr = props.cup.children[0].userData.grip; props.cup.position.y -= (gr ? gr.position.y : 0.06) * 0.45; }
+        else { props.cup.position.copy(palm); props.cup.position.y -= 0.03; }
+        props.cup.rotation.set(0, yaw, 0);
       }
       if (props.phone.visible && eye) {
         const z = eye.clone().sub(palm).normalize(), fy = new THREE.Vector3(Math.sin(yaw), 0.6, Math.cos(yaw)).normalize();

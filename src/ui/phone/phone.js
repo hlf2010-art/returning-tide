@@ -91,6 +91,12 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   const banner = document.createElement('div'); banner.id = 'phone-banner'; document.body.appendChild(banner);
   const host = root.querySelector('.host'), statusEl = root.querySelector('.status'), island = root.querySelector('.island'), homebar = root.querySelector('.homebar');
   const S = { open: false, unlocked: false, stack: [{ s: 'lock' }], call: null, sheet: null, playing: null, liveText: '' };
+  // a message or a call: the phone buzzes (the sound, the banner shaking, a real buzz on a phone that can)
+  function buzz() {
+    if (audio && audio.cue) audio.cue('buzz');
+    banner.classList.remove('buzz'); void banner.offsetWidth; banner.classList.add('buzz');
+    try { if (navigator.vibrate) navigator.vibrate([260, 160, 260]); } catch { /* not allowed here */ }
+  }
   let bannerTimer = 0, lastNote = 0, statusKey = '', islandHtml = null;
   // voice notes, videos and the other side of a call (./media.js): recorded voices, never synthetic speech
   const media = createPhoneMedia({ audio, voice, enText, onChange: () => refreshMedia() });
@@ -334,7 +340,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     // it rings in your pocket: a banner and the ringtone; P brings the phone up to answer
     const p = person(script.from);
     banner.innerHTML = noteCard(getLife(), { from: script.from, thread: script.from, text: Z('微信语音通话', 'WeChat voice call'), at: stamp(getLife()) }, { hint: Z('P 接听', 'P to answer') }); void p;
-    banner.classList.add('on'); clearTimeout(bannerTimer);
+    banner.classList.add('on'); clearTimeout(bannerTimer); buzz();
     if (S.open) render();
     if (audio && audio.cue) audio.cue('ring');
     return true;
@@ -537,7 +543,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
         const p = person(n.from);
         banner.innerHTML = noteCard(l, n, { hint: Z('P 打开', 'P to open') }); void p;
         banner.classList.add('on'); clearTimeout(bannerTimer); bannerTimer = setTimeout(() => banner.classList.remove('on'), 4200);
-        if (audio && audio.cue) audio.cue('ping');
+        buzz(); if (audio && audio.cue) audio.cue('ping', 0.75);
         S.lastThread = n.thread;
       } else if (top().s === 'chat' || top().s === 'chats' || top().s === 'home' || top().s === 'lock') render();
     }
