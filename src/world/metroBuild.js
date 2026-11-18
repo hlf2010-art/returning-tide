@@ -84,6 +84,8 @@ function quad(batch, F, pts, tileU = 1, tileV = 1) {
   g.computeVertexNormals(); batch.push(g);
 }
 
+// the next stop each way from each station (Line 2: + toward Guanglan Road, - toward East Xujing)
+const NEXT_STOP = { enr: { 1: ['陆家嘴', 'Lujiazui'], [-1]: ['人民广场', "People's Square"] }, ljz: { 1: ['东昌路', 'Dongchang Road'], [-1]: ['南京东路', 'East Nanjing Road'] } };
 export function buildStation(root, S, m) {
   const F = S.F, g = new THREE.Group(); g.name = `metro-${S.id}`; root.add(g);
   const rotY = -F.rot;
@@ -268,13 +270,13 @@ export function buildStation(root, S, m) {
   // the screen doors: posts, fixed glass between doorways, headers; the sliding doors (instanced, moved by metro.js)
   const psd = { doors: [] };
   for (const s of [-1, 1]) {
-    const pz = s * PLAT.psd, hdr = signMat(psdHeaderTex(s > 0 ? 1 : -1, null), 1.1);
+    const pz = s * PLAT.psd, hdr = signMat(psdHeaderTex(s > 0 ? 1 : -1, null, [S.name.zh, S.name.en], NEXT_STOP[S.id][s > 0 ? 1 : -1]), 1.1);
     const openings = DOOR_AS.map((a) => [a - 1.0, a + 1.0]);
     let a = A0 + 2;
     for (const [o0, o1] of openings) { if (o0 > a) { box('psdGlass', a, o0, yP, yP + 2.45, pz - 0.015, pz + 0.015); } box('steel', o0 - 0.06, o0, yP, yP + 2.45, pz - 0.08, pz + 0.08); box('steel', o1, o1 + 0.06, yP, yP + 2.45, pz - 0.08, pz + 0.08); a = o1; }
     box('psdGlass', a, A1 - 2, yP, yP + 2.45, pz - 0.015, pz + 0.015);
     box('dark', A0 + 2, A1 - 2, yP + 2.45, yP + 3.15, pz - 0.18, pz + 0.18); box('steel', A0 + 2, A1 - 2, yP, yP + 0.06, pz - 0.1, pz + 0.1);
-    for (let i = 0; i < DOOR_AS.length; i += 1) pic(hdr, DOOR_AS[i], yP + 2.8, pz - s * 0.19, 1.6, 0.2, 0, -s);
+    for (let i = 0; i < DOOR_AS.length; i += 1) pic(hdr, DOOR_AS[i], yP + 2.8, pz - s * 0.19, 2.4, 0.3, 0, -s);
     DOOR_AS.forEach((da, i) => psd.doors.push({ a: da, s, i }));
   }
   const psdGeo = new THREE.BoxGeometry(1.0, 2.38, 0.03);

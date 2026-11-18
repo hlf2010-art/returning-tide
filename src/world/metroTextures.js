@@ -140,15 +140,24 @@ export function lineMapTex(here, dir = 0, { w = 2048, h = 320 } = {}) {
   return tex(c, { repeat: false });
 }
 // over the screen doors on one side: the line, which way, the door's number
-export function psdHeaderTex(dir, n = 1) {
+export function psdHeaderTex(dir, n = 1, here = null, next = null) {
+  // as over Line 2's screen doors (the photos): a white band, a green stripe along its foot, the way the
+  // trains go with an arrow, and the next stop large; this stop small beside it
   const [c, x] = makeCanvas(1024, 128);
-  x.fillStyle = '#26292c'; x.fillRect(0, 0, 1024, 128);
-  badge(x, 16, 18, 92);
+  x.fillStyle = '#f6f6f3'; x.fillRect(0, 0, 1024, 128);
+  x.fillStyle = L2; x.fillRect(0, 112, 1024, 16);
+  badge(x, 14, 22, 70);
   const [zh, en] = TERMINUS[dir];
-  x.fillStyle = '#fff'; x.textAlign = 'left'; x.textBaseline = 'middle'; x.font = `800 52px ${FONT.sans}`; x.fillText(`往 ${zh}`, 130, 50); x.font = `500 26px ${FONT.sans}`; x.fillText(`To ${en}`, 134, 98);
-  arrow(x, 600, 26, 76, dir > 0 ? 'right' : 'left');
-  if (n != null) { x.fillStyle = EXIT_Y; x.fillRect(880, 18, 120, 92); x.fillStyle = '#111'; x.font = `900 60px ${FONT.sans}`; x.textAlign = 'center'; x.fillText(String(n), 940, 66); }
-  else { x.fillStyle = 'rgba(255,255,255,0.75)'; x.font = `600 24px ${FONT.sans}`; x.textAlign = 'right'; x.fillText('小心站台间隙 Mind the gap', 1000, 64); }
+  x.fillStyle = '#1d1f22'; x.textAlign = 'left'; x.textBaseline = 'middle'; x.font = `800 44px ${FONT.sans}`; x.fillText(`往${zh}`, 100, 46, 250); x.font = `500 20px ${FONT.sans}`; x.fillStyle = '#444'; x.fillText(`To ${en}`, 102, 88, 250);
+  x.fillStyle = '#e5262b'; x.save(); x.translate(400, 58); if (dir > 0) x.scale(-1, 1); x.beginPath(); x.moveTo(-26, 0); x.lineTo(0, -20); x.lineTo(0, -8); x.lineTo(28, -8); x.lineTo(28, 8); x.lineTo(0, 8); x.lineTo(0, 20); x.closePath(); x.fill(); x.restore();
+  if (n != null) { x.fillStyle = EXIT_Y; x.fillRect(880, 14, 120, 90); x.fillStyle = '#111'; x.font = `900 60px ${FONT.sans}`; x.textAlign = 'center'; x.fillText(String(n), 940, 60); }
+  else if (here && next) {
+    x.textAlign = 'left'; x.fillStyle = '#555'; x.font = `600 18px ${FONT.sans}`; x.fillText('本站 This stop', 470, 30); x.fillText('下一站 Next stop', 700, 30);
+    x.fillStyle = '#1d1f22'; x.font = `700 34px ${FONT.sans}`; x.fillText(here[0], 470, 68, 200);
+    x.font = `900 52px ${FONT.sans}`; x.fillText(next[0], 700, 70, 300);
+    x.fillStyle = '#444'; x.font = `500 18px ${FONT.sans}`; x.fillText(here[1], 470, 98, 200); x.fillText(next[1], 700, 100, 300);
+    x.fillStyle = L2; for (let k = 0; k < 3; k++) { const X = 650 + k * 12; x.beginPath(); x.moveTo(X, 56); x.lineTo(X + 8, 64); x.lineTo(X, 72); x.lineTo(X + 4, 64); x.closePath(); x.fill(); }
+  } else { x.fillStyle = '#555'; x.font = `600 24px ${FONT.sans}`; x.textAlign = 'right'; x.fillText('小心站台间隙 Mind the gap', 1000, 60); }
   return tex(c, { repeat: false });
 }
 // on the platform's floor at each door: the two waiting lanes either side, the way out down the middle
