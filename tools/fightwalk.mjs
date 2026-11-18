@@ -160,7 +160,7 @@ if (only.includes('lose')) {
   await ev(() => { const b = window.__bund; b.setHour(8, 40); b.dtMax = 0.25; });
   await p.waitForFunction(() => window.__bund.life.flags.fight.morning && window.__bund.life.flags.fight.mirror, null, { timeout: T });
   const M = await life();
-  ok(M.threads.momo.some((t) => /救护车/.test(t)) && M.threads.wuhu.some((t) => /视频/.test(t)) && M.threads.ruoan.some((t) => /冰敷/.test(t)) && M.threads['110'] && M.threads.zhiwei && M.threads.zhiwei.length === 1, 'morning: Momo, the group chat (the clip), Ruoan, the receipt, and her');
+  ok(M.threads.momo.some((t) => /救护车/.test(t)) && M.threads.wuhu.some((t) => /视频/.test(t)) && M.threads.yuan.some((t) => /冰敷/.test(t)) && M.threads['110'] && M.threads.zhiwei && M.threads.zhiwei.length === 1, 'morning: Momo, the group chat (the clip), Yu\'an, the receipt, and her');
   ok(subs.some((t) => /In the mirror|镜子里/.test(t)), 'the mirror');
   await ev(() => window.__bund.player.teleport(-46.6, -208.2, Math.PI, 0));
   await p.waitForFunction(() => window.__bund.life.flags.fight.doorman, null, { timeout: T }); await p.waitForTimeout(400); await shot('doorman');

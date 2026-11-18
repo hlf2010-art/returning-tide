@@ -90,7 +90,7 @@ It ends in one of four ways:
 - **Injury** (`engine/year.js` `injure`, a night per level to heal, in `lifeContext` so people see it):
   1 skinned knuckles and bruised forearms · 2 a black eye and a split lip (health at 55 or less) ·
   3 four stitches over an eyebrow (you went down). The next day: a line in the mirror, the doorman
-  asks about your face, Ruoan messages.
+  asks about your face, Yu'an messages.
 - **Police.** They come if someone called 110, someone went down, you were pulled apart, you hit a
   man who had stopped, or it went on (blows given, heavy ones again, and blows taken add up to 7).
   They ask who started it; you can tell it straight, shade it ("he started it, I only defended
@@ -116,7 +116,7 @@ It ends in one of four ways:
   he was bothering than if she watched. Talking him down or standing your ground builds trust;
   walking away costs it badly; violence you started frightens her.
 - **The morning after** (08:10): Momo has heard from the bar staff; if it was filmed the clip is in
-  the group chat; Ruoan if your face shows it; a 110 receipt if the police were involved; a message
+  the group chat; Yu'an if your face shows it; a 110 receipt if the police were involved; a message
   from whoever was with you. All in Chinese, with English in `EN_FIGHT` (the phone finds it).
 - **The ledger.** One `fact(L, 'fight', { outcome, how, where, against, blows, started, landed, took,
   hurt, police, fine, filmed, minutes }, [companion])`. `fightContext(L)` is a ready sentence for the

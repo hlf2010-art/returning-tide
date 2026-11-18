@@ -190,22 +190,22 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     const poly = (pts, fill, stroke = null) => { g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)))); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1; g.stroke(); } };
     const disc = (x, z, r, fill) => { g.fillStyle = fill; g.beginPath(); g.arc(px(x), pz(z), r * P, 0, 6.2832); g.fill(); };
     const line = (x0, z0, x1, z1, w, col) => { g.strokeStyle = col; g.lineWidth = w * P; g.lineCap = 'butt'; g.beginPath(); g.moveTo(px(x0), pz(z0)); g.lineTo(px(x1), pz(z1)); g.stroke(); };
-    g.fillStyle = '#30343c'; g.fillRect(px(470), 0, 1e5, 1e5);                           // the Pudong bank
-    poly(GREEN.P, '#2f4a30');
-    for (const l of LAKE) poly(l.P, '#0c1c2c');
-    poly(PEARL_PARK, '#2a3f2c');
-    for (const A of ARMS) line(C.x + A.dx * 20 + A.px * A.off, C.z + A.dz * 20 + A.pz * A.off, C.x + A.dx * A.len + A.px * A.off, C.z + A.dz * A.len + A.pz * A.off, A.hw * 2, '#15181d');
-    line(...fromAP(YIN.ac, -YIN.len), ...fromAP(YIN.ac, YIN.len), YIN.a1 - YIN.a0, '#15181d');
-    disc(C.x, C.z, RING.road, '#15181d'); disc(C.x, C.z, RING.island, '#2f4a30');
-    for (const q of ZEBRAS) poly([fromAP(q.a0, q.p0), fromAP(q.a1, q.p0), fromAP(q.a1, q.p1), fromAP(q.a0, q.p1)], 'rgba(230,226,215,0.55)');
+    g.fillStyle = '#132328'; g.fillRect(px(470), 0, 1e5, 1e5);                           // the Pudong bank
+    poly(GREEN.P, '#1f3a33');
+    for (const l of LAKE) poly(l.P, '#0d2a33');
+    poly(PEARL_PARK, '#1a2f2a');
+    for (const A of ARMS) line(C.x + A.dx * 20 + A.px * A.off, C.z + A.dz * 20 + A.pz * A.off, C.x + A.dx * A.len + A.px * A.off, C.z + A.dz * A.len + A.pz * A.off, A.hw * 2, '#0a1317');
+    line(...fromAP(YIN.ac, -YIN.len), ...fromAP(YIN.ac, YIN.len), YIN.a1 - YIN.a0, '#0a1317');
+    disc(C.x, C.z, RING.road, '#0a1317'); disc(C.x, C.z, RING.island, '#1f3a33');
+    for (const q of ZEBRAS) poly([fromAP(q.a0, q.p0), fromAP(q.a1, q.p0), fromAP(q.a1, q.p1), fromAP(q.a0, q.p1)], 'rgba(236,212,154,0.42)');
     const ifcIds = new Set([IFC.north, IFC.south, IFC.mall].map((B) => B.id));
-    for (const B of BUILDINGS) if (!B.part || B.min < 3) poly(B.P, ifcIds.has(B.id) ? '#525a68' : '#454a55', '#5b616d');
-    for (const [k, t] of Object.entries(LJZ.towers)) if (!k.startsWith('ifc')) disc(t.x, t.z, k === 'pearl' ? 30 : 26, '#5a5266');
+    for (const B of BUILDINGS) if (!B.part || B.min < 3) poly(B.P, ifcIds.has(B.id) ? '#284852' : '#1d343b', 'rgba(200,163,90,0.62)');
+    for (const [k, t] of Object.entries(LJZ.towers)) if (!k.startsWith('ifc')) disc(t.x, t.z, k === 'pearl' ? 30 : 26, '#2c3e4f');
     // the ring bridge, its stairs and the spur; the Apple plaza and the mall's curved front; the station's exits
-    g.strokeStyle = 'rgba(214,206,190,0.9)'; g.lineWidth = (RING.r1 - RING.r0) * P; g.beginPath(); g.arc(px(RC.x), pz(RC.z), RING.rc * P, 0, 6.2832); g.stroke();
-    for (const R of RAMPS) line(R.top[0], R.top[1], R.bot[0], R.bot[1], R.hw * 2, 'rgba(214,206,190,0.9)');
-    line(...rpolar(SPUR.b, RING.r1 - 1), ...rpolar(SPUR.b, SPUR.s1), SPUR.hw * 2, 'rgba(214,206,190,0.9)');
-    disc(APPLE.x, APPLE.z, APPLE.rOut, '#4a4f58'); disc(APPLE.x, APPLE.z, APPLE.rCyl, '#cfe6e6');
+    g.strokeStyle = 'rgba(244,230,196,0.9)'; g.lineWidth = (RING.r1 - RING.r0) * P; g.beginPath(); g.arc(px(RC.x), pz(RC.z), RING.rc * P, 0, 6.2832); g.stroke();
+    for (const R of RAMPS) line(R.top[0], R.top[1], R.bot[0], R.bot[1], R.hw * 2, 'rgba(244,230,196,0.9)');
+    line(...rpolar(SPUR.b, RING.r1 - 1), ...rpolar(SPUR.b, SPUR.s1), SPUR.hw * 2, 'rgba(244,230,196,0.9)');
+    disc(APPLE.x, APPLE.z, APPLE.rOut, '#22404a'); disc(APPLE.x, APPLE.z, APPLE.rCyl, '#cfe6e6');
     for (const W of METRO_LJZ) { const [x, z] = wellPt(W, W.len / 2); line(...W.top, ...wellPt(W, W.len), W.hw * 2, '#c8161e'); g.fillStyle = '#fff'; g.font = `700 ${Math.round(3.4 * P)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`M${W.exit}`, px(x), pz(z)); }
   });
 

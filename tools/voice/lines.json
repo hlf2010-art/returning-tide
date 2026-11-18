@@ -640,7 +640,7 @@
   "en": "It is!! Top comment: \"the calmest man in Shanghai\" hahaha"
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "你脸怎么了？谁告诉我的不重要。冰敷，别热敷。",
   "en": "What happened to your face? Never mind who told me. Ice, not heat."
  },
@@ -911,8 +911,8 @@
  },
  {
   "who": "zhixia",
-  "zh": "喂，纪白，听说你硅谷那家公司的股票套现了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？",
-  "en": "Hey, Ji Bai, heard you cashed out your stock from that Valley company? ...Don't play dumb, Ruoan told me. Come to Tianma this weekend, I'll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?"
+  "zh": "喂，纪白，听说你硅谷那家公司的股票套现了？……别装，予安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？",
+  "en": "Hey, Ji Bai, heard you cashed out your stock from that Valley company? ...Don't play dumb, Yu'an told me. Come to Tianma this weekend, I'll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?"
  },
  {
   "who": "zhixia",
@@ -1521,8 +1521,8 @@
  },
  {
   "who": "zhiwei",
-  "zh": "纪白？我是许知微，这个项目的 PM。工牌和电脑在你桌上，IT 十点来装 VPN。",
-  "en": "Ji Bai? Xu Zhiwei. I'm the engagement manager on this one. Your badge and laptop are on your desk. IT will be round at ten to set up the VPN."
+  "zh": "纪白？我是许知微，这个项目的产品设计负责人，交付也是我带。工牌和电脑在你桌上，IT 十点来装 VPN。",
+  "en": "Ji Bai? Xu Zhiwei. Product design lead on this one, and I run delivery. Your badge and laptop are on your desk. IT will be round at ten to set up the VPN."
  },
  {
   "who": "zhiwei",
@@ -2036,8 +2036,8 @@
  },
  {
   "who": "zhiwei",
-  "zh": "没有一天了，报告今晚发。……我签吧，我是 PM。",
-  "en": "There isn't a day. The report goes tonight. ...I'll sign it. I'm the manager."
+  "zh": "没有一天了，报告今晚发。……我签吧，项目是我带的。",
+  "en": "There isn't a day. The report goes tonight. ...I'll sign it. It's my engagement."
  },
  {
   "who": "shaofeng",
@@ -3380,17 +3380,17 @@
   "en": "Striking another person. Back to the station. Under the Public Security Administration Punishments Law, a five-hundred-yuan fine."
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "……你知道这省了我们多少事吗？两周的测绘。下次请你吃饭，我请。",
   "en": "...Do you know how much work that just saved us? Two weeks of measuring. Dinner's on me next time."
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "每一格都是手工做的，九十多年了。……要是有台便携的激光雷达就好了，我们量了三个礼拜。",
   "en": "Every one of those coffers was made by hand, ninety-odd years ago. ...If only we had a portable LiDAR. We've been measuring for three weeks."
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "跟紧我。保安认识我。",
   "en": "Stay close. The guard knows me."
  },
@@ -3405,7 +3405,7 @@
   "en": "Baibai... thanks. Really."
  },
  {
-  "who": "ruoan",
+  "who": "yuan",
   "zh": "来啦。准时，难得。",
   "en": "You came. On time, for once."
  },
@@ -3691,13 +3691,13 @@
  },
  {
   "who": "gunian",
-  "zh": "我跟合伙人们说了：我要出来，自己募一支基金。办公室看好了，杨浦滨江一个老厂房的楼上，楼下就是创客空间。不是请你帮忙搬东西。是想让你第一个看。",
-  "en": "I've told my partners: I'm leaving to raise a fund of my own. I've found the office, upstairs in an old factory on the Yangpu riverside, right above the makerspace. I'm not asking you to carry anything. I'd like you to be the first to see it."
+  "zh": "有件事一月就定了，现在可以说了：我要出来，自己募一支人民币基金。合伙人们一月就知道了，交接做到三月底，新项目的投委会我已经回避了。基石是杨浦区的引导基金，条件是基金注册在杨浦、一部分钱投在杨浦，所以办公室就在杨浦滨江一个老厂房的楼上，楼下就是创客空间。不是请你帮忙搬东西。是想让你第一个看。",
+  "en": "Something was decided in January, and now I can say it: I'm leaving to raise an RMB fund of my own. My partners have known since January; I'm handing over until the end of March, and I've already stepped out of the investment committee for new deals. The anchor is the Yangpu district guidance fund, on condition that the fund is registered in Yangpu and puts part of its money there. So the office is upstairs in an old factory on the Yangpu riverside, right above the makerspace. I'm not asking you to carry anything. I'd like you to be the first to see it."
  },
  {
   "who": "gunian",
-  "zh": "下个月出去路演：香港、新加坡、北京，三周见二十六个出资人。这之前我晚上都在改材料，不太回消息。不是冷淡，是在募资。先跟你说一声。",
-  "en": "Next month I take the fund on the road: Hong Kong, Singapore, Beijing, twenty-six investors in three weeks. Until then I'm rewriting the deck every evening and slow to answer. It isn't coldness. It's fundraising. I wanted you to know beforehand."
+  "zh": "下个月出去路演：香港、新加坡见家族办公室，北京见母基金，三周见二十六个出资人。这之前我晚上都在改材料，不太回消息。不是冷淡，是在募资。先跟你说一声。",
+  "en": "Next month I take the fund on the road: family offices in Hong Kong and Singapore, a fund of funds in Beijing, twenty-six investors in three weeks. Until then I'm rewriting the deck every evening and slow to answer. It isn't coldness. It's fundraising. I wanted you to know beforehand."
  },
  {
   "who": "gunian",
@@ -3711,8 +3711,8 @@
  },
  {
   "who": "gunian",
-  "zh": "慢潮资本的第一笔投资签了：就是那台摄像头。他拿一百个真实家庭的晚上重新训练了模型，现在分得清坐下和摔倒了。他问我，当初是谁先指出问题的。我没告诉他。",
-  "en": "Slow Tide's first investment is signed: that camera. He retrained the model on evenings in a hundred real homes, and now it can tell sitting from falling. He asked me who first spotted the problem. I didn't tell him."
+  "zh": "慢潮资本的第一笔投资签了：就是那台摄像头。他没跟我解释，他去修了：征得同意，在一百个真实家庭里录了晚上的数据，模型改成看前后两秒，不只看一帧，而且全在设备上算，视频不出家门。尽调的时候，我在同一个大堂、同样的灯下坐了三十次，又请康复医院的治疗师在垫子上真摔了两百次：误报我要看，漏报更要看。两户老人家里各看了一晚。他问我，当初是谁先指出问题的。我没告诉他。",
+  "en": "Slow Tide's first investment is signed: that camera. He didn't explain it to me. He fixed it: with their consent, evenings recorded in a hundred real homes, and a model that watches the two seconds either side, not one frame, all of it worked out on the device so no video leaves the house. For the due diligence I sat down thirty times in the same lobby under the same lights, and had therapists from a rehabilitation hospital take two hundred real falls on mats: I wanted the false alarms, and even more the falls it missed. Then a night each in two old people's homes. He asked me who first spotted the problem. I didn't tell him."
  },
  {
   "who": "gunian",
@@ -3841,48 +3841,48 @@
  },
  {
   "who": "yuan",
-  "zh": "看到你朋友圈了。外滩。",
-  "en": "Saw your Moments. The Bund."
+  "zh": "今天在和平饭店顶上测了一天，下来看见你站在江边。没叫你。",
+  "en": "I spent the day surveying the Peace Hotel's roof, and when I came down you were standing by the river. I didn't call out."
  },
  {
   "who": "yuan",
-  "zh": "所以你真的回去了。",
-  "en": "So you really went back."
+  "zh": "所以你真的回来了。比我晚了两年。",
+  "en": "So you really came back. Two years after me."
  },
  {
   "who": "yuan",
-  "zh": "[图片] 你的马克杯还在我这儿。印着 GO BEARS 那个。寄给你，还是扔了？",
-  "en": "[Photo] Your mug is still here. The GO BEARS one. Shall I post it to you, or throw it out?"
+  "zh": "[图片] 你那只 GO BEARS 的马克杯，两年前被我顺手装进箱子带回来了，一直在我工位上。还你，还是我接着用？",
+  "en": "[Photo] Your GO BEARS mug came home in my suitcase two years ago. It has been on my desk ever since. Do you want it back, or shall I keep using it?"
  },
  {
   "who": "yuan",
-  "zh": "名单这次有我了。早上十点开的会，十点十五电脑就登不进去了。",
-  "en": "This time my name was on the list. The meeting was at ten. By a quarter past I couldn't log in."
+  "zh": "反对意见我交上去了：那条弄堂要留房，也要留人，不能只留一张皮，把住在里面的人都迁走。下个月居民意愿征询。组长说我会后悔。",
+  "en": "I've filed my dissent: that lane has to keep its houses and its people. It can't be kept as a skin with everyone moved out. The residents' consultation is next month. My team lead says I'll regret it."
  },
  {
   "who": "yuan",
-  "zh": "有家上海的公司找我，做 AI 产品的设计负责人。让我六月过去，先待三个月，算试用。我还没答应。",
-  "en": "A Shanghai company has approached me: design lead on their AI products. They want me over in June for three months, as a trial. I haven't said yes."
+  "zh": "旧金山来信了：以前那家城市研究所，请我回去带一个社区更新的项目，两年。我回国满两年了，签证上那条回国两年的限制刚好到期；他们是大学下属的，也不用抽签。九月要答复。我还没想好。",
+  "en": "A letter from San Francisco: my old urban-research institute wants me back to lead a community-renewal project. Two years. I've been home two years now, so the two-year rule on my old visa has just run out, and they're university-affiliated, so there's no lottery. They want an answer by September. I haven't decided."
  },
  {
   "who": "yuan",
-  "zh": "机票订了。六月五号到浦东。别来接，我自己会坐磁悬浮。",
-  "en": "Flight's booked. I land at Pudong on the fifth of June. Don't meet me. I can manage the maglev by myself."
+  "zh": "征询结果出来了：方案改成留房留人，愿意留下的居民都可以留下。改过的那一页上，有我的名字。",
+  "en": "The consultation is in: the scheme now keeps the houses and the people, and every resident who wants to stay can. My name is on the page that changed."
  },
  {
   "who": "yuan",
-  "zh": "我在你那个饭店的大堂。你以前说它像老电影。——确实像。",
-  "en": "I'm in the lobby of that hotel of yours. You used to say it was like an old film. — It is."
+  "zh": "我在你那个饭店的八角厅，测玻璃顶。你以前说它像老电影。——确实像。",
+  "en": "I'm in the octagon hall of that hotel of yours, measuring the glass roof. You used to say it was like an old film. — It is."
  },
  {
   "who": "yuan",
-  "zh": "单程。公司的 offer 我签了。静安，租了个朝南的。你的杯子我带回来了。",
-  "en": "One-way. I've signed the offer. A south-facing flat in Jing'an. I brought your mug back with me."
+  "zh": "旧金山我回掉了。弄堂二期我签了。你的杯子还在我桌上。",
+  "en": "I've turned San Francisco down and signed on for the lane's second phase. Your mug is still on my desk."
  },
  {
   "who": "yuan",
-  "zh": "[图片] 旧金山，雾。到了。我在收尾：退租，卖车，跟律师谈绿卡。明年春天见，如果你那句话还作数。",
-  "en": "[Photo] San Francisco, fog. I'm here. Closing things up: the lease, the car, a talk with the lawyer about the green card. See you in the spring, if that sentence of yours still stands."
+  "zh": "[图片] 旧金山，雾。到了。先做一年，然后我们再看，如果你那句话还作数。",
+  "en": "[Photo] San Francisco, fog. I'm here. One year first, and then we'll see, if that sentence of yours still stands."
  },
  {
   "who": "yuan",
@@ -3892,17 +3892,17 @@
  {
   "who": "yuan",
   "zh": "到旧金山了。保重，纪白。",
-  "en": "I'm back in San Francisco. Take care, Ji Bai."
+  "en": "I'm in San Francisco. Take care, Ji Bai."
  },
  {
   "who": "yuan",
-  "zh": "[图片] 回旧金山了。Clement 街那家点心店还开着。下次你来，我请。",
-  "en": "[Photo] Back in San Francisco. The dim sum place on Clement is still open. Next time you are over, my treat."
+  "zh": "[图片] 到旧金山了。Clement 街那家点心店还开着。下次你来，我请。群里我照样说话。",
+  "en": "[Photo] I'm in San Francisco. The dim sum place on Clement is still open. Next time you're over, my treat. I'll still be in the group chat."
  },
  {
   "who": "zhiwei",
-  "zh": "纪白？我是许知微，你这个项目的 PM。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。",
-  "en": "Ji Bai? Xu Zhiwei. I'm the PM on your project. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight."
+  "zh": "纪白？我是许知微，你这个项目的设计负责人，交付也归我管。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。",
+  "en": "Ji Bai? Xu Zhiwei. Design lead on your project, and delivery is mine too. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight."
  },
  {
   "who": "zhiwei",
@@ -3941,8 +3941,8 @@
  },
  {
   "who": "zhiwei",
-  "zh": "今天给合伙人过方案，你做的那个评估模型，我说的是“我们组做的”。Vincent 以为是我做的，我没纠正。",
-  "en": "At the partner review today I called your evaluation model \"the team's work\". Vincent assumed it was mine. I didn't correct him."
+  "zh": "今天给合伙人过方案，你做的那个评估模型，我说的是“我们组做的”。Raymond 以为是我做的，我没纠正。",
+  "en": "At the partner review today I called your evaluation model \"the team's work\". Raymond assumed it was mine. I didn't correct him."
  },
  {
   "who": "zhiwei",
@@ -3971,13 +3971,13 @@
  },
  {
   "who": "zhiwei",
-  "zh": "新加坡办公室要人去带亚太的 AI 业务。Vincent 推了我。年底走，两年。",
-  "en": "The Singapore office needs someone to run AI for Asia-Pacific. Vincent put my name forward. I'd leave at the end of the year. Two years."
+  "zh": "新加坡办公室要人去带亚太的 AI 业务。Raymond 推了我。年底走，两年。",
+  "en": "The Singapore office needs someone to run AI for Asia-Pacific. Raymond put my name forward. I'd leave at the end of the year. Two years."
  },
  {
   "who": "zhiwei",
-  "zh": "我跟 Vincent 说了，新加坡我不去。不是为你。——有一部分是。",
-  "en": "I've told Vincent I'm not taking Singapore. Not for you. — Partly for you."
+  "zh": "我跟 Raymond 说了，新加坡我不去。不是为你。——有一部分是。",
+  "en": "I've told Raymond I'm not taking Singapore. Not for you. — Partly for you."
  },
  {
   "who": "zhiwei",

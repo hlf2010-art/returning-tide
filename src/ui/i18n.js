@@ -14,6 +14,10 @@ let lang = (() => {
   return typeof navigator !== 'undefined' && /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
 })();
 
+// the page says its language from the start, not only after a switch, so the zh-CN rules in the CSS apply
+// on a first load in Chinese too (the title's weight and spacing, the menus' letter-spacing)
+if (typeof document !== 'undefined') document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+
 export const getLang = () => lang;
 export function setLang(l) {
   if (l !== 'zh' && l !== 'en' || l === lang) return;
@@ -34,10 +38,17 @@ export const S = {
   kicker: { zh: '上海 · 2026', en: 'Shanghai · 2026' },
   district: { zh: '黄浦区 · 外滩', en: 'Huangpu · The Bund' }, weatherNow: { zh: '12°C 雨后转阴 · 江风 4 级', en: '12°C · cloudy after rain · river wind F4' },
   chapter: { zh: '序章 · 抵达外滩', en: 'Prologue · Arriving at the Bund' },
+  // the title card the way a AAA title does it: one line you could put on a poster, then a back-of-the-box
+  // logline (stakes, then the hook). The story itself is played, not narrated here. Facts as in the game:
+  // he lands on Monday 9 November 2026 (world/agenda.js), he has given himself a year (docs/characters.md),
+  // and Old Zhou has been missing since the evening of 29 October, eleven days (world/cast.js, agenda.js)
+  tagline: { zh: '一年。一座城。一条九秒的语音。', en: 'One year. One city. One nine-second voicemail.' },
   premise: {
-    zh: '纪白，二十七岁。南京人，伯克利读完认知科学，在硅谷做了几年 AI 产品，回国一周，下周一去陆家嘴的咨询公司报到。父亲在南京的厂等着他接手；他给自己一年。十二岁以前的每个暑假，他都坐在汉口路老周的修表摊边。然后是老周的一条语音：九秒，几乎全是江风。“到外滩来。海关钟下面……”之后再也打不通。',
-    en: "Ji Bai, 27. Born in Nanjing; cognitive science at Berkeley; a few years building AI products in Silicon Valley; back a week, and due at a consulting firm in Lujiazui on Monday. His father's factory in Nanjing is waiting for him to take it over; he has given himself a year. Every summer until he was twelve he sat at Old Zhou's watch stall on Hankou Road. Then a voicemail from Old Zhou: nine seconds, mostly river wind. \"Come to the Bund. Under the Customs clock...\" He hasn't picked up since.",
+    zh: '2026 年 11 月，纪白落地上海。他给了自己一年：在这里闯出自己的人生，或者回南京，接下父亲的厂。陪他度过每个童年暑假的修表匠老周，已经失踪了十一天，只留下一条语音：“到外滩来。海关钟下面……”',
+    en: "November 2026. Ji Bai lands in Shanghai with one year to build a life of his own, or go home to Nanjing and take over his father's factory. Old Zhou, the watchmaker who kept him every childhood summer, has been missing for eleven days. He left one voicemail: “Come to the Bund. Under the Customs clock…”",
   },
+
+
   loading: { zh: '正在载入上海…', en: 'Loading Shanghai…' },
   begin: { zh: '走出去', en: 'Step out' },
   failed: { zh: '无法启动（需要 WebGL2）', en: 'Could not start (WebGL2 needed)' },
@@ -64,6 +75,8 @@ export const S = {
   padOff: { zh: '手柄已断开', en: 'Controller disconnected' },
   saves: { zh: '存档', en: 'Saves' },
   tipsSetting: { zh: '新手提示', en: 'Tips' },
+  musicSetting: { zh: '店里和车里的音乐', en: 'Music in shops and cars' },
+  musicCredits: { zh: '音乐署名', en: 'Music credits' },
   benchmark: { zh: '性能测试', en: 'Benchmark' }, benchRun: { zh: '运行（约 30 秒）', en: 'Run (about 30 s)' },
   waypoint: { zh: '路标', en: 'Waypoint' }, waypointHere: { zh: '到了。', en: 'You\'re there.' },
   day: { zh: (n) => `第 ${n} 天`, en: (n) => `Day ${n}` },

@@ -30,12 +30,13 @@ export const SCAN_SPOTS = [
 export function createFriendScenes({ scene, people, hud, audio, voice, getLife, save, player, interiors }) {
   const L0 = () => getLife();
   const say = (who, whoKey, zh, en, secs = 3.5, at = null) => hud.bark({ speaker: who, text: { zh, en }, who: whoKey, at, seconds: secs });
-  const S = { ruoan: { phase: 'off' }, momo: { awake: false }, scanning: null };
-  // ---- Ruoan ----
-  let ruoan = null;
-  if (people) { ruoan = createPerson(people, 'p2'); ruoan.root.visible = false; ruoan.root.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(ruoan.root); }
-  const ruoanInv = () => L0().invites.find((i) => i.id === 'ruoan-aia');
-  const ruoanOn = () => { const i = ruoanInv(), now = stamp(L0()); return i && i.status === 'accepted' && !i.kept && now >= i.at - 30 && now <= i.at + 150; };
+  const S = { yuan: { phase: 'off' }, momo: { awake: false }, scanning: null };
+  // ---- Yu'an ----
+  let yuan = null;
+  // Lin Yu'an (the old drafts' Ruoan): the same body as in her romance scenes (c1), at her 167 cm
+  if (people) { yuan = createPerson(people, 'c1'); { const b = new THREE.Box3().setFromObject(yuan.root), h = b.max.y - b.min.y; if (h > 1.2 && h < 2.2) yuan.root.scale.multiplyScalar(1.67 / h); } yuan.root.visible = false; yuan.root.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(yuan.root); }
+  const yuanInv = () => L0().invites.find((i) => i.id === 'yuan-aia');
+  const yuanOn = () => { const i = yuanInv(), now = stamp(L0()); return i && i.status === 'accepted' && !i.kept && now >= i.at - 30 && now <= i.at + 150; };
   // ---- Momo, asleep in the armchair ----
   let momo = null, momoFrame = null, momoPose = null;
   if (people) {
@@ -62,44 +63,44 @@ export function createFriendScenes({ scene, people, hud, audio, voice, getLife, 
     const r = first ? gainXp(l, 60, `scan:${spot.id}`) : { xp: 0 };
     hud.toast(T(`点云已保存 · ${spot.zh}${r.xp ? ` · +${r.xp} 创客经验` : ''}`, `Point cloud saved · ${spot.en}${r.xp ? ` · +${r.xp} Maker XP` : ''}`), 3.5);
     if (M.scans.length >= 3) { const a = achieve(l, 'scanner'); if (a) setTimeout(() => hud.achievement && hud.achievement(T(a.zh, a.en)), 1200); }
-    if (spot.id === 'aiaCeiling' && S.ruoan.phase === 'ceiling') ruoanDone(true);
+    if (spot.id === 'aiaCeiling' && S.yuan.phase === 'ceiling') yuanDone(true);
     save && save();
   }
-  function ruoanDone(scanned) {
-    const l = L0(), inv = ruoanInv(); if (!inv || inv.kept) return;
-    inv.kept = true; logTime(l, 'friends', 75, 'ruoan'); nudge(l, 'ruoan', scanned ? 7 : 3, `kept:ruoan-aia${scanned ? ':scan' : ''}`);
-    S.ruoan.phase = 'done';
-    if (scanned) { say(T('许若安', 'Ruoan'), 'ruoan', '……你知道这省了我们多少事吗？两周的测绘。下次请你吃饭，我请。', "...Do you know how much work that just saved us? Two weeks of measuring. Dinner's on me next time.", 5, ruoanHead()); gainXp(l, 80, 'ruoan:scan'); }
-    else { say(T('许若安', 'Ruoan'), 'ruoan', '每一格都是手工做的，九十多年了。……要是有台便携的激光雷达就好了，我们量了三个礼拜。', "Every one of those coffers was made by hand, ninety-odd years ago. ...If only we had a portable LiDAR. We've been measuring for three weeks.", 6, ruoanHead()); l.flags.ruoanWantsLidar = true; }
-    setTimeout(() => post(getLife(), 'ruoan', { from: 'ruoan', kind: 'text', text: scanned ? '点云我看了，比我们的全站仪还细。你这个东西，能不能借我们工地用一个月？' : '今天谢谢你来。你看天花的样子，跟小时候看我画画一样。' }), 60000);
+  function yuanDone(scanned) {
+    const l = L0(), inv = yuanInv(); if (!inv || inv.kept) return;
+    inv.kept = true; logTime(l, 'friends', 75, 'yuan'); nudge(l, 'yuan', scanned ? 7 : 3, `kept:yuan-aia${scanned ? ':scan' : ''}`);
+    S.yuan.phase = 'done';
+    if (scanned) { say(T('林予安', 'Yu\'an'), 'yuan', '……你知道这省了我们多少事吗？两周的测绘。下次请你吃饭，我请。', "...Do you know how much work that just saved us? Two weeks of measuring. Dinner's on me next time.", 5, yuanHead()); gainXp(l, 80, 'yuan:scan'); }
+    else { say(T('林予安', 'Yu\'an'), 'yuan', '每一格都是手工做的，九十多年了。……要是有台便携的激光雷达就好了，我们量了三个礼拜。', "Every one of those coffers was made by hand, ninety-odd years ago. ...If only we had a portable LiDAR. We've been measuring for three weeks.", 6, yuanHead()); l.flags.yuanWantsLidar = true; }
+    setTimeout(() => post(getLife(), 'yuan', { from: 'yuan', kind: 'text', text: scanned ? '点云我看了，比我们的全站仪还细。你这个东西，能不能借我们工地用一个月？' : '今天谢谢你来。你看天花的样子，跟小时候看我画画一样。' }), 60000);
     save && save();
   }
-  const ruoanHead = () => (ruoan ? [ruoan.root.position.x, ruoan.root.position.y + 1.6, ruoan.root.position.z] : null);
-  // where Ruoan walks: the gates, then under the ceiling
+  const yuanHead = () => (yuan ? [yuan.root.position.x, yuan.root.position.y + 1.6, yuan.root.position.z] : null);
+  // where Yu'an walks: the gates, then under the ceiling
   const R_GATE = { x: AIA.gateX + 1.1, z: -146.1 }, R_CEIL = { x: -44.4, z: -146.4 };
   const targets = () => {
     const out = [], pp = player.body;
-    if (ruoan && ruoan.root.visible && S.ruoan.phase === 'waiting') out.push({ id: 'fRuoanGo', x: ruoan.root.position.x, y: Y0 + 1.5, z: ruoan.root.position.z, reach: 3 });
-    if (ruoan && ruoan.root.visible && S.ruoan.phase === 'ceiling' && !owns(L0(), 'lidar')) out.push({ id: 'fRuoanCeil', x: R_CEIL.x, y: Y0 + 3.2, z: R_CEIL.z, reach: 6 });
+    if (yuan && yuan.root.visible && S.yuan.phase === 'waiting') out.push({ id: 'fYu\'anGo', x: yuan.root.position.x, y: Y0 + 1.5, z: yuan.root.position.z, reach: 3 });
+    if (yuan && yuan.root.visible && S.yuan.phase === 'ceiling' && !owns(L0(), 'lidar')) out.push({ id: 'fYu\'anCeil', x: R_CEIL.x, y: Y0 + 3.2, z: R_CEIL.z, reach: 6 });
     if (momoFrame && momoFrame.visible) out.push({ id: 'fMomo', x: -36.4, y: SIX.y + 0.9, z: -228.6, reach: 2.6 });
     if (owns(L0(), 'lidar') && !S.scanning) for (const s of SCAN_SPOTS) if (pp.y >= s.from.y[0] && pp.y <= s.from.y[1] && (s.id !== 'aiaCeiling' || pp.x < AIA.gateX)) out.push({ id: `scan:${s.id}`, x: s.x, y: s.y, z: s.z, reach: s.reach || 12 });
     return out;
   };
   return {
-    candidates() { return targets().map((t) => ({ ...t, cone: t.id.startsWith('scan:') ? 0.9 : 0.6, anyHeight: t.id.startsWith('scan:') || t.id === 'fRuoanCeil' })); },
+    candidates() { return targets().map((t) => ({ ...t, cone: t.id.startsWith('scan:') ? 0.9 : 0.6, anyHeight: t.id.startsWith('scan:') || t.id === 'fYu\'anCeil' })); },
     prompt(id) {
-      if (id === 'fRuoanGo') return { target: T('若安', 'Ruoan'), action: T('跟她过闸机', 'Go through with her') };
-      if (id === 'fRuoanCeil') return { target: T('藻井天花', 'The coffered ceiling'), action: T('抬头看', 'Look up') };
+      if (id === 'fYu\'anGo') return { target: T('予安', 'Yu\'an'), action: T('跟她过闸机', 'Go through with her') };
+      if (id === 'fYu\'anCeil') return { target: T('藻井天花', 'The coffered ceiling'), action: T('抬头看', 'Look up') };
       if (id === 'fMomo') return { target: 'Momo', action: S.momo.awake ? T('让他接着睡', 'Let him sleep') : T('叫醒他', 'Wake him') };
       if (id.startsWith('scan:')) { const s = SCAN_SPOTS.find((x) => `scan:${x.id}` === id); return { target: T(s.zh, s.en), action: T('激光雷达扫描', 'Scan (LiDAR)') }; }
       return null;
     },
-    owns(id) { return ['fRuoanGo', 'fRuoanCeil', 'fMomo'].includes(id) || id.startsWith('scan:'); },
+    owns(id) { return ['fYu\'anGo', 'fYu\'anCeil', 'fMomo'].includes(id) || id.startsWith('scan:'); },
     interact(id) {
-      if (id === 'fRuoanGo') {
-        interiors.escort(1, 8); S.ruoan.phase = 'walking';
-        say(T('许若安', 'Ruoan'), 'ruoan', '跟紧我。保安认识我。', "Stay close. The guard knows me.", 2.6, ruoanHead());
-      } else if (id === 'fRuoanCeil') ruoanDone(false);
+      if (id === 'fYu\'anGo') {
+        interiors.escort(1, 8); S.yuan.phase = 'walking';
+        say(T('林予安', 'Yu\'an'), 'yuan', '跟紧我。保安认识我。', "Stay close. The guard knows me.", 2.6, yuanHead());
+      } else if (id === 'fYu\'anCeil') yuanDone(false);
       else if (id === 'fMomo') {
         if (!S.momo.awake) { S.momo.awake = true; say('Momo', 'momo', '……嗯？几点了……你这椅子比我床还舒服。我就再睡十分钟，十分钟……', "...Hm? What time is it... this chair is comfier than my bed. Ten more minutes. Ten...", 5, [-36.4, SIX.y + 1.1, -228.6]); }
         else say('Momo', 'momo', '白白……谢了。真的。', 'Baibai... thanks. Really.', 3, [-36.4, SIX.y + 1.1, -228.6]);
@@ -108,24 +109,24 @@ export function createFriendScenes({ scene, people, hud, audio, voice, getLife, 
     },
     talkables() {
       const out = [];
-      if (ruoan && ruoan.root.visible) out.push({ key: 'ruoan', persona: 'ruoan', x: ruoan.root.position.x, y: Y0 + 1.6, z: ruoan.root.position.z, hold() {} });
+      if (yuan && yuan.root.visible) out.push({ key: 'yuan', persona: 'yuan', x: yuan.root.position.x, y: Y0 + 1.6, z: yuan.root.position.z, hold() {} });
       if (momoFrame && momoFrame.visible && S.momo.awake) out.push({ key: 'momo', persona: 'momo', x: -36.4, y: SIX.y + 1.1, z: -228.6, hold() {} });
       return out;
     },
     update(dt, pp) {
-      // Ruoan: at the gates while it's her evening; through, and to the ceiling
-      if (ruoan) {
-        const on = ruoanOn() || (S.ruoan.phase !== 'off' && S.ruoan.phase !== 'done');
-        if (on && S.ruoan.phase === 'off') { S.ruoan.phase = 'waiting'; ruoan.root.position.set(R_GATE.x, Y0, R_GATE.z); ruoan.root.rotation.y = Math.PI / 2; ruoan.play('idle', 0); }
-        ruoan.root.visible = on || S.ruoan.phase === 'done' && Math.abs(pp.z - -146) < 30 && stamp(L0()) < (ruoanInv() || { at: 0 }).at + 180;
-        if (ruoan.root.visible) {
-          if (S.ruoan.phase === 'waiting' && !S.ruoan.greeted && Math.hypot(pp.x - R_GATE.x, pp.z - R_GATE.z) < 5) { S.ruoan.greeted = true; say(T('许若安', 'Ruoan'), 'ruoan', '来啦。准时，难得。', 'You came. On time, for once.', 2.8, ruoanHead()); }
-          if (S.ruoan.phase === 'walking') {
-            const r = ruoan.root.position, dx = R_CEIL.x - r.x, dz = R_CEIL.z - r.z, d = Math.hypot(dx, dz);
-            if (d > 0.1) { const st = Math.min(d, 1.2 * dt); r.x += dx / d * st; r.z += dz / d * st; ruoan.root.rotation.y = Math.atan2(dx, dz); ruoan.play('walk', 0.2); ruoan.setGait(1.2); }
-            else { S.ruoan.phase = 'ceiling'; ruoan.play('idle', 0.3); say(T('许若安', 'Ruoan'), 'ruoan', owns(L0(), 'lidar') ? '你看上面。……你带那个了？扫一遍给我看看。' : '你看上面。', owns(L0(), 'lidar') ? "Look up. ...Did you bring that thing? Scan it for me." : 'Look up.', 3.2, ruoanHead()); }
+      // Yu'an: at the gates while it's her evening; through, and to the ceiling
+      if (yuan) {
+        const on = yuanOn() || (S.yuan.phase !== 'off' && S.yuan.phase !== 'done');
+        if (on && S.yuan.phase === 'off') { S.yuan.phase = 'waiting'; yuan.root.position.set(R_GATE.x, Y0, R_GATE.z); yuan.root.rotation.y = Math.PI / 2; yuan.play('idle', 0); }
+        yuan.root.visible = on || S.yuan.phase === 'done' && Math.abs(pp.z - -146) < 30 && stamp(L0()) < (yuanInv() || { at: 0 }).at + 180;
+        if (yuan.root.visible) {
+          if (S.yuan.phase === 'waiting' && !S.yuan.greeted && Math.hypot(pp.x - R_GATE.x, pp.z - R_GATE.z) < 5) { S.yuan.greeted = true; say(T('林予安', 'Yu\'an'), 'yuan', '来啦。准时，难得。', 'You came. On time, for once.', 2.8, yuanHead()); }
+          if (S.yuan.phase === 'walking') {
+            const r = yuan.root.position, dx = R_CEIL.x - r.x, dz = R_CEIL.z - r.z, d = Math.hypot(dx, dz);
+            if (d > 0.1) { const st = Math.min(d, 1.2 * dt); r.x += dx / d * st; r.z += dz / d * st; yuan.root.rotation.y = Math.atan2(dx, dz); yuan.play('walk', 0.2); yuan.setGait(1.2); }
+            else { S.yuan.phase = 'ceiling'; yuan.play('idle', 0.3); say(T('林予安', 'Yu\'an'), 'yuan', owns(L0(), 'lidar') ? '你看上面。……你带那个了？扫一遍给我看看。' : '你看上面。', owns(L0(), 'lidar') ? "Look up. ...Did you bring that thing? Scan it for me." : 'Look up.', 3.2, yuanHead()); }
           }
-          ruoan.update(dt, Math.hypot(pp.x - ruoan.root.position.x, pp.z - ruoan.root.position.z) < 6 ? [pp.x, pp.z] : null);
+          yuan.update(dt, Math.hypot(pp.x - yuan.root.position.x, pp.z - yuan.root.position.z) < 6 ? [pp.x, pp.z] : null);
         }
       }
       // Momo, while it's his night in your room

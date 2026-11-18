@@ -21,7 +21,7 @@ const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const ACTS = Object.fromEntries(YEAR_ACTS.map((a) => [a.n, [a.zh, a.en]]));      // the five acts (engine/year.js), for every kind of game
 const yuan = (n) => `¥${Math.round(n).toLocaleString('en-US')}`;
-const WHO = ['dad', 'ruoan', 'xuan', 'momo', 'zhixia', 'yinuo'];
+const WHO = ['dad', 'yuan', 'xuan', 'momo', 'zhixia', 'yinuo'];
 
 // where his life stands (a year game): read-only; everything here is the game's own state
 function yearHtml(L) {

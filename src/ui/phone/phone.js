@@ -30,7 +30,7 @@ import { askToMeet, romanceStanding } from '../../world/romance.js';
 const Z = (zh, en) => (getLang() === 'zh' ? zh : en);
 const X = (text) => (getLang() === 'en' ? enText(text) : text);
 const nm = (id) => { const p = PEOPLE[id]; if (id === 'me') return Z(ME.name, ME.en); return p ? Z(p.name, p.en === 'Dad (Ji Jianguo)' ? 'Dad' : p.en) : id; };
-// English: given names (Mingxuan, Ruoan), as friends would; Momo stays Momo
+// English: given names (Mingxuan, Yu'an), as friends would; Momo stays Momo
 const shortEn = (id, p) => (id === 'dad' ? 'Dad' : id === 'manner' ? 'Manner' : /^[A-Za-z]/.test(p.short) ? p.short : (p.en || '').split(' ').slice(1).join(' ') || p.en);
 const short = (id) => { const p = PEOPLE[id]; return p ? Z(p.short, shortEn(id, p)) : id; };
 const GROUP_NAME = () => Z(GROUP.title, 'The Jinling Five +1');
@@ -57,7 +57,8 @@ const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const person = (id) => PEOPLE[id] || { name: id === 'me' ? ME.name : id, short: id, color: '#777' };
 const LOGO_AV = { jd: 'jd', taobao: 'taobao', didi: 'didi', manner: 'manner' };
 // people with a photograph (their character sheets: public/people/<id>/): the rest get a coloured initial
-const PHOTO_AV = { me: './people/jibai/face-neutral.jpg', gunian: './people/gunian/face-smile.jpg' };
+// approved character-sheet faces (Character Bible F01 Zhiwei, F03 Gu Nian, F04 Lin Yu'an)
+const PHOTO_AV = { me: './people/jibai/face-neutral.jpg', gunian: './people/gunian/face-smile.jpg', zhiwei: './people/zhiwei/face-neutral.jpg', yuan: './people/yuan/face-neutral.jpg' };
 const avatar = (id, size = '') => { const p = person(id); if (LOGO_AV[id]) return `<div class="av logo ${size}" style="background:${BRAND_COLOR[LOGO_AV[id]]}">${appGlyph(LOGO_AV[id], 22)}</div>`; if (PHOTO_AV[id]) return `<div class="av photo ${size}" style="background-image:url('${PHOTO_AV[id]}')"></div>`; return `<div class="av ${size}" style="background:${id === 'me' ? '#2d6cdf' : p.color}">${esc(initial(id))}</div>`; };
 // a notification as iOS draws a messaging app's (WeChat has shown the sender's photo there since late 2025): the
 // sender's round photo (or initial) with the app's icon as a badge, the name as the title, the time on the right
@@ -238,7 +239,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
         : `<div class="compose">${Z('需要回复时会出现选项', 'Replies appear when there\'s something to answer')}</div>`;
     const typing = S.typing[id] ? `<span class="sub">${Z('对方正在输入…', 'typing…')}</span>` : '';
     // how they feel about you (life relation): a small gauge by the name of a friend or Dad
-    const friend = t.kind === 'person' && ['ruoan', 'xuan', 'momo', 'zhixia', 'yinuo', 'dad'].includes(id);
+    const friend = t.kind === 'person' && ['yuan', 'xuan', 'momo', 'zhixia', 'yinuo', 'dad'].includes(id);
     const aff = friend ? Math.round((l.relations[id] || { affinity: 50 }).affinity) : null;
     const gauge = friend ? `<span class="aff" title="${Z('关系', 'How they feel')}: ${aff}" style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:10px;opacity:0.75">♥<i style="display:inline-block;width:34px;height:4px;border-radius:2px;background:rgba(127,127,127,0.35);overflow:hidden"><u style="display:block;height:100%;width:${Math.max(4, Math.min(100, aff))}%;background:#e7b96a"></u></i></span>` : '';
     // one of the five: how it stands, by her name; and, when nothing's waiting to be answered, a way to ask to see her
@@ -265,7 +266,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const builds = Object.entries(BLUEPRINTS).map(([id, b]) => `<div class="bl ${m.gadgets[id] ? 'got' : ''}"><span>${esc(Z(b.zh, b.en))}</span><span>${m.gadgets[id] ? Z(`做好了 · ${Math.round(m.gadgets[id].quality * 100)}%`, `built · ${Math.round(m.gadgets[id].quality * 100)}%`) : Z(`创客 ${b.level}`, `Maker ${b.level}`)}</span></div>`).join('');
     const ws = workSummary(l), wu = ws.grade ? workUnwritten(l).length : 0;
     const work = ws.grade ? `<div class="bl got"><span>${Z(`夜行云台 · 第 ${ws.rev} 版`, `Night gimbal · version ${ws.rev}`)}</span><span>${Z(`${ws.hands} 人用过 · 名单 ${ws.list}`, `${ws.hands} tried it · ${ws.list} on the list`)}</span></div><div class="sys">${Z(`${ws.grams} 克 · ${ws.minutes} 分钟 · 还有 ${ws.open.length} 个问题${wu ? ` · ${wu} 条没写下来` : ''}（N 翻开本子）`, `${ws.grams} g · ${ws.minutes} min · ${ws.open.length} ${ws.open.length === 1 ? 'issue' : 'issues'} open${wu ? ` · ${wu} not written up` : ''} (N opens the notebook)`)}</div>` : '';
-    const rel = ['ruoan', 'xuan', 'momo', 'zhixia', 'yinuo', 'dad'].map((id) => { const w = Math.max(0, Math.min(100, 50 + warmth(l, id))); return `<div class="rl"><span>${esc(nm(id))}</span><i><u style="width:${w}%"></u></i></div>`; }).join('');
+    const rel = ['yuan', 'xuan', 'momo', 'zhixia', 'yinuo', 'dad'].map((id) => { const w = Math.max(0, Math.min(100, 50 + warmth(l, id))); return `<div class="rl"><span>${esc(nm(id))}</span><i><u style="width:${w}%"></u></i></div>`; }).join('');
     const ach = Object.entries(ACHIEVEMENTS).map(([id, a]) => `<span class="ac ${m.achievements.includes(id) ? 'got' : ''}">${esc(Z(a.zh, a.en))}</span>`).join('');
     return `<div class="view sketch"><div class="bar"><span class="back" data-act="back">‹</span>${Z('速写本', 'Sketchbook')}</div><div class="scroll">
       <div class="hd2">${Z('接下来', 'Coming up')}</div>${goals}
@@ -377,7 +378,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       if (r) {
         const tg = PHOTO_TARGETS.find((x) => x.id === p.target);
         const quips = ['白白这张可以啊🔥', '哪里拍的？我也要去', '构图满分', '求原图！', '可以，摄影师上线了'];
-        setTimeout(() => post(l, 'wuhu', { from: ['momo', 'ruoan', 'zhixia', 'xuan'][Math.floor(Math.random() * 4)], kind: 'text', text: quips[Math.floor(Math.random() * quips.length)] }), 4000);
+        setTimeout(() => post(l, 'wuhu', { from: ['momo', 'yuan', 'zhixia', 'xuan'][Math.floor(Math.random() * 4)], kind: 'text', text: quips[Math.floor(Math.random() * quips.length)] }), 4000);
         if (onEvent) onEvent({ type: 'shared', followers: r.followers, achievement: r.achievement });
       }
       render();
@@ -395,7 +396,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (act === 'say') { const c = S.call, line = c.script.lines[c.i], ch = line.choices[+el.dataset.i]; c.said = ch.text; if (onEvent) onEvent({ type: 'call-choice', from: c.from, choice: ch }); c.i++; advanceCall(); }
   });
   // ---- writing to a friend in your own words: they answer in character (engine/llm.js) ----
-  const FREE_CHAT = new Set(['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo', 'dad', 'vivian', 'wuhu']);
+  const FREE_CHAT = new Set(['xuan', 'yuan', 'momo', 'zhixia', 'yinuo', 'dad', 'vivian', 'wuhu']);
   for (const id of ROMANCE) FREE_CHAT.add(id);                              // the five he might come to love: what they're told is world/romance.js's (guardTalk)
   S.draft = {}; S.typing = {};
   root.addEventListener('input', (e) => { if (e.target.classList && e.target.classList.contains('say')) S.draft[e.target.dataset.thread] = e.target.value; });
@@ -413,7 +414,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     render(); focusSay(id);
     const t = l.threads[id];
     // in the group, whoever's named answers (or one or two who'd have something to say)
-    const friends = ['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo'];
+    const friends = ['xuan', 'yuan', 'momo', 'zhixia', 'yinuo'];
     const named = friends.filter((f) => text.includes(PEOPLE[f].short) || text.includes(PEOPLE[f].name) || text.toLowerCase().includes((PEOPLE[f].en || '').split(' ').pop().toLowerCase()));
     const who = t.kind === 'group' ? (named.length ? named.slice(0, 2) : [friends[Math.floor(Math.random() * friends.length)]]) : [id];
     who.forEach((f, i) => setTimeout(() => answerAs(f, id), 900 + i * 2600));

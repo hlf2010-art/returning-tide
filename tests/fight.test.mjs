@@ -150,7 +150,7 @@ const R = (o) => ({ outcome: 'won', how: 'backed', blows: true, started: 'him', 
   skipTo(L, 4 * 1440 + 8 * 60 + 30);
   const m = morningAfter(L), m2 = morningAfter(L);
   ok(m.length >= 5 && m2.length === 0, `the morning after: ${m.length} messages, once`);
-  ok(L.threads.momo.messages.some((x) => /动手/.test(x.text)) && L.threads.wuhu.messages.some((x) => /视频/.test(x.text)) && L.threads.ruoan.messages.some((x) => /脸/.test(x.text)) && L.threads['110'] && L.threads.zhiwei.messages.length === 1, 'Momo has heard, the clip is in the group chat, Ruoan has seen your face, the receipt, and her');
+  ok(L.threads.momo.messages.some((x) => /动手/.test(x.text)) && L.threads.wuhu.messages.some((x) => /视频/.test(x.text)) && L.threads.yuan.messages.some((x) => /脸/.test(x.text)) && L.threads['110'] && L.threads.zhiwei.messages.length === 1, 'Momo has heard, the clip is in the group chat, Yu\'an has seen your face, the receipt, and her');
   ok(/pulled apart/.test(fightContext(L)) && /warning/.test(fightContext(L)) && /Last night/.test(fightContext(L)), 'and a line for whoever he talks to');
   const back = load(save(L)); ok(back && back.flags.fight.applied && back.flags.fight.result.outcome === 'separated' && morningAfter(back).length === 0, 'it all survives a save (format v1)');
 }

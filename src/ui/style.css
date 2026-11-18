@@ -611,8 +611,72 @@ html[lang="zh-CN"] #ride-card .place { font-family: var(--serif); font-weight: 9
 #workbook .pl .tg small { display: block; font-size: 10px; opacity: 0.65; font-weight: 500; }
 #workbook .pred { margin: 10px 0 6px; font-size: 13px; } #workbook .pred small { display: block; opacity: 0.6; margin-top: 3px; }
 #workbook .pred b.g { color: #7fe08a; } #workbook .pred b.b { color: #ffab91; }
+/* ===================================================================================== */
+/* v4 title & loading: the Bund at blue hour as a painted backdrop, a centred serif title  */
+/* with one thread of gold light under it. The thread is the loading bar; when the city is */
+/* ready it flares and the card rises in beneath. (ui/titleScreen.js draws the live light.) */
+/* ===================================================================================== */
+#entry { display: block; padding: 0; background: #070b14; overflow: hidden auto; }
+#entry::before, #entry::after { display: none; }
+#entry .backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: #0c1220; }
+#entry .bd-pan { position: absolute; inset: 0; transform-origin: 58% 62%; animation: bd-drift 48s ease-in-out infinite alternate; }
+#entry .bd-img, #entry #entry-fx { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+#entry .bd-img { opacity: 0; animation: bd-in 2.2s 0.1s ease forwards; }
+@keyframes bd-in { from { opacity: 0; filter: brightness(0.5) blur(6px); } to { opacity: 1; filter: none; } }
+@keyframes bd-drift { from { transform: scale(1.02) translate3d(0, 0, 0); } to { transform: scale(1.085) translate3d(-1.2%, -0.6%, 0); } }
+/* a quiet vignette, deeper at the top (behind the title) and the bottom (behind the status line) */
+#entry .backdrop::after { content: ''; position: absolute; inset: 0; pointer-events: none; background:
+  radial-gradient(ellipse 60% 46% at 50% 34%, rgba(6,9,18,0.5) 0%, rgba(6,9,18,0) 70%),
+  linear-gradient(180deg, rgba(6,9,18,0.55) 0%, rgba(6,9,18,0) 22%, rgba(6,9,18,0) 70%, rgba(6,9,18,0.75) 100%),
+  radial-gradient(ellipse 120% 90% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.45) 100%); }
+#entry .topbar { position: absolute; top: 18px; right: clamp(16px, 4vw, 56px); z-index: 2; }
 
-/* loading (main.js): a hairline under the begin button, gone once Shanghai is ready */
-#load-bar { height: 2px; margin-top: 14px; width: min(260px, 60vw); background: rgba(255,255,255,0.14); border-radius: 1px; overflow: hidden; transition: opacity 0.6s; }
-#load-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #a9d6ff, #ecd49a); transition: width 0.4s ease; }
-#entry.ready #load-bar, body:not(.booting) #entry #load-bar.done { opacity: 0; }
+#entry .stage { position: relative; width: 100%; min-height: 100%; display: flex; flex-direction: column; align-items: center; padding: clamp(56px, 15vh, 170px) 16px calc(5.5vh + 24px); text-align: center; }
+#entry .hero { display: flex; flex-direction: column; align-items: center; width: min(980px, 100%); }
+#entry .logo { margin: 0; font: 500 clamp(40px, 7.2vw, 104px)/1 var(--serif); font-variant: small-caps; letter-spacing: 0.1em; text-transform: none; color: #f2e9db;
+  background: linear-gradient(100deg, #f2e9db 0%, #f2e9db 42%, #fff8ea 50%, #f2e9db 58%, #f2e9db 100%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 18px rgba(4,7,14,0.55)); opacity: 0; transform: translateY(10px); animation: rise 1.4s 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) forwards, sheen 7s 3s ease-in-out infinite; }
+html[lang="zh-CN"] #entry .logo { font: 900 clamp(64px, 10vw, 140px)/1 var(--serif); font-variant: normal; letter-spacing: 0.32em; margin-right: -0.32em; }
+#entry .swoosh { width: min(860px, 86vw); height: clamp(34px, 5vw, 60px); margin-top: clamp(-6px, -0.6vw, 0px); overflow: visible; }
+#entry .swoosh path { fill: none; stroke: url(#sw-grad); stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; vector-effect: non-scaling-stroke; }
+#entry .swoosh .sw-line { stroke-width: 1.6; }
+#entry .swoosh .sw-glow { stroke-width: 6; opacity: 0.55; }
+#entry .swoosh .sw-flare { mix-blend-mode: screen; transition: opacity 1.2s ease, transform 1.2s ease; transform-box: fill-box; transform-origin: center; }
+#entry.loaded .swoosh .sw-flare { animation: flare 5.5s 0.2s ease-in-out infinite; }
+@keyframes flare { 0%, 100% { opacity: 0.75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.25, 1.1); } }
+#entry .hero-sub { white-space: nowrap; margin-top: 4px; font: 500 12px/1 var(--serif); letter-spacing: 0.6em; margin-right: -0.6em; color: rgba(233,185,111,0.85); opacity: 0; animation: rise 1.2s 0.9s ease forwards; }
+#entry .hero-sub .alt-zh { letter-spacing: 1em; margin-right: -1em; font-size: 14px; }
+#entry .hero-sub .alt-en { font-variant: small-caps; letter-spacing: 0.4em; font-size: 14px; }
+html[lang="zh-CN"] #entry .hero-sub .alt-zh, html:not([lang="zh-CN"]) #entry .hero-sub .alt-en { display: none; }
+#entry .load { display: flex; gap: 14px; align-items: baseline; margin-top: 26px; font: 500 11px var(--ui); letter-spacing: 0.32em; text-transform: uppercase; color: rgba(244,241,234,0.62); transition: opacity 0.8s ease, transform 0.8s ease; }
+#entry .load .pct { font-variant-numeric: tabular-nums; letter-spacing: 0.1em; color: var(--gold); min-width: 3.2em; text-align: left; }
+#entry:not(.loading) .load { opacity: 0; transform: translateY(-6px); pointer-events: none; height: 0; margin: 0; overflow: hidden; }
+
+/* the card under the title, centred over the dusk sky between the title and the skyline */
+#entry .card { position: relative; left: auto; bottom: auto; margin-top: clamp(18px, 4.5vh, 52px); max-width: min(36rem, 100%); padding: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; }
+#entry .card::before { content: ''; position: absolute; inset: -40px -90px; z-index: -1; background: radial-gradient(ellipse at 50% 45%, rgba(6,9,18,0.62) 0%, rgba(6,9,18,0.35) 45%, rgba(6,9,18,0) 72%); pointer-events: none; }
+#entry .chapter { margin: 0; }
+#entry .premise { margin: 12px auto 0; max-width: 33rem; text-shadow: 0 1px 12px rgba(4,7,14,0.8); }
+#entry .actions { justify-content: center; margin-top: 26px; }
+#entry.loading .card { visibility: hidden; }
+#entry.loading .card > * { animation: none; opacity: 0; }
+#entry .card > * { animation-duration: 1s; }
+#entry .card > :nth-child(1) { animation-delay: 0.15s; } #entry .card > :nth-child(2) { animation-delay: 0.3s; } #entry .card > :nth-child(3) { animation-delay: 0.45s; } #entry .card > :nth-child(4) { animation-delay: 0.6s; }
+
+#entry .cityline { left: clamp(16px, 7vw, 120px); }
+
+@media (max-height: 640px) {
+  #entry .stage { padding-top: 48px; padding-bottom: 20px; }
+  #entry .logo { font-size: clamp(32px, 9vh, 64px); margin-top: 0; } html[lang="zh-CN"] #entry .logo { font-size: clamp(44px, 13vh, 84px); }
+  #entry .swoosh { height: 30px; } #entry .card { margin-top: 10px; bottom: auto; left: auto; }
+  #entry .load { margin-top: 14px; }
+}
+@media (max-width: 640px) {
+  #entry .logo { letter-spacing: 0.04em; }
+  #entry .hero-sub { letter-spacing: 0.3em; }
+  #entry .card::before { inset: -30px -16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #entry .bd-pan, #entry .logo, #entry.loaded .swoosh .sw-flare { animation: none; }
+  #entry .logo, #entry .bd-img, #entry .hero-sub { opacity: 1; transform: none; }
+}

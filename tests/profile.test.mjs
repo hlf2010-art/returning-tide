@@ -8,7 +8,7 @@ import { profileView, GROUPS } from '../src/world/profileView.js';
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
 const L = createLife(); initYear(L); updateQuests(L, QUESTS, 0);
-meet(L, 'nanxing'); setStage(L, 'nanxing', 'dating'); nudge(L, 'dad', 10, 't'); nudge(L, 'ruoan', 4, 't');
+meet(L, 'nanxing'); setStage(L, 'nanxing', 'dating'); nudge(L, 'dad', 10, 't'); nudge(L, 'yuan', 4, 't');
 own(L, { kind: 'umbrella', id: 'umbrella', name: '自动折叠伞 黑色', en: 'Automatic folding umbrella, black', from: '京东' });
 const zh = profileView(L, QUESTS, 'zh'), en = profileView(L, QUESTS, 'en');
 ok(zh.me.name === '纪白' && en.me.name === 'Ji Bai' && en.me.job === 'Consultant' && en.me.employer === 'Marlowe Finch', `who: ${en.me.name}, ${en.me.job} at ${en.me.employer}, ${en.me.date}`);
@@ -21,5 +21,5 @@ ok(/Peace Hotel/.test(en.property.home.name) && !en.property.car, 'property: the
 const nx = en.people.find((p) => p.id === 'nanxing'), dad = en.people.find((p) => p.id === 'dad');
 ok(nx && nx.group === 'heart' && nx.stage === 'Dating' && dad && dad.group === 'family' && dad.close === 60, `people: Nanxing (${nx && nx.stage}, ${nx && nx.close}), Dad (${dad && dad.close})`);
 ok(!en.people.some((p) => p.id === 'gunian' || p.id === 'didi'), 'only people he has met; no apps');
-ok(en.people.every((p) => GROUPS[p.group]) && zh.people.find((p) => p.id === 'ruoan').role === '建筑师，外滩老楼修缮', 'every person has a group; roles in Chinese');
+ok(en.people.every((p) => GROUPS[p.group]) && zh.people.find((p) => p.id === 'yuan').role === '建筑师、城市空间研究者，外滩老楼修缮', 'every person has a group; roles in Chinese');
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);

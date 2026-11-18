@@ -67,7 +67,7 @@ export function createRomanceScenes({ scene, people, player, hud, audio = null, 
     g.position.set(a.x + 0.95, a.y, a.z + 0.55); g.rotation.y = -0.2; g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     return g;
   }
-  function suitcase(a) {
+  function suitcase(a) {   // (Lin Yu'an's survey-instrument case in the octagon hall)
     const g = new THREE.Group(), shell = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.26), mat(0x2f4a5c, 0.55, 0.1)); shell.position.y = 0.36; g.add(shell);
     const handle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.34, 0.02), mat(0x777a80, 0.4, 0.8)); handle.position.set(0, 0.84, -0.1); g.add(handle);
     g.position.set(a.x + 0.55, a.y, a.z + 0.2); g.rotation.y = 0.5; g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
@@ -80,6 +80,9 @@ export function createRomanceScenes({ scene, people, player, hud, audio = null, 
     const sp = SPOTS[spotId], r = role(CAST[who].avatar); if (!sp || !r) return null;
     const p = createPerson(people, r);
     p.root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    // her own height where the Character Bible locks one (Zhiwei 1.78 m) and the body is a shared stand-in;
+    // standing only, so seated poses keep the hip height they were fitted to
+    if (CAST[who].height && !sp.seat) { const b = new THREE.Box3().setFromObject(p.root), h = b.max.y - b.min.y; if (h > 1.2 && h < 2.2) p.root.scale.multiplyScalar(CAST[who].height / h); }
     const a = { who, p, spot: spotId, seat: !!sp.seat, x: sp.x, z: sp.z, y: spotY(sp), t: Math.random() * 10, props: [] };
     if (sp.seat) {
       a.frame = new THREE.Group(); a.frame.position.set(sp.x, a.y, sp.z); a.frame.rotation.y = sp.yaw; scene.add(a.frame);

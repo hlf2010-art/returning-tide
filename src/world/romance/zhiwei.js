@@ -1,5 +1,8 @@
-// 许知微 Xu Zhiwei, 28: the project manager on his first engagement at the firm. Workplace chemistry,
-// rivalry, trust, and what a career costs. (Her scenes in the office itself belong to the office;
+// 许知微 Xu Zhiwei, 28, 178 cm: a product and industrial designer (Character Bible F01, LOCKED), who
+// leads product design on his first engagement at the firm and runs its delivery (her employer is
+// WORKING: the firm is the game's choice, not the Bible's). Cool and uncompromising: she judges a
+// thing by whether people can actually use it, on a screen or in the hand. Workplace chemistry,
+// rivalry, trust, and what a career costs. Her face is the F01 Approved Hero (docs/zhiwei-reference.jpg). (Her scenes in the office itself belong to the office;
 // here are her messages, the hours after work, and the two of them.)
 //   Act I    she sizes him up: the pass and laptop in the Peace Hotel lobby, the kickoff, the
 //            weekly report he can write for her or not, a drink she owes him at the Jazz Bar
@@ -11,6 +14,7 @@
 import { stamp } from '../../engine/life.js';
 import { heart, inLife, shared, feel, leave, meet } from '../../engine/hearts.js';
 import { fact, actOf, isWorkday, career, standing } from '../../engine/year.js';
+import { hasProduct } from '../../engine/studio.js';
 import { B, D, H, tod, say, R, A, ask, askOut, fired, done, dateOn, upstairs, recalls, openThread } from './kit.js';
 
 const W = 'zhiwei';
@@ -18,12 +22,12 @@ const Z = (zh, en) => [W, zh, en], N = (zh, en) => ['nar', zh, en];
 const said = (L, k) => !!(heart(L, W).said || {})[k];
 
 const P = {
-  id: W, name: B('许知微', 'Xu Zhiwei'), short: B('知微', 'Zhiwei'), age: 28, sex: 'f', color: '#3d5a80', avatar: ['p5', 'c4', 'c1'], voice: { pitch: 1.02, rate: 1.1 },
-  role: B('他项目的项目经理，陆家嘴', 'His project manager, Lujiazui'),
+  id: W, name: B('许知微', 'Xu Zhiwei'), short: B('知微', 'Zhiwei'), age: 28, sex: 'f', color: '#3d5a80', avatar: ['c4', 'c1'], height: 1.78, voice: { pitch: 1.02, rate: 1.1 },
+  role: B('产品与工业设计师；他第一个项目的设计负责人，交付也是她带', 'Product and industrial designer; design lead on his first engagement, and she runs its delivery'),
   ambition: B('三十岁之前升高级经理，然后是合伙人', 'Senior manager before thirty; then partner'),
-  how: 'You are the project manager on his first engagement at the firm; he was hired from Silicon Valley at nearly your level, which you noticed. You have a rule about not getting close to colleagues.',
+  how: 'You are a product and industrial designer, the design lead on his first engagement at the firm, and you run its delivery; he was hired from Silicon Valley at nearly your level, which you noticed. You have a rule about not getting close to colleagues.',
   address: B('纪白', 'Ji Bai'),
-  card: 'Xu Zhiwei (许知微), 28, from Hangzhou; Fudan economics, six years at the international technology consulting firm in Lujiazui where Ji Bai has just started, and the project manager on his first engagement (an enterprise AI rollout for a large client); wants senior manager this cycle and partner after that, and her sponsor is the partner, Vincent; sharp, fast, dry, guarded, fair when it costs her; competitive with Ji Bai because he was hired from Silicon Valley at nearly her level; lives alone in a rented flat off Yuyuan Road and crosses the river on Line 2; her mother in Hangzhou sends her the CVs of suitable men; texts in short sentences with no emoji and the English work words Lujiazui uses (kickoff, deck, deadline)',
+  card: 'Xu Zhiwei (许知微), 28, 178 cm, from Hangzhou; a product and industrial designer who judges digital products, physical objects and whether people can really use them in the same breath; studied industrial design at the China Academy of Art in Hangzhou (2016-2020) and joined the firm\'s product and design practice straight after, designing connected appliances and medical devices with their apps before moving onto enterprise AI; she and Ji Bai had never met before his first day; six years at the international technology consulting firm in Lujiazui where Ji Bai has just started, where she leads product design and runs delivery on his first engagement (an enterprise AI rollout for a large client); not a brand or visual creative director; her standards are her own and sharp, and she does not bend them to please a partner, a client or Ji Bai; still sketches objects (a hinge, a handle, a stool) in the margins of every deck; wants senior manager this cycle and partner after that, and her sponsor is the partner, Raymond He; cool, uncompromising, fast, dry, guarded, fair when it costs her; short light ash-blonde layered hair with dark roots, thin silver metal-frame glasses, black knitwear, silver rings, headphones round her neck on the way home; competitive with Ji Bai because he was hired from Silicon Valley at nearly her level; lives alone in a rented flat off Yuyuan Road and crosses the river on Line 2; her mother in Hangzhou sends her the CVs of suitable men; texts in short sentences with no emoji and the English work words Lujiazui uses (kickoff, deck, deadline)',
   arc: {
     1: B('带着八个月的客户，突然多了一个硅谷回来的“同级”。', 'Eight months into running the account, and suddenly a "peer" from Silicon Valley on her team.'),
     2: B('今年高级经理只有一个名额。评级在三月。', 'One senior-manager slot this year. Ratings in March.'),
@@ -77,7 +81,7 @@ const P = {
     career: {
       resigned: B('辞职信我看到了。……你走了，我的规矩就管不着你了。这句话你自己琢磨。', "I've seen your resignation. ...Once you're gone my rule doesn't cover you. Think about that sentence."),
       laidoff: B('名单我争过，没争下来。对不起。这不是你的问题，是预算的问题。——推荐信我来写。', "I fought the list and lost. I'm sorry. It was the budget, not you. — I'll write your reference."),
-      startup: B('自己做公司？……Vincent 说你疯了。我没说话。我其实有点羡慕。', "Your own company? ...Vincent says you've lost your mind. I said nothing. The truth is I rather envy you."),
+      startup: B('自己做公司？……Raymond 说你疯了。我没说话。我其实有点羡慕。', "Your own company? ...Raymond says you've lost your mind. I said nothing. The truth is I rather envy you."),
       family: B('回南京接厂。也好。至少有人知道自己一年后在哪儿。', "Home to Nanjing and the works. Fair enough. At least one of us knows where he'll be in a year."),
       switched: B('跳槽了。行。下次在客户那儿碰到，我不会手软。', "So you've jumped ship. Fine. When we meet across a client's table I won't go easy."),
     },
@@ -90,7 +94,7 @@ const P = {
   },
   beats: [
     // ---- Act I ----
-    { id: 'z1', first: true, urgent: true, work: true, when: () => D(1, 18, 10), until: () => D(2, 9, 0), run: (L) => { meet(L, W); openThread(L, W, P.name.zh); say(L, W, '纪白？我是许知微，你这个项目的 PM。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。', "Ji Bai? Xu Zhiwei. I'm the PM on your project. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight.", [
+    { id: 'z1', first: true, urgent: true, work: true, when: () => D(1, 18, 10), until: () => D(2, 9, 0), run: (L) => { meet(L, W); openThread(L, W, P.name.zh); say(L, W, '纪白？我是许知微，你这个项目的设计负责人，交付也归我管。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。', "Ji Bai? Xu Zhiwei. Design lead on your project, and delivery is mine too. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight.", [
       R('收到，今晚看完。', "Got it. I'll read it tonight.", { t: 2 }, '好。', 'Good.'),
       R('刚落地，时差还没倒过来。明早路上看行吗？', "I've only just landed and I'm jet-lagged. Can I read it on the way in?", { t: -2 }, '九点二十，楼下。别让我在客户面前替你翻页。', "9:20, downstairs. Don't make me turn your pages for you in front of the client."),
     ]); } },
@@ -105,18 +109,18 @@ const P = {
     { id: 'z4', when: () => D(3, 19, 40), until: () => D(3, 23, 30), run: (L) => say(L, W, '帮个忙。明早八点要交客户周报，我妈今晚突然来上海，我得去虹桥接她。初稿你能替我写吗？就这一次。', "I need a favour. The client's weekly report is due at eight tomorrow, and my mother has turned up in Shanghai tonight without warning. I have to fetch her from Hongqiao. Could you write the first draft for me? Just this once.", [
       R('发我模板，十二点前给你。', "Send me the template. You'll have it by midnight.", { ev: 'z-covered' }, '……谢了。我欠你一次。', '...Thank you. I owe you one.'),
       R('我今晚也有安排。写一半行吗？', "I've got plans tonight too. Can I do half?", { t: 2 }, '一半也行。结构你搭，数我来填。', 'Half will do. You build the structure, I fill in the numbers.'),
-      R('这是 PM 的活。', "That's the PM's job.", { t: -5, a: -2 }, '知道了。当我没问。', 'Understood. Forget I asked.'),
+      R('这是项目负责人的活。', "That's the lead's job.", { t: -5, a: -2 }, '知道了。当我没问。', 'Understood. Forget I asked.'),
     ], { ttl: 240 }) },
     { id: 'z5', when: () => D(4, 22, 0), until: () => D(5, 18, 0), run: (L) => {
       if (recalls(L, W, 'covered-report')) say(L, W, '周报我一个字没改就发了。客户回了两个字：“清楚”。他上一次夸人是去年。', 'I sent the report without changing a word. The client replied with one: "Clear." The last time he praised anyone was last year.');
       else say(L, W, '这周你没掉链子。我说话算话：新人撑过第一周，我请一杯。', "You didn't drop anything this week. I keep my word: a new hire who survives week one gets a drink.");
       askOut(L, W, 'z-drink', P.dates['z-drink'], D(5, 21, 0)); } },
     // ---- Act II ----
-    { id: 'z6', urgent: true, when: () => D(7, 20, 10), until: () => D(8, 12, 0), run: (L) => { say(L, W, '今天给合伙人过方案，你做的那个评估模型，我说的是“我们组做的”。Vincent 以为是我做的，我没纠正。', "At the partner review today I called your evaluation model \"the team's work\". Vincent assumed it was mine. I didn't correct him.");
+    { id: 'z6', urgent: true, when: () => D(7, 20, 10), until: () => D(8, 12, 0), run: (L) => { say(L, W, '今天给合伙人过方案，你做的那个评估模型，我说的是“我们组做的”。Raymond 以为是我做的，我没纠正。', "At the partner review today I called your evaluation model \"the team's work\". Raymond assumed it was mine. I didn't correct him.");
       say(L, W, '想了一晚上。还是该告诉你。', "I've thought about it all evening. You should hear it from me.", [
         R('下次汇报，把名字写上就行。', "Next review, put the name on it. That's all.", { ev: 'z-credit-fix' }, '周四的材料我已经改了。第一页，你的名字。', "I've already changed Thursday's deck. Page one. Your name."),
         R('你是来道歉，还是来通知我？', 'Are you apologising, or informing me?', { a: 2, t: 1, mem: 'credit-row' }, '……道歉。我不太会。', "...Apologising. I'm not good at it."),
-        R('没事，你是 PM。', "It's fine. You're the PM.", { a: -3, t: 1 }, '你不生气？……你应该生气的。', "You're not angry? ...You should be."),
+        R('没事，项目是你带的。', "It's fine. It's your engagement.", { a: -3, t: 1 }, '你不生气？……你应该生气的。', "You're not angry? ...You should be."),
       ]); } },
     { id: 'z7', when: () => D(8, 21, 30), until: () => D(8, 22, 20), if: (L) => heart(L, W).trust >= 28, run: (L) => { say(L, W, '还在加班。从我这层能看到你住的那栋楼的绿顶。', 'Still at the office. From this floor I can see the green roof of your hotel.'); askOut(L, W, 'z-river', P.dates['z-river'], D(8, 22, 30)); } },
     { id: 'z8', when: () => D(9, 21, 0), until: () => D(10, 12, 0), if: (L) => said(L, 'step') && inLife(L, W), run: (L) => say(L, W, '今天在电梯里你看了我三秒。小周看见了。——三秒太长。', 'You looked at me for three seconds in the lift today. Xiao Zhou saw. — Three seconds is too long.', [
@@ -131,7 +135,7 @@ const P = {
       R('谢谢你保我。', 'Thank you for keeping me.', { t: 2 }, '不是保你。是你值。两回事。', "I didn't keep you. You earned it. Different things."),
     ]) },
     // ---- Act IV ----
-    { id: 'z11', urgent: true, when: () => D(13, 21, 0), until: () => D(14, 22, 0), run: (L) => say(L, W, '新加坡办公室要人去带亚太的 AI 业务。Vincent 推了我。年底走，两年。', "The Singapore office needs someone to run AI for Asia-Pacific. Vincent put my name forward. I'd leave at the end of the year. Two years.", [
+    { id: 'z11', urgent: true, when: () => D(13, 21, 0), until: () => D(14, 22, 0), run: (L) => say(L, W, '新加坡办公室要人去带亚太的 AI 业务。Raymond 推了我。年底走，两年。', "The Singapore office needs someone to run AI for Asia-Pacific. Raymond put my name forward. I'd leave at the end of the year. Two years.", [
       R('去。这是你等了六年的位置。', "Go. You've waited six years for this.", { ev: 'z-go' }, '……我以为你会留我。你没留。所以我才信你。', "...I thought you'd ask me to stay. You didn't. Which is why I believe you."),
       R('留下来。', 'Stay.', { ev: 'z-stay' }, '你不能替我做这个决定。……但我会把这句话算进去。', "You can't make this decision for me. ...But I'll weigh that."),
       R('这是你的事。', "That's your decision.", { t: -6, a: -4 }, '……知道了。', '...Understood.'),
@@ -139,19 +143,20 @@ const P = {
     { id: 'z12', urgent: true, when: () => D(16, 20, 0), until: () => D(17, 12, 0), run: (L) => { const why = P.end(L); if (why) leave(L, W, why); } },
   ],
   scenes: {
-    'z-lobby': { who: W, spot: 'peaceLobby', kind: 'talk', label: B('一个拎着电脑包的女人', 'A woman with a laptop bag'), action: B('走过去', 'Go over'),
+    'z-lobby': { who: W, spot: 'peaceLobby', kind: 'talk', label: B('一个浅灰金短发、戴银框眼镜的女人', 'A woman with short ash-blonde hair and silver glasses'), action: B('走过去', 'Go over'),
       on: (L) => !!fired(L, 'z2') && !fired(L, 'z2b') && !done(L, 'z-lobby') && stamp(L) <= D(1, 21, 35),
       script: (L) => [
+        N('她几乎和你平视：一米七八，浅灰金的短发，发根是深的，银色细框眼镜，黑色针织开衫，耳机挂在脖子上。', 'She looks at you almost level: a hundred and seventy-eight centimetres, short ash-blonde hair with dark roots, thin silver glasses, a black knit cardigan, headphones round her neck.'),
         Z('纪白？比照片上高。', 'Ji Bai? Taller than your photo.'),
         Z('门禁卡，电脑。密码贴在背面，回去就改掉。', "Your pass. Your laptop. The password's taped to the back. Change it the minute you get upstairs."),
         ask(L, W,
-          A('谢谢。你每个新人都亲自送？', 'Thanks. Do you hand-deliver to every new hire?', { a: 3 }, Z('不送。你住得顺路，而且我想在明天之前看看，Vincent 花大价钱挖来的人长什么样。', 'No. You\'re on my way home, and I wanted a look at what Vincent paid so much for before tomorrow.')),
+          A('谢谢。你每个新人都亲自送？', 'Thanks. Do you hand-deliver to every new hire?', { a: 3 }, Z('不送。你住得顺路，而且我想在明天之前看看，Raymond 花大价钱挖来的人长什么样。', 'No. You\'re on my way home, and I wanted a look at what Raymond paid so much for before tomorrow.')),
           A('辛苦了。明天的材料我看了，第七页的数据口径有问题。', "Thanks for coming. I've read tomorrow's deck. The data definition on slide seven is wrong.", { t: 5, a: 2, mem: 'slide-seven' }, Z('……哪里有问题？', '...Wrong how?'), N('她掏出手机，看了十秒。', 'She takes out her phone and reads for ten seconds.'), Z('你是对的。今晚我改。', "You're right. I'll fix it tonight.")),
           A('（接过来，点点头）', '(Take them. Nod.)', null, Z('话少。也好。', 'A man of few words. Fine by me.'))),
         Z('先说清楚：这个客户我带了八个月，他们只认我。你在硅谷怎么做事我不管，在这里，对外的口径先过我。', "One thing, so we're clear. I've run this client for eight months and they trust me. I don't care how you did things in the Valley. Here, anything that goes outside goes through me first."),
         ask(L, W,
           A('可以。但我有不同意见的时候，会当面跟你说。', "Fine. But when I disagree, I'll say it to your face.", { t: 4, a: 2 }, Z('当面说可以。别在客户面前说。', 'To my face is fine. Not in front of the client.')),
-          A('你是 PM，听你的。', "You're the PM. Your call.", { t: 1, a: -1 }, Z('……这么好说话？我不太信。', "...That easy? I don't quite believe it.")),
+          A('项目你带，听你的。', "It's your engagement. Your call.", { t: 1, a: -1 }, Z('……这么好说话？我不太信。', "...That easy? I don't quite believe it.")),
           A('我是来做产品的，不是来抢客户的。', "I came to build the product, not to take your client.", { t: 3 }, Z('这话我记下了。', "I'll hold you to that."))),
         Z('九点二十，楼下。', '9:20. Downstairs.'),
       ] },
@@ -160,6 +165,8 @@ const P = {
       script: (L) => [
         N('她已经到了。外套搭在椅背上，面前一杯威士忌，没动。', "She's already there. Jacket over the back of the chair, a whisky in front of her, untouched."),
         Z('你迟到了两分钟。我数了。', "You're two minutes late. I counted."),
+        // the industrial designer in her: if he has built the gimbal, she has already looked at it
+        ...(hasProduct(L) ? [Z('你包里那个云台是你自己做的？握把太细了，手一出汗就会转。下一版加粗两毫米，前面收一点，拇指才有地方放。', "Is that gimbal in your bag your own? The grip's too thin: it'll turn the moment your hand sweats. Two millimetres thicker on the next one, and pull the front in so your thumb has somewhere to go.")] : []),
         ask(L, W,
           A('你下班以后也计时？', 'You keep time after hours too?', { a: 3 }, Z('职业病。坐。', 'Occupational hazard. Sit.')),
           A('电梯坏了。我住楼上。', 'The lift was out. I live upstairs.', { a: 2 }, Z('住楼上还迟到。', "You live upstairs and you're still late."), N('她笑了一下，很短。', 'She smiles. Briefly.')),
@@ -183,11 +190,11 @@ const P = {
       script: (L) => [
         N('对岸，你们公司那栋楼还亮着十几层。', "Across the river a dozen floors of your firm's tower are still lit."),
         Z('三十一层，靠右那一格。二十分钟前我关的灯。', 'Thirty-first floor, the window on the right. I turned that light off twenty minutes ago.'),
-        Z('Vincent 今天找我了。高级经理今年只有一个名额。他说，我和你，他都看好。', "Vincent called me in today. There's one senior-manager slot this year. He says he rates us both."),
+        Z('Raymond 今天找我了。高级经理今年只有一个名额。他说，我和你，他都看好。', "Raymond called me in today. There's one senior-manager slot this year. He says he rates us both."),
         ask(L, W,
           A('我才来两个月。这个位置是你的。', "I've been here two months. That slot is yours.", { t: 5 }, Z('我不要你让。让来的，我拿着不踏实。', "I don't want you standing aside. I couldn't hold it properly if it was handed to me.")),
           A('那就各凭本事。', 'Then may the better one win.', { a: 4, t: 2 }, N('她转过来看着你。', 'She turns to look at you.'), Z('好。这才像话。', "Good. That's more like it.")),
-          A('我对升职没兴趣。一年后我可能就不在了。', "I'm not interested in promotion. In a year I may not even be here.", { t: 2, a: -1 }, Z('……这话别让 Vincent 听见。也别让我太早听见。', "...Don't let Vincent hear that. And I'd rather not have heard it this early myself."))),
+          A('我对升职没兴趣。一年后我可能就不在了。', "I'm not interested in promotion. In a year I may not even be here.", { t: 2, a: -1 }, Z('……这话别让 Raymond 听见。也别让我太早听见。', "...Don't let Raymond hear that. And I'd rather not have heard it this early myself."))),
         N('风从江上过来。她把手插进大衣口袋，往你这边站近了半步。', 'The wind comes in off the river. She pushes her hands into her coat pockets and stands half a step closer.'),
         Z('我的规矩你知道。可是这两个月我下了班，想找人说话的时候，想到的都是你。很烦。', "You know my rule. But for two months now, when I've left the office wanting someone to talk to, it's you I think of. It's annoying."),
         ask(L, W,
@@ -200,7 +207,7 @@ const P = {
       on: (L) => dateOn(L, 'z-night'),
       script: (L) => [
         Z('我请。从今天起我请得起了。', "I'm buying. As of today I can afford to."),
-        Z('Vincent 宣布的时候，我第一个想告诉的人不是我妈。', "When Vincent announced it, the first person I wanted to tell wasn't my mother."),
+        Z('Raymond 宣布的时候，我第一个想告诉的人不是我妈。', "When Raymond announced it, the first person I wanted to tell wasn't my mother."),
         ask(L, W,
           A('是谁？', 'Who was it?', { a: 3 }, Z('明知故问。', "As if you didn't know.")),
           A('你妈要是知道，催你结婚会催得更紧。', "If your mother knew, she'd push you about marriage twice as hard.", { a: 2, t: 2 }, Z('她已经在催了。上周发了我三个“小伙子”的简历。带照片。', 'She already is. Last week she sent me the CVs of three "nice young men". With photographs.'))),
@@ -224,7 +231,7 @@ const P = {
   // December: what she does (her last message of the year; world/romance.js records how it ended)
   end(L) {
     const h = heart(L, W), tog = h.stage === 'together', dating = h.stage === 'dating';
-    if (tog && h.said.stay && h.trust >= 70) { h.settled = 'stays'; say(L, W, '我跟 Vincent 说了，新加坡我不去。不是为你。——有一部分是。', "I've told Vincent I'm not taking Singapore. Not for you. — Partly for you."); }
+    if (tog && h.said.stay && h.trust >= 70) { h.settled = 'stays'; say(L, W, '我跟 Raymond 说了，新加坡我不去。不是为你。——有一部分是。', "I've told Raymond I'm not taking Singapore. Not for you. — Partly for you."); }
     else if (tog) { h.settled = 'distance'; say(L, W, '机票订了，十二月二十号。两年，每个月我回来一次。春节你来新加坡，我带你吃肉骨茶。', "The flight's booked: the twentieth of December. Two years, and I'm back once a month. Come to Singapore at Spring Festival. I'll take you for bak kut teh."); }
     else if (dating) { say(L, W, '十二月走。纪白，我们差一点。——差的那一点，是我没等，还是你没追，我分不清。', "I leave in December. We nearly had it, Ji Bai. — Whether the missing part was me not waiting or you not coming after me, I can't tell."); return 'moved'; }
     else { h.settled = 'colleague'; say(L, W, '十二月去新加坡。走之前，把你那页数据流图教给新人。那是你留在这个项目上最好的东西。', "I'm off to Singapore in December. Before I go, teach the new hire your data-flow slide. It's the best thing you've left on this project."); }

@@ -22,7 +22,7 @@ const anon = (p) => anonTester(p, () => 0.9);                              // ca
   const L = createLife();
   ok(!hasProduct(L) && summary(L).grade === 0 && go(L, anon('office')).kind === 'none', 'before it exists there is nothing to lend, and nothing to weigh');
   ok(dinnerWork(L).length === 0 && dinnerScript(L).filter((b) => !Array.isArray(b)).length === 3, 'the dinner is the dinner it was: three questions');
-  ok(epilogue(L, 'stay') === null && workContext(L) === '' && !/gimbal/.test(storyContext(L, 'ruoan')), 'the endings and your friends say nothing about it');
+  ok(epilogue(L, 'stay') === null && workContext(L) === '' && !/gimbal/.test(storyContext(L, 'yuan')), 'the endings and your friends say nothing about it');
 }
 
 // ---- the content is all there, in both languages ----
@@ -178,7 +178,7 @@ ok(c3.late && studio(L).people.chen.stood === 1, 'a day late: he waited, and say
     ok(all.length === 24 && !bad.length, `24 afterwords across an empty list, one name and three: none says "0 people"${bad.length ? `: ${bad[0].en}` : ''}`); }
   warm.X.flags.ending = 'stay'; skipTo(warm.X, stamp(warm.X) + 10); runWork(warm.X); const g0 = specs(warm.X).grams; skipTo(warm.X, stamp(warm.X) + 2200);
   ok(runWork(warm.X).includes('w-arm') && specs(warm.X).grams === g0 - 38 && !isOpen(warm.X, 'heavy') && !machined(warm.X), `a day and a half later the arm comes back from Nanjing: ${specs(warm.X).grams} g`);
-  ok(/version 4/.test(storyContext(L, 'ruoan')) && storyContext(L, 'office') === '', 'your friends know what you\'re making; strangers don\'t');
+  ok(/version 4/.test(storyContext(L, 'yuan')) && storyContext(L, 'office') === '', 'your friends know what you\'re making; strangers don\'t');
 }
 
 // ---- saves ----

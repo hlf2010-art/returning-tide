@@ -9,7 +9,9 @@ export const ME = {
 // voice: browser-speech profile (pitch / rate); avatar colour for the phone
 export const PEOPLE = {
   xuan:   { name: '陆明轩', short: '明轩', en: 'Lu Mingxuan', role: 'VC analyst, Lujiazui', color: '#3f6fb5', voice: { pitch: 0.95, rate: 1.08 }, sex: 'm' },
-  ruoan:  { name: '许若安', short: '若安', en: 'Xu Ruoan', role: 'architect, Bund restorations', color: '#7a9a6a', voice: { pitch: 1.08, rate: 1.0 }, sex: 'f' },
+  // 林予安 Lin Yu'an (Character Bible F04): the old drafts' 许若安 / Ruoan is the same person, one id ('yuan');
+  // she is one of the five friends and one of the five he might come to love (world/romance/yuan.js)
+  yuan:  { name: '林予安', short: '予安', en: 'Lin Yu\'an', aliases: ['许若安', '若安', 'Ruoan'], role: 'architect & urban-space researcher, Bund restorations', color: '#7a9a6a', voice: { pitch: 1.08, rate: 1.0 }, sex: 'f' },
   momo:   { name: '周子墨', short: 'Momo', en: 'Zhou Zimo', role: 'jazz keys, 1.2M followers', color: '#c4703c', voice: { pitch: 1.0, rate: 1.15 }, sex: 'm' },
   zhixia: { name: '韩知夏', short: '知夏', en: 'Han Zhixia', role: 'EV engineer, amateur GT racer', color: '#b5463f', voice: { pitch: 1.05, rate: 1.12 }, sex: 'f' },
   yinuo:  { name: '程以诺', short: '以诺', en: 'Cheng Yinuo', role: 'family office, art & property', color: '#8a6aa8', voice: { pitch: 1.1, rate: 0.96 }, sex: 'f' },
@@ -24,10 +26,10 @@ export const PEOPLE = {
   ye:     { name: '小叶', short: '小叶', en: 'Xiao Ye', role: 'portrait photographer on the Bund', color: '#5a8a9a', voice: { pitch: 1.08, rate: 1.08 }, sex: 'f' },
   zhe:    { name: '阿哲', short: '阿哲', en: 'Zhe', role: 'livestreams the Bund at night', color: '#9a5a8a', voice: { pitch: 1.0, rate: 1.15 }, sex: 'm' },
   // the five he might come to love (world/romance.js and world/romance/*.js have who they are)
-  zhiwei:  { name: '许知微', short: '知微', en: 'Xu Zhiwei', role: 'his project manager, Lujiazui', color: '#3d5a80', voice: { pitch: 1.02, rate: 1.1 }, sex: 'f' },
+  zhiwei:  { name: '许知微', short: '知微', en: 'Xu Zhiwei', role: 'product & industrial designer; his engagement lead', color: '#3d5a80', voice: { pitch: 1.02, rate: 1.1 }, sex: 'f' },
   nanxing: { name: '沈南星', short: '南星', en: 'Shen Nanxing', role: 'independent photographer', color: '#b0623a', voice: { pitch: 1.1, rate: 1.06 }, sex: 'f' },
   gunian:  { name: '顾念', short: '顾念', en: 'Gu Nian', role: 'tech investor & strategist, early-stage fund', color: '#5f7f6e', voice: { pitch: 1.0, rate: 0.98 }, sex: 'f' },
-  yuan:    { name: '林予安', short: '予安', en: "Lin Yu'an", role: 'product designer, San Francisco', color: '#7d6b9e', voice: { pitch: 1.06, rate: 1.04 }, sex: 'f' },
+  // (林予安 Lin Yu'an is above, with the friends: one person)
   kexin:   { name: '唐可昕', short: '可昕', en: 'Tang Kexin', role: 'lifestyle creator, 180K on Xiaohongshu', color: '#c0507a', voice: { pitch: 1.14, rate: 1.12 }, sex: 'f' },
   zhou:   { name: '老周', short: '老周', en: 'Old Zhou', role: 'watch-repairer, Hankou Road; missing since 29 October', color: '#8a7656', voice: { pitch: 0.82, rate: 0.9 }, sex: 'm' },
   mum:    { name: '妈', short: '妈', en: 'Mum (Zhou Lan)', role: 'cardiologist, Gulou Hospital, Nanjing', color: '#b56576', voice: { pitch: 1.05, rate: 0.98 }, sex: 'f' },
@@ -43,5 +45,5 @@ Object.assign(PEOPLE, {
   agent:    { name: '中介小吴', short: '小吴', en: 'Wu (letting agent)', role: 'letting agent', color: '#a07a3a', voice: { pitch: 1.05, rate: 1.15 }, sex: 'm' },
   zhoumin:  { name: '周敏', short: '周敏', en: 'Zhou Min', role: "the watch-repairer's daughter", color: '#7a5a8a', voice: { pitch: 1.06, rate: 0.98 }, sex: 'f' },
 });
-export const FRIENDS = ['xuan', 'ruoan', 'momo', 'zhixia', 'yinuo'];
+export const FRIENDS = ['xuan', 'yuan', 'momo', 'zhixia', 'yinuo'];
 export const GROUP = { id: 'wuhu', title: '金陵五虎+1', members: ['me', ...FRIENDS] };

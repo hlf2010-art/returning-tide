@@ -1,4 +1,4 @@
-// The friends after the first days: the beats arrive on the phone in both languages; Ruoan takes you
+// The friends after the first days: the beats arrive on the phone in both languages; Yu'an takes you
 // through the AIA's gates to her ceiling; the Pocket LiDAR scans the Peace Hotel's rotunda; Momo
 // asleep in 612. node tools/friendwalk.mjs (URL=, OUT=)
 import { createRequire } from 'module';
@@ -18,13 +18,13 @@ await p.evaluate(() => { const L = window.__bund.life; L.clock.day = 4; L.clock.
 await p.waitForTimeout(6000);
 const beats = await p.evaluate(() => Object.keys(window.__bund.life.fired));
 ok(['r2', 'r3', 'z2', 'm2', 'mu1', 'y3'].every((k) => beats.includes(k)) || ['r2', 'r3', 'z2', 'm2', 'mu1'].every((k) => beats.includes(k)), `the days after: ${beats.filter((k) => /^(r|z|m|x|y|mu|d)\d/.test(k)).join(' ')}`);
-const msgs = await p.evaluate(() => { const L = window.__bund.life; return ['ruoan', 'zhixia', 'momo', 'mum'].flatMap((t) => (L.threads[t] ? L.threads[t].messages.filter((m) => m.from !== 'me').map((m) => m.text) : [])); });
-ok(msgs.length >= 5, `${msgs.length} new messages from Ruoan, Zhixia, Momo and Mum`);
-// 2. Ruoan's evening at the AIA: accept, then be there at seven
-await p.evaluate(() => { const L = window.__bund.life, inv = L.invites.find((i) => i.id === 'ruoan-aia'); inv.status = 'accepted'; L.clock.minute = 18 * 60 + 58; window.__bund.player.teleport(-38.6, -146.1, Math.PI / 2, -0.05); });
+const msgs = await p.evaluate(() => { const L = window.__bund.life; return ['yuan', 'zhixia', 'momo', 'mum'].flatMap((t) => (L.threads[t] ? L.threads[t].messages.filter((m) => m.from !== 'me').map((m) => m.text) : [])); });
+ok(msgs.length >= 5, `${msgs.length} new messages from Yu\'an, Zhixia, Momo and Mum`);
+// 2. Yu'an's evening at the AIA: accept, then be there at seven
+await p.evaluate(() => { const L = window.__bund.life, inv = L.invites.find((i) => i.id === 'yuan-aia'); inv.status = 'accepted'; L.clock.minute = 18 * 60 + 58; window.__bund.player.teleport(-38.6, -146.1, Math.PI / 2, -0.05); });
 await p.waitForTimeout(3000);
-let pr = await prompt(); ok(/Ruoan.*Go through/.test(pr), `Ruoan at the gates: "${pr}"`);
-await p.screenshot({ path: `${dir}friends-ruoan.png`, timeout: 120000 });
+let pr = await prompt(); ok(/Yu\'an.*Go through/.test(pr), `Yu\'an at the gates: "${pr}"`);
+await p.screenshot({ path: `${dir}friends-yuan.png`, timeout: 120000 });
 await p.keyboard.press('KeyE'); await p.waitForTimeout(800);
 await p.keyboard.down('KeyW'); await p.waitForTimeout(3500); await p.keyboard.up('KeyW'); await p.waitForTimeout(2500);
 let s = await p.evaluate(() => window.__bund.player.body.x);
@@ -33,7 +33,7 @@ await p.waitForFunction(() => document.getElementById('prompt').innerText.includ
 await p.evaluate(() => window.__bund.player.teleport(-43.2, -146.2, Math.PI / 2, 0.9)); await p.waitForTimeout(1500);
 pr = await prompt(); ok(/ceiling|Look up/.test(pr), `under the ceiling: "${pr}"`);
 await p.keyboard.press('KeyE'); await p.waitForTimeout(1500);
-const kept = await p.evaluate(() => ({ kept: window.__bund.life.invites.find((i) => i.id === 'ruoan-aia').kept, wants: window.__bund.life.flags.ruoanWantsLidar }));
+const kept = await p.evaluate(() => ({ kept: window.__bund.life.invites.find((i) => i.id === 'yuan-aia').kept, wants: window.__bund.life.flags.yuanWantsLidar }));
 ok(kept.kept && kept.wants, 'you were there; she wishes someone had a portable LiDAR');
 // 3. the Pocket LiDAR: scan the rotunda
 await p.evaluate(() => { const M = window.__bund.life.flags.maker || (window.__bund.life.flags.maker = { xp: 0, parts: {}, gadgets: {}, builds: [], photos: [], shot: {}, achievements: [], followers: 3412, log: [] }); M.gadgets.lidar = { quality: 0.9 }; window.__bund.player.teleport(-48, -225.5, 0, 1.1); });

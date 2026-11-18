@@ -185,7 +185,11 @@ export function runRomance(L) {
   if (M.t !== now) {
     M.t = now;
     for (const who of ROMANCE) {
-      const P = CAST[who], h = heart(L, who); if (h.stage === 'over') continue;
+      const P = CAST[who], h = heart(L, who);
+      // her own life, off screen and whatever stands between them: recorded once, never sent, never told
+      // to the model (type 'timeline' is not in FACT_EN), so he learns of it only when she says so
+      for (const o of P.offscreen || []) { const k = `${who}:${o.id}`; if (M.fired[k] == null && now >= o.at(L)) { M.fired[k] = now; o.run(L); } }
+      if (h.stage === 'over') continue;
       const slot = slotOf(L, who);
       for (const b of P.beats) {
         if (M.fired[b.id] != null || (!b.first && h.stage === 'stranger')) continue;
@@ -317,7 +321,8 @@ export function romanceContext(L, who) {
     if (seeing(L).length > 1 && !h.knows) s.push('(You do not know that he is seeing anyone else.)');
   }
   s.push(`Right now you are ${slot.doing.en}.`);
-  if (a && P.arc[a.n]) s.push(`Your own life at the moment: ${P.arc[a.n].en}`);
+  const arc = a && (typeof P.arc[a.n] === 'function' ? P.arc[a.n](L) : P.arc[a.n]);   // an arc can depend on what has happened (Gu Nian, act II)
+  if (arc) s.push(`Your own life at the moment: ${arc.en}`);
   const mem = h.memories.map((m) => memoryText(who, m.key)).filter(Boolean).map((b, i) => `(${i + 1}) ${b.en}`);
   s.push(mem.length ? `Everything that has actually happened between you and him: ${mem.join(' ')}` : 'Nothing in particular has happened between you yet.');
   const facts = factsAbout(L, who).filter((f) => FACT_EN[f.type]).slice(-6).map((f) => FACT_EN[f.type](f));

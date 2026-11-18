@@ -95,8 +95,8 @@ export const EN = {
   '到了吗？外滩风大，你那件薄外套不够的。': 'Here yet? It\'s windy on the Bund. That thin jacket of yours won\'t cut it.',
   '到了，确实冷。在海关大楼这边。': 'Here. It is cold. I\'m by the Customs House.', '海关大楼？那正好，钟楼刚修完，你抬头看看。': 'The Customs House? Perfect, the clock tower\'s just been restored. Look up.',
   '还行，不冷。': 'It\'s fine, not cold.', '嘴硬。': 'Liar.',
-  '喂，纪白，听说你硅谷那家公司的股票套现了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？':
-    'Hey, Ji Bai, heard you cashed out your stock from that Valley company? ...Don\'t play dumb, Ruoan told me. Come to Tianma this weekend, I\'ll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?',
+  '喂，纪白，听说你硅谷那家公司的股票套现了？……别装，予安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？':
+    'Hey, Ji Bai, heard you cashed out your stock from that Valley company? ...Don\'t play dumb, Yu\'an told me. Come to Tianma this weekend, I\'ll take you round a few laps. And seriously, you need a new car. Are you still driving that second-hand Model 3?',
   '周末可以，车的事再说。': 'Weekend works. We\'ll see about the car.', '再说就是想。我认识保时捷浦东的一个顾问，人靠谱，回头推给你。': '"We\'ll see" means yes. I know a consultant at Porsche in Pudong, she\'s solid. I\'ll send you her contact.',
   'Model 3 挺好的。': 'The Model 3 is fine.', '……行，你开心就好。': '...Sure. Whatever makes you happy.',
   '说正事。有个做机械臂的团队，创始人是我学长，产品经理跑了，原型卡住了。': 'Business. There\'s a robotic-arm team, the founder was a year above me at LSE. Their product lead quit and the prototype\'s stuck.',

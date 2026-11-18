@@ -1,0 +1,362 @@
+/* =====================================================================================
+   Bund Deco: the game's own interface in the manner of its title screen. The Bund was built by
+   banks and trading houses in the 1920s and 30s, and its interiors (the Peace Hotel above all) are
+   Art Deco: night-blue and black, brass and gold, ivory, fine double rules, serif lettering spaced
+   wide. So: deep night panels with a thin gold double rule instead of frosted glass, square-ish
+   corners instead of pills, gold for the action that matters, ivory text, serif small capitals for
+   headings and labels (the sans stays for running text and the HUD's small print, for legibility).
+   Loaded last (main.js), so it restyles what style.css and the rest build. It replaces the earlier
+   liquid-glass layer; the phone keeps its own glass, because that is what a 2026 phone looks like.
+   ===================================================================================== */
+:root {
+  --ui: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  /* the same tokens as the character page and the season screen (ui/fonts.js): river ink, gold leaf, a seal's vermilion */
+  --text: #f4e6c4; --muted: rgba(244, 230, 196, 0.70); --faint: rgba(244, 230, 196, 0.46);
+  --ink: #f4e6c4; --gold: #ecd49a; --gold-2: #f4e6c4; --gold-deep: #c8a35a;
+  --accent: #c8a35a; --accent-2: #a8823f; --accent-ink: #1a1408; --accent-soft: rgba(200, 163, 90, 0.16);
+  --hair: rgba(200, 163, 90, 0.24); --hair-strong: rgba(200, 163, 90, 0.52);
+  /* the material: the river at night, as behind the character page */
+  --deco-bg: linear-gradient(180deg, rgba(16, 38, 45, 0.92) 0%, rgba(8, 16, 20, 0.94) 100%);
+  --deco-bg-strong: linear-gradient(180deg, rgba(16, 38, 45, 0.97) 0%, rgba(7, 11, 15, 0.98) 100%);
+  --glass: rgba(11, 26, 32, 0.9); --glass-strong: rgba(7, 11, 15, 0.96);
+  --deco-edge: 1px solid rgba(200, 163, 90, 0.45);
+  --deco-drop: 0 18px 44px rgba(0, 0, 0, 0.55);
+  --deco-r: 2px;
+  --gold-fill: linear-gradient(180deg, #e7c97f 0%, #d2ad66 50%, #b48a3e 100%);
+  --chamfer: polygon(9px 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 9px 100%, 0 50%);
+  --cut: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  --shadow-text: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --caps: 0.2em;
+}
+
+/* ---- the material: a night panel, a gold rule, and a second finer rule just inside it ---- */
+#prompt, #toast, #subtitle, #bark, #objective, #minimap, #tip, #achv, #year-chip, #talk, #build,
+#settings .panel, #journal .panel, #saves .panel, #workbook .panel, #shop-menu .in, #worldmap .wm-legend,
+#entrance-labels .ent, #mission-card, #ride-card, #ride-sub .ch span, #drive-hud, .glass {
+  background: var(--deco-bg) !important;
+  -webkit-backdrop-filter: blur(6px) !important; backdrop-filter: blur(6px) !important;
+  border: var(--deco-edge) !important;
+  box-shadow: var(--deco-drop) !important;
+  border-radius: var(--deco-r) !important;
+  color: var(--text);
+  text-shadow: var(--shadow-text);
+}
+#settings .panel, #journal .panel, #saves .panel, #workbook .panel, #shop-menu .in, #talk, #build, #mission-card, #ride-card, #subtitle {
+  background: var(--deco-bg-strong) !important;
+  outline: 1px solid rgba(200, 163, 90, 0.16); outline-offset: -6px;   /* the inner rule */
+}
+/* the big panels get a gold keyline across the top, like the brass rail over a lift door */
+#settings .panel, #journal .panel, #saves .panel, #workbook .panel {
+  background: linear-gradient(90deg, rgba(200, 163, 90, 0) 0%, rgba(200, 163, 90, 0.85) 50%, rgba(200, 163, 90, 0) 100%) top / 100% 1px no-repeat, var(--deco-bg-strong) !important;
+}
+
+/* ---- keys and buttons ---- */
+kbd { min-width: 1.7em; padding: 0.12em 0.5em; border-radius: 2px; border: 1px solid rgba(200, 163, 90, 0.65);
+  background: rgba(11, 14, 22, 0.85); color: var(--gold); font: 600 0.8em var(--ui); box-shadow: none; text-shadow: none; }
+.mbtn { border-radius: 2px !important; padding: 13px 28px; font: 600 13px var(--rt-serif) !important; letter-spacing: var(--caps) !important; text-transform: uppercase !important;
+  color: var(--text); border: 1px solid rgba(200, 163, 90, 0.5) !important;
+  background: rgba(11, 14, 22, 0.55) !important;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  box-shadow: none !important;
+  text-shadow: var(--shadow-text); transition: transform 0.25s var(--ease), background 0.25s, border-color 0.25s, color 0.25s, box-shadow 0.25s; }
+html[lang="zh-CN"] .mbtn { letter-spacing: 0.32em !important; font-size: 14px !important; }
+.mbtn:hover:not(:disabled), .mbtn:focus-visible { background: rgba(200, 163, 90, 0.12) !important; border-color: var(--gold) !important; color: var(--gold-2); transform: translateY(-1px); }
+.mbtn.primary { color: var(--accent-ink) !important; text-shadow: none; border-color: transparent !important; font-weight: 700 !important;
+  background: var(--gold-fill) !important; clip-path: var(--chamfer); padding-left: 34px; padding-right: 34px;
+  box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.7), 0 8px 24px rgba(200, 163, 90, 0.22) !important; }
+.mbtn.primary:hover:not(:disabled), .mbtn.primary:focus-visible { color: var(--accent-ink) !important; background: linear-gradient(180deg, #f1d896 0%, #dcb874 50%, #c09548 100%) !important; }
+.mbtn:disabled { color: rgba(242, 233, 219, 0.6) !important; background: rgba(242, 233, 219, 0.08) !important; border-color: rgba(242, 233, 219, 0.18) !important; box-shadow: none !important; }
+.mbtn.ghost, #settings .mbtn.small { background: transparent !important; box-shadow: none !important; }
+
+/* segmented choices: a ruled track; the chosen one in gold */
+.seg { padding: 3px; gap: 2px; border-radius: 2px; border: 1px solid var(--hair-strong);
+  background: rgba(8, 10, 17, 0.6); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.seg button { border-radius: 1px; padding: 6px 14px; font: 500 12.5px var(--ui); letter-spacing: 0.04em; color: var(--muted); text-shadow: none; transition: background 0.25s var(--ease), color 0.25s; }
+.seg button:hover { background: rgba(200, 163, 90, 0.1); color: var(--text); }
+.seg button.on { background: var(--gold-fill); color: var(--accent-ink); font-weight: 600; box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.6); }
+
+/* sliders: a gold hairline and a small gold diamond */
+input[type=range] { -webkit-appearance: none; appearance: none; height: 18px; background: transparent; accent-color: var(--gold); }
+input[type=range]::-webkit-slider-runnable-track { height: 2px; border-radius: 0; background: linear-gradient(90deg, var(--gold), rgba(200, 163, 90, 0.25)); }
+input[type=range]::-moz-range-track { height: 2px; background: rgba(200, 163, 90, 0.25); }
+input[type=range]::-moz-range-progress { height: 2px; background: var(--gold); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -5px; border-radius: 1px; transform: rotate(45deg); background: var(--gold-2); box-shadow: 0 0 0 3px rgba(11, 14, 22, 0.9), 0 0 0 4px rgba(200, 163, 90, 0.5); }
+input[type=range]::-moz-range-thumb { width: 11px; height: 11px; border: 0; border-radius: 1px; transform: rotate(45deg); background: var(--gold-2); box-shadow: 0 0 0 3px rgba(11, 14, 22, 0.9), 0 0 0 4px rgba(200, 163, 90, 0.5); }
+
+/* the little neon line before a kicker becomes a gold lozenge, the Deco ornament */
+.neon { width: 7px !important; height: 7px !important; border-radius: 1px !important; transform: rotate(45deg); background: var(--gold) !important; box-shadow: 0 0 10px rgba(200, 163, 90, 0.6) !important; }
+.kicker { font: 500 11.5px/1 var(--rt-thin) !important; letter-spacing: 0.24em !important; text-transform: uppercase !important; color: var(--gold) !important; text-shadow: var(--shadow-text); }
+
+/* ---- HUD ---- */
+#prompt { padding: 6px 16px 6px 6px !important; font: 500 13.5px var(--ui) !important; }
+#prompt kbd { min-width: 26px; height: 26px; display: inline-grid; place-items: center; padding: 0; color: var(--accent-ink);
+  background: var(--gold-fill); border-color: rgba(255, 236, 200, 0.7); box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.7); }
+#prompt-target { color: var(--gold-2); font-weight: 600; letter-spacing: 0.04em; }
+#prompt-target::after { background: var(--hair-strong) !important; }
+#prompt-text { color: var(--muted); }
+#reticle { background: var(--gold-2); box-shadow: 0 0 0 3px rgba(200, 163, 90, 0.16), 0 0 8px rgba(2, 4, 10, 0.5); }
+
+#toast { padding: 9px 22px !important; font: 500 13.5px var(--ui) !important; border-left: 2px solid var(--gold) !important; }
+#subtitle { padding: 15px 22px 16px !important; }
+#subtitle.interacting { background: var(--deco-bg-strong) !important; }
+#sub-speaker { background: transparent !important; color: var(--gold) !important; border-radius: 0 !important; padding: 0 0 3px !important; border-bottom: 1px solid var(--hair-strong);
+  font: 600 12px var(--rt-serif) !important; letter-spacing: 0.2em !important; text-transform: uppercase; text-shadow: none; }
+#sub-source { color: var(--faint) !important; }
+#sub-text { font: 400 17.5px/1.65 var(--rt-serif) !important; color: var(--text); }
+.opt { border-radius: 2px !important; padding: 6px 14px !important; color: var(--muted) !important; border: 1px solid transparent; }
+.opt.sel { background: rgba(200, 163, 90, 0.12) !important; color: var(--gold-2) !important; border-color: var(--hair-strong); text-shadow: none; box-shadow: none; }
+.opt.sel .mk { color: var(--gold) !important; }
+#bark-who { color: var(--gold) !important; font-family: var(--rt-serif); letter-spacing: 0.14em; }
+
+#objective { padding: 12px 18px 13px !important; border-left: 2px solid var(--gold) !important; }
+#objective::before { display: none !important; }
+#objective .m-head { font: 500 11px var(--rt-thin) !important; letter-spacing: 0.22em !important; text-transform: uppercase !important; color: var(--gold) !important; }
+#objective .m-num { color: var(--gold-2) !important; }
+#objective .m-title { color: var(--muted) !important; }
+#objective .m-step { font: 600 15px/1.45 var(--ui) !important; color: var(--text); }
+#objective.pulse { animation: decopulse 1.4s var(--ease) !important; }
+@keyframes decopulse { 0% { box-shadow: 0 0 0 0 rgba(200, 163, 90, 0.55), var(--deco-drop); } 100% { box-shadow: 0 0 0 16px rgba(200, 163, 90, 0), var(--deco-drop); } }
+
+#minimap { border-radius: 50% !important; outline: 1px solid rgba(200, 163, 90, 0.2); outline-offset: 3px; }
+#minimap canvas { opacity: 0.94; }
+#minimap .mm-area { color: var(--gold-2) !important; font: 500 11px var(--rt-serif) !important; letter-spacing: 0.12em; }
+#place .kicker { color: var(--gold) !important; }
+#place .name { font-family: var(--rt-serif) !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-shadow: 0 2px 24px rgba(2, 4, 10, 0.6); }
+#keys { color: var(--muted) !important; text-shadow: var(--shadow-text); }
+#mission-card { padding: 22px 48px 24px !important; }
+#mission-card::before { display: none !important; }
+#mission-card .mc-kicker { color: var(--gold) !important; letter-spacing: 0.26em !important; font: 500 12px var(--rt-thin) !important; text-transform: uppercase; }
+#mission-card .mc-title { font-family: var(--rt-serif) !important; font-weight: 700 !important; letter-spacing: 0.06em !important; }
+#achv { padding: 10px 26px 12px !important; }
+#year-chip { padding: 6px 14px !important; font: 500 12px var(--rt-serif) !important; letter-spacing: 0.1em; color: var(--gold-2); }
+#entrance-labels .ent i { background: var(--gold-fill) !important; color: var(--accent-ink) !important; border-radius: 1px !important; }
+#stamina { background: rgba(11, 14, 22, 0.6) !important; box-shadow: inset 0 0 0 1px var(--hair-strong) !important; border-radius: 1px !important; }
+#stamina i { background: var(--gold-fill) !important; border-radius: 0 !important; }
+#stamina.low i { background: linear-gradient(90deg, #c8564a, #e9b96f) !important; }
+#dev { border-radius: 2px !important; }
+
+/* ---- full-screen menus: the world dimmed to night behind them, not a pale veil ---- */
+#pause, #settings, #saves, #journal, #workbook {
+  background: radial-gradient(120% 90% at 20% 70%, rgba(18, 49, 58, 0.70) 0%, rgba(11, 26, 32, 0.80) 38%, rgba(6, 9, 12, 0.90) 78%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(90%) !important; backdrop-filter: blur(10px) saturate(90%) !important;
+}
+/* pause: a column of ruled entries from the left edge; the one you're on in gold */
+#pause .menu-col { left: 0 !important; gap: 10px !important; }
+#pause .menu-col .kicker, #pause h1 { margin-left: clamp(22px, 6vw, 96px) !important; }
+#pause h1 { font: 500 clamp(38px, 4.8vw, 64px)/1.05 var(--rt-serif) !important; font-variant: small-caps; text-transform: none !important; letter-spacing: 0.12em !important; color: #f2e9db; text-shadow: 0 2px 30px rgba(2, 4, 10, 0.6); }
+html[lang="zh-CN"] #pause h1 { font: 900 clamp(40px, 5vw, 66px)/1.05 var(--rt-serif) !important; letter-spacing: 0.3em !important; }
+#pause .mbtn { clip-path: none !important; min-width: min(320px, 70vw) !important; text-align: left; border-left: 0 !important; border-right: 0 !important; padding-left: clamp(22px, 6vw, 96px) !important; }
+#pause .mbtn:not(.primary) { background: linear-gradient(90deg, rgba(11, 14, 22, 0.75), rgba(11, 14, 22, 0.25)) !important; }
+#pause .mbtn::before { opacity: 0.9; }
+
+/* settings / journal / saves / workbook: a serif heading in spaced capitals, ruled tabs, hairline rows */
+#settings .panel, #saves .panel { width: min(560px, 94vw) !important; padding: 26px 28px 22px !important; }
+#settings .ph, #journal .ph, #workbook .ph, #saves .ph { font: 600 15px var(--rt-serif) !important; letter-spacing: 0.26em !important; text-transform: uppercase !important; color: var(--gold) !important;
+  border-bottom: 1px solid var(--hair) !important; padding-bottom: 12px !important; }
+html[lang="zh-CN"] #settings .ph, html[lang="zh-CN"] #journal .ph, html[lang="zh-CN"] #workbook .ph, html[lang="zh-CN"] #saves .ph { font-size: 17px !important; letter-spacing: 0.4em !important; }
+#settings .x, #journal .x, #workbook .x, #saves .ph .x { clip-path: var(--cut); width: 32px; height: 32px; border-radius: 0 !important; display: inline-grid; place-items: center; color: var(--gold) !important; font-size: 13px !important;
+  background: transparent !important; border: 1px solid var(--hair-strong) !important; box-shadow: none; letter-spacing: 0; }
+#settings .x:hover, #journal .x:hover, #workbook .x:hover, #saves .ph .x:hover { background: rgba(200, 163, 90, 0.12) !important; }
+#settings .tabs, #journal .tabs { gap: 6px !important; margin: 12px 0 14px !important; }
+#settings .tabs button, #journal .tabs button { border-radius: 1px !important; border: 1px solid var(--hair) !important; padding: 7px 16px !important;
+  font: 500 12.5px var(--rt-serif) !important; letter-spacing: 0.14em !important; text-transform: none !important; color: var(--muted) !important;
+  background: transparent !important; text-shadow: none; }
+#settings .tabs button:hover, #journal .tabs button:hover { color: var(--text) !important; border-color: var(--hair-strong) !important; }
+#settings .tabs button.on, #journal .tabs button.on { background: var(--gold-fill) !important; color: var(--accent-ink) !important; border-color: transparent !important; box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.6); }
+#settings .row { padding: 11px 2px !important; border-bottom: 1px solid rgba(200, 163, 90, 0.12); font: 400 14px var(--ui) !important; color: var(--text) !important; text-shadow: none; }
+#settings .row:last-of-type { border-bottom: 0; }
+#settings .slide output { color: var(--gold-2) !important; font-variant-numeric: tabular-nums; }
+#settings .ai-status { color: var(--muted) !important; }
+#settings input:not([type=range]), #talk input, #ai-server, #ai-model { border-radius: 2px !important; border: 1px solid var(--hair-strong) !important; color: var(--text) !important;
+  background: rgba(6, 8, 14, 0.7) !important; box-shadow: none; }
+#settings input:not([type=range]):focus, #talk input:focus { border-color: var(--gold) !important; outline: none; }
+#journal .ph .clock, #workbook .ph .wh { color: var(--muted) !important; font: 500 13px var(--rt-serif) !important; letter-spacing: 0.08em !important; text-transform: none !important; }
+#talk button { border-radius: 2px !important; background: transparent !important; border: 1px solid var(--hair-strong) !important; color: var(--gold-2); }
+#shop-menu button[data-i] { border-bottom-color: var(--hair) !important; border-radius: 2px; }
+#shop-menu button[data-i]:hover { background: rgba(200, 163, 90, 0.1) !important; }
+#build button { border-radius: 2px !important; color: var(--accent-ink) !important; background: var(--gold-fill) !important; }
+#worldmap .wm-legend button { border-radius: 2px !important; color: var(--text) !important; }
+#worldmap .wm-legend button:hover { background: rgba(200, 163, 90, 0.1) !important; }
+
+/* ---- the title screen: its own design lives in style.css (v4); here only what sits on it ---- */
+#entry .cityline { bottom: 14px !important; height: auto !important; padding: 8px 20px; width: max-content; max-width: calc(100vw - 48px); border-radius: 2px;
+  background: rgba(9, 12, 20, 0.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1px solid var(--hair-strong); box-shadow: none;
+  letter-spacing: 0.08em !important; text-transform: none !important; font-family: var(--rt-serif); }
+#entry .cityline #entry-time { margin-left: 18px !important; color: var(--gold-2); }
+#entry .cityline #entry-time::after { background: var(--gold) !important; box-shadow: 0 0 10px var(--gold) !important; }
+#entry .chapter { color: var(--gold) !important; font-family: var(--rt-serif) !important; letter-spacing: 0.24em !important; }
+#ride-card { padding: 20px 24px 22px !important; }
+#ride-card .fare { color: var(--gold-2) !important; }
+#ride-sub .ch kbd, #drive-hud i { color: var(--accent-ink) !important; background: var(--gold-fill) !important; border: 0 !important; }
+#drive-hud { padding: 8px 16px !important; }
+
+/* ---- lists and actions inside panels ---- */
+#journal .q { border-radius: 2px !important; border: 1px solid var(--hair) !important; background: rgba(11, 14, 22, 0.5) !important; box-shadow: none !important; }
+#journal .q:hover { background: rgba(200, 163, 90, 0.07) !important; border-color: var(--hair-strong) !important; }
+#journal .q.on, #journal .q.sel, #journal .q[aria-selected="true"] { background: rgba(200, 163, 90, 0.12) !important; color: var(--text) !important; border-color: var(--gold) !important; border-left-width: 3px !important; text-shadow: none; box-shadow: none !important; }
+#journal .q.on .kind, #journal .q.sel .kind { color: var(--gold) !important; } #journal .q.on .st, #journal .q.sel .st { color: var(--muted) !important; }
+#journal .q .kind { letter-spacing: 0.16em !important; font-weight: 600 !important; font-family: var(--rt-serif); color: var(--gold); }
+#journal .acts button { border-radius: 2px !important; border: 1px solid rgba(255, 236, 200, 0.6) !important; color: var(--accent-ink) !important; text-shadow: none; background: var(--gold-fill) !important; }
+#journal .steps .inv { display: inline-flex; gap: 8px; margin-left: 12px; vertical-align: middle; }
+#journal .steps .inv button { all: unset; cursor: pointer; font: 600 13px var(--ui); padding: 4px 14px; border-radius: 2px; background: var(--gold-fill); color: var(--accent-ink); }
+#journal .steps .inv button.no { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--hair-strong); }
+#journal .sk { padding: 12px 0; border-bottom: 1px solid rgba(200, 163, 90, 0.12); }
+#journal .sk .sn { display: flex; justify-content: space-between; font-size: 15px; } #journal .sk .sw { opacity: 0.7; font-size: 12px; margin: 2px 0 6px; }
+#journal .sk .bar { display: block; height: 3px; border-radius: 0; background: rgba(200, 163, 90, 0.15); overflow: hidden; } #journal .sk .bar i { display: block; height: 100%; background: var(--gold-fill); }
+#journal .sk .sp { font-size: 12px; margin-top: 6px; opacity: 0.85; }
+/* settings: room for the labels; choices never wrap into a second row */
+#settings .panel { width: min(640px, 94vw) !important; }
+#settings .row > span:first-child { flex: 1 1 auto; padding-right: 14px; }
+#settings .seg { flex-wrap: nowrap; white-space: nowrap; }
+#settings .seg button { padding: 6px 12px; }
+#workbook.sketch-only { background: radial-gradient(ellipse at 50% 55%, rgba(34,27,18,0.5), rgba(3,5,10,0.84)) !important; }   /* the notebook (ui/sketchbook.js): just the book on the dark */
+
+/* focus: a gold halo for the keyboard, never the browser's thick outline (the title focuses "Step out" itself) */
+.mbtn:focus-visible { box-shadow: 0 0 0 3px rgba(200, 163, 90, 0.3) !important; }
+.mbtn.primary:focus, .mbtn.primary:focus-visible, #begin:focus, #begin:focus-visible { box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.7), 0 0 24px rgba(200, 163, 90, 0.45) !important; }
+.mbtn:not(.primary):focus-visible { box-shadow: 0 0 0 1px var(--gold), 0 0 16px rgba(200, 163, 90, 0.3) !important; }
+/* the round settings cog on the title: a ruled circle, gold on hover */
+#entry .mbtn.round { border-radius: 50% !important; }
+
+/* ---- the phone: an in-world 2026 phone keeps its own liquid glass (carried over unchanged from the old ui/glass.css) ---- */
+#phone .body { background: linear-gradient(160deg, #3a3d44 0%, #15171b 40%, #2a2c31 100%) !important;
+  box-shadow: 0 30px 80px rgba(10, 14, 22, 0.45), inset 0 0 0 1.5px rgba(255, 255, 255, 0.35), inset 0 0 0 3px #0b0c0e, inset 0 1px 0 4px rgba(255, 255, 255, 0.08) !important; }
+#phone .bar { background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(245, 246, 250, 0.62)) !important; -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.6); position: relative; z-index: 2; }
+#phone .bar .back { width: 32px; height: 32px; left: 8px !important; padding: 0 !important; display: grid; place-items: center; border-radius: 50%; font-size: 22px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(235, 238, 244, 0.7)); box-shadow: inset 0 1px 0 #fff, 0 2px 8px rgba(10, 14, 22, 0.12), inset 0 0 0 1px rgba(0, 0, 0, 0.05); }
+#phone .replies, #phone .compose { background: linear-gradient(180deg, rgba(250, 250, 252, 0.7), rgba(240, 241, 246, 0.82)) !important; -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); border-top: 0.5px solid rgba(255, 255, 255, 0.55) !important; }
+#phone .chip { border-radius: 999px !important; border: 1px solid rgba(0, 0, 0, 0.06) !important; background: linear-gradient(180deg, #fff, rgba(244, 246, 250, 0.9)) !important; box-shadow: inset 0 1px 0 #fff, 0 2px 8px rgba(10, 14, 22, 0.08); }
+#phone .chip:hover, #phone .chip.sel { border-color: rgba(120, 180, 235, 0.6) !important; box-shadow: inset 0 1px 0 #fff, 0 0 0 3px rgba(169, 214, 255, 0.35); }
+#phone .call .choices .chip { background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08)) !important; border-color: rgba(255, 255, 255, 0.34) !important; color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+#phone .call .rb { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 10px 26px rgba(10, 14, 22, 0.35); }
+#phone .note, #phone .dock { background: linear-gradient(160deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.10)) !important; border: 0.5px solid rgba(255, 255, 255, 0.44);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 8px 24px rgba(10, 14, 22, 0.2); -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%); }
+
+
+/* ---- icons on static buttons (index.html data-ico): drawn as a mask in the text colour ---- */
+[data-ico]::before { content: ""; display: inline-block; width: 17px; height: 17px; margin-right: 10px; vertical-align: -3px; background: currentColor; -webkit-mask: var(--ico) center / contain no-repeat; mask: var(--ico) center / contain no-repeat; }
+.ico-only { font-size: 0 !important; letter-spacing: 0 !important; }
+.ico-only::before { margin-right: 0 !important; width: 18px; height: 18px; vertical-align: middle; }
+[data-ico="monitor"] { --ico: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20width%3D%2218%22%20height%3D%2218%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%224.5%22%20width%3D%2218%22%20height%3D%2212%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M9%2020h6M12%2016.5V20%22%2F%3E%3C%2Fsvg%3E"); }
+[data-ico="play"] { --ico: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20width%3D%2218%22%20height%3D%2218%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M8%205.5v13l10.5-6.5z%22%2F%3E%3C%2Fsvg%3E"); }
+[data-ico="folder"] { --ico: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20width%3D%2218%22%20height%3D%2218%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3.5%207a2%202%200%20012-2h4l2%202.2h7a2%202%200%20012%202V17a2%202%200%2001-2%202h-13a2%202%200%2001-2-2z%22%2F%3E%3C%2Fsvg%3E"); }
+
+/* ---- icons in the HUD and tabs ---- */
+.ico { display: inline-block; flex: none; vertical-align: -3px; }
+#keys span { gap: 5px !important; } #keys .ico { width: 16px; height: 16px; opacity: 0.92; }
+#m-hint { display: inline-flex !important; align-items: center; gap: 6px; } #m-hint .ico { width: 15px; height: 15px; }
+#journal .tabs button { display: inline-flex; align-items: center; gap: 8px; }
+#journal .tabs button .ico { width: 16px; height: 16px; }
+#journal .tabs button:not(.on) span { display: none; }            /* the others are icons only; the one you're on says its name */
+#settings .tabs button.ico-only { width: 38px; height: 34px; padding: 0 !important; display: inline-grid; place-items: center; }
+#entry .mbtn.round { width: 46px; height: 46px; padding: 0 !important; display: inline-grid; place-items: center; border-radius: 50% !important; }
+#pause .mbtn::before { opacity: 0.9; }
+/* icon-only buttons win over the panels' own type rules; a paler veil behind menus (inZOI's light grey) */
+#settings .tabs button.ico-only, .mbtn.ico-only { font-size: 0 !important; letter-spacing: 0 !important; line-height: 0 !important; }
+.mbtn.ico-only::before, #settings .tabs button.ico-only::before { margin: 0 !important; vertical-align: 0 !important; }
+
+/* focus: no browser outline (the halos above replace it) */
+.mbtn:focus, .mbtn:focus-visible, #begin:focus, #begin:focus-visible, .seg button:focus-visible { outline: none !important; }
+/* icon-only buttons: the icon centred (the hidden label takes no room) */
+.ico-only, #entry .mbtn.round, #settings .tabs button.ico-only { display: inline-flex !important; align-items: center; justify-content: center; }
+#entry .mbtn.round::before { width: 20px; height: 20px; }
+[data-ico="gear"] { --ico: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20width%3D%2218%22%20height%3D%2218%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M10.16%204.83%20L9.76%202.67%20L14.24%202.67%20L13.84%204.83%20L15.77%205.63%20L17.02%203.81%20L20.19%206.98%20L18.37%208.23%20L19.17%2010.16%20L21.33%209.76%20L21.33%2014.24%20L19.17%2013.84%20L18.37%2015.77%20L20.19%2017.02%20L17.02%2020.19%20L15.77%2018.37%20L13.84%2019.17%20L14.24%2021.33%20L9.76%2021.33%20L10.16%2019.17%20L8.23%2018.37%20L6.98%2020.19%20L3.81%2017.02%20L5.63%2015.77%20L4.83%2013.84%20L2.67%2014.24%20L2.67%209.76%20L4.83%2010.16%20L5.63%208.23%20L3.81%206.98%20L6.98%203.81%20L8.23%205.63%20Z%22%2F%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%223.1%22%2F%3E%3C%2Fsvg%3E"); }
+
+/* =====================================================================================
+   Brass: the main action and the chosen tab as metal, not paint. A brushed gold with a horizon
+   in it (polished brass catches the light in a band), the words engraved into it (a hair of light
+   under each stroke), two fine rules engraved inside the plaque, and on hover a slow sweep of
+   light across. The secondary action is a dark panel with stepped corner brackets, the frame of
+   the character page in miniature. Used everywhere a primary button or a chosen tab appears.
+   ===================================================================================== */
+:root {
+  --brass: linear-gradient(180deg, rgba(255, 248, 228, 0.55) 0%, rgba(255, 248, 228, 0) 38%),
+           repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 1px, rgba(0, 0, 0, 0.035) 1px 3px),
+           linear-gradient(180deg, #f2d895 0%, #dcb874 44%, #b98f45 50%, #caa158 66%, #a8813c 100%);
+  --brass-hi: linear-gradient(180deg, rgba(255, 250, 236, 0.7) 0%, rgba(255, 250, 236, 0) 40%),
+              repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 1px, rgba(0, 0, 0, 0.03) 1px 3px),
+              linear-gradient(180deg, #f7e2a8 0%, #e5c27e 44%, #c69a4e 50%, #d6ad62 66%, #b48a44 100%);
+  --engrave: 0 1px 0 rgba(255, 244, 214, 0.55), 0 -1px 0 rgba(70, 46, 10, 0.25);
+  --brass-ink: #2a1c07;
+}
+.mbtn.primary, #begin.mbtn { position: relative; overflow: hidden; isolation: isolate;
+  background: var(--brass) !important; color: var(--brass-ink) !important; text-shadow: var(--engrave) !important;
+  font-weight: 700 !important; clip-path: var(--chamfer); box-shadow: none !important; }
+/* two engraved rules inside the plaque */
+.mbtn.primary:not([data-ico])::after, #begin.mbtn::after { content: ''; position: absolute; inset: 4px 16px; pointer-events: none; z-index: -1;
+  border-top: 1px solid rgba(92, 62, 16, 0.38); border-bottom: 1px solid rgba(92, 62, 16, 0.38);
+  box-shadow: 0 1px 0 rgba(255, 244, 214, 0.35), inset 0 1px 0 rgba(255, 244, 214, 0.35); }
+.mbtn.primary:hover:not(:disabled), .mbtn.primary:focus-visible, #begin.mbtn:hover:not(:disabled), #begin.mbtn:focus-visible {
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 30%, rgba(255, 252, 240, 0.55) 48%, rgba(255, 255, 255, 0) 66%) -160% 0 / 220% 100% no-repeat, var(--brass-hi) !important;
+  animation: brass-sweep 1.6s var(--ease) both; transform: translateY(-1px); }
+@keyframes brass-sweep { from { background-position: -160% 0, 0 0, 0 0, 0 0; } to { background-position: 260% 0, 0 0, 0 0, 0 0; } }
+.mbtn.primary:active:not(:disabled), #begin.mbtn:active:not(:disabled) { transform: translateY(1px); filter: brightness(0.94); }
+#begin.mbtn:disabled { background: linear-gradient(180deg, rgba(200, 163, 90, 0.28), rgba(200, 163, 90, 0.14)) !important; color: rgba(244, 230, 196, 0.7) !important; text-shadow: none !important; }
+#begin.mbtn:disabled::after { border-color: rgba(200, 163, 90, 0.2); box-shadow: none; }
+/* the plaque throws a warm glow on the dusk behind it (on the row, so the chamfer doesn't clip it) */
+#entry .actions { filter: drop-shadow(0 8px 22px rgba(200, 163, 90, 0.28)); gap: 16px; }
+/* the title's two actions: compact plaques (the owner asked for them smaller) */
+#entry .actions { gap: 12px; margin-top: 22px; }
+#entry .actions .mbtn { padding: 10px 26px; min-width: 112px; font-size: 11.5px !important; letter-spacing: 0.22em !important; }
+#entry .actions .mbtn.primary, #entry #begin.mbtn { clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%); }
+#entry .actions .mbtn.primary::after, #entry #begin.mbtn::after { inset: 3px 12px; }
+#entry .actions .mbtn:not(.primary):not(#begin) { --l: 7px; }
+html[lang="zh-CN"] #entry .actions .mbtn { font-size: 13px !important; letter-spacing: 0.36em !important; padding-right: calc(26px - 0.36em); }
+
+/* the secondary action: a dark panel, a faint rule, and bright stepped brackets at its corners */
+.mbtn:not(.primary):not(#begin):not(.ico-only):not(.small) {
+  --b: rgba(236, 212, 154, 0.95); --l: 10px;
+  background:
+    linear-gradient(var(--b), var(--b)) top left / var(--l) 1px no-repeat, linear-gradient(var(--b), var(--b)) top left / 1px var(--l) no-repeat,
+    linear-gradient(var(--b), var(--b)) top right / var(--l) 1px no-repeat, linear-gradient(var(--b), var(--b)) top right / 1px var(--l) no-repeat,
+    linear-gradient(var(--b), var(--b)) bottom left / var(--l) 1px no-repeat, linear-gradient(var(--b), var(--b)) bottom left / 1px var(--l) no-repeat,
+    linear-gradient(var(--b), var(--b)) bottom right / var(--l) 1px no-repeat, linear-gradient(var(--b), var(--b)) bottom right / 1px var(--l) no-repeat,
+    linear-gradient(180deg, rgba(16, 38, 45, 0.78), rgba(7, 11, 15, 0.86)) !important;
+  border: 1px solid rgba(200, 163, 90, 0.26) !important; color: var(--gold) !important;
+  box-shadow: inset 0 0 0 3px rgba(7, 11, 15, 0.35), inset 0 0 0 4px rgba(200, 163, 90, 0.12) !important; }
+.mbtn:not(.primary):not(#begin):not(.ico-only):not(.small):hover:not(:disabled), .mbtn:not(.primary):not(#begin):not(.ico-only):not(.small):focus-visible {
+  --b: #f4e6c4; --l: 14px; color: #f4e6c4 !important; border-color: rgba(200, 163, 90, 0.5) !important;
+  box-shadow: inset 0 0 0 3px rgba(7, 11, 15, 0.35), inset 0 0 0 4px rgba(200, 163, 90, 0.3), 0 0 18px rgba(200, 163, 90, 0.18) !important; }
+#pause .mbtn:not(.primary) { --l: 0px; }   /* the pause column's run-in rows keep their plain rule */
+
+/* chosen tab / segment: the same brass, smaller */
+.seg button.on, #settings .tabs button.on, #journal .tabs button.on {
+  background: var(--brass) !important; color: var(--brass-ink) !important; text-shadow: var(--engrave) !important; box-shadow: inset 0 0 0 1px rgba(92, 62, 16, 0.3) !important; }
+
+/* the language switch on the title: a small ruled plaque with brackets; serif, spaced */
+#entry .topbar .seg { --b: rgba(236, 212, 154, 0.9); --l: 7px; padding: 4px; gap: 0; border-radius: 0;
+  border: 1px solid rgba(200, 163, 90, 0.3);
+  background:
+    linear-gradient(var(--b), var(--b)) top left / var(--l) 1px no-repeat, linear-gradient(var(--b), var(--b)) top left / 1px var(--l) no-repeat,
+    linear-gradient(var(--b), var(--b)) top right / var(--l) 1px no-repeat, linear-gradient(var(--b), var(--b)) top right / 1px var(--l) no-repeat,
+    linear-gradient(var(--b), var(--b)) bottom left / var(--l) 1px no-repeat, linear-gradient(var(--b), var(--b)) bottom left / 1px var(--l) no-repeat,
+    linear-gradient(var(--b), var(--b)) bottom right / var(--l) 1px no-repeat, linear-gradient(var(--b), var(--b)) bottom right / 1px var(--l) no-repeat,
+    rgba(7, 11, 15, 0.62);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+#entry .topbar .seg button { position: relative; border-radius: 0; padding: 5px 12px; min-width: 46px; font: 600 12px var(--rt-serif); letter-spacing: 0.2em; color: rgba(244, 230, 196, 0.62); }
+#entry .topbar .seg button[data-v="en"] { font: 600 11.5px var(--rt-serif); letter-spacing: 0.22em; }
+#entry .topbar .seg button + button::before { content: '◆'; position: absolute; left: -4px; top: 50%; transform: translateY(-52%); font-size: 6px; letter-spacing: 0; color: rgba(200, 163, 90, 0.7); }
+#entry .topbar .seg button.on::before, #entry .topbar .seg button.on + button::before { opacity: 0; }   /* the lozenge only between two unchosen halves */
+#entry .topbar .seg button:not(.on):hover { color: #f4e6c4; background: rgba(200, 163, 90, 0.1); }
+#entry .topbar .seg button.on { clip-path: var(--cut); }
+
+/* the title card: a poster line, then the logline under it */
+#entry .tagline { white-space: nowrap; margin: 14px auto 0; font: 500 clamp(20px, 2.15vw, 28px)/1.25 var(--rt-serif); letter-spacing: 0.04em; color: #f4e6c4; text-shadow: 0 2px 18px rgba(4, 7, 14, 0.85); }
+@media (max-width: 640px) { #entry .tagline { white-space: normal; } }
+html[lang="zh-CN"] #entry .tagline { font-weight: 700; letter-spacing: 0.16em; margin-right: -0.16em; }
+#entry .premise { max-width: 34rem; margin-top: 12px; font-size: 14.5px; color: rgba(244, 230, 196, 0.78); }
+
+/* the location strip (coordinates, district, weather, clock) is not shown on the title: a AAA title keeps
+   to the title, its line and the menu. The place and the hour arrive in play (the place card, the year
+   chip). The element stays (main.js keeps its clock), so this one rule brings it back. */
+#entry .cityline { display: none !important; }
+
+/* Settings: the music's credits, folded under its switch */
+#settings .credits { margin: 2px 2px 8px; font: 400 12px/1.6 var(--ui); color: var(--muted); }
+#settings .credits summary { cursor: pointer; font: 500 12px var(--rt-serif); letter-spacing: 0.14em; color: var(--gold); padding: 6px 0; list-style: none; }
+#settings .credits summary::before { content: '◆'; font-size: 7px; margin-right: 8px; vertical-align: 2px; color: var(--gold-deep); }
+#settings .credits[open] summary::before { color: var(--gold); }
+#settings .credits ul { margin: 2px 0 6px; padding-left: 16px; }
+#settings .credits a { color: var(--gold-2); text-decoration: none; border-bottom: 1px solid var(--hair-strong); }

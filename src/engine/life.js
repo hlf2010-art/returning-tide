@@ -24,7 +24,7 @@ export function createLife(seed = {}) {
       ledger: [],
     },
     threads: {}, order: [],
-    relations: {}, invites: [], calendar: [], inventory: [], flags: {},
+    relations: {}, invites: [], calendar: [], inventory: [], flags: { idsV: 2 },   // (a new game needs no id migration: see load)
     notifications: [], outbox: [], fired: {},
     ...seed,
   };
@@ -137,5 +137,43 @@ export function drain(L) { const o = L.outbox; L.outbox = []; return o; }
 // ---- saving ----
 export const save = (L) => JSON.stringify(L);
 export function load(json) {
-  try { const L = JSON.parse(json); return L && L.v === 1 ? L : null; } catch { return null; }
+  try { const L = JSON.parse(json); return L && L.v === 1 ? migrateIds(L) : null; } catch { return null; }
+}
+// ids renamed since a save was made. Character Bible v2.2: 许若安 Ruoan and 林予安 Lin Yu'an are one person,
+// id 'yuan'. Her two chats become one (by time), and every key or id naming 'ruoan' names 'yuan' (where
+// both exist they are merged). What people wrote stays as it was written: history is not rewritten.
+const RENAMED = { ruoan: 'yuan' };
+function mergeInto(a, b) {   // b into a
+  if (Array.isArray(a) && Array.isArray(b)) { const c = [...a, ...b]; return c.every((x) => typeof x === 'number') ? c.sort((x, y) => x - y) : c; }   // (stamps stay in time order)
+  if (typeof a === 'number' && typeof b === 'number') return a + b;
+  if (a && b && typeof a === 'object' && typeof b === 'object') { for (const k of Object.keys(b)) a[k] = k in a ? mergeInto(a[k], b[k]) : b[k]; return a; }
+  return a ?? b;
+}
+export function migrateIds(L) {
+  if (!L || (L.flags && L.flags.idsV >= 2)) return L;
+  for (const [from, to] of Object.entries(RENAMED)) {
+    const th = L.threads || {};
+    if (th[from]) {
+      const a = th[from], b = th[to];
+      if (b) { a.messages = [...a.messages, ...b.messages].sort((x, y) => (x.at || 0) - (y.at || 0)); a.unread = (a.unread || 0) + (b.unread || 0); }
+      th[to] = a; delete th[from];
+    }
+    if (L.relations && L.relations[from]) { L.relations[to] = L.relations[from]; delete L.relations[from]; }   // (her romance never used its own)
+    const re = new RegExp(`(^|[^A-Za-z])${from}(?=$|[^a-z])`, 'g'), fix = (s) => s.replace(re, `$1${to}`);
+    const walk = (o, key) => {
+      if (typeof o === 'string') return ['text', 'title', 'memo', 'memoEn', 'zh', 'en'].includes(key) ? o : fix(o);
+      if (Array.isArray(o)) return o.map((v) => walk(v, key));
+      if (!o || typeof o !== 'object') return o;
+      for (const k of Object.keys(o)) {
+        const v = walk(o[k], k), nk = fix(k);
+        if (nk !== k) { delete o[k]; o[nk] = nk in o ? mergeInto(o[nk], v) : v; } else o[k] = v;
+      }
+      return o;
+    };
+    walk(L, null);
+    if (Array.isArray(L.order)) L.order = [...new Set(L.order)];
+    for (const t of Object.values(L.threads || {})) if (t && t.title === '许若安') t.title = '林予安';
+  }
+  (L.flags ||= {}).idsV = 2;
+  return L;
 }

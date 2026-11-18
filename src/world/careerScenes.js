@@ -36,7 +36,7 @@ export const FIRM_SCENES = [
   { id: 'd2', day: 2, title: B('入职', 'First day'), place: FIRM.place, cast: ['zhiwei', 'taoke', 'shaofeng', 'partner'],
     parts: [
       () => [
-        ['zhiwei', '纪白？我是许知微，这个项目的 PM。工牌和电脑在你桌上，IT 十点来装 VPN。', "Ji Bai? Xu Zhiwei. I'm the engagement manager on this one. Your badge and laptop are on your desk. IT will be round at ten to set up the VPN."],
+        ['zhiwei', '纪白？我是许知微，这个项目的产品设计负责人，交付也是我带。工牌和电脑在你桌上，IT 十点来装 VPN。', "Ji Bai? Xu Zhiwei. Product design lead on this one, and I run delivery. Your badge and laptop are on your desk. IT will be round at ten to set up the VPN."],
         ['zhiwei', '先说项目。客户是东澜保险，做理赔的 AI 助手：理赔员上传病历和发票，模型读材料、对条款、给建议。合同签到明年三月。', 'The project first. The client is Donglan Insurance. An AI assistant for claims: the adjuster uploads the medical records and the invoices, the model reads them, checks them against the policy and makes a recommendation. The contract runs to March.'],
         ['zhiwei', '团队四个人。陶可，分析师，去年复旦毕业。邵峰，高级顾问，比你早来三年。合伙人是 Raymond，贺维安，你面试见过。', "Four of us. Tao Ke, analyst, out of Fudan last year. Shao Feng, senior consultant, three years ahead of you. The partner is Raymond, He Wei'an. You met him at interview."],
         ['taoke', '纪老师好！你在湾区做的那个产品，发布会我看了两遍。', 'Hello! That product you worked on in the Bay Area: I watched the launch twice.'],
@@ -262,7 +262,7 @@ export const FIRM_SCENES = [
           { zh: '我签。', en: "I'll sign.", s: 5, r: -3, zw: -5, rel: { partner: 5, shaofeng: 1 }, k: ['report', 'sign'],
             then: [['partner', '好。这才是做项目。', 'Good. That is how an engagement is run.'], [null, '（知微没有看你。）', '(Zhiwei does not look at you.)']] },
           { zh: '我需要一天。', en: 'I need a day.', s: -1, zw: -3, k: ['report', 'silent'],
-            then: [['zhiwei', '没有一天了，报告今晚发。……我签吧，我是 PM。', "There isn't a day. The report goes tonight. ...I'll sign it. I'm the manager."], [null, '（知微一个人签了。）', '(Zhiwei signs it alone.)']] },
+            then: [['zhiwei', '没有一天了，报告今晚发。……我签吧，项目是我带的。', "There isn't a day. The report goes tonight. ...I'll sign it. It's my engagement."], [null, '（知微一个人签了。）', '(Zhiwei signs it alone.)']] },
         ] },
       ],
       (L, S) => (S.review ? [

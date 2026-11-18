@@ -8,9 +8,11 @@ import { L, colliders, crossing, planterIslands, streetTrees, stall, npcs as npc
 const PPM = 2.4;                                   // pixels per metre in the offscreen map
 const X0 = -560, X1 = 60, Z0 = -290, Z1 = 110;     // world bounds painted (out to Henan Road)
 const SIZE = 168, R = SIZE / 2, VIEW = 0.62;       // display px; metres shown ~ R / (PPM * VIEW)
+// Bund Deco, like the floor plans on the character page: river-ink ground, teal water, the buildings in
+// dark teal with gold edges, jade trees (ui/fonts.js: --rt-river, --rt-gold, --rt-jade)
 const C = {
-  water: '#0c1c2c', deck: '#272c34', road: '#15181d', pave: '#30343c', block: '#454a55', blockEdge: '#5b616d',
-  zebra: 'rgba(230,226,215,0.55)', tree: 'rgba(120,150,96,0.75)', text: 'rgba(236,230,216,0.78)',
+  water: '#0d2a33', deck: '#18292e', road: '#0a1317', pave: '#132328', block: '#1d343b', blockEdge: 'rgba(200,163,90,0.62)',
+  zebra: 'rgba(236,212,154,0.42)', tree: 'rgba(79,143,123,0.75)', text: 'rgba(244,230,196,0.8)',
 };
 
 // more ground, painted over the base by whoever has some (world/lujiazui.js: Pudong): ({ g, px, pz, P, bounds }) => void
@@ -45,9 +47,9 @@ export function paint(bounds = { X0, X1, Z0, Z1 }, P = PPM) {
     g.fillStyle = '#fff'; g.font = `700 ${Math.round(3.4 * P)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(`M${m.exit}`, px((m.x0 + m.x1) / 2), pz((m.z0 + m.z1) / 2));
   }
-  for (const p of planterIslands) rect(p.x0, p.x1, p.z0, p.z1, '#2f3a2f');
+  for (const p of planterIslands) rect(p.x0, p.x1, p.z0, p.z1, '#1a2f2a');
   rect(PIER.x0, PIER.x1, PIER.z0, PIER.z1, C.deck);                                       // the cruise pier
-  rect(DUMPLING.x0, DUMPLING.x1, DUMPLING.z0, DUMPLING.z1, '#3a2a28');                    // the shengjian shop
+  rect(DUMPLING.x0, DUMPLING.x1, DUMPLING.z0, DUMPLING.z1, '#2e2420');                    // the shengjian shop
   g.fillStyle = C.tree;
   for (const t of [...streetTrees, ...planterIslands.map((p) => ({ x: (p.x0 + p.x1) / 2, z: (p.z0 + p.z1) / 2 }))]) { g.beginPath(); g.arc(px(t.x), pz(t.z), 2.2 * P, 0, Math.PI * 2); g.fill(); }
   for (const extra of mapExtras) extra({ g, px, pz, P, bounds });

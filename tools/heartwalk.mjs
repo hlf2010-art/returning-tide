@@ -1,7 +1,7 @@
 // Walkthrough: the five people Ji Bai might come to love, in the game itself.
 //   day 1   Zhiwei's first message on the phone (and its reply chips); she brings his pass to the
 //           Peace Hotel lobby; Nanxing at the railing with her tripod; Kexin filming in the Jazz Bar
-//   day 2   Gu Nian measuring the AIA lobby; Nanxing's invitation, accepted on the phone; the
+//   day 2   Gu Nian testing a start-up's camera in the AIA lobby; Nanxing's invitation, accepted on the phone; the
 //           lights at ten opposite the Customs House: "is this a date?"
 //   day 3   the Jazz Bar, sat across the table from her; "I live upstairs"; the cut to the morning
 //   day 4   the journal's People tab; one o'clock at Manner with Gu Nian; her invitation
@@ -58,7 +58,7 @@ const closePhone = async () => { await ev(() => window.__bund.phone.close()); aw
 // ---- day 1: Zhiwei writes; the reply chips ----
 await setClock(1, 18, 10); await p.waitForFunction(() => !!window.__bund.life.threads.zhiwei, null, { timeout: 120000 });
 let txt = await chat('zhiwei');
-ok((zh ? /我是许知微/ : /Xu Zhiwei\. I'm the PM/).test(txt) && (zh ? /收到，今晚看完/ : /I'll read it tonight/).test(txt), 'day 1, ten past six: his project manager writes, with two ways to answer');
+ok((zh ? /我是许知微/ : /Xu Zhiwei\. Design lead/).test(txt) && (zh ? /收到，今晚看完/ : /I'll read it tonight/).test(txt), 'day 1, ten past six: his project manager writes, with two ways to answer');
 await shot('phone-zhiwei');
 await dom('#phone .replies .chip'); await p.waitForTimeout(600);
 await closePhone();
@@ -102,10 +102,10 @@ ok((await ev(() => Object.keys(window.__bund.world.hearts.actors).length)) <= 2,
 await setClock(2, 18, 40);
 await stand('aiaLobby', [1, 1.3], 2.0); await actor('gunian'); await p.waitForTimeout(2500);
 pr = await prompt();
-ok(/measuring|量地面/.test(pr), `in the AIA lobby after hours: "${pr}"`);
+ok(/testing a camera|试摄像头/.test(pr), `in the AIA lobby after hours: "${pr}"`);
 await shot('gunian-aia');
 await p.keyboard.press('KeyE'); await playScene([0, 0], { watch: 2 });
-ok((await H('gunian')).memories.some((m) => m.key === 'held-tape'), 'he holds the other end of the tape');
+ok((await H('gunian')).memories.some((m) => m.key === 'held-tape'), 'he sits down for her camera');
 await ev(() => window.__bund.player.teleport(-70, 0.6, -Math.PI / 2, 0));
 await p.waitForFunction(() => window.__bund.life.invites.some((i) => i.id === 'h-n-ten'), null, { timeout: 120000 });
 txt = await chat('nanxing');
@@ -151,7 +151,7 @@ await stand('manner', [0.3, 1], 1.8); await actor('gunian'); await p.waitForTime
 pr = await prompt(); ok(/Gu Nian|顾念/.test(pr), `at the Manner window at one: "${pr}"`);
 await shot('gunian-manner');
 await p.keyboard.press('KeyE'); await playScene([1, 0], { watch: 2 });
-ok((await H('gunian')).stage === 'close', 'the tape and the coffee: close');
+ok((await H('gunian')).stage === 'close', 'the camera and the coffee: close');
 await setClock(4, 20, 31); await p.waitForFunction(() => window.__bund.life.invites.some((i) => i.id === 'h-g-cruise'), null, { timeout: 120000 });
 await chat('gunian'); await shot('phone-gunian'); await dom('#phone [data-act="invite"][data-yes="1"]'); await p.waitForTimeout(700); await closePhone();
 await setClock(5, 15, 58);

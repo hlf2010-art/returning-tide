@@ -8,6 +8,7 @@ import { ROMANCE, NATURE, heart, meet, feel, remember, setStage, seeing, contact
 import { CAST, EN_HEARTS, ROMANCE_SCENES, ROMANCE_CALLS, ROMANCE_NAMES, runRomance, presence, sceneScript, startScene, endScene, leftScene, askToMeet, romanceEvent, romanceContext, romancePrompt, romanceStanding, romanceEpilogue, romanceCallChoice, cannedHeart, guardTalk, takeNews, memoryText, datesAhead, TALK_RULES } from '../src/world/romance.js';
 import { enText } from '../src/world/agendaEn.js';
 import { PEOPLE } from '../src/world/cast.js';
+import { seasonAftermath } from '../src/world/allotEvents.js';
 import { PERSONAS, systemPrompt, addressOf } from '../src/world/personas.js';
 
 let failed = 0;
@@ -94,7 +95,7 @@ const fresh = () => { const L = createLife(); setupThreads(L); initYear(L); retu
   let good = true;
   for (const id of ROMANCE) {
     const P = CAST[id];
-    for (const b of [P.name, P.short, P.role, P.ambition, P.address, ...Object.values(P.arc), ...Object.values(P.memories), ...Object.values(P.lines).filter((x) => x.zh), ...Object.values(P.lines.career), ...Object.values(P.dates).flatMap((d) => [d.title, d.place, d.text, d.yes, d.no])]) {
+    for (const b of [P.name, P.short, P.role, P.ambition, P.address, ...Object.values(P.arc).flatMap((a) => (typeof a === 'function' ? [a({ flags: {} }), a({ flags: { hearts: { _: { fired: { g5: 1 } } } } })] : [a])), ...Object.values(P.memories), ...Object.values(P.lines).filter((x) => x.zh), ...Object.values(P.lines.career), ...Object.values(P.dates).flatMap((d) => [d.title, d.place, d.text, d.yes, d.no])]) {
       if (!b || !b.zh || !b.en || cjk(b.en) || !cjk(b.zh + '汉')) { good = false; console.log('  not bilingual:', id, JSON.stringify(b)); }
     }
     if (Object.keys(P.arc).join() !== '1,2,3,4,5' || P.lines.canned.zh.length !== P.lines.canned.en.length || !P.card || !P.how) { good = false; console.log('  incomplete:', id); }
@@ -158,8 +159,8 @@ const only = (who, scenes = {}) => ({ reply: (w) => (w === who ? 0 : null), invi
 {
   // ---- nobody he hasn't met writes to him, except the two who would ----
   const L = run(fresh(), D(3, 12), never);
-  ok(heart(L, 'zhiwei').stage === 'known' && heart(L, 'yuan').stage === 'known' && ['nanxing', 'gunian', 'kexin'].every((id) => heart(L, id).stage === 'stranger' && !L.threads[id]), 'day 3: his project manager has written, and Yu\'an from California; the other three are strangers until he meets them');
-  ok(L.threads.zhiwei.messages[0].at >= D(1, 18, 10) && L.threads.zhiwei.messages[0].at < D(1, 18, 20) && L.threads.yuan.messages[0].at >= D(2, 1, 20) && L.threads.yuan.messages[0].at < D(2, 1, 30), 'Zhiwei at ten past six on his first evening; Yu\'an at twenty past one at night, her morning');
+  ok(heart(L, 'zhiwei').stage === 'known' && heart(L, 'yuan').stage === 'known' && ['nanxing', 'gunian', 'kexin'].every((id) => heart(L, id).stage === 'stranger' && !L.threads[id]), 'day 3: his engagement lead has written, and Yu\'an, his oldest friend, has said what she never said; the other three are strangers until he meets them');
+  ok(L.threads.zhiwei.messages[0].at >= D(1, 18, 10) && L.threads.zhiwei.messages[0].at < D(1, 18, 20) && (() => { const m = L.threads.yuan.messages.find((x) => /所以你真的回来了/.test(x.text)); return m && m.at >= D(2, 23, 10) && m.at < D(2, 23, 20); })() && L.threads.yuan.messages[0].from === 'yuan' && L.threads.yuan.messages[0].at < D(2, 0, 0), 'Zhiwei at ten past six on his first evening; Lin Yu\'an is in his chats from the first day as a friend, and late on the second night writes as more than that (one person, one chat)');
   ok(heart(L, 'yuan').memories.some((m) => m.key === 'sf-years') && heart(L, 'yuan').attraction > heart(L, 'zhiwei').attraction, 'Yu\'an arrives with a history');
 }
 {
@@ -234,6 +235,15 @@ const kept = {};
   run(L, D(17, 12), only('gunian')); L.flags.dinnerChoice = 'home';
   ok(/an hour by train/.test(ep(L).en) && romanceStanding(L, 'gunian').stage.en === 'Together', `Gu Nian, Act V: "${ep(L).en}"`);
   kept.gunian = L;
+  // Character Bible v2.2 (F03): day 7 she tells her partners (off screen), day 9 she tells him; he cannot know before
+  const tl = factsAbout(L, 'gunian', 'timeline'), when = (ev) => (tl.find((f) => f.event === ev) || {}).day;
+  ok(when('disclosure_to_partner') === 7 && when('message_to_ji_bai') === 9 && !/partners|leaving/.test(CAST.gunian.arc[2]({ flags: {} }).en.replace('told no one outside the fund', '')), 'Gu Nian: day 7 she tells her partners off screen, day 9 she tells him; before that her model is not told she is leaving');
+  ok(L.threads.gunian.messages.some((m) => /三十次/.test(m.text) && /坐下和摔倒|两秒/.test(m.text)), 'her fund\'s first investment is the camera, with why it now works and the due diligence she did');
+  {
+    const n0 = L.threads.gunian.messages.length;
+    seasonAftermath(L, [{ type: 'milestone', id: 'batch' }]); seasonAftermath(L, [{ type: 'milestone', id: 'batch' }]);
+    ok(L.threads.gunian.messages.length === n0 + 1, 'his small batch reaches her once, however often a season reports it');
+  }
   // lost: she is nobody's option
   const X = fresh(); run(X, D(2, 19, 0), never); play(X, 'g-aia', []); run(X, D(3, 13, 5), only('gunian')); play(X, 'g-manner', []); run(X, D(4, 16, 0), only('gunian')); play(X, 'g-cruise', []);
   ok(isSeeing(X, 'gunian'), '(dating)');
@@ -245,7 +255,7 @@ const kept = {};
   const L = fresh();
   run(L, D(12, 23), only('yuan'));
   const h = heart(L, 'yuan');
-  ok(h.memories.some((m) => m.key === 'named-it') && h.events.call === 1 && h.stage === 'close' && L.threads.yuan.messages.some((m) => /六月五号/.test(m.text)), `Yu'an, Acts I-III on the phone: the mug, the call from Clement Street, the layoff, the flight: ${h.stage}`);
+  ok(h.memories.some((m) => m.key === 'named-it') && h.events.call === 1 && h.stage === 'close' && L.threads.yuan.messages.some((m) => /改过的那一页上，有我的名字/.test(m.text)) && L.threads.yuan.messages.some((m) => /旧金山来信了/.test(m.text)), `Lin Yu'an, Acts I-III on the phone: the mug, the call from outside the site, her dissent, San Francisco's offer, the scheme that changed: ${h.stage}`);
   run(L, D(13, 19, 0), only('yuan'));
   ok(presence(L, 'yuan') && presence(L, 'yuan').scene === 'y-lobby' && presence(L, 'yuan').spot === 'peaceHall', 'June: she is under the glass of the Peace Hotel\'s octagon hall');
   play(L, 'y-lobby', [1]); ok(presence(L, 'yuan').scene === 'y-river', 'and then at the river');
@@ -373,7 +383,8 @@ const kept = {};
   // every message that reached the phone in any of the lives above, and every reply chip offered
   let msgs = 0; bad = 0;
   for (const L of [...Object.values(kept)]) for (const who of ROMANCE) for (const m of (L.threads[who] || { messages: [] }).messages) {
-    for (const tx of [m.text, ...(m.replies || []).flatMap((r) => [r.text, r.follow]), m.meta && m.meta.title, m.meta && m.meta.place].filter(Boolean)) { msgs++; if (!EN_HEARTS[tx] || cjk(EN_HEARTS[tx]) || cjk(enText(tx))) { bad++; console.log('  message:', who, tx); } }
+    for (const tx of [m.text, ...(m.replies || []).flatMap((r) => [r.text, r.follow]), m.meta && m.meta.title, m.meta && m.meta.place].filter(Boolean)) { msgs++; if ((EN_HEARTS[tx] ? cjk(EN_HEARTS[tx]) : true) && cjk(enText(tx))) { bad++;   // (Lin Yu'an's chat also carries her friend messages: world/agendaEn.js)
+ console.log('  message:', who, tx); } }
   }
   const all = Object.entries(EN_HEARTS);
   ok(bad === 0 && msgs > 150 && all.every(([zh, en]) => cjk(zh) && en && !cjk(en)), `every message, reply and invitation has its English (${msgs} checked; ${all.length} lines in the lookup), and the phone finds it (world/agendaEn.js)`);

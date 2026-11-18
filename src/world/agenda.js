@@ -10,11 +10,11 @@ const D = (day, h, m = 0) => day * 1440 + h * 60 + m;           // absolute minu
 
 export function setupThreads(L) {
   thread(L, GROUP.id, { title: GROUP.title, members: GROUP.members, kind: 'group' });
-  for (const id of ['ruoan', 'xuan', 'zhixia', 'momo', 'yinuo', 'dad']) thread(L, id, { title: PEOPLE[id].name, members: ['me', id], kind: 'person' });
+  for (const id of ['yuan', 'xuan', 'zhixia', 'momo', 'yinuo', 'dad']) thread(L, id, { title: PEOPLE[id].name, members: ['me', id], kind: 'person' });
   // a little history so the chats don't start empty
   for (const [t, from, text] of [
     ['wuhu', 'zhixia', '下周谁有空，天马跑两圈'], ['wuhu', 'xuan', '我周末要飞深圳'], ['wuhu', 'momo', '[视频]'],
-    ['dad', 'dad', '落地了说一声。'], ['ruoan', 'ruoan', '航班号发我一下'], ['ruoan', 'me', 'UA857，下午三点多到浦东'],
+    ['dad', 'dad', '落地了说一声。'], ['yuan', 'yuan', '航班号发我一下'], ['yuan', 'me', 'UA857，下午三点多到浦东'],
   ]) { const m = post(L, t, { from, kind: 'text', text }, { notify: false }); m.at -= 600; m.read = true; }
   for (const t of Object.values(L.threads)) t.unread = 0;
   addVoicemail(L);
@@ -42,11 +42,11 @@ const BEATS = [
       text: '今晚九点半，和平饭店爵士吧，给你留位置', onAccept: 6, onDecline: -2, onMiss: -6,
       yesText: '来，给我留个靠前的位置', noText: '今晚倒时差，下次一定' });
   } },
-  { id: 'r1', at: 5, run: (L) => post(L, 'ruoan', { from: 'ruoan', kind: 'text', text: '到了吗？外滩风大，你那件薄外套不够的。', replies: [
+  { id: 'r1', at: 5, run: (L) => post(L, 'yuan', { from: 'yuan', kind: 'text', text: '到了吗？外滩风大，你那件薄外套不够的。', replies: [
     { text: '到了，确实冷。在海关大楼这边。', delta: 2, follow: '海关大楼？那正好，钟楼刚修完，你抬头看看。' },
     { text: '还行，不冷。', delta: 0, follow: '嘴硬。' },
   ] }) },
-  { id: 'z1', at: 7, run: (L) => post(L, 'zhixia', { from: 'zhixia', kind: 'voice', text: '喂，纪白，听说你硅谷那家公司的股票套现了？……别装，若安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？', replies: [
+  { id: 'z1', at: 7, run: (L) => post(L, 'zhixia', { from: 'zhixia', kind: 'voice', text: '喂，纪白，听说你硅谷那家公司的股票套现了？……别装，予安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？', replies: [
     { text: '周末可以，车的事再说。', delta: 3, follow: '再说就是想。我认识保时捷浦东的一个顾问，人靠谱，回头推给你。', flag: 'carCurious' },
     { text: 'Model 3 挺好的。', delta: -1, follow: '……行，你开心就好。' },
   ] }) },
@@ -68,14 +68,14 @@ const BEATS = [
 // ---- the days after: each friend's own thread (when: a time on the calendar; if: only if) ----
 const said = (L, key, flag) => (L.flags[`${key}Said`] || []).includes(flag);
 BEATS.push(
-  // Ruoan: on the job inside the Bund's old buildings; she gets you past the AIA's gates
-  { id: 'r2', when: D(2, 10, 30), run: (L) => post(L, 'ruoan', { from: 'ruoan', kind: 'text', text: '今天在和平饭店顶层测绘，屋顶的铜皮比图纸上老三十年。你那个612住得惯吗？', replies: [
+  // Yu'an: on the job inside the Bund's old buildings; she gets you past the AIA's gates
+  { id: 'r2', when: D(2, 10, 30), run: (L) => post(L, 'yuan', { from: 'yuan', kind: 'text', text: '今天在和平饭店顶层测绘，屋顶的铜皮比图纸上老三十年。你那个612住得惯吗？', replies: [
     { text: '住得惯，窗外就是江。', delta: 1, follow: '那是我们去年修的窗框。不客气。' },
     { text: '你在楼上？我下来请你喝咖啡。', delta: 3, follow: '今天没空。改天，你欠我一杯。' },
   ] }) },
   { id: 'r3', when: D(3, 19, 0), run: (L) => {
-    post(L, 'ruoan', { from: 'ruoan', kind: 'text', text: '明晚来友邦大楼？我们在修大堂的天花，我带你进闸机里面看看，平时谁都进不去。' });
-    invite(L, { id: 'ruoan-aia', from: 'ruoan', thread: 'ruoan', title: '友邦大楼 · 大堂天花', place: '友邦大楼（外滩17号）', at: D(4, 19, 0), deadline: D(4, 17, 0),
+    post(L, 'yuan', { from: 'yuan', kind: 'text', text: '明晚来友邦大楼？我们在修大堂的天花，我带你进闸机里面看看，平时谁都进不去。' });
+    invite(L, { id: 'yuan-aia', from: 'yuan', thread: 'yuan', title: '友邦大楼 · 大堂天花', place: '友邦大楼（外滩17号）', at: D(4, 19, 0), deadline: D(4, 17, 0),
       text: '明晚七点，友邦大楼大堂，我在闸机那儿等你。', onAccept: 4, onDecline: -2, onMiss: -3, yesText: '好，七点见', noText: '明晚不行' });
   } },
   // Zhixia: a race-telemetry logger for her car; the parts come to the makerspace; then Tianma
@@ -132,8 +132,8 @@ BEATS.push(
 // background chatter: who might say what, now and then (no story weight)
 const CHATTER = [
   ['momo', '[视频] 今天排练的，这段solo我自己都想哭'], ['xuan', '开会开到现在，饭都没吃'], ['zhixia', '测试台又炸了一个电芯，没人受伤，就是心疼钱'],
-  ['ruoan', '有人知道海关大楼钟每天几点敲吗，甲方问我我也不知道😂'], ['momo', '谁有静安那家生煎的电话，排队排疯了'], ['yinuo', '刚落虹桥，雾好大'],
-  ['xuan', '@纪白 你周末到底在不在上海'], ['zhixia', '周末天马下雨就取消，别问了'], ['momo', '[表情] 旺柴.gif'], ['ruoan', '今天工地挖出来一块1920年代的地砖，开心一整天'],
+  ['yuan', '有人知道海关大楼钟每天几点敲吗，甲方问我我也不知道😂'], ['momo', '谁有静安那家生煎的电话，排队排疯了'], ['yinuo', '刚落虹桥，雾好大'],
+  ['xuan', '@纪白 你周末到底在不在上海'], ['zhixia', '周末天马下雨就取消，别问了'], ['momo', '[表情] 旺柴.gif'], ['yuan', '今天工地挖出来一块1920年代的地砖，开心一整天'],
 ];
 
 export function runAgenda(L, rnd = Math.random) {
@@ -179,7 +179,7 @@ export function react(L, ev) {
   }
   if (ev.type === 'paid' && ev.to === 'Manner' && !L.flags.firstManner) {
     L.flags.firstManner = true;
-    (L.flags.pendingFollow ||= []).push({ at: stamp(L) + 3, thread: 'ruoan', from: 'ruoan', text: '你是不是在汉口路那家Manner？我们工地的人天天去，燕麦拿铁不错。' });
+    (L.flags.pendingFollow ||= []).push({ at: stamp(L) + 3, thread: 'yuan', from: 'yuan', text: '你是不是在汉口路那家Manner？我们工地的人天天去，燕麦拿铁不错。' });
   }
   if (ev.type === 'call-declined') (L.flags.pendingFollow ||= []).push({ at: stamp(L) + 2, thread: ev.from, from: ev.from, text: ev.from === 'dad' ? '怎么不接电话？' : '在忙？' });
 }
