@@ -21,5 +21,5 @@ window.view = (name) => {
   cam.position.set(...V); cam.lookAt(hand); if (name === 'fp') cam.fov = 70; else cam.fov = 40; cam.updateProjectionMatrix();
   pb.update(1 / 30, player, eye.clone()); pb.placeProps(eye); r.render(scene, cam);
 };
-window.ready = true;
+window.ready = true; window.gripInfo = () => ({ tw: pb.grip.tw, ha: pb.grip.ha });
 </script>

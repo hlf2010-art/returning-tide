@@ -10,6 +10,7 @@ import { cup as makeCup } from './cups.js';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { createSprings } from './springs.js';
+import { twoBone } from './driverPose.js';
 
 const GAITS = ['walk', 'jog', 'sprint'];
 const wrap = (a) => { let r = a; while (r > Math.PI) r -= Math.PI * 2; while (r < -Math.PI) r += Math.PI * 2; return r; };
@@ -74,9 +75,9 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
   let holdW = 0, want = { cup: false, phone: false };
 
 
-  // ---- a cup in the right hand: carried on the open palm (the umbrella clip's arm, palm up) ----
+  // ---- a cup in the right hand ----
   // (the phone clip's finger tracks don't suit this rig's fingers and mangled the hand: none are used;
-  // where the cup goes comes from the bones: f along the palm to the knuckles)
+  // f runs along the palm to the knuckles, p from it toward the thumb's base, under the palm)
   const R = (n) => root.getObjectByName(n);
   const rHand = R('Bip01_R_Hand'), knuckle = R('Bip01_R_Finger2'), thumb0 = R('Bip01_R_Finger0');
   const gf = new THREE.Vector3(), gp = new THREE.Vector3(), ga = new THREE.Vector3(), gh = new THREE.Vector3(), gt = new THREE.Vector3(), gn = new THREE.Vector3();
@@ -96,16 +97,55 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
     ga.crossVectors(gf, gp).normalize();                                          // the curl axis: + closes the hand
     return len;
   }
-  function gripCup(w) {
+  // the cup held up in front of the chest, a little right, as you'd carry a coffee down the street:
+  // the arm reaches there (two-bone IK), the forearm turns so the palm faces the cup, the hand settles,
+  // the fingers and thumb close round it (tools/jibai/fingers.mjs gave the fingers clean weights)
+  const upperR = R('Bip01_R_UpperArm'), foreR = R('Bip01_R_Forearm');
+  const FING = [1, 2, 3, 4].map((k) => [R(`Bip01_R_Finger${k}`), R(`Bip01_R_Finger${k}1`), R(`Bip01_R_Finger${k}2`)]);
+  const THMB = [R('Bip01_R_Finger0'), R('Bip01_R_Finger01'), R('Bip01_R_Finger02')];
+  const CURL = [0.95, 1.0, 0.75], TCURL = [0, 0, 0];   // (the four fingers move as one on the middle finger's bones; the thumb stays: fingers.mjs)
+  const HOLD = { fwd: 0.4, right: 0.0, down: 0.26 };          // where the hand goes, from the eye (m)
+  const gF = new THREE.Vector3(), gR = new THREE.Vector3(), gT = new THREE.Vector3(), gPole = new THREE.Vector3(), gA = new THREE.Vector3(), gB = new THREE.Vector3(), gC = new THREE.Vector3();
+  const fDes = new THREE.Vector3(), nDes = new THREE.Vector3(), _hq = new THREE.Quaternion();
+  function curlChain(chain, angles, w) {
+    chain.forEach((b, i) => {
+      if (!b || !b.children.length) return;
+      frame(); gn.copy(gp);                                                       // (the thumb's base lies under the palm: toward it is the palm's side)
+      b.getWorldPosition(gA); (b.children.find((c) => c.isBone) || b.children[0]).getWorldPosition(gB);
+      gC.subVectors(gB, gA).normalize(); gB.crossVectors(gC, gn);
+      if (gB.lengthSq() < 1e-6) return;
+      turnWorld(b, gB.normalize(), angles[i] * w);
+    });
+  }
+  function gripCup(w, eye, viewYaw) {
     grip.ok = false;
-    if (!rHand || !knuckle || !thumb0 || w <= 0) return;
-    frame();
+    if (!rHand || !knuckle || !thumb0 || !upperR || !foreR || w <= 0) return;
+    gF.set(Math.sin(viewYaw), 0, Math.cos(viewYaw)); gR.crossVectors(gF, UP).normalize();
+    // 1. the arm: the hand to its place (blended in with w), the elbow down and out
+    rHand.getWorldPosition(gh);
+    gT.copy(eye).addScaledVector(gF, HOLD.fwd).addScaledVector(gR, HOLD.right).addScaledVector(UP, -HOLD.down);
+    gT.lerpVectors(gh, gT, w);
+    gPole.copy(UP).multiplyScalar(-1).addScaledVector(gR, 0.7).normalize();
+    twoBone(upperR, foreR, rHand, gT, gPole);
+    // 2. the hand's roll: the palm's side kept toward the cup (the clip already holds it close; a small
+    //    turn of the forearm, never a half-turn, which the skin can't take)
+    fDes.copy(gF).multiplyScalar(0.85).addScaledVector(gR, 0.25).addScaledVector(UP, 0.1).normalize();
+    nDes.copy(gR).addScaledVector(gF, -0.2).normalize();
+    frame(); gn.crossVectors(gf, gp).normalize();
+    foreR.getWorldPosition(gA); rHand.getWorldPosition(gB); gC.subVectors(gB, gA).normalize();   // forearm axis
+    const pn = gA.copy(gn).addScaledVector(gC, -gn.dot(gC)).normalize(), pd = gB.copy(nDes).addScaledVector(gC, -nDes.dot(gC)).normalize();
+    const tw = Math.max(-0.5, Math.min(0.5, Math.atan2(gC.dot(new THREE.Vector3().crossVectors(pn, pd)), pn.dot(pd))));
+    grip.tw = tw;
+    turnWorld(foreR, gC, tw * w);
+    // 3. the hand settles: fingers forward, palm to the cup (a small bend at the wrist now)
+    frame(); _hq.setFromUnitVectors(gf, fDes);
+    { const ax = new THREE.Vector3(_hq.x, _hq.y, _hq.z), s = ax.length(); grip.ha = 2 * Math.atan2(s, _hq.w); if (s > 1e-5) turnWorld(rHand, ax.divideScalar(s), 2 * Math.atan2(s, _hq.w) * w); }
+    // 4. close the hand
+    for (const ch of FING) curlChain(ch, CURL, w);
+    curlChain(THMB, TCURL, w);
+    // the cup in the curl: from the palm's middle out by its radius
     const len = frame();
-    // the fingers stay as they are: this rig's finger weights tear the mesh when they bend, so the cup
-    // rests in the upturned palm, its base on the palm between the wrist and the knuckles
-    // the palm faces the chest (thumb up): out that way by the cup's radius, the fingers round its middle
-    gn.crossVectors(gp, gf).normalize();
-    grip.centre.copy(gh).addScaledVector(gf, len * 0.5).addScaledVector(gn, 0.043).addScaledVector(gp, -0.005);
+    grip.centre.copy(gh).addScaledVector(gf, len * 0.6).addScaledVector(gp, 0.05);
     grip.ok = true;
   }
 
@@ -152,7 +192,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
 
   return {
     root: group, body: root, shadow, mixer, tune,
-    get yaw() { return yaw; },
+    get yaw() { return yaw; }, grip,
     // player: the controller (body, yaw, pitch, stride, speed, forward, lateral, head, stamina)
     // eye: the camera position, read to hang the body from it, and moved when bent over
     update(dt, player, eye = null) {
@@ -226,7 +266,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
         const ex = _v.x - fx * 0.12, ey = _v.y + 0.07, ez = _v.z - fz * 0.12;
         eye.x += (ex - eye.x) * bend; eye.y += (ey - eye.y) * bend; eye.z += (ez - eye.z) * bend;
       }
-      if (want.cup && !want.phone && holdW > 0.05) gripCup(Math.min(1, holdW));
+      if (want.cup && !want.phone && holdW > 0.05) gripCup(Math.min(1, holdW), eye || head.getWorldPosition(new THREE.Vector3()), yaw);
       if (springs) springs.update(dt);                              // the jacket's hem, the trouser legs (tools/cloth/)
       // the shadow copy takes the pose, head and all; then the drawn body loses its head
       shadow.position.copy(root.position); shadow.quaternion.copy(root.quaternion);
@@ -266,7 +306,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0 } = {}) {
       hand.getWorldPosition(_v); const palm = _v.clone();
       if (finger) { finger.getWorldPosition(_v); palm.add(_v).multiplyScalar(0.5); }
       if (props.cup.visible) {                                             // in the curl of the right hand: the cup sits on the palm side (toward the body)
-        if (grip.ok) { group.worldToLocal(props.cup.position.copy(grip.centre)); const gr = props.cup.children[0].userData.grip; props.cup.position.y -= (gr ? gr.position.y : 0.06) * 0.45; }
+        if (grip.ok) { group.worldToLocal(props.cup.position.copy(grip.centre)); const gr = props.cup.children[0].userData.grip; props.cup.position.y -= (gr ? gr.position.y : 0.06) * 0.9; }
         else { props.cup.position.copy(palm); props.cup.position.y -= 0.03; }
         props.cup.rotation.set(0, yaw, 0);
       }

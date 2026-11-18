@@ -26,3 +26,11 @@ height (173 cm): `NAME=GuNian PALMMAX=12 ADDUCT=0 SHOULDER=0 node rig.mjs c4.glb
 has shoulder pads, so the skeleton keeps its own shoulders and the arms aren't drawn in; her small hands give an unreliable
 palm direction, so its turn is capped. Then `tools/cloth/cloth.mjs gunian.glb gunian.glb gunian`. In people.json she is
 `"named": true`, so the crowds never wear her.
+
+## Fingers (`fingers.mjs`)
+
+`node fingers.mjs player.glb player.glb` (run after `rig.mjs`, before or after `cloth.mjs`): the transferred finger
+weights bound each of his fingers partly to its neighbours' bones (the Rocketbox fingers lie elsewhere), so any finger
+pose tore the hand. The fitted finger bones don't sit inside his modelled fingers either, so the four fingers are bound
+as one, in bands past the knuckle line on the middle finger's bones, and the thumb rides with the hand. First person
+(`world/playerBody.js` gripCup) closes the hand round a cup with the middle finger's chain.

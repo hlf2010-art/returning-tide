@@ -1308,7 +1308,7 @@ function lateNight() {
 debug.setHour = (h, m = 0) => {   // (tools: load with ?hour= or ?tod so the hour isn't pinned)
   life.clock.minute = h * 60 + m; life.clock.sec = 0; applyHour(0, { force: true }); };
 debug.hour = () => hourState;
-debug.worldMap = () => worldMap; debug.setWaypoint = (w) => { waypoint = w; }; debug.getWaypoint = () => waypoint;
+debug.mapState = () => mapState; debug.worldMap = () => worldMap; debug.setWaypoint = (w) => { waypoint = w; }; debug.getWaypoint = () => waypoint;
 debug.envInfo = () => ({ envAt, envWait, uuid: scene.environment && scene.environment.uuid, captures: envCaptures });
 
 let lastDraw = 0;

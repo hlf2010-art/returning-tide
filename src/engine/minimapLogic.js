@@ -18,7 +18,7 @@ export function updateMinimap(s, dt, { mode = 'play', moving = false, objective 
   const want = mode === 'play';
   // a short hysteresis so a step's pause doesn't make it flicker
   s.since += dt;
-  if (want !== s.shown && (s.since > MAP.settle || mode !== 'play' || held)) { s.shown = want; s.since = 0; }
+  if (want !== s.shown) { s.shown = want; s.since = 0; }                   // at once, either way (it only changes with the mode)
   return s;
 }
 
