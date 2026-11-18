@@ -44,7 +44,8 @@ export function metroMaterials() {
     rubber: std({ color: 0x141516, roughness: 0.5 }),
     glass: std({ color: 0xc4d8dc, metalness: 0.1, roughness: 0.04, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }),
     psdGlass: std({ color: 0xbcd2d6, metalness: 0.1, roughness: 0.04, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }),
-    psdBand: std({ color: 0xf2f2ee, roughness: 0.4, metalness: 0.05 }),   // the white band over the screen doors
+    psdBand: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.18, 1.18, 1.18) }),   // the white band over the screen doors: lit from within, as on Line 2
+    psdStripe: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.42, 0.78, 0.14) }),   // its green stripe, end to end
     flap: std({ color: 0xa8c8d8, metalness: 0.2, roughness: 0.1, transparent: true, opacity: 0.55, side: THREE.DoubleSide }),
     trackbed: std({ color: 0x3a3b3c, roughness: 0.95 }),
     sleeper: std({ color: 0x77777a, roughness: 0.9 }),
@@ -271,13 +272,14 @@ export function buildStation(root, S, m) {
   // the screen doors: posts, fixed glass between doorways, headers; the sliding doors (instanced, moved by metro.js)
   const psd = { doors: [] };
   for (const s of [-1, 1]) {
-    const pz = s * PLAT.psd, hdr = signMat(psdHeaderTex(s > 0 ? 1 : -1, null, [S.name.zh, S.name.en], NEXT_STOP[S.id][s > 0 ? 1 : -1]), 1.1);
+    const pz = s * PLAT.psd, hdr = signMat(psdHeaderTex(s > 0 ? 1 : -1, null, [S.name.zh, S.name.en], NEXT_STOP[S.id][s > 0 ? 1 : -1]), 1.18);
     const openings = DOOR_AS.map((a) => [a - 1.0, a + 1.0]);
     let a = A0 + 2;
     for (const [o0, o1] of openings) { if (o0 > a) { box('psdGlass', a, o0, yP, yP + 2.45, pz - 0.015, pz + 0.015); } box('steel', o0 - 0.06, o0, yP, yP + 2.45, pz - 0.08, pz + 0.08); box('steel', o1, o1 + 0.06, yP, yP + 2.45, pz - 0.08, pz + 0.08); a = o1; }
     box('psdGlass', a, A1 - 2, yP, yP + 2.45, pz - 0.015, pz + 0.015);
-    box('psdBand', A0 + 2, A1 - 2, yP + 2.45, yPc, pz - 0.18, pz + 0.18);   // (white, up to the ceiling, as on Line 2: the photos) box('steel', A0 + 2, A1 - 2, yP, yP + 0.06, pz - 0.1, pz + 0.1);
-    for (let i = 0; i < DOOR_AS.length; i += 1) pic(hdr, DOOR_AS[i], yP + 2.8, pz - s * 0.19, 2.4, 0.3, 0, -s);
+    box('psdBand', A0 + 2, A1 - 2, yP + 2.45, yPc, pz - 0.18, pz + 0.18);   // (white, up to the ceiling, as on Line 2: the photos)
+    box('psdStripe', A0 + 2, A1 - 2, yP + 2.47, yP + 2.55, pz - s * 0.185, pz - s * 0.2);   // the green stripe along its foot box('steel', A0 + 2, A1 - 2, yP, yP + 0.06, pz - 0.1, pz + 0.1);
+    for (let i = 0; i < DOOR_AS.length; i += 1) pic(hdr, DOOR_AS[i], yP + 2.93, pz - s * 0.205, 4.2, 0.52, 0, -s);   // (the band's own lettering: no edge of its own)
     DOOR_AS.forEach((da, i) => psd.doors.push({ a: da, s, i }));
   }
   const psdGeo = new THREE.BoxGeometry(1.0, 2.38, 0.03);

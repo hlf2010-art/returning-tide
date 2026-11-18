@@ -144,8 +144,7 @@ export function psdHeaderTex(dir, n = 1, here = null, next = null) {
   // as over Line 2's screen doors (the photos): a white band, a green stripe along its foot, the way the
   // trains go with an arrow, and the next stop large; this stop small beside it
   const [c, x] = makeCanvas(1024, 128);
-  x.fillStyle = '#f6f6f3'; x.fillRect(0, 0, 1024, 128);
-  x.fillStyle = L2; x.fillRect(0, 112, 1024, 16);
+  x.fillStyle = '#ffffff'; x.fillRect(0, 0, 1024, 128);
   badge(x, 14, 22, 70);
   const [zh, en] = TERMINUS[dir];
   x.fillStyle = '#1d1f22'; x.textAlign = 'left'; x.textBaseline = 'middle'; x.font = `800 44px ${FONT.sans}`; x.fillText(`往${zh}`, 100, 46, 250); x.font = `500 20px ${FONT.sans}`; x.fillStyle = '#444'; x.fillText(`To ${en}`, 102, 88, 250);
