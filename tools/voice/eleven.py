@@ -62,8 +62,8 @@ DIRECTION = {
     '发了。小猫贴纸的点赞比我的脸还多，我有点受伤😂': ('[laughs]', '[mock-hurt]', None),
     '来啦。准时，难得。': ('[teasing]', None, None),
     '你还是这样，看东西先看毛病。': ('[sighs] [with a wry laugh]', None, None),
-    '嗯。你妈让你按时吃饭。挂了。': ('[gruffly]', '[abruptly]', '[pause]'),
-    '……你自己的事，你自己想清楚。钱够不够？': ('[sighs]', '[pause] [gruff, awkward concern]', None),
+    '嗯。你妈让你按时吃饭。挂了。': ('[calm, steady, even pace]', None, '[short pause]'),
+    '……你自己的事，你自己想清楚。钱够不够？': ('[calm, steady, even pace]', '[short pause]', None),
     '白白，妈妈看到你朋友圈了，那个车……你爸还不知道。你自己注意安全，按时吃饭。': ('[worried, hushed]', '[gently]', None),
     '十一月就这样，白天看着还暖和，一过五点天就暗下来了。': ('[chatty, unhurried]', None, None),
     '对岸东方明珠刚才亮灯那一下，江面上全倒映出来了。': ('[delighted]', None, None),
@@ -71,6 +71,8 @@ DIRECTION = {
     '我们的机械臂末端正好缺一双眼睛。': ('[eyes lighting up]', None, None),
     '怎么样？在外滩开这台车，整条路的人都在看您。': ('[warm salesy enthusiasm]', None, None),
 }
+# how steady each voice is (ElevenLabs stability: higher = calmer, more even); the rest 0.35
+STABILITY = {'dad': 0.7}
 DIRECTION_WHO = {'xuan': ('[warm, hearty]', None, None), 'zhixia': ('[rapid-fire, excited]', '[pleading, playful]', None)}
 
 
@@ -111,9 +113,9 @@ def spoken(text):
     return re.sub('[\U0001F300-\U0001FAFF☀-➿]', '', t).strip()
 
 
-def tts(voice, text):
+def tts(voice, text, stability=0.35):
     req = urllib.request.Request(f'https://api.elevenlabs.io/v1/text-to-speech/{voice}?output_format=mp3_44100_128',
-                                 data=json.dumps({'text': text, 'model_id': MODEL, 'voice_settings': {'stability': 0.35, 'similarity_boost': 0.8}}).encode(), headers={'Content-Type': 'application/json'})
+                                 data=json.dumps({'text': text, 'model_id': MODEL, 'voice_settings': {'stability': stability, 'similarity_boost': 0.8}}).encode(), headers={'Content-Type': 'application/json'})
     return urllib.request.urlopen(req, timeout=180).read()
 
 
@@ -132,6 +134,9 @@ def main():
             print('not found / no voice:', p)
     chars = sum(len(spoken(l['zh'])) + len(spoken(l['en'])) for l in picked)
     print(f'{len(picked)} lines, {len(picked) * 2} clips, {chars} characters')
+    only = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--only=')), None)   # --only=dad: just his lines
+    if only:
+        picked = [l for l in picked if l['who'] in only.split(',')]
     if '--dry' in sys.argv:
         for l in picked:
             print(f"  {l['who']:8} {directed(l, 'zh')}\n           {directed(l, 'en')}")
@@ -143,7 +148,7 @@ def main():
         for lang in ('zh', 'en'):
             text = l[lang]
             key = voice_key(lang, text)
-            data = tts(VOICES[l['who']], directed(l, lang))
+            data = tts(VOICES[l['who']], directed(l, lang), STABILITY.get(l['who'], 0.35))
             with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as t:
                 t.write(data)
             f = OUT / f'{key}.mp3'
