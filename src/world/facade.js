@@ -115,12 +115,17 @@ export function skylineGlass(m, dayColor = [0.46, 0.53, 0.6], f0 = 0.2) {
       { float l = clamp(dot(diffuseColor.rgb, vec3(0.3, 0.55, 0.15)), 0.0, 1.0);
         vec3 V = normalize(vFW - cameraPosition), N = dot(vFN, vFN) > 1e-4 ? normalize(vFN) : -V, R = reflect(V, N);   // (no normals: seen straight on)
         float F = fF0 + (1.0 - fF0) * pow(1.0 - clamp(dot(-V, N), 0.0, 1.0), 5.0);
-        vec3 tint = todGlass * todAmb * (0.62 + 0.6 * l);
-        vec3 refl = fCity(R, fSky(R)) * mix(vec3(1.0), todGlass * 1.9, 0.5);
-        vec3 day = abs(N.y) > 0.6 ? tint * 0.8 : mix(tint, refl, F);
+        // by day: the glass's own colour, deeper and more saturated than a grey haze, the window grid kept,
+        // the sunny side lit and the far side in shade, then the sky in it at a glancing angle
+        float g = dot(todGlass, vec3(0.33));
+        vec3 deep = mix(vec3(g), todGlass, 1.4);
+        float sunlit = 0.62 + 0.75 * max(dot(N, normalize(skSun)), 0.0);
+        vec3 tint = deep * todAmb * (0.42 + 0.95 * l) * sunlit;
+        vec3 refl = fCity(R, fSky(R)) * mix(vec3(1.0), deep * 1.9, 0.55);
+        vec3 day = abs(N.y) > 0.6 ? tint * 0.8 : mix(tint, refl, clamp(F * 1.25, 0.0, 1.0));
         diffuseColor.rgb = mix(diffuseColor.rgb * mix(0.35, 1.0, todWin) + refl * F * 0.5 * skGlow * (1.0 - todDay), day, todDay); }`);
   };
-  m.customProgramCacheKey = () => 'skyline-glass-v3';
+  m.customProgramCacheKey = () => 'skyline-glass-v4';
   m.needsUpdate = true;
   return m;
 }

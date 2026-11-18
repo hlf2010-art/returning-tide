@@ -543,8 +543,9 @@ export function createSkyline() {
   group.traverse((o) => { o.layers.enable(REFLECT_LAYER); o.matrixAutoUpdate = false; o.updateMatrix(); });
   // by day: the window atlases become hazy glass (each tower its own tint), the lit trims and names
   // dull fixtures, the far bank's lamps and the aircraft lights off; the LED walls are their own
-  const DAY_GLASS = { 'towers-a': [0.34, 0.42, 0.5], 'towers-b': [0.43, 0.42, 0.41], 'towers-gold': [0.46, 0.43, 0.37], 'towers-white': [0.5, 0.56, 0.62],
-    'towers-violet': [0.36, 0.38, 0.47], 'towers-green': [0.34, 0.43, 0.41], jinmao: [0.38, 0.39, 0.42], 'swfc-top': [0.46, 0.53, 0.6], globes: [0.62, 0.66, 0.72], shore: [0.3, 0.31, 0.29] };
+  // (a sunny day: blue-green and bronze glass, steel-grey Jin Mao, white stone, not one pale grey)
+  const DAY_GLASS = { 'towers-a': [0.24, 0.38, 0.52], 'towers-b': [0.42, 0.36, 0.3], 'towers-gold': [0.5, 0.42, 0.28], 'towers-white': [0.56, 0.6, 0.64],
+    'towers-violet': [0.3, 0.34, 0.5], 'towers-green': [0.24, 0.42, 0.38], jinmao: [0.34, 0.36, 0.4], 'swfc-top': [0.36, 0.48, 0.6], globes: [0.62, 0.66, 0.72], shore: [0.26, 0.3, 0.24] };
   asLight(led.material, 'media', 0.12);
   group.traverse((o) => {
     if (!o.material || o.material.userData.tod) return;
