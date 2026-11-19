@@ -53,33 +53,19 @@ def flex(b, a):
     pb[b].rotation_mode = 'QUATERNION'; pb[b].rotation_quaternion = Quaternion(la, a)
 
 # ---- the cup: its axis along the bend axis, its wall on the palm's face ----
-# ---- where the cup goes: curl the fingers in a natural proportion, fit a circle (in the plane across the bend axis)
-# through the palm's face by the knuckles and the middle finger's three segments, and take the curl at which that
-# circle is the cup plus half a finger; its centre is the cup's axis ----
-def seg_c(b):
-    pts = skin_points([b]); return sum(pts, Vector()) / max(1, len(pts))
-near_k = [p for p in palm_pts if (p - hand).dot(f_dir) > 0.4 * (knuck - hand).length] or palm_pts
-face_k = sorted(near_k, key=lambda p: (p - pc).dot(palm_n))[-max(6, len(near_k) // 5):]
-def ring(t):
-    for f in ('index', 'middle', 'ring', 'pinky'):
-        for j_, b in enumerate(FING[f]): flex(b, t * (1.0, 1.2, 0.8)[j_])
-    P = [sum(face_k, Vector()) / len(face_k)] + [seg_c(b) for b in FING['middle']]
-    xs = [((q - pc).dot(f_dir), (q - pc).dot(palm_n)) for q in P]
-    # least-squares circle (Kasa)
-    A = np.array([[x, y, 1.0] for x, y in xs]); bb = np.array([x * x + y * y for x, y in xs])
-    sol, *_ = np.linalg.lstsq(A, bb, rcond=None); cx, cy = sol[0] / 2, sol[1] / 2; r = math.sqrt(max(0.0, sol[2] + cx * cx + cy * cy))
-    return cx, cy, r
-target = CUP_R + 0.009
-best = None
-for k in range(15, 34):                                          # (real grasps only: a near-straight finger fits any circle)
-    t = k * 0.04; cx, cy, r = ring(t)
-    if best is None or abs(r - target) < abs(best[3] - target): best = (t, cx, cy, r)
-t_ring, cx, cy, r_ring = best
-print('ring: curl', round(t_ring, 2), 'radius', round(r_ring, 4))
-along_axis = (seg_c('middle_01_r') - pc).dot(axis)
-centre = pc + f_dir * cx + palm_n * cy + axis * along_axis
-for f in ('index', 'middle', 'ring', 'pinky', 'thumb'):
-    for b in FING[f]: flex(b, 0.0)
+# ---- where the cup goes, as an animator puts it: its axis along the knuckle line (index to little finger), its
+# wall just off the palm's side of the knuckles; the fingers then close onto it ----
+k_index, k_pinky = bone_head('index_01_r'), bone_head('pinky_01_r')
+axis = (k_pinky - k_index).normalized()
+f_dir = (f_dir - axis * f_dir.dot(axis)).normalized()
+palm_n = axis.cross(f_dir).normalized()
+# the palm's side: where the resting fingertips already lean
+lean = tip('middle_03_r') - bone_head('middle_01_r') if 'tip' in globals() else None
+bpy.context.view_layer.update(); t_mid = arm.matrix_world @ pb['middle_03_r'].tail
+if (t_mid - knuck).dot(palm_n) < 0: palm_n = -palm_n
+klm = (k_index + k_pinky) / 2
+centre = klm + palm_n * (CUP_R + float(next((a.split('=')[1] for a in args if a.startswith('--off=')), '0.02'))) + f_dir * float(next((a.split('=')[1] for a in args if a.startswith('--ahead=')), '0.0'))
+print('cup centre from knuckles: n', round((centre - klm).dot(palm_n), 3), 'f', round((centre - klm).dot(f_dir), 3))
 def dist_axis(p): v = p - centre; return (v - axis * v.dot(axis)).length
 def touches(bones, skip=frozenset()):
     return min((dist_axis(p) for k, p in enumerate(skin_points(bones)) if k not in skip), default=1) < CUP_R + SKIN
