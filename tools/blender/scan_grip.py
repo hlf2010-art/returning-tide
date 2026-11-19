@@ -13,7 +13,8 @@ arm, body = bpy.data.objects['Bip01'], bpy.data.objects['hand']; pb = arm.pose.b
 B = lambda n: arm.data.bones[n]
 # the model's units: wrist to middle fingertip is about 19 cm on a man's hand
 U = (B('Bip01_R_Hand').head_local - B('Bip01_R_Finger22').tail_local).length / 0.19
-CUP_R, SKIN = 0.041 * U, 0.0025 * U
+CUP_K = float(next((a.split('=')[1] for a in (sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]) if a.startswith('--cupk=')), '1.0'))
+CUP_R, SKIN = 0.041 * U * CUP_K, 0.0015 * U
 palm_n = Vector((-1, 0, 0))
 def flex(name, a):
     bone = B(name); d = (bone.tail_local - bone.head_local).normalized()
@@ -33,7 +34,12 @@ f_dir = (B('Bip01_R_Finger2').head_local - B('Bip01_R_Hand').head_local); f_dir 
 n = (palm_n - axis * palm_n.dot(axis) - f_dir * palm_n.dot(f_dir)).normalized()
 klm = (k_index + k_pinky) / 2
 centre = klm + n * (CUP_R + opt('off', 0.006) * U) + f_dir * opt('ahead', 0.035) * U
-def dist_axis(p): v = p - centre; return (v - axis * v.dot(axis)).length
+def dist_axis(p):
+    # the distance from the cup's axis, for points level with the cup (it is 8.4 cm tall, gripped 3.6 cm up): the
+    # thumb and wrist beyond its ends don't count
+    v = p - centre; h = v.dot(axis)
+    if h < -0.036 * U * CUP_K or h > 0.052 * U * CUP_K: return 9e9
+    return (v - axis * h).length
 def touches(bones, skip=frozenset()):
     return min((dist_axis(p) for k, p in enumerate(skin_points(bones)) if k not in skip), default=9) < CUP_R + SKIN
 def near_now(bones): return frozenset(k for k, p in enumerate(skin_points(bones)) if dist_axis(p) < CUP_R + SKIN + 0.003 * U)
@@ -74,12 +80,41 @@ if '--arc' in args:
         L = [seglen(b) for b in FING[i]]
         for j, b in enumerate(FING[i]):
             a_ = (L[j] / 2 + (L[j - 1] / 2 if j else 0.0)) / R
+            a_ += OPEN[j]                                                            # (from straight: the scan rests half curled)
             flex(b, a_); angles[b] = round(a_, 2)
     tv = [float(v) for v in next((a_ for a_ in args if a_.startswith('--thumb=')), '--thumb=0.5,0.6,0.5').split('=')[1].split(',')]
     for j, b in enumerate(FING[0]): flex(b, tv[j]); angles[b] = tv[j]
     kn = B('Bip01_R_Finger2').head_local
     centre = kn + n * R + axis * axis.dot((k_index + k_pinky) / 2 - kn)
     print('arc grasp: R (cm)', round(R / U * 100, 2))
+    # no finger through the cup: each finger opens (all its joints together) just until its skin is outside the wall;
+    # one that doesn't reach closes until it touches. The cup stays where the arc puts it
+    # first the cup's place: with the fingers' first segments only lightly bent, out along the palm normal until the
+    # finger roots and palm clear its wall (it rests against them), then each finger closes onto it
+    allf = [b for i in (1, 2, 3, 4) for b in FING[i]]
+    keep = {b: angles[b] for b in allf}
+    for i in (1, 2, 3, 4):
+        for j, b in enumerate(FING[i]): flex(b, OPEN[j])                          # (straight: the cup rests on the palm side of the knuckles)
+    roots = [FING[i][0] for i in (1, 2, 3, 4)]
+    for _ in range(15):
+        d = min(dist_axis(p) for p in skin_points(roots))                       # (the finger roots: the thumb's pad sits round the cup's other side)
+        if d >= CUP_R: break
+        centre = centre + n * (CUP_R + 0.0008 * U - d)
+    print('cup set against the finger roots: moved out (cm)', round((centre - kn).dot(n) / U * 100, 2))
+    for b in allf: flex(b, keep[b])
+    for i in (1, 2, 3, 4):
+        base = [angles[b] for b in FING[i]]
+        def setk(k):
+            for j_, (b, a0) in enumerate(zip(FING[i], base)): flex(b, OPEN[j_] + (a0 - OPEN[j_]) * k)
+        gap = lambda: min(dist_axis(p) for p in skin_points(FING[i])) - CUP_R + 0.003 * U        # (skin gives a little where it presses: 3 mm)
+        k = 1.0
+        if gap() < 0:
+            while k > 0.0 and gap() < 0: k -= 0.03; setk(k)
+        else:
+            while k < 1.8 and gap() > 0.001 * U: k += 0.03; setk(k)
+            if gap() < 0: k -= 0.03; setk(k)
+        for j_, (b, a0) in enumerate(zip(FING[i], base)): angles[b] = round(OPEN[j_] + (a0 - OPEN[j_]) * k, 2)
+        print('finger', i, 'scale', round(k, 2), 'gap (mm)', round(gap() / U * 1000, 1))
 print('angles', angles)
 # ---- the cup goes where the posed fingers' ring is: a circle (across the cup's axis) through the inner faces of the
 # middle finger's three segments and the palm under its knuckle; its centre is the cup's axis ----
@@ -119,7 +154,7 @@ if '--fit' in args:
 # ---- the cup itself, for the renders and the socket ----
 bm = bmesh.new(); seg = 48; s = U
 prof = [(0.0, 0.0), (0.030, 0.0), (0.040, 0.004), (0.0425, 0.078), (0.0448, 0.0838), (0.048, 0.0838), (0.048, 0.090), (0.0, 0.092)]
-rings = [[bm.verts.new((r * s * math.cos(2 * math.pi * k / seg), r * s * math.sin(2 * math.pi * k / seg), y * s)) for r, y in prof] for k in range(seg)]
+rings = [[bm.verts.new((r * s * CUP_K * math.cos(2 * math.pi * k / seg), r * s * CUP_K * math.sin(2 * math.pi * k / seg), y * s * CUP_K)) for r, y in prof] for k in range(seg)]
 for k in range(seg):
     A, Bk = rings[k], rings[(k + 1) % seg]
     for q in range(len(prof) - 1): bm.faces.new((A[q], Bk[q], Bk[q + 1], A[q + 1]))
@@ -128,7 +163,7 @@ for p in cm.polygons: p.use_smooth = True
 cup = bpy.data.objects.new('cup', cm); bpy.context.collection.objects.link(cup)
 cmat = bpy.data.materials.new('paper'); cmat.use_nodes = True; cmat.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (0.93, 0.93, 0.91, 1); cm.materials.append(cmat)
 up = axis
-cup.matrix_world = Matrix.Translation(centre - up * 0.036 * U) @ Vector((0, 0, 1)).rotation_difference(up).to_matrix().to_4x4()
+cup.matrix_world = Matrix.Translation(centre - up * 0.036 * U * CUP_K) @ Vector((0, 0, 1)).rotation_difference(up).to_matrix().to_4x4()
 bpy.context.view_layer.update()
 hb = arm.matrix_world @ pb['Bip01_R_Hand'].matrix
 open(os.path.join(OUT, 'socket.txt'), 'w').write(repr({'socket': [list(r) for r in hb.inverted() @ cup.matrix_world], 'units': U, 'angles': angles}))
