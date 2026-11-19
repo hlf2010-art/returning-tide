@@ -1,3 +1,4 @@
+import './polyfills.js';   // older Safari: must stay the first import
 import '@fontsource/noto-serif-sc/500.css';
 import { roleSex } from './engine/streetPeople.js';
 import '@fontsource/noto-serif-sc/900.css';

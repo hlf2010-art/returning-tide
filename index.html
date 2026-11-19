@@ -148,6 +148,25 @@
   <div id="ride-interlude"><div class="streaks"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
   <div id="ride-sub"><div class="sp"></div><div class="tx"></div><div class="ch hidden"></div></div>
   <div id="ride-card"><div class="kicker"><span class="neon"></span><span data-t="rideArrived"></span></div><div class="place"></div><div class="line"></div><div class="fare"></div><div class="back"></div><button class="mbtn primary go"></button></div>
+  <script>
+    // If this browser can't run the game (no WebGL2, or JavaScript too old), say so instead of a blank page.
+    (function () {
+      var shown = false;
+      function tell(why) {
+        if (shown) return; shown = true;
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0b0f1a;color:#e8e2d4;font:16px/1.6 -apple-system,system-ui,sans-serif;padding:24px;text-align:center';
+        d.innerHTML = '<div style="max-width:520px"><div style="font-size:26px;margin-bottom:12px">回潮 Returning Tide</div>' +
+          '<p>这个浏览器打不开游戏（' + why + '）。请更新 Safari（macOS 系统更新），或改用 Chrome / Edge。</p>' +
+          '<p style="opacity:.8">This browser can\'t run the game (' + why + '). Please update Safari (through a macOS update), or use Chrome or Edge.</p></div>';
+        document.body.appendChild(d);
+      }
+      var c = document.createElement('canvas'), gl = null;
+      try { gl = c.getContext('webgl2'); } catch (e) {}
+      if (!gl) document.addEventListener('DOMContentLoaded', function () { tell('no WebGL2'); });
+      window.addEventListener('error', function (e) { if (e && e.error instanceof SyntaxError || /SyntaxError|Unexpected/.test(e && e.message || '')) tell('JavaScript too old'); });
+    })();
+  </script>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

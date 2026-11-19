@@ -13,5 +13,5 @@ const woff2Only = {
 
 export default defineConfig({
   plugins: [woff2Only],
-  build: { chunkSizeWarningLimit: 1200 },
+  build: { chunkSizeWarningLimit: 1200, target: ['es2020', 'safari14'] },   // older Safari (macOS Big Sur) too
 });
