@@ -14,6 +14,37 @@ import { createSprings } from './springs.js';
 const ARM = (side) => new RegExp(`^Bip01_${side}_(Clavicle|UpperArm|Forearm|Hand|Finger)`);
 const boneOf = (track) => track.name.slice(0, track.name.lastIndexOf('.'));
 
+// The converter kept every material group of an avatar as its own glTF primitive, and the loader
+// makes each one a separate SkinnedMesh with its own copy of the skeleton: 7-20 draw calls a person
+// where 2-4 would do. Merge the pieces that share a material (and a parent and bones) into one mesh;
+// the picture is the same (docs/living-city-architecture.md §6.1, item 0.1). Returns how many went.
+export function mergeByMaterial(root) {
+  const groups = new Map();
+  root.traverse((o) => {
+    if (!o.isSkinnedMesh || !o.geometry.index || o.geometry.morphAttributes.position) return;
+    const key = `${o.parent.uuid}|${o.material.uuid}|${o.skeleton.bones.map((b) => b.uuid).join(',')}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(o);
+  });
+  let removed = 0;
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const first = list[0], names = Object.keys(first.geometry.attributes);
+    const sameAttrs = list.every((m) => names.every((n) => m.geometry.attributes[n] === first.geometry.attributes[n]) && Object.keys(m.geometry.attributes).length === names.length);
+    const sameBind = list.every((m) => m.bindMatrix.equals(first.bindMatrix) && m.matrix.equals(first.matrix));
+    if (!sameAttrs || !sameBind) continue;                   // (pieces with their own vertices stay as they are)
+    const idx = [];
+    for (const m of list) { const ix = m.geometry.index.array, { start, count } = m.geometry.drawRange, end = Math.min(ix.length, start + (Number.isFinite(count) ? count : ix.length)); for (let i = start; i < end; i++) idx.push(ix[i]); }
+    const g = new THREE.BufferGeometry();
+    for (const n of names) g.setAttribute(n, first.geometry.attributes[n]);
+    g.setIndex(idx);
+    g.computeBoundingBox(); g.computeBoundingSphere();
+    first.geometry = g; first.name = first.material.name || first.name;
+    for (const m of list.slice(1)) { m.parent.remove(m); removed++; }
+  }
+  return removed;
+}
+
 export async function loadPeople(base = './people/') {
   const res = await fetch(`${base}people.json`);
   if (!res.ok) throw new Error(`people manifest: ${res.status}`);
@@ -23,6 +54,7 @@ export async function loadPeople(base = './people/') {
   await Promise.all([
     ...Object.entries(manifest.cast).map(async ([role, c]) => {
       avatars[role] = (await loader.loadAsync(base + c.file)).scene;
+      mergeByMaterial(avatars[role]);
       // the children's rig is the same Biped, named Bip02: rename it so the shared clips bind to it
       if (c.child) avatars[role].traverse((o) => { if (o.name.startsWith('Bip02')) o.name = o.name.replace('Bip02', 'Bip01'); });
     }),
@@ -62,12 +94,43 @@ function childClips(people, role) {
   return (cache[role] = { clips, speeds, k });
 }
 
+// Every person made by createPerson, for cullPeople(): beyond PERSON_FAR they aren't drawn at all,
+// and only those within PERSON_SHADOW cast a shadow (docs/living-city-architecture.md §6.1, 0.3-0.4).
+export const PERSON_FAR = 120, PERSON_SHADOW = 30;   // (the spec says 18 m; 30 keeps daytime shadows on people across a street)
+const LIVE = new Set(), _pp = new THREE.Vector3();
+export function cullPeople(eye) {
+  for (const P of LIVE) {
+    if (!P.root.parent) { if ((P.gone = (P.gone || 0) + 1) > 1800) LIVE.delete(P); continue; }   // (a minute detached: let it go)
+    P.gone = 0;
+    P.root.getWorldPosition(_pp);
+    const d = _pp.distanceTo(eye), near = d < PERSON_FAR, shade = d < PERSON_SHADOW;
+    for (const m of P.meshes) {
+      if (m.userData.cs === undefined) { m.userData.cs = m.castShadow; m.userData.v0 = m.visible; }   // what its owner asked for
+      m.visible = m.userData.v0 && near;
+      m.castShadow = m.userData.cs && shade;
+    }
+  }
+}
+export const livePeople = () => LIVE.size;
+
 export function createPerson(people, role) {
   const cast = people.manifest.cast[role], sex = cast.sex, kid = cast.child ? childClips(people, role) : null;
   const speeds = kid ? kid.speeds : people.manifest.clips[sex].speeds, CLIPS = kid ? kid.clips : people.clips[sex];
   const root = SkeletonUtils.clone(people.avatars[role]);
   root.scale.setScalar(0.01);                                         // centimetres -> metres
-  root.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; } });   // skinned bounds don't follow the pose
+  // Skinned bounds don't follow the pose, so each body gets a fixed sphere round its bind pose, half
+  // as big again (raised arms, a seat, a stride): off-screen people are skipped like anything else,
+  // in the shadow pass too. Distance and shadows are decided once a frame in cullPeople().
+  const meshes = [];
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    if (o.isSkinnedMesh) {
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      o.boundingSphere = o.geometry.boundingSphere.clone(); o.boundingSphere.radius *= 1.5;
+      o.frustumCulled = true;
+    } else o.frustumCulled = false;
+    meshes.push(o);
+  });
   const mixer = new THREE.AnimationMixer(root);
   const springs = createSprings(root);                                   // skirts, hair, hems that swing (tools/cloth/)
   const hand = people.umbrellaHand[sex], armRe = ARM(hand);
@@ -113,7 +176,7 @@ export function createPerson(people, role) {
   const phoneClip = CLIPS.find((c) => c.name === 'phone');
   const phoneLayer = phoneClip ? mixer.clipAction(new THREE.AnimationClip('phone:hold', phoneClip.duration, phoneClip.tracks.filter((t) => PHONE_LAYER.test(boneOf(t))))) : null;
   if (phoneLayer) { phoneLayer.play(); phoneLayer.setEffectiveWeight(0); phoneLayer.time = phoneClip.duration * (0.15 + Math.random() * 0.6); }
-  return {
+  const person = {
     springs,
     root, mixer, role, sex, speeds, anchors, bones, umbrellaHand: hand, child: !!kid, size: kid ? kid.k : 1,
     // the actions themselves (base: whole body but the umbrella arm; arm: that arm), for posing a
@@ -182,4 +245,6 @@ export function createPerson(people, role) {
       return umbrellaW;
     },
   };
+  LIVE.add({ root, meshes });
+  return person;
 }

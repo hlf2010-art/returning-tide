@@ -71,7 +71,7 @@ import { startFlinch } from './engine/flinch.js';
 import { createVehicles } from './world/vehicles.js';
 import { createSignals } from './world/signals.js';
 import { createPedestrians } from './world/pedestrians.js';
-import { loadPeople } from './world/people.js';
+import { loadPeople, cullPeople } from './world/people.js';
 import { createRealNpcs } from './world/npcsReal.js';
 import { createRealPedestrians } from './world/pedestriansReal.js';
 import { createPlayerBody } from './world/playerBody.js';
@@ -1678,6 +1678,7 @@ function frame(now) {
     hud.toast(tx(player.body.x < L.facadeX - 20 ? 'hoarding' : 'barriers'), 3);
   }
 
+  cullPeople(camera.position);   // people far away aren't drawn; only those near cast shadows (world/people.js)
   if (!debug.noReflect) world.river.renderReflection(R.renderer, scene, camera);
   R.renderer.info.reset();
   R.renderer.shadowMap.needsUpdate = true;
