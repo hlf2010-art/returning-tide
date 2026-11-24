@@ -19,6 +19,10 @@ and **export** a slot to a file (keep it safe, or move it to another computer) a
 average frame rate and the 1% low. Try the presets (Mac M4 on a Mac mini M4; High or Ultra on an RTX
 4080 SUPER) and keep the one that holds a steady frame rate.
 
+For the hero-shot benchmark (four fixed views of the Bund and Nanjing Road), open
+http://localhost:8000/?bench and click **Start the benchmark**. After about a minute and a half the result
+appears on screen: **Copy the result** and send the text back. Nothing is saved to your game while it runs.
+
 ## Optional: free conversation with a local AI (T to talk)
 - Install Ollama (https://ollama.com), run `ollama pull qwen2.5:7b` once, and leave Ollama running.
 - The game finds it the first time you talk to someone (Settings → Free conversation AI → Local server).

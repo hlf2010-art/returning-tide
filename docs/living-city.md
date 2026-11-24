@@ -1,0 +1,147 @@
+# A living city: the benchmark
+
+The goal of the larger effort is a Bund that feels alive when it is put side by side with real footage of the same streets. This page fixes what is compared: four hero shots, the numbers measured in each, today's baseline, and provisional targets with where they come from.
+
+## The hero shots
+
+Each shot is a fixed camera at a fixed hour, at a person's eye height (1.68 m above the ground there), the way handheld footage is shot. They are defined once, in `src/engine/bench.js` (`HERO_SHOTS`), and used by the tool, the in-game benchmark and the tests.
+
+| id | Place | Hour | Camera (x, y, z) | Looking at | What is in frame |
+|---|---|---|---|---|---|
+| `nanjing` | Nanjing Road East near Henan Road (`NJ` in `src/world/layout.js`) | 18:00 | -478, 1.83, -198.5 | -380, 6.5, -201.5 | The pedestrian street just east of the Henan Road crossing and metro Exit 7, looking east along the shopfronts and neon |
+| `customs` | The promenade at the Customs House | 17:45 | 21, 4.68, 2 | -36, 13, 34 | The promenade deck in the foreground; across the road, the Customs House with its clock tower and the HSBC dome, floodlit |
+| `hankou` | The Hankou Road crossing | 18:15 | 0.4, 1.83, 3.5 | -40, 3, -0.5 | From the foot of the promenade stair, across the zebra on Zhongshan East 1st Road and into Hankou Road |
+| `morning` | The Bund at 8 am | 08:00 | 21, 4.68, -38 | -24, 12, -160 | North along the promenade in morning light: joggers, the tai chi group (until 8:15), the northern Bund's façades |
+
+The crowd and traffic are the game's normal ones (no `?q`), and the preset is forced to **Mac M4** (`gfx=mac`: 90% resolution, medium detail, SMAA, one lamp shadow, no AO or wet reflections). At medium detail that is about 390 people across the whole map and 22 vehicles on Zhongshan East 1st Road, plus Henan Road's traffic.
+
+![Nanjing Road East near Henan Road at 18:00](hero-nanjing.jpg)
+![The promenade at the Customs House at 17:45](hero-customs.jpg)
+![The Hankou Road crossing at 18:15](hero-hankou.jpg)
+![The Bund at 8 am](hero-morning.jpg)
+
+## What is measured
+
+The liveliness overlay (**L**, or `?live`) and `window.__bund.live()` return the same numbers (`src/engine/live.js`, gathered by `src/world/liveliness.js`):
+
+- **People in view.** In the camera's frustum, not behind a building, within 330 m. Counted by how they are drawn:
+  - *near*: full animated Rocketbox people.
+  - *mid*: impostor cards nearer than 40 m.
+  - *impostor*: cards further off.
+  - The crowd, the crossing's four walkers, Old Lin and Ms. Su, and the tai chi group are all counted.
+- **Vehicles in view, by type.** Taxi, car, NEV (the four new-energy lookalikes), bus and boat (the river's cruise boats).
+- **Distinct activities.** The different things people within 120 m are doing, for example walking, walking together, walking on the phone, photographing, taking a selfie, looking at the view, window-shopping, waiting to cross, waiting for a bus, on a tour, jogging, tai chi, chatting and in and out of shops.
+- **Audible sources.** Sound sources whose level where you stand is above about -40 dB (0.01, before the master level). They are counted by kind: chatter, music, vehicle, traffic, water, wind, clock, announcement, shop, horn, boat and voice.
+- **Frame time.** Over the last 180 frames: the average and the 95th percentile, the frame rate, and the main thread's time per frame.
+- **Draw calls and triangles** in the last frame.
+
+## Running it
+
+**On your Mac** (the game served as usual):
+
+- Packaged build: http://localhost:8000/?bench
+- `npm run dev`: http://localhost:5173/?bench
+
+Click **Start the benchmark**. It takes about a minute and a half. Each shot settles for 4 s and is then measured for 12 s, with the frame cap off. When it finishes, the result appears on screen as JSON. **Copy the result** copies it; send that text back.
+
+- Nothing is saved to your game while `?bench` is in the address. No calls, street moments or tips happen.
+- The Mac M4 preset is used unless you add `&gfx=high` or similar.
+- The result is also kept in this browser's storage (`bund-bench-shots`) and in `window.__bund.lastShots`.
+
+The JSON gives, per shot:
+
+- `frame`: average, p95, p99 and worst frame time in ms, and fps.
+- `mainThread`: the same for the main thread's time per frame. Its `fps` is only what that thread alone would allow.
+- `live`: the mean and maximum of every number above, sampled twice a second.
+- `activitiesSeen` and `audibleKinds`.
+
+A `settings` block records the preset, resolution, GPU and browser.
+
+**Here (headless, for screenshots and the numbers):**
+
+```bash
+node tools/shot.mjs http://localhost:4174/ <outDir> hero
+```
+
+This writes `<id>.png`, `<id>-live.png` (with the overlay) and `hero.json`, against a build served by `npx vite preview --port 4174`. `window.__bund.heroShot(id)` holds one shot, `endShot()` lets go, and `runShots({ settle, measure })` runs the benchmark from the console.
+
+## Baseline (24 November 2026)
+
+Measured in headless Chromium with software rendering (SwiftShader), Mac M4 preset, 1280×720. The numbers below are means of five samples taken after the shot settled.
+
+- People, vehicles, activities, sound sources, draw calls and triangles do not depend on the GPU.
+- **Frame times measured here say nothing about a real machine**: about 850–980 ms a frame, or 1 fps, in software. No GPU frame rate could be measured. Those numbers have to come from the Mac.
+
+| | Nanjing Rd 18:00 | Customs House 17:45 | Hankou Rd 18:15 | Bund 08:00 |
+|---|---|---|---|---|
+| People in view (near / mid / impostor) | **94** (2 / 9 / 83) | **56** (15 / 20 / 21) | **45** (7 / 31 / 7) | **30** (8 / 3 / 19) |
+| Vehicles in view | 0 (pedestrian street; Henan Rd is behind the camera) | 7 (taxi 2, NEV 4, bus 1) | 1–4 (NEV, bus) | 6.6 (car 1, NEV 2.6, bus 2, boat 1) |
+| Distinct activities (within 120 m) | 4.4 (walking, walking together, on a tour, on the phone, standing) | 4.2 (walking, waiting to cross, together, on the phone) | 5 (waiting to cross, walking, together, standing, on the phone) | 5 (tai chi, jogging, walking, together, photographing) |
+| Audible sources | 7.8 (chatter, music ×2, traffic, wind) | 15.6 (vehicles 11, chatter, traffic, water, wind) | 8–16 (vehicles, chatter, traffic, water, wind) | 13 (vehicles 7, chatter, traffic, water, wind) |
+| Draw calls | 2,478 | 1,678 | 1,794 | 2,178 |
+| Triangles | 3.0 M | 1.9 M | 1.9 M | 1.9 M |
+
+Hankou Road's vehicle and sound counts swing with the signal cycle: a red phase leaves the near lanes empty.
+
+What stands out:
+
+- **Too few people.** The whole map holds about 390 people at medium detail. Nanjing Road at six in the evening shows under a hundred, nearly all of them as distant cards. Only one or two are full people there, against 15 on the promenade.
+- **Too few vehicles at the crossing.** Zhongshan East 1st Road shows 1–7 vehicles where a busy four-lane road at a signal would show a queue.
+- **Narrow activity.** Four or five different things at once, mostly kinds of walking.
+- **Nanjing Road is the heaviest view:** 2,500 draw calls and 3 M triangles before any more people are added.
+
+## Provisional targets
+
+These are first estimates to steer by. They should be replaced by counts made from the reference footage, frame by frame, for each hero shot. Each line says where it comes from and how sure it is.
+
+| | Nanjing Rd 18:00 | Customs House 17:45 | Hankou Rd 18:15 | Bund 08:00 |
+|---|---|---|---|---|
+| People in view | 600–1,500 | 250–700 | 150–300 | 100–250 |
+| Vehicles in view | 0 (pedestrian street) | 8–20 | 10–25 | 8–20 |
+| Distinct activities | ≥ 8 | ≥ 8 | ≥ 6 | ≥ 6 |
+| Audible sources (kinds) | ≥ 6 kinds | ≥ 6 kinds | ≥ 5 kinds | ≥ 5 kinds |
+| Frame time on the Mac M4 preset | avg ≤ 16.7 ms, p95 ≤ 20 ms | same | same | same |
+| Draw calls / triangles | ≤ 2,500 / ≤ 3.5 M | same | same | same |
+
+How they were reached:
+
+- **People: Nanjing Road.**
+  - Holiday peaks of people on the whole pedestrian street at once:
+    - [40,000 at 18:56 on 1 October 2024](https://m.bjnews.com.cn/detail/1727836980129521.html).
+    - [32,000 at 18:00 on 31 December 2025](https://finance.sina.com.cn/jjxw/2025-12-31/doc-inhesxnp3715015.shtml).
+    - [57,000](https://news.china.com/socialgd/10000169/20261002/49775342.html) and [65,000](https://i.ifeng.com/c/8wvi6DcRAVB) on 1 and 2 October 2026.
+    - [17,529 at 22:00 at Qingming 2025](https://news.qq.com/rain/a/20250406A0404500).
+  - Area:
+    - The street is [1,033 m long and 20–28 m wide between Henan and Xizang Roads](https://www.thepaper.cn/newsDetail_forward_4488774).
+    - The extension to the Bund adds [about 495 m](https://m.winshang.com/news676321.html); its width was not found, and the game uses 22 m.
+    - That is about 36,000 m² in all, so a holiday peak is roughly 1 person per m².
+  - No figure was found for an ordinary evening. A busy Saturday, 13 July 2024, had 189,000 visits over the day, with no peak given (reported by Sina Finance on 1 August 2024; the article's URL was not kept).
+  - **Assumption:** an ordinary November evening at 0.15–0.3 people per m² (a sixth to a third of a holiday peak).
+  - The view covers about 22 m × 300 m of street, which gives 1,000–2,000. The lower end of the range allows for people hidden behind others. *Low confidence: replace with footage counts.*
+- **People: the Bund.**
+  - People on the Bund waterfront at once:
+    - [34,000 at 19:00 on Wednesday 19 August 2026, and more than 40,000 on Saturday 15 August](https://m.thepaper.cn/newsDetail_forward_33815528).
+    - [43,000 at 19:40 on 1 October 2024](https://m.bjnews.com.cn/detail/1727836980129521.html).
+  - Area: the promenade's length is given as anything from 1.5 to 2.6 km, and its width was not found.
+  - **Assumption:** about 0.1–0.25 people per m² at 17:45 on a November weekday, over the 1,500–3,000 m² of walkable ground the Customs House view takes in.
+  - The 08:00 shot is taken as about a third of the evening density (commuters, joggers, the tai chi group).
+  - The Hankou crossing shot counts the zebra, both pavements and the stair foot. *Low confidence.*
+- **Vehicles.**
+  - Zhongshan East 1st Road went from [11 lanes to 4 (two each way) when the Bund Tunnel opened in 2010](https://m.xinminweekly.com.cn/content/9413.html). There are also [2 spare lanes for bus stops and stopping](https://www.shanghai.gov.cn/nw9822/20200906/0001-9822_361953.html).
+  - No hourly traffic volume was found.
+  - **Assumption:** a red-phase queue of 4–8 vehicles per lane over the 100–150 m in view, plus moving traffic on the far side. *Low confidence.*
+- **Sound** (see `docs/sound.md`).
+  - Shanghai's [2025 averages: road traffic 67.9 dB(A) by day, background 55.3 dB(A)](https://sthj.sh.gov.cn/cmsres/c6/c692c51cbeed428fa12ede2f6ebf56a1/3dfdcfd940cab0bce8fa57b709ac1be4.pdf). So at the roadside the traffic should sit about 12 dB over the general background, and it should fall well below it down Nanjing Road.
+  - The "kinds" targets are a judgement: chatter, music, traffic, water, wind, a clock, announcements, shop doors.
+- **Activities.** A judgement of what such footage typically shows beyond walking:
+  - photographing the neon or Pudong, selfies, carrying shopping, eating or drinking on the move
+  - tour groups, security and police patrols, cleaners
+  - people waiting at the kerb, people sitting.
+- **Frame time.** The Mac M4 preset exists to hold 60 fps on a Mac mini M4 (README, *Graphics settings*). The p95 bound allows the occasional long frame.
+- **Draw calls.** The impostor crowd is one draw call however many people it holds, so more people need not cost more calls. The bound keeps Nanjing Road, the heaviest view today, from growing.
+
+## Not verified
+
+- **No GPU frame time has been measured.** The Mac run (`?bench`) supplies it.
+- **The targets have not been checked against footage.** Counting the reference footage per shot is the next step.
+- Occlusion is 2-D, against building footprints. People hidden behind other people, trees or the bus shelters still count as "in view".

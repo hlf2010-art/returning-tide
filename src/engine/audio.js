@@ -25,8 +25,8 @@ const MASTER_LEVEL = 0.8;
 export function createAudio() {
   let voiceBus = null;
   let ctx = null, master = null, env = null, duck = null, sfx = null, pauseBus = null, limiter = null, meter = null;
-  let muted = false, paused = false, pauseToken = 0, hornTimer = 35, ancF = null, ancG = null, anc = false, inside = 0;
-  let buf = null, river = null, wind = null, city = null, rain = null, lastFoot = { pan: 0.12, f: 0 }, lastDuck = -1, lastRain = -1;
+  let muted = false, paused = false, pauseToken = 0, hornTimer = 240, ancF = null, ancG = null, anc = false, inside = 0;
+  let buf = null, river = null, wind = null, city = null, rain = null, riverExp = null, windExp = null, lastExp = -1, lastFoot = { pan: 0.12, f: 0 }, lastDuck = -1, lastRain = -1;
   const loops = [];                                          // every looping source ever started (for the duplicate check)
   // the crowd's murmur (tools/voice/walla.py: many people talking at once, recorded voices): fetched
   // and decoded as the page loads, so the loop is there the moment the graph is built
@@ -123,30 +123,33 @@ export function createAudio() {
     voiceBus = gainNode(1); voiceBus.connect(pauseBus);                     // people talking (engine/voice.js): never ducked or muffled by ANC
 
     // wind off the river: two filtered noise layers with slow, unrelated gust cycles, drifting across the stereo field
-    const windPan = ctx.createStereoPanner(); windPan.connect(env);
+    // how open you are to the river and the wind (setExposure, engine/soundscape.js): full on the promenade,
+    // much less down the street canyons
+    windExp = gainNode(1); windExp.connect(env); riverExp = gainNode(1); riverExp.connect(env);
+    const windPan = ctx.createStereoPanner(); windPan.connect(windExp);
     const wf = filt('lowpass', 320, 0.4), wg = gainNode(0.26);
     loop(buf, wf, wg, windPan);
     lfo(0.07, 140, wf.frequency); const gust = lfo(0.031, 0.08, wg.gain); lfo(0.017, 0.35, windPan.pan);
     const wf2 = filt('bandpass', 700, 0.6), wg2 = gainNode(0.035);
-    loop(buf, wf2, wg2, env); lfo(0.043, 250, wf2.frequency);
+    loop(buf, wf2, wg2, windExp); lfo(0.043, 250, wf2.frequency);
     // leaves in the wind: a dry high rustle, only near the trees and only as strong as the wind
     const lf = filt('bandpass', 3400, 0.5), lg = gainNode(0), lp2 = filt('lowpass', 7000, 0.5);
     loop(white, lf, lp2, lg, env); lfo(0.19, 900, lf.frequency); lfo(0.13, 0.4, lf.Q);
     wind = { wg, leaves: lg, gust };
 
     // the Huangpu against the river wall: placed out over the water, level with the listener
-    const rp = panner(6, 1.0); rp.connect(env);
+    const rp = panner(6, 1.0); rp.connect(riverExp);
     const lap = filt('bandpass', 900, 1.2), lapG = gainNode(0.32);
     loop(buf, lap, lapG, rp); lfo(0.31, 350, lap.frequency); lfo(0.11, 0.08, lapG.gain);
     const body = filt('lowpass', 180, 0.5), bodyG = gainNode(0.22);
     loop(buf, body, bodyG, rp);
-    river = { p: rp };
+    river = { p: rp, g: lapG, body: bodyG };
 
     // the city, far off, behind the Bund buildings (west); a low wash, not a hum
     const cp = panner(40, 1.0); cp.connect(env);
     const cf = filt('lowpass', 240, 0.6), cg = gainNode(0.9);
     loop(buf, cf, cg, cp); lfo(0.023, 0.2, cg.gain);
-    city = { p: cp };
+    city = { p: cp, g: cg };
 
     // drizzle: ONE loop, built once, silent until the weather asks for it. Fine high hiss on
     // stone and water, with a little body; widened by delaying one ear (same source, no second loop).
@@ -385,7 +388,8 @@ export function createAudio() {
       if (vehicles) updateVehicles(vehicles, x, z);
       const d = Math.round(speech * 20) / 20;
       if (d !== lastDuck) { lastDuck = d; duck.gain.setTargetAtTime(duckGain(d), t, 0.3); }   // ~1 s to settle: no abrupt drop
-      if (hornTimer < 0) { hornTimer = 60 + Math.random() * 80; if (!muted && !paused) horn(); }
+      // far ships on the river: rare (ships may sound their horns here only in an emergency; engine/soundscape.js)
+      if (hornTimer < 0) { hornTimer = 420 + Math.random() * 600; if (!muted && !paused && (!riverExp || riverExp.gain.value > 0.1)) horn(); }
       breathe(dt);
     },
     // how hard the player is breathing, 0..1 (stamina.js)
@@ -471,6 +475,41 @@ export function createAudio() {
     getContext() { return ctx; },
     getMaster() { return master; },
     getMusicBus() { return duck; },
+    getEnvBus() { return env; },                 // the street's sounds: ducked under speech, muffled indoors (engine/ambience.js)
+    getSfxBus() { return sfx; },                 // footsteps and cues (the reverb listens to these)
+    getOutBus() { return pauseBus; },            // straight to the output (the reverb's return)
+    get murmurBuffer() { return murmurBuf; },    // the crowd's murmur, for the voices placed nearby
+    // how open the listener is to the river (0..1) and to the wind (0..1)
+    setExposure(rv, wd) {
+      if (!ctx || !riverExp) return;
+      const v = Math.round(rv * 40) / 40 + Math.round(wd * 40) * 10;
+      if (v === lastExp) return;
+      lastExp = v;
+      riverExp.gain.setTargetAtTime(Math.max(0, Math.min(1, rv)), ctx.currentTime, 0.8);
+      windExp.gain.setTargetAtTime(Math.max(0, Math.min(1, wd)), ctx.currentTime, 0.8);
+    },
+    // what is sounding and how loud at the listener (x, z), roughly (for the liveliness numbers):
+    // [{ id, kind, level }], before the master level and the indoor muffling
+    audible(lx, lz) {
+      const out = [];
+      if (!ctx || !wind) return out;
+      const att = (d, ref, ro) => ref / (ref + ro * (Math.max(d, ref) - ref));
+      const wx = windExp ? windExp.gain.value : 1, rx = riverExp ? riverExp.gain.value : 1;
+      out.push({ id: 'wind', kind: 'wind', level: wind.wg.gain.value * 0.6 * wx });
+      if (wind.leaves.gain.value > 0.001) out.push({ id: 'leaves', kind: 'wind', level: wind.leaves.gain.value });
+      out.push({ id: 'river', kind: 'water', level: 0.4 * rx * att(Math.abs(32 - lx), 6, 1) });
+      out.push({ id: 'city', kind: 'traffic', level: 0.9 * 0.05 * att(Math.hypot(-150 - lx, 0.3 * lz), 40, 1) });
+      if (murmur) { out.push({ id: 'murmur', kind: 'chatter', level: murmur.g.gain.value }); if (murmur.street) out.push({ id: 'nanjing-din', kind: 'chatter', level: murmur.street.gain.value }); }
+      if (rain) out.push({ id: 'rain', kind: 'rain', level: rain.g.gain.value });
+      if (boat) out.push({ id: 'boat', kind: 'boat', level: boat.bg.gain.value * 0.3 });
+      for (const [id, v] of voices) {
+        const pos = v.p.positionX ? [v.p.positionX.value, v.p.positionZ.value] : null;
+        if (!pos) continue;
+        const lvl = (v.tg.gain.value + (v.eg ? v.eg.gain.value : 0)) * att(Math.hypot(pos[0] - lx, pos[1] - lz), 5, 1.3);
+        out.push({ id: `vehicle:${id}`, kind: 'vehicle', level: lvl });
+      }
+      return out;
+    },
     getVoiceBus() { return voiceBus; }, 
     get muted() { return muted; },
     get paused() { return paused; },

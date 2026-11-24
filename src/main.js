@@ -58,7 +58,7 @@ import { createWorldMap } from './ui/worldMap.js';
 import { createGamepad } from './engine/gamepad.js';
 import { createSaves, currentSlot, slotKey } from './ui/saves.js';
 import { createTips } from './ui/tips.js';
-import { BENCH_SECONDS, BENCH_WARMUP, BENCH_HOUR, benchAt, benchStats } from './engine/bench.js';
+import { BENCH_SECONDS, BENCH_WARMUP, BENCH_HOUR, benchAt, benchStats, HERO_SHOTS, SHOT_SETTLE, SHOT_MEASURE, frameSummary, sampleSummary, shotsReport } from './engine/bench.js';
 import { createCruise } from './world/cruise.js';
 import { createDumpling } from './world/dumpling.js';
 import { createEntrances, entranceList } from './world/entrances.js';
@@ -146,8 +146,17 @@ import { icon } from './ui/icons.js';
 import './ui/fonts.js';                                     // the display type and colour tokens the theme uses (also loaded by profile.js / season.js)
 import './ui/deco.css';                                     // Bund Deco: loaded last, restyles the UI in the title screen's manner (ui/deco.css)
 import { setSpringViewer } from './world/springs.js';
+import { createAmbience } from './engine/ambience.js';
+import { peopleNear } from './engine/soundscape.js';
+import { createLiveliness } from './world/liveliness.js';
+import { flatLive } from './engine/live.js';
+import { createLiveOverlay, createBenchPanel } from './ui/liveOverlay.js';
 
 const params = new URLSearchParams(location.search);
+// ?bench: the hero-shot benchmark (engine/bench.js HERO_SHOTS), run from a URL with its result on screen:
+// nobody gets in touch, nothing is saved, the Mac M4 preset unless ?gfx= says otherwise
+const BENCH_URL = params.has('bench');
+if (BENCH_URL) params.set('life', '0');
 const canvas = document.getElementById('view');
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(FOG_COLOR, 0.00085);
@@ -168,6 +177,7 @@ const gpuName = (() => {
 let gfx = loadGfx(gpuName);
 if (params.has('gfx')) gfx = gfxResolve({ preset: params.get('gfx') });
 if (params.has('lod')) gfx = { ...gfx, lod: gfxResolve({ ...gfx, preset: 'custom', lod: params.get('lod') }).lod };
+if (BENCH_URL && !params.has('gfx')) gfx = gfxResolve({ preset: 'mac' });   // a known preset (not saved)
 const bootLod = gfx.lod;                                         // crowd and traffic sizes are set when the world is built
 const R = createRenderer(canvas, scene, camera, { fixedLevel: params.has('q') ? Number(params.get('q')) : null, gfx });
 const player = createPlayer(camera, canvas);
@@ -177,12 +187,16 @@ const hud = createHud();
 const titleScreen = createTitleScreen();   // the painted Bund behind the title; its gold line is the loading bar
 // people's voices: recorded clips per character (engine/voice.js); barks speak through the HUD
 const voice = createVoice({ audio, getLang, camera });
+const ambience = createAmbience(audio, { clipUrl: (lang, text) => voice.clipUrl(lang, text) });   // the city's sound by place: river, Nanjing Road, the road, the arcades, the clock (engine/ambience.js)
+const liveOverlay = createLiveOverlay({ getLang });   // the liveliness numbers (L, or ?live; world/liveliness.js)
+let liveliness = null;
+const LIN_SU = npcLayout.list.map((n) => ({ id: n.id, x: n.x, y: L.deckY, z: n.z, state: 'act', talk: true }));   // talking to each other at the railing
 hud.voice = voice; hud.audio = audio;
 // talking to people in your own words (engine/llm.js, ui/talk.js): typed or spoken, Mandarin or English
 const llm = createLLM({ canned: (id, said, ctx) => cannedReply(id, said, { first: ctx.first, lang: /[\u4e00-\u9fff]/.test(said || '') || (!said && getLang() === 'zh') ? 'zh' : 'en' }) });
 const talk = createTalk({ llm, voice, getLife: () => life, save: () => saveLife() });
 llm.warm();
-const HEARTS_ON = !params.has('q') || params.has('hearts');   // measurement tools: none of the five writes or turns up unless asked
+const HEARTS_ON = (!params.has('q') || params.has('hearts')) && !BENCH_URL;   // measurement tools: none of the five writes or turns up unless asked
 guardTalk(llm, () => life, getLang);   // when one of the five is being played, the model is told the validated state and nothing else (world/romance.js)
 
 let nephewSeen = null;          // Mission One: looking time at the man who left the pouch
@@ -344,7 +358,7 @@ async function boot() {
   world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
   // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
   world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
-    getHour: () => life.clock.minute, isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active, enabled: !!people && (!params.has('q') || params.has('moments')) });
+    getHour: () => life.clock.minute, isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active, enabled: !!people && (!params.has('q') || params.has('moments')) && !BENCH_URL });
   // something of your own (engine/studio.js): lending the gimbal on the promenade at dusk, the desk in 612
   world.fieldTest = createFieldTest({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), getCrowdView: () => world.crowdView, getRain: () => weather.rain,
     isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active, enabled: !!people });
@@ -418,6 +432,9 @@ async function boot() {
   mode = 'entry';
   hud.ready(lifeClock(life.clock.minute));
   titleScreen.ready();
+  liveliness = createLiveliness({ camera, renderer: R.renderer, getSources: liveSources });
+  if (params.has('live')) liveOverlay.set(true);
+  if (BENCH_URL && benchPanel) benchPanel.ready();
 }
 
 // ---- mode changes ----
@@ -643,7 +660,7 @@ document.getElementById('resume').addEventListener('click', () => { lock(); if (
 // ---- settings: language, subtitles, sound (title screen and pause menu) ----
 // first-play tips (ui/tips.js): once each, when you're free; off for measurement tools unless ?tips
 const tips = createTips({ isFree: () => mode === 'play' && !(phone && phone.isOpen) && !talk.open && !(world && world.sceneTalk.active) });
-if (params.has('q') && !params.has('tips')) tips.setOn(false, false);
+if ((params.has('q') || BENCH_URL) && !params.has('tips')) tips.setOn(false, false);
 function syncSettings() {
   for (const seg of document.querySelectorAll('.seg[data-setting]')) {
     const c = llm.conf();
@@ -735,6 +752,7 @@ window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
   const k = e.code;
   if (k === 'KeyM' && e.shiftKey) { hud.toast(tx(audio.toggleMute() ? 'soundOff' : 'soundOn'), 2.4); syncSettings(); return; }   // (M alone is the map)
+  if (k === 'KeyL' && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '') && !(e.target && e.target.isContentEditable)) { liveOverlay.toggle(); return; }   // the liveliness numbers
   if (k === 'KeyC' && (mode === 'play' || mode === 'dialogue')) {
     subtitlesOn = !subtitlesOn;
     hud.toast(tx(subtitlesOn ? 'subsOn' : 'subsOff'), 2.4); syncSettings();
@@ -894,7 +912,7 @@ function titleChoice() { const ng = document.getElementById('new-game'), saved =
     ng.addEventListener('click', () => { if (!confirm(getLang() === 'zh' ? '从头开始？现在的存档会被清掉。' : 'Start over? The saved game will be cleared.')) return; try { localStorage.removeItem(LIFE_KEY); } catch { /* */ } location.reload(); });
   } }
 titleChoice();
-const saveLife = () => { try { localStorage.setItem(LIFE_KEY, lifeSave(life)); if (saves) saves.touched(); } catch { /* private mode: no saving */ } };
+const saveLife = () => { if (BENCH_URL) return; try { localStorage.setItem(LIFE_KEY, lifeSave(life)); if (saves) saves.touched(); } catch { /* private mode: no saving */ } };
 // the pause menu's saves panel: three slots, copy / load / export / import
 saves = createSaves({ getLife: () => life, serialize: lifeSave, deserialize: lifeLoad,
   describe: (L) => { const c = currentStep(L, QUESTS); const q = c ? QT(c.quest.title) : ''; return `${yearDate(L, getLang())} · ${lifeClock(L.clock.minute)}${q ? ` · ${q}` : ''}`; },
@@ -1020,6 +1038,113 @@ function showBench(r) {
 document.getElementById('bench-run')?.addEventListener('click', () => startBench());
 try { const r = JSON.parse(localStorage.getItem('bund-bench') || 'null'); if (r) setTimeout(() => showBench(r), 0); } catch { /* */ }
 debug.startBench = () => startBench(); debug.benchRunning = () => !!bench;
+
+// ---- liveliness (world/liveliness.js): what is in view and what can be heard, for the overlay and tools ----
+function liveSources() {
+  const b = player.body, people = [], vehicles = [];
+  if (world.crowd) {
+    const near = new Set(world.crowdView ? world.crowdView.nearAgents().map((a) => a.id) : []);
+    for (const a of world.crowd.agents) if (!a.gone && !a.out && !a.inside) people.push({ x: a.x, y: a.y, z: a.z, near: near.has(a.id), state: a.state, act: a.act, kind: a.kind, v: a.v, phone: a.phone, kid: a.kid, leader: a.leader, partner: a.partner, window: a.atRail && a.x < L.facadeX });
+  }
+  if (traffic) for (const p of traffic.peds) people.push({ x: p.x, y: p.y ?? L.curbH, z: p.z, near: true, activity: p.errand ? 'getting a coffee' : p.crossing ? 'crossing the road' : p.phoneWalk ? 'walking on the phone' : 'walking' });
+  for (const n of LIN_SU) people.push({ ...n, near: true, activity: 'chatting' });
+  for (const o of world.dawn.others()) people.push({ x: o.x, y: L.deckY, z: o.z, near: true, activity: 'tai chi' });
+  if (traffic) for (const v of traffic.vehicles) if (v.active) vehicles.push({ x: v.x, z: v.z, model: v.model });
+  if (world.henan) for (const v of world.henan.traffic.vehicles) if (v.active) vehicles.push({ x: v.x, z: v.z + NJ.zc, model: v.model });
+  for (const bt of world.river.boats) vehicles.push({ x: bt.g.position.x, y: bt.g.position.y + 2, z: bt.g.position.z, model: 'boat' });
+  const ear = (d, ref, ro) => ref / (ref + ro * (Math.max(d, ref) - ref));
+  const sounds = [...audio.audible(b.x, b.z), ...ambience.audible(b.x, b.z, b.y + L.eye),
+    ...worldMusic.debug().filter((m) => !m.paused).map((m) => ({ id: `music:${m.venue}`, kind: 'music', level: m.gain })),
+    ...voice.speaking().map((v, i) => ({ id: `voice:${i}`, kind: 'voice', level: v.gain * (v.at ? ear(Math.hypot(v.at[0] - b.x, v.at[2] - b.z), 1.6, 1.1) : 1) }))];
+  if (world.jazz && world.jazz.music && world.jazz.music.playing) sounds.push({ id: 'jazz-trio', kind: 'music', level: 0.05 });
+  const m = life.clock.minute, pad = (n) => String(Math.floor(n)).padStart(2, '0');
+  return { people, vehicles, sounds, where: { x: +b.x.toFixed(1), z: +b.z.toFixed(1), hour: `${pad(m / 60)}:${pad(m % 60)}` } };
+}
+debug.live = () => (liveliness ? liveliness.snapshot() : null);
+debug.liveOverlay = liveOverlay; debug.ambience = ambience;
+
+// ---- the hero shots (engine/bench.js HERO_SHOTS; docs/living-city.md) ----
+// debug.heroShot(id) holds the camera on one (tools/shot.mjs hero); runShots() measures all four in turn:
+// each settles, then frame times and the liveliness numbers are taken for SHOT_MEASURE seconds, uncapped.
+// ?bench runs it from a URL and shows the JSON to copy. Your place and the clock are put back after.
+let shotRun = null;
+function placeShot(s) {
+  life.clock.minute = s.hour[0] * 60 + s.hour[1]; life.clock.sec = 0; applyHour(0, { force: true }); ambience.syncClock();
+  const b = player.body; b.x = s.pos[0]; b.z = s.pos[2]; b.y = s.pos[1] - L.eye;
+  camera.position.set(s.pos[0], s.pos[1], s.pos[2]); camera.lookAt(s.look[0], s.look[1], s.look[2]);
+}
+function holdShots(extra) {
+  const b = player.body;
+  shotRun = { from: mode === 'bench' ? 'play' : mode, saved: { x: b.x, z: b.z, y: b.y, yaw: player.yaw, pitch: player.pitch, minute: life.clock.minute, sec: life.clock.sec }, ...extra };
+  mode = 'bench'; player.enabled = false; player.clearInput(); hud.prompt(false);
+  document.getElementById('hud').style.visibility = 'hidden';
+}
+function releaseShots() {
+  if (!shotRun) return;
+  const sv = shotRun.saved, from = shotRun.from;
+  shotRun = null;
+  life.clock.minute = sv.minute; life.clock.sec = sv.sec; player.teleport(sv.x, sv.z, sv.yaw, sv.pitch, sv.y); applyHour(0, { force: true }); ambience.syncClock();
+  document.getElementById('hud').style.visibility = '';
+  mode = from === 'pause' ? 'pause' : 'play';
+  if (mode === 'pause') hud.show('pause', true); else player.enabled = true;
+}
+function shotsFrame(now) {
+  const r = shotRun, s = r.shot;
+  if (!s) return;
+  camera.position.set(s.pos[0], s.pos[1], s.pos[2]); camera.lookAt(s.look[0], s.look[1], s.look[2]);   // (held: nothing moves it)
+  if (!r.running) return;
+  const ms = now - r.last; r.last = now; r.t += ms / 1000;
+  if (r.phase === 'settle') { if (r.t >= r.settle) { r.phase = 'measure'; r.t = 0; r.ms = []; r.cpu = []; r.samples = []; r.acts = {}; r.kinds = {}; r.sampleIn = 0; } return; }
+  if (ms > 0 && ms < 2000) { r.ms.push(ms); r.cpu.push(lastCpu); }
+  if ((r.sampleIn -= ms / 1000) <= 0 && liveliness) {
+    r.sampleIn = 0.5;
+    const snap = liveliness.snapshot();
+    r.samples.push(flatLive(snap));
+    for (const [k, n] of Object.entries(snap.activities.list)) r.acts[k] = Math.max(r.acts[k] || 0, n);
+    for (const [k, n] of Object.entries(snap.audible.kinds)) r.kinds[k] = Math.max(r.kinds[k] || 0, n);
+  }
+  if (r.t >= r.measure) {
+    const m = s.hour[0] * 60 + s.hour[1], pad = (n) => String(n).padStart(2, '0');
+    r.results.push({ id: s.id, name: s.name, hour: `${pad(s.hour[0])}:${pad(s.hour[1])}`, frame: frameSummary(r.ms), mainThread: frameSummary(r.cpu), live: sampleSummary(r.samples), activitiesSeen: r.acts, audibleKinds: r.kinds, clockMinute: m });
+    nextShot();
+  }
+}
+function nextShot() {
+  const r = shotRun;
+  r.i++;
+  if (r.i >= r.shots.length) { finishShots(); return; }
+  r.shot = r.shots[r.i]; placeShot(r.shot);
+  r.phase = 'settle'; r.t = 0; r.last = performance.now();
+}
+function finishShots() {
+  const r = shotRun, [w, h] = R.pixels;
+  const settings = { preset: gfx.preset, lod: gfx.lod, scale: gfx.scale, msaa: gfx.msaa, shadows: gfx.shadows, ao: gfx.ao, ssr: gfx.ssr, bloom: gfx.bloom, cap: 'off during the run (display refresh still applies)',
+    pixels: `${w}x${h}`, dpr: window.devicePixelRatio, gpu: gpuName, browser: navigator.userAgent, crowd: world.crowd ? world.crowd.agents.length : 0, vehicles: traffic ? traffic.vehicles.length : 0,
+    settle: r.settle, measure: r.measure, date: new Date().toISOString().slice(0, 10) };
+  const report = shotsReport({ shots: r.results, settings });
+  const done = r.done;
+  releaseShots();
+  debug.lastShots = report;
+  try { localStorage.setItem('bund-bench-shots', JSON.stringify(report)); } catch { /* private mode */ }
+  console.info('hero-shot benchmark', report);
+  if (done) done(report);
+}
+function runShots({ settle = SHOT_SETTLE, measure = SHOT_MEASURE, ids = null } = {}) {
+  if (!world || bench || (shotRun && shotRun.running)) return Promise.resolve(null);
+  if (shotRun) releaseShots();
+  const shots = ids ? HERO_SHOTS.filter((s) => ids.includes(s.id)) : HERO_SHOTS;
+  return new Promise((resolve) => {
+    holdShots({ running: true, uncapped: true, shots, i: -1, results: [], settle, measure, done: resolve });
+    nextShot();
+  });
+}
+debug.heroShots = HERO_SHOTS;
+debug.heroShot = (id) => { const s = HERO_SHOTS.find((x) => x.id === id); if (!s || !world || (shotRun && shotRun.running)) return null; if (!shotRun) holdShots({ running: false }); shotRun.shot = s; placeShot(s); return s; };
+debug.endShot = () => releaseShots();
+debug.runShots = (o) => runShots(o);
+// ?bench: a panel with a start button; the click starts the sound too, then the run; the JSON shows after
+const benchPanel = BENCH_URL ? createBenchPanel({ getLang, onStart: () => { noLock = true; if (mode === 'entry') begin(); runShots().then((r) => { if (r) benchPanel.result(JSON.stringify(r, null, 1)); }); } }) : null;
+if (benchPanel) { benchPanel.el.style.zIndex = '9999'; benchPanel.el.style.display = 'none'; }
 // a gamepad, if one's plugged in (engine/gamepad.js): sticks walk and look, buttons are keys; Menu pauses
 const pad = createGamepad({ player, getMode: () => mode, hud, t: tx,
   onPause: () => { if (mode === 'pause') play(); else if (['play', 'ride', 'seat', 'drive'].includes(mode)) pause(); } });
@@ -1249,7 +1374,8 @@ function updateTraffic(dt) {
     world.crowdView.update(dt, eye, { rain: weather.rain });
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
     crowdHear -= dt;
-    if (crowdHear <= 0) { crowdHear = 0.5; let k = 0; for (const a of cr.agents) if (!a.gone) { const d = Math.hypot(a.x - b.x, a.z - b.z, (a.y - b.y) * 1.5); if (d < 24) k += 1 - d / 24; } audio.setCrowd(Math.max(k / 12, nanjingDin(b) * 0.85));
+    // (everyone counts: the crowd, the crossing's walkers, Old Lin and Ms. Su, the tai chi group... engine/soundscape.js)
+    if (crowdHear <= 0) { crowdHear = 0.5; audio.setCrowd(Math.max(peopleNear(cr.agents.concat(others), b.x, b.z, b.y).level, nanjingDin(b) * 0.85));
       audio.setStreet(nanjingDin(b)); }
     // tour guides talk to their groups now and then (you hear them when you're near)
     for (const tour of cr.tours) {
@@ -1344,17 +1470,18 @@ debug.hour = () => hourState;
 debug.mapState = () => mapState; debug.worldMap = () => worldMap; debug.setWaypoint = (w) => { waypoint = w; }; debug.getWaypoint = () => waypoint;
 debug.envInfo = () => ({ envAt, envWait, uuid: scene.environment && scene.environment.uuid, captures: envCaptures });
 
-let lastDraw = 0;
+let lastDraw = 0, lastFrameAt = performance.now(), lastCpu = 0;
 function frame(now) {
   // the frame-rate cap (settings): skip this display refresh if it comes too soon
-  if (!params.has('q') && gfx.fps) {
+  if (!params.has('q') && gfx.fps && !(shotRun && shotRun.uncapped)) {          // (a hero-shot run measures uncapped)
     if (!shouldDraw(now - lastDraw, gfx.fps)) return;
     const iv = 1000 / gfx.fps; lastDraw = now - lastDraw > 2 * iv ? now : lastDraw + iv;   // on the beat, so 60 on a 144 Hz screen averages 60
   }
+  const cpu0 = performance.now(), frameGap = now - lastFrameAt; lastFrameAt = now;     // (the liveliness numbers: frame time, main-thread time)
   const dt = Math.min(debug.dtMax || 0.05, Math.max(0, (now - last) / 1000)); last = now; t += dt;   // dtMax: tools only (slow software GL)
   pad.update(dt);
   if (!world) return;
-  if (mode === 'bench') benchFrame(now);
+  if (mode === 'bench') { if (shotRun) shotsFrame(now); else benchFrame(now); }
 
   if (mode === 'entry') {             // a slow breath of camera movement behind the title
     player.yaw = L.spawn.yaw + Math.sin(t * 0.13) * 0.035;
@@ -1446,7 +1573,10 @@ function frame(now) {
     let near = 0; for (const t of TREE_SPOTS) near = Math.max(near, 1 - Math.hypot(t.x - player.body.x, t.z - player.body.z) / 14);
     audio.setWind(wind.level, near);
   }
-  audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: traffic ? (world.henan ? [...traffic.vehicles, ...world.henan.worldVehicles(player.body.x < -380)] : traffic.vehicles) : null, speech });
+  const heard = traffic ? (world.henan ? [...traffic.vehicles, ...world.henan.worldVehicles(player.body.x < -380)] : traffic.vehicles) : null;
+  audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: heard, speech });
+  ambience.update(mode === 'pause' ? 0 : dt, player.body, { vehicles: heard || [], boats: world.river.boats.map((bt) => bt.g.position), people: world.crowd ? world.crowd.agents.concat(LIN_SU) : LIN_SU,
+    minute: life ? life.clock.minute + life.clock.sec / 60 : null, metroOpen: hourState.metro !== false, paused: mode === 'pause' || mode === 'entry' });
   voice.update();                                                                  // where the listener is, for positional voices
   if (dialogueAudio) dialogueAudio.updateListener();
   if (conversation) conversation.update(mode === 'pause' ? 0 : dt);
@@ -1545,6 +1675,8 @@ function frame(now) {
   world.moments.afterRender();
   if (mode !== 'bench') R.tick();                                                    // (the benchmark measures your settings as they are)
   updateTips(dt);
+  if (liveliness) { liveliness.frame(frameGap, performance.now() - cpu0); liveOverlay.update(dt, () => liveliness.snapshot()); }
+  lastCpu = performance.now() - cpu0;
 }
 R.renderer.setAnimationLoop(frame);
 

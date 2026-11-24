@@ -88,7 +88,7 @@ export function createVoice({ audio, getLang, camera = null }) {
       node.connect(pan); node = pan;
     }
     node.connect(out);
-    const h = { src, at, pan, duration: buf.duration, stop: () => { try { src.stop(); } catch { /* done */ } } };
+    const h = { src, at, pan, gain, duration: buf.duration, stop: () => { try { src.stop(); } catch { /* done */ } } };
     src.onended = () => { S.active.delete(h); onEnd && onEnd(); };
     src.start(); S.active.add(h);
     return h;
@@ -129,6 +129,8 @@ export function createVoice({ audio, getLang, camera = null }) {
     get newLines() { return this.serverOn ? 'server' : 'off'; },
     setNewLines(v) { set('bund.synthOn', '0'); this.setServer(v === 'server'); },
     setServer(on) { set('bund.voiceServerOn', on ? '1' : '0'); serverChecked = 0; if (on) checkServer(); },
+    // who is speaking right now (the liveliness numbers): [{ at, gain }] (at null: not placed)
+    speaking() { return [...S.active].map((h) => ({ at: h.at || null, gain: h.gain })); },
     get stats() { return { clips: S.clipHits, server: S.serverHits, synth: S.synthHits, loaded: !!manifest, size: manifest ? Object.keys(manifest.clips).length : 0, last: S.last, serverUp: server }; },
     has(lang, text) { return !!(manifest && manifest.clips[voiceKey(lang, text)]); },
     // sex: a passer-by's line exists in a man's and a woman's voice (keys 'zh-m|…', 'zh-f|…'): theirs first

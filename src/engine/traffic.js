@@ -111,7 +111,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   const vehicles = vSpecs.map((sp, i) => {
     const v0 = sp.v0 ?? 10.5 + rng() * 2.5;
     const veh = {
-      id: sp.id, lane: lanes[sp.lane], len: sp.len, width: sp.width, bus: !!sp.bus, route: sp.route || null,
+      id: sp.id, model: sp.model || (sp.bus ? 'bus' : null), lane: lanes[sp.lane], len: sp.len, width: sp.width, bus: !!sp.bus, route: sp.route || null,
       v0, p: { a: 1.4 + rng() * 0.5, b: 2.4, s0: 2.2, T: 1.2 + rng() * 0.4 },
       reaction: 0.55 + rng() * 0.6, waited: 0,
       s: sp.s, v: sp.v ?? 0, acc: 0, active: sp.active !== false, hold: 0,

@@ -54,6 +54,7 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | G | photo mode, once you've built the night gimbal (wheel or [ ] zoom, Space or click to shoot, G or Esc to lower) |
 | E (at the bottom of the metro stairs) | at the entrance: Line 2 one stop to Lujiazui (¥3); at the exit sign: through the concourse and out of the other exit |
 | Settings → Graphics | presets (Low / Mac M4 / High / Ultra), resolution, frame cap, detail and density, effects |
+| L | the liveliness overlay: people, vehicles and activities in view, audible sound sources, frame time, draw calls (`docs/living-city.md`) |
 | C | subtitles on / off |
 | M | the map (click a place for a waypoint) · **Shift+M** sound on / off |
 | J | the journal: quests, their steps, waiting until a quest's time, the people in your life, and (the Work tab) where your own gimbal stands |
@@ -988,6 +989,16 @@ Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings ar
   the world. You hear it from the stage when you're in the room, muffled through the door in the
   hall.
 - **The Huracán's V10** while you drive it (see *Driving it*).
+- **By place** (`src/engine/soundscape.js` rules, `src/engine/ambience.js` playback; details and licences in
+  `docs/sound.md`): the river is loudest at the railing and fades inland (water slapping at the wall, wind
+  strongest on the promenade, a cruise boat's horn now and then: rare, as horns are for emergencies on this
+  stretch of the Huangpu); Nanjing Road has music out of eight shop doors, door chimes as the crowd goes in
+  and out, and the metro's announcements rising out of the exits at Henan Road; the road has a traffic bed
+  made from the vehicles actually near you, a bus's air brakes, and a rare horn (banned here since 2007);
+  your steps ring under the Customs House portico, in the Peace Hotel's arcades, the AIA lobby and down the
+  metro stairs; the murmur counts everyone near you and a few voices are placed on the groups standing
+  closest; the **Customs House clock** plays "The East Is Red" on the quarters, the whole tune on the hour,
+  then strikes it (strokes only from 22:00 to 07:00), as the real one does. No new files: all synthesised.
 
 `tools/audiotest.mjs` records the game's real output (an AudioWorklet after the limiter) while
 playing, writes each scenario as a WAV, and measures it.
@@ -1251,6 +1262,11 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
 - **First-play tips** (`src/ui/tips.js`): short tips, each once, one at a time, only when you're free:
   walking and acting, the journal, the phone, the map, talking, the hours, street moments, the cruise,
   the shop, sitting down. Settings → General → Tips turns them off (on again shows them from the start).
+- **Hero-shot benchmark** (`?bench`; `docs/living-city.md`): four fixed shots matched to real footage
+  (Nanjing Road near Henan Road at 18:00, the promenade at the Customs House at 17:45, the Hankou Road
+  crossing at 18:15, the Bund at 8 am), each measured uncapped with the Mac M4 preset; the result appears on
+  screen as JSON to copy. Nothing is saved while it runs. `node tools/shot.mjs <url> <out> hero` shoots
+  them headless with their numbers.
 - **Benchmark** (Settings → Graphics → Benchmark, `src/engine/bench.js`, tested): a fixed 30-second
   camera route at 8 pm (the full crowd, every light on) down Hankou Road, over the crossing, up onto
   the promenade looking at Lujiazui, north along the river and round onto Nanjing Road, with your
@@ -1307,6 +1323,8 @@ src/engine/timeOfDay.js, src/world/dayNight.js, dawn.js   the hour (tested), how
 src/world/moments.js   street moments (side quests): the lost visitor, the couple's photo, the dropped phone
 src/world/dumpling.js, src/world/cruise.js, src/engine/cruiseRoute.js   the shengjian shop; the river cruise (route tested)
 src/ui/worldMap.js, saves.js, tips.js, src/engine/gamepad.js, bench.js   map, saves, tips, gamepad, benchmark (pad + bench tested)
+src/engine/live.js, src/world/liveliness.js, src/ui/liveOverlay.js   the liveliness numbers (tested), what the camera sees, the overlay (L) and the ?bench panel
+src/engine/soundscape.js, ambience.js   the city's sound by place: rules (tested) and playback (docs/sound.md)
 tools/voice/walla.py   the crowd's murmur loop (Kokoro voices, offline)
 src/ui/                HUD and stylesheet
 tests/                 node tests for movement, collision, boundaries, conversation and Mission One state (npm test)
@@ -1329,7 +1347,7 @@ Everything is procedural (canvas textures, merged box/cylinder geometry, WebAudi
 The only third-party assets are three.js and three open-licensed fonts from Fontsource
 (Noto Serif SC, Noto Sans SC, Ma Shan Zheng).
 
-Useful URL switches: `?fresh` (new life, ignore the save), `?hour=HH:MM` (start at that hour), `?tod` / `?moments` / `?tips`
+Useful URL switches: `?bench` (the hero-shot benchmark, result on screen), `?live` (the liveliness overlay on), `?fresh` (new life, ignore the save), `?hour=HH:MM` (start at that hour), `?tod` / `?moments` / `?tips`
 (measurement tools keep the 5:42 pm look, no street moments and no tips unless asked), `?q=0..5` pins the render quality step (0 = best), `?gfx=` / `?lod=` a preset / detail level, `?crowd=<density>` (0 = none), `?traffic=<factor>`, `?body=0` hides your own
 body, `?shadows=0`, `?ssr=0`, `?wind=calm|breeze|windy|gale`, `?nolock` uses
 click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.

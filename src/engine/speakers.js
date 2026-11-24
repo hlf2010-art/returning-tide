@@ -51,6 +51,15 @@ export const VENUES = [
   // south side between Jiangxi and Henan roads. Open 10:00-22:00 like the street's shops (todState.shops).
   { id: 'nj-north', playlist: 'shop', x: -338, y: 3.2, z: -190.6, ref: 4, max: 42, level: 0.42, hours: (m) => (m >= H(10) && m < H(22) ? 1 : 0) },
   { id: 'nj-south', playlist: 'shop', x: -452, y: 3.2, z: -211.4, ref: 4, max: 42, level: 0.42, hours: (m) => (m >= H(10) && m < H(22) ? 1 : 0), offset: 97 },
+  // more of the street's doors (engine/soundscape.js: Nanjing Road's music out of its shop doors), spread
+  // from the Bund end to Henan Road, each at its own place in the playlist so neighbours don't match;
+  // one is a tea-and-coffee bar playing the café list. Same hours as the street's shops.
+  { id: 'nj-henan', playlist: 'shop', x: -476, y: 3.2, z: -190.6, ref: 4, max: 40, level: 0.4, hours: (m) => (m >= H(10) && m < H(22) ? 1 : 0), offset: 300 },
+  { id: 'nj-jiangxi', playlist: 'shop', x: -408, y: 3.2, z: -211.4, ref: 4, max: 40, level: 0.4, hours: (m) => (m >= H(10) && m < H(22) ? 1 : 0), offset: 480 },
+  { id: 'nj-teabar', playlist: 'cafe', x: -372, y: 3.0, z: -190.6, ref: 3, max: 30, level: 0.3, hours: (m) => (m >= H(10) && m < H(22) ? 1 : 0), offset: 210 },
+  { id: 'nj-sichuan', playlist: 'shop', x: -262, y: 3.2, z: -211.4, ref: 4, max: 40, level: 0.4, hours: (m) => (m >= H(10) && m < H(22) ? 1 : 0), offset: 640 },
+  { id: 'nj-mid', playlist: 'shop', x: -205, y: 3.2, z: -190.6, ref: 4, max: 40, level: 0.4, hours: (m) => (m >= H(10) && m < H(22) ? 1 : 0), offset: 780 },
+  { id: 'nj-bund', playlist: 'shop', x: -98, y: 3.2, z: -211.4, ref: 4, max: 40, level: 0.38, hours: (m) => (m >= H(10) && m < H(22) ? 1 : 0), offset: 860 },
   // the DiDi driver's radio: in the car, not placed in the street (world/rideFlow.js)
   { id: 'radio', playlist: 'radio', cabin: true, level: 0.28, hours: () => 1, offset: 41 },
 ];

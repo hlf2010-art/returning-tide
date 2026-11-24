@@ -36,3 +36,42 @@ export function benchAt(u) {
   const cr = (key, c) => { const a = P(i - 1)[key][c], b = P(i)[key][c], d = P(i + 1)[key][c], e = P(i + 2)[key][c], t2 = t * t, t3 = t2 * t; return 0.5 * (2 * b + (-a + d) * t + (2 * a - 5 * b + 4 * d - e) * t2 + (-a + 3 * b - 3 * d + e) * t3); };
   return { pos: [0, 1, 2].map((c) => cr('p', c)), look: [0, 1, 2].map((c) => cr('look', c)) };
 }
+
+// ---- the hero shots (docs/living-city.md) ----
+// Four fixed views at fixed hours, each one a place and time there is real footage of, so the game
+// can be put side by side with it. pos: the camera [x, y, z] (a person's eye height above the ground
+// there, as handheld footage is shot); look: the point it looks at; hour: [h, m].
+export const HERO_SHOTS = [
+  { id: 'nanjing', name: 'Nanjing Road East near Henan Road', zh: '南京东路·近河南中路', hour: [18, 0], pos: [-478, 1.83, -198.5], look: [-380, 6.5, -201.5] },
+  { id: 'customs', name: 'The promenade at the Customs House', zh: '海关大楼前的观景平台', hour: [17, 45], pos: [21, 4.68, 2], look: [-36, 13, 34] },
+  { id: 'hankou', name: 'The Hankou Road crossing', zh: '汉口路路口', hour: [18, 15], pos: [0.4, 1.83, 3.5], look: [-40, 3, -0.5] },
+  { id: 'morning', name: 'The Bund at 8 am', zh: '早上八点的外滩', hour: [8, 0], pos: [21, 4.68, -38], look: [-24, 12, -160] },
+];
+// per shot: seconds to let the hour settle (lights, crowd, traffic), then seconds measured
+export const SHOT_SETTLE = 4, SHOT_MEASURE = 12;
+// the p-th percentile (0..100) of a list of numbers (nearest rank)
+export function percentile(xs, p) {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  return s[Math.min(s.length - 1, Math.max(0, Math.ceil((p / 100) * s.length) - 1))];
+}
+// frame times (ms) -> average, p95, p99, worst, and the frame rate they make
+export function frameSummary(ms) {
+  if (!ms.length) return null;
+  const total = ms.reduce((s, v) => s + v, 0), r = (v) => Math.round(v * 100) / 100;
+  return { frames: ms.length, avgMs: r(total / ms.length), p95Ms: r(percentile(ms, 95)), p99Ms: r(percentile(ms, 99)), worstMs: r(Math.max(...ms)), fps: r((ms.length * 1000) / total) };
+}
+// the liveliness samples taken during a shot -> one line per number: the mean (rounded) and the most
+export function sampleSummary(samples) {
+  const out = {};
+  for (const s of samples) for (const [k, v] of Object.entries(s)) {
+    if (typeof v !== 'number') continue;
+    const o = out[k] || (out[k] = { sum: 0, n: 0, max: -Infinity });
+    o.sum += v; o.n++; o.max = Math.max(o.max, v);
+  }
+  return Object.fromEntries(Object.entries(out).map(([k, o]) => [k, { mean: Math.round((o.sum / o.n) * 10) / 10, max: o.max }]));
+}
+// the whole run -> the JSON the player copies and sends back
+export function shotsReport({ shots, settings, version = 1 }) {
+  return { benchmark: 'returning-tide hero shots', version, settings, shots };
+}
