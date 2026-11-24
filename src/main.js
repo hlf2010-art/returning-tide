@@ -1514,8 +1514,15 @@ function frame(now) {
   if (life.flags.pendingAchievement) { const a = life.flags.pendingAchievement; delete life.flags.pendingAchievement; hud.achievement(getLang() === 'zh' ? a.zh : a.en); }
   world.photo.update(mode === 'pause' ? 0 : dt);
   if (mode !== 'pause') world.ambient.update(dt, player.body, { talking: talk.open });
-  if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
-  else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
+  // the Peace Hotel and AIA interiors are drawn only from where they could be seen: their own block of
+  // the Bund (through the doors) or inside; away from it nothing in them is drawn (docs/living-city-architecture.md §6.1)
+  { const b = player.body, nearBlocks = b.z < -110 && b.z > -290 && b.x > -110;
+    world.interiors.group.visible = nearBlocks;
+    if (b.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, b); world.upper.update(mode === 'pause' ? 0 : dt, b); world.jazz.update(mode === 'pause' ? 0 : dt, b, camera); }
+    else {
+      world.upper.group.visible = false; world.jazz.group.visible = false;
+      if (world.jazz.music.playing) world.jazz.update(0, b, camera);   // walked away: the band fades out
+    } }
   { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
     const ins = world.year.here || world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : world.dumpling.inside ? 0.3 : 0;
     audio.setInside(world.year.here ? 1 : world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : world.dumpling.inside ? 0.3 : 0);
