@@ -58,6 +58,7 @@ import { createWorldMap } from './ui/worldMap.js';
 import { createGamepad } from './engine/gamepad.js';
 import { createSaves, currentSlot, slotKey } from './ui/saves.js';
 import { createTips } from './ui/tips.js';
+import { createControlsHelp } from './ui/controlsHelp.js';   // the Controls page (title screen and pause menu)
 import { BENCH_SECONDS, BENCH_WARMUP, BENCH_HOUR, benchAt, benchStats, HERO_SHOTS, SHOT_SETTLE, SHOT_MEASURE, frameSummary, sampleSummary, shotsReport } from './engine/bench.js';
 import { createCruise } from './world/cruise.js';
 import { createDumpling } from './world/dumpling.js';
@@ -659,6 +660,7 @@ document.getElementById('begin').addEventListener('click', begin);
 document.getElementById('resume').addEventListener('click', () => { lock(); if (noLock) play(); });
 // ---- settings: language, subtitles, sound (title screen and pause menu) ----
 // first-play tips (ui/tips.js): once each, when you're free; off for measurement tools unless ?tips
+const controlsHelp = createControlsHelp();
 const tips = createTips({ isFree: () => mode === 'play' && !(phone && phone.isOpen) && !talk.open && !(world && world.sceneTalk.active) });
 if ((params.has('q') || BENCH_URL) && !params.has('tips')) tips.setOn(false, false);
 function syncSettings() {
@@ -723,6 +725,7 @@ document.addEventListener('click', (e) => {
     syncSettings(); return;
   }
   if (e.target.closest('[data-open-settings]')) { document.getElementById('settings').classList.remove('hidden'); syncSettings(); return; }
+  if (e.target.closest('[data-open-controls]')) { controlsHelp.open(); return; }
   if (e.target.closest('[data-open-saves]')) { saveLife(); saves.open(); return; }
   if (e.target.closest('[data-close-settings]') || e.target.id === 'settings') document.getElementById('settings').classList.add('hidden');
 });
@@ -770,6 +773,7 @@ window.addEventListener('keydown', (e) => {
     hud.toast(weather.toggle() === 'drizzle' ? tx('devDrizzle') : tx('devClear'), 2.4);
     return;
   }
+  if (controlsHelp.isOpen) { if (k === 'Escape') { e.preventDefault(); controlsHelp.close(); } return; }   // the Controls page takes the keys while it's open
   if (mode === 'entry') { if (k === 'Enter') begin(); return; }
   if (mode === 'pause') { if (k === 'Escape' && noLock) play(); return; }
   if (mode === 'inspect') { if (k === 'KeyE' || (k === 'Escape' && noLock)) closeInspect(); return; }
@@ -978,6 +982,7 @@ function updateTips(dt) {
   if (mode === 'play') playTime += dt;
   const b = player.body;
   if (playTime > 2) tips.show('move');
+  if (playTime > 20) tips.show('controls');
   if (playTime > 15 && life.quests && Object.keys(life.quests.list).length) tips.show('journal');
   if (playTime > 40) tips.show('phone');
   if (playTime > 75) tips.show('map');
