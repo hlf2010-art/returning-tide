@@ -16,6 +16,7 @@ import { asLight } from './dayNight.js';
 import { cruiseAt, DOCK, FARE, TRIP_MINUTES, PA_AT } from '../engine/cruiseRoute.js';
 import { stamp, pay, clockText } from '../engine/life.js';
 import { FERRY, nextFerry } from '../engine/ferry.js';
+import { lastFerryDue, lastFerryScript, hasBox, AFTER as FERRY_AFTER } from './lastFerry.js';
 import { getLang } from '../ui/i18n.js';
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -83,7 +84,7 @@ function ferryTexture() {
   return tex(c, { repeat: false });
 }
 
-export function createCruise({ scene, people, player, hud, audio, voice, getLife, save, travel, skipTo, ferryTo = null, roles = [], clock = null }) {
+export function createCruise({ scene, people, player, hud, audio, voice, getLife, save, travel, skipTo, ferryTo = null, roles = [], clock = null, talk = null }) {
   const L0 = () => getLife();
   const C = () => { const l = L0(); return l.flags.cruise || (l.flags.cruise = { rides: 0, ticket: null }); };
   const std = (o) => new THREE.MeshStandardMaterial(o);
@@ -181,6 +182,8 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
   scene.add(boat);
   // a few other passengers at the rails (Rocketbox people, aboard with the boat)
   const riders = [];
+  let fang = null;                                 // the deckhand at Dongchang Road (world/lastFerry.js), only while he talks
+  const FANG_ROLE = 'p4';                          // the older man in the work jacket
   if (people) {
     const SPOTS = [[-3.2, -12, -Math.PI / 2, 'look'], [-3.1, -10.9, -Math.PI / 2, 'phone'], [3.1, -6, Math.PI / 2, 'look'], [-3.2, 4, -Math.PI / 2, 'idle'], [-2.9, 4.9, -Math.PI / 2 + 0.5, 'phone'], [2.9, 8, Math.PI / 2, 'look'], [0.4, -17.5, Math.PI, 'idle']];
     const pool = roles.filter((r) => people.manifest.cast[r] && !people.manifest.cast[r].child);
@@ -270,6 +273,7 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
       ledA.color.setHSL((0.92 + S.t * 0.01) % 1, 0.8, 0.6).multiplyScalar(2 * on); ledB.color.setHSL((0.52 + S.t * 0.008) % 1, 0.8, 0.6).multiplyScalar(2 * on);
       const close = S.aboard || Math.hypot(pp.body.x - bx, pp.body.z - bz) < 90;
       if (close) for (const q of riders) q.p.update(dt * 0.6);
+      if (fang) fang.update(dt);
       deckLight.intensity = close ? 22 * (l.clock.minute > 7 * 60 && l.clock.minute < 17 * 60 ? 0.1 : 1) : 0;
     },
     // E at the gate (ticket / wait) and at the wheelhouse door (stay to the end)
@@ -292,6 +296,17 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
     },
     interact(id) {
       const l = L0(), c = C(), st = S.st;
+      function lastFerry() {
+        const st2 = talk && talk(); if (!st2 || st2.active) return;
+        const b = player.body, yaw = player.yaw || 0, fx = b.x - Math.sin(yaw) * 1.5, fz = b.z - Math.cos(yaw) * 1.5;
+        // Old Fang stands where he stepped off, facing him, for as long as they talk
+        if (people && !fang && people.manifest.cast[FANG_ROLE]) {
+          const p = createPerson(people, FANG_ROLE); p.root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+          p.root.position.set(fx, b.y, fz); p.root.rotation.y = yaw; p.play('talk1', 0); scene.add(p.root); fang = p;
+        }
+        const gone = () => { if (fang) { scene.remove(fang.root); fang = null; } };
+        st2.play(lastFerryScript(L0()), { at: () => [fx, b.y + 1.6, fz], onDone: () => { gone(); if (hasBox(L0())) { hud.thought(FERRY_AFTER.zh, FERRY_AFTER.en); hud.toast(T('日志（J）：修表匠', 'Journal (J): the missing watch-repairer'), 3.5); } save && save(); } });
+      }
       if (id === 'cruise:ferry') {
         const n = nextFerry(l.clock.minute);
         if (n == null) { hud.toast(T('今天的轮渡已经停了。地铁2号线（南京东路站）或叫车也能过江。', 'No more ferries today. Line 2 (East Nanjing Road) or a DiDi still cross.'), 3.6); return true; }
@@ -300,7 +315,9 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
         r.entry.memoEn = 'Jinling Rd E → Dongchang Rd ferry';
         audio && audio.cue && audio.cue('ping', 0, 0.6);
         const arrive = Math.floor(stamp(l) / 1440) * 1440 + n + FERRY.crossing;
-        travel(() => { skipTo(arrive); ferryTo({ method: 'ferry', fare: FERRY.fare }); }, { line: T(`轮渡 · ${clockText(n)} · 金陵东路 → 东昌路 · 八分钟过江`, `The ferry · ${clockText(n)} · Jinling Rd E → Dongchang Rd · eight minutes across`), hold: 1700 });
+        // the last sailing, with the notice read: the deckhand at Dongchang Road (world/lastFerry.js)
+        const beat = lastFerryDue(l, n) && talk && talk();
+        travel(() => { skipTo(arrive); ferryTo({ method: 'ferry', fare: FERRY.fare }); if (beat) setTimeout(() => lastFerry(), 2600); }, { line: T(`轮渡 · ${clockText(n)} · 金陵东路 → 东昌路 · 八分钟过江`, `The ferry · ${clockText(n)} · Jinling Rd E → Dongchang Rd · eight minutes across`), hold: 1700 });
         return true;
       }
       if (id === 'cruise:skip') {

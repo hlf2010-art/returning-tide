@@ -1282,7 +1282,7 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
 
 - Walk from Hankou Road out onto Zhongshan East 1st Road, up the stair, along the promenade.
 - Barriers at both ends of the waterfront and a hoarding at the west end of Hankou Road mark the edges.
-- Missing-person notice taped to a lamp post by the river hinting at Mission One.
+- Missing-person notice taped to a lamp post by the river hinting at Mission One. The line scrawled across it and the ferry token on its corner lead to the 23:00 ferry and Old Fang (`src/world/lastFerry.js`, docs/year.md).
 - Two waterfront NPCs (`老林` / Old Lin and `苏女士` / Ms. Su) standing near the river railing beneath a promenade lamp, already conversing in Mandarin across three everyday-Shanghai exchanges with idle/listening/speaking gestures, non-repeating cadence, and a brief greeting interaction (`E`).
 - Audio & speech note: recorded Mandarin/Shanghainese voice clips are not yet shipped, so `src/engine/dialogueAudio.js` implements WebAudio `PannerNode` positional attenuation ready for recorded clips and falls back to browser Mandarin speech synthesis (`window.speechSynthesis`, `zh-CN`), clearly labeled in the subtitle bar. Browser `speechSynthesis` playback requires an OS/browser `zh-CN` TTS voice and uses utterance-start scalar distance volume rather than true binaural panning.
 

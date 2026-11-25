@@ -10,6 +10,7 @@ const B = (zh, en) => ({ zh, en });
 const D = (day, h, m = 0) => day * 1440 + h * 60 + m;
 const DIDI = { x: -3.2, z: -18.5, label: B('打车点（或南京东路站，地铁 2 号线）', 'DiDi pickup (or East Nanjing Road station, Line 2)') };
 const STALL = { x: -57, z: -5.7, label: B('汉口路 · 修表摊', "Hankou Road · the watch-repairer's stall") };
+const FERRY_PIER = { x: 24, z: 65, label: B('金陵东路渡口', 'Jinling Road East ferry pier') };
 const LIN = { x: 23.5, z: -2, label: B('老林 · 江边栏杆', 'Old Lin, at the river railing') };
 const sceneDone = (L, id) => Object.values(work(L).days).some((r) => r.scene === id);
 const firmDay = (id) => FIRM_SCENES.find((s) => s.id === id).day;
@@ -83,6 +84,7 @@ export const YEAR_QUESTS = [
   { id: 'watch-repairer', giver: 'lin',
     title: B('修表匠', 'The missing watch-repairer'),
     summary: (L) => { const h = handoff(L), W = isYear(L) ? work(L).watch : {};
+      if (W.result === 'saved' && W.book) return B('老周找到了：昆山的医院，中风，五个月的“无名氏”。末班轮渡上的老方替他收着工具箱，修理单上他自己写着“不签”。他侄子认了：协议是仿的，启事上那行字也是他写的。摊子保住了。那块表，是给你修的。', "Old Zhou has been found: a hospital in Kunshan, a stroke, five months as \"name unknown\". Old Fang on the last ferry had kept his toolbox, and in the ticket book Zhou had written that he wouldn't sign. His nephew confessed: the agreement was forged, and the line on the notice was his. The stall is saved. The watch was mended for you.");
       if (W.result === 'saved') return B('老周找到了：昆山的医院，中风，五个月的“无名氏”。转让协议是他侄子仿的签名。因为你记得协议上的日期比他失踪晚两天，摊子保住了。', 'Old Zhou has been found: a hospital in Kunshan, a stroke, five months as "name unknown". His nephew forged the transfer. Because you remembered that its date was two days after he vanished, the stall is saved.');
       if (W.result === 'held') return B('老周找到了：昆山的医院，中风，五个月的“无名氏”。你说出了你看见的那个人，是他侄子。转让被叫停，摊位冻结，等法院判：摊子关着，但没有易主。', 'Old Zhou has been found: a hospital in Kunshan, a stroke, five months as "name unknown". You told his daughter about the man you saw; it was his nephew. The transfer has been stopped and the pitch frozen until the court decides: the stall is shut, but it has not changed hands.');
       if (W.result === 'lost') return W.unmet ? B('汉口路的修表摊换了招牌：手机贴膜。老周后来怎样，你没有再听说。', "The stall on Hankou Road has a new sign: phone screen protectors. What became of Old Zhou, you never heard.") : B('老周找到了，人还在。摊子没保住：转让早就办完了，没有人能说清袋子里那张纸上写的是哪一天。', 'Old Zhou has been found, alive. The stall is gone: the transfer went through long ago, and nobody could say what date was on the page in that pouch.');
@@ -93,6 +95,7 @@ export const YEAR_QUESTS = [
     steps: [
       { id: 'collect', text: B('到汉口路北侧的修表摊，取柜台上的文件袋', "Collect the pouch from the counter of the watch-repair stall, north side of Hankou Road"), target: STALL, done: (L) => !!handoff(L) || (L.flags.m1 || {}).step === 'carry' },
       { id: 'handed', text: (L) => (handoff(L) ? (handoff(L).outcome === 'opened' ? B('把文件袋交给了老林（封条已破）', 'Handed the pouch to Old Lin (seal broken)') : B('把文件袋交给了老林（封条完好）', 'Handed the pouch to Old Lin (seal intact)')) : B('把文件袋交给江边栏杆旁的老林', 'Bring the pouch to Old Lin at the river railing')), target: LIN, done: (L) => !!handoff(L) },
+      { id: 'ferry', optional: true, text: B('寻人启事上写着：“想晓得，就乘末班轮渡。”（金陵东路渡口，晚上十一点）', 'The notice says: "If you want to know, take the last ferry." (Jinling Road East pier, 11 pm)'), target: FERRY_PIER, done: (L) => !!L.flags.zhouBox, fail: (L) => !L.flags.zhouBox && (L.clock.day >= 13 || (isYear(L) && !!work(L).watch.met)) },
       { id: 'daughter', optional: true, text: B('一月以后，汉口路的修表摊前有人在打听老周', "From January, someone is at the stall on Hankou Road asking after Old Zhou"), target: STALL, done: (L) => isYear(L) && !!work(L).watch.met, fail: (L) => !isYear(L) || L.clock.day >= 13 },
       { id: 'news', optional: true, text: B('等消息', 'Wait for news'), done: (L) => isYear(L) && !!work(L).watch.result && !work(L).watch.unmet, fail: (L) => !isYear(L) || !!work(L).watch.unmet || L.clock.day >= FINAL_DAY },
     ] },
