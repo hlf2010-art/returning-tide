@@ -17,7 +17,7 @@
 // Dev-only: every face in the game at dialogue distance, in the game's renderer and the shared idle pose.
 //   /tools/characters/faces.html            all roles in public/people/people.json
 //   /tools/characters/faces.html?roles=c4,c1&yaw=30
-//   debug: specks=0|1 (the shard cleaner), armout=<deg>, clips=player, ids=1|map, uvdbg=1 (UV as colour), tridbg=1 (triangle ids)
+//   debug: specks=0|1 (the shard cleaner), armout=<deg>, clips=player, ids=1|map, uvdbg=1 (UV as colour), tridbg=1 (triangle ids), hide=<regex> (meshes), names=1, morph=jawOpen:0.3,mouthSmile:0.7
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
@@ -81,6 +81,9 @@ for (const role of roles) {
     if (qs.get('fix') === 'normals') o.material = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide });
   });
   if (qs.get('nohero')) root.traverse((o) => { if (/^hero-/.test(o.name)) o.visible = false; });
+  if (qs.get('morph')) for (const kv of qs.get('morph').split(',')) { const [k, w] = kv.split(':'); root.traverse((o) => { const i = o.morphTargetDictionary?.[k]; if (i !== undefined) o.morphTargetInfluences[i] = +w; }); }
+  if (qs.get('hide')) { const re = new RegExp(qs.get('hide')); root.traverse((o) => { if (o.isMesh && re.test(o.name)) o.visible = false; }); }
+  if (qs.get('names')) root.traverse((o) => { if (o.isMesh) console.log('mesh', o.name, o.material.name, o.material.color?.getHexString(), o.geometry.attributes.position.count, !!o.material.vertexColors, o.visible); });
   root.scale.setScalar(0.01);
   const key = new THREE.DirectionalLight(0xfff0dd, 2.0); key.position.set(1, 1.8, 1.4);
   const rim = new THREE.DirectionalLight(0xdde8ff, 1.0); rim.position.set(-1, 1.6, -1.2);
