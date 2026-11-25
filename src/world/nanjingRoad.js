@@ -14,54 +14,19 @@ import { makeCanvas, tex, rng, FONT } from './canvas.js';
 import { towerAtlas } from './skyline.js';
 import { markCanvas } from '../ui/brands.js';
 import { createShopfronts } from './shopfronts.js';
+import { createSignAtlas, loadSignFonts } from './shopSigns.js';
+import { placedShops } from './njShops.js';
 
 const CH = L.curbH;
 const NAMES = ['stone', 'stoneDark', 'flute', 'classic', 'arched', 'rustic', 'deco', 'brick', 'roof', 'copper', 'bronze', 'glassDark'];
 export const LINE_COLOR = { 2: '#82BF25', 10: '#C6AFD4' };      // Wikipedia's Shanghai Metro palette (not an official spec)
 
-// ---- the sign atlas: horizontal fascia signs and vertical blade signs ----
+// ---- invented shops, for frontages no real shop has been placed on ----
 const SHOP_TYPES = [['丝绸', 'SILK'], ['钟表', 'WATCHES'], ['工艺美术', 'ARTS & CRAFTS'], ['珠宝', 'JEWELLERY'], ['糕团', 'PASTRY'], ['照相器材', 'CAMERAS'],
   ['运动', 'SPORTS'], ['书店', 'BOOKS'], ['茶庄', 'TEA'], ['药房', 'PHARMACY'], ['百货', 'DEPARTMENT STORE'], ['鞋帽', 'SHOES & HATS'], ['咖啡', 'COFFEE'],
   ['酒家', 'RESTAURANT'], ['眼镜', 'OPTICIAN'], ['食品', 'FOOD HALL'], ['时装', 'FASHION'], ['箱包', 'LUGGAGE'], ['生煎', 'FRIED BUNS'], ['纪念品', 'SOUVENIRS'], ['数码', 'DIGITAL']];
 const SYL = ['华', '美', '新', '恒', '永', '丰', '德', '益', '昌', '兴', '和', '泰', '瑞', '鸿', '宝', '光', '大', '协'];
 const NEON = ['#ff3b3b', '#ffd23a', '#ffffff', '#3bd1ff', '#ff4fd8', '#5bff8f', '#ff8a2a'];
-// a flagship's name over its front
-function brandSign({ sign: [main, sub], fg, bg }) {
-  const [c, x] = makeCanvas(1024, 226);
-  x.fillStyle = bg; x.fillRect(0, 0, 1024, 226);
-  x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.font = `700 ${/[一-鿿]/.test(main) ? 104 : 118}px ${FONT.sans}`; x.fillText(main, 512, 96, 980);
-  x.font = `500 34px ${FONT.sans}`; x.globalAlpha = 0.85; x.fillText(sub, 512, 186, 980);
-  return tex(c, { repeat: false, aniso: 8 });
-}
-function signAtlas(seed = 7) {
-  const r = rng(seed), [c, x] = makeCanvas(2048, 2048);
-  x.fillStyle = '#000'; x.fillRect(0, 0, 2048, 2048);
-  const fascia = [], blades = [], types = [];
-  // fascia: 4 x 12 cells of 512 x 96
-  for (let row = 0; row < 12; row++) for (let col = 0; col < 4; col++) {
-    const [zh, en] = SHOP_TYPES[Math.floor(r() * SHOP_TYPES.length)], name = SYL[Math.floor(r() * SYL.length)] + SYL[Math.floor(r() * SYL.length)] + zh;
-    const X = col * 512, Y = row * 96, bg = r() < 0.5 ? ['#7a0d12', '#0d2a55', '#111', '#2b1708', '#0f3a2a'][Math.floor(r() * 5)] : '#0b0b0b';
-    const fg = r() < 0.4 ? '#f5d27a' : NEON[Math.floor(r() * NEON.length)];
-    x.fillStyle = bg; x.fillRect(X + 2, Y + 2, 508, 92);
-    x.fillStyle = fg; x.shadowColor = fg; x.shadowBlur = 10; x.textBaseline = 'middle';
-    x.font = `900 52px ${FONT.serif}`; x.textAlign = 'left'; x.fillText(name, X + 24, Y + 46);
-    x.shadowBlur = 0; x.font = `700 20px ${FONT.sans}`; x.textAlign = 'right'; x.fillStyle = 'rgba(255,255,255,0.8)'; x.fillText(en, X + 494, Y + 50);
-    fascia.push([X / 2048, 1 - (Y + 96) / 2048, (X + 512) / 2048, 1 - Y / 2048]); types.push(zh);
-  }
-  // blades: 21 x 2 cells of 96 x 448, characters stacked
-  for (let row = 0; row < 2; row++) for (let col = 0; col < 21; col++) {
-    const [zh] = SHOP_TYPES[Math.floor(r() * SHOP_TYPES.length)], name = (SYL[Math.floor(r() * SYL.length)] + SYL[Math.floor(r() * SYL.length)] + zh).slice(0, 4);
-    const X = col * 96 + 4, Y = 1152 + 32 + row * 448, fg = NEON[Math.floor(r() * NEON.length)];
-    x.fillStyle = r() < 0.5 ? '#0a0a0a' : '#5a0a0e'; x.fillRect(X + 4, Y + 4, 88, 440);
-    x.strokeStyle = fg; x.lineWidth = 4; x.shadowColor = fg; x.shadowBlur = 12; x.strokeRect(X + 8, Y + 8, 80, 432);
-    x.fillStyle = fg; x.font = `900 76px ${FONT.serif}`; x.textAlign = 'center'; x.textBaseline = 'middle';
-    [...name].forEach((ch, i) => x.fillText(ch, X + 48, Y + 60 + i * (400 / Math.max(3, name.length))));
-    x.shadowBlur = 0;
-    blades.push([X / 2048, 1 - (Y + 448) / 2048, (X + 96) / 2048, 1 - Y / 2048]);
-  }
-  return { texture: tex(c, { repeat: false, aniso: 8 }), fascia, blades, types };
-}
 // ad slides for the LED screens (cycled)
 function screenAtlas() {
   const [c, x] = makeCanvas(512, 1024);
@@ -139,7 +104,32 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   for (let x = h.x0 + 0.4; x < h.x1 - 0.4; x += 0.9) P.paint.floor(x, x + 0.45, NJ.zc - 3.4, NJ.zc + 3.4, 0.012);           // the zebra
   P.paint.floor(h.x0 + 0.3, h.xc - 0.3, NJ.zc - 5.6, NJ.zc - 5.2, 0.012); P.paint.floor(h.xc + 0.3, h.x1 - 0.3, NJ.zc + 5.2, NJ.zc + 5.6, 0.012);
   // ---- the buildings ----
-  const signs = new Batch(), blades = new Batch(), atlas = signAtlas();
+  const signs = new Batch(), letters = new Batch(), blades = new Batch(), boards = new Batch();
+  // the signs: each shop's own, drawn into atlases (world/shopSigns.js) once the sign faces have loaded
+  const signAt = createSignAtlas(4096, 2048), bladeAt = createSignAtlas(2048, 2048);
+  // a generic shop (where no real one has been placed): an invented name in the street's manner
+  const PLAQUE_BG = ['#111010', '#121212', '#5e0f12', '#1a1410'], BRAND_BG = ['#b8141c', '#0d3b7a', '#0f5a3a', '#1d1d1f', '#c8102e', '#5a2a82'];
+  const generic = (rr) => {
+    const [zh, en] = SHOP_TYPES[Math.floor(rr() * SHOP_TYPES.length)], name = SYL[Math.floor(rr() * SYL.length)] + SYL[Math.floor(rr() * SYL.length)] + zh, k = rr();
+    return { zh: name, en, type: zh, sign: k < 0.45 ? { style: 'plaque', bg: PLAQUE_BG[Math.floor(rr() * 4)], font: rr() < 0.7 ? 'kai' : 'wei' } : k < 0.8 ? { style: 'brand', bg: BRAND_BG[Math.floor(rr() * BRAND_BG.length)] } : { style: 'deco' },
+      blade: rr() < 0.5 ? { bladeStyle: rr() < 0.5 ? 'neon' : 'plaque', neon: NEON[Math.floor(rr() * NEON.length)] } : null };
+  };
+  // a signboard out in front of the façade (clear of the ground floor's cornice, 0.3 m out): w x h, its
+  // bottom at y; standing letters have no board
+  const signboard = (spec, cx, zf, dir, w, h, y) => {
+    const st = spec.style || 'brand', off = 0.34, d = st === 'letters' ? 0 : 0.12, zFace = zf + dir * (off + d + 0.004);
+    const uv = signAt.add(spec, w / h);
+    if (d) boards.box(cx, y - 0.04, zf + dir * (off + d / 2), w + 0.08, h + 0.08, d);
+    quad(st === 'letters' ? letters : signs, dir > 0 ? cx - w / 2 : cx + w / 2, zFace, dir > 0 ? cx + w / 2 : cx - w / 2, zFace, y, y + h, uv);
+    if (d) for (const bx of [cx - w * 0.35, cx + w * 0.35]) boards.box(bx, y + h * 0.4, zf + dir * off / 2, 0.06, 0.08, off);   // brackets back to the wall
+  };
+  // a vertical sign standing out from the façade, both faces
+  const bladeSign = (spec, bx, zf, dir, y0, hgt) => {
+    const f = bladeAt.add(spec, hgt / 1.1 * 0.9, { blade: true });
+    quad(blades, bx, zf + dir * 0.3, bx, zf + dir * 1.4, y0, y0 + hgt, f);
+    quad(blades, bx, zf + dir * 1.4, bx, zf + dir * 0.3, y0, y0 + hgt, [f[2], f[1], f[0], f[3]]);
+    boards.box(bx, y0 - 0.05, zf + dir * 0.85, 0.08, hgt + 0.1, 1.2);
+  };
   // the shopfronts: glass with the real shop behind it, frames, automatic doors (world/shopfronts.js)
   const fronts = createShopfronts({ size: roomSize, rnd: rng(2020) });
   const quad = (batch, ax, az, bx, bz, y0, y1, uv) => {
@@ -162,43 +152,29 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     ], `${face}EW`, seed, gain);
     // the shopfront (the room behind the glass follows what the sign says it sells), with a door at each
     // spot the crowd goes in by (engine/crowd.js: every 13 m from x -46)
-    const nSigns = w > 22 ? 2 : 1, picks = Array.from({ length: nSigns }, () => Math.floor(rr() * atlas.fascia.length));
+    // which shop: a real one placed here (world/njShops.js), else an invented one
+    const shop = opts.shop || generic(rr);
     const doorAt = [];
     for (let dx = -46; dx > xa; dx -= 13) if (dx > xa + 2.6 && dx < xb - 2.6) { doorAt.push(dx); doorList.push({ x: dx, z: zf, dir }); }
-    fronts.addFront({ axis: 'x', plane: zf, out: dir }, xa, xb, { y0: CH, doorAt, type: opts.type || atlas.types[picks[0]], room: opts.room || null });
-    if (opts.signs === false) return base + up + (top ? 3.6 : 0);
-    // the fascia sign over the shopfront, sometimes two
-    for (let i = 0; i < nSigns; i++) {
-      const sw = Math.min(w * 0.8 / nSigns, 11), cx = xa + (w * (i + 0.5)) / nSigns, f = atlas.fascia[picks[i]], zs = zf + dir * 0.12;
-      quad(signs, dir > 0 ? cx - sw / 2 : cx + sw / 2, zs, dir > 0 ? cx + sw / 2 : cx - sw / 2, zs, 4.3, 4.3 + sw * 96 / 512, f);
-    }
-    // vertical blade signs standing out from the façade
-    const nBlades = rr() < 0.75 ? 1 + Math.floor(rr() * 2) : 0;
-    for (let i = 0; i < nBlades; i++) {
-      const bx = xa + 1.5 + rr() * (w - 3), y0 = base + 1 + rr() * 3, hgt = 5.5 + rr() * 4, f = atlas.blades[Math.floor(rr() * atlas.blades.length)];
-      quad(blades, bx, zf + dir * 0.3, bx, zf + dir * 1.5, y0, y0 + hgt, f);
-      quad(blades, bx, zf + dir * 1.5, bx, zf + dir * 0.3, y0, y0 + hgt, [f[2], f[1], f[0], f[3]]);
+    if (shop.doors) for (const dx of shop.doors) if (dx > xa + 2.6 && dx < xb - 2.6 && !doorAt.some((u) => Math.abs(u - dx) < 5.2)) doorAt.push(dx);
+    if (shop.front !== false) fronts.addFront({ axis: 'x', plane: zf, out: dir }, xa, xb, { y0: CH, doorAt, type: shop.type, room: opts.room || shop.room || null });
+    if (opts.signs === false || shop.noSign) return base + up + (top ? 3.6 : 0);
+    // the signboard over the shopfront, out in front of the cornice
+    const sg = { zh: shop.zh, en: shop.en, since: shop.since, ...shop.sign }, st = sg.style || 'brand';
+    const sh = sg.h || (st === 'letters' ? 1.0 : st === 'plaque' ? 1.3 : 1.15), sw = Math.min(w - 1.2, sg.width || (st === 'plaque' ? Math.max(5, [...shop.zh].length * 1.5) : 11), 13);
+    signboard(sg, sg.at ?? (xa + xb) / 2, zf, dir, sw, sh, 4.3);
+    // a vertical sign standing out from the façade
+    if (shop.blade) {
+      const bx = shop.blade.at ?? (dir > 0 ? xb - 1.6 : xa + 1.6), y0 = base + 0.8, hgt = Math.min(9, 1.2 * [...(shop.blade.text || shop.zh)].length + 1.2);
+      bladeSign({ ...sg, ...shop.blade, blade: shop.blade.text || shop.zh }, bx, zf, dir, y0, hgt);
     }
     return base + up + (top ? 3.6 : 0);
   }
   let seed = 11;
   const doorList = [];
-  // the flagship stores of this stretch (between Henan Road and Jiangxi Road), as they stand: Apple in the
-  // Henderson Metropolitan building and New World Daimaru on the south side; Samsung's largest Chinese store
-  // in Hongyi Plaza and Huawei's global flagship in the 1930s Nanjing Building on the north
-  const LANDMARKS = [
-    { side: 1, x0: -492, x1: -452, style: 'deco', up: 28.8, top: false, glass: true, sign: ['SAMSUNG', '宏伊国际广场  HONGYI PLAZA'], fg: '#ffffff', bg: '#1428a0', room: 'phone_shop' },
-    { side: 1, x0: -448, x1: -404, style: 'deco', up: 21.6, top: true, sign: ['HUAWEI  华为', '全球旗舰店 · 南京大楼'], fg: '#ffffff', bg: '#c7000b', room: 'phone_shop' },
-    { side: -1, x0: -492, x1: -460, style: 'classic', up: 25.2, top: false, glass: true, sign: ['Apple', '南京东路'], fg: '#f5f5f7', bg: '#1d1d1f', room: 'phone_shop' },
-    { side: -1, x0: -456, x1: -404, style: 'classic', up: 28.8, top: true, glass: true, sign: ['新世界大丸百货', 'SHANGHAI NEW WORLD DAIMARU'], fg: '#2b2b2b', bg: '#f3efe6', room: 'royal_esplanade' },
-  ];
-  const lmSigns = [];
-  function landmark(lm, zf, dir) {
-    const hgt = building(lm.x0, lm.x1, zf, dir, seed++, { style: lm.style, up: lm.up, top: lm.top, signs: false, room: lm.room });
-    const w = lm.x1 - lm.x0, cx = (lm.x0 + lm.x1) / 2;
-    lmSigns.push({ lm, x: cx, z: zf + dir * 0.16, dir, y: 5.5, w: Math.min(w * 0.5, 12) });
-    return hgt;
-  }
+  // the real shops (world/njShops.js), each at its street number on its side of the street
+  const PLACED = placedShops();
+  const placedAt = (dir, x) => PLACED.find((p) => p.dir === dir && Math.abs(x - p.x1) < 0.01);
   const runs = [[-84, NJ.cross[0].x1], [NJ.cross[0].x0, NJ.cross[1].x1], [NJ.cross[1].x0, h.x1 + 5], [h.x0 - 5, NJ.xWest - 2]];
   const screens = [];
   // the shengjian shop's building (world/dumpling.js does its ground floor): storeys above an open shopfront
@@ -216,12 +192,16 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     const end = Math.min(ea, eb);
     while (x - end > 6) {
       if (dir < 0 && Math.abs(x - DUMPLING.x1) < 0.01) { shopBuilding(DUMPLING.x0, DUMPLING.x1, zf); x = DUMPLING.x0; continue; }
-      const lmHere = LANDMARKS.find((l) => l.side === dir && Math.abs(x - l.x1) < 0.01);
-      if (lmHere) { landmark(lmHere, zf, dir); x = lmHere.x0; continue; }
+      const here = placedAt(dir, x);
+      if (here && here.x0 >= end - 0.01) { building(here.x0, x, zf, dir, seed++, { ...here.building, shop: here.shop }); x = here.x0; continue; }
       let w = Math.min(x - end, 16 + r() * 22);
-      if (dir < 0 && x > DUMPLING.x1 && x - w < DUMPLING.x1 + 0.01) w = x - DUMPLING.x1;    // stop at the shop
-      const lmNext = LANDMARKS.find((l) => l.side === dir && x > l.x1 + 0.01 && x - w < l.x1 + 0.01);
-      if (lmNext) w = x - lmNext.x1;                                                          // stop at a flagship
+      if (dir < 0 && x > DUMPLING.x1 && x - w < DUMPLING.x1 + 0.01) w = x - DUMPLING.x1;    // stop at the shengjian shop
+      const next = PLACED.find((p) => p.dir === dir && x > p.x1 + 0.01 && x - w < p.x1 + 0.01 && p.x0 >= end - 0.01);
+      if (next) {                                                                             // stop at a real shop
+        if (x - next.x1 < 5) { building(next.x0, x, zf, dir, seed++, { ...next.building, shop: next.shop }); x = next.x0; continue; }   // (no sliver between)
+        w = x - next.x1;
+      }
+      if (x - w - end < 5 && x - w > end) w = x - end;                                         // (nor at the end of the block)
       const hgt = building(x - w, x, zf, dir, seed++);
       if (r() < 0.12 && w > 18) screens.push({ x: x - w / 2, z: zf + dir * 0.2, dir, y: Math.min(hgt - 4, 14), w: Math.min(w * 0.6, 12) });
       x -= w;
@@ -303,14 +283,15 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   for (const s of screens) { const p = new THREE.Mesh(new THREE.PlaneGeometry(s.w, s.w * 0.5), scrMat); p.position.set(s.x, s.y, s.z); if (s.dir < 0) p.rotation.y = Math.PI; group.add(p); }
   // ---- materials ----
   flush(B, M, group, 'nj-');
-  const signMat = new THREE.MeshBasicMaterial({ map: atlas.texture }); signMat.color.setScalar(1.55); asLight(signMat, 'signs', 0.5);   // unlit by day: painted signs
-  const bladeMat = new THREE.MeshBasicMaterial({ map: atlas.texture, side: THREE.DoubleSide }); bladeMat.color.setScalar(1.7); asLight(bladeMat, 'signs', 0.5);
+  // the signs: lit at night, painted boards by day; drawn now and again once the sign faces are in
+  signAt.draw(); bladeAt.draw(); loadSignFonts().then(() => { signAt.draw(); bladeAt.draw(); });
+  const signMat = new THREE.MeshBasicMaterial({ map: signAt.texture }); signMat.color.setScalar(1.35); asLight(signMat, 'signs', 0.62);
+  const letterMat = new THREE.MeshBasicMaterial({ map: signAt.texture, alphaTest: 0.5 }); letterMat.color.setScalar(1.5); asLight(letterMat, 'signs', 0.7);
+  const bladeMat = new THREE.MeshBasicMaterial({ map: bladeAt.texture, side: THREE.DoubleSide }); bladeMat.color.setScalar(1.5); asLight(bladeMat, 'signs', 0.6);
+  const boardMat = new THREE.MeshStandardMaterial({ color: 0x1b1916, metalness: 0.6, roughness: 0.4 });
   group.add(fronts.build());
-  for (const sgn of lmSigns) {
-    const m = new THREE.MeshBasicMaterial({ map: brandSign(sgn.lm) }); m.color.setScalar(1.25); asLight(m, 'screens', 0.9);
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(sgn.w, sgn.w * 0.2), m); p.position.set(sgn.x, sgn.y + sgn.w * 0.1, sgn.z); if (sgn.dir < 0) p.rotation.y = Math.PI; group.add(p);
-  }
-  group.add(signs.mesh(signMat, 'nj-signs'), blades.mesh(bladeMat, 'nj-blades'));
+  group.add(signs.mesh(signMat, 'nj-signs'), blades.mesh(bladeMat, 'nj-blades'), boards.mesh(boardMat, 'nj-sign-boards'));
+  if (letters.list.length) group.add(letters.mesh(letterMat, 'nj-sign-letters'));
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
   group.add(P.paint.mesh(paint, 'henan-paint'), P.yellow.mesh(yellow, 'henan-yellow'));
