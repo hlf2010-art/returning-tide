@@ -117,10 +117,10 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   // a signboard out in front of the façade (clear of the ground floor's cornice, 0.3 m out): w x h, its
   // bottom at y; standing letters have no board
   const signboard = (spec, cx, zf, dir, w, h, y) => {
-    const st = spec.style || 'brand', off = 0.34, d = st === 'letters' ? 0 : 0.12, zFace = zf + dir * (off + d + 0.004);
+    const st = spec.style || 'brand', bare = st === 'letters' && !spec.board, off = 0.34, d = bare ? 0 : 0.12, zFace = zf + dir * (off + d + 0.004);
     const uv = signAt.add(spec, w / h);
     if (d) boards.box(cx, y - 0.04, zf + dir * (off + d / 2), w + 0.08, h + 0.08, d);
-    quad(st === 'letters' ? letters : signs, dir > 0 ? cx - w / 2 : cx + w / 2, zFace, dir > 0 ? cx + w / 2 : cx - w / 2, zFace, y, y + h, uv);
+    quad(bare ? letters : signs, dir > 0 ? cx - w / 2 : cx + w / 2, zFace, dir > 0 ? cx + w / 2 : cx - w / 2, zFace, y, y + h, uv);
     if (d) for (const bx of [cx - w * 0.35, cx + w * 0.35]) boards.box(bx, y + h * 0.4, zf + dir * off / 2, 0.06, 0.08, off);   // brackets back to the wall
   };
   // a vertical sign standing out from the façade, both faces
@@ -157,12 +157,22 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     const doorAt = [];
     for (let dx = -46; dx > xa; dx -= 13) if (dx > xa + 2.6 && dx < xb - 2.6) { doorAt.push(dx); doorList.push({ x: dx, z: zf, dir }); }
     if (shop.doors) for (const dx of shop.doors) if (dx > xa + 2.6 && dx < xb - 2.6 && !doorAt.some((u) => Math.abs(u - dx) < 5.2)) doorAt.push(dx);
-    if (shop.front !== false) fronts.addFront({ axis: 'x', plane: zf, out: dir }, xa, xb, { y0: CH, doorAt, type: shop.type, room: opts.room || shop.room || null });
+    if (shop.front !== false) fronts.addFront({ axis: 'x', plane: zf, out: dir }, xa, xb, { y0: CH, top: (shop.front && shop.front.top) || 4.1, doorAt, type: shop.type, room: opts.room || shop.room || null });
     if (opts.signs === false || shop.noSign) return base + up + (top ? 3.6 : 0);
     // the signboard over the shopfront, out in front of the cornice
     const sg = { zh: shop.zh, en: shop.en, since: shop.since, ...shop.sign }, st = sg.style || 'brand';
-    const sh = sg.h || (st === 'letters' ? 1.0 : st === 'plaque' ? 1.3 : 1.15), sw = Math.min(w - 1.2, sg.width || (st === 'plaque' ? Math.max(5, [...shop.zh].length * 1.5) : 11), 13);
-    signboard(sg, sg.at ?? (xa + xb) / 2, zf, dir, sw, sh, 4.3);
+    const size = (g, wide) => {
+      const t = g.style || 'brand', h = g.h || (t === 'letters' ? 1.0 : t === 'plaque' ? 1.3 : 1.15);
+      return [Math.min(w - 1.2, g.width || (t === 'plaque' ? Math.max(5, [...(g.zh || '')].length * 1.5) : wide), 13), h];
+    };
+    const [sw, sh] = size(sg, 11), y = sg.y || ((shop.front && shop.front.top) > 6 ? 5.6 : 4.3);
+    const sx = Math.min(xb - sw / 2 - 0.4, Math.max(xa + sw / 2 + 0.4, shop.signAt ?? (xa + xb) / 2));
+    signboard(sg, sx, zf, dir, sw, sh, y);
+    // the other shops in the same building (their own signs over their own windows)
+    for (const m of shop.more || []) {
+      const g = { zh: m.zh, en: m.en, ...m.sign }, [mw, mh] = size(g, 6);
+      signboard(g, Math.min(xb - mw / 2 - 0.4, Math.max(xa + mw / 2 + 0.4, m.x)), zf, dir, mw, mh, 4.3);
+    }
     // a vertical sign standing out from the façade
     if (shop.blade) {
       const bx = shop.blade.at ?? (dir > 0 ? xb - 1.6 : xa + 1.6), y0 = base + 0.8, hgt = Math.min(9, 1.2 * [...(shop.blade.text || shop.zh)].length + 1.2);
@@ -301,7 +311,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   group.add(P.dark.mesh(new THREE.MeshStandardMaterial({ color: 0x15181c, roughness: 0.15, metalness: 0.6 }), 'metro-panels'));
   group.add(glassB.mesh(glassMat, 'metro-glass'), strips.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.6, 1.7) }), 'metro-strips'));
   return {
-    group, lights, doors: doorList, fronts,
+    group, lights, doors: doorList, fronts, signAtlas: signAt, bladeAtlas: bladeAt, placed: PLACED,
     update(t) { scrTex.offset.y = (Math.floor(t / 6) % 4) * 0.25; },
     // the automatic doors: open for whoever comes up to them (people: [{ x, z }])
     doorsUpdate(dt, people, eye) { fronts.update(dt, people, eye); },

@@ -4,7 +4,7 @@
 //   plaque   a 老字号's board: black (or red) lacquer, gilt brush characters, a thin gilt border
 //   deco     a department store's: dark bronze, cream serif characters, the English beneath
 //   brand    a modern brand's lightbox: its colour, bold characters, the English beside
-//   letters  standing letters on the façade, no board (cut out of the texture)
+//   letters  standing letters, on a dark fascia band (board) or, without one, cut out against the façade
 // Type: Ma Shan Zheng (brush), ZCOOL XiaoWei (an old-fashioned print hand), Noto Serif SC and Noto
 // Sans SC Black, all SIL OFL, subset to the shop names (tools/fonts/signs.py, public/fonts/sign-*.woff2).
 import * as THREE from 'three';
@@ -41,7 +41,7 @@ function spaced(x, text, cx, cy, size, font, spacing) {
 }
 // draw one sign into (X, Y, W, H) of the atlas
 export function drawSign(x, s, X, Y, W, H) {
-  const st = s.style || 'brand', zh = s.zh, en = s.en || '';
+  const st = s.style || 'brand', zh = s.zh || s.en || '', en = s.zh ? (s.en || '') : '';
   x.save(); x.beginPath(); x.rect(X, Y, W, H); x.clip();
   x.textAlign = 'center'; x.textBaseline = 'middle';
   if (st === 'plaque') {
@@ -61,11 +61,19 @@ export function drawSign(x, s, X, Y, W, H) {
     const font = SIGN_FONTS[s.font || 'song'], size = fit(x, zh, font, H * (en ? 0.5 : 0.62), W * 0.9, 0.18);
     x.fillStyle = fg; spaced(x, zh, X + W / 2, Y + H * (en ? 0.4 : 0.52), size, font, 0.18);
     if (en) { const es = fit(x, en, SIGN_FONTS.song, H * 0.15, W * 0.86, 0.25); x.globalAlpha = 0.85; spaced(x, en.toUpperCase(), X + W / 2, Y + H * 0.79, es, SIGN_FONTS.song, 0.25); x.globalAlpha = 1; }
-  } else if (st === 'letters' && s.logo && !zh) {
-    // a logo alone (Apple's), standing on the façade
-    x.clearRect(X, Y, W, H); logo(x, s.logo, X + W / 2, Y + H / 2, H * 0.86, s.fg || '#f5f5f7', s.glow);
+  } else if (st === 'letters' && s.logo && (!s.zh || /Apple/.test(s.en || ''))) {
+    // a logo alone (Apple's), or a logo and a name, standing on the façade (or on a dark fascia band)
+    if (s.board) { x.fillStyle = s.board; x.fillRect(X, Y, W, H); } else x.clearRect(X, Y, W, H);
+    const text = /Apple/.test(s.en || '') ? '' : (s.en || '');
+    if (!text) logo(x, s.logo, X + W / 2, Y + H / 2, H * 0.86, s.fg || '#f5f5f7', s.glow);
+    else {
+      const L = H * 0.7, font = SIGN_FONTS[s.font || 'hei'], ts = fit(x, text, font, H * 0.5, W * 0.92 - L - H * 0.3, 0.04);
+      x.font = `${ts}px ${font}`; const tw = x.measureText(text).width, x0 = X + (W - (L + H * 0.3 + tw)) / 2;
+      logo(x, s.logo, x0 + L / 2, Y + H / 2, L, s.fg || '#ffffff');
+      x.fillStyle = s.fg || '#ffffff'; x.textAlign = 'left'; x.fillText(text, x0 + L + H * 0.3, Y + H * 0.54);
+    }
   } else if (st === 'letters') {
-    x.clearRect(X, Y, W, H);
+    if (s.board) { x.fillStyle = s.board; x.fillRect(X, Y, W, H); } else x.clearRect(X, Y, W, H);
     const font = SIGN_FONTS[s.font || 'hei'], fg = s.fg || '#f5f5f5', size = fit(x, zh, font, H * (en ? 0.56 : 0.7), W * 0.94, 0.12);
     x.fillStyle = fg; x.shadowColor = s.glow || 'rgba(0,0,0,0)'; x.shadowBlur = s.glow ? H * 0.08 : 0;
     spaced(x, zh, X + W / 2, Y + H * (en ? 0.4 : 0.52), size, font, 0.12);
