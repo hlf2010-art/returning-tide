@@ -88,6 +88,7 @@ import { createHotelUpper } from './world/hotelUpper.js';
 import { createJazzBar } from './world/jazzBar.js';
 import { createHailers } from './world/hailers.js';
 import { createShoppers } from './world/shoppers.js';
+import { createTrams } from './world/tram.js';
 import { createDestinations } from './world/destinations.js';
 import { createDriving } from './world/driving.js';
 import { createRoadReactions } from './world/roadReactions.js';
@@ -340,7 +341,7 @@ async function boot() {
   // people getting out of its way, and what happens if someone can't (world/roadReactions.js)
   const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd, onHit: (L, info) => carFallout(L, info) });
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads });
-  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio }) };
+  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -1377,7 +1378,7 @@ function updateTraffic(dt) {
     const canSpawnAt = (n) => { const dx = n.x - eye.x, dz = n.z - eye.z, d = Math.hypot(dx, dz); return d > 45 || (d > 14 && (dx * _d.x + dz * _d.z) / d < -0.2); };
     const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others(), ...world.moments.others(), ...world.fieldTest.others()];
     others.push(...world.hearts.others());
-    others.push(...world.shoppers.others());
+    others.push(...world.shoppers.others(), ...world.trams.others());
     others.push(...world.confront.others());                                        // (the crowd walks round a row, too)
     cr.setCars(traffic.obstacles);                                                   // the Huracán, parked or driven: walked round, not through
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others, focus: eye });
@@ -1519,6 +1520,7 @@ function frame(now) {
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
   world.shoppers.update(mode === 'pause' ? 0 : dt, player.body);                     // shoppers coming and going by DiDi
+  world.trams.update(mode === 'pause' ? 0 : dt, player.body, world.crowd ? world.crowd.agents : null, camera.position);   // Nanjing Road's sightseeing trains
   if (mode !== 'pause' && Math.abs(player.body.z + 201) < 60 && player.body.x < -20) {         // Nanjing Road's automatic doors: who's at them
     const b = player.body, near = [b];
     if (world.crowd) for (const a of world.crowd.agents) if (!a.inside && a.x < -34 && Math.abs(a.z + 201) < 14 && Math.abs(a.x - b.x) < 90) near.push(a);
