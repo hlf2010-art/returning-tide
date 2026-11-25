@@ -15,6 +15,7 @@ import { L, deckLamps, DECK_LAMP_X } from './layout.js';
 import { flinchPose } from '../engine/flinch.js';
 import { bakeBones } from './crowdBake.js';
 import { createCrowdMid } from './crowdMid.js';
+import { canopyGeometry } from './umbrella.js';
 
 // a reaction to being bumped (engine/social.js kinds, set by main.js on a crowd person) -> clip
 const GESTURE = { sorry: 'wave', fine: 'shrug', scold: 'angry', tut: 'look', look: 'look' };
@@ -201,7 +202,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   const hash = (i, k) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
   const uOpen = new Float32Array(N);
   const tint = new Float32Array(N * 3), tintAt = new Int32Array(N).fill(-1); let frameNo = 0;   // (each figure's light, kept: see update)
-  const canopyGeo = new THREE.ConeGeometry(0.5, 0.26, 12, 1, true); canopyGeo.translate(0, -0.13, 0);
+  const canopyGeo = canopyGeometry({ r: 0.5, h: 0.22, perRib: 2, rings: 4 });           // (apex at the origin)
   const canopyMat = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0, side: THREE.DoubleSide });
   const canopies = new THREE.InstancedMesh(canopyGeo, canopyMat, N); canopies.frustumCulled = false; canopies.count = 0; canopies.name = 'crowd-umbrellas';
   for (let i = 0; i < N; i++) canopies.setColorAt(i, UMB_COLORS[0]);
@@ -209,8 +210,8 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   const _um = new THREE.Matrix4(), _uq = new THREE.Quaternion(), _us = new THREE.Vector3(), _up = new THREE.Vector3(), _ue = new THREE.Euler();
   let rain = 0;
   function umbrellaFor(a, dt) {
-    const carries = !a.child && a.kind !== 'jogger' && hash(a.id, 1) < 0.62;
-    const th = 0.14 + hash(a.id, 2) * 0.4;
+    const carries = !a.child && a.kind !== 'jogger' && hash(a.id, 1) < 0.76;   // (Shanghai opens umbrellas at the first drops)
+    const th = 0.1 + hash(a.id, 2) * 0.3;
     const want = carries && (rain > th || (uOpen[a.id] > 0.5 && rain > th - 0.1)) ? 1 : 0;
     uOpen[a.id] += Math.sign(want - uOpen[a.id]) * Math.min(Math.abs(want - uOpen[a.id]), dt / 1.4);
     return uOpen[a.id];
@@ -236,9 +237,9 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     const phone = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.15, 0.009), phoneMat); phone.visible = false;
     group.add(person.root, phone);
     const umb = new THREE.Group(); umb.visible = false;
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.72, 6), phoneMat); shaft.position.y = 0.36;
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.92, 6), phoneMat); shaft.position.y = 0.46;
     const cmat = new THREE.MeshStandardMaterial({ roughness: 0.45, side: THREE.DoubleSide });
-    const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.3, 14, 1, true), cmat); canopy.position.y = 0.7; canopy.castShadow = true;
+    const canopy = new THREE.Mesh(canopyGeometry({ r: 0.55, h: 0.24 }), cmat); canopy.position.y = 0.95; canopy.castShadow = true;   // (apex: clear of the head)
     umb.add(shaft, canopy); group.add(umb);
     // paper carrier bags (after a shop), in the hands
     const bags = [0, 1, 2].map(() => { const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ roughness: 0.75 }); const bx = new THREE.Mesh(BAG_BOX, m); bx.position.y = -0.27; bx.castShadow = true; g.add(bx, new THREE.Mesh(BAG_CORD, phoneMat)); g.children[1].position.y = -0.1; g.visible = false; group.add(g); return g; });
@@ -404,7 +405,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
           _m.makeTranslation(a.x, a.y + 0.02, a.z); blobs.setMatrixAt(n, _m);
           const u = umbrellaFor(a, dt);
           if (u > 0.02) {
-            const h = (a.child ? 1.35 : 2.02) * (a.scale || 1);
+            const h = (a.child ? 1.42 : 2.1) * (a.scale || 1);
             _up.set(a.x + Math.sin(a.heading) * 0.08, a.y + h, a.z + Math.cos(a.heading) * 0.08);
             _us.set(0.15 + 0.85 * u, 0.5 + 0.5 * u, 0.15 + 0.85 * u);
             _um.compose(_up, _uq.setFromEuler(_ue.set(0.06, a.heading, 0, 'YXZ')), _us); canopies.setMatrixAt(nu, _um);
@@ -423,7 +424,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         // an umbrella over the card: up in the raised hand, held a little forward
         const u = umbrellaFor(a, dt);
         if (u > 0.02) {
-          const h = (a.child ? 1.35 : 2.02) * (a.scale || 1);
+          const h = (a.child ? 1.42 : 2.1) * (a.scale || 1);
           _up.set(a.x + Math.sin(a.heading) * 0.08, a.y + h, a.z + Math.cos(a.heading) * 0.08);
           _us.set(0.15 + 0.85 * u, 0.5 + 0.5 * u, 0.15 + 0.85 * u);
           _um.compose(_up, _uq.setFromEuler(_ue.set(0.06, a.heading, 0, 'YXZ')), _us); canopies.setMatrixAt(nu, _um);

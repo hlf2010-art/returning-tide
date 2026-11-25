@@ -53,6 +53,31 @@ function concourseTex() {
   return tex(c, { repeat: false });
 }
 // the metro sign: logo, station name, line badges, exit number
+// the back panel of an exit (the closed end, toward the street): a lit station board, white, with the
+// line diagram and the neighbourhood map as Shanghai Metro's street boards carry them
+function metroBoard(exit) {
+  const [c, x] = makeCanvas(512, 1024);
+  x.fillStyle = '#f4f5f6'; x.fillRect(0, 0, 512, 1024);
+  x.fillStyle = '#EC1C24'; x.fillRect(0, 0, 512, 150);
+  const logo = markCanvas('shanghaimetro', { color: '#ffffff', bg: '#EC1C24', size: 110, pad: 0.1 }); x.drawImage(logo, 20, 20, 110, 110);
+  x.fillStyle = '#fff'; x.textBaseline = 'middle'; x.textAlign = 'left'; x.font = `900 52px ${FONT.sans}`; x.fillText('南京东路站', 146, 62);
+  x.font = `600 24px ${FONT.sans}`; x.fillText('East Nanjing Road Station', 148, 112);
+  // the two lines through the station
+  [[2, 230], [10, 330]].forEach(([n, y]) => {
+    x.fillStyle = LINE_COLOR[n]; x.fillRect(40, y - 8, 432, 16);
+    for (let k = 0; k < 6; k++) { x.fillStyle = '#fff'; x.beginPath(); x.arc(60 + k * 78, y, 12, 0, 7); x.fill(); x.strokeStyle = LINE_COLOR[n]; x.lineWidth = 5; x.stroke(); }
+    x.fillStyle = '#222'; x.font = `800 26px ${FONT.sans}`; x.fillText(`${n}号线 Line ${n}`, 40, y - 40);
+  });
+  // a street map: the blocks round the station, the exits marked
+  x.fillStyle = '#dfe3e6'; x.fillRect(40, 400, 432, 400);
+  x.fillStyle = '#fff'; x.fillRect(40, 580, 432, 40); x.fillRect(236, 400, 40, 400);
+  x.fillStyle = '#333'; x.font = `600 18px ${FONT.sans}`; x.fillText('南京东路 Nanjing Rd (E)', 54, 600); x.save(); x.translate(262, 780); x.rotate(-Math.PI / 2); x.fillText('河南中路 Henan Rd (M)', 0, 0); x.restore();
+  [[150, 570, 2], [330, 570, 7], [150, 630, 3], [330, 630, 4]].forEach(([X, Y, n]) => { x.fillStyle = n === exit ? '#ffd400' : '#9aa3aa'; x.fillRect(X - 18, Y - 18, 36, 36); x.fillStyle = '#111'; x.font = `900 24px ${FONT.sans}`; x.textAlign = 'center'; x.fillText(String(n), X, Y + 1); x.textAlign = 'left'; });
+  x.fillStyle = '#EC1C24'; x.beginPath(); x.arc(256, 600, 9, 0, 7); x.fill();
+  x.fillStyle = '#222'; x.font = `700 30px ${FONT.sans}`; x.fillText(`您在 ${exit} 号口`, 40, 860); x.font = `500 22px ${FONT.sans}`; x.fillText(`You are at Exit ${exit}`, 40, 900);
+  x.fillStyle = '#888'; x.font = `500 18px ${FONT.sans}`; x.fillText('首班车 05:30   末班车 22:50', 40, 960);
+  return tex(c, { repeat: false, aniso: 8 });
+}
 function metroSign(exit) {
   const [c, x] = makeCanvas(1024, 256);
   x.fillStyle = '#16181c'; x.fillRect(0, 0, 1024, 256);
@@ -425,7 +450,10 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     for (const z of [m.z0 - 0.06, m.z1 + 0.06]) walls.box((m.x0 + m.x1) / 2, -METRO_DEPTH, z, m.x1 - m.x0, METRO_DEPTH + CH, 0.12);
     const endX = m.top === m.x1 ? m.x0 - 0.06 : m.x1 + 0.06;
     walls.box(endX, -0.8, zc, 0.12, 0.8 + CH, wz + 0.24);                                                // (below: open on to the concourse)
-    P.dark.box(endX, CH, zc, 0.14, 3.0, wz + 0.24);                                                   // above the street: a dark glass panel
+    // above the street: the closed end, a steel-framed lit station board on its street face, glass above
+    P.steel.box(endX, CH, zc, 0.16, 2.6, wz + 0.24);
+    { const bm = asLight(new THREE.MeshBasicMaterial({ map: metroBoard(m.exit) }), 'lamps', 0.85), out = m.top === m.x1 ? -1 : 1;
+      const b = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 2.4), bm); b.position.set(endX + out * 0.085, CH + 1.3, zc); b.rotation.y = out * Math.PI / 2; group.add(b); }
     walls.box((m.x0 + m.x1) / 2, 3.1, zc, m.x1 - m.x0 + 0.6, 0.12, wz + 0.8);                         // canopy roof frame
     // glass balustrades (three sides) and the canopy's glass
     for (const z of [m.z0, m.z1]) { glassB.box((m.x0 + m.x1) / 2, CH, z, m.x1 - m.x0, 1.1, 0.03); P.steel.box((m.x0 + m.x1) / 2, CH + 1.1, z, m.x1 - m.x0, 0.05, 0.06); }
@@ -437,7 +465,8 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     const topX = m.top + (m.top === m.x1 ? 0.15 : -0.15);
     for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(wz + 0.4, (wz + 0.4) / 4), signMat); p.position.set(topX, 3.55, zc); p.rotation.y = s * Math.PI / 2; group.add(p); }
     const side = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.1), signMat); side.position.set((m.x0 + m.x1) / 2, 3.55, m.z1 + 0.42); group.add(side);
-    const sb = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1.2, 0.8), new THREE.MeshStandardMaterial({ color: 0x1c1f24, roughness: 0.5 })); sb.position.set((m.x0 + m.x1) / 2, 3.55, m.z1 + 0.0); group.add(sb);
+    const sb = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1.2, 0.8), new THREE.MeshStandardMaterial({ color: 0x8e959c, roughness: 0.35, metalness: 0.7 })); sb.position.set((m.x0 + m.x1) / 2, 3.55, m.z1 + 0.0); group.add(sb);   // brushed steel
+    const side2 = side.clone(); side2.position.z = m.z1 - 0.42; side2.rotation.y = Math.PI; group.add(side2);                          // the sign on its other face too
     lights.push({ x: (lx0 + lx1) / 2, y: -METRO_DEPTH + 2.6, z: zc, color: new THREE.Color(0.95, 0.97, 1.0), intensity: 2.2, distance: 8 });
     lights.push({ x: (m.x0 + m.x1) / 2, y: 2.8, z: zc, color: new THREE.Color(0.92, 0.96, 1.0), intensity: 5, distance: 9 });
     m.sign = { x: topX, z: zc };
@@ -469,7 +498,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   const steel = new THREE.MeshStandardMaterial({ color: 0x8a9096, metalness: 0.85, roughness: 0.35 });
   group.add(P.steel.mesh(steel, 'nj-steel'), P.hoard.mesh(new THREE.MeshStandardMaterial({ color: 0x2f6aa8, roughness: 0.7 }), 'nj-hoarding'));
   group.add(P.tile.mesh(new THREE.MeshStandardMaterial({ color: 0x8e8b86, roughness: 0.35 }), 'metro-landing'), walls.mesh(new THREE.MeshStandardMaterial({ color: 0xa9aba9, roughness: 0.45 }), 'metro-walls'));
-  group.add(P.dark.mesh(new THREE.MeshStandardMaterial({ color: 0x15181c, roughness: 0.15, metalness: 0.6 }), 'metro-panels'));
+  if (!P.dark.empty) group.add(P.dark.mesh(new THREE.MeshStandardMaterial({ color: 0x15181c, roughness: 0.15, metalness: 0.6 }), 'metro-panels'));
   group.add(glassB.mesh(glassMat, 'metro-glass'), strips.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.6, 1.7) }), 'metro-strips'));
   return {
     group, lights, doors: doorList, fronts, signAtlas: signAt, bladeAtlas: bladeAt, placed: PLACED,
