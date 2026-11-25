@@ -55,12 +55,13 @@ for (const role of roles) {
     const col = /body/.test(n) ? 0xff3030 : /head/.test(n) ? 0x30ff30 : 0x3060ff;
     o.material = new THREE.MeshBasicMaterial({ map: (/opacity/.test(n) || qs.get('ids') === 'map') ? o.material.map : null, color: qs.get('ids') === 'map' ? 0xffffff : col, alphaTest: o.material.alphaTest, side: THREE.DoubleSide });
   });
-  if (qs.get('uvdbg')) { const N = 1024, d = new Uint8Array(N * N * 4); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = (y * N + x) * 4; d[i] = x & 255; d[i + 1] = y & 255; d[i + 2] = ((x >> 8) << 4) | (y >> 8); d[i + 3] = 255; }
+  if (qs.get('uvdbg')) { const N = 2048, d = new Uint8Array(N * N * 4); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = (y * N + x) * 4; d[i] = x & 255; d[i + 1] = y & 255; d[i + 2] = ((x >> 8) << 4) | (y >> 8); d[i + 3] = 255; }
     const t = new THREE.DataTexture(d, N, N); t.magFilter = t.minFilter = THREE.NearestFilter; t.flipY = false; t.needsUpdate = true;
     root.traverse((o) => { if (o.isSkinnedMesh) o.material = new THREE.MeshBasicMaterial({ map: t }); }); renderer.toneMapping = THREE.NoToneMapping; renderer.outputColorSpace = THREE.LinearSRGBColorSpace; }
   if (qs.get('tridbg')) root.traverse((o) => { if (!o.isSkinnedMesh) return; const g = o.geometry.toNonIndexed(), n = g.attributes.position.count, c = new Float32Array(n * 3);
     for (let v = 0; v < n; v++) { const t = (v / 3) | 0; c[v * 3] = (t & 255) / 255; c[v * 3 + 1] = ((t >> 8) & 255) / 255; c[v * 3 + 2] = ((t >> 16) & 255) / 255; }
     g.setAttribute('color', new THREE.BufferAttribute(c, 3)); o.geometry = g; o.material = new THREE.MeshBasicMaterial({ vertexColors: true }); renderer.toneMapping = THREE.NoToneMapping; renderer.outputColorSpace = THREE.LinearSRGBColorSpace; });
+  if (qs.get('nonormal')) root.traverse((o) => { if (o.isSkinnedMesh && !/^hero-/.test(o.name)) { o.material.normalMap = null; o.material.needsUpdate = true; } });
   if (qs.get('novc')) root.traverse((o) => { if (o.isMesh) { o.material.vertexColors = false; o.material.needsUpdate = true; } });
   if (qs.get('head')) root.traverse((o) => {
     if (!o.isMesh || !/head/.test(o.material.name)) return; const m = o.material, h = qs.get('head');
@@ -90,7 +91,7 @@ for (const role of roles) {
   root.updateMatrixWorld(true);
   const head = root.getObjectByName('Bip01_Head') || root.getObjectByName('Head');
   const hp = new THREE.Vector3(); if (head) head.getWorldPosition(hp); else hp.set(0, 1.6, 0);
-  const face = hp.clone().add(new THREE.Vector3(0, 0.07 + (+qs.get('aimy') || 0), 0));
+  const face = hp.clone().add(new THREE.Vector3(+qs.get('aimx') || 0, 0.07 + (+qs.get('aimy') || 0), 0));
   // which way the face looks: the root's +z (the avatars face +z)
   const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
   const cam = new THREE.PerspectiveCamera(24, 1, 0.01, 20);
