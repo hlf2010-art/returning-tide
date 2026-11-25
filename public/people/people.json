@@ -44,14 +44,14 @@
    "file": "player.glb",
    "head": "jibai/head.glb",
    "keepHair": true,
-   "skinTone": [120, 80, 64],
+   "skinTone": [120, 80, 64], "armOut": 7, "cleanSpecks": true,
    "bytes": 4440904
   },
   "gunian": {
    "avatar": "GuNian (Hunyuan3D from her character sheet; Rocketbox Biped rig)",
    "sex": "f",
    "named": true,
-   "file": "gunian.glb",
+   "file": "gunian.glb", "armOut": 6,
    "bytes": 4964280
   },
   "p5": {

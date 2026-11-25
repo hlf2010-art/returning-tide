@@ -10,6 +10,7 @@ import { cup as makeCup } from './cups.js';
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { createSprings } from './springs.js';
+import { spreadArms } from './people.js';
 import { twoBone } from './driverPose.js';
 import { createFpHand } from './fpHand.js';
 export const FP_ROLE = 'p1';   // whose hand holds things in first person (world/fpHand.js)
@@ -36,6 +37,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0, fpRole = FP_RO
   const root = SkeletonUtils.clone(people.avatars.player);
   root.scale.setScalar(0.01);
   root.name = 'player-body';
+  const armOut = (people.manifest.cast.player?.armOut || 0) * Math.PI / 180;
   let separateHead = false;
   root.traverse((o) => {
     if (!o.isMesh) return;
@@ -252,6 +254,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0, fpRole = FP_RO
         const d = holdClip.duration; if (hold.time < d * 0.12 || hold.time > d * 0.88) hold.time = d * 0.12;
       }
       mixer.update(dt);
+      spreadArms(root, armOut);                                      // (people.json armOut: the hands clear the wide trousers)
 
       // stand the body under the eye (refined below, once the pose is known)
       const down = Math.max(0, -player.pitch), back = tune.back + tune.backDown * Math.min(1, down / 1.2);

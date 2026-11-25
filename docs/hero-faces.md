@@ -130,3 +130,18 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
   head, and the back-face flip is off for them. Cards wound inward used to be lit as facing into the head and
   showed as near-black slabs with hard edges (Su's crown). The su/c5 card lightening of round 4 is gone.
 - `docs/hero-faces/round5-hands-crown.jpg`.
+
+## Round 6 (25 November): the specks on Ji Bai's trousers
+
+- **Most of the specks were his hands.** The shared idle pose was made for the slimmer Rocketbox bodies; on the
+  Hunyuan bodies the hands hung inside the wide trousers and the arms inside the jacket, and the skin showed
+  through the cloth as light shards on the thigh. `people.json` `armOut` (degrees) hangs the arms that much
+  wider over whatever the mixer plays (`spreadArms` in `src/world/people.js`, in `createPerson`, the first-person
+  body and `faces.html`): Ji Bai 7, Gu Nian 6.
+- **The rest were light shards in the bake:** triangles whose UVs fall across an island's edge onto skin or shirt
+  texels. `"cleanSpecks": true` recolours, at load, a triangle that is lighter than dark neighbours that agree with
+  each other (about 270 on Ji Bai), using a neighbour's UV. Only light-on-dark: the white hem one triangle wide stays.
+- `faces.html` debug views for this: `armout=<deg>`, `specks=0|1`, `uvdbg=1` (UV as colour), `tridbg=1`
+  (triangle ids). `docs/hero-faces/round6-trousers.jpg`.
+- **Still off:** a few faint grey facets on the trousers (shading, not texture), and a dark scratch on his left wrist
+  that is painted into the Hunyuan texture.
