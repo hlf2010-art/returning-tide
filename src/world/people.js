@@ -204,6 +204,27 @@ function conformNeck(pos, bodyWorld, profile, chin) {
   pos.needsUpdate = true;
 }
 
+// The Hunyuan bodies were rigged per vertex, and the copies of a vertex on either side of a UV seam got different
+// skin weights: posed, the seam opens into a crack you see the background through (the dotted lines down his
+// arms, the "scratch" across his left wrist). Every copy of a position gets the same weights, merged.
+function weldSkin(g, id) {
+  const si = g.attributes.skinIndex, sw = g.attributes.skinWeight;
+  if (!si || !sw) return 0;
+  const groups = new Map();
+  for (let v = 0; v < id.length; v++) (groups.get(id[v]) || groups.set(id[v], []).get(id[v])).push(v);
+  let n = 0;
+  for (const vs of groups.values()) {
+    if (vs.length < 2) continue;
+    const acc = new Map();
+    for (const v of vs) for (let k = 0; k < 4; k++) { const w = sw.getComponent(v, k); if (w > 0) acc.set(si.getComponent(v, k), (acc.get(si.getComponent(v, k)) || 0) + w); }
+    const top = [...acc].sort((a, b) => b[1] - a[1]).slice(0, 4), sum = top.reduce((t, [, w]) => t + w, 0) || 1;
+    for (const v of vs) for (let k = 0; k < 4; k++) { si.setComponent(v, k, top[k] ? top[k][0] : 0); sw.setComponent(v, k, top[k] ? top[k][1] / sum : 0); }
+    n += vs.length;
+  }
+  si.needsUpdate = sw.needsUpdate = true;
+  return n;
+}
+
 // Hunyuan bakes leave shards: small triangles whose UVs fall across an island's edge onto other texels (skin, the
 // white shirt), so light slivers dot the dark trousers and jacket. A triangle lighter than edge neighbours that
 // are dark and agree with each other takes its own copy of its corners with the UV of the most typical neighbour:
@@ -222,6 +243,7 @@ export function cleanSpecks(root, { diff = 0.04, agree = 0.04, share = 2 / 3, pa
     const k = `${Math.round(pos.getX(v) * 1e3)},${Math.round(pos.getY(v) * 1e3)},${Math.round(pos.getZ(v) * 1e3)}`;
     if (!seen.has(k)) seen.set(k, seen.size); id[v] = seen.get(k);
   }
+  weldSkin(g, id);
   const edges = new Map(), col = new Float32Array(T * 3), cuv = new Float32Array(T * 2);
   const B = [[1 / 3, 1 / 3], [0.6, 0.2], [0.2, 0.6], [0.2, 0.2], [0.45, 0.45], [0.45, 0.1], [0.1, 0.45]];
   for (let t = 0; t < T; t++) {

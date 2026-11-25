@@ -145,3 +145,14 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
   (triangle ids). `docs/hero-faces/round6-trousers.jpg`.
 - **Still off:** a few faint grey facets on the trousers (shading, not texture), and a dark scratch on his left wrist
   that is painted into the Hunyuan texture.
+
+## Round 7 (25 November): seam cracks on the Hunyuan bodies
+
+- **The wrist "scratch" and the faint grey trouser marks were cracks.** The Hunyuan bodies were rigged per vertex,
+  and the copies of a vertex on either side of a UV seam got different skin weights. Posed, the seams opened into
+  hairline cracks, and the background showed through them: a dark curve across Ji Bai's left wrist, dotted lines
+  down his arms and Gu Nian's suit, and grey marks on his trousers. With `cleanSpecks`, `weldSkin` gives every copy
+  of a position the same merged weights at load. Gu Nian now has `cleanSpecks` too.
+- How it was found: `faces.html?ids=map` showed the scratch in the scene's background colour, and `tridbg=1` showed
+  no triangle there. New in `faces.html`: `aimx` (aim sideways) and `nonormal=1` (the body's normal map off).
+- `docs/hero-faces/round7-seams.jpg`.
