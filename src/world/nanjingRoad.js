@@ -111,7 +111,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   // (the sign faces by atlas page: page -> Batch)
   const signs = [], letters = [], blades = [], boards = new Batch(), onPage = (list, k) => list[k] || (list[k] = new Batch());
   // the signs: each shop's own, drawn into atlases (world/shopSigns.js) once the sign faces have loaded
-  const signAt = createSignAtlas(4096, 2048), bladeAt = createSignAtlas(2048, 2048);
+  const signAt = createSignAtlas(2048, 2048), bladeAt = createSignAtlas(2048, 2048);
   // a generic shop (where no real one has been placed): an invented name in the street's manner
   const PLAQUE_BG = ['#111010', '#121212', '#5e0f12', '#1a1410'], BRAND_BG = ['#b8141c', '#0d3b7a', '#0f5a3a', '#1d1d1f', '#c8102e', '#5a2a82'];
   const generic = (rr) => {

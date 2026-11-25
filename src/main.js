@@ -100,7 +100,7 @@ import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
 import { createNephew } from './world/nephew.js';
 import { createWitness, WITNESS } from './engine/witness.js';
-import { createCrowd } from './engine/crowd.js';
+import { createCrowd, buildNet, keepShopsWithDoors } from './engine/crowd.js';
 import { trafficSpecs, BUS_STOPS } from './world/trafficMix.js';
 import { createBuses } from './world/buses.js';
 import { GUIDE_LINES, BUS_LINES, LATE_LINES } from './world/crowdLines.js';
@@ -342,7 +342,7 @@ async function boot() {
   // people getting out of its way, and what happens if someone can't (world/roadReactions.js)
   const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd, onHit: (L, info) => carFallout(L, info) });
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads });
-  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }) };
+  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -350,7 +350,7 @@ async function boot() {
     const det = gfxDetail({ ...gfx, lod: bootLod });
     const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0 : det.crowd;   // tools: none unless asked
     // the preset's population at its busiest (engine/gfx.js LOD people); ?crowd=<density> (tools) as before
-    world.crowd = createCrowd({ density, count: params.has('crowd') || params.has('q') ? null : det.people, roles });
+    world.crowd = createCrowd({ net: keepShopsWithDoors(buildNet(), nanjing.doors), density, count: params.has('crowd') || params.has('q') ? null : det.people, roles });
     world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, camera });
     traffic.setExtraPeople(() => world.crowd.onCarriageway());
     henan.traffic.setExtraPeople(() => world.crowd.onHenan());
@@ -1536,7 +1536,7 @@ function frame(now) {
   world.trams.update(mode === 'pause' ? 0 : dt, player.body, world.crowd ? world.crowd.agents : null, camera.position, life ? life.clock.minute : 720);   // Nanjing Road's sightseeing trains
   if (mode !== 'pause' && Math.abs(player.body.z + 201) < 60 && player.body.x < -20) {         // Nanjing Road's automatic doors: who's at them
     const b = player.body, near = [b];
-    if (world.crowd) for (const a of world.crowd.agents) if (!a.inside && a.x < -34 && Math.abs(a.z + 201) < 14 && Math.abs(a.x - b.x) < 90) near.push(a);
+    if (world.crowd) for (const a of world.crowd.agents) if (!a.inside && !a.gone && !a.out && a.x < -34 && Math.abs(a.z + 201) < 14 && Math.abs(a.x - b.x) < 90) near.push(a);
     near.push(...world.shoppers.others());
     world.nanjing.doorsUpdate(dt, near, b);
   }

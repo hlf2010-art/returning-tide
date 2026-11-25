@@ -259,6 +259,7 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
           const along = d.f.axis === 'x' ? dx : dz, across = (d.f.axis === 'x' ? dz : dx) * d.f.out;
           if (Math.abs(along) < 1.9 && across > -1.5 && across < 2.6) { near = true; break; }
         }
+        if (TOD.shops.value < 0.5) near = false;                               // (shut for the night: the doors stay closed)
         d.hold = near ? 1.6 : Math.max(0, d.hold - dt);
         const want = d.hold > 0 ? 1 : 0, o = d.open + Math.sign(want - d.open) * Math.min(Math.abs(want - d.open), dt / (want ? 0.85 : 1.3));
         if (o !== d.open) { d.open = o; d.moved = true; any = true; }

@@ -13,6 +13,7 @@
 // a personal space, give you a wider berth, step round street furniture; walls, planters and the kerb
 // (the road is off limits except on the zebra) are seen ahead and walked along, never pushed against.
 // When two people touch anyway, both flinch (engine/flinch.js) and carry on.
+import { njLamps } from '../world/layout.js';
 import { L, deckLamps, DECK_LAMP_X, benches, planterIslands, telescope, lions, streetTrees, stall, colliders, groundHeight, roadLamps, ROAD_LAMP_WEST_OFFSET, crossing, NJ, METRO, inHenan } from '../world/layout.js';
 import { BUS_STOPS } from '../world/trafficMix.js';
 import { startFlinch, stepFlinch, flinchSpeed, FLINCH } from './flinch.js';
@@ -130,7 +131,8 @@ export function buildNet(extra = null) {
   // ... and on, a kilometre, to Xizang Road (three walks down the street, joined every ~24 m); people come in
   // from People's Square at the end (NW4) and from the cross streets' mouths
   const QX = []; for (let x = -556; x > NJ.xWest + 8; x -= 24) QX.push(x);
-  QX.forEach((x, i) => NZ.forEach((z, j) => {
+  const NZW = [-208.6, -202.6, -192.6];                              // (west of Henan Road: clear of the trams' lanes, world/tram.js)
+  QX.forEach((x, i) => NZW.forEach((z, j) => {
     node(`Q${i}_${j}`, x, z, 2.2);
     if (i) link(`Q${i - 1}_${j}`, `Q${i}_${j}`); else link(j === 2 ? 'NW3' : 'NW2', `Q0_${j}`);
     if (j) link(`Q${i}_${j - 1}`, `Q${i}_${j}`);
@@ -144,7 +146,7 @@ export function buildNet(extra = null) {
   }
   // the shop fronts down the long stretch
   const C = NJ.century;
-  for (let x = -526; x > NJ.xWest + 4; x -= 13) {
+  for (let x = -527; x > NJ.xWest + 4; x -= 13) {                    // (the street's door spacing: world/nanjingRoad.js)
     if (NJ.cross.some((c) => x > c.x0 - 2 && x < c.x1 + 2)) continue;
     for (const [z, row] of [[NJ.z0 + 1.0, 0], [NJ.z1 - 1.0, 2]]) {
       if (row === 2 && x > C.x0 - 2 && x < C.x1 + 2) continue;                       // (Century Square: no shop front)
@@ -165,6 +167,13 @@ export function buildNet(extra = null) {
   return { nodes, edges, by, rail, shops, ends: { E0: Eat(-258), E15: Eat(92), W0: Wat(-258), W16: Wat(92) } };
 }
 
+// only the shop fronts that have a door drawn (world/nanjingRoad.js's doors: { x, z, dir }); the rest are
+// windows, looked into but not walked into
+export function keepShopsWithDoors(net, doors) {
+  if (!doors || !doors.length) return net;
+  net.shops = net.shops.filter((id) => { const n = net.by[id], north = n.z < NJ.zc; return doors.some((d) => Math.abs(d.x - n.x) < 0.8 && (d.dir > 0) === north); });
+  return net;
+}
 // shortest path (node ids) by Dijkstra; zebra edges carry a small penalty (people avoid crossing for nothing)
 export function route(net, from, to) {
   const dist = { [from]: 0 }, prev = {}, open = new Set([from]);
@@ -204,6 +213,7 @@ export function obstacles() {
   o.push([stall.x, stall.z, 1.1]);
   for (const z of roadLamps) { o.push([L.westCurbX - 0.5, z + ROAD_LAMP_WEST_OFFSET, 0.35]); o.push([L.eastCurbX + 0.5, z, 0.35]); }
   for (const p of crossing.vehPoles) o.push([p.x, p.z, 0.4]);
+  for (const [x, z] of njLamps()) o.push([x, z, 0.35]);                     // Nanjing Road's lamp posts
   for (const p of crossing.pedPoles) o.push([p.x, p.z, 0.3]);
   // the pavement corners of the Customs House portico: walked round, not hugged (a crowd pinned people there)
   for (const b of colliders) if (b.tag === 'portico') for (const z of [b.minZ, b.maxZ]) o.push([b.maxX, z, 0.3]);
@@ -311,6 +321,7 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
     if (midway && p.length > 2) {                                     // start somewhere along it (so the scene starts full)
       const k = 1 + Math.floor(rnd() * (p.length - 1)), A = net.by[p[k - 1]], B = net.by[p[k]], f = rnd();
       a.x = A.x + (B.x - A.x) * f; a.z = A.z + (B.z - A.z) * f; a.i = k;
+      if (blocked(a.x, a.z, 0.3)) { a.x = B.x; a.z = B.z; }                    // (never started inside a kiosk or a wall)
       if (via && p.indexOf(via) < k) a.via = null;
       // the scene starts as it would be: those who came for the railing mostly already at it, partway
       // through their stay, spread along it and two deep in places

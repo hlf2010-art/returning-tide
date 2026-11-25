@@ -12,7 +12,7 @@
 // Look and route: docs/nanjing-road-tram.md (what's known, what's assumed).
 import * as THREE from 'three';
 import { Batch } from './geo.js';
-import { NJ } from './layout.js';
+import { NJ, L as LAY } from './layout.js';
 import { createPerson } from './people.js';
 import { twoBone } from './driverPose.js';
 import { asLight } from './dayNight.js';
@@ -128,7 +128,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
   // ticket kiosks at the stops, on the 金带 beside the lane (white and green, a sign on top)
   { const kb = new Batch(), kt = new Batch(), sign = new THREE.MeshBasicMaterial({ map: signTexture() });
     for (const x of route.stops) {
-      const kz = (route.zc ?? NJ.zc) - route.half - 2.2;
+      const kz = NJ.zc - 1.3 - 2.1 - 0.9;                                                 // (north of the 金带, clear of the crowd's middle walk)
       kb.box(x, 0.15, kz, 1.8, 2.3, 1.3); kt.box(x, 2.45, kz, 2.2, 0.16, 1.7); kt.box(x, 0.15, kz, 1.82, 0.4, 1.32);
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.36), sign); pl.position.set(x, 2.78, kz); group.add(pl);
       const pl2 = pl.clone(); pl2.rotation.y = Math.PI; group.add(pl2);
@@ -144,21 +144,23 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
     if (!people || t.driver) return;
     const mk = (role) => { const p = createPerson(people, role); p.root.traverse((o) => { if (o.isMesh) o.castShadow = true; }); group.add(p.root); p.play('idle', 0); return p; };
     t.driver = { p: mk('p4'), car: 0, seat: { x: 0, z: 0.55 }, drive: true };
+    t.boarding = [];
     for (let c = 1; c <= nCars; c++) {
       const free = SEATS.slice(); const k = 2 + Math.floor(rnd() * 4);
-      for (let j = 0; j < k; j++) { const seat = free.splice(Math.floor(rnd() * free.length), 1)[0]; t.riders.push({ p: mk(ROLES[Math.floor(rnd() * ROLES.length)]), car: c, seat, look: rnd() * 2 - 1 }); }
+      for (let j = 0; j < k; j++) { const seat = free.splice(Math.floor(rnd() * free.length), 1)[0]; t.boarding.push({ role: ROLES[Math.floor(rnd() * ROLES.length)], car: c, seat }); }
     }
+    t.mk = mk;
   }
   function alight(t) {
     for (const r of [t.driver, ...t.riders]) if (r) { group.remove(r.p.root); r.p.root.traverse((o) => { if (o.isSkinnedMesh) o.skeleton.dispose(); }); }
-    t.driver = null; t.riders = [];
+    t.driver = null; t.riders = []; t.boarding = [];
   }
   // sit someone on a bench (world space, after their idle clip): pelvis on the seat, thighs forward,
   // feet on the floor, hands on the knees (or forward to the tiller, for the driver)
   function sit(r, carPos, dt, eye) {
     const p = r.p, root = p.root, c = Math.cos(carPos.yaw), s = Math.sin(carPos.yaw);
     fwd.set(s, 0, c); right.set(-c, 0, s);
-    const seatY = r.drive ? 0.95 : 0.86, hip = v1.set(carPos.x + c * r.seat.x + s * r.seat.z, seatY, carPos.z - s * r.seat.x + c * r.seat.z);
+    const seatY = (r.drive ? 0.95 : 0.86) + LAY.curbH, hip = v1.set(carPos.x + c * r.seat.x + s * r.seat.z, seatY, carPos.z - s * r.seat.x + c * r.seat.z);
     root.position.copy(hip); root.rotation.y = carPos.yaw;
     p.update(dt, r.drive ? null : (eye && Math.hypot(eye.x - hip.x, eye.z - hip.z) < 12 ? [eye.x, eye.z] : null));
     const B = r.B || (r.B = Object.fromEntries(['Pelvis', 'L_Thigh', 'L_Calf', 'L_Foot', 'R_Thigh', 'R_Calf', 'R_Foot', 'L_UpperArm', 'L_Forearm', 'L_Hand', 'R_UpperArm', 'R_Forearm', 'R_Hand'].map((nm) => [nm, root.getObjectByName(`Bip01_${nm}`)])));
@@ -167,7 +169,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
     const pw = B.Pelvis.getWorldPosition(v2);
     root.position.add(v2.set(hip.x - pw.x, hip.y + 0.06 - pw.y, hip.z - pw.z)); root.updateMatrixWorld(true);
     for (const [sd, k] of [['L', 1], ['R', -1]]) {
-      const foot = v2.copy(hip).addScaledVector(fwd, 0.5).addScaledVector(right, -k * 0.12); foot.y = 0.5;
+      const foot = v2.copy(hip).addScaledVector(fwd, 0.5).addScaledVector(right, -k * 0.12); foot.y = 0.5 + LAY.curbH;
       pole.copy(fwd).add(up).normalize();
       twoBone(B[`${sd}_Thigh`], B[`${sd}_Calf`], B[`${sd}_Foot`], foot, pole);
       const hand = v2.copy(hip).addScaledVector(fwd, r.drive ? 0.55 : 0.36).addScaledVector(right, -k * (r.drive ? 0.18 : 0.16)); hand.y = hip.y + (r.drive ? 0.38 : 0.14);
@@ -185,7 +187,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
   }
   // ---- you, aboard: E at a stopped train to get on (a free seat in the nearest trailer), E to get off,
   // F to ride on to the next stop (main.js fades and moves the clock on) ----
-  let rider = null;                                      // { t, car, seat }
+  let rider = null, lastOpen = true;                      // { t, car, seat }; running now
   const seatWorld = (t, car, seat, out) => { const q = t.pos[car], c = Math.cos(q.yaw), s = Math.sin(q.yaw); out.x = q.x + c * seat.x + s * seat.z; out.z = q.z - s * seat.x + c * seat.z; out.yaw = q.yaw; return out; };
   const _sw = { x: 0, z: 0, yaw: 0 };
   function nearTrailer(pp) {
@@ -197,7 +199,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
     group, trains, path: P,
     get riding() { return !!rider; },
     // the interaction target (main.js places): a stopped train's trailer within reach
-    candidates(pp) { if (rider || !pp || pp.y > 1.5) return []; const n = nearTrailer(pp); return n ? [{ id: 'tram', x: n.q.x, y: 1.2, z: n.q.z, reach: 3.6, cone: 0.45 }] : []; },
+    candidates(pp) { if (rider || !pp || pp.y > 1.5 || !lastOpen) return []; const n = nearTrailer(pp); return n ? [{ id: 'tram', x: n.q.x, y: 1.2, z: n.q.z, reach: 3.6, cone: 0.45 }] : []; },
     board(pp) {
       const n = nearTrailer(pp); if (!n) return false;
       const taken = new Set(n.t.riders.filter((r) => r.car === n.k).map((r) => `${r.seat.x},${r.seat.z}`));
@@ -211,7 +213,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
     seatCamera(camera, player) {
       if (!rider) return;
       seatWorld(rider.t, rider.car, rider.seat, _sw);
-      camera.position.set(_sw.x, 0.86 + 0.78, _sw.z); camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
+      camera.position.set(_sw.x, 0.86 + 0.78 + LAY.curbH, _sw.z); camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
       player.body.x = _sw.x; player.body.z = _sw.z;
     },
     seatPrompt(lang = 'zh') {
@@ -232,6 +234,9 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
       if (!rider) return 0;
       const t = rider.t, ahead = ((P.stopS[t.nextStop] - t.s) % P.total + P.total) % P.total;
       if (t.dwell > 0 || ahead < 1) { t.dwell = 0; t.nextStop = (t.nextStop + 1) % P.stopS.length; }
+      t.atEnd = false;
+      // not onto a stop the other train is at or pulling into
+      for (let n = 0; n < P.stopS.length; n++) { const ss = P.stopS[t.nextStop]; if (!trains.some((o) => o !== t && Math.abs(((ss - o.s) % P.total + P.total) % P.total - P.total / 2) > P.total / 2 - 40)) break; t.nextStop = (t.nextStop + 1) % P.stopS.length; }
       const d = ((P.stopS[t.nextStop] - t.s) % P.total + P.total) % P.total;
       t.s = (P.stopS[t.nextStop] - 0.2 + P.total) % P.total; t.v = 0; t.dwell = route.dwell; t.pos.forEach((q, k) => P.at(t.s - offsets[k] + LOCO.len / 2, q));
       return d / route.cruise + route.dwell;
@@ -249,7 +254,9 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
     // ... and the minute of the day (they run 08:30 to 22:00; out of hours they wait at the ends)
     update(dt, player, agents, eye, minute = 720) {
       if (!dt) return;
-      const open = minute >= route.open[0] && minute < route.open[1];
+      const open = minute >= route.open[0] && minute < route.open[1]; lastOpen = open;
+      // far from both: nothing to draw (the instanced meshes aren't frustum-culled)
+      group.visible = !eye || trains.some((t) => Math.abs(eye.x - t.pos[0].x) < 260) || Math.abs(eye.z - NJ.zc) < 40 && eye.x < -480;
       for (const t of trains) {
         t.bellT = Math.max(0, t.bellT - dt);
         const head = t.pos[0], c = Math.cos(head.yaw), s = Math.sin(head.yaw);
@@ -257,7 +264,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
         let block = Infinity, crowd = Infinity;
         const ahead = (x, z) => { const dx = x - head.x, dz = z - head.z, f = dx * s + dz * c, lat = Math.abs(dx * c - dz * s); return f > 0 && f < 6 && lat < 1.15 ? f : Infinity; };
         if (player && player.y < 1.5 && !(rider && rider.t === t)) block = ahead(player.x, player.z);
-        if (agents && Math.abs(head.z - NJ.zc) < 14 && (!eye || Math.abs(eye.x - head.x) < 150)) for (const a of agents) { if (a.inside) continue; const f = ahead(a.x, a.z); if (f < crowd) crowd = f; }
+        if (agents && Math.abs(head.z - NJ.zc) < 14 && (!eye || Math.abs(eye.x - head.x) < 150)) for (const a of agents) { if (a.inside || a.gone || a.out) continue; const f = ahead(a.x, a.z); if (f < crowd) crowd = f; }
         // the stops
         if (t.dwell > 0) { if (open || !t.atEnd) t.dwell -= dt; t.want = 0; if (t.dwell <= 0) { bell(t, eye); t.nextStop = (t.nextStop + 1) % P.stopS.length; t.atEnd = false; } }
         else {
@@ -266,6 +273,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
           if (toStop < 6) t.want = Math.min(t.want, 0.25 + toStop * 0.25);
           if (toStop < 0.3) { t.dwell = route.dwell; t.v = 0; const sx = t.pos[0].x; t.atEnd = !open && (Math.abs(sx - route.stops[0]) < 3 || Math.abs(sx - route.stops[route.stops.length - 1]) < 3); }
         }
+        for (const o of trains) if (o !== t) { const gap = ((o.s - offsets[offsets.length - 1] - CAR.len / 2 - t.s) % P.total + P.total) % P.total; if (gap < 8) t.want = 0; else if (gap < 20) t.want = Math.min(t.want, 0.6); }
         if (block < 4.5) { t.want = 0; bell(t, eye, 1.2); }
         else if (crowd < 3.5) { t.want = Math.min(t.want, 0.55); if (crowd < 2.2) bell(t, eye); }
         const a = t.want > t.v ? 0.5 : 1.8;
@@ -283,16 +291,17 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
         // people aboard while you're near
         const near = eye && Math.hypot(eye.x - head.x, eye.z - head.z) < 70;
         if (near && !t.driver) board(t); else if (!near && t.driver && (!eye || Math.hypot(eye.x - head.x, eye.z - head.z) > 90)) alight(t);
-        if (t.driver) for (const r of [t.driver, ...t.riders]) sit(r, t.pos[r.car], dt, eye);
+        if (t.driver && t.boarding && t.boarding.length) { const b = t.boarding.shift(); t.riders.push({ p: t.mk(b.role), car: b.car, seat: b.seat }); }
+        if (t.driver) { sit(t.driver, t.pos[0], dt, eye); for (const r of t.riders) sit(r, t.pos[r.car], dt, eye); }
       }
       // the instances
       trains.forEach((t, i) => t.pos.forEach((q, k) => {
-        _q.setFromAxisAngle(up, q.yaw); _m.compose(_p.set(q.x, 0.02, q.z), _q, _s);
+        _q.setFromAxisAngle(up, q.yaw); _m.compose(_p.set(q.x, LAY.curbH + 0.01, q.z), _q, _s);
         if (k === 0) for (const im of locoIM) im.setMatrixAt(i, _m);
         else for (const im of carIM) im.setMatrixAt(i * nCars + k - 1, _m);
       }));
       for (const im of [...locoIM, ...carIM]) im.instanceMatrix.needsUpdate = true;
-      for (const t of trains) { const q = t.pos[t.pos.length - 1], c = Math.cos(q.yaw), s = Math.sin(q.yaw), back = CAR.len / 2 + 0.05; t.num.position.set(q.x - s * back, 0.72, q.z - c * back); t.num.rotation.y = q.yaw + Math.PI; }
+      for (const t of trains) { const q = t.pos[t.pos.length - 1], c = Math.cos(q.yaw), s = Math.sin(q.yaw), back = CAR.len / 2 + 0.05; t.num.position.set(q.x - s * back, 0.72 + LAY.curbH, q.z - c * back); t.num.rotation.y = q.yaw + Math.PI; }
     },
     get state() { return trains.map((t) => ({ x: +t.pos[0].x.toFixed(1), z: +t.pos[0].z.toFixed(1), v: +t.v.toFixed(2), dwell: +t.dwell.toFixed(1), riders: t.riders.length })); },
   };
