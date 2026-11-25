@@ -31,7 +31,7 @@ export const ROOMS = {
   royal_esplanade: { yaws: [0, 3] },
 };
 const ROOM_FOR = {
-  丝绸: 'witsand_woolshop', 时装: 'witsand_woolshop', 鞋帽: 'decor_shop', 箱包: 'decor_shop', 运动: 'decor_shop', 书店: 'decor_shop',
+  丝绸: 'witsand_woolshop', 时装: 'decor_shop', 鞋帽: 'decor_shop', 箱包: 'decor_shop', 运动: 'decor_shop', 书店: 'decor_shop',
   钟表: 'museum_of_ethnography', 珠宝: 'museum_of_ethnography', 工艺美术: 'museum_of_ethnography', 纪念品: 'museum_of_ethnography', 茶庄: 'museum_of_ethnography',
   照相器材: 'phone_shop', 数码: 'phone_shop', 眼镜: 'phone_shop', 药房: 'phone_shop',
   糕团: 'comfy_cafe', 咖啡: 'comfy_cafe', 酒家: 'warm_restaurant', 生煎: 'warm_restaurant', 食品: 'warm_restaurant', 百货: 'royal_esplanade',
@@ -136,11 +136,12 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
   // z, or x), out (+1/-1: which way it faces) }; u0..u1 its extent along the front; doorAt: the ways in;
   // type: what the sign says it sells (picks the room). y0 the pavement.
   function addFront(f, u0, u1, { y0 = 0.15, top = 4.1, doorAt = [], type = null, room: roomId = null, depth = 5 } = {}) {
-    const F = frame(f), id = roomId || roomFor(type, rnd), yaw = yawFor(id, rnd);
+    const F = frame(f), id = roomId || roomFor(type, rnd), ys = ROOMS[id].yaws;
+    let yi = Math.floor(rnd() * ys.length);                 // each room along the front turned to another wall: no twin bays
     // a room behind the stretch of front from ua to ub (along the front), a little wider than it
     const roomOver = (ua, ub, d = depth) => {
       const sA = F.at(ua, 0, 0).dot(F.T), sB = F.at(ub, 0, 0).dot(F.T);
-      return { id, s0: Math.min(sA, sB) - 0.5, s1: Math.max(sA, sB) + 0.5, y0, y1: top + 0.25, depth: d, yaw };
+      return { id, s0: Math.min(sA, sB) - 0.5, s1: Math.max(sA, sB) + 0.5, y0, y1: top + 0.25, depth: d, yaw: ys[yi++ % ys.length] };
     };
     const lo = Math.min(u0, u1), hi = Math.max(u0, u1);
     // the stretches of window between the doors

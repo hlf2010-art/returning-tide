@@ -416,7 +416,17 @@ export function createBund(M) {
 
   // roof flags
   const poles = new Batch(), flags = [];
-  const flagMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.95, 0.07, 0.05), side: THREE.DoubleSide });
+  // the national flag (GB 12982): red, 3:2; the large star centred at (5, 5) of a 30 x 20 grid, radius 3; the
+  // four small ones (radius 1) at (10, 2), (12, 4), (12, 7), (10, 9), each with a point toward the large star
+  const flagTex = (() => {
+    const [c, x] = makeCanvas(600, 400), u = 20;
+    x.fillStyle = '#ee1c25'; x.fillRect(0, 0, 600, 400); x.fillStyle = '#ffff00';
+    const star = (cx, cy, r, toward) => { x.beginPath(); for (let i = 0; i < 10; i++) { const a = toward + (i * Math.PI) / 5, rr = i % 2 ? r * 0.382 : r; x.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } x.closePath(); x.fill(); };
+    star(5 * u, 5 * u, 3 * u, -Math.PI / 2);
+    for (const [sx, sy] of [[10, 2], [12, 4], [12, 7], [10, 9]]) star(sx * u, sy * u, u, Math.atan2(5 - sy, 5 - sx));
+    return tex(c, { repeat: false, aniso: 4 });
+  })();
+  const flagMat = new THREE.MeshBasicMaterial({ map: flagTex, color: new THREE.Color(0.95, 0.95, 0.95), side: THREE.DoubleSide });
   const flagGeo = new THREE.PlaneGeometry(3.6, 2.4, 6, 1); flagGeo.translate(1.8, 0, 0);
   for (const f of extra.flags) {
     poles.cyl(f.x, f.y, f.z, 0.07, 0.1, f.h, 6);

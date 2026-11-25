@@ -544,8 +544,9 @@ export function createSkyline() {
   // by day: the window atlases become hazy glass (each tower its own tint), the lit trims and names
   // dull fixtures, the far bank's lamps and the aircraft lights off; the LED walls are their own
   // (a sunny day: blue-green and bronze glass, steel-grey Jin Mao, white stone, not one pale grey)
-  const DAY_GLASS = { 'towers-a': [0.24, 0.38, 0.52], 'towers-b': [0.42, 0.36, 0.3], 'towers-gold': [0.5, 0.42, 0.28], 'towers-white': [0.56, 0.6, 0.64],
-    'towers-violet': [0.3, 0.34, 0.5], 'towers-green': [0.24, 0.42, 0.38], jinmao: [0.34, 0.36, 0.4], 'swfc-top': [0.36, 0.48, 0.6], globes: [0.62, 0.66, 0.72], shore: [0.26, 0.3, 0.24] };
+  // (by day Lujiazui is mostly blue-grey and silver curtain wall; the night palettes' tints only a hint)
+  const DAY_GLASS = { 'towers-a': [0.26, 0.36, 0.46], 'towers-b': [0.36, 0.36, 0.37], 'towers-gold': [0.42, 0.4, 0.36], 'towers-white': [0.48, 0.52, 0.56],
+    'towers-violet': [0.3, 0.35, 0.44], 'towers-green': [0.27, 0.35, 0.38], jinmao: [0.34, 0.36, 0.4], 'swfc-top': [0.36, 0.48, 0.6], globes: [0.62, 0.66, 0.72], shore: [0.26, 0.3, 0.24] };
   asLight(led.material, 'screens', 0.12);   // a big screen: on all day (7 am - 11 pm), not with the LED façades' evening show
   group.traverse((o) => {
     if (!o.material || o.material.userData.tod) return;
