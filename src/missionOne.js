@@ -297,6 +297,8 @@ export function createMissionOne({ hud, audio, pouch, npcs, isClueRead = () => f
     openPickup: () => { if (mission.step === 'collect' && !view) openView('pickup'); return view === 'pickup'; },
     viewMove, viewPress, viewFlip, viewDrag, closeView, update, devStart,
     witness: () => mission.witness(),
+    // a reloaded game: the mission where it was (complete: Lin has had his after-line already)
+    restore(snap) { const ok = mission.restore(snap); if (ok && mission.step === 'complete') afterLineSaid = true; return ok; },
     get collecting() { return mission.step === 'collect'; },
     dialogueMove, dialogueConfirm,
     get dialogueChoices() { return offerPending ? { options: OFFER_OPTIONS, index: offerIndex } : null; },

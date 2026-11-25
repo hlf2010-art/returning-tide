@@ -94,11 +94,11 @@ const P = {
   },
   beats: [
     // ---- Act I ----
-    { id: 'z1', first: true, urgent: true, work: true, when: () => D(1, 18, 10), until: () => D(2, 9, 0), run: (L) => { meet(L, W); openThread(L, W, P.name.zh); say(L, W, '纪白？我是许知微，你这个项目的设计负责人，交付也归我管。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。', "Ji Bai? Xu Zhiwei. Design lead on your project, and delivery is mine too. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight.", [
+    { id: 'z1', first: true, urgent: true, work: true, when: (L) => Math.min(L.flags.room612 ? (L.flags.room612At ?? stamp(L)) + 8 : Infinity, D(1, 19, 40)), until: () => D(2, 9, 0), run: (L) => { meet(L, W); openThread(L, W, P.name.zh); say(L, W, '纪白？我是许知微，你这个项目的设计负责人，交付也归我管。明早九点半客户 kickoff，材料发你邮箱了，今晚看完。', "Ji Bai? Xu Zhiwei. Design lead on your project, and delivery is mine too. Client kickoff at 9:30 tomorrow. The deck is in your inbox. Read it tonight.", [
       R('收到，今晚看完。', "Got it. I'll read it tonight.", { t: 2 }, '好。', 'Good.'),
       R('刚落地，时差还没倒过来。明早路上看行吗？', "I've only just landed and I'm jet-lagged. Can I read it on the way in?", { t: -2 }, '九点二十，楼下。别让我在客户面前替你翻页。', "9:20, downstairs. Don't make me turn your pages for you in front of the client."),
     ]); } },
-    { id: 'z2', urgent: true, when: () => D(1, 20, 20), until: () => D(1, 21, 0), run: (L) => say(L, W, '你住和平饭店？我回浦西顺路，把门禁卡和电脑带给你。九点半之前我在大堂。', "You're at the Peace Hotel? It's on my way back to Puxi. I'll bring your pass and laptop. I'll be in the lobby until half nine.") },
+    { id: 'z2', urgent: true, when: () => D(1, 20, 45), until: () => D(1, 21, 15), run: (L) => say(L, W, '你住和平饭店？我回浦西顺路，把门禁卡和电脑带给你。九点半之前我在大堂。', "You're at the Peace Hotel? It's on my way back to Puxi. I'll bring your pass and laptop. I'll be in the lobby until half nine.") },
     { id: 'z2b', urgent: true, when: () => D(1, 21, 35), until: () => D(2, 8, 0), if: (L) => !!fired(L, 'z2') && !done(L, 'z-lobby'), run: (L) => say(L, W, '东西放前台了。明早别迟到。', "I've left them at the front desk. Don't be late tomorrow.") },
     { id: 'z3', when: () => D(2, 21, 10), until: () => D(3, 12, 0), run: (L) => { say(L, W, '今天你讲数据流那一页，客户 CTO 追问了三次，你都接住了。不错。', "Your data-flow slide today: the client's CTO came back at you three times and you held. Not bad.");
       say(L, W, '别得意。', "Don't let it go to your head.", [

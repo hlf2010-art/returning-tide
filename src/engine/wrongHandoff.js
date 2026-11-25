@@ -16,6 +16,7 @@
 // Integration surface (also on window.__bund.mission):
 //   start(source)  begin from idle; returns false otherwise
 //   reset()        back to idle from anywhere (developer reset / chapter restart)
+//   restore(snap)  put a saved state back (a reloaded game): emits 'change' only, never 'start' or 'complete'
 //   on('start' | 'change' | 'complete' | 'reset', fn) -> unsubscribe
 //   'complete' payload: { outcome: 'sealed' | 'opened', seconds, source }
 
@@ -79,6 +80,20 @@ export function createWrongHandoff({ now = () => Date.now() / 1000 } = {}) {
       go('complete');
       emit('complete');
       return outcome;
+    },
+    // a saved game coming back: the step it had reached and the pouch as it was. Only 'change' fires, so
+    // nothing that listens for 'complete' (the completion card, the save) runs a second time.
+    restore(snap = {}) {
+      const to = STEPS.includes(snap.step) ? snap.step : 'idle';
+      if (to === 'idle') return false;
+      sealed = snap.sealed !== false && snap.outcome !== 'opened';
+      string = ['wound', 'unwound', 'rewound'].includes(snap.string) ? snap.string : 'wound';
+      if (!sealed) string = 'unwound';
+      witnessed = !!snap.witnessed;
+      outcome = to === 'complete' ? (snap.outcome || (sealed ? 'sealed' : 'opened')) : null;
+      source = snap.source || 'save'; startedAt = now(); seconds = snap.seconds || 0;
+      go(to);
+      return true;
     },
     reset() {
       step = 'idle'; sealed = true; string = 'wound'; witnessed = false; outcome = null; source = null; seconds = 0;
