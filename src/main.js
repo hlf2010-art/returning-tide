@@ -250,7 +250,7 @@ async function boot() {
   traffic = createTraffic({ geom: crossing, vehicles: vehSpecs, peds: crossing.peds, shop: createShop({ queue: mannerSpec.queue, pickup: mannerSpec.pickup }) });
   const vehicles = createVehicles(vehSpecs), signals = createSignals();
   // Nanjing Road East to Henan Road, the metro's Exits 7 and 2 (world/nanjingRoad.js), Henan Road's traffic
-  const nanjing = createNanjingRoad(M); scene.add(nanjing.group);
+  const nanjing = createNanjingRoad(M, { roomSize: gfxDetail({ ...gfx, lod: bootLod }).rooms || 384 }); scene.add(nanjing.group);
   const henan = createHenanTraffic({ scene, factor: params.has('q') && !params.has('traffic') ? 0.35 : gfxDetail({ ...gfx, lod: bootLod }).traffic, addCollider: addDynamicCollider });
   // the city buses and their stops (world/buses.js); they let the crowd's commuters on and off
   // the bus's kerbside announcement as the doors open / as it pulls away, if you're near enough to hear
@@ -1519,6 +1519,12 @@ function frame(now) {
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
   world.shoppers.update(mode === 'pause' ? 0 : dt, player.body);                     // shoppers coming and going by DiDi
+  if (mode !== 'pause' && Math.abs(player.body.z + 201) < 60 && player.body.x < -20) {         // Nanjing Road's automatic doors: who's at them
+    const b = player.body, near = [b];
+    if (world.crowd) for (const a of world.crowd.agents) if (!a.inside && a.x < -34 && Math.abs(a.z + 201) < 14 && Math.abs(a.x - b.x) < 90) near.push(a);
+    near.push(...world.shoppers.others());
+    world.nanjing.doorsUpdate(dt, near, b);
+  }
   world.dest.update(mode === 'pause' ? 0 : dt, player.body);
   world.sceneTalk.update(mode === 'pause' ? 0 : dt);
   world.dinner.update(mode === 'pause' ? 0 : dt, player.body);

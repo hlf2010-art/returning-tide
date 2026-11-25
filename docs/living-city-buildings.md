@@ -76,4 +76,6 @@ about 35 m (`layout.js:32, 39-43`). The promenade runs from x 2 to x 26.
 8. Street furniture: planters, benches, kiosks.
 9. Vary the doorways, spaced every 13 m whatever the building (`nanjingRoad.js:212`).
 
+*25 Nov 2026: the shop windows and doors are rebuilt (`world/shopfronts.js`): real 360-degree photographs of shop interiors (Poly Haven, CC0) seen through the glass with true depth (interior mapping), reflective glass, stone stall risers, bronze frames, automatic sliding doors that open for whoever walks up, warm light on the paving after dark. The photographs are of shops elsewhere; 360-degree photos taken inside real Nanjing Road shops would drop straight in (`tools/rooms/make.py`).*
+
 Sources: [apple.com.cn Nanjing East](https://www.apple.com.cn/retail/nanjingeast/), [Henderson Metropolitan](https://www.hld.com/en/properties-in-mainland-china/properties-for-lease/henderson-metropolitan), [The Bund (Wikipedia)](https://en.wikipedia.org/wiki/The_Bund), [thepaper.cn](https://www.thepaper.cn/newsDetail_forward_5700079).

@@ -13,6 +13,7 @@ import { tiers } from './bund.js';
 import { makeCanvas, tex, rng, FONT } from './canvas.js';
 import { towerAtlas } from './skyline.js';
 import { markCanvas } from '../ui/brands.js';
+import { createShopfronts } from './shopfronts.js';
 
 const CH = L.curbH;
 const NAMES = ['stone', 'stoneDark', 'flute', 'classic', 'arched', 'rustic', 'deco', 'brick', 'roof', 'copper', 'bronze', 'glassDark'];
@@ -24,17 +25,6 @@ const SHOP_TYPES = [['丝绸', 'SILK'], ['钟表', 'WATCHES'], ['工艺美术', 
   ['酒家', 'RESTAURANT'], ['眼镜', 'OPTICIAN'], ['食品', 'FOOD HALL'], ['时装', 'FASHION'], ['箱包', 'LUGGAGE'], ['生煎', 'FRIED BUNS'], ['纪念品', 'SOUVENIRS'], ['数码', 'DIGITAL']];
 const SYL = ['华', '美', '新', '恒', '永', '丰', '德', '益', '昌', '兴', '和', '泰', '瑞', '鸿', '宝', '光', '大', '协'];
 const NEON = ['#ff3b3b', '#ffd23a', '#ffffff', '#3bd1ff', '#ff4fd8', '#5bff8f', '#ff8a2a'];
-// an open shop doorway: warm light, the doors folded back, the floor inside and shelves in silhouette
-function doorTexture() {
-  const [c, x] = makeCanvas(128, 160);
-  const g = x.createLinearGradient(0, 0, 0, 160); g.addColorStop(0, '#fff3d6'); g.addColorStop(1, '#e8c890');
-  x.fillStyle = g; x.fillRect(0, 0, 128, 160);
-  x.fillStyle = 'rgba(120,90,60,0.35)'; for (let i = 0; i < 4; i++) x.fillRect(14 + i * 26, 30, 16, 80);          // shelves in the back
-  x.fillStyle = '#b89a70'; x.fillRect(0, 128, 128, 32);                                                       // the floor
-  x.fillStyle = '#2a2622'; x.fillRect(0, 0, 128, 6); x.fillRect(0, 0, 5, 160); x.fillRect(123, 0, 5, 160);     // the frame
-  x.fillStyle = 'rgba(40,40,44,0.5)'; x.fillRect(5, 6, 10, 154); x.fillRect(113, 6, 10, 154);                 // the glass doors, open
-  return tex(c, { repeat: false });
-}
 // a flagship's name over its front
 function brandSign({ sign: [main, sub], fg, bg }) {
   const [c, x] = makeCanvas(1024, 226);
@@ -47,7 +37,7 @@ function brandSign({ sign: [main, sub], fg, bg }) {
 function signAtlas(seed = 7) {
   const r = rng(seed), [c, x] = makeCanvas(2048, 2048);
   x.fillStyle = '#000'; x.fillRect(0, 0, 2048, 2048);
-  const fascia = [], blades = [];
+  const fascia = [], blades = [], types = [];
   // fascia: 4 x 12 cells of 512 x 96
   for (let row = 0; row < 12; row++) for (let col = 0; col < 4; col++) {
     const [zh, en] = SHOP_TYPES[Math.floor(r() * SHOP_TYPES.length)], name = SYL[Math.floor(r() * SYL.length)] + SYL[Math.floor(r() * SYL.length)] + zh;
@@ -57,7 +47,7 @@ function signAtlas(seed = 7) {
     x.fillStyle = fg; x.shadowColor = fg; x.shadowBlur = 10; x.textBaseline = 'middle';
     x.font = `900 52px ${FONT.serif}`; x.textAlign = 'left'; x.fillText(name, X + 24, Y + 46);
     x.shadowBlur = 0; x.font = `700 20px ${FONT.sans}`; x.textAlign = 'right'; x.fillStyle = 'rgba(255,255,255,0.8)'; x.fillText(en, X + 494, Y + 50);
-    fascia.push([X / 2048, 1 - (Y + 96) / 2048, (X + 512) / 2048, 1 - Y / 2048]);
+    fascia.push([X / 2048, 1 - (Y + 96) / 2048, (X + 512) / 2048, 1 - Y / 2048]); types.push(zh);
   }
   // blades: 21 x 2 cells of 96 x 448, characters stacked
   for (let row = 0; row < 2; row++) for (let col = 0; col < 21; col++) {
@@ -70,40 +60,7 @@ function signAtlas(seed = 7) {
     x.shadowBlur = 0;
     blades.push([X / 2048, 1 - (Y + 448) / 2048, (X + 96) / 2048, 1 - Y / 2048]);
   }
-  return { texture: tex(c, { repeat: false, aniso: 8 }), fascia, blades };
-}
-// shop interiors seen through the glass: 8 looks. Dim and warm at the back, the display lit at the
-// front, goods on shelves and rails, a person or two inside, the glass's mullions and a sheen across it.
-function shopAtlas() {
-  const [c, x] = makeCanvas(1024, 256), r = rng(3);
-  for (let k = 0; k < 8; k++) {
-    const X = k * 128, warm = k % 3 !== 1;
-    x.save(); x.beginPath(); x.rect(X, 0, 128, 256); x.clip();
-    const back = x.createLinearGradient(0, 0, 0, 256);                       // the room: ceiling light, darker floor
-    back.addColorStop(0, warm ? '#6b4a2a' : '#4a5566'); back.addColorStop(0.18, warm ? '#c89a62' : '#a9b8c8');
-    back.addColorStop(0.6, warm ? '#7a5534' : '#5d6a7a'); back.addColorStop(1, warm ? '#2a1c12' : '#1e242c');
-    x.fillStyle = back; x.fillRect(X, 0, 128, 256);
-    x.fillStyle = warm ? 'rgba(255,236,200,0.85)' : 'rgba(235,245,255,0.85)';  // ceiling downlights
-    for (let i = 0; i < 4; i++) x.fillRect(X + 10 + i * 30, 14, 14, 3);
-    const kind = k % 4;
-    for (let i = 0; i < 6; i++) {                                           // shelves / rails of goods
-      const y = 70 + i * 26;
-      if (kind === 0) { x.fillStyle = 'rgba(30,22,16,0.7)'; x.fillRect(X + 6, y + 14, 116, 3); for (let j = 0; j < 9; j++) { x.fillStyle = `hsla(${(r() * 50 + (warm ? 10 : 190)) | 0},45%,${30 + r() * 35}%,0.95)`; x.fillRect(X + 8 + j * 12.5, y + 14 - (6 + r() * 9), 9, 6 + r() * 9); } }
-      else if (kind === 1 && i < 3) { x.strokeStyle = 'rgba(40,40,40,0.8)'; x.lineWidth = 2; x.beginPath(); x.moveTo(X + 8, y); x.lineTo(X + 120, y); x.stroke(); for (let j = 0; j < 8; j++) { x.fillStyle = `hsla(${(r() * 360) | 0},35%,${25 + r() * 30}%,0.95)`; x.fillRect(X + 10 + j * 14, y, 10, 22 + r() * 10); } }
-      else if (kind === 2 && i === 2) { for (let j = 0; j < 4; j++) { x.fillStyle = 'rgba(250,240,220,0.9)'; x.fillRect(X + 12 + j * 28, y + 30, 20, 4); x.fillStyle = `hsla(${(40 + r() * 20) | 0},70%,60%,0.95)`; x.beginPath(); x.arc(X + 22 + j * 28, y + 26, 5, 0, Math.PI * 2); x.fill(); } }
-      else if (kind === 3 && i === 1) { x.fillStyle = 'rgba(20,20,24,0.9)'; x.fillRect(X + 14, y, 100, 40); x.fillStyle = '#7fd4ff'; x.fillRect(X + 18, y + 4, 92, 30); }
-    }
-    for (let i = 0; i < 1 + (r() * 2 | 0); i++) {                            // someone inside
-      const px = X + 20 + r() * 88, ph = 70 + r() * 20;
-      x.fillStyle = 'rgba(25,18,14,0.85)'; x.beginPath(); x.ellipse(px, 256 - ph - 30, 7, 9, 0, 0, Math.PI * 2); x.fill(); x.fillRect(px - 9, 256 - ph - 20, 18, ph);
-    }
-    x.fillStyle = warm ? 'rgba(255,214,150,0.35)' : 'rgba(210,230,255,0.3)'; x.fillRect(X, 200, 128, 10);   // the lit display shelf
-    const sheen = x.createLinearGradient(X, 0, X + 128, 256); sheen.addColorStop(0, 'rgba(255,255,255,0.0)'); sheen.addColorStop(0.45, 'rgba(255,255,255,0.08)'); sheen.addColorStop(0.55, 'rgba(255,255,255,0.0)');
-    x.fillStyle = sheen; x.fillRect(X, 0, 128, 256);
-    x.fillStyle = 'rgba(12,12,14,0.95)'; x.fillRect(X, 0, 4, 256); x.fillRect(X + 124, 0, 4, 256); x.fillRect(X, 0, 128, 6); x.fillRect(X + 62, 0, 3, 256);   // mullions
-    x.restore();
-  }
-  return tex(c, { repeat: false, aniso: 4 });
+  return { texture: tex(c, { repeat: false, aniso: 8 }), fascia, blades, types };
 }
 // ad slides for the LED screens (cycled)
 function screenAtlas() {
@@ -158,7 +115,7 @@ function landingSign() {
   return tex(c, { repeat: false, aniso: 8 });
 }
 
-export function createNanjingRoad(M) {
+export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   const group = new THREE.Group(); group.name = 'nanjing-road';
   const B = batchSet(NAMES), P = { paving: new Batch(), asphalt: new Batch(), granite: new Batch(), paint: new Batch(), yellow: new Batch(), steel: new Batch(), hoard: new Batch(), dark: new Batch(), tile: new Batch() };
   const r = rng(1851), h = NJ.henan, lights = [];
@@ -182,7 +139,9 @@ export function createNanjingRoad(M) {
   for (let x = h.x0 + 0.4; x < h.x1 - 0.4; x += 0.9) P.paint.floor(x, x + 0.45, NJ.zc - 3.4, NJ.zc + 3.4, 0.012);           // the zebra
   P.paint.floor(h.x0 + 0.3, h.xc - 0.3, NJ.zc - 5.6, NJ.zc - 5.2, 0.012); P.paint.floor(h.xc + 0.3, h.x1 - 0.3, NJ.zc + 5.2, NJ.zc + 5.6, 0.012);
   // ---- the buildings ----
-  const shops = new Batch(), signs = new Batch(), blades = new Batch(), atlas = signAtlas(), shopTex = shopAtlas();
+  const signs = new Batch(), blades = new Batch(), atlas = signAtlas();
+  // the shopfronts: glass with the real shop behind it, frames, automatic doors (world/shopfronts.js)
+  const fronts = createShopfronts({ size: roomSize, rnd: rng(2020) });
   const quad = (batch, ax, az, bx, bz, y0, y1, uv) => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute([ax, y0, az, bx, y0, bz, bx, y1, bz, ax, y0, az, bx, y1, bz, ax, y1, az], 3));
@@ -201,24 +160,16 @@ export function createNanjingRoad(M) {
       { h: up, style, floors: Math.round(up / 3.6), bay: style === 'deco' ? 3 : 4, f0: 0.5, f1: 0.28, cornice: { out: 0.55, h: 0.7 } },
       ...(top ? [{ h: 3.6, style, floors: 1, bay: 4, inset: 1.6, f0: 0.35, f1: 0.25 }] : []),
     ], `${face}EW`, seed, gain);
-    // shop windows: bays of glass between piers, lit from inside
-    const zg = zf + dir * 0.06, bays = Math.max(1, Math.round(w / 4));
-    for (let i = 0; i < bays; i++) {
-      const a = xa + (w * i) / bays + 0.35, b = xa + (w * (i + 1)) / bays - 0.35, k = Math.floor(rr() * 8);
-      quad(shops, dir > 0 ? a : b, zg, dir > 0 ? b : a, zg, CH + 0.3, 4.1, [k / 8, 0, (k + 1) / 8, 1]);
-    }
-    // the way in: a doorway at each spot the crowd goes in by (engine/crowd.js: every 13 m from x -46), the
-    // shop's light spilling out, its doors standing open
-    for (let dx = -46; dx > xa; dx -= 13) if (dx > xa + 1.4 && dx < xb - 1.4) {
-      const zd = zf + dir * 0.1;
-      quad(doors, dir > 0 ? dx - 1.2 : dx + 1.2, zd, dir > 0 ? dx + 1.2 : dx - 1.2, zd, CH + 0.02, 3.1, [0, 0, 1, 1]);
-      doorList.push({ x: dx, z: zf, dir });
-    }
+    // the shopfront (the room behind the glass follows what the sign says it sells), with a door at each
+    // spot the crowd goes in by (engine/crowd.js: every 13 m from x -46)
+    const nSigns = w > 22 ? 2 : 1, picks = Array.from({ length: nSigns }, () => Math.floor(rr() * atlas.fascia.length));
+    const doorAt = [];
+    for (let dx = -46; dx > xa; dx -= 13) if (dx > xa + 2.6 && dx < xb - 2.6) { doorAt.push(dx); doorList.push({ x: dx, z: zf, dir }); }
+    fronts.addFront({ axis: 'x', plane: zf, out: dir }, xa, xb, { y0: CH, doorAt, type: opts.type || atlas.types[picks[0]], room: opts.room || null });
     if (opts.signs === false) return base + up + (top ? 3.6 : 0);
     // the fascia sign over the shopfront, sometimes two
-    const nSigns = w > 22 ? 2 : 1;
     for (let i = 0; i < nSigns; i++) {
-      const sw = Math.min(w * 0.8 / nSigns, 11), cx = xa + (w * (i + 0.5)) / nSigns, f = atlas.fascia[Math.floor(rr() * atlas.fascia.length)], zs = zf + dir * 0.12;
+      const sw = Math.min(w * 0.8 / nSigns, 11), cx = xa + (w * (i + 0.5)) / nSigns, f = atlas.fascia[picks[i]], zs = zf + dir * 0.12;
       quad(signs, dir > 0 ? cx - sw / 2 : cx + sw / 2, zs, dir > 0 ? cx + sw / 2 : cx - sw / 2, zs, 4.3, 4.3 + sw * 96 / 512, f);
     }
     // vertical blade signs standing out from the façade
@@ -231,21 +182,20 @@ export function createNanjingRoad(M) {
     return base + up + (top ? 3.6 : 0);
   }
   let seed = 11;
-  const doors = new Batch(), doorList = [];
+  const doorList = [];
   // the flagship stores of this stretch (between Henan Road and Jiangxi Road), as they stand: Apple in the
   // Henderson Metropolitan building and New World Daimaru on the south side; Samsung's largest Chinese store
   // in Hongyi Plaza and Huawei's global flagship in the 1930s Nanjing Building on the north
   const LANDMARKS = [
-    { side: 1, x0: -492, x1: -452, style: 'deco', up: 28.8, top: false, glass: true, sign: ['SAMSUNG', '宏伊国际广场  HONGYI PLAZA'], fg: '#ffffff', bg: '#1428a0' },
-    { side: 1, x0: -448, x1: -404, style: 'deco', up: 21.6, top: true, sign: ['HUAWEI  华为', '全球旗舰店 · 南京大楼'], fg: '#ffffff', bg: '#c7000b' },
-    { side: -1, x0: -492, x1: -460, style: 'classic', up: 25.2, top: false, glass: true, sign: ['Apple', '南京东路'], fg: '#f5f5f7', bg: '#1d1d1f' },
-    { side: -1, x0: -456, x1: -404, style: 'classic', up: 28.8, top: true, glass: true, sign: ['新世界大丸百货', 'SHANGHAI NEW WORLD DAIMARU'], fg: '#2b2b2b', bg: '#f3efe6' },
+    { side: 1, x0: -492, x1: -452, style: 'deco', up: 28.8, top: false, glass: true, sign: ['SAMSUNG', '宏伊国际广场  HONGYI PLAZA'], fg: '#ffffff', bg: '#1428a0', room: 'phone_shop' },
+    { side: 1, x0: -448, x1: -404, style: 'deco', up: 21.6, top: true, sign: ['HUAWEI  华为', '全球旗舰店 · 南京大楼'], fg: '#ffffff', bg: '#c7000b', room: 'phone_shop' },
+    { side: -1, x0: -492, x1: -460, style: 'classic', up: 25.2, top: false, glass: true, sign: ['Apple', '南京东路'], fg: '#f5f5f7', bg: '#1d1d1f', room: 'phone_shop' },
+    { side: -1, x0: -456, x1: -404, style: 'classic', up: 28.8, top: true, glass: true, sign: ['新世界大丸百货', 'SHANGHAI NEW WORLD DAIMARU'], fg: '#2b2b2b', bg: '#f3efe6', room: 'royal_esplanade' },
   ];
   const lmSigns = [];
   function landmark(lm, zf, dir) {
-    const hgt = building(lm.x0, lm.x1, zf, dir, seed++, { style: lm.style, up: lm.up, top: lm.top, signs: false });
+    const hgt = building(lm.x0, lm.x1, zf, dir, seed++, { style: lm.style, up: lm.up, top: lm.top, signs: false, room: lm.room });
     const w = lm.x1 - lm.x0, cx = (lm.x0 + lm.x1) / 2;
-    if (lm.glass) quad(shops, dir > 0 ? lm.x0 + 0.6 : lm.x1 - 0.6, zf + dir * 0.08, dir > 0 ? lm.x1 - 0.6 : lm.x0 + 0.6, zf + dir * 0.08, 4.1, 5.3, [0, 0, 1, 0.3]);   // a second storey of shop glass
     lmSigns.push({ lm, x: cx, z: zf + dir * 0.16, dir, y: 5.5, w: Math.min(w * 0.5, 12) });
     return hgt;
   }
@@ -281,8 +231,7 @@ export function createNanjingRoad(M) {
   for (const [xf, dir] of [[h.x1 + 5, 1], [h.x0 - 5, -1]]) for (const [za, zb] of [[NJ.z0 - 34, NJ.z0 - 18], [NJ.z1 + 18, NJ.z1 + 34]]) {
     const fp = dir > 0 ? { x0: xf, x1: xf + 16, z0: za, z1: zb } : { x0: xf - 16, x1: xf, z0: za, z1: zb };
     tiers(B, fp, 0, [{ h: 5.4, style: 'rustic', bay: 4, f0: 0.5, f1: 0.4, cornice: { out: 0.3, h: 0.45 } }, { h: 18, style: 'classic', floors: 5, bay: 4, f0: 0.45, f1: 0.25, cornice: { out: 0.5, h: 0.6 } }], dir > 0 ? 'W' : 'E', seed++, { W: 1, E: 1 });
-    const xg = xf - dir * -0.06;
-    for (let z = za + 0.5; z < zb - 3; z += 4) { const k = Math.floor(r() * 8); quad(shops, xg, dir > 0 ? z + 3.3 : z, xg, dir > 0 ? z : z + 3.3, CH + 0.3, 4.1, [k / 8, 0, (k + 1) / 8, 1]); }
+    fronts.addFront({ axis: 'z', plane: xf, out: -dir }, za + 0.3, zb - 0.3, { y0: CH });
   }
   // and further along Henan Road: the street's walls, seen in perspective (simple massing, lit windows)
   const far = new Batch(), fr = rng(77);
@@ -356,15 +305,12 @@ export function createNanjingRoad(M) {
   flush(B, M, group, 'nj-');
   const signMat = new THREE.MeshBasicMaterial({ map: atlas.texture }); signMat.color.setScalar(1.55); asLight(signMat, 'signs', 0.5);   // unlit by day: painted signs
   const bladeMat = new THREE.MeshBasicMaterial({ map: atlas.texture, side: THREE.DoubleSide }); bladeMat.color.setScalar(1.7); asLight(bladeMat, 'signs', 0.5);
-  // the shop windows: open (10 am to 10 pm) they're lit bright enough to read as lit in daylight too
-  const shopMat = new THREE.MeshBasicMaterial({ map: shopTex }); shopMat.color.setScalar(2.1); asLight(shopMat, 'shops', 0.32);   // closed: dark
-  const doorMat = asLight(new THREE.MeshBasicMaterial({ map: doorTexture() }), 'shops', 0.25); doorMat.color.setScalar(2.2);
-  group.add(doors.mesh(doorMat, 'nj-doors'));
+  group.add(fronts.build());
   for (const sgn of lmSigns) {
     const m = new THREE.MeshBasicMaterial({ map: brandSign(sgn.lm) }); m.color.setScalar(1.25); asLight(m, 'screens', 0.9);
     const p = new THREE.Mesh(new THREE.PlaneGeometry(sgn.w, sgn.w * 0.2), m); p.position.set(sgn.x, sgn.y + sgn.w * 0.1, sgn.z); if (sgn.dir < 0) p.rotation.y = Math.PI; group.add(p);
   }
-  group.add(shops.mesh(shopMat, 'nj-shops'), signs.mesh(signMat, 'nj-signs'), blades.mesh(bladeMat, 'nj-blades'));
+  group.add(signs.mesh(signMat, 'nj-signs'), blades.mesh(bladeMat, 'nj-blades'));
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
   group.add(P.paint.mesh(paint, 'henan-paint'), P.yellow.mesh(yellow, 'henan-yellow'));
@@ -374,7 +320,9 @@ export function createNanjingRoad(M) {
   group.add(P.dark.mesh(new THREE.MeshStandardMaterial({ color: 0x15181c, roughness: 0.15, metalness: 0.6 }), 'metro-panels'));
   group.add(glassB.mesh(glassMat, 'metro-glass'), strips.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.6, 1.7) }), 'metro-strips'));
   return {
-    group, lights, doors: doorList,
+    group, lights, doors: doorList, fronts,
     update(t) { scrTex.offset.y = (Math.floor(t / 6) % 4) * 0.25; },
+    // the automatic doors: open for whoever comes up to them (people: [{ x, z }])
+    doorsUpdate(dt, people, eye) { fronts.update(dt, people, eye); },
   };
 }
