@@ -29,18 +29,44 @@ export const L = {
 // paving wall to wall, out west past Henan Middle Road (world/nanjingRoad.js).
 export const sideStreets = [
   { id: 'jiujiang', z0: -131, z1: -117, roadHalfW: 3.4, xEnd: -56 },
-  { id: 'nanjing', z0: -212, z1: -190, roadHalfW: 5, xEnd: -548, pedestrian: true },
+  { id: 'nanjing', z0: -212, z1: -190, roadHalfW: 5, xEnd: -1526, pedestrian: true },
 ].map((s) => ({ ...s, zc: (s.z0 + s.z1) / 2 }));
 export const inSideRoad = (x, z) => x < -28 && sideStreets.some((s) => !s.pedestrian && Math.abs(z - s.zc) < s.roadHalfW && x > s.xEnd - 1);
 
-// Nanjing Road East out to Henan Middle Road (real distances approximated: the pedestrian extension
-// runs about 500 m from the Bund to Henan Road). Cross streets (Sichuan, Jiangxi Middle Roads) are
-// closed off a few metres in, like the other side streets.
+// Nanjing Road East from the Bund to Xizang Middle Road, about 1.5 km (the Bund to Henan Road a little
+// short of its real 490 m; west of Henan Road at full scale, from OpenStreetMap: docs/nanjing-road-shops.md).
+// Cross streets are closed off a few metres in, like the other side streets; some open on one side only
+// (Shandong Road to the south; the lanes 五福弄 and 石潭弄 to the north). Century Square (南京路世纪广场)
+// is an open square off the south side. Xizang Road at the west end: its carriageway, railed at the kerb.
 export const NJ = {
-  z0: -212, z1: -190, zc: -201, xWest: -548,
+  z0: -212, z1: -190, zc: -201, xWest: -1526,
   henan: { x0: -513, x1: -497, xc: -505, walkTo: 30 },     // carriageway; its pavements are open 30 m each way
-  cross: [{ id: 'sichuan', x0: -296, x1: -284 }, { id: 'jiangxi', x0: -401, x1: -389 }],
+  cross: [
+    { id: 'sichuan', x0: -296, x1: -284 }, { id: 'jiangxi', x0: -401, x1: -389 },
+    { id: 'shandong', x0: -605, x1: -595, side: 'S' },
+    { id: 'shanxi', x0: -765, x1: -753 },
+    { id: 'wufu', x0: -869, x1: -865, side: 'N', lane: true }, { id: 'shitan', x0: -935, x1: -931, side: 'N', lane: true },
+    { id: 'fujian', x0: -992, x1: -978 },
+    { id: 'zhejiang', x0: -1174, x1: -1160 },
+    { id: 'guangxi', x0: -1303, x1: -1293 },
+    { id: 'guizhou', x0: -1363, x1: -1353 },
+  ],
+  century: { x0: -1135, x1: -1075, depth: 36 },             // Century Square, off the south side
+  xizang: { x0: -1556, x1: -1526 },                         // Xizang Middle Road's carriageway
 };
+// the cross streets that open on a side (dir 1: the north side, -1: the south)
+export const njCross = (dir) => NJ.cross.filter((c) => !c.side || c.side === (dir > 0 ? 'N' : 'S'));
+// the street's frontage on a side, east to west, as [xEast, xWest] runs between the cross streets (and
+// Henan Road's pavements, and Century Square on the south side)
+export function njRuns(dir) {
+  const cuts = [...njCross(dir).map((c) => [c.x1, c.x0]), [NJ.henan.x1 + 5, NJ.henan.x0 - 5]];
+  if (dir < 0) cuts.push([NJ.century.x1, NJ.century.x0]);
+  cuts.sort((a, b) => b[0] - a[0]);
+  const runs = []; let x = -84;
+  for (const [e, w] of cuts) { if (x - e > 0.5) runs.push([x, e]); x = Math.min(x, w); }
+  if (x - NJ.xWest > 0.5) runs.push([x, NJ.xWest]);
+  return runs;
+}
 export const inHenan = (x, z) => x > NJ.henan.x0 && x < NJ.henan.x1 && Math.abs(z - NJ.zc) < 420;
 // East Nanjing Road station (Lines 2 and 10), the two exits at Henan Road's north corners (Shanghai
 // Metro's own descriptions): Exit 7, east side of Henan Rd, north of Nanjing Rd (signed for Tianjin Road
@@ -238,17 +264,21 @@ for (const p of crossing.vehPoles) around(p.x, p.z, 0.2, 0.2, 'signal');
 for (const p of crossing.pedPoles) around(p.x, p.z, 0.1, 0.1, 'signal');
 
 {
-  const segs = [[-84, NJ.cross[0].x1], [NJ.cross[0].x0, NJ.cross[1].x1], [NJ.cross[1].x0, NJ.henan.x1 + 5], [NJ.henan.x0 - 5, NJ.xWest - 2]];
-  for (const [a, b] of segs) {
+  for (const [a, b] of njRuns(1)) box(Math.min(a, b), Math.max(a, b), NJ.z0 - 22, NJ.z0, 'nj-north');
+  for (const [a, b] of njRuns(-1)) {
     const lo = Math.min(a, b), hi = Math.max(a, b);
-    box(lo, hi, NJ.z0 - 22, NJ.z0, 'nj-north');
     // the south frontage, open where the shengjian shop is: its walls instead
     if (DUMPLING.x0 > lo && DUMPLING.x1 < hi) { box(lo, DUMPLING.x0, NJ.z1, NJ.z1 + 22, 'nj-south'); box(DUMPLING.x1, hi, NJ.z1, NJ.z1 + 22, 'nj-south'); }
     else box(lo, hi, NJ.z1, NJ.z1 + 22, 'nj-south');
   }
+  // Century Square: open to the street, its back and sides walled
+  { const C = NJ.century; box(C.x0, C.x1, NJ.z1 + C.depth, NJ.z1 + C.depth + 1, 'nj-south'); box(C.x0 - 1, C.x0, NJ.z1, NJ.z1 + C.depth + 1, 'nj-south'); box(C.x1, C.x1 + 1, NJ.z1, NJ.z1 + C.depth + 1, 'nj-south'); }
+  // the west end: Xizang Road's kerb, railed
+  box(NJ.xWest - 1, NJ.xWest - 0.2, NJ.z0 - 1, NJ.z1 + 1, 'boundary');
   { const D = DUMPLING; box(D.x0 - 0.3, D.x0 + 0.15, D.z0, D.z1 + 0.3, 'wall'); box(D.x1 - 0.15, D.x1 + 0.3, D.z0, D.z1 + 0.3, 'wall'); box(D.x0, D.x1, D.z1, D.z1 + 0.3, 'wall');
     box(D.x0, D.x0 + 3.6, D.z0 - 0.05, D.z0 + 0.25, 'shop'); box(D.x1 - 3.6, D.x1, D.z0 - 0.05, D.z0 + 0.25, 'shop'); }   // the shopfront glass, a door in the middle
-  for (const c of NJ.cross) { box(c.x0, c.x1, NJ.z0 - 9, NJ.z0 - 8, 'boundary'); box(c.x0, c.x1, NJ.z1 + 8, NJ.z1 + 9, 'boundary'); }
+  for (const c of njCross(1)) box(c.x0, c.x1, NJ.z0 - 9, NJ.z0 - 8, 'boundary');
+  for (const c of njCross(-1)) box(c.x0, c.x1, NJ.z1 + 8, NJ.z1 + 9, 'boundary');
   // Henan Road's pavements: open 30 m each way, then fenced; the far sides are buildings
   const h = NJ.henan, w = h.walkTo;
   box(h.x1, h.x1 + 5, NJ.z0 - w - 1, NJ.z0 - w, 'boundary'); box(h.x1, h.x1 + 5, NJ.z1 + w, NJ.z1 + w + 1, 'boundary');

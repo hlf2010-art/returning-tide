@@ -66,7 +66,7 @@ about 35 m (`layout.js:32, 39-43`). The promenade runs from x 2 to x 26.
 
 ### Fixes, ranked by impact
 
-1. Extend the street west of Henan Road, with the big department stores.
+1. Extend the street west of Henan Road, with the big department stores. (*Done 25 Nov 2026: to Xizang Road, with the real shops: `docs/nanjing-road-shops.md`.*)
 2. Model the Peace Hotel's Nanjing Road front and the Swatch hotel.
 3. Give Apple a glass front and its logo.
 4. Survey the real tenants from the Bund to Henan Road and use the real names.

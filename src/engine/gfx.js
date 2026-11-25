@@ -19,12 +19,13 @@ export const PRESETS = {
 // what each level of detail means in the world
 export const LOD = {
   // rooms: the size of the shop-window photographs' cube faces (world/shopfronts.js)
-  // people: the crowd's population at its busiest (a weekend evening); only those within ~30 m steer
+  // people: the crowd's population at its busiest (a weekend evening; raised when Nanjing Road ran on to
+  // Xizang Road); only those within ~30 m steer
   // round each other, the rest follow their lanes (engine/crowd.js), so it costs about what 380 did
-  low:    { crowd: 0.45, people: 1000, nearPeople: 8, traffic: 0.6, farDetail: 0.6, trees: 0, rooms: 384 },
-  medium: { crowd: 1.0, people: 2800, nearPeople: 16, traffic: 1.0, farDetail: 0.85, trees: 1, rooms: 512 },
-  high:   { crowd: 1.6, people: 3600, nearPeople: 24, traffic: 1.35, farDetail: 1.0, trees: 1, rooms: 512 },
-  ultra:  { crowd: 2.4, people: 4500, nearPeople: 40, traffic: 1.7, farDetail: 1.0, trees: 2, rooms: 512 },
+  low:    { crowd: 0.45, people: 1200, nearPeople: 8, traffic: 0.6, farDetail: 0.6, trees: 0, rooms: 384 },
+  medium: { crowd: 1.0, people: 3300, nearPeople: 16, traffic: 1.0, farDetail: 0.85, trees: 1, rooms: 512 },
+  high:   { crowd: 1.6, people: 4300, nearPeople: 24, traffic: 1.35, farDetail: 1.0, trees: 1, rooms: 512 },
+  ultra:  { crowd: 2.4, people: 5400, nearPeople: 40, traffic: 1.7, farDetail: 1.0, trees: 2, rooms: 512 },
 };
 export const FPS_CAPS = [30, 60, 120, 0];
 

@@ -7,7 +7,7 @@
 // are typical of the street, not surveyed one by one.
 import { asLight, glassByDay } from './dayNight.js';
 import * as THREE from 'three';
-import { L, NJ, METRO, METRO_DEPTH, DUMPLING } from './layout.js';
+import { L, NJ, METRO, METRO_DEPTH, DUMPLING, njRuns, njCross } from './layout.js';
 import { Batch, batchSet, flush } from './geo.js';
 import { tiers } from './bund.js';
 import { makeCanvas, tex, rng, FONT } from './canvas.js';
@@ -104,7 +104,8 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   for (let x = h.x0 + 0.4; x < h.x1 - 0.4; x += 0.9) P.paint.floor(x, x + 0.45, NJ.zc - 3.4, NJ.zc + 3.4, 0.012);           // the zebra
   P.paint.floor(h.x0 + 0.3, h.xc - 0.3, NJ.zc - 5.6, NJ.zc - 5.2, 0.012); P.paint.floor(h.xc + 0.3, h.x1 - 0.3, NJ.zc + 5.2, NJ.zc + 5.6, 0.012);
   // ---- the buildings ----
-  const signs = new Batch(), letters = new Batch(), blades = new Batch(), boards = new Batch();
+  // (the sign faces by atlas page: page -> Batch)
+  const signs = [], letters = [], blades = [], boards = new Batch(), onPage = (list, k) => list[k] || (list[k] = new Batch());
   // the signs: each shop's own, drawn into atlases (world/shopSigns.js) once the sign faces have loaded
   const signAt = createSignAtlas(4096, 2048), bladeAt = createSignAtlas(2048, 2048);
   // a generic shop (where no real one has been placed): an invented name in the street's manner
@@ -120,14 +121,14 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     const st = spec.style || 'brand', bare = st === 'letters' && !spec.board, off = 0.34, d = bare ? 0 : 0.12, zFace = zf + dir * (off + d + 0.004);
     const uv = signAt.add(spec, w / h);
     if (d) boards.box(cx, y - 0.04, zf + dir * (off + d / 2), w + 0.08, h + 0.08, d);
-    quad(bare ? letters : signs, dir > 0 ? cx - w / 2 : cx + w / 2, zFace, dir > 0 ? cx + w / 2 : cx - w / 2, zFace, y, y + h, uv);
+    quad(onPage(bare ? letters : signs, uv[4]), dir > 0 ? cx - w / 2 : cx + w / 2, zFace, dir > 0 ? cx + w / 2 : cx - w / 2, zFace, y, y + h, uv);
     if (d) for (const bx of [cx - w * 0.35, cx + w * 0.35]) boards.box(bx, y + h * 0.4, zf + dir * off / 2, 0.06, 0.08, off);   // brackets back to the wall
   };
   // a vertical sign standing out from the façade, both faces
   const bladeSign = (spec, bx, zf, dir, y0, hgt) => {
     const f = bladeAt.add(spec, hgt / 1.1 * 0.9, { blade: true });
-    quad(blades, bx, zf + dir * 0.3, bx, zf + dir * 1.4, y0, y0 + hgt, f);
-    quad(blades, bx, zf + dir * 1.4, bx, zf + dir * 0.3, y0, y0 + hgt, [f[2], f[1], f[0], f[3]]);
+    quad(onPage(blades, f[4]), bx, zf + dir * 0.3, bx, zf + dir * 1.4, y0, y0 + hgt, f);
+    quad(onPage(blades, f[4]), bx, zf + dir * 1.4, bx, zf + dir * 0.3, y0, y0 + hgt, [f[2], f[1], f[0], f[3]]);
     boards.box(bx, y0 - 0.05, zf + dir * 0.85, 0.08, hgt + 0.1, 1.2);
   };
   // the shopfronts: glass with the real shop behind it, frames, automatic doors (world/shopfronts.js)
@@ -185,7 +186,6 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   // the real shops (world/njShops.js), each at its street number on its side of the street
   const PLACED = placedShops();
   const placedAt = (dir, x) => PLACED.find((p) => p.dir === dir && Math.abs(x - p.x1) < 0.01);
-  const runs = [[-84, NJ.cross[0].x1], [NJ.cross[0].x0, NJ.cross[1].x1], [NJ.cross[1].x0, h.x1 + 5], [h.x0 - 5, NJ.xWest - 2]];
   const screens = [];
   // the shengjian shop's building (world/dumpling.js does its ground floor): storeys above an open shopfront
   function shopBuilding(xa, xb, zf) {
@@ -197,7 +197,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     // the shop's back wall (the rest of the ground floor behind it is the building's)
     tiers(B, { x0: xa, x1: xb, z0: DUMPLING.z1 + 0.3, z1: zf + 18 }, 0, [{ h: 4.6, style: 'rustic', bay: 4, f0: 0.55, f1: 0.45 }], 'N', 978, { N: 0.4 });
   }
-  for (const [ea, eb] of runs) for (const [zf, dir] of [[NJ.z0, 1], [NJ.z1, -1]]) {
+  for (const [zf, dir] of [[NJ.z0, 1], [NJ.z1, -1]]) for (const [ea, eb] of njRuns(dir)) {
     let x = Math.max(ea, eb);
     const end = Math.min(ea, eb);
     while (x - end > 6) {
@@ -224,7 +224,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     fronts.addFront({ axis: 'z', plane: xf, out: -dir }, za + 0.3, zb - 0.3, { y0: CH });
   }
   // and further along Henan Road: the street's walls, seen in perspective (simple massing, lit windows)
-  const far = new Batch(), fr = rng(77);
+  const far = new Batch(), fr = rng(77), farX = new Batch(), fr0 = rng(78);
   for (const [x0, x1] of [[h.x1 + 5, h.x1 + 30], [h.x0 - 30, h.x0 - 5]]) for (const sgn of [-1, 1]) {
     let z = sgn < 0 ? NJ.z0 - 34 : NJ.z1 + 34;
     while (Math.abs(z - NJ.zc) < HL) {
@@ -235,10 +235,48 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   }
   const farMat = glassByDay(new THREE.MeshBasicMaterial({ map: towerAtlas(31, 0.75) }), [0.44, 0.45, 0.47]); farMat.color.setScalar(0.85);
   group.add(far.mesh(farMat, 'henan-walls'));
-  // ---- the west end and the cross streets: closed off (roadworks hoardings) ----
+  const trunks = new Batch(), crowns = new Batch();
+  // ---- the cross streets: closed off a few metres in (roadworks hoardings), on the sides they open ----
   const hoard = (x0, x1, z0, z1) => { P.hoard.box((x0 + x1) / 2, 0, (z0 + z1) / 2, Math.max(0.12, x1 - x0), 2.5, Math.max(0.12, z1 - z0)); };
-  hoard(NJ.xWest - 0.6, NJ.xWest - 0.48, NJ.z0, NJ.z1);
-  for (const c of NJ.cross) { hoard(c.x0, c.x1, NJ.z0 - 8.6, NJ.z0 - 8.48); hoard(c.x0, c.x1, NJ.z1 + 8.48, NJ.z1 + 8.6); P.paving.box((c.x0 + c.x1) / 2, -0.3, NJ.z0 - 4.3, c.x1 - c.x0, 0.3 + CH, 8.6, { tile: 2.4 }); P.paving.box((c.x0 + c.x1) / 2, -0.3, NJ.z1 + 4.3, c.x1 - c.x0, 0.3 + CH, 8.6, { tile: 2.4 }); }
+  for (const c of njCross(1)) { hoard(c.x0, c.x1, NJ.z0 - 8.6, NJ.z0 - 8.48); P.paving.box((c.x0 + c.x1) / 2, -0.3, NJ.z0 - 4.3, c.x1 - c.x0, 0.3 + CH, 8.6, { tile: 2.4 }); }
+  for (const c of njCross(-1)) { hoard(c.x0, c.x1, NJ.z1 + 8.48, NJ.z1 + 8.6); P.paving.box((c.x0 + c.x1) / 2, -0.3, NJ.z1 + 4.3, c.x1 - c.x0, 0.3 + CH, 8.6, { tile: 2.4 }); }
+  // ---- Century Square (南京路世纪广场): an open square off the south side, the old Wing On annexe's tower
+  // behind it, planted, with benches ----
+  {
+    const C = NJ.century, zb = NJ.z1 + C.depth;
+    P.paving.box((C.x0 + C.x1) / 2, -0.3, NJ.z1 + C.depth / 2, C.x1 - C.x0, 0.3 + CH, C.depth, { tile: 2.4 });
+    tiers(B, { x0: C.x0 - 6, x1: C.x1 + 6, z0: zb, z1: zb + 20 }, 0, [
+      { h: 6, style: 'rustic', bay: 4, f0: 0.55, f1: 0.45, cornice: { out: 0.3, h: 0.45 } },
+      { h: 25.2, style: 'deco', floors: 7, bay: 3, f0: 0.5, f1: 0.28, cornice: { out: 0.55, h: 0.7 } },
+      { h: 10.8, style: 'deco', floors: 3, bay: 3, inset: 6, f0: 0.4, f1: 0.25 },
+    ], 'NEW', 1918, { N: 1, E: 0.55, W: 0.55 });
+    fronts.addFront({ axis: 'x', plane: zb, out: -1 }, C.x0 - 4, C.x1 + 4, { y0: CH, type: '百货' });
+    for (const x of [C.x0 + 1, C.x1 - 1]) P.granite.box(x, CH, NJ.z1 + C.depth / 2, 0.4, 0.5, C.depth - 4);   // low walls down the sides
+    for (let x = C.x0 + 8; x < C.x1 - 6; x += 12) for (const z of [NJ.z1 + 12, NJ.z1 + 24]) {
+      P.granite.box(x, CH, z, 2.6, 0.5, 2.6); trunks.cyl(x, CH + 0.5, z, 0.12, 0.16, 2.6, 7); crowns.add(new THREE.IcosahedronGeometry(1.9, 1), { x, y: CH + 4.2, z });   // planters, each with a tree
+      P.steel.box(x + 3, CH + 0.42, z, 1.8, 0.06, 0.5);                                                  // and a bench
+    }
+  }
+  // ---- the west end: Xizang Middle Road, its carriageway railed off at the kerb; People's Square beyond ----
+  {
+    const X = NJ.xizang, HZ = 160;
+    P.asphalt.floor(X.x0, X.x1, NJ.zc - HZ, NJ.zc + HZ, 0, 6);
+    P.granite.box(X.x1 + 0.08, -0.3, NJ.zc, 0.16, 0.3 + CH + 0.005, HZ * 2);
+    for (let x = X.x0 + 0.5; x < X.x1 - 0.5; x += 0.9) P.paint.floor(x, x + 0.45, NJ.zc - 3.4, NJ.zc + 3.4, 0.012);    // the zebra (closed: railed)
+    for (const sx of [-0.18, 0.18]) P.yellow.floor((X.x0 + X.x1) / 2 + sx - 0.07, (X.x0 + X.x1) / 2 + sx + 0.07, NJ.zc - HZ, NJ.zc + HZ, 0.012);
+    // the pedestrian railing along the kerb (Shanghai's white-and-grey steel), with its posts
+    for (let z = NJ.z0 - 1; z <= NJ.z1 + 1; z += 2.2) P.steel.box(X.x1 + 0.4, CH, z, 0.06, 1.1, 0.06);
+    for (const y of [0.35, 1.05]) P.steel.box(X.x1 + 0.4, CH + y, NJ.zc, 0.05, 0.05, NJ.z1 - NJ.z0 + 2);
+    // the far side: People's Square's edge and the buildings along Xizang Road, in perspective
+    for (const [za, zb] of [[NJ.zc - HZ, NJ.z0 - 2], [NJ.z1 + 2, NJ.zc + HZ]]) {
+      let z = za;
+      while (z < zb - 4) { const d = Math.min(zb - z, 18 + fr0() * 20), hh = 20 + fr0() * fr0() * 70, g = new THREE.BoxGeometry(24, hh, d), uv = g.attributes.uv;
+        for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * d) / 3 / 64 + fr0(), (uv.getY(i) * hh) / 4 / 64);
+        g.translate(X.x0 - 14, hh / 2, z + d / 2); farX.push(g); z += d + 0.4; }
+    }
+    { const g = new THREE.BoxGeometry(60, 34, 60), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * 60) / 3 / 64, (uv.getY(i) * 34) / 4 / 64); g.translate(X.x0 - 40, 17, NJ.zc - 2); farX.push(g); }   // across the road: the New World City block
+    group.add(farX.mesh(farMat, 'xizang-walls'));
+  }
   for (const z of [NJ.z0 - h.walkTo - 0.5, NJ.z1 + h.walkTo + 0.5]) { hoard(h.x1, h.x1 + 5, z - 0.06, z + 0.06); hoard(h.x0 - 5, h.x0, z - 0.06, z + 0.06); }
   // ---- lamp posts down both sides ----
   const lampGlass = new Batch();
@@ -295,17 +333,18 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   flush(B, M, group, 'nj-');
   // the signs: lit at night, painted boards by day; drawn now and again once the sign faces are in
   signAt.draw(); bladeAt.draw(); loadSignFonts().then(() => { signAt.draw(); bladeAt.draw(); });
-  const signMat = new THREE.MeshBasicMaterial({ map: signAt.texture }); signMat.color.setScalar(1.35); asLight(signMat, 'signs', 0.62);
-  const letterMat = new THREE.MeshBasicMaterial({ map: signAt.texture, alphaTest: 0.5 }); letterMat.color.setScalar(1.5); asLight(letterMat, 'signs', 0.7);
-  const bladeMat = new THREE.MeshBasicMaterial({ map: bladeAt.texture, side: THREE.DoubleSide }); bladeMat.color.setScalar(1.5); asLight(bladeMat, 'signs', 0.6);
+  const pageMats = (list, atlas, make) => list.forEach((b, k) => { if (b && b.list.length) group.add(b.mesh(make(atlas.textures[k]), `nj-signs-${k}`)); });
   const boardMat = new THREE.MeshStandardMaterial({ color: 0x1b1916, metalness: 0.6, roughness: 0.4 });
   group.add(fronts.build());
-  group.add(signs.mesh(signMat, 'nj-signs'), blades.mesh(bladeMat, 'nj-blades'), boards.mesh(boardMat, 'nj-sign-boards'));
-  if (letters.list.length) group.add(letters.mesh(letterMat, 'nj-sign-letters'));
+  pageMats(signs, signAt, (t) => { const m = new THREE.MeshBasicMaterial({ map: t }); m.color.setScalar(1.35); return asLight(m, 'signs', 0.62); });
+  pageMats(letters, signAt, (t) => { const m = new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.5 }); m.color.setScalar(1.5); return asLight(m, 'signs', 0.7); });
+  pageMats(blades, bladeAt, (t) => { const m = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); m.color.setScalar(1.5); return asLight(m, 'signs', 0.6); });
+  group.add(boards.mesh(boardMat, 'nj-sign-boards'));
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
   group.add(P.paint.mesh(paint, 'henan-paint'), P.yellow.mesh(yellow, 'henan-yellow'));
   const steel = new THREE.MeshStandardMaterial({ color: 0x8a9096, metalness: 0.85, roughness: 0.35 });
+  if (trunks.list.length) group.add(trunks.mesh(new THREE.MeshStandardMaterial({ color: 0x4a3b2c, roughness: 0.9 }), 'nj-trunks'), crowns.mesh(new THREE.MeshStandardMaterial({ color: 0x3f6b3a, roughness: 0.85, flatShading: true }), 'nj-crowns'));
   group.add(P.steel.mesh(steel, 'nj-steel'), P.hoard.mesh(new THREE.MeshStandardMaterial({ color: 0x2f6aa8, roughness: 0.7 }), 'nj-hoarding'));
   group.add(P.tile.mesh(new THREE.MeshStandardMaterial({ color: 0x8e8b86, roughness: 0.35 }), 'metro-landing'), walls.mesh(new THREE.MeshStandardMaterial({ color: 0xa9aba9, roughness: 0.45 }), 'metro-walls'));
   group.add(P.dark.mesh(new THREE.MeshStandardMaterial({ color: 0x15181c, roughness: 0.15, metalness: 0.6 }), 'metro-panels'));

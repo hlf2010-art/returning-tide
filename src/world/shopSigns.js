@@ -127,32 +127,38 @@ function shade(hex, k) {
   return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
 
-// An atlas of signs: add(spec, aspect) -> region [u0, v0, u1, v1]; draw() paints them (call again once the
-// fonts are in). Rows of PX px; each sign as wide as its aspect asks, up to the atlas's width.
+// An atlas of signs, in pages of W x H: add(spec, aspect) -> region [u0, v0, u1, v1, page]; draw() paints them
+// (call again once the fonts are in). Rows of PX px; each sign as wide as its aspect asks, up to the width;
+// a new page when one fills. textures[page] for the materials.
 export function createSignAtlas(W = 4096, H = 2048) {
-  const c = typeof document !== 'undefined' ? document.createElement('canvas') : null;
-  if (c) { c.width = W; c.height = H; }
-  const items = [];
+  const pages = [], items = [];
   let cx = 0, cy = 0, rowH = 0;
-  const tex = c ? new THREE.CanvasTexture(c) : null;
-  if (tex) { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; }
+  const page = () => {
+    const c = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+    if (c) { c.width = W; c.height = H; }
+    const tex = c ? new THREE.CanvasTexture(c) : null;
+    if (tex) { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; }
+    pages.push({ c, tex });
+  };
+  page();
   return {
-    texture: tex,
+    get textures() { return pages.map((p) => p.tex); },
+    get texture() { return pages[0].tex; },
     // a horizontal sign of the given width/height ratio, or a vertical one (blade: true)
     add(spec, aspect, { blade = false } = {}) {
-      const h = blade ? Math.round(PX * aspect) : PX, w = blade ? PX * 0.9 : Math.min(W, Math.round(PX * aspect));
+      const h = Math.round(blade ? Math.min(PX * aspect, H) : PX), w = blade ? PX * 0.9 : Math.min(W, Math.round(PX * aspect));
       if (cx + w > W) { cx = 0; cy += rowH + 4; rowH = 0; }
-      const r = { spec, blade, X: cx, Y: cy, w, h: Math.round(blade ? Math.min(h, H) : h) };
-      cx += w + 4; rowH = Math.max(rowH, r.h);
+      if (cy + h > H) { page(); cx = 0; cy = 0; rowH = 0; }
+      const r = { spec, blade, page: pages.length - 1, X: cx, Y: cy, w, h };
+      cx += w + 4; rowH = Math.max(rowH, h);
       items.push(r);
-      return [r.X / W, 1 - (r.Y + r.h) / H, (r.X + r.w) / W, 1 - r.Y / H];
+      return [r.X / W, 1 - (r.Y + r.h) / H, (r.X + r.w) / W, 1 - r.Y / H, r.page];
     },
     draw() {
-      if (!c) return;
-      const x = c.getContext('2d'); x.clearRect(0, 0, W, H);
-      for (const r of items) (r.blade ? drawBlade : drawSign)(x, r.spec, r.X, r.Y, r.w, r.h);
-      tex.needsUpdate = true;
+      for (const p of pages) if (p.c) p.c.getContext('2d').clearRect(0, 0, W, H);
+      for (const r of items) { const p = pages[r.page]; if (p.c) (r.blade ? drawBlade : drawSign)(p.c.getContext('2d'), r.spec, r.X, r.Y, r.w, r.h); }
+      for (const p of pages) if (p.tex) p.tex.needsUpdate = true;
     },
-    get used() { return { rows: cy + rowH, items: items.length }; },
+    get used() { return { pages: pages.length, rows: cy + rowH, items: items.length }; },
   };
 }

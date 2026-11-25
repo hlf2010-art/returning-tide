@@ -125,8 +125,35 @@ export function buildNet(extra = null) {
   node('HSE0', h.x1 + 2.0, NJ.z1 + 1, 0.6); node('HSE1', h.x1 + 2.2, NJ.z1 + h.walkTo - 2, 0.6);
   link(`N${last}_2`, 'HSE0'); link(`N${last}_1`, 'HSE0'); link('HSE0', 'HSE1');
   // west of Henan Road: the stub of the street to the hoarding, Exit 2, the west pavements
-  node('NW0', -520, -201, 1.6); node('NW1', -520, -193.4, 1.6); node('NW2', -536, -201, 1.6); node('NW3', -536, -193.4, 1.6); node('NW4', -545, -198, 2.5);
-  link('HW', 'NW0'); link('NW0', 'NW1'); link('NW0', 'NW2'); link('NW1', 'NW3'); link('NW2', 'NW3'); link('NW2', 'NW4'); link('NW3', 'NW4');
+  node('NW0', -520, -201, 1.6); node('NW1', -520, -193.4, 1.6); node('NW2', -536, -201, 1.6); node('NW3', -536, -193.4, 1.6);
+  link('HW', 'NW0'); link('NW0', 'NW1'); link('NW0', 'NW2'); link('NW1', 'NW3'); link('NW2', 'NW3');
+  // ... and on, a kilometre, to Xizang Road (three walks down the street, joined every ~24 m); people come in
+  // from People's Square at the end (NW4) and from the cross streets' mouths
+  const QX = []; for (let x = -556; x > NJ.xWest + 8; x -= 24) QX.push(x);
+  QX.forEach((x, i) => NZ.forEach((z, j) => {
+    node(`Q${i}_${j}`, x, z, 2.2);
+    if (i) link(`Q${i - 1}_${j}`, `Q${i}_${j}`); else link(j === 2 ? 'NW3' : 'NW2', `Q0_${j}`);
+    if (j) link(`Q${i}_${j - 1}`, `Q${i}_${j}`);
+  }));
+  const qLast = QX.length - 1;
+  node('NW4', NJ.xWest + 4, -199, 2.5); for (let j = 0; j < 3; j++) link(`Q${qLast}_${j}`, 'NW4');
+  const qNear = (x) => QX.reduce((b, qx, i) => (Math.abs(qx - x) < Math.abs(QX[b] - x) ? i : b), 0);
+  for (const c of NJ.cross) if (c.x1 < -540 && !c.lane) for (const side of c.side ? [c.side] : ['N', 'S']) {
+    const id = `X:${c.id}:${side}`, cx = (c.x0 + c.x1) / 2;
+    node(id, cx, side === 'N' ? NJ.z0 - 6.5 : NJ.z1 + 6.5, 1.2); link(id, `Q${qNear(cx)}_${side === 'N' ? 0 : 2}`);
+  }
+  // the shop fronts down the long stretch
+  const C = NJ.century;
+  for (let x = -526; x > NJ.xWest + 4; x -= 13) {
+    if (NJ.cross.some((c) => x > c.x0 - 2 && x < c.x1 + 2)) continue;
+    for (const [z, row] of [[NJ.z0 + 1.0, 0], [NJ.z1 - 1.0, 2]]) {
+      if (row === 2 && x > C.x0 - 2 && x < C.x1 + 2) continue;                       // (Century Square: no shop front)
+      if (row === 0 && wellAt(x, -209)) continue;
+      const id = `S${Math.round(-x)}_${row}`, q = x > -548 ? (row === 2 ? 'NW3' : 'NW2') : `Q${qNear(x)}_${row}`;
+      node(id, x, z, 0.5); link(id, q); shops.push(id);
+    }
+  }
+
   node('M2a', m2.top - 1.4, -205.2, 0.4); node('M2t', m2.top - 1.0, -209.5, 0.5); node('M2b', m2.bottom + 0.6, -209.5, 0.8);
   link('NW0', 'M2a'); link('NW2', 'M2a'); link('M2a', 'M2t'); link('M2t', 'M2b');
   node('HNW0', h.x0 - 0.9, -205, 0.3); node('HNW1', h.x0 - 0.9, -214, 0.3); node('HNW2', h.x0 - 2.2, NJ.z0 - h.walkTo + 2, 0.6);
@@ -161,7 +188,8 @@ export const ENDS = [
   { id: 'E0', w: 2, area: 'east' }, { id: 'E15', w: 2, area: 'east' },
   { id: 'W0', w: 2, area: 'west' }, { id: 'W16', w: 2, area: 'west' },
   { id: 'HN4', w: 1, area: 'hankou' }, { id: 'HS4', w: 1, area: 'hankou' },
-  { id: 'M7b', w: 24, area: 'nanjing' }, { id: 'M2b', w: 16, area: 'nanjing' }, { id: 'NW4', w: 12, area: 'nanjing' },
+  { id: 'M7b', w: 24, area: 'nanjing' }, { id: 'M2b', w: 16, area: 'nanjing' }, { id: 'NW4', w: 26, area: 'nanjing' },   // (NW4: People's Square, at Xizang Road)
+  ...['shandong:S', 'shanxi:N', 'shanxi:S', 'fujian:N', 'fujian:S', 'zhejiang:N', 'zhejiang:S', 'guangxi:N', 'guangxi:S', 'guizhou:N', 'guizhou:S'].map((k) => ({ id: `X:${k}`, w: 4, area: 'nanjing' })),
   { id: 'HNE2', w: 1.5, area: 'nanjing' }, { id: 'HSE1', w: 1.5, area: 'nanjing' }, { id: 'HNW2', w: 1.5, area: 'nanjing' }, { id: 'HSW1', w: 1.5, area: 'nanjing' },
 ];
 

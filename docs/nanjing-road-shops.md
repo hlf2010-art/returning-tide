@@ -12,8 +12,10 @@ Commons photos of August 2022 and 2024). Data: `src/world/njShops.js`. Signs: `s
 - **Distances** west from the Bund along the centreline: Sichuan Middle Road at 204 m, Jiangxi Middle
   Road at 326 m, Henan Middle Road at 486–498 m, Shandong Middle Road at 585 m, Shanxi South Road at
   744 m, Fujian Middle Road at 970 m, Zhejiang Middle Road at 1152 m, Xizang Middle Road at about 1526 m.
-  The game's map ends about 35 m west of Henan Road, and its Jiangxi–Henan block is 96 m instead of
-  160 m. Shops are placed block by block (`xForMetres`).
+  The game's street now runs to Xizang Road (x −1526): the Bund to Henan Road a little short of scale
+  (its Jiangxi–Henan block is 96 m instead of 160 m), west of Henan Road at full scale. Shops are placed
+  block by block (`xForMetres`). Cross streets are closed a few metres in by hoardings; Century Square
+  opens off the south side between Fujian and Zhejiang Roads; Xizang Road is railed at the kerb.
 
 ## In the game (Bund to just past Henan Road)
 
@@ -42,7 +44,7 @@ Frontages with no known tenant still get an invented shop in the street's manner
 the shengjian shop, which is the game's own), N 40–152 m beyond the Peace Hotel (the 工联大厦 at
 146 m, tenants unknown), N 262–284 m, S 256–268 m.
 
-## West of the map (for when it's extended to Xizang Road)
+## West of Henan Road (in the game since 25 November 2026)
 
 王开照相馆 (378, N, 1923), 邵万生 (414, N, 1852), 朵云轩 (422, N, 1900; black lacquered board, gold
 calligraphy "朵雲軒"), 老凤祥银楼 总店 (432, N, 1848; long gilt relief fascia with a phoenix), 蔡同德堂
@@ -51,7 +53,13 @@ in 2022), 老庙黄金 (462, N), 张小泉 (490, N, reopened 26 July 2026; giant
 (536, N, reopened October 2024), 第一医药商店 (616, N), 三阳南货店 and 沈大成's main shop (630 / 636, N),
 永安百货 (635, S, Zhejiang Road corner), 宝大祥, 新雅粤菜馆 and 吴良材眼镜 (685 / 719 / 719-1, S),
 上海时装商店 (690, N), 第一食品商店 (720, N), 上海床上用品商店 and 茂昌眼镜 (740 / 762), 第一百货 (830, N,
-Xizang Road corner), M&M's World (829, S), 百联ZX创趣场 (340, N), 353广场 (353, S).
+Xizang Road corner), M&M's World (829, S), 百联ZX创趣场 (340, N), 353广场 (353, S). Also placed from
+OpenStreetMap: Puma, H&M, Uniqlo, Levi's, Tamashii Nations, SEGA, Loongstore, KFC (twice), Yoshinoya, MINISO
+(twice more), Pizza Hut (twice), Häagen-Dazs, the Radisson Hyland, Huawei, Nike, an ICBC branch, Top Toy,
+Fila, Zara, Giordano, McDonald's, Subway, Starbucks, Shimao Festival City. Where OSM and the street
+numbers disagree (沈大成's main shop: No.636, but OSM puts it just past Zhejiang Road) the numbers'
+order is kept and the shop sits at the Zhejiang corner. Frontages with no known tenant keep invented
+shops (notably S 750–790 m, S 977–1060 m, both sides of Guizhou to the No.1 Department Store).
 
 Not found on Nanjing Road East: 恒源祥, 开开, 回力. 培罗蒙 appears in a 2019 photo near Guizhou
 Road with no number.
