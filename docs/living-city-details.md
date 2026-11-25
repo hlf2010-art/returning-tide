@@ -31,7 +31,7 @@ reference).
 
 | Detail | Where / when | How often | Rests on | Cost | Status |
 |---|---|---|---|---|---|
-| The shop speaker announcing each payment: "支付宝到账 25 元" / "微信收款 18 元" | Every counter: Manner, the shengjian shop, kiosks, Nanjing Road shops | Each time someone in the crowd pays (shop visits already exist) | Local knowledge | S | idea |
+| The shop speaker announcing each payment: "支付宝到账 25 元" / "微信收款 18 元" | Every counter: Manner, the shengjian shop, kiosks, Nanjing Road shops | Each time someone in the crowd pays (shop visits already exist) | Local knowledge | S | built |
 | Delivery riders' navigation and order voices from a phone on the handlebars | Side streets, riders waiting at the kerb | Now and then near a rider | Local knowledge | S | idea |
 | People watching short videos with the sound on, walking or on a bench | Everywhere | 1 in 20 people near you | Local knowledge | S | idea |
 | Video calls held at arm's length while walking, both sides audible | Promenade, Nanjing Road | Rare, a few an hour | Local knowledge | S | idea |
@@ -46,8 +46,8 @@ reference).
 
 | Detail | Where / when | How often | Rests on | Cost | Status |
 |---|---|---|---|---|---|
-| **22:00 lights out: the crowd lets out a collective "awww", phones come down, and the railing empties over five minutes** | Promenade, 22:00 | Nightly | Local knowledge; the lighting schedule already switches at 22:00 | M | idea |
-| Phones and selfie sticks go up as the floods come on (~17:10) | Railing | Nightly | Local knowledge (architecture plan §6.6) | S | idea |
+| **22:00 lights out: the crowd lets out a collective "awww", phones come down, and the railing empties over five minutes** | Promenade, 22:00 | Nightly | Local knowledge; the lighting schedule already switches at 22:00 | M | built |
+| Phones and selfie sticks go up as the floods come on (as they reach half, ~17:20) | Railing | Nightly | Local knowledge (architecture plan §6.6) | S | built |
 | Wedding photo shoots: a couple, a photographer, an assistant with a reflector | Promenade, afternoon and dusk | One or two at a time | Local knowledge | M | idea |
 | Influencers filming with ring lights after dark | Railing | A few | Local knowledge | S | idea |
 | Hawkers selling light-up toys and balloons, who pack up and scatter when the city inspectors (城管) walk by | Promenade edges, after dark | Occasional, with a chase now and then | Local knowledge | M | idea |
