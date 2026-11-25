@@ -18,7 +18,7 @@ export const VIEWS = {
   nanjing: [-478, -198.5, E, 0.02], nanjingShop: [-430, -205.5, E - 0.9, 0.0], nanjingShop2: [-300, -196.5, E + 0.9, 0.0], nanjingFloor: [-400, -201, E, -0.75],
   lobby: [-48, -216, N, 0.05], lobbyHall: [-48, -228, N + 0.6, 0.1], lobbyFloor: [-52, -222, S + 0.4, -0.6],
   aiaLobby: [-36, -145.5, W, 0.05], jazz: [-44, -214.5, N - 0.6, 0.0],
-  lifts: [-48, -239.5, N, 0.05], staffDoor: [-57, -232.5, W + 0.3, 0.0], aiaLifts: [-43.8, -145.5, W, 0.05],
+  lifts: [-48, -239.5, N, 0.05], njWin: [-430, -209.6, N + 0.25, 0.0], njWin2: [-380, -192.6, S - 0.3, 0.0], njDoor: [-455, -209.0, N - 0.4, 0.0], staffDoor: [-57, -232.5, W + 0.3, 0.0], aiaLifts: [-43.8, -145.5, W, 0.05],
 };
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const scale = Number(opt.scale || 1);
