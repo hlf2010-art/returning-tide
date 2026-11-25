@@ -54,9 +54,15 @@ function scooter(courier, head) {
   if (courier) {
     p.push(box(0.46, 0.4, 0.44, PAINT, 0, 1.06, -0.62), box(0.48, 0.04, 0.46, 0xe9e9e9, 0, 1.27, -0.62), box(0.34, 0.12, 0.012, 0x1a1a1a, 0, 1.1, -0.395));   // the box, its lid, its label
   }
-  // the helmet, on the rider's head (the bike's colour; a strip of visor)
-  p.push(part(new THREE.SphereGeometry(0.14, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), PAINT, head.x, head.y + 0.13, head.z - 0.02));
-  p.push(box(0.2, 0.035, 0.05, 0x101418, head.x, head.y + 0.115, head.z + 0.12));
+  // the helmet, fitted to this rider's skull (measured off the posed mesh): a shell a centimetre or so
+  // proud of the hair, its rim at the brow, a short visor over the eyes, straps down past the ears
+  // (tipped back a little, as helmets sit: the rim at the brow in front, down over the nape behind)
+  const { cx, cz, top, rx, rz } = head.skull, ry = 0.11, tip = 0.22, base = top + 0.016 - ry * Math.cos(tip);
+  const at = (y, z) => [base + y * Math.cos(tip) - z * Math.sin(tip), cz + y * Math.sin(tip) + z * Math.cos(tip)];   // a point of the helmet, tipped
+  p.push(part(new THREE.SphereGeometry(1, 18, 9, 0, Math.PI * 2, 0, Math.PI * 0.5).scale(rx, ry, rz), PAINT, cx, base, cz, tip));
+  p.push(part(new THREE.CylinderGeometry(1, 1, 0.014, 18, 1, true).scale(rx + 0.003, 1, rz + 0.003), DARK, cx, ...at(0.004, 0), tip));   // the rim
+  p.push(part(new THREE.BoxGeometry(rx * 1.3, 0.012, 0.045), 0x101418, cx, ...at(0.006, rz + 0.012), tip - 0.1));   // the visor
+  for (const sd of [-1, 1]) p.push(part(new THREE.BoxGeometry(0.008, 0.075, 0.012), 0x141414, cx + sd * (rx - 0.004), ...at(-0.035, rz * 0.15)));   // the straps
   return mergeGeometries(p, false);
 }
 
@@ -118,6 +124,18 @@ async function riderGeometry(people, role) {
   const dx = -pelvis.x, dy = 0.9 - pelvis.y, dz = -0.3 - pelvis.z;
   g.translate(dx, dy, dz); head.add(new THREE.Vector3(dx, dy, dz));
   g.computeBoundingSphere();
+  // the skull: the top of the head, and its width and depth across the band where a helmet sits
+  let top = -Infinity;
+  for (let i = 0; i < P.count; i++) if (Math.abs(P.getX(i) - head.x) < 0.14 && Math.abs(P.getZ(i) - head.z) < 0.16 && P.getY(i) > top) top = P.getY(i);
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let i = 0; i < P.count; i++) {
+    const x = P.getX(i), y = P.getY(i), z = P.getZ(i);
+    if (y < top - 0.085 || Math.abs(x - head.x) > 0.14 || Math.abs(z - head.z) > 0.16) continue;
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+  }
+  head.skull = x0 < x1
+    ? { cx: (x0 + x1) / 2, cz: (z0 + z1) / 2 - 0.006, top, rx: (x1 - x0) / 2 + 0.012, rz: (z1 - z0) / 2 + 0.02 }
+    : { cx: head.x, cz: head.z, top: head.y + 0.2, rx: 0.095, rz: 0.11 };
   p.mixer.stopAllAction(); for (const m of ref) m.skeleton.dispose();
   return { geometry: g, map: lod.map, head };
 }
