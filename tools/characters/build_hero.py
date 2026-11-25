@@ -312,6 +312,40 @@ def mouth_frame():
 MOUTH = mouth_frame()
 
 
+def smooth_region(sel, passes, k):
+    """Laplacian passes over the vertices in sel; the same shift goes into every face shape."""
+    co = [v.co.copy() for v in hero.data.vertices]
+    nb = {i: [] for i in sel}
+    for e in hero.data.edges:
+        a, b = e.vertices
+        if a in nb: nb[a].append(b)
+        if b in nb: nb[b].append(a)
+    new = list(co)
+    for _ in range(passes):
+        cur = list(new)
+        for i in sel:
+            if nb[i]:
+                avg = sum((cur[j] for j in nb[i]), Vector()) / len(nb[i])
+                new[i] = cur[i] + (avg - cur[i]) * k
+    for i in sel:
+        d = new[i] - co[i]
+        hero.data.vertices[i].co = new[i]
+        for kb in hero.data.shape_keys.key_blocks:
+            kb.data[i].co = kb.data[i].co + d
+
+
+def smooth_lower_corners(passes=8, k=0.5):
+    """The relaxed pose (rest_face) bunches the skin just below and outside each end of the lower lip into a
+    little crease; the baked occlusion turned it into a brown bracket round the lip's ends. Ironed out."""
+    m = MOUTH
+    lips = set(group_verts(hero, "lips", 0.3))
+    sel = [v.index for v in hero.data.vertices if v.index not in lips
+           and m["x"] * 0.8 < abs(v.co.x) < m["x"] * 1.5 and m["bottom"] - 0.005 < v.co.z < m["z"] + 0.001
+           and v.co.y < m["front"] + 0.02 and v.normal.y < 0]
+    smooth_region(sel, passes, k)
+    print("smoothed below the lip corners:", len(sel), "vertices")
+
+
 def smooth_corners(passes=3, k=0.5):
     """MakeHuman's lips roll in at each corner in a tiny ledge that faces the light and shows as a pale fleck in
     the gap between the lips; a few Laplacian passes over the corners (the same shift in every face shape)
@@ -341,6 +375,7 @@ def smooth_corners(passes=3, k=0.5):
 
 
 smooth_corners()
+smooth_lower_corners()
 
 
 def mouth_detail(c, on_lip, n=None):
@@ -350,10 +385,9 @@ def mouth_detail(c, on_lip, n=None):
     g = lambda d, r: math.exp(-(d / r) ** 2)
     ax = abs(c.x)
     inside = 1.0 if ax < m["x"] * 0.96 else g(ax - m["x"] * 0.96, 0.002)
-    # off the lips the line is faint, except in the commissure, where the skin folds in between the lips
-    fold = 0.5 * g(ax - m["x"] * 0.96, 0.0025) if ax > m["x"] * 0.85 else 0.3
-    line = g(c.z - m["z"], 0.001) * max(inside * (0.75 if on_lip else 0.3), 0.0 if on_lip else fold)
-    corner = 0.4 * g(math.hypot(ax - m["x"] * 0.97, c.z - m["z"]), 0.0025)
+    line = g(c.z - m["z"], 0.001) * (0.75 * inside if on_lip else 0.3)   # faint off the lips
+    # a small shadowed dimple right at each corner (wider, it read as a brown smear down from the corner)
+    corner = 0.3 * g(math.hypot(ax - m["x"] * 0.97, c.z - m["z"]), 0.0016)
     under = 0.45 * g(c.z - (m["bottom"] - 0.0028), 0.0022) * g(c.x, 0.011) * (0.0 if on_lip else 1.0)
     philtrum = 0.3 * g(c.x, 0.0028) * (1.0 if m["top"] + 0.001 < c.z < m["top"] + 0.012 else 0.0) * (0.0 if on_lip else 1.0)
     # the inside of the lips and the mouth: dark, so the folds at the corners don't show as light flecks
@@ -361,7 +395,9 @@ def mouth_detail(c, on_lip, n=None):
     if n is not None and ax < m["x"] * 1.3 and abs(c.z - m["z"]) < 0.01 and c.y < m["front"] + 0.04:
         if n.y > 0.05:                                               # faces back, into the mouth
             mouth_in = min(1.0, (n.y - 0.05) / 0.25)
-        if ax < m["x"] * 1.02:                                       # deep in between the lips: the mouth's walls
+        if ax < m["x"] * 1.02 and n.y > -0.35:                       # deep in between the lips: the mouth's walls
+            # (not the skin outside the corners, which faces forward: the face curves back there as deep as the
+            # walls, and darkened it showed as a brown bracket round each end of the lower lip)
             mouth_in = max(mouth_in, min(1.0, max(0.0, (c.y - m["front"] - 0.011) / 0.003)))
     return min(1.0, line + corner + under + philtrum + mouth_in), (1.0 if c.z > m["z"] else 0.0)
 
@@ -431,7 +467,7 @@ def skin_material():
     L.new(wm.outputs["Result"], sh.inputs["A"])
     L.new(sh.outputs["Result"], red.inputs["A"]); L.new(redc.outputs[0], red.inputs["B"])
     # the lips: a crisp vermilion border (the vertex mask, thresholded), the upper lip darker than the lower
-    lipm = N.new("ShaderNodeMapRange"); lipm.inputs["From Min"].default_value = 0.38; lipm.inputs["From Max"].default_value = 0.62
+    lipm = N.new("ShaderNodeMapRange"); lipm.inputs["From Min"].default_value = 0.3; lipm.inputs["From Max"].default_value = 0.7
     L.new(sep.outputs["Red"], lipm.inputs["Value"])
     lipu = N.new("ShaderNodeRGB"); lipu.outputs[0].default_value = (*s.get("lips_upper", s["lips"]), 1)
     lipcol = N.new("ShaderNodeMix"); lipcol.data_type = "RGBA"
@@ -529,7 +565,7 @@ def make_eye(center, name, side, aim=None):
     els[0].position = 0.0; els[0].color = (0.004, 0.004, 0.004, 1)       # pupil
     els[1].position = 0.17; els[1].color = (0.004, 0.004, 0.004, 1)
     for pos, col in ((0.19, (*e["iris"], 1)), (0.40, (*e["iris"], 1)), (0.49, (*e["iris_outer"], 1)),
-                     (0.53, (0.70, 0.66, 0.62, 1)), (1.0, (0.82, 0.78, 0.76, 1))):
+                     (0.53, (0.66, 0.62, 0.59, 1)), (1.0, (0.50, 0.45, 0.43, 1))):
         el = ramp.color_ramp.elements.new(pos); el.color = col
     L.new(rad.outputs[0], ramp.inputs["Fac"])
     back = N.new("ShaderNodeMix"); back.data_type = "RGBA"
@@ -542,7 +578,19 @@ def make_eye(center, name, side, aim=None):
     fm = N.new("ShaderNodeMix"); fm.data_type = "RGBA"; fm.blend_type = "OVERLAY"
     fm.inputs["Factor"].default_value = 0.35
     L.new(back.outputs["Result"], fm.inputs["A"]); L.new(fib.outputs["Color"], fm.inputs["B"])
-    L.new(fm.outputs["Result"], bs.inputs["Base Color"])
+    # the upper lid and lashes shade the top of the eyeball (an evenly white sclera reads as a stare)
+    lid = N.new("ShaderNodeMapRange")
+    lid.inputs["From Min"].default_value = -0.25 * r; lid.inputs["From Max"].default_value = 0.45 * r
+    lid.inputs["To Min"].default_value = 1.0; lid.inputs["To Max"].default_value = 0.5
+    L.new(sepx.outputs["Z"], lid.inputs["Value"])
+    shade = N.new("ShaderNodeMix"); shade.data_type = "RGBA"; shade.blend_type = "MULTIPLY"
+    shade.inputs["Factor"].default_value = 1.0
+    L.new(fm.outputs["Result"], shade.inputs["A"])
+    lidc = N.new("ShaderNodeCombineColor")
+    for ch in ("Red", "Green", "Blue"):
+        L.new(lid.outputs["Result"], lidc.inputs[ch])
+    L.new(lidc.outputs["Color"], shade.inputs["B"])
+    L.new(shade.outputs["Result"], bs.inputs["Base Color"])
     bs.inputs["Roughness"].default_value = 0.3
     bs.inputs["Subsurface Weight"].default_value = 0.2
     ball.data.materials.append(mt)
@@ -669,67 +717,127 @@ def hair_material(name, color, alpha_img=None, strand=False):
     return mt
 
 
-# brows: grown from the skin above each eye, inner hairs up and outer hairs flat and lateral
+# brows: grown from the skin above each eye, inner hairs up and outer hairs flat and lateral. Many fine hairs
+# of uneven length and angle, thinning out at the edges (a soft border, no hard upper and lower lines), dense in
+# the body of the brow and sparse at the head and tail
 def brows():
     b = SHEET["brows"]
     verts, faces, uvs = [], [], []
     for eye, sgn in ((EYE_L, 1), (EYE_R, -1)):
         head_vs = near_verts(eye + Vector((0, 0, 0.018)), 0.045)
-        def in_brow(p, eye=eye, sgn=sgn):
+
+        def frame(p, eye=eye, sgn=sgn):
             lx = (p.x - eye.x) * sgn  # lateral, positive outward
+            t = (lx + 0.022) / 0.048  # 0 at the inner end, 1 at the tail
+            centre = eye.z + 0.0160 + 0.003 * math.sin(t * math.pi * 0.9) - 0.001 * t
+            half = (0.0052 - 0.0030 * t) * b.get("thickness", 1.0)
+            return t, centre, half
+
+        def in_brow(p, eye=eye):
             if p.y > eye.y + 0.01:
                 return 0.0
-            t = (lx + 0.022) / 0.048  # 0 at the inner end, 1 at the tail
-            if not (0.0 <= t <= 1.0):
+            t, centre, half = frame(p)
+            if not (-0.04 <= t <= 1.04):
                 return 0.0
-            centre = eye.z + 0.0160 + 0.003 * math.sin(t * math.pi * 0.9) - 0.001 * t
-            half = (0.0050 - 0.0030 * t) * b.get("thickness", 1.0)
-            return 1.0 if abs(p.z - centre) < half else 0.0
-        pts = surface_sample(head_vs, int(380 * b.get("density", 1.0)), in_brow)
+            ends = min(1.0, (t + 0.04) / 0.16) * min(1.0, (1.04 - t) / 0.2)   # sparse at the head and tail
+            edge = max(0.0, 1.0 - (abs(p.z - centre) / (half * 1.35)) ** 3)  # thinning out above and below
+            return ends * edge
+
+        pts = surface_sample(head_vs, int(900 * b.get("density", 1.0)), in_brow)
         for p, n in pts:
-            lx = (p.x - eye.x) * sgn
-            t = max(0.0, min(1.0, (lx + 0.022) / 0.048))
-            # direction: inner third points up, the rest lateral and a little down at the tail
+            t, centre, half = frame(p)
+            t = max(0.0, min(1.0, t))
+            # direction: the head of the brow points up, the rest lateral and a little down at the tail;
+            # the hairs below the centre line point slightly up, those above slightly down, so they knit
             up = Vector((0, 0, 1)); lat = Vector((sgn, 0, 0))
-            d = (up * (1.0 - t) * 1.2 + lat * (0.4 + t)).normalized()
+            knit = max(-1.0, min(1.0, (centre - p.z) / max(1e-4, half)))
+            d = (up * ((1.0 - t) * 1.3 + 0.25 * knit) + lat * (0.45 + t)).normalized()
+            d = (d + Vector(((RNG.random() - 0.5) * 0.5, 0, (RNG.random() - 0.5) * 0.5))).normalized()
             d = (d - n * d.dot(n)).normalized()
-            L_ = 0.007 + 0.003 * RNG.random()
-            seg = [p + n * 0.0002]
+            L_ = (0.0045 + 0.0035 * RNG.random()) * (0.75 + 0.25 * math.sin(math.pi * min(1.0, t + 0.15)))
+            seg = [p - n * 0.0001]
             for k in range(1, 4):
-                q = seg[-1] + d * (L_ / 3) + n * (0.0006 if k == 1 else 0.0002)
-                seg.append(q)
-            ribbon(seg, [0.00028, 0.00022, 0.00014, 0.00004], n, verts, faces, uvs)
+                seg.append(seg[-1] + d * (L_ / 3) + n * (0.00035 if k == 1 else 0.0001))
+            w = 0.00013 + 0.00006 * RNG.random()
+            ribbon(seg, [w, w * 0.85, w * 0.55, w * 0.15], n, verts, faces, uvs)
     return make_mesh("brows", verts, faces, uvs, hair_material("brow-hair", b["color"]))
 
 
+def lid_margins():
+    """Each eye's upper lid margin, inner to outer: where, seen from the front, the skin starts to cover the
+    eyeball. (MakeHuman's lash helper sits a few millimetres up on the lid, which is where the old lashes grew.)"""
+    me = hero.data
+    tree = BVHTree.FromPolygons([v.co.copy() for v in me.vertices], [tuple(p.vertices) for p in me.polygons])
+    r = SHEET["eyes"].get("radius_m", 0.0120)
+    fwd = Vector((0, 1, 0))
+
+    def ball(o, c):
+        oc = o - c; b_ = oc.dot(fwd); q = oc.dot(oc) - r * r; disc = b_ * b_ - q
+        return None if disc < 0 else -b_ - math.sqrt(disc)
+
+    def eye_shows(x, z, c):
+        o = Vector((x, c.y - 0.06, z))
+        tb = ball(o, c)
+        loc, _, _, d = tree.ray_cast(o, fwd, 0.12)
+        return tb is not None and (loc is None or tb < d), (loc, d)
+
+    out = {}
+    for name, c, sgn in (("l", _cl, 1), ("r", _cr, -1)):
+        rim = []
+        for k in range(81):
+            x = c.x + (k / 80 - 0.5) * 0.04
+            z = c.z - 0.002
+            ok, _ = eye_shows(x, z, c)
+            if not ok:
+                continue
+            while z < c.z + 0.012:
+                z += 0.00015
+                shows, (loc, _) = eye_shows(x, z, c)
+                if not shows:
+                    if loc is not None:
+                        rim.append(loc.copy())
+                    break
+        rim.sort(key=lambda v: (v.x - c.x) * sgn)
+        out[name] = (rim, [])
+        print("lid rim", name, len(rim), "points")
+    return out
+
+
+LIDS = lid_margins()
+
+
 def lashes():
+    """Upper lashes rooted on the lid margin itself (not on the lid above it): they leave the edge forward,
+    curl up, fan outward towards the outer corner and are longest in the outer third."""
     verts, faces, uvs = [], [], []
-    for gname, eye, sgn in (("helper-l-eyelashes-2", EYE_L, 1), ("helper-r-eyelashes-2", EYE_R, -1),
-                            ("helper-l-eyelashes-1", EYE_L, 1), ("helper-r-eyelashes-1", EYE_R, -1)):
-        upper = gname.endswith("-2")
-        vs = [co[i] for i in group_verts_orig[gname]]
-        # the lid margin: the helper's vertices closest to the eye centre, sorted inner to outer
-        vs.sort(key=lambda c: (c - eye).length)
-        rim = vs[: len(vs) // 3]
-        rim.sort(key=lambda c: (c.x - eye.x) * sgn)
-        count = 70 if upper else 35
+    for name, c, sgn in (("l", _cl, 1), ("r", _cr, -1)):
+        rim = LIDS[name][0]
+        if len(rim) < 3:
+            continue
+        # arc length along the rim, so the lashes are spread evenly
+        acc = [0.0]
+        for i in range(1, len(rim)):
+            acc.append(acc[-1] + (rim[i] - rim[i - 1]).length)
+        total = acc[-1]
+        count = 70
         for k in range(count):
-            t = (k + RNG.random()) / count
-            fi = t * (len(rim) - 1)
-            i0 = int(fi); i1 = min(i0 + 1, len(rim) - 1)
-            p = rim[i0].lerp(rim[i1], fi - i0)
-            out = (p - eye); out.y = min(out.y, 0); out = out.normalized()
-            vert = Vector((0, 0, 1 if upper else -1))
-            L_ = (0.0085 if upper else 0.005) * (0.55 + 0.6 * math.sin(math.pi * min(1, t * 1.1)))
+            t = min(0.999, (k + RNG.random()) / count)
+            if t < 0.06:                           # none in the tear duct's corner
+                continue
+            d_ = t * total
+            i = max(1, next(j for j in range(1, len(acc)) if acc[j] >= d_))
+            f = (d_ - acc[i - 1]) / max(1e-9, acc[i] - acc[i - 1])
+            p = rim[i - 1].lerp(rim[i], f) + Vector((0, -0.0002, -0.0001))
+            lat = Vector((sgn * (0.15 + 0.55 * max(0.0, t - 0.45)), 0, 0))
+            L_ = 0.0056 * (0.45 + 0.55 * math.sin(math.pi * min(1.0, 0.25 + t * 0.85))) * (0.8 + 0.4 * RNG.random())
+            d = (Vector((0, -1, -0.15)) + lat + Vector(((RNG.random() - 0.5) * 0.2, 0, 0))).normalized()
             seg = [p]
-            d = (Vector((0, -1, 0)) * 0.7 + vert * 0.5 + Vector((sgn * 0.25 * t, 0, 0))).normalized()
-            for s in range(1, 4):
-                d = (d + vert * 0.35).normalized()
-                seg.append(seg[-1] + d * L_ / 3)
-            nrm = Vector((0, -1, 0)).cross(Vector((1, 0, 0))).normalized()
-            ribbon(seg, [0.00022, 0.00018, 0.0001, 0.00003], [Vector((0, -0.3, 1)).normalized()] * 4,
-                   verts, faces, uvs)
-    return make_mesh("lashes", verts, faces, uvs, hair_material("lash-hair", (0.01, 0.009, 0.008)))
+            for _ in range(4):
+                seg.append(seg[-1] + d * L_ / 4)
+                d = (d + Vector((0, 0.02, 0.32))).normalized()    # the curl
+            fwd = Vector((0, -1, 0.25)).normalized()
+            ribbon(seg, [0.00014, 0.00012, 0.00009, 0.00005, 0.00002], fwd, verts, faces, uvs)
+    return make_mesh("lashes", verts, faces, uvs, hair_material("lash-hair", (0.012, 0.010, 0.009)))
 
 
 # --------------------------------------------------------------------------------------------- hair (cards)

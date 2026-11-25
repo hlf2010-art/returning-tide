@@ -121,6 +121,86 @@ function matteHairShell(m) {
   return p;
 }
 
+// a geometry of just these triangles (its own compact copy of the vertices they use)
+function compact(g, tris) {
+  const map = new Map(), order = [];
+  const idx = tris.map((v) => { if (!map.has(v)) { map.set(v, order.length); order.push(v); } return map.get(v); });
+  const out = new THREE.BufferGeometry();
+  for (const [name, at] of Object.entries(g.attributes)) {
+    const n = at.itemSize, arr = new at.array.constructor(order.length * n);
+    order.forEach((v, i) => { for (let k = 0; k < n; k++) arr[i * n + k] = at.getComponent(v, k); });
+    out.setAttribute(name, new THREE.BufferAttribute(arr, n, at.normalized));
+  }
+  out.setIndex(idx);
+  return out;
+}
+
+// A sculpted hair shell, shaded as hair: fine strands running from the crown outward (light and dark hairs in
+// the colour, rougher and smoother ones), a highlight that runs across the strands rather than a round glossy
+// spot (Kajiya-Kay, from the key light), little specular otherwise, and strand-shaped gaps where the shell is
+// seen edge on, so its silhouette breaks up into hair tips instead of a hard rubber edge.
+// `nose` is the old nose tip in the avatar's space (centimetres, y up, face +z); bodyWorld maps the mesh there.
+function strandHair(src, nose, bodyWorld) {
+  const inv = new THREE.Matrix4().copy(bodyWorld).invert();
+  const crown = new THREE.Vector3(nose.x, nose.y + 14, nose.z - 9).applyMatrix4(inv);   // the whorl, behind the top
+  const perCm = 1 / new THREE.Vector3().setFromMatrixScale(bodyWorld).x;                 // mesh units per centimetre
+  const m = new THREE.MeshPhysicalMaterial({
+    name: 'kept-hair', map: src.map, normalMap: src.normalMap || null, roughness: 0.72, metalness: 0,
+    specularIntensity: 0.25, envMapIntensity: 0.35, side: THREE.FrontSide, alphaTest: 0.5,
+  });
+  const down = new THREE.Vector3(0, -1, 0).transformDirection(inv), front = new THREE.Vector3(0, 0, 1).transformDirection(inv);
+  const U = { uCrown: { value: crown }, uPerCm: { value: perCm }, uDown: { value: down }, uFront: { value: front } };
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uCrown; uniform float uPerCm;\nvarying vec3 vHairD; varying vec3 vHairT;')
+      .replace('#include <skinnormal_vertex>', `#include <skinnormal_vertex>
+        vec3 hT = position - uCrown; hT -= normal * dot(hT, normal); hT = normalize(hT + vec3(0.0, -0.35, 0.0) * length(hT));
+        #ifdef USE_SKINNING
+          hT = (skinMatrix * vec4(hT, 0.0)).xyz;
+        #endif
+        vHairT = normalize(normalMatrix * hT);
+        // strands radiate from the crown: across them is the angle round it, along them the distance from it
+        vHairD = (position - uCrown) / uPerCm;   // (the angle is taken per pixel: interpolated, it kinks at every triangle)`);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+        uniform vec3 uDown; uniform vec3 uFront;
+        varying vec3 vHairD; varying vec3 vHairT;
+        float hHash(float n) { return fract(sin(n) * 43758.5453); }
+        // value noise that wraps every p cells (round the head, without a seam at the back)
+        float hStrand(float x, float p) { float i = floor(x), f = fract(x); return mix(hHash(mod(i, p)), hHash(mod(i + 1.0, p)), smoothstep(0.0, 1.0, f)); }`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        // strand coordinate: 360 clumps round the head (about 6 per cm at the hairline, finer hairs inside), wobbling along their length
+        vec3 hT0 = normalize(vHairT);
+        vec2 hUV = vec2(atan(dot(vHairD, cross(uDown, uFront)), dot(vHairD, uFront)) / 6.2831853 + 0.5, length(vHairD));
+        float hAlong = hUV.y;
+        float hAcross = hUV.x * 360.0 + 0.5 * sin(hAlong * 0.7);
+        // each octave fades to its mean once its strands are finer than about two pixels (no sparkle at a distance)
+        float hW = fwidth(hUV.x * 360.0);
+        float hS = 0.5 + 0.6 * (hStrand(hAcross, 360.0) - 0.5) * (1.0 - smoothstep(0.3, 0.7, hW))
+                       + 0.4 * (hStrand(hAcross * 3.0 + 7.0, 1080.0) - 0.5) * (1.0 - smoothstep(0.3, 0.7, hW * 3.0));
+        hS = clamp(0.5 + (hS - 0.5) * 1.25, 0.0, 1.0);
+        diffuseColor.rgb *= mix(0.58, 1.12, hS) * vec3(0.8, 0.84, 0.96);   // and a cooler, near-black brown
+        // the shell seen edge on: strand-shaped gaps, so the outline reads as hair tips
+        float hFace = abs(dot(normalize(vNormal), normalize(vViewPosition)));
+        if (hFace < 0.42 * hS - 0.04) discard;`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+        roughnessFactor = clamp(roughnessFactor * mix(1.15, 0.8, hS), 0.0, 1.0);`)
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+        #if NUM_DIR_LIGHTS > 0
+        {
+          vec3 hV = normalize(vViewPosition), hL = directionalLights[0].direction, hH = normalize(hL + hV);
+          vec3 hTs = normalize(vHairT + normal * (hS - 0.5) * 0.35);      // a jittered shift per strand
+          float tdh = dot(hTs, hH);
+          float kk = pow(sqrt(max(0.0, 1.0 - tdh * tdh)), 90.0) * smoothstep(0.0, 0.3, dot(normal, hL));
+          reflectedLight.directSpecular += directionalLights[0].color * kk * 0.22 * (0.4 + 0.9 * hS) * diffuseColor.rgb * 3.0;
+        }
+        #endif`);
+  };
+  m.customProgramCacheKey = () => 'kept-hair-strands';
+  return m;
+}
+
 // The Hunyuan-generated bodies (Ji Bai, Gu Nian) have smeared, washed-out faces: the texture detail is spread over
 // thousands of UV islands (docs/research-hero-characters.md; one bad eye can be mended: tools/characters/repair_eyes.py). A close-up head built with
 // tools/characters/build_hero.py takes the old head's place: the old head's triangles (skinned mostly to the head
@@ -394,8 +474,12 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
     if (r - bb < 0.05) return true;   // neutral, not skin: a white shirt collar, grey cloth (kept, or the collar gets holes)
     return 0.3 * r + 0.55 * gg + 0.15 * bb < 0.42 && !(r > gg * 1.25 && r > 0.3);   // dark, and not lip or shadowed skin red
   };
+  const darkHair = (a, b, c) => {   // the hair itself, not a collar kept with it
+    const [r, gg, bb] = texel((uv.getX(a) + uv.getX(b) + uv.getX(c)) / 3, (uv.getY(a) + uv.getY(b) + uv.getY(c)) / 3);
+    return 0.3 * r + 0.55 * gg + 0.15 * bb < 0.42;
+  };
   const skinSum = [0, 0, 0, 0], neckProfile = new Map();
-  const ix = g.index.array, keep = [];
+  const ix = g.index.array, keep = [], hairTris = [];
   for (let t = 0; t < ix.length; t += 3) {
     const a = ix[t], b = ix[t + 1], c = ix[t + 2];
     const dropIt = (share(a) > 0.5 && share(b) > 0.5 && share(c) > 0.5)
@@ -412,9 +496,18 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
       if (texel) { const col = texel(uv.getX(a), uv.getY(a)); skinSum[0] += col[0]; skinSum[1] += col[1]; skinSum[2] += col[2]; skinSum[3]++; }
       continue;
     }
-    keep.push(a, b, c);
+    if (dropIt && texel && darkHair(a, b, c)) hairTris.push(a, b, c); else keep.push(a, b, c);
   }
   const ng = g.clone(); ng.setIndex(keep); body.geometry = ng;
+  // keepHair: the kept hair becomes its own mesh with a strand material (on the body's map it was one glossy,
+  // rubbery shell)
+  if (hairTris.length) {
+    const hm = new THREE.SkinnedMesh(compact(g, hairTris), strandHair(body.material, nose, body.matrixWorld));
+    hm.name = 'kept-hair'; hm.castShadow = true; hm.frustumCulled = false;
+    body.parent.add(hm);
+    hm.position.copy(body.position); hm.quaternion.copy(body.quaternion); hm.scale.copy(body.scale);
+    hm.bind(body.skeleton, body.bindMatrix);
+  }
   const toWorld = new THREE.Matrix4().makeTranslation(nose.x, nose.y, nose.z)
     .multiply(new THREE.Matrix4().makeScale(100 * s * sx, 100 * s, 100 * s * sz))
     .multiply(new THREE.Matrix4().makeTranslation(-newNose.x, -newNose.y, -newNose.z));
