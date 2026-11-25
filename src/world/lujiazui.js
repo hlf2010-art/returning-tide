@@ -24,9 +24,13 @@ import {
   C, RING, ARMS, RAMPS, SPUR, APPLE, METRO_LJZ, IFC, BUILDINGS, GREEN, LAKE, YIN, ZEBRAS, AVE, CH, LJZ,
   dirOf, polar, rpolar, fromAP, toAP, applePt, wellPt, wellLocal, PEARL_PARK, RC, carriage, zebra, inPudong, ljzZone, ljzState, signalAt,
 } from './lujiazuiLayout.js';
-import { buildGround, buildMarkings, railTexture } from './lujiazuiGround.js';
-import { ljzMaterials, buildBridge, buildApple, buildIfc, buildMetro, buildTrees, buildGreen, buildSurroundings, buildStreet, lampKit, LJZ_TEXT } from './lujiazuiBuild.js';
-import { createLjzTraffic, createLjzPeople } from './lujiazuiLife.js';
+import { LJZ_TEXT } from './lujiazuiLayout.js';
+// The district's builders (ground, structures, traffic and people: some 120 KB) are a chunk of their
+// own, not in the startup bundle: fetched in the background once the game is up, and waited for before
+// the district is first built.
+let mods = null, modsP = null;
+const loadMods = () => modsP || (modsP = Promise.all([import('./lujiazuiGround.js'), import('./lujiazuiBuild.js'), import('./lujiazuiLife.js')])
+  .then(([g, b, l]) => (mods = { ...g, ...b, ...l })));
 
 export { LJZ };
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -42,7 +46,9 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   // the district is made in steps: all at once (build), or a step at a time between frames (buildAsync,
   // started while you ride Line 2 east, so it's ready when the train comes out under Pudong)
   let steps = null, building = null;
+  if (typeof window !== 'undefined') setTimeout(() => loadMods().catch((e) => console.warn('Lujiazui: modules failed to load', e)), 1500);
   function makeSteps() {
+    const { buildGround, buildMarkings, railTexture, ljzMaterials, buildBridge, buildApple, buildIfc, buildMetro, buildTrees, buildGreen, buildSurroundings, buildStreet, lampKit, createLjzTraffic, createLjzPeople } = mods;
     const t0 = performance.now(), m = ljzMaterials(M), kit = lampKit(m), trees = [], C = { t0 };
     return [
       () => {
@@ -86,16 +92,17 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
       },
     ];
   }
+  // (true once built; false while its modules are still on their way: update() tries again each frame)
   function build() {
-    if (built) return;
+    if (built) return true;
+    if (!mods) { loadMods(); return false; }
     if (!steps) steps = makeSteps();
     while (steps.length) steps.shift()();
-    built = true;
+    built = true; return true;
   }
   function buildAsync() {
     if (built || building) return building;
-    if (!steps) steps = makeSteps();
-    building = (async () => { while (steps.length && !built) { steps.shift()(); await new Promise((r) => setTimeout(r, 40)); } built = true; })();
+    building = (async () => { await loadMods(); if (!steps) steps = makeSteps(); while (steps.length && !built) { steps.shift()(); await new Promise((r) => setTimeout(r, 40)); } built = true; })();
     return building;
   }
   function show(on) {
@@ -117,8 +124,8 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     const behind = info.method === 'metro' || info.method === 'ferry';   // already behind that journey's own fade
     pending = { method: behind ? 'alipay' : info.method || 'wechat', invite: info.invite || null, at: stamp(getLife()) };
     let done = false;
-    const go = () => {
-      if (done) return; done = true; build();
+    const go = async () => {
+      if (done) return; done = true; await loadMods(); build();
       const p = info.method === 'metro' ? LJZ.metroArrive : info.method === 'ferry' ? LJZ.ferryArrive : LJZ.kerbPickup;
       player.teleport(p.x, p.z, p.yaw, 0, p.y); show(true);
       if (info.method === 'ferry') hud.toast(T('东昌路轮渡码头 · 沿陆家嘴西路走上来', 'Off the Dongchang Road ferry · up West Lujiazui Road'), 3.6);
@@ -142,7 +149,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   // down again: the lift opens on the lobby, you step out onto Century Avenue
   dests.exitTo = (id, finish) => {
     if (id !== 'lujiazui') return false;
-    travel(async () => { finish(); build(); const p = LJZ.ifcLobbyStand; player.teleport(p.x, p.z, p.yaw, 0, p.y); show(true); save && save(); }, { line: T('国金中心 · 一楼大堂', 'IFC · the ground-floor lobby'), hold: 700, to: 'play' });
+    travel(async () => { finish(); await loadMods(); build(); const p = LJZ.ifcLobbyStand; player.teleport(p.x, p.z, p.yaw, 0, p.y); show(true); save && save(); }, { line: T('国金中心 · 一楼大堂', 'IFC · the ground-floor lobby'), hold: 700, to: 'play' });
     return true;
   };
   // back to the Bund: a car from the kerb (through the Yan'an East Road tunnel), the ferry, or Line 2 (world/metro.js)
@@ -259,7 +266,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
       const want = inPudong(body.x, body.y);
       if (want && !built) build();                             // (a save loaded here, a tool's teleport)
       if (want !== active) show(want);
-      if (!active) return;
+      if (!active || !built) return;
       clock += dt;
       if (hour) traffic.setDensity(Math.max(0.3, hour.traffic));
       const onRoad = body.y < 1 && carriage(body.x, body.z) ? ((_p.x = body.x), (_p.z = body.z), _p) : null;

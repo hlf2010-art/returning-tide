@@ -34,6 +34,7 @@ import { createHud } from './ui/hud.js';
 import { createTitleScreen } from './ui/titleScreen.js';
 import { createWorldMusic } from './world/music.js';
 import { TRACKS as MUSIC_TRACKS, LICENCE as MUSIC_LICENCE } from './engine/speakers.js';
+import { creditsHtml } from './ui/credits.js';
 import { createVoice } from './engine/voice.js';
 import { createLLM } from './engine/llm.js';
 import { createTalk } from './ui/talk.js';
@@ -69,6 +70,9 @@ import { crossing, addDynamicCollider } from './world/layout.js';
 import { createTraffic } from './engine/traffic.js';
 import { startFlinch } from './engine/flinch.js';
 import { createVehicles } from './world/vehicles.js';
+import { createVehicleLamps } from './world/vehicleLamps.js';
+import { createDressing } from './world/dressing.js';
+import { createPulse } from './world/pulse.js';
 import { createSignals } from './world/signals.js';
 import { createPedestrians } from './world/pedestrians.js';
 import { loadPeople, cullPeople } from './world/people.js';
@@ -239,7 +243,7 @@ async function boot() {
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
   // real people (Microsoft Rocketbox, MIT) when their files load; the hand-built figures otherwise
   let people = null;
-  try { people = await loadPeople('./people/'); } catch (err) { console.warn('people assets unavailable, using simple figures', err); }
+  try { people = await loadPeople('./people/', { lean: ['low', 'medium'].includes(bootLod) && params.get('lean') !== '0' }); } catch (err) { console.warn('people assets unavailable, using simple figures', err); }
   const npcs = people ? createRealNpcs(people) : createNpcs(M);
   // the player's own body, seen when looking down (?body=0 to leave it out)
   const playerBody = people && people.avatars.player && params.get('body') !== '0' ? createPlayerBody(people, { walk: WALK_SPEED, run: RUN_SPEED }) : null;
@@ -342,7 +346,12 @@ async function boot() {
   // people getting out of its way, and what happens if someone can't (world/roadReactions.js)
   const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd, onHit: (L, info) => carFallout(L, info) });
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads });
-  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }) };
+  const dressing = params.get('dress') === '0' ? null : createDressing({ scene, addCollider: addDynamicCollider });   // bikes, bins, bollards... (world/dressing.js)
+  const lamps = params.get('lamps') === '0' ? null : createVehicleLamps({ scene });   // night traffic as lamps (world/vehicleLamps.js)
+  lampSources = [{ list: traffic.vehicles, z: 0 }, { list: henan.traffic.vehicles, z: NJ.zc }];
+  const pulse = params.get('pulse') === '0' ? null : createPulse({ scene, getCrowd: () => world && world.crowd, getTraffic: () => lampSources,
+    cameras: dressing ? dressing.spots.camera : [], police: dressing ? dressing.spots.police : [] });   // flashes, strobes, barges, leaves (world/pulse.js)
+  world = { pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -351,7 +360,7 @@ async function boot() {
     const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0 : det.crowd;   // tools: none unless asked
     // the preset's population at its busiest (engine/gfx.js LOD people); ?crowd=<density> (tools) as before
     world.crowd = createCrowd({ net: keepShopsWithDoors(buildNet(), nanjing.doors), density, count: params.has('crowd') || params.has('q') ? null : det.people, roles });
-    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, camera });
+    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, midCount: params.get('t1') === '0' ? 0 : det.mid || 0, camera });
     traffic.setExtraPeople(() => world.crowd.onCarriageway());
     henan.traffic.setExtraPeople(() => world.crowd.onHenan());
     crowdBoxes = Array.from({ length: (params.has('q') ? 5 : det.nearPeople) + 2 }, () => addDynamicCollider('npc'));
@@ -436,7 +445,12 @@ async function boot() {
   world.nephew = createNephew({ scene, people });
   nephewSeen = createWitness();
   mission1.mission.on('reset', () => { world.nephew.reset(); nephewSeen.reset(); });
-  mission1.mission.on('complete', ({ outcome, witnessed, string }) => { world.year.handoff(outcome, { saw: !!witnessed, string }); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
+  mission1.mission.on('complete', ({ outcome, witnessed, string }) => { world.year.handoff(outcome, { saw: !!witnessed, string }); });
+  // a reloaded game picks Mission One up where it was: handed over (flags.handoff), or under way (flags.m1)
+  { const h = life.flags.handoff, m = life.flags.m1;
+    if (h) mission1.restore({ step: 'complete', outcome: h.outcome, string: h.string, witnessed: !!h.saw });
+    else if (m && (m.step === 'collect' || m.step === 'carry')) mission1.restore(m); }
+  mission1.mission.on('change', (s) => { if (s.step === 'collect' || s.step === 'carry') life.flags.m1 = { step: s.step, sealed: s.sealed, string: s.string, witnessed: s.witnessed }; else delete life.flags.m1; saveLife(); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
   document.getElementById('inspect-paper').appendChild(clue.canvas);
   player.update(0);
   R.renderer.compile(scene, camera);
@@ -628,7 +642,7 @@ function closeInspect() {
   hud.show('inspect', false);
   exitInteraction();
   if (!clueRead) {
-    clueRead = true;
+    clueRead = true; life.flags.clueRead = true; saveLife();
     hud.thought('末班轮渡。金陵东路渡口，沿江往南。', 'The last ferry. Jinling East Road pier, south along the water.');   // (one shown, by language)
   }
 }
@@ -684,6 +698,8 @@ function syncSettings() {
   syncGfx();
   // the music's credits (CC BY: title, artist, a link to the work, the licence), every track the game ships with
   { const ul = document.querySelector('#music-credits ul'); if (ul && !ul.childElementCount) ul.innerHTML = Object.values(MUSIC_TRACKS).map((t) => `<li>“${t.title}” · ${t.artist} · <a href="${t.page}" target="_blank" rel="noopener">OpenGameArt</a> · <a href="${MUSIC_LICENCE.url}" target="_blank" rel="noopener">${MUSIC_LICENCE.name}</a></li>`).join(''); }
+  // everyone else's credits, as their licences ask (ui/credits.js), in the current language
+  { const ul = document.querySelector('#credits ul'); if (ul && ul.dataset.lang !== getLang()) { ul.innerHTML = creditsHtml(getLang()); ul.dataset.lang = getLang(); } }
   const c = llm.conf(), sv = document.getElementById('ai-server'), md = document.getElementById('ai-model');
   if (sv && document.activeElement !== sv) sv.value = c.server; if (md && document.activeElement !== md) md.value = c.model;
   const st = document.getElementById('ai-status'), vs = voice.stats;
@@ -920,6 +936,7 @@ const LIFE_KEY = slotKey(currentSlot());   // the slot you're playing (ui/saves.
 let life = null;
 try { life = params.has('fresh') ? null : lifeLoad(localStorage.getItem(LIFE_KEY)); } catch { life = null; }
 if (!life) { life = createLife(); setupThreads(life); initYear(life); } else addVoicemail(life, { atEnd: true });   // a new game is a year long (engine/year.js); older saves keep their six days (and get Old Zhou's voicemail)
+clueRead = !!life.flags.clueRead;   // the missing-person notice, read in an earlier session
 if (params.has('legacy') && params.has('fresh')) delete life.flags.year;   // tools: a new six-day game, as before the year existed
 if (params.has('hour')) { const [h, m] = params.get('hour').split(':').map(Number); if (h >= 0 && h < 24) { life.clock.minute = h * 60 + (m || 0); life.clock.sec = 0; } }
 let saves = null;
@@ -1003,7 +1020,7 @@ function updateTips(dt) {
   if (playTime > 15 && life.quests && Object.keys(life.quests.list).length) tips.show('journal');
   if (playTime > 40) tips.show('phone');
   if (playTime > 75) tips.show('map');
-  if (playTime > 120) tips.show('talk');
+  if (playTime > 120 && (life.flags.handoff || life.clock.day >= 2)) tips.show('talk');   // (free conversation waits until the pouch is delivered: one thing at a time on the first evening)
   if (hourJumped) tips.show('hour');
   if (world.moments.active) tips.show('moment');
   if (Math.hypot(b.x - 24, b.z - 65) < 12) tips.show('cruise');
@@ -1418,6 +1435,8 @@ function updateTraffic(dt) {
   world.buses.update(dt);
   world.henan.update(dt, { player: world.driving && world.driving.driving ? null : b, eye: camera.position, rain: weather.rain });
   world.vehicles.update(traffic.vehicles, camera.position);
+  if (world.lamps) world.lamps.update(lampSources, camera.position, hourState.lamps);
+  if (world.pulse) world.pulse.update(dt, camera.position, hourState);
   world.pedestrians.update(traffic.peds, dt, camera.position);
   world.signals.update(traffic.controller);
   traffic.peds.forEach((p, i) => { const bx = pedBoxes[i]; if (bx) { bx.minX = p.x - 0.22; bx.maxX = p.x + 0.22; bx.minZ = p.z - 0.22; bx.maxZ = p.z + 0.22; } });
@@ -1438,6 +1457,7 @@ function nanjingDin(b) {
   const ends = Math.min(1, (L.facadeX + 30 - b.x) / 30);
   return ends * (0.55 + 0.45 * (hourState.crowd ?? 1));
 }
+let lampSources = [];
 let crowdHear = 0, envCaptures = 0, world0 = null, hourState = todState(17 * 60 + 42), hourAt = -1, hourTick = 0, envAt = null, envWait = 0, lastHourMin = null;
 const _hazeFog = new THREE.Color(), DAY_HAZE_FOG = new THREE.Color(0.64, 0.66, 0.68);
 // tools: ?hour=HH:MM sets today's clock at load (the screenshots of the day); debug.setHour too
@@ -1741,7 +1761,7 @@ debug.setLang = setLang; debug.getLang = getLang; debug.voice = voice; debug.llm
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   player, camera, scene, R, audio, wind,
-  get mode() { return mode; }, get target() { return target; }, get talkTarget() { return talkTarget; }, talkables: () => talkables(),
+  get mode() { return mode; }, get lastCpu() { return lastCpu; }, get target() { return target; }, get talkTarget() { return talkTarget; }, talkables: () => talkables(),
   talkProbe: () => talkables().map((q) => { const c = camera.position, v = { x: q.x - c.x, y: q.y - c.y, z: q.z - c.z }, d = Math.hypot(v.x, v.y, v.z); camera.getWorldDirection(_d); return { key: q.key, d: +d.toFixed(2), vy: +v.y.toFixed(2), cos: +((v.x * _d.x + v.y * _d.y + v.z * _d.z) / d).toFixed(3), block: colliders.filter((b) => BLOCKING_TAGS.has(b.tag) && segmentHitsBox(c.x, c.z, q.x, q.z, b)).map((b) => b.tag) }; }).filter((r) => r.d < 6),
   get nearClue() { return !!target && target.id === 'notice'; }, get nearNpc() { return !!target && target.id === 'lin'; },
   get clueRead() { return clueRead; }, get subtitlesOn() { return subtitlesOn; },

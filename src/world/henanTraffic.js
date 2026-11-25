@@ -26,10 +26,11 @@ const MIX = [
   ['sedan', 4.6, 1.78, 1.5, 2.82, 0xf2f2f0], ['luxeed-r7', 4.956, 1.999, 1.656, 2.950], ['taxi', 4.6, 1.78, 1.5, 2.82], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x2a2e36],
 ];
 export function henanSpecs(factor = 1) {
-  const n = Math.max(4, Math.round(12 * factor)), out = [];
+  const n = Math.max(4, Math.round(20 * factor)), out = [];
   for (let i = 0; i < n; i++) {
     const [model, len, width, height, wheelbase, paint] = MIX[i % MIX.length], lane = HENAN_GEOM.lanes[i % 4].id;
-    out.push({ id: `hn${i}`, model, len, width, height, wheelbase, paint, lane, s: -400 + ((i * 197) % 790) });
+    const per = Math.ceil(n / 4), j = Math.floor(i / 4);                          // (evenly along each lane)
+    out.push({ id: `hn${i}`, model, len, width, height, wheelbase, paint, lane, s: -400 + ((j * 790 / per + (i % 4) * 61) % 790) });
   }
   return out;
 }
@@ -37,7 +38,7 @@ export function henanSpecs(factor = 1) {
 export function createHenanTraffic({ scene, factor = 1, addCollider }) {
   const specs = henanSpecs(factor);
   const traffic = createTraffic({ geom: HENAN_GEOM, vehicles: specs, peds: [] });
-  const vehicles = createVehicles(specs), signals = createSignals(HENAN_GEOM);
+  const vehicles = createVehicles(specs, { frameZ: NJ.zc }), signals = createSignals(HENAN_GEOM);
   signals.group.name = 'henan-signals'; vehicles.group.name = 'henan-vehicles';   // (the Bund crossing's keep their own names)
   // drawn in the world: the junction's frame shifted south-north into place
   const frame = new THREE.Group(); frame.position.z = NJ.zc; frame.name = 'henan-traffic';

@@ -28,7 +28,7 @@ for (const R of ROUTES) {
 export function createLjzTraffic({ group, factor = 1 }) {
   const n = Math.max(8, Math.round(20 * factor)), specs = [], per = {};
   for (let i = 0; i < n; i++) { const [model, len, width, height, wheelbase, paint] = MIX[i % MIX.length]; specs.push({ id: `ljz${i}`, model, len, width, height, wheelbase, paint }); }
-  const vehicles = createVehicles(specs); vehicles.group.name = 'ljz-vehicles'; group.add(vehicles.group);
+  const vehicles = createVehicles(specs, { shared: false }); vehicles.group.name = 'ljz-vehicles'; group.add(vehicles.group);
   const cars = specs.map((sp, i) => {
     const R = ROUTES[i % ROUTES.length], k = (per[R.id] = (per[R.id] || 0) + 1);
     return { id: sp.id, len: sp.len, width: sp.width, R, s: (R.len * ((k * 0.37 + i * 0.11) % 1)), v: 6, x: 0, z: 0, yaw: 0, hx: 0, hz: 1, active: true, hidden: false, wheelDist: 0, braking: false, pace: 0.86 + ((i * 7) % 10) * 0.025, stuck: 0, free: 0, rank: (i * 37 % n) / n };

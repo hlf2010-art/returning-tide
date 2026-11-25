@@ -2,6 +2,7 @@
 // parented to the head bone so they move with it. Lots of people in Shanghai wear them.
 //   styles: 'acetate' (black, thicker), 'metal' (thin gold), 'gunmetal' (thin dark), 'rimless'
 import * as THREE from 'three';
+import { mergeStatic } from './instancer.js';
 
 const FRAME = {
   acetate: { color: 0x141414, metal: 0.1, rough: 0.35, rim: 0.0032, w: 1.0 },
@@ -35,6 +36,10 @@ function build(style, eyeGap) {
   }
   const br = new THREE.Mesh(new THREE.CylinderGeometry(F.rim * 0.9, F.rim * 0.9, bridge + 0.004, 6), frameMat(style));
   br.rotation.z = Math.PI / 2; br.position.y = lh * 0.18; g.add(br);
+  // one mesh for the frame, one for the lenses: 2 draw calls a pair instead of 7
+  const byMat = new Map();
+  for (const o of [...g.children]) { if (!byMat.has(o.material)) byMat.set(o.material, []); byMat.get(o.material).push(o); g.remove(o); }
+  for (const [mat, list] of byMat) { const m = new THREE.Mesh(mergeStatic(list), mat); m.renderOrder = list[0].renderOrder; g.add(m); }
   g.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.frustumCulled = false; } });
   return g;
 }
@@ -66,5 +71,6 @@ export function addGlasses(person, style = 'metal') {
   local.decompose(g.position, g.quaternion, g.scale);
   g.name = `glasses-${style}`;
   head.add(g);
+  if (person.accessories) person.accessories.push(g);      // (not drawn beyond a few metres: world/people.js cullPeople)
   return g;
 }

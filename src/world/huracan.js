@@ -7,9 +7,37 @@
 // the street doesn't wait for it.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { capTextures } from './texCap.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { addDynamicCollider } from './layout.js';
 
 export const HURACAN_SPOT = { x: -40.6, z: 2.86 };            // Hankou Road, south kerb lane (kerb at z = 4), where people walk by
+
+// The model arrives as ~80 meshes; most share a material with others and never move relative to the
+// body. Merged by material (the wheels left alone, they turn): about a third of the draw calls, the
+// same picture, the same materials (lamps and paint are still found by name).
+function mergeBody(root, keep) {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), groups = new Map();
+  const under = (o) => { for (let p = o; p; p = p.parent) if (keep.includes(p)) return true; return false; };
+  root.traverse((o) => {
+    if (!o.isMesh || o.isSkinnedMesh || Array.isArray(o.material) || under(o) || o.geometry.morphAttributes.position) return;
+    const key = `${o.material.uuid}|${Object.keys(o.geometry.attributes).sort().join(',')}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(o);
+  });
+  let removed = 0;
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const indexed = list.every((m) => m.geometry.index);
+    const geos = list.map((m) => { let g = m.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld)); if (!indexed && g.index) g = g.toNonIndexed(); return g; });
+    const merged = mergeGeometries(geos, false); if (!merged) continue;
+    const m = new THREE.Mesh(merged, list[0].material); m.name = list[0].name; m.renderOrder = list[0].renderOrder;
+    root.add(m);
+    for (const o of list) { o.parent.remove(o); removed++; }
+  }
+  return removed;
+}
 
 export function createHuracan(scene) {
   const group = new THREE.Group(); group.name = 'huracan'; scene.add(group);
@@ -17,6 +45,7 @@ export function createHuracan(scene) {
   const S = { root: null, wheels: [], lights: [] };
   const ready = new GLTFLoader().loadAsync('./models/huracan.glb').then((gltf) => {
     const root = gltf.scene;
+    capTextures(root, 2048);                                   // (two 4096 maps: 130 MB on the GPU for a parked car; world/texCap.js)
     root.updateMatrixWorld(true);
     // which way is the front: from the front wheels to the rear ones
     const pos = (n) => { const o = root.getObjectByName(n); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
@@ -33,6 +62,7 @@ export function createHuracan(scene) {
       S.wheels.push({ pivot, axle });
     }
     const fwd = lf && lr ? new THREE.Vector3().subVectors(lf, lr).setY(0).normalize() : new THREE.Vector3(0, 0, 1);
+    mergeBody(root, S.wheels.map((w) => w.pivot));
     // stand it on the ground, centred
     const box = new THREE.Box3().setFromObject(root), c = box.getCenter(new THREE.Vector3());
     root.position.set(-c.x, -box.min.y, -c.z);

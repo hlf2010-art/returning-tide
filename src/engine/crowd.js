@@ -14,6 +14,7 @@
 // (the road is off limits except on the zebra) are seen ahead and walked along, never pushed against.
 // When two people touch anyway, both flinch (engine/flinch.js) and carry on.
 import { njLamps } from '../world/layout.js';
+import { dressingObstacles } from '../world/dressingData.js';
 import { L, deckLamps, DECK_LAMP_X, benches, planterIslands, telescope, lions, streetTrees, stall, colliders, groundHeight, roadLamps, ROAD_LAMP_WEST_OFFSET, crossing, NJ, METRO, inHenan } from '../world/layout.js';
 import { BUS_STOPS } from '../world/trafficMix.js';
 import { startFlinch, stepFlinch, flinchSpeed, FLINCH } from './flinch.js';
@@ -217,6 +218,7 @@ export function obstacles() {
   for (const p of crossing.pedPoles) o.push([p.x, p.z, 0.3]);
   // the pavement corners of the Customs House portico: walked round, not hugged (a crowd pinned people there)
   for (const b of colliders) if (b.tag === 'portico') for (const z of [b.minZ, b.maxZ]) o.push([b.maxX, z, 0.3]);
+  o.push(...dressingObstacles());                                   // bins, bollards, posts (world/dressingData.js)
   return o;
 }
 // solid things, bucketed on a 10 m grid (rebuilt if colliders are added): a few hundred people check
