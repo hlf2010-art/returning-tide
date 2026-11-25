@@ -170,7 +170,7 @@ function flagMesh(color) {
   return g;
 }
 
-export function createCrowdView({ scene, renderer, people, crowd, roles, nearCount = 16, midCount = 0, camera }) {
+export function createCrowdView({ scene, renderer, people, crowd, roles, nearCount = 16, midCount = 0, camera, lod = true }) {
   const group = new THREE.Group(); group.name = 'crowd'; scene.add(group);
   const atlas = bakeImpostors(renderer, people, roles);
   // the middle tier: GPU-skinned instances from a baked bone texture (world/crowdBake.js, crowdMid.js)
@@ -178,7 +178,22 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   if (midCount > 0) {
     try { mid = createCrowdMid({ group, people, bake: bakeBones(people, roles), roles, max: midCount }); } catch (err) { console.warn('crowd middle tier unavailable', err); mid = null; }
   }
-  const MID_FAR = 30, MID_FADE = 0.35;
+  // Phase 2b: each avatar's lighter one-mesh version, made in the background an avatar at a time
+  // (world/crowdLod.js); until it's ready the middle tier draws the full meshes
+  const lodStats = { done: 0, tris: 0, from: 0, ms: 0 };
+  if (mid && lod) {
+    import('./crowdLod.js').then(async ({ buildLod, lodReady }) => {
+      await lodReady;
+      for (const role of mid.roles()) {
+        await new Promise((r) => setTimeout(r, 30));
+        const t0 = performance.now();
+        try { const l = buildLod(people.avatars[role]); if (l && mid.upgrade(role, l)) { lodStats.done++; lodStats.tris += l.tris; lodStats.from += l.from; } } catch (err) { console.warn('crowd lod', role, err); }
+        lodStats.ms += performance.now() - t0;
+      }
+      console.info('crowd middle tier: lighter meshes', { avatars: lodStats.done, tris: Math.round(lodStats.tris), from: Math.round(lodStats.from), ms: Math.round(lodStats.ms) });
+    }).catch((err) => console.warn('crowd lod unavailable', err));
+  }
+  const MID_FAR = 30, MID_FADE = 0.35, midMax = midCount;
   // the far crowd: one instanced card per person
   const N = crowd.agents.length;
   const base = new THREE.PlaneGeometry(FRAME_W, FRAME_H); base.translate(0, FRAME_H / 2, 0);
@@ -267,6 +282,9 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   const view = {
     group, atlas, stats: S,
     setNearCount(n) { nearCount = n; },
+    // (the renderer's step-down thins the middle tier first: engine/renderer.js, main.js)
+    setMidCount(n) { midCount = Math.max(0, Math.min(n, midMax)); },
+    get midCount() { return midCount; }, get midMax() { return midMax; },
     // who's near enough to be a full person (and to talk to, bump into)
     nearAgents() { return [...live.keys()].map((id) => crowd.agents[id]).filter(Boolean); },
     bodyOf(a) { return live.get(a.id) || null; },
@@ -329,7 +347,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         // a bump: the shoulder swings back, a lean away, a glance at whoever it was (engine/flinch.js)
         const fp = a.flinch ? flinchPose(a.flinch) : null;
         b.person.setFlinch(fp);
-        b.person.update(dt, fp && fp.look ? fp.look : a.faceTo || (Math.hypot(eye.x - a.x, eye.z - a.z) < 3.5 ? [eye.x, eye.z] : null));
+        b.person.update(dt, fp && fp.look ? fp.look : (a.glance && a.glance.until > a.glance.now && a.glance.now > a.glance.from ? a.glance.at : null) || a.faceTo || (Math.hypot(eye.x - a.x, eye.z - a.z) < 3.5 ? [eye.x, eye.z] : null));
         b.umb.visible = u > 0.02;
         if (b.umb.visible) {
           b.canopy.material.color.copy(UMB_COLORS[Math.floor(hash(a.id, 3) * UMB_COLORS.length)]);

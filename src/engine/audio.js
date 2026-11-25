@@ -204,11 +204,15 @@ export function createAudio() {
     }
   }
 
+  // whoever wants to know a ship sounded (world/pulse.js turns heads toward the river): fn(x, z)
+  const hornHeard = new Set();
+  const heard = (x, z) => { for (const fn of hornHeard) try { fn(x, z); } catch (e) { /* */ } };
   function horn() {
     // a far ship on the Huangpu: three detuned notes, out over the water
     stats.horns++;
     const t = ctx.currentTime, g = gainNode(0), f = filt('lowpass', 420), p = panner(60, 1);
-    place(p, 220, 2, (Math.random() - 0.5) * 600, 0.001);
+    const hz = (Math.random() - 0.5) * 600;
+    place(p, 220, 2, hz, 0.001); heard(220, hz);
     const peak = 0.5 + Math.random() * 0.3, len = 3.5 + Math.random() * 2.5, base = 0.92 + Math.random() * 0.16;
     g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + 0.5); g.gain.setValueAtTime(peak, t + len - 1); g.gain.exponentialRampToValueAtTime(0.0005, t + len + 2.5);
     for (const hz of [98, 123.5, 147]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz * base; o.connect(f); o.start(t); o.stop(t + len + 2.6); }
@@ -276,6 +280,7 @@ export function createAudio() {
       burst(t + 0.07, { type: 'bandpass', f: 1800, q: 1.2, gain: 0.24 * level, attack: 0.001, decay: 0.045 });
     } else if (name === 'shiphorn') {
       // a ship's horn: a long low chord, swelling and dying, as a boat pulls away
+      heard(null, null);
       const g = gainNode(0), lp = filt('lowpass', 520, 0.7); lp.connect(g).connect(env || sfx);
       for (const f of [98, 147, 196]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = Math.random() * 6 - 3; o.connect(lp); o.start(t); o.stop(t + 2.6); }
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.09 * level, t + 0.25); g.gain.setValueAtTime(0.09 * level, t + 1.9); g.gain.linearRampToValueAtTime(0, t + 2.5);
@@ -413,6 +418,7 @@ export function createAudio() {
   const muteListeners = new Set();
   return {
     start, step, cue,
+    onHorn(fn) { hornHeard.add(fn); return () => hornHeard.delete(fn); },
     // per frame: listener position, the crossing's vehicles, how much an NPC is speaking (0..1)
     update(dt, x, { z = 0, vehicles = null, speech = 0 } = {}) {
       if (!ctx) return;

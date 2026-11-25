@@ -127,6 +127,9 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
   // steam off the pans
   const steamMat = new THREE.SpriteMaterial({ map: glowTexture(64, [[0, 0.35], [0.5, 0.12], [1, 0]]), color: 0xffffff, transparent: true, depthWrite: false, opacity: 0.4 });
   const steam = Array.from({ length: 10 }, (_, i) => { const s = new THREE.Sprite(steamMat.clone()); s.userData = { p: pans[i % 2], t: Math.random() * 3 }; group.add(s); return s; });
+  // and what the street sees: steam rolling out over the top of the open door, and the kitchen's
+  // extractor breathing out above the sign (docs/living-city-architecture.md §6.6)
+  const street = Array.from({ length: 8 }, (_, i) => { const s = new THREE.Sprite(steamMat.clone()); s.userData = { vent: i >= 5, t: (i % 5) * 0.88 + Math.random() * 0.3, dx: (Math.random() - 0.5) * 2.4 }; s.renderOrder = 3; group.add(s); return s; });
   // the roller shutter, down when closed
   const shutterTex = (() => { const [c, x] = makeCanvas(64, 256); for (let y = 0; y < 256; y += 8) { x.fillStyle = y % 16 ? '#8d9196' : '#a3a7ab'; x.fillRect(0, y, 64, 8); } return tex(c); })();
   shutterTex.repeat.set(4, 4);
@@ -292,10 +295,16 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
       for (const k of ['cashier', 'cook']) if (ppl[k]) ppl[k].p.root.visible = isOpen;
       if (ppl.diner) ppl.diner.frame.visible = isOpen;
       S.inside = pp.x > x0 && pp.x < x1 && pp.z > z0 && pp.z < z1;
+      for (const s of steam) s.visible = near && isOpen; for (const s of street) s.visible = near;   // (sprites cost a draw each: only near the shop)
       if (!near || dt <= 0) return;
       // the order cooks; the lid comes up; your number's called
       if (S.order && S.ready > 0) { S.ready -= dt; if (S.ready <= 0) { pans[0].lift = 2.5; say('ready'); audio && audio.cue && audio.cue('ping', 0, 0.6); } }
       for (const p of pans) { p.lift = Math.max(0, (p.lift || 0) - dt); const want = p.lift > 0 ? -1.1 : 0; p.pivot.rotation.x += (want - p.pivot.rotation.x) * Math.min(1, dt * 4); }
+      for (const s of street) {
+        const u = s.userData; u.t += dt * (u.vent ? 0.8 : 1); const f = (u.t % 4.4) / 4.4, busy = pans[0].lift > 0 || pans[1].lift > 0 ? 1.6 : 1;
+        if (u.vent) { s.position.set(x1 - 1.4 + Math.sin(u.t * 1.3) * 0.25, Y0 + 4.3 + f * 2.6, z0 - 0.2 - f * 0.5); s.scale.setScalar(0.5 + f * 1.6); s.material.opacity = 0.16 * (1 - f) * (isOpen ? 1 : 0.35); }
+        else { s.position.set(cx + u.dx * 0.6 + Math.sin(u.t * 2.1) * 0.15, Y0 + 2.75 + f * 1.3, z0 - 0.15 - f * 0.9); s.scale.setScalar(0.35 + f * 1.1); s.material.opacity = 0.2 * busy * (1 - f) * Math.min(1, f * 6) * (isOpen ? 1 : 0); }
+      }
       for (const s of steam) { const u = s.userData; u.t += dt * (u.p.lift > 0 ? 2.2 : 1); const f = (u.t % 3) / 3; s.position.set(u.p.x + Math.sin(u.t * 3) * 0.12, Y0 + 1.2 + f * 1.4, u.p.z + Math.cos(u.t * 2) * 0.12); s.scale.setScalar(0.3 + f * 0.9); s.material.opacity = (u.p.lift > 0 ? 0.55 : 0.18) * (1 - f) * (isOpen ? 1 : 0); }
       if (isOpen) {
         for (const k of ['cashier', 'cook']) if (ppl[k]) ppl[k].p.update(dt, k === 'cashier' && S.inside ? [pp.x, pp.z] : null);

@@ -27,7 +27,7 @@ mat4 cmSkinAt(float row) {
 }
 `;
 
-function midMaterial(src, boneTex, tinted) {
+function midMaterial(src, boneTex, tinted, lod = false) {
   const m = src.clone();
   m.normalMap = null;                                    // (flat cloth up close is fine at 7-30 m)
   m.vertexColors = false;
@@ -41,12 +41,16 @@ function midMaterial(src, boneTex, tinted) {
         vFade = iAnim.w;`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
         transformed = (cmSkin * vec4(transformed, 1.0)).xyz;`);
+    // (the lighter one-mesh person: the coat colour only where the clothes are)
+    if (lod) shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float tint;')
+      .replace('#include <color_vertex>', '#include <color_vertex>\n#ifdef USE_INSTANCING_COLOR\n vColor.xyz = mix(vec3(1.0), vColor.xyz, tint);\n#endif');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nvarying float vFade;')
       .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
         if (vFade < 0.999) { float dz = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))); if (dz >= vFade) discard; }`);
   };
-  m.customProgramCacheKey = () => `crowdMid${tinted ? 't' : ''}|${src.type}`;
+  m.customProgramCacheKey = () => `crowdMid${tinted ? 't' : ''}${lod ? 'l' : ''}|${src.type}`;
   return m;
 }
 
@@ -86,8 +90,24 @@ export function createCrowdMid({ group, people, bake, roles, max = 150 }) {
     }
     R.cap = cap; return true;
   }
+  // Phase 2b: swap an avatar's two or three meshes for its lighter one-mesh version (world/crowdLod.js):
+  // one draw call and about a third of the triangles; the same bake, the same instance data
+  function upgrade(role, lod) {
+    const R = byRole[role]; if (!R || !lod || R.lod) return false;
+    const src = R.body ? R.body.material : R.meshes[0].material;
+    const base = new THREE.MeshStandardMaterial({ map: lod.map, roughness: src.roughness ?? 0.8, metalness: src.metalness ?? 0, alphaTest: 0.5, name: `${role}_lod` });
+    const g = lod.geometry; g.setAttribute('iAnim', R.iAnim);
+    const mesh = new THREE.InstancedMesh(g, midMaterial(base, R.b.texture, true, true), R.cap);
+    mesh.instanceMatrix = R.iMat;
+    mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(R.cap * 3).fill(1), 3).setUsage(THREE.DynamicDrawUsage);
+    mesh.count = 0; mesh.visible = false; mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = true; mesh.name = 'crowd-mid';
+    for (const old of R.meshes) { group.remove(old); old.material.dispose(); }   // (its geometry is the full person's own: kept)
+    group.add(mesh); R.meshes = [mesh]; R.body = mesh; R.lod = lod;
+    return true;
+  }
   return {
-    stats,
+    stats, upgrade,
+    roles: () => Object.keys(byRole),
     has: (role) => !!byRole[role],
     clipsOf: (role) => byRole[role] && byRole[role].b,
     begin() { for (const k in byRole) byRole[k].n = 0; },

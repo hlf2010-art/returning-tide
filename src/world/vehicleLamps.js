@@ -92,6 +92,12 @@ export function createVehicleLamps({ scene }) {
             const near = Math.min(1, Math.max(0.3, (d - 5) / 25)), lv = level * near;
             const head = lv * Math.min(1, Math.max(0, (facing + 0.25) / 0.6)), tail = lv * Math.min(1, Math.max(0, (-facing + 0.25) / 0.6));
             const hy = bus ? 0.75 : 0.66, ty = bus ? 1.0 : 0.82, tc = v.braking ? BRAKE : TAIL;
+            if (v.ebike) {                                    // an e-bike: one small lamp each end, no pool (world/ebikeView.js)
+              const k = v.fade ?? 1;
+              lamp(vx + fx * 0.66, 0.98, vz + fz * 0.66, 0.26, HEAD, head * k);
+              lamp(vx - fx * 0.74, 0.62, vz - fz * 0.74, v.braking ? 0.26 : 0.2, tc, tail * k);
+              cars++; continue;
+            }
             for (const s of [-1, 1]) {
               lamp(vx + fx * (hl + 0.05) + rx * hw * s, hy, vz + fz * (hl + 0.05) + rz * hw * s, 0.42, HEAD, head);
               lamp(vx - fx * (hl + 0.05) + rx * hw * s, ty, vz - fz * (hl + 0.05) + rz * hw * s, v.braking ? 0.4 : 0.32, tc, tail);

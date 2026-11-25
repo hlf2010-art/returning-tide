@@ -84,7 +84,7 @@ export function createPulse({ scene, getCrowd, getTraffic, cameras = [], police 
   const LF = Array.from({ length: LEAVES }, () => { const l = leaf(); l.y = rnd() * 8; return l; });
 
   const flashes = [];                        // { x, y, z, t, kind }
-  let flashAcc = 0, floodsWas = 0, raised = [], t = 0;
+  let flashAcc = 0, floodsWas = 0, raised = [], t = 0, glancing = [];
   const camState = cameras.map(() => ({ wait: 2 + rnd() * 6 }));
   const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _s = new THREE.Vector3(1, 1, 1), _e = new THREE.Euler(), _up = new THREE.Vector3(0, 1, 0);
   const stats = { flashes: 0, glows: 0 };
@@ -94,8 +94,23 @@ export function createPulse({ scene, getCrowd, getTraffic, cameras = [], police 
   return {
     group, stats,
     emit(kind, x, y, z) { flashes.push({ kind, x, y, z, t: 0 }); },
+    // a ship's horn (engine/audio.js onHorn): everyone within earshot near the river glances that way for
+    // a few seconds, the nearer ones first; a far horn's place is out on the water (x, z), the cruise
+    // boat's is the river opposite you (null)
+    horn(x, z, eye) {
+      const crowd = getCrowd && getCrowd(); if (!crowd || !eye) return;
+      const hx = x ?? 60, hz = z ?? eye.z;
+      for (const a of crowd.agents) {
+        if (a.gone || a.inside || a.x < -45 || Math.abs(a.x - eye.x) + Math.abs(a.z - eye.z) > 90) continue;
+        if (rnd() > 0.75) continue;                                   // (not everyone looks up)
+        const delay = 0.2 + rnd() * 0.9;
+        a.glance = { at: [hx + (rnd() - 0.5) * 40, hz + (rnd() - 0.5) * 40], from: t + delay, until: t + delay + 2.5 + rnd() * 2.5, now: t };
+        glancing.push(a);
+      }
+    },
     update(dt, eye, hour) {
       t += dt; n = 0;
+      if (glancing.length) glancing = glancing.filter((a) => { if (!a.glance) return false; a.glance.now = t; if (t < a.glance.until) return true; a.glance = null; return false; });
       const night = Math.max(hour.lamps || 0, 1 - (hour.daylight ?? 1));
       const crowd = getCrowd && getCrowd();
       // the crowd answers the floodlights: phones up along the rail for a minute and a half
