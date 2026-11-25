@@ -189,3 +189,29 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
 - **Still off (not seen in play):** with the mouth open, as in a big smile, the tongue sits in front of the upper
   teeth and the teeth are blocky. The game never opens the hero head's mouth (`face.js` drives the body's jaw bone,
   not face shapes), so this only shows in the review renders.
+
+## Round 10 (25 November): lower lip corners, brows, lashes, hair
+
+- **Lower lip corners:** a brown bracket round each end of the lower lip. Round 9's mouth-wall shading darkened
+  anything more than 11 mm behind the lips, and the face curves back that far outside the corners. It now only
+  shades surfaces that don't face forward. The corner dimple is smaller, the skin crease below each end is
+  smoothed (`smooth_lower_corners`), and the lip border is a little softer (mask 0.3 to 0.7).
+- **Brows:** they read as hard black combs. Now about 2.5 times as many hairs, finer (0.13 to 0.19 mm) and
+  shorter, at uneven angles. The hairs above and below the centre line knit together, and they thin out at the
+  edges and at the head and tail. Dark brown rather than black (`brows` in the sheet).
+- **Lashes:** they grew from MakeHuman's lash helper, which sits a few millimetres up the lid, so they stood on top
+  of it. Now they root on the lid margin itself, found by casting rays from the front for where the skin starts
+  to cover the eyeball (`lid_margins`). They leave the edge forward, curl up, fan out towards the outer corner,
+  and are longest in the outer third.
+- **Eyes:** the sclera is less white, darker towards the corners, and shaded under the upper lid.
+- **Hair:** the kept Hunyuan hair shell is split off the body into its own mesh (`kept-hair`) with a strand
+  material (`strandHair` in people.js):
+  - Strands radiate from the crown, with light and dark hairs in the colour and rougher and smoother ones.
+    Each octave fades out once it is finer than about two pixels, so the hair doesn't sparkle at a distance.
+  - The highlight is a Kajiya-Kay band across the strands, from the key light. There is little other specular,
+    and the colour is a cooler, near-black brown.
+  - Where the shell is seen edge on, strand-shaped gaps break the outline into hair tips.
+  - It is one extra draw call, with no new textures. The first-person body hides it, like the hero head.
+- `docs/hero-faces/round10-brows-lashes-hair.jpg`.
+- **Still off:** the hairline. The skin shows as a flat patch between the fringe locks, where the old hair shell
+  stops above the new forehead.

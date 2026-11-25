@@ -1,7 +1,7 @@
 {
   "id": "jibai",
   "name": "\u7eaa\u767d Ji Bai",
-  "status": "PROTOTYPE v4: v3 plus a closed, relaxed mouth (rest_face), dusky rose lips with a crisp border, a lip line and corner shading (round 8).",
+  "status": "PROTOTYPE v5: v4 plus clean lower lip corners, fine soft brows, lashes on the lid margin and a shaded sclera (round 10).",
   "reference": [
     "docs/jibai-reference.webp",
     "public/people/jibai/face-neutral.jpg"
@@ -120,12 +120,12 @@
   },
   "brows": {
     "color": [
-      0.018,
-      0.014,
-      0.012
+      0.032,
+      0.024,
+      0.019
     ],
-    "density": 0.7,
-    "thickness": 0.6
+    "density": 1.0,
+    "thickness": 0.75
   },
   "hair": {
     "color": [
