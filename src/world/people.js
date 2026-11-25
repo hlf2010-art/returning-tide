@@ -487,7 +487,19 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
         side: THREE.DoubleSide, roughness: 0.9, metalness: 0, specularIntensity: 0.06, envMapIntensity: 0.15 });
     } else if (/cornea/i.test(o.name + mat.name)) {
       mat = new THREE.MeshPhysicalMaterial({ name: 'cornea', transmission: 0, transparent: true, opacity: 0.12, roughness: 0.02, specularIntensity: 1, depthWrite: false });
-    } else if (isSkin && (tint || autoTint)) { mat = mat.clone(); mat.color.setRGB(...(tint || autoTint)); }
+    } else if (/teeth/i.test(o.name)) {
+      // the side teeth sit in the cheeks' shadow: lit evenly they glint white through the closed lips' corners
+      const p = o.geometry.attributes.position, sh = new Float32Array(p.count * 3);
+      let xm = 1e-6; for (let v = 0; v < p.count; v++) xm = Math.max(xm, Math.abs(p.getX(v)));
+      for (let v = 0; v < p.count; v++) {
+        const k = 1 - 0.9 * THREE.MathUtils.smoothstep(Math.abs(p.getX(v)) / xm, 0.1, 0.5);
+        sh[v * 3] = sh[v * 3 + 1] = sh[v * 3 + 2] = k;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(sh, 3));
+      // and with the default specular their grazing sides mirror the sky as a grey glint even with a dark colour
+      mat = new THREE.MeshPhysicalMaterial({ name: mat.name, color: mat.color, vertexColors: true, roughness: 0.6, metalness: 0,
+        specularIntensity: 0.15, envMapIntensity: 0.1 });
+    } else if (isSkin && mat.map && (tint || autoTint)) { mat = mat.clone(); mat.color.setRGB(...(tint || autoTint)); }   // a multiplier on the skin map (the tongue has no map: it keeps its own colour)
     const sm = new THREE.SkinnedMesh(geo, mat);
     sm.name = 'hero-' + o.name;
     if (o.morphTargetDictionary) { sm.morphTargetDictionary = { ...o.morphTargetDictionary }; sm.morphTargetInfluences = new Array(Object.keys(o.morphTargetDictionary).length).fill(0); }
@@ -496,6 +508,25 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
     sm.position.copy(body.position); sm.quaternion.copy(body.quaternion); sm.scale.copy(body.scale);
     sm.bind(body.skeleton, body.bindMatrix);
     made.push(sm);
+    if (/teeth/i.test(o.name)) {
+      // MakeHuman's head has no inside to the mouth: through the lips' corners (and an open mouth) you saw
+      // straight out of the back of the head. A dark shell behind the teeth (only its far side is drawn) closes it.
+      const bb = new THREE.Box3().setFromBufferAttribute(o.geometry.attributes.position);
+      const c = bb.getCenter(new THREE.Vector3()), s = bb.getSize(new THREE.Vector3());
+      const bg = new THREE.SphereGeometry(1, 24, 16);
+      bg.scale(s.x * 0.75, s.y * 1.1, s.z * 1.1); bg.translate(c.x, c.y, c.z - s.z * 0.25);
+      bg.applyMatrix4(new THREE.Matrix4().multiplyMatrices(toBody, o.matrixWorld));
+      const nb = bg.attributes.position.count, bi = new Uint16Array(nb * 4), bw = new Float32Array(nb * 4);
+      for (let v = 0; v < nb; v++) { bi[v * 4] = iHead; bw[v * 4] = 1; }
+      bg.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(bi, 4));
+      bg.setAttribute('skinWeight', new THREE.Float32BufferAttribute(bw, 4));
+      const bag = new THREE.SkinnedMesh(bg, new THREE.MeshStandardMaterial({ name: 'mouth', color: 0x1c0d0b, roughness: 1, side: THREE.BackSide }));
+      bag.name = 'hero-mouth'; bag.frustumCulled = false;
+      body.parent.add(bag);
+      bag.position.copy(body.position); bag.quaternion.copy(body.quaternion); bag.scale.copy(body.scale);
+      bag.bind(body.skeleton, body.bindMatrix);
+      made.push(bag);
+    }
   });
   return made;
 }

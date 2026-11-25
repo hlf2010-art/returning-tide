@@ -144,5 +144,7 @@
   "rest_face": {
     "mouthPress": 0.25,
     "mouthShrugLower": -0.4
-  }
+  },
+  "teeth_width": 0.8,
+  "teeth_back": 0.0015
 }

@@ -231,6 +231,13 @@ def delete_group(names):
 
 bpy.context.view_layer.objects.active = hero
 teeth = split_group(["helper-upper-teeth", "helper-lower-teeth"], "teeth")
+# narrower and a little further back than MakeHuman's, so the side teeth stay behind the closed lips' corners
+# (the gap at each corner showed them); every shape key alike, so a smile still shows them
+TW, TB = SHEET.get("teeth_width", 1.0), SHEET.get("teeth_back", 0.0)
+if TW != 1.0 or TB:
+    for kb in (teeth.data.shape_keys.key_blocks if teeth.data.shape_keys else []):
+        for d in kb.data: d.co = Vector((d.co.x * TW, d.co.y + TB, d.co.z))
+    for v in teeth.data.vertices: v.co = Vector((v.co.x * TW, v.co.y + TB, v.co.z))
 tongue = split_group(["helper-tongue"], "tongue")
 # remove the rest of the helper geometry (eyes, lashes, tights, skirt, hair helper, joint cubes, genital helper)
 helpers = [vg.name for vg in hero.vertex_groups if vg.name.startswith(("helper-", "joint-"))]
@@ -303,21 +310,60 @@ def mouth_frame():
 
 
 MOUTH = mouth_frame()
-print("mouth:", {k: round(v, 4) for k, v in MOUTH.items()})
 
 
-def mouth_detail(c, on_lip):
+def smooth_corners(passes=3, k=0.5):
+    """MakeHuman's lips roll in at each corner in a tiny ledge that faces the light and shows as a pale fleck in
+    the gap between the lips; a few Laplacian passes over the corners (the same shift in every face shape)
+    iron it out."""
+    m = MOUTH
+    co = [v.co.copy() for v in hero.data.vertices]
+    sel = [i for i, c in enumerate(co) if m["x"] * 0.55 < abs(c.x) < m["x"] * 1.08
+           and -0.004 < c.z - m["z"] < 0.008 and c.y < m["front"] + 0.0095 and hero.data.vertices[i].normal.y < -0.2]
+    nb = {i: [] for i in sel}
+    for e in hero.data.edges:
+        a, b = e.vertices
+        if a in nb: nb[a].append(b)
+        if b in nb: nb[b].append(a)
+    new = list(co)
+    for _ in range(passes):
+        cur = list(new)
+        for i in sel:
+            if nb[i]:
+                avg = sum((cur[j] for j in nb[i]), Vector()) / len(nb[i])
+                new[i] = cur[i] + (avg - cur[i]) * k
+    for i in sel:
+        d = new[i] - co[i]
+        hero.data.vertices[i].co = new[i]
+        for kb in hero.data.shape_keys.key_blocks:
+            kb.data[i].co = kb.data[i].co + d
+    print("smoothed mouth corners:", len(sel), "vertices")
+
+
+smooth_corners()
+
+
+def mouth_detail(c, on_lip, n=None):
     """(darken 0..1, upper lip 0/1) for one vertex: the line where the lips meet, the shadowed corners, the
     shadow under the lower lip and the philtrum's groove."""
     m = MOUTH
     g = lambda d, r: math.exp(-(d / r) ** 2)
     ax = abs(c.x)
     inside = 1.0 if ax < m["x"] * 0.96 else g(ax - m["x"] * 0.96, 0.002)
-    line = g(c.z - m["z"], 0.0009) * inside * (0.75 if on_lip else 0.3)
+    # off the lips the line is faint, except in the commissure, where the skin folds in between the lips
+    fold = 0.5 * g(ax - m["x"] * 0.96, 0.0025) if ax > m["x"] * 0.85 else 0.3
+    line = g(c.z - m["z"], 0.001) * max(inside * (0.75 if on_lip else 0.3), 0.0 if on_lip else fold)
     corner = 0.4 * g(math.hypot(ax - m["x"] * 0.97, c.z - m["z"]), 0.0025)
     under = 0.45 * g(c.z - (m["bottom"] - 0.0028), 0.0022) * g(c.x, 0.011) * (0.0 if on_lip else 1.0)
     philtrum = 0.3 * g(c.x, 0.0028) * (1.0 if m["top"] + 0.001 < c.z < m["top"] + 0.012 else 0.0) * (0.0 if on_lip else 1.0)
-    return min(1.0, line + corner + under + philtrum), (1.0 if c.z > m["z"] else 0.0)
+    # the inside of the lips and the mouth: dark, so the folds at the corners don't show as light flecks
+    mouth_in = 0.0
+    if n is not None and ax < m["x"] * 1.3 and abs(c.z - m["z"]) < 0.01 and c.y < m["front"] + 0.04:
+        if n.y > 0.05:                                               # faces back, into the mouth
+            mouth_in = min(1.0, (n.y - 0.05) / 0.25)
+        if ax < m["x"] * 1.02:                                       # deep in between the lips: the mouth's walls
+            mouth_in = max(mouth_in, min(1.0, max(0.0, (c.y - m["front"] - 0.011) / 0.003)))
+    return min(1.0, line + corner + under + philtrum + mouth_in), (1.0 if c.z > m["z"] else 0.0)
 
 
 def skin_material():
@@ -353,7 +399,7 @@ def skin_material():
             under = Vector((e.x, e.y - 0.006, e.z - 0.014))
             shade = max(shade, blob(c, under, 0.011))
         warm = max(warm, 0.9 * blob(c, nose_tip, 0.012))
-        dark, upper = mouth_detail(c, i in lips)
+        dark, upper = mouth_detail(c, i in lips, v.normal)
         ca2.data[i].color = (warm, shade, dark, upper)
     reg = N.new("ShaderNodeAttribute"); reg.attribute_name = "region"
     regs = N.new("ShaderNodeSeparateColor"); L.new(reg.outputs["Color"], regs.inputs[0])

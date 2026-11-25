@@ -169,3 +169,23 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
   corners, a shadow under the lower lip and the philtrum's groove (`mouth_detail` in `build_hero.py`). The teeth
   are darker, because they sit in the mouth's shadow.
 - `docs/hero-faces/round8-mouth.jpg`. **Still off:** a grey fleck of tooth at each corner up close.
+
+## Round 9 (25 November): the flecks at the corners of Ji Bai's mouth
+
+- **What they were:** not teeth at first. MakeHuman's lips roll in at each corner in a tiny ledge that faces the
+  light and showed as a pale fleck. Darkening its colour did nothing, because the fleck was lighting, not colour.
+- **The ledge** is ironed out with a few Laplacian passes over the front of the corners (`smooth_corners` in
+  `build_hero.py`, the same shift in every face shape). That opened a small gap at each corner, and through it:
+  - **the side teeth**, which mirrored the sky even when dark. `swapHead` now gives the teeth a low-specular
+    material that darkens towards the sides (the side teeth sit in the cheeks' shadow), and the sheet narrows
+    them (`teeth_width 0.8`) and sets them back slightly (`teeth_back`).
+  - **the back of the head**: MakeHuman's head has no inside to the mouth. `swapHead` adds a dark shell behind the
+    teeth (`hero-mouth`, only its far side drawn).
+- **Also fixed:** the skin tint (a multiplier on the skin map) was overwriting the tongue's colour, turning it
+  white. Only meshes with a map are tinted now.
+- **Debug:** in `faces.html`, `morph=jawOpen:0.3,mouthSmile:0.7` sets face shapes and `names=1` lists the meshes
+  with their colours.
+- `docs/hero-faces/round9-mouth-corners.jpg`.
+- **Still off (not seen in play):** with the mouth open, as in a big smile, the tongue sits in front of the upper
+  teeth and the teeth are blocky. The game never opens the hero head's mouth (`face.js` drives the body's jaw bone,
+  not face shapes), so this only shows in the review renders.
