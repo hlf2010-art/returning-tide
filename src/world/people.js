@@ -63,8 +63,13 @@ export function fixHair(root, tint = null) {
         vertexColors: m.vertexColors,
       });
       if (tint) h.color.setRGB(tint[0], tint[1], tint[2]);
+      // cards lying on the scalp are often wound inward: seen from outside, three.js lights their back face as if
+      // it faced into the head, and they show as near-black slabs with hard edges. Every card is lit as facing out.
+      h.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0')); };
+      h.customProgramCacheKey = () => 'hair-out';
       done.set(m, h);
     }
+    if (!o.geometry.userData.hairNormals) outwardNormals(o.geometry);
     o.material = done.get(m);
   });
   // the painted hair on the scalp (the shell under the cards) is part of the head material, which is as glossy
@@ -77,6 +82,17 @@ export function fixHair(root, tint = null) {
     o.material = done.get(m);
   });
   return done.size;
+}
+
+// normals pointing away from the middle of the head (about 11 cm under the top of the hair, on its centre line):
+// the usual trick for hair cards, which then shade like the volume of hair rather than like flat strips
+function outwardNormals(geo) {
+  geo.computeBoundingBox();
+  const b = geo.boundingBox, cm = b.max.y - b.min.y > 5, c = new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - (cm ? 11 : 0.11), (b.min.z + b.max.z) / 2);
+  const p = geo.attributes.position, n = new Float32Array(p.count * 3), v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).sub(c).normalize(); n[i * 3] = v.x; n[i * 3 + 1] = v.y; n[i * 3 + 2] = v.z; }
+  geo.setAttribute('normal', new THREE.BufferAttribute(n, 3));
+  geo.userData.hairNormals = true;
 }
 
 function matteHairShell(m) {
@@ -125,6 +141,32 @@ function texelReader(material) {
     const x = Math.min(w - 1, Math.max(0, Math.floor((u - Math.floor(u)) * w))), y = Math.min(h - 1, Math.max(0, Math.floor((v - Math.floor(v)) * h)));
     const i = (y * w + x) * 4; return [d[i] / 255, d[i + 1] / 255, d[i + 2] / 255];
   };
+}
+
+// Recolour the skin texels of a body's colour map (warm and light: not hair, not cloth) from one mean colour to
+// another, in linear light, feathered by how skin-like each texel is. A new texture: the source map is shared.
+function retintBodySkin(body, from, to) {
+  const m = Array.isArray(body.material) ? body.material[0] : body.material, img = m.map?.image;
+  if (!img || typeof document === 'undefined') return;
+  const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(img, 0, 0);
+  const id = cx.getImageData(0, 0, cv.width, cv.height), d = id.data;
+  const lin = (c) => Math.pow(c, 2.2), k = [0, 1, 2].map((i) => lin(to[i]) / Math.max(0.01, lin(from[i])));
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255, l = 0.3 * r + 0.55 * g + 0.15 * b;
+    const w = THREE.MathUtils.smoothstep(r - b, 0.04, 0.1) * THREE.MathUtils.smoothstep(l, 0.38, 0.5) * (r >= g ? 1 : 0);
+    if (w <= 0) continue;
+    for (let c = 0; c < 3; c++) {
+      const v = d[i + c] / 255, t = Math.pow(Math.min(1, lin(v) * k[c]), 1 / 2.2);
+      d[i + c] = Math.round(255 * (v + (t - v) * w));
+    }
+  }
+  cx.putImageData(id, 0, 0);
+  const t = new THREE.CanvasTexture(cv);
+  t.flipY = m.map.flipY; t.colorSpace = m.map.colorSpace; t.wrapS = m.map.wrapS; t.wrapT = m.map.wrapT; t.channel = m.map.channel;
+  t.anisotropy = m.map.anisotropy;
+  const nm = m.clone(); nm.map = t; body.material = nm;
 }
 
 // The new head's neck takes the shape of the old neck it replaces, so it fills the collar exactly: below the old
@@ -286,6 +328,8 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
       if (n) autoTint = mean.map((x, i) => THREE.MathUtils.clamp(lin(want[i]) / Math.max(0.01, lin(x / n)), 0.4, 2.5));
     });
   }
+  // the rest of the body's skin (hands, wrists) takes the same tone as the new face
+  if (tone && texel && skinSum[3] > 50) retintBodySkin(body, [0, 1, 2].map((i) => skinSum[i] / skinSum[3]), tone.map((c) => c / 255));
   let eyeY = null;
   headScene.traverse((o) => { if (o.isMesh && /^eye-[lr]$/.test(o.name)) eyeY = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).y; });
   const made = [], hw = new THREE.Vector3();
