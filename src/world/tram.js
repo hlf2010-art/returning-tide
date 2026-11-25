@@ -1,8 +1,10 @@
-// The Nanjing Road sightseeing trains (南京路步行街观光车, the "当当车"): a small tractor dressed as an old tram
-// pulling open trailers, slowly down the middle of the pedestrian street and back, ringing its bell. Two
-// of them on a loop: westbound on the north half of the street, eastbound on the south (traffic keeps
-// right), turning round at each end; they stop at the stops for people to get on and off. The trailers
-// follow the tractor's path (a road train), so they swing round the turns as real ones do.
+// The Nanjing Road sightseeing trains (南京路步行街观光车, the "铛铛车", named for the bell): battery road trains
+// on the pedestrian street between Henan Road and Xizang Road (not on the 2020 extension to the Bund), in the
+// 7 m lane along the south side of the red granite 金带; white bodies, green arched canopies with a scalloped
+// valance, green skirts, fleet numbers on the back (a photo of November 2025). Two of them on a loop,
+// westbound on the lane's north half and eastbound on its south (traffic keeps right), turning at each
+// end, stopping at the ends and at Century Square, about 6 km/h; 08:30 to 22:00. The trailers follow the
+// tractor's path (a road train), so they swing round the turns as real ones do.
 //   - people in the way: the crowd steps aside (the cars are in main.js's `others`, with their speed);
 //     the train slows and rings for them, and stops for you if you stand in front of it
 //   - you can't walk through it (a box per car, engine/movement.js)
@@ -17,21 +19,21 @@ import { asLight } from './dayNight.js';
 import { makeCanvas, tex, FONT } from './canvas.js';
 
 // the loop: two lanes either side of the centre line, turned at each end (radius = half the spacing)
-export const TRAM_ROUTE = { xEast: -566, xWest: -1488, half: 3.5, stops: [-600, -1100, -1450], cruise: 1.7, dwell: 18 };
+export const TRAM_ROUTE = { xEast: -548, xWest: -1500, zc: NJ.zc + 4.3, half: 2.4, stops: [-560, -1105, -1488], cruise: 1.7, dwell: 18, open: [510, 1320] };
 // the livery (docs/nanjing-road-tram.md)
-export const TRAM_LOOK = { body: 0x8c1d1d, trim: 0xd9b45f, roof: 0xf1e9d8, seat: 0x7a4a2a, frame: 0x2a2420, cars: 3 };
+export const TRAM_LOOK = { body: 0xf2f1ec, trim: 0x1f6e3a, roof: 0x2f8a4c, seat: 0x8a5a34, frame: 0xf4f4f0, cars: 3, numbers: ['11', '12'] };
 const LOCO = { len: 3.4, w: 1.55, h: 2.55 }, CAR = { len: 4.0, w: 1.62, h: 2.45 }, GAP = 0.55;
 
 // ---- the path: s (m) round the loop -> position and heading ----
 function makePath(R) {
-  const L = R.xEast - R.xWest, r = R.half, zN = NJ.zc - r, zS = NJ.zc + r, arc = Math.PI * r, total = 2 * L + 2 * arc;
+  const L = R.xEast - R.xWest, r = R.half, zc = R.zc ?? NJ.zc, zN = zc - r, zS = zc + r, arc = Math.PI * r, total = 2 * L + 2 * arc;
   // 0..L westbound along zN; then the west turn; then eastbound along zS; then the east turn
   function at(s, out) {
     s = ((s % total) + total) % total;
     if (s < L) { out.x = R.xEast - s; out.z = zN; out.yaw = -Math.PI / 2; }
-    else if (s < L + arc) { const a = (s - L) / r; out.x = R.xWest - Math.sin(a) * r; out.z = NJ.zc - Math.cos(a) * r; out.yaw = -Math.PI / 2 + a; }
+    else if (s < L + arc) { const a = (s - L) / r; out.x = R.xWest - Math.sin(a) * r; out.z = zc - Math.cos(a) * r; out.yaw = -Math.PI / 2 + a; }
     else if (s < 2 * L + arc) { out.x = R.xWest + (s - L - arc); out.z = zS; out.yaw = Math.PI / 2; }
-    else { const a = (s - 2 * L - arc) / r; out.x = R.xEast + Math.sin(a) * r; out.z = NJ.zc + Math.cos(a) * r; out.yaw = Math.PI / 2 + a; }
+    else { const a = (s - 2 * L - arc) / r; out.x = R.xEast + Math.sin(a) * r; out.z = zc + Math.cos(a) * r; out.yaw = Math.PI / 2 + a; }
     return out;
   }
   // the path s at a stop (both directions): the stop's x on each straight
@@ -53,6 +55,7 @@ function locoParts() {
   const { len, w, h } = LOCO, hl = len / 2;
   b.frame.box(0, 0.22, 0, w - 0.1, 0.16, len - 0.2);                                   // chassis
   b.body.box(0, 0.38, 0, w, 0.75, len);                                                // lower body
+  b.trim.box(0, 0.26, 0, w + 0.02, 0.24, len + 0.02);                                  // the green skirt
   b.trim.box(0, 1.1, 0, w + 0.02, 0.06, len + 0.02);                                   // the waist rail
   // the cab: corner posts, glazing, a front with a big windscreen
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.body.box(sx * (w / 2 - 0.05), 1.13, sz * (hl - 0.05), 0.1, h - 1.13 - 0.18, 0.1);
@@ -61,8 +64,8 @@ function locoParts() {
   b.body.box(0, 2.15, hl - 0.03, w, 0.22, 0.06);
   b.sign.add(new THREE.PlaneGeometry(w - 0.25, 0.2), { x: 0, y: 2.26, z: hl + 0.035 });          // the destination board
   // the roof: an arched clerestory, a lantern on top, the bell at the front
-  b.roof.box(0, h - 0.18, 0, w + 0.14, 0.1, len + 0.25);
-  b.roof.box(0, h - 0.08, 0, w * 0.55, 0.16, len * 0.8);
+  b.roof.add(new THREE.CylinderGeometry(1.05, 1.05, len + 0.25, 16, 1, true, -0.82, 1.64).rotateX(-Math.PI / 2), { y: h - 0.95 });   // the arched roof
+  b.roof.box(0, h - 0.24, 0, w + 0.16, 0.12, len + 0.26);
   b.trim.cyl(0, h + 0.08, hl - 0.35, 0.1, 0.14, 0.18, 10);                            // the bell
   // headlamps, a cow-catcher fender, the wheels
   for (const sx of [-1, 1]) b.lamp.cyl(sx * 0.5, 0.75, hl + 0.02, 0.09, 0.09, 0.05, 12);
@@ -80,8 +83,10 @@ function trailerParts() {
   for (const sx of [-1, 1]) b.trim.box(sx * (w / 2 - 0.02), 0.98, 0, 0.05, 0.05, len); // the rail along the top of the sides
   // posts holding up the roof, the roof with its fringe
   for (const sx of [-1, 1]) for (const z of [-hl + 0.05, -hl / 3, hl / 3, hl - 0.05]) b.frame.box(sx * (w / 2 - 0.04), 0.98, z, 0.06, h - 0.98 - 0.12, 0.06);
-  b.roof.box(0, h - 0.12, 0, w + 0.2, 0.08, len + 0.15);
-  b.trim.box(0, h - 0.26, 0, w + 0.21, 0.14, len + 0.16);                              // the valance round the roof
+  b.roof.add(new THREE.CylinderGeometry(1.1, 1.1, len + 0.15, 16, 1, true, -0.82, 1.64).rotateX(-Math.PI / 2), { y: h - 0.95 });   // the arched canopy
+  for (const sx of [-1, 1]) for (let z = -hl; z < hl; z += 0.4) b.roof.add(new THREE.CircleGeometry(0.2, 8, Math.PI, Math.PI).rotateY(sx * Math.PI / 2), { x: sx * (w / 2 + 0.11), y: h - 0.24, z: z + 0.2 });   // its scalloped valance
+  b.roof.box(0, h - 0.24, 0, w + 0.22, 0.12, len + 0.16);
+  b.trim.box(0, 0.26, 0, w + 0.02, 0.24, len + 0.02);                                  // the green skirt
   // benches facing forward, a back to each
   for (const z of [-1.35, -0.45, 0.45, 1.35]) { b.seat.box(0, 0.8, z, w - 0.2, 0.06, 0.42); b.seat.box(0, 0.86, z - 0.21, w - 0.2, 0.42, 0.05); b.frame.box(0, 0.44, z, 0.08, 0.36, 0.3); }
   b.frame.box(0, 0.3, hl + GAP / 2, 0.08, 0.06, GAP + 0.2);                            // the drawbar
@@ -95,7 +100,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
   const mats = {
     body: new THREE.MeshStandardMaterial({ color: look.body, roughness: 0.42, metalness: 0.15 }),
     trim: new THREE.MeshStandardMaterial({ color: look.trim, roughness: 0.3, metalness: 0.85 }),
-    roof: new THREE.MeshStandardMaterial({ color: look.roof, roughness: 0.6 }),
+    roof: new THREE.MeshStandardMaterial({ color: look.roof, roughness: 0.6, side: THREE.DoubleSide }),
     frame: new THREE.MeshStandardMaterial({ color: look.frame, roughness: 0.5, metalness: 0.5 }),
     seat: new THREE.MeshStandardMaterial({ color: look.seat, roughness: 0.55 }),
     glass: new THREE.MeshStandardMaterial({ color: 0x0c1418, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.45 }),
@@ -117,6 +122,19 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
     pos: sizes.map(() => ({ x: 0, z: 0, yaw: 0 })), riders: [], driver: null, lit: 1,
   }));
   for (const t of trains) t.nextStop = P.stopS.findIndex((ss) => ss > t.s + 1) % P.stopS.length;
+  // fleet numbers on the back of each train's last trailer
+  const numMats = look.numbers.map((n) => { const [c, x] = makeCanvas(128, 96); x.fillStyle = '#f4f4f0'; x.fillRect(0, 0, 128, 96); x.fillStyle = '#1f6e3a'; x.fillRect(0, 70, 128, 26); x.fillStyle = '#1c1c1c'; x.font = `800 60px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(n, 64, 38); return new THREE.MeshStandardMaterial({ map: tex(c, { repeat: false }), roughness: 0.5 }); });
+  trains.forEach((t, i) => { t.num = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.45), numMats[i % numMats.length]); group.add(t.num); });
+  // ticket kiosks at the stops, on the 金带 beside the lane (white and green, a sign on top)
+  { const kb = new Batch(), kt = new Batch(), sign = new THREE.MeshBasicMaterial({ map: signTexture() });
+    for (const x of route.stops) {
+      const kz = (route.zc ?? NJ.zc) - route.half - 2.2;
+      kb.box(x, 0.15, kz, 1.8, 2.3, 1.3); kt.box(x, 2.45, kz, 2.2, 0.16, 1.7); kt.box(x, 0.15, kz, 1.82, 0.4, 1.32);
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.36), sign); pl.position.set(x, 2.78, kz); group.add(pl);
+      const pl2 = pl.clone(); pl2.rotation.y = Math.PI; group.add(pl2);
+      if (addCollider) { const b = addCollider('shop'); b.minX = x - 0.95; b.maxX = x + 0.95; b.minZ = kz - 0.7; b.maxZ = kz + 0.7; }
+    }
+    group.add(kb.mesh(mats.body, 'tram-kiosks'), kt.mesh(mats.trim, 'tram-kiosk-trim')); }
 
   // ---- people aboard: a driver, and a few on the benches of each trailer (near you only) ----
   const SEATS = []; for (const z of [-1.35, -0.45, 0.45, 1.35]) for (const x of [-0.48, 0, 0.48]) SEATS.push({ x, z });
@@ -177,8 +195,10 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
       return out;
     },
     // dt; the player's body; the crowd's agents (for slowing); eye (for the bell's loudness, who to seat)
-    update(dt, player, agents, eye) {
+    // ... and the minute of the day (they run 08:30 to 22:00; out of hours they wait at the ends)
+    update(dt, player, agents, eye, minute = 720) {
       if (!dt) return;
+      const open = minute >= route.open[0] && minute < route.open[1];
       for (const t of trains) {
         t.bellT = Math.max(0, t.bellT - dt);
         const head = t.pos[0], c = Math.cos(head.yaw), s = Math.sin(head.yaw);
@@ -186,14 +206,14 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
         let block = Infinity, crowd = Infinity;
         const ahead = (x, z) => { const dx = x - head.x, dz = z - head.z, f = dx * s + dz * c, lat = Math.abs(dx * c - dz * s); return f > 0 && f < 6 && lat < 1.15 ? f : Infinity; };
         if (player && player.y < 1.5) block = ahead(player.x, player.z);
-        if (agents && Math.abs(head.z - NJ.zc) < 12 && (!eye || Math.abs(eye.x - head.x) < 150)) for (const a of agents) { if (a.inside) continue; const f = ahead(a.x, a.z); if (f < crowd) crowd = f; }
+        if (agents && Math.abs(head.z - NJ.zc) < 14 && (!eye || Math.abs(eye.x - head.x) < 150)) for (const a of agents) { if (a.inside) continue; const f = ahead(a.x, a.z); if (f < crowd) crowd = f; }
         // the stops
-        if (t.dwell > 0) { t.dwell -= dt; t.want = 0; if (t.dwell <= 0) { bell(t, eye); t.nextStop = (t.nextStop + 1) % P.stopS.length; } }
+        if (t.dwell > 0) { if (open || !t.atEnd) t.dwell -= dt; t.want = 0; if (t.dwell <= 0) { bell(t, eye); t.nextStop = (t.nextStop + 1) % P.stopS.length; t.atEnd = false; } }
         else {
           const toStop = ((P.stopS[t.nextStop] - t.s) % P.total + P.total) % P.total;
           t.want = route.cruise;
           if (toStop < 6) t.want = Math.min(t.want, 0.25 + toStop * 0.25);
-          if (toStop < 0.3) { t.dwell = route.dwell; t.v = 0; }
+          if (toStop < 0.3) { t.dwell = route.dwell; t.v = 0; const sx = t.pos[0].x; t.atEnd = !open && (Math.abs(sx - route.stops[0]) < 3 || Math.abs(sx - route.stops[route.stops.length - 1]) < 3); }
         }
         if (block < 4.5) { t.want = 0; bell(t, eye, 1.2); }
         else if (crowd < 3.5) { t.want = Math.min(t.want, 0.55); if (crowd < 2.2) bell(t, eye); }
@@ -221,6 +241,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
         else for (const im of carIM) im.setMatrixAt(i * nCars + k - 1, _m);
       }));
       for (const im of [...locoIM, ...carIM]) im.instanceMatrix.needsUpdate = true;
+      for (const t of trains) { const q = t.pos[t.pos.length - 1], c = Math.cos(q.yaw), s = Math.sin(q.yaw), back = CAR.len / 2 + 0.05; t.num.position.set(q.x - s * back, 0.72, q.z - c * back); t.num.rotation.y = q.yaw + Math.PI; }
     },
     get state() { return trains.map((t) => ({ x: +t.pos[0].x.toFixed(1), z: +t.pos[0].z.toFixed(1), v: +t.v.toFixed(2), dwell: +t.dwell.toFixed(1), riders: t.riders.length })); },
   };
