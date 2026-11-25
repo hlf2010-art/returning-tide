@@ -279,6 +279,13 @@ export function createAudio() {
       const g = gainNode(0), lp = filt('lowpass', 520, 0.7); lp.connect(g).connect(env || sfx);
       for (const f of [98, 147, 196]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = Math.random() * 6 - 3; o.connect(lp); o.start(t); o.stop(t + 2.6); }
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.09 * level, t + 0.25); g.gain.setValueAtTime(0.09 * level, t + 1.9); g.gain.linearRampToValueAtTime(0, t + 2.5);
+    } else if (name === 'tramBell') {
+      // the sightseeing train's bell: two strokes on a small brass bell (inharmonic partials, a long ring)
+      for (const t0 of [t, t + 0.36]) for (const [k, g, d] of [[1, 0.09, 1.3], [2.76, 0.045, 0.7], [5.4, 0.025, 0.35], [8.9, 0.012, 0.18]]) {
+        const o = ctx.createOscillator(), e = gainNode(0); o.type = 'sine'; o.frequency.value = 1180 * k;
+        e.gain.setValueAtTime(0, t0); e.gain.linearRampToValueAtTime(g * level, t0 + 0.004); e.gain.exponentialRampToValueAtTime(0.0006, t0 + d);
+        o.connect(e).connect(sfx); o.start(t0); o.stop(t0 + d + 0.05);
+      }
     } else if (name === 'chime') {
       // an achievement: three rising bell notes
       [1047, 1319, 1568].forEach((f, i) => ping(t + i * 0.11, f, 0.06 * level, 0.5));

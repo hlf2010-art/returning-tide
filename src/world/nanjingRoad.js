@@ -15,6 +15,7 @@ import { towerAtlas } from './skyline.js';
 import { markCanvas } from '../ui/brands.js';
 import { createShopfronts } from './shopfronts.js';
 import { createSignAtlas, loadSignFonts } from './shopSigns.js';
+import { LANDMARK_BUILDERS } from './njLandmarks.js';
 import { placedShops } from './njShops.js';
 
 const CH = L.curbH;
@@ -91,7 +92,10 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   P.paving.box((NJ.xWest + L.facadeX) / 2 + 0, -0.3, (-207.7 + NJ.z1) / 2, L.facadeX - NJ.xWest, 0.3 + CH, NJ.z1 + 207.7, { tile: 2.4 });
   { let x = L.facadeX; for (const [a, b] of [...holes].reverse()) { if (x > b) P.paving.box((x + b) / 2, -0.3, -209.5, x - b, 0.3 + CH, 3.6, { tile: 2.4 }); x = a; } P.paving.box((x + NJ.xWest) / 2, -0.3, -209.5, x - NJ.xWest, 0.3 + CH, 3.6, { tile: 2.4 }); }
   // the paving pattern: granite bands across the street every 6 m (as on the pedestrian street)
-  for (let x = -40; x > NJ.xWest; x -= 6) if (x > h.x1 + 1 || x < h.x0 - 1) P.granite.floor(x - 0.2, x + 0.2, NJ.z0 + (METRO.some((m) => x > m.x0 && x < m.x1) ? 3.6 : 0), NJ.z1, CH + 0.004);
+  for (let x = -40; x > h.x1 + 1; x -= 6) P.granite.floor(x - 0.2, x + 0.2, NJ.z0 + (METRO.some((m) => x > m.x0 && x < m.x1) ? 3.6 : 0), NJ.z1, CH + 0.004);
+  // west of Henan Road the 1999 street's 金带: a 4.2 m strip of red granite a little north of the centre line,
+  // the sightseeing train's lane (world/tram.js) along its south side
+  P.belt = new Batch(); P.belt.floor(NJ.xWest + 2, h.x0 - 1, NJ.zc - 1.3 - 2.1, NJ.zc - 1.3 + 2.1, CH + 0.006, 3.2);
   // Henan Road: carriageway, kerbs, its pavements (beyond the junction too, for the view), markings
   const HL = 420;
   P.asphalt.floor(h.x0, h.x1, NJ.zc - HL, NJ.zc + HL, 0, 6);
@@ -146,7 +150,10 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     const face = dir > 0 ? 'S' : 'N', gain = { [face]: 1, E: 0.55, W: 0.55 };
     const base = 5.4, style = opts.style || (kind < 0.4 ? 'classic' : kind < 0.65 ? 'deco' : kind < 0.85 ? 'arched' : 'brick');
     const up = opts.up || 12 + Math.floor(rr() * 5) * 3.6, top = opts.top ?? rr() < 0.5;
-    tiers(B, fp, 0, [
+    // the great department stores: built as they are (world/njLandmarks.js)
+    const lmk = opts.shop && opts.shop.landmark && LANDMARK_BUILDERS[opts.shop.landmark];
+    const lmHeight = lmk ? lmk({ B, tiers, steel: P.steel, globes: lmGlobes, group, seed }, xa, xb, zf, dir) : 0;
+    if (!lmk) tiers(B, fp, 0, [
       { h: base, style: 'rustic', bay: 4, f0: 0.55, f1: 0.45, cornice: { out: 0.3, h: 0.45 } },
       { h: up, style, floors: Math.round(up / 3.6), bay: style === 'deco' ? 3 : 4, f0: 0.5, f1: 0.28, cornice: { out: 0.55, h: 0.7 } },
       ...(top ? [{ h: 3.6, style, floors: 1, bay: 4, inset: 1.6, f0: 0.35, f1: 0.25 }] : []),
@@ -159,7 +166,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     for (let dx = -46; dx > xa; dx -= 13) if (dx > xa + 2.6 && dx < xb - 2.6) { doorAt.push(dx); doorList.push({ x: dx, z: zf, dir }); }
     if (shop.doors) for (const dx of shop.doors) if (dx > xa + 2.6 && dx < xb - 2.6 && !doorAt.some((u) => Math.abs(u - dx) < 5.2)) doorAt.push(dx);
     if (shop.front !== false) fronts.addFront({ axis: 'x', plane: zf, out: dir }, xa, xb, { y0: CH, top: (shop.front && shop.front.top) || 4.1, doorAt, type: shop.type, room: opts.room || shop.room || null });
-    if (opts.signs === false || shop.noSign) return base + up + (top ? 3.6 : 0);
+    if (opts.signs === false || shop.noSign) return lmHeight || base + up + (top ? 3.6 : 0);
     // the signboard over the shopfront, out in front of the cornice
     const sg = { zh: shop.zh, en: shop.en, since: shop.since, ...shop.sign }, st = sg.style || 'brand';
     const size = (g, wide) => {
@@ -172,17 +179,17 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     // the other shops in the same building (their own signs over their own windows)
     for (const m of shop.more || []) {
       const g = { zh: m.zh, en: m.en, ...m.sign }, [mw, mh] = size(g, 6);
-      signboard(g, Math.min(xb - mw / 2 - 0.4, Math.max(xa + mw / 2 + 0.4, m.x)), zf, dir, mw, mh, 4.3);
+      signboard(g, Math.min(xb - mw / 2 - 0.4, Math.max(xa + mw / 2 + 0.4, m.x)), zf, dir, mw, mh, g.y || 4.3);
     }
     // a vertical sign standing out from the façade
     if (shop.blade) {
       const bx = shop.blade.at ?? (dir > 0 ? xb - 1.6 : xa + 1.6), y0 = base + 0.8, hgt = Math.min(9, 1.2 * [...(shop.blade.text || shop.zh)].length + 1.2);
       bladeSign({ ...sg, ...shop.blade, blade: shop.blade.text || shop.zh }, bx, zf, dir, y0, hgt);
     }
-    return base + up + (top ? 3.6 : 0);
+    return lmHeight || base + up + (top ? 3.6 : 0);
   }
   let seed = 11;
-  const doorList = [];
+  const doorList = [], lmGlobes = new Batch();
   // the real shops (world/njShops.js), each at its street number on its side of the street
   const PLACED = placedShops();
   const placedAt = (dir, x) => PLACED.find((p) => p.dir === dir && Math.abs(x - p.x1) < 0.01);
@@ -291,6 +298,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   }
   const glow = asLight(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.9, 1.7, 1.4) }), 'lamps', 0.45);
   group.add(lampGlass.mesh(glow, 'nj-lamps'));
+  if (lmGlobes.list.length) group.add(lmGlobes.mesh(glow, 'nj-landmark-globes'));
   // ---- the metro entrances ----
   const glassMat = new THREE.MeshStandardMaterial({ color: 0xa8c4cc, metalness: 0.1, roughness: 0.04, transparent: true, opacity: 0.28, side: THREE.DoubleSide });
   const glassB = new Batch(), stairs = new Batch(), walls = new Batch(), strips = new Batch();
@@ -340,6 +348,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   pageMats(letters, signAt, (t) => { const m = new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.5 }); m.color.setScalar(1.5); return asLight(m, 'signs', 0.7); });
   pageMats(blades, bladeAt, (t) => { const m = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); m.color.setScalar(1.5); return asLight(m, 'signs', 0.6); });
   group.add(boards.mesh(boardMat, 'nj-sign-boards'));
+  group.add(P.belt.mesh(new THREE.MeshStandardMaterial({ color: 0x7a2e28, roughness: 0.32, metalness: 0.05 }), 'nj-golden-belt'));
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
   group.add(P.paint.mesh(paint, 'henan-paint'), P.yellow.mesh(yellow, 'henan-yellow'));
