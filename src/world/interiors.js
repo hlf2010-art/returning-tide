@@ -87,6 +87,18 @@ const stainedGlass = () => canvasTex(1024, 1024, (x, w) => {
   for (let i = 0; i < 64; i++) { const a = (i / 64) * Math.PI * 2; x.beginPath(); x.moveTo(c + Math.cos(a) * c * 0.2, c + Math.sin(a) * c * 0.2); x.lineTo(c + Math.cos(a) * c, c + Math.sin(a) * c); x.stroke(); }
   const g = x.createRadialGradient(c, c, 0, c, c, c * 0.25); g.addColorStop(0, '#fff6d8'); g.addColorStop(1, 'rgba(255,230,160,0)'); x.fillStyle = g; x.fillRect(0, 0, w, w);
 });
+// the gilt frieze under the cornice: stepped chevrons and sunbursts in relief on walnut, 1.2 m a repeat
+const friezeTexture = () => { const t = canvasTex(512, 192, (x, w, h) => {
+  const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2a180d'); g.addColorStop(1, '#1a0e07'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+  const gilt = (draw) => { x.save(); x.translate(1.5, 2); x.strokeStyle = 'rgba(0,0,0,0.6)'; x.fillStyle = 'rgba(0,0,0,0.6)'; draw(); x.restore();
+    const gg = x.createLinearGradient(0, 0, 0, h); gg.addColorStop(0, '#f0d58e'); gg.addColorStop(0.5, '#b88a3c'); gg.addColorStop(1, '#e2c070'); x.strokeStyle = gg; x.fillStyle = gg; draw(); };
+  gilt(() => { x.fillRect(0, 8, w, 6); x.fillRect(0, h - 14, w, 6); });
+  // a sunburst in the middle of the repeat, chevrons stepping out either side
+  gilt(() => { x.lineWidth = 4; const cx = w / 2, cy = h - 22; for (let k = 0; k <= 10; k++) { const a = Math.PI + (k / 10) * Math.PI; x.beginPath(); x.moveTo(cx + Math.cos(a) * 18, cy + Math.sin(a) * 18); x.lineTo(cx + Math.cos(a) * 128, cy + Math.sin(a) * 128); x.stroke(); }
+    x.beginPath(); x.arc(cx, cy, 18, Math.PI, 0); x.fill(); });
+  gilt(() => { x.lineWidth = 5; for (const s of [-1, 1]) for (let k = 0; k < 4; k++) { const ox = w / 2 + s * (150 + k * 26); x.beginPath(); x.moveTo(ox - 13, h - 22); x.lineTo(ox, 30); x.lineTo(ox + 13, h - 22); x.stroke(); } });
+  gilt(() => { x.lineWidth = 3; for (const ex of [0, w]) { x.beginPath(); x.arc(ex, h / 2 + 8, 34, 0, Math.PI * 2); x.stroke(); x.beginPath(); x.arc(ex, h / 2 + 8, 18, 0, Math.PI * 2); x.stroke(); } });
+}); t.wrapS = THREE.RepeatWrapping; return t; };
 // the octagon inlaid in the floor: dark green marble ring, brass lines, a star
 const floorInlay = () => canvasTex(1024, 1024, (x, w) => {
   const c = w / 2; x.clearRect(0, 0, w, w);
@@ -211,6 +223,39 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const sconce = (x, z, ry) => { const g = new THREE.Group(); g.position.set(x, Y0 + 2.6, z); g.rotation.y = ry; const f = new THREE.Mesh(new THREE.CircleGeometry(0.32, 3, -Math.PI / 6, Math.PI / 3 * 2), frosted); f.rotation.z = Math.PI; f.position.z = 0.05; g.add(f); const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), brass); b.position.set(0, 0.1, 0.03); g.add(b); group.add(g); };
   for (let x = P.x0 + 4; x < P.x1 - 3; x += 5) { sconce(x, P.z0 + 0.03, 0); }
   for (let z = P.z1 - 4; z > P.z0 + 3; z -= 5) sconce(P.x0 + 0.03, z, Math.PI / 2);
+  // the walls' dressing, as in the restored hall: a gilt Art Deco frieze under the cornice, the plaster between
+  // the pilasters set out in moulded panels, a brass dado rail on the walnut wainscot, a dark marble skirting
+  {
+    const friezeMat = new THREE.MeshStandardMaterial({ map: friezeTexture(), roughness: 0.45, metalness: 0.35, emissive: 0x1a1006 });
+    const fy = Y0 + P.h - 0.53, fh = 0.44;
+    const strip = (ax, az, bx, bz, nx, nz) => {
+      const len = Math.hypot(bx - ax, bz - az), g = new THREE.PlaneGeometry(len, fh), uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * len / 1.2);
+      const m = add(g, friezeMat, (ax + bx) / 2 + nx * 0.035, fy, (az + bz) / 2 + nz * 0.035, Math.atan2(nx, nz)); return m;
+    };
+    strip(P.x0, P.z0, P.x1, P.z0, 0, 1); strip(P.x0, P.z1, JAZZ.x0, P.z1, 0, -1); strip(P.x0, P.z0, P.x0, P.z1, 1, 0);
+    for (const [ax, az, bx, bz] of [[P.x0, P.z0, P.x1, P.z0], [P.x0, P.z1, JAZZ.x0, P.z1]]) {
+      const inward = az < -230 ? 1 : -1, zz = az + inward * 0.03, L = Math.abs(bx - ax);
+      box(L, 0.05, 0.05, brass, (ax + bx) / 2, Y0 + 1.28, zz + inward * 0.02);                              // dado rail
+      box(L, 0.16, 0.04, marbleDark, (ax + bx) / 2, Y0, zz + inward * 0.015);                              // skirting
+    }
+    box(0.05, 0.05, P.z1 - P.z0, brass, P.x0 + 0.05, Y0 + 1.28, pcz); box(0.04, 0.16, P.z1 - P.z0, marbleDark, P.x0 + 0.045, Y0, pcz);
+    // moulded panels between the pilasters (shorter over the lifts, none where the door or the bar is)
+    const mould = (cx, z, y0, y1, w, inward) => {
+      const t = 0.035, zz = z + inward * 0.05;
+      box(w, t, t, brass, cx, y0, zz); box(w, t, t, brass, cx, y1 - t, zz);
+      box(t, y1 - y0, t, brass, cx - w / 2 + t / 2, y0, zz); box(t, y1 - y0, t, brass, cx + w / 2 - t / 2, y0, zz);
+      const inner = 0.12;                                                                                     // an inner fillet, finer
+      for (const [a, b, c, d] of [[w - 2 * inner, 0.018, cx, y0 + inner], [w - 2 * inner, 0.018, cx, y1 - inner - 0.018]]) box(a, b, 0.02, brass, c, d, zz);
+      for (const sx of [-1, 1]) box(0.018, y1 - y0 - 2 * inner, 0.02, brass, cx + sx * (w / 2 - inner), y0 + inner, zz);
+    };
+    for (let x = P.x0 + 4; x + 1.6 < P.x1 - 0.3; x += 4) {
+      const overLift = [-52, -48, -44].some((lx) => Math.abs(lx - x) < 1.2);
+      mould(x, P.z0, overLift ? Y0 + 3.45 : Y0 + 1.7, Y0 + P.h - 0.95, 3.0, 1);
+      const nearDoor = x > P.door[0] - 2.5 && x < P.door[1] + 2.5;
+      if (!nearDoor && x + 1.6 < JAZZ.x0 - 0.6) mould(x, P.z1, Y0 + 1.7, Y0 + P.h - 0.95, 3.0, -1);
+    }
+  }
   // Art Deco detail: brass-capped walnut pilasters along the walls, a stepped cornice under the ceiling
   for (let x = P.x0 + 2; x < P.x1 - 1; x += 4) for (const z of [P.z0 + 0.12, P.z1 - 0.12]) { if (z > -213 && ((x > P.door[0] - 1 && x < P.door[1] + 1) || x > JAZZ.x0 - 0.5)) continue; box(0.34, P.h - 0.4, 0.14, walnut, x, Y0, z); box(0.4, 0.14, 0.18, brass, x, Y0 + P.h - 0.54, z); }
   for (const [ax, az, bx, bz] of [[P.x0, P.z0, P.x1, P.z0], [P.x0, P.z1, P.x1, P.z1]]) box(Math.abs(bx - ax), 0.22, 0.3, walnut, (ax + bx) / 2, Y0 + P.h - 0.26, az + (az < -230 ? 0.15 : -0.15));
