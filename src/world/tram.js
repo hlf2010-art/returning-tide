@@ -183,8 +183,59 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
     if (d < 60) audio.cue('tramBell', 0, level * 0.9 / (1 + d / 8));
     t.bellT = 3.5;
   }
+  // ---- you, aboard: E at a stopped train to get on (a free seat in the nearest trailer), E to get off,
+  // F to ride on to the next stop (main.js fades and moves the clock on) ----
+  let rider = null;                                      // { t, car, seat }
+  const seatWorld = (t, car, seat, out) => { const q = t.pos[car], c = Math.cos(q.yaw), s = Math.sin(q.yaw); out.x = q.x + c * seat.x + s * seat.z; out.z = q.z - s * seat.x + c * seat.z; out.yaw = q.yaw; return out; };
+  const _sw = { x: 0, z: 0, yaw: 0 };
+  function nearTrailer(pp) {
+    let best = null;
+    for (const t of trains) { if (t.v > 0.3) continue; for (let k = 1; k <= nCars; k++) { const q = t.pos[k], d = Math.hypot(pp.x - q.x, pp.z - q.z); if (d < 3.4 && (!best || d < best.d)) best = { t, k, d, q }; } }
+    return best;
+  }
   return {
     group, trains, path: P,
+    get riding() { return !!rider; },
+    // the interaction target (main.js places): a stopped train's trailer within reach
+    candidates(pp) { if (rider || !pp || pp.y > 1.5) return []; const n = nearTrailer(pp); return n ? [{ id: 'tram', x: n.q.x, y: 1.2, z: n.q.z, reach: 3.6, cone: 0.45 }] : []; },
+    board(pp) {
+      const n = nearTrailer(pp); if (!n) return false;
+      const taken = new Set(n.t.riders.filter((r) => r.car === n.k).map((r) => `${r.seat.x},${r.seat.z}`));
+      const free = SEATS.filter((q) => !taken.has(`${q.x},${q.z}`)); if (!free.length) return false;
+      let seat = free[0], bd = Infinity;
+      for (const q of free) { seatWorld(n.t, n.k, q, _sw); const d = Math.hypot(_sw.x - pp.x, _sw.z - pp.z); if (d < bd) { bd = d; seat = q; } }
+      rider = { t: n.t, car: n.k, seat }; bell(n.t, pp, 0.8);
+      return true;
+    },
+    // the camera on your seat; your body goes with it (so the world knows where you are)
+    seatCamera(camera, player) {
+      if (!rider) return;
+      seatWorld(rider.t, rider.car, rider.seat, _sw);
+      camera.position.set(_sw.x, 0.86 + 0.78, _sw.z); camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
+      player.body.x = _sw.x; player.body.z = _sw.z;
+    },
+    seatPrompt(lang = 'zh') {
+      const t = rider && rider.t, west = t && t.pos[0].z < (route.zc ?? NJ.zc), stopped = t && t.v < 0.3;
+      const zh = `观光车 · 往${west ? '西藏路' : '河南路'}`, en = `Sightseeing tram · to ${west ? 'Xizang Road' : 'Henan Road'}`;
+      return { target: lang === 'zh' ? zh : en, action: lang === 'zh' ? (stopped ? '下车 (E) · 坐到下一站 (F)' : '坐到下一站 (F) · 停车后可下车') : (stopped ? 'Get off (E) · Ride to the next stop (F)' : 'Ride to the next stop (F) · get off when it stops') };
+    },
+    get canGetOff() { return !!rider && rider.t.v < 0.3; },
+    // off at the kerb side of your car: returns where to stand
+    getOff() {
+      if (!rider) return null;
+      const q = rider.t.pos[rider.car], c = Math.cos(q.yaw), s = Math.sin(q.yaw), side = -1;                 // (out to the right)
+      const x = q.x + side * c * (CAR.w / 2 + 0.75), z = Math.min(NJ.z1 - 1, Math.max(NJ.z0 + 1, q.z - side * s * (CAR.w / 2 + 0.75)));
+      rider = null; return { x, z, yaw: q.yaw };
+    },
+    // straight on to the next stop (for the fade): returns the seconds the ride would have taken
+    rideToNextStop() {
+      if (!rider) return 0;
+      const t = rider.t, ahead = ((P.stopS[t.nextStop] - t.s) % P.total + P.total) % P.total;
+      if (t.dwell > 0 || ahead < 1) { t.dwell = 0; t.nextStop = (t.nextStop + 1) % P.stopS.length; }
+      const d = ((P.stopS[t.nextStop] - t.s) % P.total + P.total) % P.total;
+      t.s = (P.stopS[t.nextStop] - 0.2 + P.total) % P.total; t.v = 0; t.dwell = route.dwell; t.pos.forEach((q, k) => P.at(t.s - offsets[k] + LOCO.len / 2, q));
+      return d / route.cruise + route.dwell;
+    },
     // the cars, as points with their speed, for the crowd to walk round
     others() {
       const out = [];
@@ -205,7 +256,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
         // who's in front: you stop it; people slow it (and get the bell)
         let block = Infinity, crowd = Infinity;
         const ahead = (x, z) => { const dx = x - head.x, dz = z - head.z, f = dx * s + dz * c, lat = Math.abs(dx * c - dz * s); return f > 0 && f < 6 && lat < 1.15 ? f : Infinity; };
-        if (player && player.y < 1.5) block = ahead(player.x, player.z);
+        if (player && player.y < 1.5 && !(rider && rider.t === t)) block = ahead(player.x, player.z);
         if (agents && Math.abs(head.z - NJ.zc) < 14 && (!eye || Math.abs(eye.x - head.x) < 150)) for (const a of agents) { if (a.inside) continue; const f = ahead(a.x, a.z); if (f < crowd) crowd = f; }
         // the stops
         if (t.dwell > 0) { if (open || !t.atEnd) t.dwell -= dt; t.want = 0; if (t.dwell <= 0) { bell(t, eye); t.nextStop = (t.nextStop + 1) % P.stopS.length; t.atEnd = false; } }

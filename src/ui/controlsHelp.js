@@ -39,6 +39,10 @@ const KBM = [
     [['H'], '喇叭（上海市区禁鸣）', 'Horn (banned in central Shanghai)'],
     [['E'], '停稳后下车', 'Get out, once stopped'],
   ] },
+  { zh: '南京路观光车', en: 'Nanjing Road tram', rows: [
+    [['E'], '车停着时上车；停稳后下车', 'Get on while it is stopped; get off once it stops'],
+    [['F'], '坐着直接到下一站（时间照样过去）', 'Ride straight on to the next stop (the time still passes)'],
+  ] },
   { zh: '游戏', en: 'Game', rows: [
     [['Esc'], '暂停：继续、设置、存档、操作说明', 'Pause: resume, settings, saves, controls'],
     [['C'], '字幕开关', 'Subtitles on or off'],
