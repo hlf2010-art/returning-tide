@@ -29,7 +29,7 @@ BLENDER_USER_EXTENSIONS=~/.bext .bvenv/bin/python -I tools/characters/build_hero
 - `--render`: Cycles close-ups at 85 mm: `front`, `three-quarter`, `profile`, `medium`, and `expr-<name>` for the
   character sheet's eight expressions. About 1.5 minutes a frame on 4 CPU cores; `--fast` for quick looks.
 - `--export`: `<id>-head.glb`: the head (cut at the base of the neck) with its face shapes, eyeballs and corneas,
-  teeth, tongue, brows, lashes and hair cards; the skin's procedural colour baked to a texture on repacked UVs.
+  teeth, tongue, brows, lashes and hair cards; the skin's procedural colour, normal (pores) and roughness baked to textures on repacked UVs.
 - `stats.json`: triangles per part and the GLB size.
 
 What it builds, and what is still a stand-in:
@@ -41,10 +41,18 @@ What it builds, and what is still a stand-in:
 | eyes | own eyeball (iris, pupil, limbus) and a bulged clear cornea, aimed through the lids | a painted iris texture, a tear line and eye occlusion |
 | brows, lashes | single thin ribbons grown on the skin (cheap enough to ship) | a hand check of shape and density |
 | hair | alpha cards marched over the scalp along a flow field (base layer + clumps) | a human groom (the research doc's biggest time sink) |
-| skin | procedural colour, stubble shadow, lips, pores (bump) and SSS in Blender; colour only in the GLB | the portrait projection, normal and roughness maps of step 3 |
+| skin | procedural colour, cheek and nose warmth, under-eye shadow, stubble shadow, lips, pores and SSS; colour, normal and roughness maps in the GLB | the portrait projection, normal and roughness maps of step 3 |
 
 ## Review in the game's renderer
 
 `npm run dev`, then `/tools/characters/review.html?glb=/people/jibai/head.glb`: dialogue, close-up, profile and
 three-quarter cameras, four light setups (studio, Bund at dusk, office, night neon), the eight expressions, a slider
 per face shape, blinks, eye darts and breathing.
+
+## In the game
+
+- `people.json`: `"head": "<id>/head.glb"` swaps a hero head onto a cast member's body at load (`swapHead` in
+  `src/world/people.js`); `"keepHair": true` keeps the body's own sculpted hair and replaces only the skin.
+- `/tools/characters/faces.html`: every face at dialogue distance, in the game's renderer and idle pose.
+- `repair_eyes.py`: mends a Hunyuan texture whose one eye came out smeared by mirroring the good eye
+  (`python3 tools/characters/repair_eyes.py public/people/gunian.glb out.glb --good left --preview /tmp`).

@@ -43,6 +43,7 @@ export function createPlayerBody(people, { walk = 2.2, run = 5.0, fpRole = FP_RO
     // head and hair are not drawn at all: collapsed, the hair cards weighted between head and neck
     // stretch into slivers right in front of the eye (the shadow copy keeps them)
     if (/head|opacity/i.test(o.material.name)) { o.visible = false; separateHead = true; }
+    if (/^hero-/.test(o.name)) o.visible = false;   // a swapped-in close-up head (people.js swapHead): the collar cap closes the neck
   });
   // The eye sits where the head is, so the drawn body has its head bone collapsed to a point: that
   // closes the collar (an invisible head would leave a hole to look down into). Its shadow comes
