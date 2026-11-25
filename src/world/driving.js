@@ -1,4 +1,4 @@
-// Your Huracán, once it's been delivered (engine/carPurchase.js): get in (E at the car) and drive
+// Your Strale, once it's been delivered (engine/carPurchase.js): get in (E at the car) and drive
 // it on the roads that are here (Hankou Road, Zhongshan Road along the Bund, the side streets to
 // Nanjing Road), then park it wherever you stop and get out (it stays there, saved).
 //   W / S     throttle / brake (S again once stopped: reverse)     A / D   steer
@@ -123,11 +123,11 @@ export function createDriving({ huracan, traffic, camera, player, audio, hud, ge
       return [{ id: owned() ? (drivingSuspended(getLife()) || (reactions && reactions.busy) ? 'held' : 'drive') : 'car', x: g.position.x, y: 0.9, z: g.position.z, reach: 3.3, cone: 0.5 }];
     },
     prompt(id) {
-      if (id === 'drive') return { target: T('你的 Huracán', 'Your Huracán'), action: T('开车', 'Drive') };
-      if (id === 'held') return { target: T('你的 Huracán', 'Your Huracán'), action: T('事故处理中', 'After the accident') };
+      if (id === 'drive') return { target: T('你的 Strale', 'Your Strale'), action: T('开车', 'Drive') };
+      if (id === 'held') return { target: T('你的 Strale', 'Your Strale'), action: T('事故处理中', 'After the accident') };
       if (id !== 'car') return null;
       const st = (getLife().flags.carBuy || {}).stage || 'none';
-      return { target: T('兰博基尼 Huracán', 'Lamborghini Huracán'), action: st === 'none' ? T('拍给知夏', 'Send Zhixia a photo') : T('看看', 'Look') };
+      return { target: T('科尔维纳 Strale', 'Corvina Strale'), action: st === 'none' ? T('拍给知夏', 'Send Zhixia a photo') : T('看看', 'Look') };
     },
     owns(id) { return id === 'drive' || id === 'car' || id === 'held'; },
     interact(id) {
@@ -136,7 +136,7 @@ export function createDriving({ huracan, traffic, camera, player, audio, hud, ge
       const L = getLife(), b = L.flags.carBuy, st = (b && b.stage) || 'none';
       if (st === 'none') {                            // the lead: she knows the consultant whose demo car this is
         L.flags.carCurious = true; lead(L); save && save();
-        hud.toast(T('你拍了一张发给知夏。她回了一张名片：Vivian，兰博基尼的销售顾问。按 P 打开微信加她，约试驾。', 'You send Zhixia a photo. She sends back a contact card: Vivian, a Lamborghini sales consultant. P for the phone: add her in WeChat to book a test drive.'), 7);
+        hud.toast(T('你拍了一张发给知夏。她回了一张名片：Vivian，科尔维纳的销售顾问。按 P 打开微信加她，约试驾。', 'You send Zhixia a photo. She sends back a contact card: Vivian, a Corvina sales consultant. P for the phone: add her in WeChat to book a test drive.'), 7);
       } else if (st === 'lead') hud.toast(T('Vivian 的名片在微信里知夏的聊天中：P 打开手机，加她，约试驾。', "Vivian's card is in your WeChat chat with Zhixia: P for the phone, add her, book a test drive."), 6);
       else if (st === 'booked' || st === 'contacted') hud.toast(T(`Vivian ${Math.floor(b.at / 60) % 24}:${String(b.at % 60).padStart(2, '0')} 在这里等你，带你试驾。`, `Vivian meets you here at ${Math.floor(b.at / 60) % 24}:${String(b.at % 60).padStart(2, '0')} for the test drive.`), 5);
       else hud.toast(T('你的车已经订了，Vivian 会在微信上跟你确认交车。', "Yours is on order: Vivian will be in touch on WeChat about delivery."), 5);

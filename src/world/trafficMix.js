@@ -23,7 +23,7 @@ const CARS = [
   ['taxi', 4.6, 1.78, 1.5, 2.82], ['taxi', 4.6, 1.78, 1.5, 2.82], ['taxi', 4.6, 1.78, 1.5, 2.82],
   ['sedan', 4.6, 1.78, 1.5, 2.82, 0xe8e8e6], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x9aa0a6], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x101216],
   ['sedan', 4.6, 1.78, 1.5, 2.82, 0xf2f2f0], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x2a2e36],
-  // ride-hail and private new-energy cars: BYD Hans (a real model, world/fleet.js) in the usual colours
+  // ride-hail and private new-energy cars: the big electric saloon (world/fleet.js; badges off, shown as the Jinghe E7) in the usual colours
   ['byd-han', 4.995, 1.91, 1.495, 2.92, 0xf1f1ef], ['byd-han', 4.995, 1.91, 1.495, 2.92, 0x16181c], ['byd-han', 4.995, 1.91, 1.495, 2.92, 0xb9bdc2],
   ['byd-han', 4.995, 1.91, 1.495, 2.92, 0x22324a], ['byd-han', 4.995, 1.91, 1.495, 2.92, 0xf1f1ef],
 ];

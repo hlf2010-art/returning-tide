@@ -1,4 +1,4 @@
-// Wait for someone to stop and photograph the Huracán; screenshot them doing it.
+// Wait for someone to stop and photograph the Strale; screenshot them doing it.
 import { createRequire } from 'module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const dir = (process.env.OUT || '.') + '/';

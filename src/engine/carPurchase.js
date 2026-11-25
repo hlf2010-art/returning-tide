@@ -24,7 +24,7 @@ import { stamp, pay, post, thread, own, emit, balance } from './life.js';
 import { dateOf } from './year.js';
 // (quote() is used before its definition below: function declarations are hoisted)
 
-export const CAR = { id: 'huracan', zh: '兰博基尼 Huracán LP610-4', en: 'Lamborghini Huracán LP610-4', price: 2_680_000, deposit: 200_000 };
+export const CAR = { id: 'huracan', zh: '科尔维纳 Strale', en: 'Corvina Strale', price: 2_680_000, deposit: 200_000 };
 export const COLOURS = [
   { id: 'giallo', zh: '迈达斯黄', en: 'Giallo Midas (yellow)', hex: 0xe8b40f },
   { id: 'nero', zh: '诺克提斯黑', en: 'Nero Noctis (black)', hex: 0x0d0d0f },
@@ -69,7 +69,7 @@ export function lead(L) {
 export function contact(L, at) {
   const b = P(L); if (b.stage !== 'lead') return false;
   mark(L, 'contacted');
-  say(L, '你好，我是知夏的朋友纪白，想了解一下 Huracán。', 'me');
+  say(L, '你好，我是知夏的朋友纪白，想了解一下 Strale。', 'me');
   say(L, '纪先生您好！知夏跟我说过您～ 我们这边可以把试驾车开到您那边，外滩可以吗？');
   b.at = at;
   say(L, `那就${Math.floor(at / 60) % 24}点${String(at % 60).padStart(2, '0')}在汉口路，车停在路边，我在车旁边等您。`);
@@ -94,7 +94,7 @@ export function spec(L, { colour, interior }) {
 
 export function payDeposit(L) {
   const b = P(L); if (b.stage !== 'specced') return { ok: false, reason: 'stage' };
-  const r = pay(L, { method: 'bank', amount: CAR.deposit, to: '兰博基尼上海', memo: `定金 ${CAR.zh}`, kind: 'car' });
+  const r = pay(L, { method: 'bank', amount: CAR.deposit, to: '科尔维纳上海', memo: `定金 ${CAR.zh}`, kind: 'car' });
   if (!r.ok) return r;
   r.entry.memoEn = `Deposit, ${CAR.en}`;
   mark(L, 'deposit'); b.orderedAt = stamp(L);
@@ -148,7 +148,7 @@ export function payBalance(L, how = 'full') {
   const b = P(L); if (b.stage !== 'plate') return { ok: false, reason: 'stage' };
   const q = quote(how);
   if (balance(L, 'bank') < q.now) return { ok: false, reason: 'insufficient', need: q.now };
-  const r = pay(L, { method: 'bank', amount: q.now, to: '兰博基尼上海', memo: how === 'finance' ? '首付（汽车金融）' : '尾款', kind: 'car' });
+  const r = pay(L, { method: 'bank', amount: q.now, to: '科尔维纳上海', memo: how === 'finance' ? '首付（汽车金融）' : '尾款', kind: 'car' });
   if (!r.ok) return r;
   r.entry.memoEn = how === 'finance' ? 'Down payment (dealer finance)' : 'Balance';
   b.paid = { how, ...q }; mark(L, 'paid');

@@ -20,7 +20,7 @@ const ROLE_ZH = {
   xuan: '风投分析师，陆家嘴', yuan: '建筑师、城市空间研究者，外滩老楼修缮', momo: '爵士键盘手，120 万粉丝', zhixia: '电动车工程师，业余 GT 车手', yinuo: '家族办公室，艺术与地产',
   dad: '精密机加工厂，南京', mum: '心内科医生，鼓楼医院', kai: '杨浦创客空间', chen: '退休车工，拍海关大楼', ye: '外滩人像摄影师', zhe: '外滩夜间主播',
   zhiwei: '产品与工业设计师，陆家嘴', nanxing: '独立摄影师', gunian: '科技投资人，早期基金合伙人', kexin: '生活方式博主，小红书 18 万',
-  zhou: '汉口路修表匠', vivian: '兰博基尼销售顾问', taoke: '分析师，迈芬', shaofeng: '高级顾问，迈芬', partner: '合伙人，迈芬', gu: '东澜理赔系统；后来屿深',
+  zhou: '汉口路修表匠', vivian: '科尔维纳销售顾问', taoke: '分析师，迈芬', shaofeng: '高级顾问，迈芬', partner: '合伙人，迈芬', gu: '东澜理赔系统；后来屿深',
   feng: '东澜保险运营副总', agent: '房产中介', zhoumin: '修表匠的女儿',
 };
 const WORK = ['taoke', 'shaofeng', 'partner', 'gu', 'feng', 'kai', 'vivian'];

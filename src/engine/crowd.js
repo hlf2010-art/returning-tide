@@ -249,7 +249,7 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
   const grown = roles ? roles.filter((r) => !/^k\d/.test(r)) : null;
   const rolesFor = (k) => { const a = ROLE_POOL[k].filter((r) => !have || have.has(r)); return a.length ? a : (grown && grown.length ? grown : ['p1']); };
   const obs = obstacles();
-  let cars = [];                              // things that move and stop (the Huracán, parked or driven): [{ x, z, r }]
+  let cars = [];                              // things that move and stop (the Strale, parked or driven): [{ x, z, r }]
   const ends = ENDS.map((e) => ({ ...e, id: (net.ends && net.ends[e.id]) || e.id })).filter((e) => net.by[e.id]);
   const stops = BUS_STOPS.map((st) => `BS:${st.id}`).filter((id) => net.by[id]);
   const W = ends.reduce((s, e) => s + e.w * ((areaWeights && areaWeights[e.area]) ?? 1), 0);
