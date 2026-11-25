@@ -17,6 +17,6 @@ export default defineConfig({
     chunkSizeWarningLimit: 1200, target: ['es2020', 'safari14'],   // older Safari (macOS Big Sur) too
     // three.js in a file of its own: it changes far less often than the game, so a returning player's
     // browser keeps it cached across updates, and the two download side by side
-    rollupOptions: { output: { manualChunks: (id) => (/node_modules[\\/]three[\\/]/.test(id) ? 'three' : undefined) } },
+    rollupOptions: { output: { manualChunks: (id) => (/node_modules[\\/]three[\\/](build|src)[\\/]/.test(id) ? 'three' : undefined) } },
   },
 });

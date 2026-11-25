@@ -73,6 +73,8 @@ import { createVehicles } from './world/vehicles.js';
 import { createVehicleLamps } from './world/vehicleLamps.js';
 import { createDressing } from './world/dressing.js';
 import { createPulse } from './world/pulse.js';
+import { createEbikes } from './engine/ebikes.js';
+import { createEbikeView } from './world/ebikeView.js';
 import { createSignals } from './world/signals.js';
 import { createPedestrians } from './world/pedestrians.js';
 import { loadPeople, cullPeople } from './world/people.js';
@@ -222,7 +224,7 @@ camera.layers.enable(HELD_LAYER); camera.layers.enable(RAIN_LAYER);
 const weather = createWeather();
 if (params.get('weather') === 'drizzle') weather.set('drizzle', { instant: true });
 const _metroFog = new THREE.Color(0.32, 0.33, 0.34), HAZE_FOG = new THREE.Color(0.072, 0.108, 0.2), FOG_DENSITY = scene.fog.density, HAZE_DENSITY = 0.00028;
-let weatherTime = 0, suUmbrella = 0, treeLevel = -1;
+let weatherTime = 0, suUmbrella = 0, treeLevel = -1, midDrop = 0;
 // Wind in the trees: a river breeze that rises with the drizzle. Developer control F6 cycles
 // auto / calm / breeze / windy / gale; ?wind=<level> pins it.
 const wind = createWind();
@@ -351,7 +353,21 @@ async function boot() {
   lampSources = [{ list: traffic.vehicles, z: 0 }, { list: henan.traffic.vehicles, z: NJ.zc }];
   const pulse = params.get('pulse') === '0' ? null : createPulse({ scene, getCrowd: () => world && world.crowd, getTraffic: () => lampSources,
     cameras: dressing ? dressing.spots.camera : [], police: dressing ? dressing.spots.police : [] });   // flashes, strobes, barges, leaves (world/pulse.js)
-  world = { pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }) };
+  if (pulse && audio.onHorn) audio.onHorn((x, z) => pulse.horn(x, z, camera.position));   // a ship's horn turns heads toward the river
+  // e-bikes and couriers on Henan Road, Hankou Road and Jiujiang Road (engine/ebikes.js, world/ebikeView.js)
+  let ebikes = null, ebikeView = null;
+  if (params.get('ebikes') !== '0' && people) {
+    const hc = henan.traffic.controller, _fw = new THREE.Vector3();
+    ebikes = createEbikes({
+      count: gfxDetail({ ...gfx, lod: bootLod }).ebikes || 60,
+      signal: (id) => (id === 'henan' ? { go: hc.vehAspect === 'green' || hc.vehAspect === 'green-flash', yellow: hc.vehAspect === 'yellow', early: hc.phase === 'AR2' && !hc.extending, toGreen: henan.traffic.config.allRedPed - hc.time } : { go: true }),
+      // (the side streets' ends: only where you aren't looking, or far enough off)
+      canVanish: (x, z) => { const dx = x - camera.position.x, dz = z - camera.position.z, d = Math.hypot(dx, dz); if (d > 75) return true; camera.getWorldDirection(_fw); return (dx * _fw.x + dz * _fw.z) / (d || 1) < 0.35; },
+      blocked: (x, z) => Math.abs(player.body.x - x) < 4 && Math.abs(player.body.z - z) < 3.5,
+    });
+    ebikeView = createEbikeView({ scene, people, roles: ['c5', 'c1'].filter((r) => people.manifest.cast[r]) });
+  }
+  world = { ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -360,7 +376,7 @@ async function boot() {
     const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0 : det.crowd;   // tools: none unless asked
     // the preset's population at its busiest (engine/gfx.js LOD people); ?crowd=<density> (tools) as before
     world.crowd = createCrowd({ density, count: params.has('crowd') || params.has('q') ? null : det.people, roles });
-    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, midCount: params.get('t1') === '0' ? 0 : det.mid || 0, camera });
+    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, midCount: params.get('t1') === '0' ? 0 : det.mid || 0, camera, lod: params.get('midlod') !== '0' });
     traffic.setExtraPeople(() => world.crowd.onCarriageway());
     henan.traffic.setExtraPeople(() => world.crowd.onHenan());
     crowdBoxes = Array.from({ length: (params.has('q') ? 5 : det.nearPeople) + 2 }, () => addDynamicCollider('npc'));
@@ -1435,7 +1451,8 @@ function updateTraffic(dt) {
   world.buses.update(dt);
   world.henan.update(dt, { player: world.driving && world.driving.driving ? null : b, eye: camera.position, rain: weather.rain });
   world.vehicles.update(traffic.vehicles, camera.position);
-  if (world.lamps) world.lamps.update(lampSources, camera.position, hourState.lamps);
+  if (world.ebikes) { world.ebikes.setDensity(Math.max(0.15, Math.min(1, hourState.traffic ?? 1))); world.ebikes.update(mode === 'pause' ? 0 : dt); world.ebikeView.update(world.ebikes.riders, camera.position); }
+  if (world.lamps) world.lamps.update(world.ebikes ? [...lampSources, { list: world.ebikes.riders, z: 0 }] : lampSources, camera.position, hourState.lamps);
   if (world.pulse) world.pulse.update(dt, camera.position, hourState);
   world.pedestrians.update(traffic.peds, dt, camera.position);
   world.signals.update(traffic.controller);
@@ -1626,6 +1643,9 @@ function frame(now) {
   world.metro.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });         // Line 2 (only near a station or aboard)
   world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);
   { const tl = params.has('q') ? R.level : treeStep(gfx, R.drop); if (tl !== treeLevel) { treeLevel = tl; world.trees.setQuality(tl); } }
+  // when frames run long the crowd's middle tier is the first thing thinned (half at the first step,
+  // a quarter from the fourth), before resolution and shadows go (docs/living-city-architecture.md §6.8)
+  if (world.crowdView && world.crowdView.setMidCount && R.drop !== midDrop) { midDrop = R.drop; world.crowdView.setMidCount(Math.round(world.crowdView.midMax * (midDrop >= 4 ? 0.25 : midDrop >= 1 ? 0.5 : 1))); }
   if (world.playerBody) world.playerBody.shadow.visible = world.lighting.shadowCount > 0;   // the shadow copy only matters with shadows
   world.lighting.update(camera.position, dt);
   // environment yields to NPC speech: fully while in conversation, by audibility otherwise
