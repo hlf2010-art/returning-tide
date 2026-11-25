@@ -226,3 +226,10 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
   mouth's inside. In `build_hero.py` the scalp is the hair's own near-black and matte. The front hairline is
   soft (about 10 mm), uneven, and broken into wisps and roots by stretched noise in the shader.
 - `docs/hero-faces/round11-hairline.jpg`.
+
+## Round 12 (25 November): gaps under Ji Bai's hair
+
+![before and after](hero-faces/round12-hair-gaps.jpg)
+
+- **Why it looked hollow, and why a band showed under the fringe:** his kept Hunyuan hair is a sculpted shell that floats a little off the head and was drawn one-sided. Under its edges you saw the MPFB scalp (a flat, matte grey-brown under the lights), bare skin behind the ear, and through its open edges into nothing.
+- **Fixes:** the scalp texels of the hero skin get the same crown-radial strand shading as the shell (`strandPatch` in people.js, darker, as hair lying flat under other hair would be), so the gap reads as short hair down to the painted hairline. The shell is drawn double-sided with a dark inside. In build_hero.py the hairline no longer paints hair on the ears (it made a black cap on the ear top) and runs behind the ear from mid-ear curving down to the nape, with a soft uneven edge.

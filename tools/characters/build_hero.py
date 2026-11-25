@@ -281,10 +281,15 @@ def hairline(p):
                 + 0.0028 * math.sin(p.x * 230.0 + 0.7) + 0.0014 * math.sin(p.x * 590.0 + 2.1))   # uneven, as real ones are
         return min(1.0, max(0.0, (p.z - base) / 0.010 + 0.5))
     side = abs(p.x) > 0.055
-    if side and p.y < HEAD_J.y + 0.005:  # temples down to the top of the ear (sideburn to mid-ear)
+    if side and p.y < HEAD_J.y - 0.005:  # temples down to the top of the ear (sideburn to mid-ear)
         return 1.0 if p.z > EYE_L.z - 0.012 else 0.0
-    if p.y >= HEAD_J.y + 0.005:  # behind the ears to the nape
-        return 1.0 if p.z > NECK.z + 0.045 else 0.0
+    if p.y >= HEAD_J.y - 0.005:  # behind the ears to the nape (short hair is cut down past the ear, not above it):
+        # from mid-ear just behind the ear, curving down to the nape, with a soft, uneven edge
+        t = min(1.0, max(0.0, (p.y - (HEAD_J.y - 0.005)) / 0.045))
+        t = t * t * (3 - 2 * t)
+        base = ((EYE_L.z - 0.012) * (1 - t) + (NECK.z + 0.045) * t
+                + 0.002 * math.sin(p.x * 260.0 + p.y * 170.0) + 0.001 * math.sin(p.x * 610.0 + 1.3))
+        return min(1.0, max(0.0, (p.z - base) / 0.008 + 0.5))
     return 1.0 if p.z > EYE_L.z + 0.03 else 0.0
 
 
@@ -422,7 +427,8 @@ def skin_material():
         stub = 0.0
         if NECK.z + 0.035 < c.z < EYE_L.z - 0.045 and c.y < EYE_L.y + 0.035:
             stub = 1.0
-        scalp_t = hairline(c) if c.z > EYE_L.z - 0.02 else 0.0
+        # (not on the ear itself: it sticks out above the hairline, and hair painted on it read as a black cap)
+        scalp_t = hairline(c) if c.z > NECK.z + 0.04 and i not in ears else 0.0
         ca.data[i].color = (r, g, max(stub, 0.0), scalp_t)
     # regional colour: warmth on the cheeks, nose tip and ears; shadow under the eyes and in the eye sockets
     ca2 = hero.data.color_attributes.new("region", "FLOAT_COLOR", "POINT")
