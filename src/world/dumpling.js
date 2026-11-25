@@ -5,6 +5,7 @@
 // Seated: 1 bite a small hole and sip the soup first (the way to do it), 2 pop one in whole (hot),
 // 3 drink the soup; E stands you up. Open 6:30 am to 9:30 pm; the shutter is down otherwise.
 import * as THREE from 'three';
+import { tileTextures, plasterTextures } from './surfaceDetail.js';
 import { Batch } from './geo.js';
 import { makeCanvas, tex, FONT, glowTexture } from './canvas.js';
 import { DUMPLING as D, L as LAYOUT, addDynamicCollider } from './layout.js';
@@ -51,6 +52,12 @@ function menuTexture() {
     x.fillStyle = '#ffd98a'; x.font = `800 38px ${FONT.sans}`; x.textAlign = 'right'; x.fillText(`¥${m.price}`, 980, y); x.textAlign = 'left';
   });
   return tex(c, { repeat: false });
+}
+// a shared detail set (world/surfaceDetail.js) at this batch's UV scale (Batch.box: metres / 2)
+function tiled(set, rep) {
+  const o = {};
+  for (const k of ['map', 'normalMap', 'roughnessMap']) if (set[k]) { const t = set[k].clone(); t.repeat.set(rep, rep); o[k] = t; }
+  return o;
 }
 function tileTexture() {
   const [c, x] = makeCanvas(256, 256);
@@ -111,7 +118,7 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
     tables.push({ x: tx, z: tz, seats, busy: false });
   }
   const mats = {
-    floor: std({ map: tileTexture(), roughness: 0.35 }), tile: std({ color: 0xf2f1ee, roughness: 0.2 }), wall: std({ color: 0xece2cc, roughness: 0.8 }),
+    floor: std({ map: tileTexture(), roughness: 0.35 }), tile: std({ ...tiled(tileTextures(), 2 / 0.6), roughness: 1 }), wall: std({ ...tiled(plasterTextures(), 1), color: 0xece2cc, roughness: 0.85 }),
     steel: std({ color: 0xb8bcc0, metalness: 0.85, roughness: 0.32 }), wood: std({ color: 0x8a6440, roughness: 0.6 }), iron: std({ color: 0x1b1b1d, metalness: 0.6, roughness: 0.5 }),
     red: std({ color: 0xa61d1d, roughness: 0.5 }), dark: std({ color: 0x2a2624, roughness: 0.5, metalness: 0.3 }),
   };
