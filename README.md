@@ -1084,8 +1084,8 @@ SSR and AO are off on Mac M4; auto resolution steps down if frames run long. If 
 
 A data-driven quest engine (tested in `tests/quests.test.mjs`): each quest is a list of steps with a
 `done` test on the life state, optional steps, a time to wait for, a place on the map and a way to
-fail. The main arc runs in three acts over six days: the first night back, Kai's robot arm (the
-makerspace), Dad's offer, and dinner with Dad at the Peace Hotel Jazz Bar on day 6 (his own avatar,
+fail. The main arc of a six-day game (one begun before the year) runs in three acts: the first night back,
+Kai's robot arm (the makerspace; in the year the arm belongs to Zhou's start-up on IFC 32F), Dad's offer, and dinner with Dad at the Peace Hotel Jazz Bar on day 6 (his own avatar,
 a sat-down conversation in recorded voices, 1-4 to answer). What you chose, what you built and how he
 feels about you lead to one of six endings, shown on a card after the late-night lighting at ten.
 **J** opens the journal: quests with their steps, track one (its next step is on screen and on the

@@ -28,7 +28,7 @@ export const YEAR_QUESTS = [
     summary: B('迈芬咨询，国金中心二期 28 层。项目是东澜保险的理赔 AI 助手，带项目的是产品设计负责人许知微。工作日去上班；不去，是要算账的。', "Marlowe Finch, IFC Tower 2, 28th floor. The project is an AI claims assistant for Donglan Insurance; the engagement is run by its product design lead, Xu Zhiwei. Go to work on working days. Days you don't are counted."),
     start: (L) => isYear(L) && (!!L.flags.room612 || stamp(L) >= D(1, 19, 30) || L.clock.day >= 2),   // from the HR message in room 612
     steps: [
-      step('d2', B('11 月 10 日（周二）上午九点半前，到陆家嘴国金中心二期 28 层报到', 'Tuesday 10 November, by 9:30 am: report to the 28th floor of IFC Tower 2 in Lujiazui')),
+      step('d2', B('11 月 10 日（周二）上午十点前，到陆家嘴国金中心二期 28 层报到', 'Tuesday 10 November, by 10 am: report to the 28th floor of IFC Tower 2 in Lujiazui')),
       step('d3', B('周三：客户启动会', "Wednesday: the client's kick-off")),
       step('d4', B('周四：方案评审', 'Thursday: the design review')),
       step('d5', B('周五：评测表', 'Friday: the evaluation sheet')),

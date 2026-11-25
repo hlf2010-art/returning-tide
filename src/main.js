@@ -598,7 +598,7 @@ function begin() {
 function workReminder() {
   const s = workSummary(life), st = workState(life), left = finalDay(life) - life.clock.day, zhUI = getLang() === 'zh';
   const waiting = Object.entries(st.people).filter(([, p]) => p.promised != null).map(([id]) => (zhUI ? WORK_REG[id].name.zh : WORK_REG[id].name.en));
-  const dinner = life.flags.dinnerChoice || left < 0 ? '' : zhUI ? (left === 0 ? ' · 今晚和爸爸吃饭' : ` · 离和爸爸吃饭还有 ${left} 个晚上`) : (left === 0 ? ' · dinner with Dad tonight' : ` · ${left} ${left === 1 ? 'evening' : 'evenings'} until the dinner with Dad`);
+  const dinner = life.flags.dinnerChoice || left < 0 ? '' : isYear(life) && left > 1 ? (zhUI ? ` · 和爸爸吃饭：${yearDate(life, 'zh', finalDay(life))}` : ` · dinner with Dad: ${yearDate(life, 'en', finalDay(life))}`) : zhUI ? (left === 0 ? ' · 今晚和爸爸吃饭' : ` · 离和爸爸吃饭还有 ${left} 个晚上`) : (left === 0 ? ' · dinner with Dad tonight' : ` · ${left} ${left === 1 ? 'evening' : 'evenings'} until the dinner with Dad`);
   return zhUI ? `夜行云台 · 第 ${s.rev} 版${dinner}${waiting.length ? ` · ${waiting.join('、')}等着试改过的` : ''} · N 翻开本子` : `Night gimbal · version ${s.rev}${dinner}${waiting.length ? ` · ${waiting.join(' and ')} ${waiting.length === 1 ? 'is' : 'are'} waiting to try the changed one` : ''} · N for your notebook`;
 }
 function pause() {
