@@ -156,6 +156,20 @@ for kb in keys:
         if kb.name.endswith(unit) or kb.name == unit:
             kb.name = ark
 print("face shapes:", [k.name for k in keys][1:])
+# the neutral face: MakeHuman's rest mouth is slightly parted (a slit of teeth) and full; the sheet's rest_face
+# mixes face shapes into the basis and every key alike, so the relaxed pose is the new zero
+REST = SHEET.get("rest_face", {})
+if REST:
+    nv = len(hero.data.vertices)
+    delta = [Vector((0, 0, 0)) for _ in range(nv)]
+    for name, w in REST.items():
+        kb = keys.get(name)
+        if kb is None: continue
+        for i in range(nv): delta[i] += (kb.data[i].co - keys[0].data[i].co) * w
+    for kb in keys:
+        for i in range(nv): kb.data[i].co = kb.data[i].co + delta[i]
+    for i in range(nv): hero.data.vertices[i].co = hero.data.vertices[i].co + delta[i]
+    print("rest face:", REST)
 
 # expressions for the review renders, as weights of those shapes (eight from the character sheet)
 EXPRESSIONS = {
@@ -263,13 +277,56 @@ def hairline(p):
     return 1.0 if p.z > EYE_L.z + 0.03 else 0.0
 
 
+def lip_core():
+    """The lips group shrunk by one ring of vertices: MPFB's group runs past the vermilion into the skin."""
+    lips = set(group_verts(hero, "lips", 0.3))
+    nb = {i: set() for i in lips}
+    for e in hero.data.edges:
+        a, b = e.vertices
+        if a in nb: nb[a].add(b)
+        if b in nb: nb[b].add(a)
+    return {i for i in lips if nb[i] <= lips}
+
+
+LIP_CORE = lip_core()
+
+
+def mouth_frame():
+    """Where the lips part (z), the corners (x) and the lips' top and bottom on the centre line."""
+    vs = [hero.data.vertices[i].co for i in LIP_CORE]
+    mid = [v for v in vs if abs(v.x) < 0.004]
+    lo, hi = min(v.z for v in mid), max(v.z for v in mid)
+    # the lips part where the centre line reaches deepest into the mouth, in the middle of the lips' height
+    inner = [v for v in mid if lo + 0.3 * (hi - lo) < v.z < hi - 0.3 * (hi - lo)]
+    z = max(inner, key=lambda v: v.y).z
+    return {"z": z, "x": max(abs(v.x) for v in vs), "top": hi, "bottom": lo, "front": min(v.y for v in vs)}
+
+
+MOUTH = mouth_frame()
+print("mouth:", {k: round(v, 4) for k, v in MOUTH.items()})
+
+
+def mouth_detail(c, on_lip):
+    """(darken 0..1, upper lip 0/1) for one vertex: the line where the lips meet, the shadowed corners, the
+    shadow under the lower lip and the philtrum's groove."""
+    m = MOUTH
+    g = lambda d, r: math.exp(-(d / r) ** 2)
+    ax = abs(c.x)
+    inside = 1.0 if ax < m["x"] * 0.96 else g(ax - m["x"] * 0.96, 0.002)
+    line = g(c.z - m["z"], 0.0009) * inside * (0.75 if on_lip else 0.3)
+    corner = 0.4 * g(math.hypot(ax - m["x"] * 0.97, c.z - m["z"]), 0.0025)
+    under = 0.45 * g(c.z - (m["bottom"] - 0.0028), 0.0022) * g(c.x, 0.011) * (0.0 if on_lip else 1.0)
+    philtrum = 0.3 * g(c.x, 0.0028) * (1.0 if m["top"] + 0.001 < c.z < m["top"] + 0.012 else 0.0) * (0.0 if on_lip else 1.0)
+    return min(1.0, line + corner + under + philtrum), (1.0 if c.z > m["z"] else 0.0)
+
+
 def skin_material():
     s = SHEET["skin"]
     mt, N, L, bs = mat("skin")
     out = N["Material Output"]
     # lips and ear/nose redness from MPFB's vertex groups, as a colour attribute
     ca = hero.data.color_attributes.new("tint", "FLOAT_COLOR", "POINT")
-    lips = set(group_verts(hero, "lips", 0.3))
+    lips = LIP_CORE
     ears = set(group_verts(hero, "ears", 0.3))
     for i, v in enumerate(hero.data.vertices):
         r = 1.0 if i in lips else 0.0
@@ -296,7 +353,8 @@ def skin_material():
             under = Vector((e.x, e.y - 0.006, e.z - 0.014))
             shade = max(shade, blob(c, under, 0.011))
         warm = max(warm, 0.9 * blob(c, nose_tip, 0.012))
-        ca2.data[i].color = (warm, shade, 0.0, 1.0)
+        dark, upper = mouth_detail(c, i in lips)
+        ca2.data[i].color = (warm, shade, dark, upper)
     reg = N.new("ShaderNodeAttribute"); reg.attribute_name = "region"
     regs = N.new("ShaderNodeSeparateColor"); L.new(reg.outputs["Color"], regs.inputs[0])
     attr = N.new("ShaderNodeAttribute"); attr.attribute_name = "tint"
@@ -326,9 +384,20 @@ def skin_material():
     L.new(regs.outputs["Green"], sf.inputs[0]); L.new(sf.outputs[0], sh.inputs["Factor"])
     L.new(wm.outputs["Result"], sh.inputs["A"])
     L.new(sh.outputs["Result"], red.inputs["A"]); L.new(redc.outputs[0], red.inputs["B"])
-    lip = N.new("ShaderNodeMix"); lip.data_type = "RGBA"
-    L.new(sep.outputs["Red"], lip.inputs["Factor"])
-    L.new(red.outputs["Result"], lip.inputs["A"]); L.new(lipc.outputs[0], lip.inputs["B"])
+    # the lips: a crisp vermilion border (the vertex mask, thresholded), the upper lip darker than the lower
+    lipm = N.new("ShaderNodeMapRange"); lipm.inputs["From Min"].default_value = 0.38; lipm.inputs["From Max"].default_value = 0.62
+    L.new(sep.outputs["Red"], lipm.inputs["Value"])
+    lipu = N.new("ShaderNodeRGB"); lipu.outputs[0].default_value = (*s.get("lips_upper", s["lips"]), 1)
+    lipcol = N.new("ShaderNodeMix"); lipcol.data_type = "RGBA"
+    L.new(reg.outputs["Alpha"], lipcol.inputs["Factor"])
+    L.new(lipc.outputs[0], lipcol.inputs["A"]); L.new(lipu.outputs[0], lipcol.inputs["B"])
+    lip0 = N.new("ShaderNodeMix"); lip0.data_type = "RGBA"
+    L.new(lipm.outputs[0], lip0.inputs["Factor"])
+    L.new(red.outputs["Result"], lip0.inputs["A"]); L.new(lipcol.outputs["Result"], lip0.inputs["B"])
+    # the lip line, the corners, under the lower lip, the philtrum
+    lip = N.new("ShaderNodeMix"); lip.data_type = "RGBA"; lip.blend_type = "MULTIPLY"
+    lip.inputs["B"].default_value = (0.32, 0.17, 0.15, 1)
+    L.new(regs.outputs["Blue"], lip.inputs["Factor"]); L.new(lip0.outputs["Result"], lip.inputs["A"])
     # stubble: fine dark speckle where the beard grows (he is clean-shaven: a shadow, not a beard)
     vor = N.new("ShaderNodeTexVoronoi"); vor.inputs["Scale"].default_value = 1400.0
     L.new(tex.outputs["Object"], vor.inputs["Vector"])
@@ -370,7 +439,7 @@ def skin_material():
 
 
 hero.data.materials.append(skin_material())
-mt, N, L, bs = mat("teeth"); bs.inputs["Base Color"].default_value = (0.82, 0.78, 0.70, 1)
+mt, N, L, bs = mat("teeth"); bs.inputs["Base Color"].default_value = (0.55, 0.50, 0.44, 1)   # in the mouth's shadow
 bs.inputs["Roughness"].default_value = 0.25; teeth.data.materials.append(mt)
 mt, N, L, bs = mat("tongue"); bs.inputs["Base Color"].default_value = (0.55, 0.22, 0.22, 1)
 bs.inputs["Roughness"].default_value = 0.35; bs.inputs["Subsurface Weight"].default_value = 0.4

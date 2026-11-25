@@ -1,7 +1,7 @@
 {
   "id": "jibai",
-  "name": "纪白 Ji Bai",
-  "status": "PROTOTYPE v3: v2 plus a flatter, wider, less pink mouth (round 3); still guesses until the owner judges.",
+  "name": "\u7eaa\u767d Ji Bai",
+  "status": "PROTOTYPE v4: v3 plus a closed, relaxed mouth (rest_face), dusky rose lips with a crisp border, a lip line and corner shading (round 8).",
   "reference": [
     "docs/jibai-reference.webp",
     "public/people/jibai/face-neutral.jpg"
@@ -87,9 +87,9 @@
       0.155
     ],
     "lips": [
-      0.31,
-      0.155,
-      0.12
+      0.27,
+      0.11,
+      0.1
     ],
     "subsurface_radius": [
       1.0,
@@ -98,7 +98,12 @@
     ],
     "roughness": 0.46,
     "stubble": 0.12,
-    "blush": 0.35
+    "blush": 0.35,
+    "lips_upper": [
+      0.24,
+      0.115,
+      0.105
+    ]
   },
   "eyes": {
     "iris": [
@@ -135,5 +140,9 @@
     "note": "black, full, slightly wavy, tousled, falling over the forehead (LOCKED look)",
     "part_x": 0.012,
     "curtain": 0.6
+  },
+  "rest_face": {
+    "mouthPress": 0.25,
+    "mouthShrugLower": -0.4
   }
 }
