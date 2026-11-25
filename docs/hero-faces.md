@@ -156,3 +156,16 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
 - How it was found: `faces.html?ids=map` showed the scratch in the scene's background colour, and `tridbg=1` showed
   no triangle there. New in `faces.html`: `aimx` (aim sideways) and `nonormal=1` (the body's normal map off).
 - `docs/hero-faces/round7-seams.jpg`.
+
+## Round 8 (25 November): Ji Bai's mouth
+
+- **What was wrong:** the lips were nearly skin-coloured with a soft, blurry border, the mouth stood slightly open
+  with a white slit of teeth, and there was no lip line or corner shading, so the mouth read as a pale pout.
+- **The sheet's `rest_face`** mixes face shapes into the head's basis (and every face shape alike), so the
+  relaxed pose becomes the new zero: `mouthPress 0.25, mouthShrugLower -0.4` closes the lips.
+- **The lips** use MPFB's lips group shrunk by one ring of vertices (the group ran into the skin), thresholded for
+  a crisp vermilion border, with a darker upper lip (`skin.lips_upper`) than lower (`skin.lips`), dusky rose
+  rather than pink, as in his portraits. A per-vertex darkening adds the line where the lips meet, shadowed
+  corners, a shadow under the lower lip and the philtrum's groove (`mouth_detail` in `build_hero.py`). The teeth
+  are darker, because they sit in the mouth's shadow.
+- `docs/hero-faces/round8-mouth.jpg`. **Still off:** a grey fleck of tooth at each corner up close.
