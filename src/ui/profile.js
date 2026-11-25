@@ -274,7 +274,7 @@ export function createProfile({ getLife, defs = [], getPeople = () => null, onCl
     const rows = M.recent.map((e) => `<div class="row"><span>${esc(e.to)}${e.memo ? ` · ${esc(e.memo)}` : ''}</span><b class="${e.in ? 'in' : ''}">${e.in ? '+' : '−'}${num(Math.abs(e.amount))}</b></div>`).join('');
     return `<div class="rise money"><div class="slips">
         <div class="slip total"><i style="background:var(--rt-gold-hi)"></i><span>${T('身家', 'Worth')}</span><b>¥${num(M.net)}</b></div>
-        <div class="slip"><i style="background:#2aae67"></i><span>${T('信语', 'Xinyu')}</span><b>${num(M.wechat)}</b></div>
+        <div class="slip"><i style="background:#13a39c"></i><span>${T('信语', 'Xinyu')}</span><b>${num(M.wechat)}</b></div>
         <div class="slip"><i style="background:#1677ff"></i><span>${T('易付', 'YiPay')}</span><b>${num(M.alipay)}</b></div>
         <div class="slip"><i style="background:#c8a35a"></i><span>${T('银行卡', 'Bank')}</span><b>${num(M.bank)}</b></div>
         <div class="slip"><i style="background:#b3352a"></i><span>${T('信用卡欠', 'Card owed')}</span><b>${num(M.cardUsed)}</b></div>

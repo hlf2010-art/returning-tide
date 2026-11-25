@@ -34,3 +34,17 @@ weights bound each of his fingers partly to its neighbours' bones (the Rocketbox
 pose tore the hand. The fitted finger bones don't sit inside his modelled fingers either, so the four fingers are bound
 as one, in bands past the knuckle line on the middle finger's bones, and the thumb rides with the hand. First person
 (`world/playerBody.js` gripCup) closes the hand round a cup with the middle finger's chain.
+
+## Provenance (checked 25 November 2026)
+
+What the repo and project notes record, and what they don't:
+
+| Asset | Made from | Recorded | Not recorded |
+|---|---|---|---|
+| `docs/jibai-reference.webp`, `docs/gunian-reference.webp`, `docs/jibai-views/`, `docs/zhiwei-reference.jpg`, `docs/yuan-reference.jpg`, and the portraits and expressions in `public/people/{jibai,gunian,zhiwei,yuan}/` | character sheets supplied by the project owner (Character Bible v2.2, F01 to F04 cards; uploaded 17 November 2026) | that they are the owner's approved sheets | which image tool made them, on which plan, and under which terms; any embedded metadata (C2PA, XMP, EXIF) was stripped before they reached the repo |
+| `public/people/player.glb`, `public/people/gunian.glb` | Tencent Hunyuan 3D, from the A-pose views, then simplified and rigged here | the tool's name | the version, and whether it ran as Tencent's hosted service (its service terms apply) or as the open weights (the Tencent Hunyuan 3D community licence: not for use in the EU, the UK or South Korea, and a separate licence above a monthly-user threshold; see `docs/research-hero-characters.md`) |
+| `public/people/jibai/head.glb` | MPFB2 in Blender (`tools/characters/`) | open tools: MakeHuman assets are CC0, MPFB is GPL (the tool, not its output) | |
+
+Before release: record the image tool, plan and terms for the sheets, and the Hunyuan route and version, here and in
+`src/ui/credits.js`. The hero-face pipeline (`docs/hero-faces.md`) is replacing the faces with MPFB heads, which removes
+the Hunyuan faces from close-ups; the Hunyuan bodies stay until it covers bodies too.

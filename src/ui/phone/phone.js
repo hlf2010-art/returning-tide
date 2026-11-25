@@ -286,7 +286,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const memo = (e) => (getLang() === 'en' && e.memoEn ? e.memoEn : e.memo);
     const led = l.wallet.ledger.slice(-12).reverse().map((e) => `<div class="led"><span>${esc(e.to)}<br><small style="color:#999">${METHOD(e.method)} · ${clockText(e.at)} ${esc(memo(e))}</small></span><span class="a ${e.amount < 0 ? 'neg' : 'pos'}">${e.amount < 0 ? '−' : '+'}${yuan(e.amount)}</span></div>`).join('') || `<div class="led"><span style="color:#999">${Z('还没有交易', 'No transactions yet')}</span></div>`;
     return `<div class="view wallet"><div class="bar"><span class="back" data-act="back">‹</span>${Z('钱包', 'Wallet')}</div><div class="scroll">
-      ${acct('wechat', Z('信语支付 零钱', 'Xinyu Pay balance'), 'linear-gradient(135deg,#07c160,#05984b)')}${acct('alipay', Z('易付 余额', 'YiPay balance'), 'linear-gradient(135deg,#1677ff,#0b4fc4)')}
+      ${acct('wechat', Z('信语支付 零钱', 'Xinyu Pay balance'), 'linear-gradient(135deg,#13a39c,#0c7d78)')}${acct('alipay', Z('易付 余额', 'YiPay balance'), 'linear-gradient(135deg,#1677ff,#0b4fc4)')}
       ${acct('bank', Z('申江银行 储蓄卡 尾号 0731', 'Shenjiang Bank debit ••0731'), 'linear-gradient(135deg,#a33,#6d1f1f)')}${acct('card', Z('信用卡 可用额度', 'Credit card, available'), 'linear-gradient(135deg,#333,#000)')}
       <div class="ledger">${led}</div><div class="sys" style="text-align:center;padding:4px 0 20px">${Z('游戏内虚拟资金', 'In-game money only')}</div></div></div>`;
   }
