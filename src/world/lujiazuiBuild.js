@@ -329,17 +329,33 @@ function shopfronts() {
 // ================= towers =================
 // a glass curtain wall in metres: 24 m across, 100.8 m up (24 storeys of 4.2 m), lit rooms in runs
 function curtainAtlas(seed, { glass = '#0f1f2e', warm = 0.4, fin = 'rgba(190,210,225,0.5)', occ = 0.22 } = {}) {
-  const [c, x] = makeCanvas(256, 1024), r = rng(seed); x.fillStyle = glass; x.fillRect(0, 0, 256, 1024);
-  const fh = 1024 / 24;
-  for (let f = 0; f < 24; f++) {
-    let run = 0, col = '#000';
-    for (let b = 0; b < 16; b++) {
-      if (run <= 0 && r() < occ * 0.6) { run = 1 + Math.floor(r() * 4); const t = r(), k = 0.3 + r() * 0.5; const cc = t < warm ? [255, 214, 160] : [205, 228, 255]; col = `rgb(${cc.map((v) => (v * k) | 0).join(',')})`; }
-      if (run > 0) { run--; x.fillStyle = col; x.fillRect(b * 16 + 1, f * fh + 6, 14, fh - 14); }
-    }
-    x.fillStyle = 'rgba(8,12,18,0.85)'; x.fillRect(0, f * fh, 256, 5);
+  // 24 floors x 16 bays. Offices at night go floor by floor: some floors fully lit, some with a long
+  // run of desks still on, most dark with the odd late worker; lit bays are fluorescent white with the
+  // ceiling panels brightest and desks and partitions dark along the sill. Unlit bays differ a little
+  // (blinds half down, a far light), so dark glass isn't one flat colour.
+  const W = 256, H = 1024, floors = 24, bays = 16, fh = H / floors, bw = W / bays;
+  const [c, x] = makeCanvas(W, H), r = rng(seed); x.fillStyle = glass; x.fillRect(0, 0, W, H);
+  const lit = (b, f, rgb, k) => {
+    const X = b * bw + 1, Y = f * fh + 6, w = bw - 2, h = fh - 14;
+    const g = x.createLinearGradient(0, Y, 0, Y + h), cc = (m) => `rgb(${rgb.map((v) => Math.min(255, v * k * m) | 0).join(',')})`;
+    g.addColorStop(0, cc(1.12)); g.addColorStop(0.18, cc(1.0)); g.addColorStop(0.7, cc(0.82)); g.addColorStop(1, cc(0.55));
+    x.fillStyle = g; x.fillRect(X, Y, w, h);
+    x.fillStyle = `rgba(255,255,255,${0.18 * k})`; x.fillRect(X, Y + 2, w, 1.5);                         // a row of ceiling panels
+    x.fillStyle = 'rgba(10,12,16,0.55)';
+    for (let i = 0; i < 3; i++) if (r() < 0.6) { const dw = 2 + r() * 5; x.fillRect(X + r() * (w - dw), Y + h * (0.62 + r() * 0.12), dw, h * 0.4); }   // desks, screens, a person
+    if (r() < 0.25) { x.fillStyle = 'rgba(10,12,16,0.45)'; x.fillRect(X, Y, w, h * (0.2 + r() * 0.4)); }                   // a blind part-way down
+  };
+  for (let f = 0; f < floors; f++) {
+    for (let b = 0; b < bays; b++) { x.fillStyle = `rgba(${r() < 0.5 ? '255,255,255' : '0,0,0'},${(r() * 0.05).toFixed(3)})`; x.fillRect(b * bw + 1, f * fh + 6, bw - 2, fh - 14); }
+    const k = r(), rgb = r() < warm ? [255, 212, 158] : [222, 233, 250], bright = 0.55 + r() * 0.3;
+    if (k < occ * 0.8) {                                          // a whole floor still working
+      for (let b = 0; b < bays; b++) if (r() > 0.08) lit(b, f, rgb, bright * (0.92 + r() * 0.16));
+    } else if (k < occ * 2.1) {                                    // one or two long runs
+      for (let n = r() < 0.4 ? 2 : 1; n > 0; n--) { const s0 = Math.floor(r() * bays), len = 3 + Math.floor(r() * 7); for (let b = s0; b < Math.min(bays, s0 + len); b++) lit(b, f, rgb, bright * (0.92 + r() * 0.16)); }
+    } else if (r() < 0.35) lit(Math.floor(r() * bays), f, r() < 0.5 ? [255, 214, 160] : rgb, 0.4 + r() * 0.3);   // the late one
+    x.fillStyle = 'rgba(8,12,18,0.85)'; x.fillRect(0, f * fh, W, 5);
   }
-  x.fillStyle = fin; for (let b = 0; b < 16; b++) x.fillRect(b * 16, 0, 1.6, 1024);
+  x.fillStyle = fin; for (let b = 0; b < bays; b++) x.fillRect(b * bw, 0, 1.6, H);
   return tex(c, { aniso: 8 });
 }
 // ---- footprints: walls and roofs from OSM outlines (anticlockwise in x, z), UVs in curtain-atlas units
