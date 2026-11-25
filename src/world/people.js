@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { createSprings } from './springs.js';
+import { dropMaps, shrink } from './texCap.js';
 
 const ARM = (side) => new RegExp(`^Bip01_${side}_(Clavicle|UpperArm|Forearm|Hand|Finger)`);
 const boneOf = (track) => track.name.slice(0, track.name.lastIndexOf('.'));
@@ -45,7 +46,10 @@ export function mergeByMaterial(root) {
   return removed;
 }
 
-export async function loadPeople(base = './people/') {
+// lean (the low and medium levels of detail): the crowd's avatars (not the named cast, the player or
+// the family) load without normal maps and with their hair and lashes texture at 512: about 15 MB
+// less each on the GPU (docs/living-city-architecture.md D5); flatter cloth up close, the same at 5 m
+export async function loadPeople(base = './people/', { lean = false } = {}) {
   const res = await fetch(`${base}people.json`);
   if (!res.ok) throw new Error(`people manifest: ${res.status}`);
   const manifest = await res.json();
@@ -55,6 +59,10 @@ export async function loadPeople(base = './people/') {
     ...Object.entries(manifest.cast).map(async ([role, c]) => {
       avatars[role] = (await loader.loadAsync(base + c.file)).scene;
       mergeByMaterial(avatars[role]);
+      if (lean && !c.named && !['lin', 'su', 'player', 'dad'].includes(role)) {
+        dropMaps(avatars[role], ['normalMap']);
+        avatars[role].traverse((o) => { if (o.material && /_opacity$/i.test(o.material.name || '') && o.material.map) shrink(o.material.map, 512); });
+      }
       // the children's rig is the same Biped, named Bip02: rename it so the shared clips bind to it
       if (c.child) avatars[role].traverse((o) => { if (o.name.startsWith('Bip02')) o.name = o.name.replace('Bip02', 'Bip01'); });
     }),
@@ -96,7 +104,7 @@ function childClips(people, role) {
 
 // Every person made by createPerson, for cullPeople(): beyond PERSON_FAR they aren't drawn at all,
 // and only those within PERSON_SHADOW cast a shadow (docs/living-city-architecture.md §6.1, 0.3-0.4).
-export const PERSON_FAR = 120, PERSON_SHADOW = 30;   // (the spec says 18 m; 30 keeps daytime shadows on people across a street)
+export const PERSON_FAR = 120, PERSON_SHADOW = 30, ACCESSORY_FAR = 25;   // (glasses and such: a few pixels beyond 25 m)   // (the spec says 18 m; 30 keeps daytime shadows on people across a street)
 const LIVE = new Set(), _pp = new THREE.Vector3();
 export function cullPeople(eye) {
   for (const P of LIVE) {
@@ -104,6 +112,7 @@ export function cullPeople(eye) {
     P.gone = 0;
     P.root.getWorldPosition(_pp);
     const d = _pp.distanceTo(eye), near = d < PERSON_FAR, shade = d < PERSON_SHADOW;
+    for (const a of P.acc) a.visible = d < ACCESSORY_FAR;
     for (const m of P.meshes) {
       if (m.userData.cs === undefined) { m.userData.cs = m.castShadow; m.userData.v0 = m.visible; }   // what its owner asked for
       m.visible = m.userData.v0 && near;
@@ -177,7 +186,7 @@ export function createPerson(people, role) {
   const phoneLayer = phoneClip ? mixer.clipAction(new THREE.AnimationClip('phone:hold', phoneClip.duration, phoneClip.tracks.filter((t) => PHONE_LAYER.test(boneOf(t))))) : null;
   if (phoneLayer) { phoneLayer.play(); phoneLayer.setEffectiveWeight(0); phoneLayer.time = phoneClip.duration * (0.15 + Math.random() * 0.6); }
   const person = {
-    springs,
+    springs, accessories: [],
     root, mixer, role, sex, speeds, anchors, bones, umbrellaHand: hand, child: !!kid, size: kid ? kid.k : 1,
     // the actions themselves (base: whole body but the umbrella arm; arm: that arm), for posing a
     // person at an exact moment of a clip (the crowd's impostor bake). (mixer.existingAction by name
@@ -245,6 +254,6 @@ export function createPerson(people, role) {
       return umbrellaW;
     },
   };
-  LIVE.add({ root, meshes });
+  LIVE.add({ root, meshes, acc: person.accessories });
   return person;
 }
