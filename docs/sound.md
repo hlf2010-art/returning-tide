@@ -59,18 +59,15 @@ What is not certain:
 
 ### The beds replaced the synthesised layers
 
-Since 25 November the river, the wind, the city's wash, the traffic bed and the crowd are recorded beds (above). Once the crowd bed is playing, the synthesised wind, river and city layers and the murmur loop fade out, and the placed "talker" voices (grains of one murmur loop, heard as repeats) stop. If the beds can't load, the synthesised layers stay. The leaves, rain, footsteps, door chimes, payment speakers, the clock and the horns are unchanged.
+Since 25 November the river, the wind, the city's wash, the traffic bed and the crowd are prepared beds (above). Once the crowd bed is playing, the synthesised wind, river and city layers and the murmur loop fade out, and the placed "talker" voices (grains of one murmur loop, heard as repeats) stop. If the beds can't load, the synthesised layers stay. The leaves, rain, footsteps, door chimes, payment speakers, the clock and the horns are unchanged.
 
-### Licence warning: ElevenLabs free-plan output is non-commercial
+### No ElevenLabs audio is left (25 November 2026)
 
-Everything generated with ElevenLabs so far was made on the account's **free plan**, whose output may be used
-only non-commercially (with attribution) under ElevenLabs' terms: the payment speaker's pieces
-(`public/ambience/pay/`), the 22:00 sigh (`lights-out.mp3`), Ji Bai's breathing (`breath/`), the background beds
-(`beds/`) and the character lines voiced with ElevenLabs in earlier sessions (`tools/voice/eleven.json`). That's
-fine for a prototype played privately. **Before the game is sold or monetised in any way**, regenerate these on a
-paid plan (commercial rights cover what's generated while subscribed) or replace them from commercially usable
-sources (open-source models such as ACE-Step for music or Stable Audio Open for effects, CC0 or royalty-free
-recordings such as Freesound CC0 or the Sonniss GDC bundles). Check the provider's current terms at that time.
+The free-plan ElevenLabs output (non-commercial) has all been replaced with sound the game owns or may ship
+commercially: the 34 character lines and the payment speaker are Kokoro-82M (Apache-2.0) like every other voice;
+the background beds and Ji Bai's breathing are synthesised from noise and oscillators by `tools/voice/ambience.py`
+and `tools/voice/breath.py` (the crowd bed layers the Kokoro murmur); the 22:00 sigh is two dozen Kokoro voices
+layered by `tools/voice/sigh.py`. `tests/credits.test.mjs` fails if anything non-commercial is credited again.
 
 ## Sources and licences
 
@@ -82,10 +79,10 @@ recordings such as Freesound CC0 or the Sonniss GDC bundles). Check the provider
 | Reverb (a generated impulse) | this game's code | the portico, the Peace Hotel arcade, the AIA lobby, the metro stairs | none | made for this project |
 | The Customs House chimes and strokes | this game's code; the tune "The East Is Red" is a Shaanbei folk melody in the public domain | the Customs House tower | none | made for this project; the melody is public domain |
 | Shop music (14 tracks) | see `docs/music.md` | eight Nanjing Road doors, Manner, the DiDi radio | `public/music/*.mp3` | CC0 1.0 |
-| The payment speaker's pieces (支付宝到账, 微信收款, 零-九, 十, 百, 千, 点, 元) | ElevenLabs (eleven_v3, premade voice "Lily"), one take cut at the pauses by `tools/voice/paybox.py`; checked by transcribing stitched amounts | every counter | `public/ambience/pay/*.mp3` (17 files, about 40 KB) | made for this project (generated speech, used under the ElevenLabs terms) |
-| Ji Bai catching his breath (two loops: heavy, easing) | ElevenLabs sound generation, looped with their breathing envelopes by `tools/voice/breath.py` | you, after running out of stamina | `public/ambience/breath/{heavy,ease}.mp3` + `.json` (about 140 KB) | made for this project (generated audio, used under the ElevenLabs terms) |
-| The railing's sigh at 22:00 ("awww", then a laugh) | ElevenLabs sound generation | the promenade, at the late-night switch | `public/ambience/lights-out.mp3` (49 KB) | made for this project (generated audio, used under the ElevenLabs terms) |
-| The background beds: crowds (3 takes), traffic (2), the river at the wall (2), boats on the river (2), wind (2) | ElevenLabs sound generation, folded into loops and levelled by `tools/voice/ambience.py` (wind-1 is wind-2 reversed and slowed); played by `engine/beds.js`, one take at a time from a random point at a slightly different speed, crossfaded over 4 s to another take | everywhere: the crowd by how many people are near you, the traffic placed where the cars are, the river from the railing nearest you, the boats from the nearest boat, the wind by how open it is | `public/ambience/beds/*.mp3` (11 files, 1.9 MB) | made for this project (generated audio, used under the ElevenLabs terms) |
+| The payment speaker's pieces (易付到账, 信语收款, 零-九, 十, 百, 千, 点, 元) | made for this project with Kokoro-82M (Apache-2.0, voice zf_017), each piece on its own, by `tools/voice/paybox.py` | every counter | `public/ambience/pay/*.mp3` (17 files, about 40 KB) | made for this project |
+| Ji Bai catching his breath (two loops: heavy, easing) | synthesised (shaped noise: an open exhale, a thinner inhale) with their breathing envelopes by `tools/voice/breath.py` | you, after running out of stamina | `public/ambience/breath/{heavy,ease}.mp3` + `.json` (about 140 KB) | made for this project |
+| The railing's sigh at 22:00 ("哇——", "Oh…", then the talk coming back) | made for this project from 24 Kokoro-82M voices (Apache-2.0) and the murmur, layered by `tools/voice/sigh.py` | the promenade, at the late-night switch | `public/ambience/lights-out.mp3` (47 KB) | made for this project |
+| The background beds: crowds (3 takes), traffic (2), the river at the wall (2), boats on the river (2), wind (2) | synthesised by `tools/voice/ambience.py` (the crowd: the Kokoro murmur laid over itself, with footsteps), folded into loops and levelled; played by `engine/beds.js`, one take at a time from a random point at a slightly different speed, crossfaded over 4 s to another take | everywhere: the crowd by how many people are near you, the traffic placed where the cars are, the river from the railing nearest you, the boats from the nearest boat, the wind by how open it is | `public/ambience/beds/*.mp3` (11 files, 2.5 MB) | made for this project |
 | The crowd's murmur | made for this project with Kokoro-82M (Apache-2.0), `tools/voice/walla.py` | everywhere people are; the placed voices | `public/ambience/murmur.mp3` (already shipped) | made for this project |
 | Metro announcements (3 lines) | made for this project with Kokoro-82M (Apache-2.0), `tools/voice/generate.py` | Exits 7 and 2 at Henan Road | `public/voice/*.mp3` (already shipped) | made for this project |
 
@@ -94,7 +91,7 @@ Credits:
 - Synthesised sounds (water, wind, horns, traffic, chimes, bells, reverb): made for this project in Web Audio; no recordings.
 - "The East Is Red" (东方红): traditional Shaanbei folk melody, public domain; played here as synthesised chimes.
 - The shop music: the fourteen CC0 tracks credited in `docs/music.md`.
-- Voices (the murmur, the metro announcements): generated for this project with **Kokoro-82M** by hexgrad (Apache-2.0), https://huggingface.co/hexgrad/Kokoro-82M.
+- Voices (every line, the payment speakers, the murmur, the 22:00 sigh, the metro announcements): generated for this project with **Kokoro-82M** by hexgrad (Apache-2.0), https://huggingface.co/hexgrad/Kokoro-82M.
 
 ## Checking it
 

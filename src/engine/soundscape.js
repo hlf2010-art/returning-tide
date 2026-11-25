@@ -194,7 +194,7 @@ export function clockGain(d, x, z) {
 }
 
 // ---- the counter's payment speaker ----
-// "支付宝到账二十五元": the box strings recorded pieces together (public/ambience/pay/, tools/voice/paybox.py).
+// "易付到账二十五元": the box strings recorded pieces together (public/ambience/pay/, tools/voice/paybox.py).
 // payTokens(amount, method) -> the piece ids in order. Amounts read the Chinese way: 10 十, 15 十五,
 // 105 一百零五, 110 一百一十, 2008 二千零八, 30.5 三十点五; one decimal at most.
 export const PAYBOX = { range: 22, minGap: 3.2, gap: 0.03, crowdChance: 0.55 };

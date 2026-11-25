@@ -6,7 +6,12 @@ a key the game computes from the language and the text (src/engine/voice.js voic
   python tools/voice/generate.py --probe          # one test line per voice, with its pitch -> probe.json
   python tools/voice/generate.py                  # voice tools/voice/lines.json (skips what exists)
 
+  python tools/voice/generate.py --prune          # drop clips no current line uses
+
 Needs: pip install "kokoro>=0.9.4" "misaki[zh,en]" soundfile torch, and ffmpeg.
+Or, without torch or Hugging Face: KOKORO_ONNX=<dir> with kokoro-onnx and "misaki[zh]>=0.9.4" installed, and the
+ONNX exports of the same two models in <dir> (kokoro-v1.0.onnx + voices-v1.0.bin, kokoro-v1.1-zh.onnx +
+voices-v1.1-zh.bin, from the kokoro-onnx GitHub releases). Same voices, same output.
 """
 import json, os, subprocess, sys, tempfile, time
 from pathlib import Path
@@ -64,17 +69,49 @@ def zh_speed(base):
     return f
 
 
-def synth(lang, text, voice, speed=1.0):
-    p = pipes()
-    if lang == 'zh':
-        pipe, sp = p['zh'], zh_speed(speed)
-    else:
-        pipe, sp = p['b' if voice.startswith('b') else 'a'], speed
+_onnx = {}
+
+
+def onnx_parts(lang, text, voice, speed):
+    """the same models through kokoro-onnx (KOKORO_ONNX=<dir>): one array per sentence"""
+    import re
+    from kokoro_onnx import Kokoro
+    d = Path(os.environ['KOKORO_ONNX'])
+    if not _onnx:
+        from misaki import zh
+        _onnx['en'] = Kokoro(str(d / 'kokoro-v1.0.onnx'), str(d / 'voices-v1.0.bin'))
+        _onnx['zh'] = Kokoro(str(d / 'kokoro-v1.1-zh.onnx'), str(d / 'voices-v1.1-zh.bin'))
+        # English words inside Mandarin lines go through espeak, as the torch pipeline's en_callable does
+        en_ph = lambda t: _onnx['en'].tokenizer.phonemize(t, 'en-us')
+        _onnx['g2p'] = zh.ZHG2P(version='1.1', en_callable=en_ph)
     parts = []
-    for r in pipe(text, voice=voice, speed=sp):
-        a = r.audio.numpy() if hasattr(r.audio, 'numpy') else np.asarray(r.audio)
-        parts.append(a)
-        parts.append(np.zeros(int(SR * 0.12), dtype=np.float32))     # a breath between sentences
+    if lang == 'zh':
+        for sent in [x for x in re.split(r'(?<=[。！？!?…])', text) if x.strip()]:
+            ph, _ = _onnx['g2p'](sent)
+            a, _ = _onnx['zh'].create(ph, voice=voice, speed=zh_speed(speed)(len(ph)), is_phonemes=True)
+            parts.append(np.asarray(a, dtype=np.float32))
+    else:
+        for sent in [x for x in re.split(r'(?<=[.!?])\s+', text) if x.strip()]:
+            a, _ = _onnx['en'].create(sent, voice=voice, speed=speed, lang='en-gb' if voice.startswith('b') else 'en-us')
+            parts.append(np.asarray(a, dtype=np.float32))
+    return parts
+
+
+def synth(lang, text, voice, speed=1.0):
+    parts = []
+    if os.environ.get('KOKORO_ONNX'):
+        for a in onnx_parts(lang, text, voice, speed):
+            parts += [a, np.zeros(int(SR * 0.12), dtype=np.float32)]
+    else:
+      p = pipes()
+      if lang == 'zh':
+          pipe, sp = p['zh'], zh_speed(speed)
+      else:
+          pipe, sp = p['b' if voice.startswith('b') else 'a'], speed
+      for r in pipe(text, voice=voice, speed=sp):
+          a = r.audio.numpy() if hasattr(r.audio, 'numpy') else np.asarray(r.audio)
+          parts.append(a)
+          parts.append(np.zeros(int(SR * 0.12), dtype=np.float32))     # a breath between sentences
     if not parts:
         return np.zeros(SR // 4, dtype=np.float32)
     a = np.concatenate(parts[:-1])
@@ -198,5 +235,25 @@ def generate_anyone():
     print(f'anyone: {done} new clips, {len(man["clips"])} in all')
 
 
+def prune():
+    lines = json.load(open(HERE / 'lines.json'))
+    man_path = OUT / 'manifest.json'
+    man = json.load(open(man_path))
+    want = set()
+    for l in lines:
+        for lang in ('zh', 'en'):
+            text = l['zh'] if lang == 'zh' else l['en']
+            if text:
+                want.add(voice_key(lang, text))
+                want.update(voice_key(f'{lang}-{sex}', text) for sex in (ANYONE.get(l['who']) or {}))
+    gone = [k for k in man['clips'] if k not in want]
+    for k in gone:
+        (OUT / man['clips'].pop(k)[0]).unlink(missing_ok=True)
+    json.dump(man, open(man_path, 'w'))
+    print(f'pruned {len(gone)} clips, {len(man["clips"])} left')
+
+
 if __name__ == '__main__':
-    probe() if '--probe' in sys.argv else (generate(), generate_anyone())
+    if '--probe' in sys.argv: probe()
+    elif '--prune' in sys.argv: prune()
+    else: generate(); generate_anyone()

@@ -14,7 +14,7 @@ ok(CREDITS.filter((c) => c.licenceUrl?.startsWith('./')).every((c) => existsSync
 
 // what the licences ask for
 ok(by.osm && by.osm.who === '© OpenStreetMap contributors' && /odbl/i.test(by.osm.licence.en), 'OpenStreetMap: "© OpenStreetMap contributors" and the ODbL (its licence requires that wording)');
-ok(/elevenlabs/i.test(by.elevenlabs?.who) && /non-commercial/i.test(by.elevenlabs.licence.en), 'ElevenLabs is credited, and says free-plan output is non-commercial');
+ok(!by.elevenlabs && !existsSync('tools/voice/eleven.json') && !CREDITS.some((c) => /elevenlabs|non-commercial/i.test(c.who + c.licence.en)), 'nothing shipped is under a non-commercial licence (the ElevenLabs free-plan audio is gone)');
 ok(/MattDoesBlender/.test(by['byd-han']?.who) && /changed/i.test(by['byd-han'].who) && /CC BY 4\.0/.test(by['byd-han'].licence.en), 'the BYD Han (CC BY): author, licence, and that it was changed');
 ok(/Microsoft/.test(by.rocketbox?.who) && by.rocketbox.licence.en === 'MIT', 'Rocketbox: the MIT copyright line and its licence file');
 
@@ -29,7 +29,7 @@ for (const c of CREDITS) for (const f of c.files) ok(existsSync(f), `${c.id}: ${
 
 // the list
 const en = creditsHtml('en'), zh = creditsHtml('zh');
-ok((en.match(/<li>/g) || []).length === CREDITS.length && /OpenStreetMap contributors/.test(zh) && /其余配音/.test(zh) && !/其余配音/.test(en), 'one item per credit, in the chosen language');
+ok((en.match(/<li>/g) || []).length === CREDITS.length && /OpenStreetMap contributors/.test(zh) && /全部配音/.test(zh) && !/全部配音/.test(en), 'one item per credit, in the chosen language');
 ok(/target="_blank" rel="noopener"/.test(en) && !/<a href="null"/.test(en), 'links open in a new tab; a credit with no link is plain text');
 
 if (failed) { console.log(`\n${failed} failed`); process.exit(1); }
