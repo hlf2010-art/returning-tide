@@ -815,6 +815,27 @@ def bake_maps(ob, size, name, extra=True):
             bpy.ops.object.bake(type=kind)
         img.filepath_raw = os.path.join(OUT, "%s-%s.png" % (name, key)); img.file_format = "PNG"; img.save()
         imgs[key] = tx
+    if extra:
+        # ambient occlusion, multiplied into the colour: the depth a real face has in its eye sockets, nostrils,
+        # mouth corners and under the jaw, which three.js won't compute (the hair, brows and lashes are left out,
+        # or the fringe would paint a shadow on the forehead)
+        hidden = [o for o in scene.objects if o.type == "MESH" and o != ob and any(k in o.name for k in ("hair", "brow", "lash"))]
+        for o in hidden: o.hide_render = True
+        scene.cycles.samples = 32
+        ao = bpy.data.images.new("%s-ao" % name, size, size, alpha=False, is_data=True)
+        ao.colorspace_settings.name = "Non-Color"
+        tx = nodes.new("ShaderNodeTexImage"); tx.image = ao; nodes.active = tx
+        bpy.ops.object.bake(type="AO")
+        scene.cycles.samples = 4
+        for o in hidden: o.hide_render = False
+        import numpy as np
+        a = np.array(ao.pixels[:], np.float32).reshape(-1, 4)[:, 0]
+        c = np.array(imgs["color"].image.pixels[:], np.float32).reshape(-1, 4)
+        occ = np.clip(1 - a, 0, 1)[:, None]
+        c[:, :3] *= (1 - 0.6 * occ) * (np.array([1.0, 0.9, 0.85]) ** occ)   # darker, and a little warmer, in the creases
+        imgs["color"].image.pixels[:] = c.ravel()
+        imgs["color"].image.save()
+        nodes.remove(tx)
     bs = nodes["Principled BSDF"]
     for inp in ("Base Color", "Roughness", "Normal"):
         for link in list(bs.inputs[inp].links):

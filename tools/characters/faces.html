@@ -46,7 +46,7 @@ for (const role of roles) {
   scene.add(root);
   if (qs.get('game') !== '0') {   // what loadPeople does (game=0: the raw files)
     fixHair(root, c.hairTint || null);
-    if (c.head && qs.get('swap') !== '0') swapHead(root, (await loader.loadAsync('/people/' + c.head)).scene, { tint: c.headTint || null, keepHair: qs.has('keephair') ? qs.get('keephair') === '1' : !!c.keepHair, ...(qs.has('drop') ? { drop: qs.get('drop').split(',').filter(Boolean) } : {}) });
+    if (c.head && qs.get('swap') !== '0') swapHead(root, (await loader.loadAsync('/people/' + c.head)).scene, { tint: c.headTint || null, keepHair: qs.has('keephair') ? qs.get('keephair') === '1' : !!c.keepHair, tone: qs.get('tone') ? qs.get('tone').split(',').map(Number) : (c.skinTone || null), ...(qs.has('drop') ? { drop: qs.get('drop').split(',').filter(Boolean) } : {}) });
   }
   if (qs.get('ids')) root.traverse((o) => {
     if (!o.isMesh) return; const n = o.material.name;
