@@ -27,7 +27,8 @@ sustainable for four; one that isn't burns out sooner over a long gap.
 
 ## The season plan
 
-The plan appears on the night that crosses a gap of two weeks or more (after acts 1, 2 and 4).
+The plan appears on the night that crosses a gap of two weeks or more. In the year that is most nights
+from January on (9 of the 16), since the playable days are spread across the months.
 - **The budget**: the gap's days, less the overtime nights the job takes (one a week at the consultancy,
   two at the family works, none at his own start-up).
 - **Five uses**: making things / one person (pick who) / friends and family / business / rest.

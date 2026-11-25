@@ -19,7 +19,7 @@ import { PRODUCT, ISSUE_TEXT, FIX_TEXT, REG, PERSONA_NAME, quoteOf, speakerOf, t
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 const P = (b) => (b ? (getLang() === 'zh' ? b.zh : b.en) : '');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-import { finalDay } from '../engine/year.js';
+import { finalDay, isYear } from '../engine/year.js';
 import { shortDate } from '../world/career.js';
 const DINNER = (L) => finalDay(L) * 1440 + 20 * 60;
 const hoursText = (h) => T(`${h % 1 ? h.toFixed(1) : h} 小时`, `${h % 1 ? h.toFixed(1) : h} ${h === 1 ? 'hour' : 'hours'}`);
@@ -35,6 +35,7 @@ function specLine(L) {
 function countdown(L) {
   if (L.flags.dinnerChoice || stamp(L) > DINNER(L)) return '';
   const left = finalDay(L) - eveningOf(L);
+  if (isYear(L) && left > 1) return T(`和爸爸吃饭：${shortDate(L, 'zh', finalDay(L))}。`, `The dinner with Dad: ${shortDate(L, 'en', finalDay(L))}.`);
   return left <= 0 ? T('今晚八点，和爸爸吃饭。做到哪一版，就是哪一版。', 'Dinner with Dad is at eight tonight. Whatever version this is, it is the one he sees.')
     : T(`离和爸爸吃饭还有 ${left} 个晚上。`, `${left} ${left === 1 ? 'evening' : 'evenings'} until the dinner with Dad.`);
 }
