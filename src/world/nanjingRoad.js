@@ -111,7 +111,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   // (the sign faces by atlas page: page -> Batch)
   const signs = [], letters = [], blades = [], boards = new Batch(), onPage = (list, k) => list[k] || (list[k] = new Batch());
   // the signs: each shop's own, drawn into atlases (world/shopSigns.js) once the sign faces have loaded
-  const signAt = createSignAtlas(4096, 2048), bladeAt = createSignAtlas(2048, 2048);
+  const signAt = createSignAtlas(2048, 2048), bladeAt = createSignAtlas(2048, 2048);
   // a generic shop (where no real one has been placed): an invented name in the street's manner
   const PLAQUE_BG = ['#111010', '#121212', '#5e0f12', '#1a1410'], BRAND_BG = ['#b8141c', '#0d3b7a', '#0f5a3a', '#1d1d1f', '#c8102e', '#5a2a82'];
   const generic = (rr) => {
@@ -264,6 +264,15 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
       P.steel.box(x + 3, CH + 0.42, z, 1.8, 0.06, 0.5);                                                  // and a bench
     }
   }
+  // ---- the Christmas tree outside Shimao Festival City, on the Xizang Road corner (lit late November to New
+  // Year: Shimao lit its tree on 22 November 2025), a tiered cone strung with warm bulbs, a star on top ----
+  const xmas = new THREE.Group(); xmas.name = 'nj-christmas'; xmas.visible = false; group.add(xmas);
+  { const X = -1514, Z = NJ.z1 - 3.4, tierB = new Batch(), bulbB = new Batch(), r0 = rng(1225);
+    tierB.cyl(X, CH, Z, 1.6, 1.7, 0.6, 16);                                                          // the planter
+    for (let i = 0; i < 6; i++) { const y = CH + 0.6 + i * 1.35, rb = 2.6 - i * 0.38; tierB.add(new THREE.ConeGeometry(rb, 2.0, 18, 1, true), { x: X, y: y + 1.0, z: Z });
+      for (let k = 0; k < 14 - i; k++) { const a = r0() * Math.PI * 2, h = r0() * 1.6, rr = rb * (1 - h / 2.0) + 0.04; bulbB.add(new THREE.SphereGeometry(0.06, 6, 4), { x: X + Math.cos(a) * rr, y: y + h, z: Z + Math.sin(a) * rr }); } }
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.42), asLight(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.0, 0.9) }), 'lamps', 0.6)); star.position.set(X, CH + 9.6, Z); xmas.add(star);
+    xmas.add(tierB.mesh(new THREE.MeshStandardMaterial({ color: 0x1f4a2a, roughness: 0.8, side: THREE.DoubleSide }), 'xmas-tree'), bulbB.mesh(asLight(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.6, 0.8) }), 'lamps', 0.5), 'xmas-bulbs')); }
   // ---- the west end: Xizang Middle Road, its carriageway railed off at the kerb; People's Square beyond ----
   {
     const X = NJ.xizang, HZ = 160;
@@ -361,6 +370,8 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   return {
     group, lights, doors: doorList, fronts, signAtlas: signAt, bladeAtlas: bladeAt, placed: PLACED,
     update(t) { scrTex.offset.y = (Math.floor(t / 6) % 4) * 0.25; },
+    // the season's decorations: date = { m, d }
+    season(date) { xmas.visible = !!date && ((date.m === 11 && date.d >= 22) || date.m === 12 || (date.m === 1 && date.d <= 3)); },
     // the automatic doors: open for whoever comes up to them (people: [{ x, z }])
     doorsUpdate(dt, people, eye) { fronts.update(dt, people, eye); },
   };

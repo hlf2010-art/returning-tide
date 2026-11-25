@@ -5,8 +5,9 @@
 //   glow       the twilight band on the horizon (1 = the blue hour the game opens in, at 5:42 pm)
 //   side       where that glow is: -1 west at dusk (behind the Bund), +1 east at dawn (over Pudong)
 //   night      0 in the blue hour .. 1 in the deep night (a city sky: never black, a brown-orange glow)
-//   floods     the Bund's façade lighting: on as the sky darkens (reports give 7 pm in summer; in
-//              November it's dark by 5:40), dimmed to a faint wash in the late-night mode, off after 0:30
+//   floods     the Bund's façade lighting: switched on at 6 pm in winter (7 pm in summer), all of it in
+//              about ten seconds (holiday notices; the crowd's "哇"), dimmed to a faint wash in the
+//              late-night mode, off after 0:30
 //   lateNight  the late-night lighting mode (since the 2018 upgrade the Bund and Lujiazui have one in
 //              which only the skyline's outlines stay lit). The switch time is the game's choice: 10 pm
 //   media      Lujiazui's LED walls and the Pearl's colour show (off in the late-night mode)
@@ -48,7 +49,7 @@ export function todState(minute) {
   const night = am ? 1 - ramp(t, H(5, 15), H(6)) : ramp(t, H(17, 45), H(18, 40));
   const lateNight = t >= H(22) || t < H(5) ? 1 : 0;
   // façade floods: up as the sky darkens, the late-night wash from 10, off from half past midnight
-  const floods = t >= H(17, 10) ? (t < H(22) ? ramp(t, H(17, 10), H(17, 30)) : 0.22) : t < H(0, 30) ? 0.22 : 0;
+  const floods = t >= H(18) ? (t < H(22) ? ramp(t, H(18), H(18) + 1 / 6) : 0.22) : t < H(0, 30) ? 0.22 : 0;
   const media = t >= H(17, 25) && t < H(22) ? ramp(t, H(17, 25), H(17, 35)) : 0;
   const outline = 1 - ramp(daylight, 0.2, 0.6);
   const lamps = 1 - ramp(daylight, 0.25, 0.7);

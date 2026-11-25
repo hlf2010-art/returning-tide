@@ -12,7 +12,8 @@ const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) fail
 const at = (h, m = 0) => todState(H(h, m));
 
 const b = at(17, 42);
-ok(b.daylight === 0 && b.glow === 1 && b.night === 0 && b.floods === 1 && b.media === 1 && b.lamps === 1 && b.windows === 1 && b.exposure === 1.15, '5:42 pm is the approved blue hour: no daylight, the full afterglow, every light on');
+ok(b.daylight === 0 && b.glow === 1 && b.night === 0 && b.floods === 0 && b.media === 1 && b.lamps === 1 && b.windows === 1 && b.exposure === 1.15, '5:42 pm is the approved blue hour: no daylight, the full afterglow, the street lit, the Bund still dark');
+{ const f = at(18, 1); ok(f.floods === 1, 'the Bund lights up at 6 pm, all at once'); }
 // the sun: rise and set to within ten minutes of the almanac (6:25 / 4:57 for Shanghai, 15 November)
 let rise = null, set = null;
 for (let m = 0; m < 1440; m++) { const a = sunDir(m).el, c = sunDir(m + 1).el; if (a < 0 && c >= 0) rise = m; if (a >= 0 && c < 0) set = m; }

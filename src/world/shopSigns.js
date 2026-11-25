@@ -25,7 +25,7 @@ export function loadSignFonts(base = './fonts/') {
   return (fontsReady = Promise.all(faces).then(() => true));
 }
 
-const PX = 128;                                   // texture pixels per metre of sign height... per row
+const PX = 96;                                   // texture pixels per metre of sign height... per row
 // fit text into a width: the font size that makes it fit, no larger than `max`
 function fit(x, text, font, max, width, spacing = 0) {
   let s = max;

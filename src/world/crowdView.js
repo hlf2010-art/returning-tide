@@ -240,10 +240,14 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     const cmat = new THREE.MeshStandardMaterial({ roughness: 0.45, side: THREE.DoubleSide });
     const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.3, 14, 1, true), cmat); canopy.position.y = 0.7; canopy.castShadow = true;
     umb.add(shaft, canopy); group.add(umb);
-    const b = { person, phone, agent: null, flag: null, umb, canopy, bodyMat };
+    // paper carrier bags (after a shop), in the hands
+    const bags = [0, 1, 2].map(() => { const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ roughness: 0.75 }); const bx = new THREE.Mesh(BAG_BOX, m); bx.position.y = -0.27; bx.castShadow = true; g.add(bx, new THREE.Mesh(BAG_CORD, phoneMat)); g.children[1].position.y = -0.1; g.visible = false; group.add(g); return g; });
+    const b = { person, phone, agent: null, flag: null, umb, canopy, bodyMat, bags };
     pool.push(b);
     return b;
   }
+  const BAG_BOX = new THREE.BoxGeometry(0.3, 0.34, 0.11), BAG_CORD = new THREE.TorusGeometry(0.055, 0.006, 4, 12, Math.PI);
+  const BAG_COLORS = [0xf3f1ec, 0x1a1a1c, 0xb98a55, 0xb3262e, 0xe7d9c4, 0x2b4a7a, 0xe86a2a].map((c) => new THREE.Color(c));
   const flags = crowd.tours.map((t, i) => { const f = flagMesh(t.flag || FLAG_COLORS[i % 4]); group.add(f); return f; });
   const _e = new THREE.Vector3(), _t = new THREE.Vector3(), _p = new THREE.Vector3(), _h = new THREE.Vector3();
   function raise(b, tx, tz, up = 0) {
@@ -267,6 +271,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     nearAgents() { return [...live.keys()].map((id) => crowd.agents[id]).filter(Boolean); },
     bodyOf(a) { return live.get(a.id) || null; },
     update(dt, eye, opts = {}) {
+      const t0 = performance.now() / 260;
       rain = opts.rain || 0;
       // every quarter second: the nearest few become full people (with some hysteresis)
       rankT -= dt;
@@ -308,7 +313,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
       // full people
       for (const [id, b] of live) {
         const a = crowd.agents[id], root = b.person.root;
-        if (a.gone || a.out || a.inside) { b.agent = null; root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); nearSet.delete(id); continue; }
+        if (a.gone || a.out || a.inside) { b.agent = null; root.visible = false; b.phone.visible = false; b.umb.visible = false; for (const g of b.bags) g.visible = false; live.delete(id); nearSet.delete(id); continue; }
         root.position.set(a.x, a.y, a.z);
         let dh = a.heading - root.rotation.y; while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2;
         root.rotation.y += dh * Math.min(1, dt * 6);
@@ -337,6 +342,15 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         if (act === 'selfie') raise(b, a.x - 50, a.z, 0.18);
         b.phone.visible = photo || phoneWalk;
         if (b.phone.visible) { holdPhone(b.phone, b.person, root.rotation.y); if (act === 'photo') b.phone.rotateZ(Math.PI / 2); }
+        // bags: shared between the hands, or all in the left while the right holds a phone or an umbrella
+        const nb = a.bags || 0, busyR = b.phone.visible || b.umb.visible || photo, sn = Math.sin(root.rotation.y), cs = Math.cos(root.rotation.y);
+        b.bags.forEach((g, i) => {
+          g.visible = i < nb; if (!g.visible) return;
+          const right = !busyR && i % 2 === 0, bone = right ? b.person.bones.R : b.person.bones.L; if (!bone) { g.visible = false; return; }
+          bone.getWorldPosition(_h); const off = (right ? -1 : 1) * 0.08 * (right ? i >> 1 : busyR ? i : i >> 1);
+          g.position.set(_h.x + cs * off, _h.y, _h.z - sn * off); g.rotation.set(moving ? Math.sin(t0 + i) * 0.08 : 0, root.rotation.y + (right ? -0.15 : 0.2), 0);
+          g.children[0].material.color.copy(BAG_COLORS[Math.floor(hash(a.id, 7 + i) * BAG_COLORS.length)]);
+        });
       }
       // the guides' flags: in the hand when near, held up above the card when far
       crowd.tours.forEach((t, i) => {

@@ -104,7 +104,7 @@ import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
 import { createNephew } from './world/nephew.js';
 import { createWitness, WITNESS } from './engine/witness.js';
-import { createCrowd } from './engine/crowd.js';
+import { createCrowd, buildNet, keepShopsWithDoors } from './engine/crowd.js';
 import { trafficSpecs, BUS_STOPS } from './world/trafficMix.js';
 import { createBuses } from './world/buses.js';
 import { GUIDE_LINES, BUS_LINES, LATE_LINES } from './world/crowdLines.js';
@@ -122,7 +122,7 @@ import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
 import { createSeasonPlan } from './ui/season.js';
 import { createProfile } from './ui/profile.js';
 import { timeVariant, timeAfterword } from './world/allotEvents.js';
-import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText, isWorkday } from './engine/year.js';
+import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText, isWorkday, dateOf } from './engine/year.js';
 import { runRomance, romanceCallChoice, guardTalk, ROMANCE_CALLS } from './world/romance.js';   // the five he might come to love (engine/hearts.js)
 import { createRomanceScenes } from './world/romanceScenes.js';
 const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the story's, the street moments' (world/moments.js), and the gimbal's week (world/work.js)
@@ -351,7 +351,7 @@ async function boot() {
   lampSources = [{ list: traffic.vehicles, z: 0 }, { list: henan.traffic.vehicles, z: NJ.zc }];
   const pulse = params.get('pulse') === '0' ? null : createPulse({ scene, getCrowd: () => world && world.crowd, getTraffic: () => lampSources,
     cameras: dressing ? dressing.spots.camera : [], police: dressing ? dressing.spots.police : [] });   // flashes, strobes, barges, leaves (world/pulse.js)
-  world = { pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }) };
+  world = { pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -359,7 +359,7 @@ async function boot() {
     const det = gfxDetail({ ...gfx, lod: bootLod });
     const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0 : det.crowd;   // tools: none unless asked
     // the preset's population at its busiest (engine/gfx.js LOD people); ?crowd=<density> (tools) as before
-    world.crowd = createCrowd({ density, count: params.has('crowd') || params.has('q') ? null : det.people, roles });
+    world.crowd = createCrowd({ net: keepShopsWithDoors(buildNet(), nanjing.doors), density, count: params.has('crowd') || params.has('q') ? null : det.people, roles });
     world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, midCount: params.get('t1') === '0' ? 0 : det.mid || 0, camera });
     traffic.setExtraPeople(() => world.crowd.onCarriageway());
     henan.traffic.setExtraPeople(() => world.crowd.onHenan());
@@ -1316,7 +1316,7 @@ function mapObjective() {
   return null;
 }
 // your own waypoint (set on the map) comes first, until you get there
-let waypoint = null;
+let waypoint = null, seasonT = 0;
 function mapTarget() { return waypoint ? { ...waypoint, label: waypoint.label ? QT(waypoint.label) : tx('waypoint') } : storyTarget(); }
 function storyTarget() {
   const r = world && world.rideFlow && world.rideFlow.ride;
@@ -1552,10 +1552,11 @@ function frame(now) {
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
   world.shoppers.update(mode === 'pause' ? 0 : dt, player.body);                     // shoppers coming and going by DiDi
+  if (life && (seasonT = (seasonT || 0) - dt) <= 0) { seasonT = 5; world.nanjing.season(dateOf(life)); }
   world.trams.update(mode === 'pause' ? 0 : dt, player.body, world.crowd ? world.crowd.agents : null, camera.position, life ? life.clock.minute : 720);   // Nanjing Road's sightseeing trains
   if (mode !== 'pause' && Math.abs(player.body.z + 201) < 60 && player.body.x < -20) {         // Nanjing Road's automatic doors: who's at them
     const b = player.body, near = [b];
-    if (world.crowd) for (const a of world.crowd.agents) if (!a.inside && a.x < -34 && Math.abs(a.z + 201) < 14 && Math.abs(a.x - b.x) < 90) near.push(a);
+    if (world.crowd) for (const a of world.crowd.agents) if (!a.inside && !a.gone && !a.out && a.x < -34 && Math.abs(a.z + 201) < 14 && Math.abs(a.x - b.x) < 90) near.push(a);
     near.push(...world.shoppers.others());
     world.nanjing.doorsUpdate(dt, near, b);
   }

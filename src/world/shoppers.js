@@ -12,7 +12,8 @@ import { holdPhone } from './pedestriansReal.js';
 import { twoBone } from './driverPose.js';
 import { createRide, stepRide, rideAction } from '../engine/rideHail.js';
 import { L, NJ } from './layout.js';
-import { buildNet, route } from '../engine/crowd.js';
+import { buildNet, route, keepShopsWithDoors } from '../engine/crowd.js';
+import { TOD } from './dayNight.js';
 
 const CURB = L.curbH;
 const kerb = (z, face = 2.5) => ({ dir: 1, z, kerbX: L.westCurbX + 1.4, stand: { x: L.westCurbX - 0.65, z: z - 0.6 }, face });
@@ -33,9 +34,9 @@ function bagMesh() {
   return g;
 }
 
-export function createShoppers({ scene, people, traffic, vehicles, audio, rnd = Math.random, max = MAX }) {
+export function createShoppers({ scene, people, traffic, vehicles, audio, rnd = Math.random, max = MAX, doors = null }) {
   if (!people || !traffic) return { update() {}, others: () => [], state: { stories: [] } };
-  const net = buildNet();
+  const net = keepShopsWithDoors(buildNet(), doors);
   // shop fronts near the Bund end of Nanjing Road, west of the two hotels (the Peace Hotel and the Swatch
   // run to x -84: world/nanjingRoad.js); people taking a car to shop don't walk 400 m
   const shops = (net.shops || []).map((id) => ({ id, n: net.by[id] })).filter(({ n }) => n.x < -86 && n.x > -250).map(({ id, n }) => {
@@ -69,7 +70,7 @@ export function createShoppers({ scene, people, traffic, vehicles, audio, rnd = 
     const list = traffic.vehicles.map((v, i) => ({ v, i })).filter(({ v, i }) => v.active && !v.bus && v.lane.dir === k.dir && !v.pickup && !v.hidden && stopS - v.s > 70 && stopS - v.s < 330 && (!strict || hail(i)));
     // a ride-hail car by preference (the BYDs), then the kerb lane, then the nearest
     const fleet = (i) => (vehicles && vehicles.list[i] && vehicles.list[i].fleetCar ? 1 : 0);
-    list.sort((a, b) => fleet(b.i) - fleet(a.i) || (a.v.lane.id.endsWith('2') ? 1 : 0) - (b.v.lane.id.endsWith('2') ? 1 : 0) || b.v.s - a.v.s);
+    list.sort((a, b) => fleet(b.i) - fleet(a.i) || Math.abs(k.kerbX - a.v.lane.x) - Math.abs(k.kerbX - b.v.lane.x) || b.v.s - a.v.s);
     const pick = list[0]; if (!pick) return null;
     const veh = pick.v;
     veh.pickup = { stopS, dx: k.kerbX - veh.lane.x, state: 'approach', npc };
@@ -107,6 +108,7 @@ export function createShoppers({ scene, people, traffic, vehicles, audio, rnd = 
     let moving = false, look = null, act = null;
     if (s.phase === 'off') {
       if ((s.wait -= dt) > 0) return null;
+      if (TOD.shops.value < 0.5) { s.wait = 20; return null; }            // (the shops are shut: 10 pm to 10 am)
       const free = SHOPPER_KERBS.drop.filter((k) => !takenKerb(k, s));
       if (!free.length || !shops.length) { s.wait = 5; return null; }
       s.drop = free[Math.floor(rnd() * free.length)];
@@ -186,7 +188,8 @@ export function createShoppers({ scene, people, traffic, vehicles, audio, rnd = 
     if (s.hz.visible) { s.hz.position.set(v.x, 0, v.z); s.hz.rotation.y = v.yaw; }
     s.phone.visible = false; for (const b of s.bags) b.visible = false;
     const P = s.person, root = P && P.root;
-    if (!st || !root || !root.visible || Math.hypot(pp.x - s.x, pp.z - s.z) > 110) return;
+    if (!st || !root || !root.visible) return;
+    if (Math.hypot(pp.x - s.x, pp.z - s.z) > 110) { root.position.set(s.x, s.x > L.westCurbX + 0.05 ? 0 : CURB, s.z); root.rotation.y = s.yaw; return; }
     const { moving, look, act } = st;
     root.position.set(s.x, s.x > L.westCurbX + 0.05 ? 0 : CURB, s.z);
     let a = s.yaw - root.rotation.y; while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; root.rotation.y += a * Math.min(1, dt * 6);
