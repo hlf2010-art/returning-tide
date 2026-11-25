@@ -70,6 +70,8 @@ import { createTraffic } from './engine/traffic.js';
 import { startFlinch } from './engine/flinch.js';
 import { createVehicles } from './world/vehicles.js';
 import { createVehicleLamps } from './world/vehicleLamps.js';
+import { createDressing } from './world/dressing.js';
+import { createPulse } from './world/pulse.js';
 import { createSignals } from './world/signals.js';
 import { createPedestrians } from './world/pedestrians.js';
 import { loadPeople, cullPeople } from './world/people.js';
@@ -341,9 +343,12 @@ async function boot() {
   // people getting out of its way, and what happens if someone can't (world/roadReactions.js)
   const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd, onHit: (L, info) => carFallout(L, info) });
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads });
+  const dressing = params.get('dress') === '0' ? null : createDressing({ scene, addCollider: addDynamicCollider });   // bikes, bins, bollards... (world/dressing.js)
   const lamps = params.get('lamps') === '0' ? null : createVehicleLamps({ scene });   // night traffic as lamps (world/vehicleLamps.js)
   lampSources = [{ list: traffic.vehicles, z: 0 }, { list: henan.traffic.vehicles, z: NJ.zc }];
-  world = { lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio }) };
+  const pulse = params.get('pulse') === '0' ? null : createPulse({ scene, getCrowd: () => world && world.crowd, getTraffic: () => lampSources,
+    cameras: dressing ? dressing.spots.camera : [], police: dressing ? dressing.spots.police : [] });   // flashes, strobes, barges, leaves (world/pulse.js)
+  world = { pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio }) };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -1409,6 +1414,7 @@ function updateTraffic(dt) {
   world.henan.update(dt, { player: world.driving && world.driving.driving ? null : b, eye: camera.position, rain: weather.rain });
   world.vehicles.update(traffic.vehicles, camera.position);
   if (world.lamps) world.lamps.update(lampSources, camera.position, hourState.lamps);
+  if (world.pulse) world.pulse.update(dt, camera.position, hourState);
   world.pedestrians.update(traffic.peds, dt, camera.position);
   world.signals.update(traffic.controller);
   traffic.peds.forEach((p, i) => { const bx = pedBoxes[i]; if (bx) { bx.minX = p.x - 0.22; bx.maxX = p.x + 0.22; bx.minZ = p.z - 0.22; bx.maxZ = p.z + 0.22; } });
