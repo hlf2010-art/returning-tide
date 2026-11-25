@@ -27,7 +27,7 @@ const BAYS = [
 ];
 
 const PROPS = [
-  // two-compartment bins (dry and wet: Shanghai sorts its rubbish)
+  // two-compartment street bins: 可回收物 recyclable (blue) and 干垃圾 residual (black) (Shanghai sorts its rubbish)
   ...[[-66, -6.0], [-50, 6.0], [-62, NJ.z0 + 0.8], [-120, NJ.z1 - 0.8], [-180, NJ.z0 + 0.8], [-240, NJ.z1 - 0.8], [-350, NJ.z0 + 0.8], [-450, NJ.z1 - 0.8],
     [h.x1 + 1.2, NJ.z0 - 2.5], [h.x0 - 1.2, NJ.z1 + 2.5], [19.6, -12], [19.6, 10], [19.6, 48], [19.6, -100], [19.6, -160]].map(([x, z]) => ({ kind: 'bin', x, z, yaw: 0, r: 0.45 })),
   // bollards: across the pedestrian street's mouth on the Bund, and either side of the Henan Road zebra
@@ -41,6 +41,18 @@ const PROPS = [
   ...[[L.westCurbX - 1.4, -4.7, Math.PI / 2], [L.westCurbX - 0.7, -116.4, Math.PI / 2], [h.x1 + 0.8, NJ.z0 - 1.0, 0], [h.x0 - 0.8, NJ.z1 + 1.0, Math.PI]].map(([x, z, yaw]) => ({ kind: 'signpost', x, z, yaw, r: 0.22 })),
   // enforcement cameras over the junctions (they flash white at night: world/pulse.js)
   ...[[L.westCurbX - 0.6, -26, 0], [L.eastCurbX + 0.6, 15, Math.PI], [h.x1 + 0.7, NJ.z0 - 4.0, Math.PI]].map(([x, z, yaw]) => ({ kind: 'camera', x, z, yaw, r: 0.25 })),
+  // west of Henan Road to Xizang Road: bins every ~70 m along the frontages (alternate sides), bollards across
+  // each cross street's mouth (no cars in the pedestrian street), a blue street-name post at each corner,
+  // the odd utility cabinet
+  ...Array.from({ length: 14 }, (_, i) => ({ kind: 'bin', x: -560 - i * 70, z: i % 2 ? NJ.z1 - 0.8 : NJ.z0 + 0.8, yaw: 0, r: 0.45 })),
+  ...NJ.cross.filter((c) => c.x1 < -540 && !c.lane).flatMap((c) => (c.side ? [c.side] : ['N', 'S']).flatMap((sd) => {
+    const z = sd === 'N' ? NJ.z0 - 1.4 : NJ.z1 + 1.4, n = Math.max(2, Math.floor((c.x1 - c.x0 - 3.2) / 1.6) + 1);   // (well clear of the corners)
+    return [...row(c.x0 + 1.6, z, n, (c.x1 - c.x0 - 3.2) / Math.max(1, n - 1), 0, { kind: 'bollard', r: 0.24 }),
+      { kind: 'signpost', x: c.x1 - 0.5, z: sd === 'N' ? NJ.z0 - 2.0 : NJ.z1 + 2.0, yaw: sd === 'N' ? 0 : Math.PI, r: 0.22 }];
+  })),
+  ...[[-640, NJ.z1 - 0.9, Math.PI], [-905, NJ.z0 + 0.9, 0], [-1210, NJ.z0 + 0.9, 0], [-1400, NJ.z1 - 0.9, Math.PI]].map(([x, z, yaw]) => ({ kind: 'cabinet', x, z, yaw, r: 0.6 })),
+  // Nanjing Road's police post by Century Square (patrols on foot and bicycles work the street from it)
+  { kind: 'police', x: -1068, z: NJ.z1 - 1.6, yaw: Math.PI, r: 1.5, box: [1.2, 1.4] },
   // a police post on the promenade, by the wall (its lamp turns slowly red and blue at night)
   { kind: 'police', x: L.wallX + 4.2, z: -64, yaw: -Math.PI / 2, r: 1.5, box: [1.2, 1.4] },
 ];
