@@ -363,17 +363,42 @@ export function createAudio() {
   // Breathing after a run: an exhale (warm, mouth) then an inhale (thinner), at the rate the head
   // motion uses, louder and quicker the more spent you are. Silent at rest.
   let breathPhase = 0, breathLevel = 0, lastWind = -1;
-  function breathe(dt) {
-    if (!ctx || muted || paused || breathLevel < 0.12 || dt <= 0) return;
-    const rate = 0.24 + 0.75 * breathLevel, before = breathPhase;
-    breathPhase += rate * dt;
-    if (Math.floor(breathPhase) !== Math.floor(before)) {
-      const t = ctx.currentTime + 0.01, g = 0.05 * breathLevel * breathLevel, len = 0.5 / rate;
-      burst(t, { buffer: buf, f: rnd(900, 1200), q: 0.7, gain: g * 2.2, attack: 0.06, decay: len * 0.55, rate: rnd(1.6, 2.1) });
-      burst(t + len * 0.95, { f: rnd(1700, 2300), q: 0.9, gain: g * 0.8, attack: 0.12, decay: len * 0.45, rate: rnd(0.9, 1.1) });
-      stats.breaths = (stats.breaths || 0) + 1;
+  // catching his breath: two recorded loops (tools/voice/breath.py), heavy (just run out) and easing
+  // (recovering), crossfaded by how hard he's breathing. Their loudness envelopes say where in a breath
+  // he is now, so the camera rises and falls on the breaths you hear (breathEnvelope, headMotion.js).
+  const BR = { heavy: null, ease: null, loading: false };
+  const sm = (a, b, x) => { const k = Math.max(0, Math.min(1, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+  function loadBreath() {
+    BR.loading = true;
+    for (const k of ['heavy', 'ease']) {
+      Promise.all([fetch(`./ambience/breath/${k}.mp3`).then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b)), fetch(`./ambience/breath/${k}.json`).then((r) => r.json())])
+        .then(([buf, env]) => { const sn = ctx.createBufferSource(); sn.buffer = buf; sn.loop = true; const g = gainNode(0); sn.connect(g).connect(sfx); const t0 = ctx.currentTime + 0.05; sn.start(t0); BR[k] = { g, env, t0, dur: buf.duration, w: 0 }; })
+        .catch(() => { /* no clips: silence */ });
     }
   }
+  function breathe() {
+    if (!ctx) return;
+    if (breathLevel > 0.1 && !BR.loading) loadBreath();
+    const heavy = sm(0.5, 0.85, breathLevel), ease = sm(0.12, 0.42, breathLevel) * (1 - heavy), on = !muted && !paused;
+    for (const [k, w, top] of [['heavy', heavy, 0.5], ['ease', ease, 0.34]]) {
+      const b = BR[k]; if (!b) continue;
+      b.w = w; b.g.gain.setTargetAtTime(on ? top * w : 0, ctx.currentTime, 0.3);
+      if (w > 0.02) stats.breaths = (stats.breaths || 0) + 1;
+    }
+  }
+  // 0..1: how far into a breath he is right now (from the recording playing), or null when he isn't
+  // breathing hard enough to hear
+  function breathEnvelope() {
+    if (!ctx) return null;
+    let e = 0, w = 0;
+    for (const k of ['heavy', 'ease']) {
+      const b = BR[k]; if (!b || b.w < 0.02) continue;
+      const pos = (((ctx.currentTime - b.t0) % b.dur) + b.dur) % b.dur, i = Math.min(b.env.env.length - 1, Math.floor(pos * b.env.fps));
+      e += b.env.env[i] * b.w; w += b.w;
+    }
+    return w > 0.05 ? e / w : null;
+  }
+
 
   const muteListeners = new Set();
   return {
@@ -390,10 +415,11 @@ export function createAudio() {
       if (d !== lastDuck) { lastDuck = d; duck.gain.setTargetAtTime(duckGain(d), t, 0.3); }   // ~1 s to settle: no abrupt drop
       // far ships on the river: rare (ships may sound their horns here only in an emergency; engine/soundscape.js)
       if (hornTimer < 0) { hornTimer = 420 + Math.random() * 600; if (!muted && !paused && (!riverExp || riverExp.gain.value > 0.1)) horn(); }
-      breathe(dt);
+      breathe();
     },
     // how hard the player is breathing, 0..1 (stamina.js)
     setBreath(level) { breathLevel = Math.max(0, Math.min(1, level)); },
+    breathEnvelope,
     // wind 0..~1.3 (wind.js); nearTree 0..1: how close the nearest tree is
     setWind(level, nearTree = 0) {
       if (!ctx || !wind) return;

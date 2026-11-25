@@ -68,6 +68,8 @@ What is not certain:
 | The Customs House chimes and strokes | this game's code; the tune "The East Is Red" is a Shaanbei folk melody in the public domain | the Customs House tower | none | made for this project; the melody is public domain |
 | Shop music (14 tracks) | see `docs/music.md` | eight Nanjing Road doors, Manner, the DiDi radio | `public/music/*.mp3` | CC0 1.0 |
 | The payment speaker's pieces (支付宝到账, 微信收款, 零-九, 十, 百, 千, 点, 元) | ElevenLabs (eleven_v3, premade voice "Lily"), one take cut at the pauses by `tools/voice/paybox.py`; checked by transcribing stitched amounts | every counter | `public/ambience/pay/*.mp3` (17 files, about 40 KB) | made for this project (generated speech, used under the ElevenLabs terms) |
+| Ji Bai catching his breath (two loops: heavy, easing) | ElevenLabs sound generation, looped with their breathing envelopes by `tools/voice/breath.py` | you, after running out of stamina | `public/ambience/breath/{heavy,ease}.mp3` + `.json` (about 140 KB) | made for this project (generated audio, used under the ElevenLabs terms) |
+| The railing's sigh at 22:00 ("awww", then a laugh) | ElevenLabs sound generation | the promenade, at the late-night switch | `public/ambience/lights-out.mp3` (49 KB) | made for this project (generated audio, used under the ElevenLabs terms) |
 | The crowd's murmur | made for this project with Kokoro-82M (Apache-2.0), `tools/voice/walla.py` | everywhere people are; the placed voices | `public/ambience/murmur.mp3` (already shipped) | made for this project |
 | Metro announcements (3 lines) | made for this project with Kokoro-82M (Apache-2.0), `tools/voice/generate.py` | Exits 7 and 2 at Henan Road | `public/voice/*.mp3` (already shipped) | made for this project |
 

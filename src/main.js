@@ -1586,7 +1586,7 @@ function frame(now) {
   // environment yields to NPC speech: fully while in conversation, by audibility otherwise
   let speech = 0;
   if (conversation && conversation.isSpeaking) speech = mode === 'dialogue' ? 1 : computeDistanceGain(_pairPos.distanceTo(camera.position), npcLayout.audibility.refDistance, npcLayout.audibility.maxDistance);
-  audio.setBreath(player.stamina.breath);
+  audio.setBreath(player.stamina.breath); player.breathEnv = audio.breathEnvelope();   // the camera rises on the breaths you hear
   {
     let near = 0; for (const t of TREE_SPOTS) near = Math.max(near, 1 - Math.hypot(t.x - player.body.x, t.z - player.body.z) / 14);
     audio.setWind(wind.level, near);

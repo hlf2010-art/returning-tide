@@ -114,5 +114,19 @@ const DT = 1 / 60;
   for (let i = 0; i < 20 / DT; i++) w.update(DT, 1);
   ok(Math.abs(w.level - WIND_LEVELS.gale) < 0.01, 'override pins the wind');
 }
+// catching his breath with the recording playing: the eye rises on each breath you hear, visibly
+{
+  const { createHeadMotion, updateHead } = await import('../src/engine/headMotion.js');
+  const h = createHeadMotion(), ys = [], es = [];
+  for (let i = 0; i < 300; i++) {
+    const t = i / 60, env = 0.5 + 0.5 * Math.sin(t * 2 * Math.PI * 1.6);
+    const o = updateHead(h, 1 / 60, { stride: 0, speed: 0, walk: 1.4, run: 4, lateral: 0, forwardAccel: 0, yawRate: 0, impact: 0, breath: 0.95, breathEnv: env, winded: false, air: false });
+    if (i > 60) { ys.push(o.y); es.push(env); }
+  }
+  const m = (a) => a.reduce((x, v) => x + v, 0) / a.length, me = m(es), my = m(ys);
+  const lag = 3, c = (k) => { let n = 0, de = 0, dy = 0; for (let i = 0; i + k < ys.length; i++) { n += (es[i] - me) * (ys[i + k] - my); de += (es[i] - me) ** 2; dy += (ys[i + k] - my) ** 2; } return n / Math.sqrt(de * dy); };
+  const best = Math.max(...[0, 1, 2, lag, 4, 5, 6].map(c)), range = Math.max(...ys) - Math.min(...ys);
+  ok(best > 0.9 && range > 0.03, `the eye follows the breaths you hear (correlation ${best.toFixed(2)}), rising and falling ${(range * 100).toFixed(1)} cm`);
+}
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);
