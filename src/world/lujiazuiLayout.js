@@ -543,3 +543,6 @@ export function ljzZone(x, z, y = 0) {
   if (p > 12 && a < YIN.a0) return 'ifc';
   return 'century';
 }
+
+// every character the district's signs use (the fonts are asked for them early, world/lujiazui.js)
+export const LJZ_TEXT = '轮渡 东昌路码头 外滩 Ferry Dongchang pier the Bund 陆家嘴站 Lujiazui 号口 Exit 进站 Entrance 号线 Line 东方明珠 正大广场 国金中心 世纪大道 环路 西路 丰和路 银城中路 中心绿地 商场 上海 北侧 网约车上下客点 广播电视塔 办公楼大堂 地铁 步行 请勿翻越护栏 注意安全 中银大厦 SUPER BRAND MALL ifc mall Shanghai Century Avenue Central Green Oriental Pearl Tower Metro Ride-hailing pick-up Ring Rd Fenghe Yincheng 人行天桥 明珠环 东 西 南 北 E W S N ↑ ← → 2 14 1 6 8 米 m';

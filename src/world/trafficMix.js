@@ -29,10 +29,13 @@ const CARS = [
 ];
 export const BUS = { model: 'bus', len: 12.0, width: 2.55, height: 3.15, wheelbase: 6.1 };
 
-// lod.traffic: 0.6 (low) .. 1.7 (ultra); about 22 vehicles at 1.0, buses included
+// lod.traffic: 0.6 (low) .. 1.7 (ultra); about 56 vehicles at 1.0, buses included: about 17 a lane-km
+// at the evening peak, the hour's share below that (engine/traffic.js setDensity). The cars are
+// instanced (world/fleet.js) and drawn as their lamps beyond 150 m, so numbers cost little to draw
+// (docs/living-city-architecture.md D6; it was 22)
 export function trafficSpecs(factor = 1, rnd = Math.random) {
   const out = crossing.vehicles.map((v) => ({ ...v }));
-  const total = Math.max(out.length, Math.round(22 * factor));
+  const total = Math.max(out.length, Math.round(56 * factor));
   const nBus = factor < 0.8 ? 2 : factor < 1.5 ? 4 : 6;
   const lanes = crossing.lanes.map((l) => l.id);
   // spread the extras evenly over the 830 m loop in each lane, clear of what's there
@@ -50,7 +53,7 @@ export function trafficSpecs(factor = 1, rnd = Math.random) {
   };
   for (let b = 0; b < nBus; b++) place({ ...BUS, id: `bus${b}`, bus: true, route: ['55', '33', '65'][b % 3], v0: 9.5 }, b % 2 ? ['nb2'] : ['sb2']);
   let i = 0;
-  while (out.length < total && i < 200) {
+  while (out.length < total && i < 400) {
     const [model, len, width, height, wheelbase, paint] = CARS[i % CARS.length];
     place({ id: `x${i}`, model, len, width, height, wheelbase, paint }, lanes);
     i++;

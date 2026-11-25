@@ -461,16 +461,19 @@ export function buildCityBus(spec, { headMat, tailRun, tailBrake, ledSign, makeW
   cabinG.push(painted(boxAt(0.3, 0.9, 0.3, -hw + 0.35, Y_FLOOR + 0.45, dF - 1.0), CAB.frame));      // the fare box by the front door
 
   const mesh = (list, mat) => { const m = new THREE.Mesh(mergeGeometries(list, false), mat); g.add(m); return m; };
-  mesh(paintG, M.paint); mesh(rubberG, M.rubber); mesh(cabinG, M.cabin); mesh(mirrorG, M.mirror);
+  // detail: what isn't worth a draw call from far off (the cabin behind tinted glass, mirrors, the
+  // door leaves, light strips, side sign, indicators); world/vehicles.js hides it beyond a few tens of metres
+  const detail = [];
+  mesh(paintG, M.paint); mesh(rubberG, M.rubber); detail.push(mesh(cabinG, M.cabin), mesh(mirrorG, M.mirror));
   const gm = mesh(glassG, M.glass), sm = mesh(screenG, M.screen); gm.renderOrder = sm.renderOrder = 2;
   // ceiling light strips
   const strips = [1, -1].map((s) => boxAt(0.14, 0.02, Ln - 2.2, s * 0.62, Y_GLASS - 0.06, -0.3));
-  g.add(new THREE.Mesh(mergeGeometries(strips.map((x) => clean(x, ['position', 'normal'])), false), M.strip));
+  const stripM = new THREE.Mesh(mergeGeometries(strips.map((x) => clean(x, ['position', 'normal'])), false), M.strip); g.add(stripM); detail.push(stripM);
 
   // ---- signs: front destination, side by the front door, rear number
   const route = spec.route || '55';
   const front = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.5, 0.32), ledSign(`${route}路`)); front.position.set(0, 2.75, hl + 0.012); g.add(front);
-  const side = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.26), ledSign(`${route}`, 512, 96, '路')); side.position.set(-hw + 0.02, 2.25, dF - 1.15); side.rotation.y = -Math.PI / 2; g.add(side);
+  const side = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.26), ledSign(`${route}`, 512, 96, '路')); side.position.set(-hw + 0.02, 2.25, dF - 1.15); side.rotation.y = -Math.PI / 2; g.add(side); detail.push(side);
   const rear = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.3), ledSign(`${route}`)); rear.position.set(0, 2.7, -hl - 0.012); rear.rotation.y = Math.PI; g.add(rear);
   // lamps: twin headlamps in each housing with a light bar above, tail clusters
   const lamps = [];
@@ -486,18 +489,19 @@ export function buildCityBus(spec, { headMat, tailRun, tailBrake, ledSign, makeW
     const leafG = new THREE.BoxGeometry(0.035, 2.08, 0.6);
     const leaf = new THREE.Mesh(leafG, M.doorGlass); leaf.renderOrder = 2; leaf.position.set(-hw - 0.005, Y_SKIRT + 0.02 + 1.04, dz + sz * 0.3); g.add(leaf);
     const edge = new THREE.Mesh(boxAt(0.05, 2.08, 0.03, 0, 0, -sz * 0.29), M.rubber); leaf.add(edge);   // the rubber nosing where the leaves meet
-    doors.push({ leaf, z: dz + sz * 0.3, sz });
+    doors.push({ leaf, z: dz + sz * 0.3, sz }); detail.push(edge);
   }
   // indicators on the kerb side, for pulling in and out
   const blinkMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 0.08, 0) });
-  for (const z of [hl - 0.06, -hl + 0.06]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, 0.12), blinkMat); b.position.set(-hw + 0.04, 0.95, z); g.add(b); }
-  { const b = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.05, 0.14), blinkMat); b.position.set(-hw - 0.01, 0.98, wf + AR + 0.25); g.add(b); }
+  { const bl = [hl - 0.06, -hl + 0.06].map((z) => new THREE.BoxGeometry(0.06, 0.14, 0.12).translate(-hw + 0.04, 0.95, z));
+    bl.push(new THREE.BoxGeometry(0.02, 0.05, 0.14).translate(-hw - 0.01, 0.98, wf + AR + 0.25));
+    const b = new THREE.Mesh(mergeGeometries(bl.map((x) => clean(x, ['position', 'normal'])), false), blinkMat); g.add(b); detail.push(b); }
   // wheels
   const wl = [];
   for (const z of [wf, wr]) for (const sx of [-1, 1]) { const w = makeWheel(); w.position.set(sx * (hw - 0.2), Y_WHEEL, z); if (sx < 0) w.rotation.y = Math.PI; g.add(w); wl.push(w); }
   let open = 0;
   return {
-    g, wheels: wl, wheelRadius: Y_WHEEL,
+    g, wheels: wl, wheelRadius: Y_WHEEL, detail,
     setBraking(b) { tailMat.color.copy(b ? tailBrake : tailRun); },
     // 0..1 doors open; blink: indicator on
     setDoors(k) { open = k; for (const d of doors) { d.leaf.position.x = -hw - 0.005 - 0.08 * Math.min(1, k * 3); d.leaf.position.z = d.z + d.sz * 0.52 * k; } },
