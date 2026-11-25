@@ -215,3 +215,14 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
 - `docs/hero-faces/round10-brows-lashes-hair.jpg`.
 - **Still off:** the hairline. The skin shows as a flat patch between the fringe locks, where the old hair shell
   stops above the new forehead.
+
+## Round 11 (25 November): the hairline
+
+- **What was wrong:** a flat, pale band of skin between the fringe's locks, with a straight edge. The new head
+  did have a dark scalp there, but two things made it read as skin:
+  - The skin-tone match multiplied the whole face map by about 2, so the scalp was lifted too.
+  - The scalp kept the skin's sheen.
+- **Now:** `skinToned` (people.js) tones only the skin texels and leaves dark ones alone: the scalp and the
+  mouth's inside. In `build_hero.py` the scalp is the hair's own near-black and matte. The front hairline is
+  soft (about 10 mm), uneven, and broken into wisps and roots by stretched noise in the shader.
+- `docs/hero-faces/round11-hairline.jpg`.
