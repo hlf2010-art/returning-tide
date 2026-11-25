@@ -275,7 +275,11 @@ def hairline(p):
     """1 where hair grows: above a hairline over the forehead and temples, round the ears, down to the nape."""
     face_front = p.y < HEAD_J.y - 0.045  # the front of the head
     if face_front:
-        return 1.0 if p.z > EYE_L.z + 0.058 + 0.10 * max(0.0, abs(p.x) - 0.045) else 0.0
+        # a soft hairline (about 8 mm from bare skin to full hair; the shader breaks it up into wisps), low enough
+        # that the forehead seen between the fringe's locks meets hair, not a bare band of skin
+        base = (EYE_L.z + 0.063 + 0.006 * (abs(p.x) / 0.04) ** 2 + 0.10 * max(0.0, abs(p.x) - 0.045)
+                + 0.0028 * math.sin(p.x * 230.0 + 0.7) + 0.0014 * math.sin(p.x * 590.0 + 2.1))   # uneven, as real ones are
+        return min(1.0, max(0.0, (p.z - base) / 0.010 + 0.5))
     side = abs(p.x) > 0.055
     if side and p.y < HEAD_J.y + 0.005:  # temples down to the top of the ear (sideburn to mid-ear)
         return 1.0 if p.z > EYE_L.z - 0.012 else 0.0
@@ -418,7 +422,7 @@ def skin_material():
         stub = 0.0
         if NECK.z + 0.035 < c.z < EYE_L.z - 0.045 and c.y < EYE_L.y + 0.035:
             stub = 1.0
-        scalp_t = 1.0 if hairline(c) and c.z > EYE_L.z - 0.02 else 0.0
+        scalp_t = hairline(c) if c.z > EYE_L.z - 0.02 else 0.0
         ca.data[i].color = (r, g, max(stub, 0.0), scalp_t)
     # regional colour: warmth on the cheeks, nose tip and ears; shadow under the eyes and in the eye sockets
     ca2 = hero.data.color_attributes.new("region", "FLOAT_COLOR", "POINT")
@@ -493,9 +497,19 @@ def skin_material():
     stc.inputs["B"].default_value = (0.25, 0.19, 0.16, 1)
     L.new(st3.outputs[0], stc.inputs["Factor"]); L.new(lip.outputs["Result"], stc.inputs["A"])
     scalpc = N.new("ShaderNodeMix"); scalpc.data_type = "RGBA"
-    scalpc.inputs["B"].default_value = (0.045, 0.035, 0.03, 1)
-    sm = N.new("ShaderNodeMath"); sm.operation = "MULTIPLY"; sm.inputs[1].default_value = 0.85
-    L.new(attr.outputs["Alpha"], sm.inputs[0]); L.new(sm.outputs[0], scalpc.inputs["Factor"])
+    scalpc.inputs["B"].default_value = (0.018, 0.013, 0.010, 1)   # the hair's own near-black (roots, not a tan)
+    # the hairline as hair: fine noise stretched along the hair's fall breaks the soft edge into wisps and roots
+    hn = N.new("ShaderNodeTexNoise"); hn.inputs["Scale"].default_value = 1.0; hn.inputs["Detail"].default_value = 4.0
+    hmap = N.new("ShaderNodeMapping"); hmap.inputs["Scale"].default_value = (900.0, 900.0, 140.0)
+    htc = N.new("ShaderNodeTexCoord"); L.new(htc.outputs["Object"], hmap.inputs["Vector"]); L.new(hmap.outputs[0], hn.inputs["Vector"])
+    hsum = N.new("ShaderNodeMath"); hsum.operation = "ADD"
+    L.new(attr.outputs["Alpha"], hsum.inputs[0])
+    hoff = N.new("ShaderNodeMath"); hoff.operation = "MULTIPLY_ADD"; hoff.inputs[1].default_value = 0.7; hoff.inputs[2].default_value = -0.35
+    L.new(hn.outputs["Fac"], hoff.inputs[0]); L.new(hoff.outputs[0], hsum.inputs[1])
+    hcl = N.new("ShaderNodeMapRange"); hcl.inputs["From Min"].default_value = 0.25; hcl.inputs["From Max"].default_value = 0.75
+    L.new(hsum.outputs[0], hcl.inputs["Value"])
+    sm = N.new("ShaderNodeMath"); sm.operation = "MULTIPLY"; sm.inputs[1].default_value = 1.0
+    L.new(hcl.outputs["Result"], sm.inputs[0]); L.new(sm.outputs[0], scalpc.inputs["Factor"])
     L.new(stc.outputs["Result"], scalpc.inputs["A"])
     L.new(scalpc.outputs["Result"], bs.inputs["Base Color"])
     bs.inputs["Subsurface Weight"].default_value = 0.35
@@ -508,7 +522,11 @@ def skin_material():
     rr = N.new("ShaderNodeMapRange")
     rr.inputs["To Min"].default_value = s["roughness"] - 0.06
     rr.inputs["To Max"].default_value = s["roughness"] + 0.08
-    L.new(pores.outputs["Distance"], rr.inputs["Value"]); L.new(rr.outputs[0], bs.inputs["Roughness"])
+    L.new(pores.outputs["Distance"], rr.inputs["Value"])
+    # the scalp under the hair is matte (shiny, the dark hairline caught the light as a pale band)
+    rsc = N.new("ShaderNodeMix"); rsc.data_type = "FLOAT"; rsc.inputs["B"].default_value = 0.95
+    L.new(rr.outputs[0], rsc.inputs["A"]); L.new(sm.outputs[0], rsc.inputs["Factor"])
+    L.new(rsc.outputs["Result"], bs.inputs["Roughness"])
     bs.inputs["Specular IOR Level"].default_value = 0.45
     bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.18
     bump.inputs["Distance"].default_value = 0.0004

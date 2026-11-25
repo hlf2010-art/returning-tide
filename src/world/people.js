@@ -121,6 +121,23 @@ function matteHairShell(m) {
   return p;
 }
 
+// The skin map toned to the character's skin: a multiplier on the skin only. On the whole map it lifted the dark
+// scalp under the hair (about twice as bright) into a pale band at the hairline; the scalp, brows' shadow and the
+// mouth's inside (dark texels) keep their colour.
+function skinToned(src, tone) {
+  const m = src.clone();
+  const U = { uTone: { value: new THREE.Vector3(...tone) } };
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uTone;')
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        diffuseColor.rgb *= mix(vec3(1.0), uTone, smoothstep(0.06, 0.09, dot(diffuseColor.rgb, vec3(0.3, 0.55, 0.15))));`);
+  };
+  m.customProgramCacheKey = () => 'skin-toned';
+  return m;
+}
+
 // a geometry of just these triangles (its own compact copy of the vertices they use)
 function compact(g, tris) {
   const map = new Map(), order = [];
@@ -592,7 +609,7 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
       // and with the default specular their grazing sides mirror the sky as a grey glint even with a dark colour
       mat = new THREE.MeshPhysicalMaterial({ name: mat.name, color: mat.color, vertexColors: true, roughness: 0.6, metalness: 0,
         specularIntensity: 0.15, envMapIntensity: 0.1 });
-    } else if (isSkin && mat.map && (tint || autoTint)) { mat = mat.clone(); mat.color.setRGB(...(tint || autoTint)); }   // a multiplier on the skin map (the tongue has no map: it keeps its own colour)
+    } else if (isSkin && mat.map && (tint || autoTint)) mat = skinToned(mat, tint || autoTint);   // (the tongue has no map: it keeps its own colour)
     const sm = new THREE.SkinnedMesh(geo, mat);
     sm.name = 'hero-' + o.name;
     if (o.morphTargetDictionary) { sm.morphTargetDictionary = { ...o.morphTargetDictionary }; sm.morphTargetInfluences = new Array(Object.keys(o.morphTargetDictionary).length).fill(0); }
