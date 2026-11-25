@@ -16,7 +16,7 @@ one short street (Hankou Road), ~155 m of the Bund promenade with two conversing
 - **Metro Line 2 (East Nanjing Road ⇄ Lujiazui), walked and ridden:** down Exit 7 or 2 (Henan Road) or Lujiazui's Exits 6 and 4 into a real concourse; with a bag, security stops you until it's been through the X-ray (E at the belt); E at a gate taps Alipay's transit code (¥3, charged on the way out); escalators (they carry you) or the stair down to an island platform behind screen doors; a real 8-car train every minute each way (5:30–23:00), the alert tone and announcements in Mandarin and English, doors that open on the left; ride it under the river (about 90 s): over every door a screen and a lit strip map of the whole line (this station red, the next green), printed line maps above the windows; individual stainless seats with the orange priority seats (爱心专座) at the car ends. Crowds follow the hour (a full car in the rush) (the morning and evening rush, a quiet midday); the stations shut their shutters after the last train (about 23:15 to 5:15). Commuters, riders and staff; procedural station and train sound. See `docs/metro.md`.
 - **Getting around:** the Bund–Lujiazui ferry from the cruise pier (E at the green ferry board; every 15 min, 06:00–23:00, ¥2) and back from the ferry sign on West Lujiazui Road; DiDi as before.
 - **The notebook:** E at the desk in 612 (or N) opens Ji Bai's notebook: handwriting and pen sketches (the first week, the night gimbal before it exists, the robot arm, Dad); ← → turn the pages.
-- **The Huracán:** E at the parked car starts the purchase (Zhixia sends the dealer's card); Vivian offers a test drive ("Can I take it for a drive?"); a bought car is delivered on day 7 and drives from either side.
+- **The Strale:** E at the parked car starts the purchase (Zhixia sends the dealer's card); Vivian offers a test drive ("Can I take it for a drive?"); a bought car is delivered on day 7 and drives from either side.
 - **Voices:** every scripted line is recorded in Mandarin and English (1,491 clips, Kokoro-82M via `tools/voice/generate.py`); only lines made up at runtime (free conversation, lines with live numbers) fall back to subtitles. 34 lines are ElevenLabs takes instead (`tools/voice/eleven.json`; free-plan, non-commercial: see Credits). The browser's synthetic speech is never used.
 - **Phone:** voice notes play with a progress bar (↑/↓ and Enter, or click), videos play in the chat, calls play their recorded lines.
 - **Streets:** pedestrians look ahead and pass each other, use kerbs and crossings without sticking, and flinch when they do brush; Manner has two baristas at work; the buses are painted metal with glass and an interior.
@@ -48,7 +48,7 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | H | noise cancelling on / off (once you have the headphones with you) |
 | 1–4 | in a DiDi: answer the driver (engage / short answer / change the subject / say nothing); at a friend's place, answer them the same way |
 | E (sat at a table) | stand up again (the Jazz Bar) |
-| W / S, A / D, Space | at the wheel of your Huracán: throttle / brake (hold S once stopped to reverse), steer, handbrake |
+| W / S, A / D, Space | at the wheel of your Strale: throttle / brake (hold S once stopped to reverse), steer, handbrake |
 | V · H · E | at the wheel: chase camera or the driver's seat · horn · get out (once stopped; it stays parked there) |
 | T | talk to whoever you're looking at, in your own words (see *Talking to people*); in a DiDi, to the driver |
 | Enter · Tab · Esc | in a conversation: send what you typed · speak instead (Mandarin or English; the 中/EN button picks) · leave |
@@ -613,7 +613,7 @@ Every scripted line in the game has a real recorded voice. That's 202 lines, eac
 Real brand marks appear where the thing really is that brand:
 - **On the phone:** WeChat, Alipay and Taobao app icons; the WeChat Pay, Alipay and Visa marks on the pay sheet and wallet.
 - **On the cars:** the maker's name across the tail of the lookalike NIO, Li Auto, AITO and Luxeed. The bodies are still approximations.
-- **Where they already were:** Lamborghini's own badges on the Huracán model you supplied, and the Starbucks and Manner cups you made.
+- **Where they already were:** Corvina's own badges on the Strale model you supplied, and the Starbucks and Manner cups you made.
 
 The vector marks come from [Simple Icons](https://simpleicons.org) (CC0 data; the trademarks belong to their owners). DiDi, JD, Manner, UnionPay and China Merchants Bank aren't in that set, so they appear as their own name in their own colours rather than an invented symbol. This is fine for a private build; publishing the game would need the brand owners' permission.
 
@@ -636,7 +636,7 @@ Jibai designs and builds. He rents a bench in a converted factory on the Yangpu 
 
 **Photo mode (G, with the gimbal).**
 - **The viewfinder** has a thirds grid, the focal length (24–135 mm equivalent) and a stabiliser light that turns red if you swing too fast.
-- **The challenge, the Bund after dark:** the Oriental Pearl, Shanghai Tower, the Customs House clock, the Peace Hotel's green roof, Old Lin and Ms Su, the Jazz Bar trio, a cruise boat, and your Huracán.
+- **The challenge, the Bund after dark:** the Oriental Pearl, Shanghai Tower, the Customs House clock, the Peace Hotel's green roof, Old Lin and Ms Su, the Jazz Bar trio, a cruise boat, and your Strale.
 - **Scoring:** each shot is scored for the subject, how centred and how big it is, and how steady you were, up to three stars. A better shot of a subject earns XP.
 - **Shots** go to the phone's **Photos** app as thumbnails. Share one to Moments for followers, and a friend will comment.
 
@@ -652,7 +652,7 @@ Their lives keep moving on the phone, on the calendar, and in person. Every mess
 - **Yu'an** surveys the Peace Hotel's roof, then asks you to the AIA Building at 19:00 on day 4. She's at the gates with her site badge: go through with her and the guard nods you past, and she shows you the coffered ceiling she's restoring.
   - Scan it with the Pocket LiDAR and you've saved her team two weeks of measuring. She'll want to borrow it.
   - Without the LiDAR, she wishes someone had one.
-- **Zhixia** wants a race-telemetry logger for her car (CAN bus, GPS, g-forces). Say yes and her parts arrive at the makerspace. Build it and she invites you to a track day at Tianma, told by the card: her lap time depends on how well you built it. If you own the Huracán, she drives it too.
+- **Zhixia** wants a race-telemetry logger for her car (CAN bus, GPS, g-forces). Say yes and her parts arrive at the makerspace. Build it and she invites you to a track day at Tianma, told by the card: her lap time depends on how well you built it. If you own the Strale, she drives it too.
 - **Momo** gets locked out on night two. Let him crash and he's asleep in your armchair in 612 when you get back (E to wake him, T to talk). He borrows your charger. Later he posts your car to his followers, and so do yours, by thousands.
 - **Xuan:** if you said you'd advise his senior's team, it's the arm's demo day at IFC. A second scene there: the arm doesn't drop a thing, an investor wants to know who you are, and dinner with him is set up for later.
 - **Yinuo** tells you what she decided about the flat, which depends on what you said. Then she asks you to fly over the Bund with her by helicopter at night (the card, and what she said on the way down).
@@ -691,18 +691,18 @@ nearer the Pearl Tower than it really is.
 
 ## Cars on the street
 
-A **Lamborghini Huracán** is parked on Hankou Road by the south kerb, right where people walk, nose toward the Bund, with a
+A **Corvina Strale** is parked on Hankou Road by the south kerb, right where people walk, nose toward the Bund, with a
 soft contact shadow. It is solid: you walk round it. It's the car the purchase journey will make
 yours. The model is real scale (4.46 m, about 134k triangles, 11 MB, loaded in the background).
 
-## Buying the Huracán (`src/engine/carPurchase.js`, `src/world/carSale.js`)
+## Buying the Strale (`src/engine/carPurchase.js`, `src/world/carSale.js`)
 
 A journey, not a checkout, and the way it really works at this end of the Shanghai market.
 
 1. **A friend's lead.** Tell Zhixia "we'll see about the car" and, a little later, she sends you a
-   WeChat contact card for Vivian, a Lamborghini sales consultant ("just say you're my friend").
+   WeChat contact card for Vivian, a Corvina sales consultant ("just say you're my friend").
 2. **The demo car comes to you.** Add Vivian and she offers to bring the demo car to the Bund (a
-   door-to-door test drive, normal for buyers like this). Twenty minutes later the yellow Huracán on
+   door-to-door test drive, normal for buyers like this). Twenty minutes later the yellow Strale on
    Hankou Road is her demo car, and she's waiting on the pavement beside it.
 3. **At the car.** E to talk; answer with 1–4:
    - sit inside (the passenger seat; mouse to look round)
@@ -757,7 +757,7 @@ The speed and gear show at the bottom right.
 
 ## People notice a nice car (`src/engine/sights.js`)
 
-Pass the Huracán and you'll see what really happens on the Bund:
+Pass the Strale and you'll see what really happens on the Bund:
 - **Most people look.** They slow a little and their heads follow it as they go by.
 - **Some stop for a photo.** They stand a few metres off, turn to face it, and raise the phone to eye
   level, sideways (the arm is posed with IK). It takes a couple of seconds, sometimes with a flash,
@@ -989,7 +989,7 @@ Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings ar
 - **The Jazz Bar's trio**, written and played live (see *The Jazz Bar*): the only music, and it's in
   the world. You hear it from the stage when you're in the room, muffled through the door in the
   hall.
-- **The Huracán's V10** while you drive it (see *Driving it*).
+- **The Strale's V10** while you drive it (see *Driving it*).
 - **By place** (`src/engine/soundscape.js` rules, `src/engine/ambience.js` playback; details and licences in
   `docs/sound.md`): the river is loudest at the railing and fades inland (water slapping at the wall, wind
   strongest on the promenade, a cruise boat's horn now and then: rare, as horns are for emergencies on this
@@ -1308,7 +1308,7 @@ src/world/hotelUpper.js, jazzBar.js   the Peace Hotel's sixth floor and room 612
 src/engine/jazzScore.js, jazzPlayer.js   the trio's tunes (pure, tested) and their Web Audio playback
 src/world/hailers.js   other people getting DiDis at two kerbs (engine/rideHail.js runs the wait)
 src/world/destinations.js   IFC 32F and the North Bund flat: the scenes, the views, the ride back
-src/engine/drive.js, carAudio.js, src/world/driving.js   driving the Huracán: the car (tested), its V10, the controls
+src/engine/drive.js, carAudio.js, src/world/driving.js   driving the Strale: the car (tested), its V10, the controls
 src/ui/veil.js         the fade for going somewhere (a lift, sleep, a ride back)
 src/engine/voice.js, tools/voice/   recorded voices per character (Kokoro-82M, offline), the live voice server
 src/engine/llm.js, src/world/personas.js, src/ui/talk.js, src/world/ambient.js   free conversation with local models
@@ -1336,7 +1336,7 @@ tools/                 headless screenshot / playtest / render-cost scripts (nee
                        walkthroughs, each against a running build (URL=, OUT= for screenshots):
                        inwalk (the hotel and the AIA), upwalk (6F and room 612), jazzwalk (the bar,
                        Momo's night), hailwalk (other people's DiDis), destwalk (by DiDi to IFC 32F and
-                       back; the North Bund flat), drivewalk (the Huracán), didiwalk, carwalk,
+                       back; the North Bund flat), drivewalk (the Strale), didiwalk, carwalk,
                        talkwalk (talking to people, against a running model server), makerwalk (build the
                        gimbal, photograph the Pearl), friendwalk (the days after: Yu'an, the LiDAR, Momo),
                        storywalk (the story to an ending), streetwalk (murmur, families, umbrellas, the three
@@ -1360,11 +1360,7 @@ The game shows these in Settings, under "Credits and licences" (`src/ui/credits.
 
 - People: Microsoft Rocketbox avatars (MIT), 16 of them: Old Lin, Ms. Su, you, and 13 passers-by and visitors (8 added for the evening crowd: Female_Adult_04, 07, 11, 14, Business_Female_04, Male_Adult_02, 04, 12).
 - Photographed surfaces: Poly Haven (CC0), https://polyhaven.com
-- **"Lamborghini Huracan LP-6104 2014"** by MdMahib, CC-BY-4.0:
-  https://sketchfab.com/3d-models/lamborghini-huracan-lp-6104-2014-4b7b162bcb4f48849f30b1c25b3102a3
-  (supplied for this project and used unmodified). Its material names (`CSR2_…`) suggest it was
-  extracted from a commercial mobile game, so the uploader's right to license it is uncertain.
-  Treat it as fine for a private build only.
+- The Corvina Strale (the supercar): an invented marque and car, modelled in code for this project (`src/world/supercarModel.js`).
 - Manner and Starbucks cup props: made for this project (`docs/props/`).
 - Voices: **Kokoro-82M** by hexgrad (Apache-2.0), v1.1-zh for Mandarin and v1.0 for English: https://huggingface.co/hexgrad/Kokoro-82M. Most clips in `public/voice/` were generated with it.
 - **ElevenLabs** (free plan: non-commercial use only, with attribution): 34 character lines in `public/voice/` (listed in `tools/voice/eleven.json`), the payment speakers, Ji Bai's breathing, the 22:00 sigh and the background beds. They must be regenerated on a paid plan or replaced before any commercial release; `docs/sound.md` lists every sound and its licence.

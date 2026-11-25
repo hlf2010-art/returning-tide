@@ -231,7 +231,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
           ${inv.status === 'pending' ? `<div class="act"><button class="btn go" data-act="invite" data-id="${esc(inv.id)}" data-yes="1">${Z('接受', 'Accept')}</button><button class="btn no" data-act="invite" data-id="${esc(inv.id)}" data-yes="0">${Z('婉拒', 'Decline')}</button></div>` : `<div class="st ${inv.status === 'accepted' ? '' : 'no'}">${{ accepted: Z('已接受', 'Accepted'), declined: Z('已婉拒', 'Declined'), missed: Z('已过期', 'Missed') }[inv.status] || ''}</div>`}</div>`;
       } else if (m.kind === 'card') {                                          // a WeChat contact card
         const id = m.meta && m.meta.contact, added = !!(l.threads[id]);
-        bub = `<div class="card contact"><div class="k">${Z('个人名片', 'Contact card')}</div><div class="ti">${esc(nm(id))}</div><div class="pl">${esc(Z('兰博基尼上海 · 销售顾问', 'Lamborghini Shanghai · Sales consultant'))}</div>
+        bub = `<div class="card contact"><div class="k">${Z('个人名片', 'Contact card')}</div><div class="ti">${esc(nm(id))}</div><div class="pl">${esc(Z('科尔维纳上海 · 销售顾问', 'Corvina Shanghai · Sales consultant'))}</div>
           ${added ? `<div class="st">${Z('已添加', 'Added')}</div>` : `<div class="act"><button class="btn go" data-act="addContact" data-id="${esc(id)}">${Z('添加到通讯录', 'Add contact')}</button></div>`}</div>`;
       } else bub = `<div class="bub">${esc(X(m.text))}</div>`;
       if (!mine && m.replies && m.replied == null) pendingReplies = m;
@@ -428,7 +428,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   async function answerAs(friend, threadId) {
     const l = L(), t = l.threads[threadId], lang = isZh(t.messages.filter((m) => m.from === 'me').slice(-1)[0]?.text) ? 'zh' : 'en';
     const now = clockText(stamp(l));
-    const facts = [l.flags.car ? 'He has just bought a yellow Lamborghini Huracán (everyone knows).' : '', l.flags.hotelKey ? 'He is staying at the Peace Hotel on the Bund, room 612.' : '', incidentText(l),
+    const facts = [l.flags.car ? 'He has just bought a yellow Corvina Strale (everyone knows).' : '', l.flags.hotelKey ? 'He is staying at the Peace Hotel on the Bund, room 612.' : '', incidentText(l),
       ...l.invites.filter((i) => i.from === friend).map((i) => `Your invitation to him (${i.title}): ${i.kept ? 'he came' : i.status}.`)].filter(Boolean).join(' ');
     const scene = `It is ${now}. You are not with him: you are wherever you would be at this hour (work, home, out). ${facts} ${storyContext(l, friend)}`;
     const sys = systemPrompt(friend, scene, { lang, texting: true }) + (t.kind === 'group' ? '\nThis is the friends\' group chat 金陵五虎+1; keep it short and in the group\'s joking tone.' : '');

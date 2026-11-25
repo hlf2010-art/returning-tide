@@ -1,4 +1,4 @@
-// A new game, the player's own way to the wheel: E at the parked Huracán on Hankou Road (Zhixia passes
+// A new game, the player's own way to the wheel: E at the parked Strale on Hankou Road (Zhixia passes
 // on Vivian's card), add Vivian in WeChat, meet her at the car, "Can I take it for a drive?", and drive
 // it tens of metres with real key presses; stop, E, and it's back by the kerb with Vivian.
 // node tools/testdrivewalk.mjs (URL=, OUT=; LOCK=1 to leave pointer lock on, as a player has it)
@@ -20,7 +20,7 @@ const hold = async (keys, secs) => { for (const k of keys) await p.keyboard.down
 // 1. on the pavement beside the yellow car (south side, where people walk), looking at it
 await p.evaluate(() => window.__bund.player.teleport(-40.6, 5.6, 0, -0.35)); await p.waitForTimeout(1500);
 let pr = await prompt();
-ok(/Huracán/.test(pr), `at the parked car, a prompt: "${pr}"`);
+ok(/Strale/.test(pr), `at the parked car, a prompt: "${pr}"`);
 await p.keyboard.press('KeyE'); await p.waitForTimeout(800);
 let st = await p.evaluate(() => (window.__bund.life.flags.carBuy || {}).stage);
 ok(st === 'lead', `E: Zhixia sends Vivian's card (stage ${st})`);

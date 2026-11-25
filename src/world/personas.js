@@ -41,7 +41,7 @@ export const PERSONAS = {
   zhe: { zh: '阿哲', en: 'Zhe', sex: 'm', voice: 'bump:young', lang: 'zh', card: 'Zhe (阿哲), 22, livestreams his evening walks along the Bund to a few thousand viewers; cheerful, talks fast, calls everyone 哥, breaks off to greet his chat; streams three hours a night whatever the weather and knows exactly how every gadget fails on him' },
   founder: { zh: '周学长', en: 'Zhou', sex: 'm', voice: 'founder', lang: 'zh', card: 'Zhou, 29, a senior from Xuan\'s university, founder of a small collaborative-robot-arm start-up; earnest, sleep-deprived, engineer first, nervous about a customer demo' },
   agent: { zh: '中介', en: 'Agent', sex: 'm', voice: 'agent', lang: 'zh', card: 'a luxury property agent showing a North Bund penthouse; talks too much, all superlatives, pushes the price' },
-  vivian: { zh: 'Vivian', en: 'Vivian', sex: 'f', voice: 'vivian', lang: 'zh', card: 'Vivian Chen, a Lamborghini sales consultant in Shanghai; polished, warm, very good at her job, switches easily between Mandarin and English' },
+  vivian: { zh: 'Vivian', en: 'Vivian', sex: 'f', voice: 'vivian', lang: 'zh', card: 'Vivian Chen, a Corvina sales consultant in Shanghai; polished, warm, very good at her job, switches easily between Mandarin and English' },
   dad: { zh: '爸', en: 'Dad', sex: 'm', voice: 'dad', lang: 'zh', card: 'Ji Jianguo, Ji Bai\'s father, 55, built a precision-machining firm in Nanjing from one workshop; few words, gruff, proud, wants his son back to run R&D; never says he misses him' },
 };
 // the DiDi drivers, from their own descriptions
@@ -55,7 +55,7 @@ const FRIENDS = new Set(['xuan', 'yinuo', 'momo', 'zhixia', 'yuan', 'dad']);
 const STAFF = new Set(['receptionist', 'concierge', 'doorman', 'liftGuard', 'host', 'bartender', 'aiaDesk', 'aiaGuard', 'barista', 'vivian', 'agent']);
 // what they call him
 export const addressOf = (id, lang) => (HEARTS[id] ? (lang === 'zh' ? `${HEARTS[id].address.zh}（如果下面说你们还不认识，就不知道他的名字）` : `${HEARTS[id].address.en} (if it says below that you have not met, you do not know his name)`) : FRIENDS.has(id) ? (id === 'dad' ? (lang === 'zh' ? '（不叫名字）' : '(no name; he is your son)') : (lang === 'zh' ? '纪白（开玩笑时叫白白）' : 'Ji Bai')) : STAFF.has(id) ? (lang === 'zh' ? '纪先生' : 'Mr Ji') : (lang === 'zh' ? '（陌生人，不知道他的名字）' : '(a stranger; you do not know his name)'));
-export const relationTo = (id) => (HEARTS[id] ? 'How you know him, and exactly where things stand between you, is set out below: go by that and by nothing else.' : FRIENDS.has(id) ? 'You have known him for years; talk to him like an old friend would.' : id === 'vivian' ? 'He is your client (he bought or is buying a Huracán from you).' : 'He is a stranger to you (unless the scene says otherwise).');
+export const relationTo = (id) => (HEARTS[id] ? 'How you know him, and exactly where things stand between you, is set out below: go by that and by nothing else.' : FRIENDS.has(id) ? 'You have known him for years; talk to him like an old friend would.' : id === 'vivian' ? 'He is your client (he bought or is buying a Strale from you).' : 'He is a stranger to you (unless the scene says otherwise).');
 
 // the system prompt: who you are, where you are, how to talk
 export function systemPrompt(id, scene, { lang = 'zh', texting = false } = {}) {

@@ -289,7 +289,7 @@ async function boot() {
   // Manner Coffee's takeaway front on Hankou Road (world/shops.js), lit from inside
   const manner = createManner(L.curbH); scene.add(manner.group);
   const baristas = createBaristas({ scene, people, work: manner.work });   // and the two making the coffee in it (world/baristas.js)
-  // a Lamborghini parked on Hankou Road (loads in the background; world/huracan.js)
+  // a Corvina Strale parked on Hankou Road (loads in the background; world/huracan.js)
   const huracan = createHuracan(scene);
   huracan.ready.then((r) => {
     if (!r) return;
@@ -511,7 +511,7 @@ function sceneText(extra = '') {
     : b.z < -190 && b.z > -215 && b.x < L.westCurbX ? 'Nanjing Road East at the Bund, outside the Peace Hotel, crowds and shopping bags'
     : 'Zhongshan East 1st Road on the Bund, the old banks floodlit gold, traffic going by';
   const wx = weather.rain > 0.3 ? 'a light drizzle' : 'a cool clear November evening, a breeze off the river';
-  const has = [cupFor > 0 ? 'he is holding a Manner coffee' : '', world.belongings && world.belongings.umbrellaUp ? 'he has an umbrella up' : '', l.flags.car ? 'he owns a new yellow Lamborghini Huracán (parked nearby)' : ''].filter(Boolean).join('; ');
+  const has = [cupFor > 0 ? 'he is holding a Manner coffee' : '', world.belongings && world.belongings.umbrellaUp ? 'he has an umbrella up' : '', l.flags.car ? 'he owns a new yellow Corvina Strale (parked nearby)' : ''].filter(Boolean).join('; ');
   return `${clockOf(m)}, ${wx}. ${where}.${has ? ` (${has}.)` : ''}${extra ? ` ${extra}` : ''}`;
 }
 // talking: whoever it is stops and turns to you; the conversation has the keyboard
@@ -1281,7 +1281,7 @@ function updateLife(dt) {
   phone.update(dt);
   if ((lifeSaveIn -= dt) <= 0) { lifeSaveIn = 5; saveLife(); }
 }
-// the Huracán: Zhixia's lead (after you said you'd think about a car), the appointment, the
+// the Strale: Zhixia's lead (after you said you'd think about a car), the appointment, the
 // purchase's own clock, delivery, and what your friends make of it
 function updateCarSale(events) {
   const f = life.flags, now = lifeStamp(life);
@@ -1409,7 +1409,7 @@ function updateTraffic(dt) {
     others.push(...world.hearts.others());
     others.push(...world.shoppers.others(), ...world.trams.others());
     others.push(...world.confront.others());                                        // (the crowd walks round a row, too)
-    cr.setCars(traffic.obstacles);                                                   // the Huracán, parked or driven: walked round, not through
+    cr.setCars(traffic.obstacles);                                                   // the Strale, parked or driven: walked round, not through
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others, focus: eye });
     world.crowdView.update(dt, eye, { rain: weather.rain });
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)

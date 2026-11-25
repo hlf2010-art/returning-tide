@@ -123,10 +123,10 @@ export const EN = {
   '你是不是在汉口路那家Manner？我们工地的人天天去，燕麦拿铁不错。': 'Are you at the Manner on Hankou Road? The guys from our site go every day. The oat latte\'s good.',
   '怎么不接电话？': 'Why aren\'t you picking up?', '在忙？': 'Busy?',
   // default answers to invitations
-  // the Huracán: Zhixia's card, Vivian
+  // the Strale: Zhixia's card, Vivian
   '推给你，Vivian，人很实在，不会硬推销。你就说是我朋友。': "Here's Vivian. She's straight with people, no hard sell. Just say you're my friend.",
   '[名片] Vivian 陈': '[Contact card] Vivian Chen',
-  '你好，我是知夏的朋友纪白，想了解一下 Huracán。': "Hi, I'm Ji Bai, a friend of Zhixia's. I'd like to know about the Huracán.",
+  '你好，我是知夏的朋友纪白，想了解一下 Strale。': "Hi, I'm Ji Bai, a friend of Zhixia's. I'd like to know about the Strale.",
   '纪先生您好！知夏跟我说过您～ 我们这边可以把试驾车开到您那边，外滩可以吗？': "Hello Mr Ji! Zhixia told me about you. We can bring the demo car to you. Would the Bund work?",
   '定金收到啦，合同我发您邮箱。配额已经帮您锁好，大概两周到店。': "Deposit received! I'll email you the contract. Your allocation is locked in; it should reach us in about two weeks.",
   '上牌的话，车在哪儿买不影响，跟着户口走。您是南京户口，我们这边可以帮您代办苏A，车先挂临牌。': "For the plate, it doesn't matter where you buy the car: registration follows your hukou. Yours is Nanjing, so we can register it on a 苏A plate for you. The car runs on temporary plates meanwhile.",

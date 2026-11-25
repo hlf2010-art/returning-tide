@@ -7,7 +7,7 @@
 // all); nothing in the text marks which is which.
 export const DRIVERS = [
   {
-    id: 'shi-gu', sex: 'm', rating: '4.9', name: '顾师傅', plate: '沪A·D7L192', car: 'BYD 汉 EV, dark grey', chatty: 0.75, mood: 'chatty',
+    id: 'shi-gu', sex: 'm', rating: '4.9', name: '顾师傅', plate: '沪A·D7L192', car: '景和 E7 电动版, dark grey', chatty: 0.75, mood: 'chatty',
     who: 'Gu, 58, Shanghainese, drove a Dazhong taxi for 22 years before switching to DiDi; drops Shanghainese words into his Mandarin, opinionated about everything',
     topics: {
       traffic: [
@@ -57,7 +57,7 @@ export const DRIVERS = [
     ],
   },
   {
-    id: 'liu-jie', sex: 'f', rating: '5.0', name: '刘师傅', plate: '沪A·DH0447', car: 'Li Auto L6, silver', chatty: 0.35, mood: 'tired',
+    id: 'liu-jie', sex: 'f', rating: '5.0', name: '刘师傅', plate: '沪A·DH0447', car: 'Kunlun L6, silver', chatty: 0.35, mood: 'tired',
     who: 'Liu, 44, from Zhoukou in Henan, has driven 11 hours today; quiet, polite, opens up about her son if asked',
     topics: {
       kids: [
@@ -72,7 +72,7 @@ export const DRIVERS = [
     ],
   },
   {
-    id: 'ma-ge', sex: 'm', rating: '4.7', name: '马师傅', plate: '沪A·D2X559', car: 'NIO ET5, blue', chatty: 0.65, mood: 'grumbly',
+    id: 'ma-ge', sex: 'm', rating: '4.7', name: '马师傅', plate: '沪A·D2X559', car: 'Aurae S5, blue', chatty: 0.65, mood: 'grumbly',
     who: 'Ma, 39, from Shandong, ex-army, used to drive for a property agency; complains about everything with affection',
     topics: {
       traffic: [
@@ -93,7 +93,7 @@ export const DRIVERS = [
     ],
   },
   {
-    id: 'chen-mei', sex: 'm', rating: '4.9', name: '陈师傅', plate: '沪A·DM1730', car: 'AITO M7, black', chatty: 0.2, mood: 'flat',
+    id: 'chen-mei', sex: 'm', rating: '4.9', name: '陈师傅', plate: '沪A·DM1730', car: 'Tianheng M7, black', chatty: 0.2, mood: 'flat',
     who: 'Chen, 50, a former restaurant owner from Ningbo; drives in silence with Yue opera on low; answers questions in a few words',
     topics: {
       weather: ['嗯，冷了。'],

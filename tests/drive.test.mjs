@@ -1,4 +1,4 @@
-// Driving the Huracán (src/engine/drive.js). npm test.
+// Driving the Strale (src/engine/drive.js). npm test.
 import { createDrive, stepDrive, footprint, kmh, CAR } from '../src/engine/drive.js';
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };

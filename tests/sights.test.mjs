@@ -62,7 +62,7 @@ function passBy(persona, seed) {
   ok(notices >= 3 && notices <= 9, `pacing past it for ten minutes, noticed it ${notices} times (not every pass)`);
 }
 {
-  // the real Hankou Road crowd with the Huracán at the kerb: nobody walks through it; some photos
+  // the real Hankou Road crowd with the Strale at the kerb: nobody walks through it; some photos
   const t = createTraffic({ geom: crossing, vehicles: crossing.vehicles, peds: crossing.peds, shop: createShop({ queue: manner.queue, pickup: manner.pickup }), rng: rng(4) });
   const car = { x: -40.6, z: 2.86 }, circles = [-1.5, 0, 1.5].map((dx) => ({ x: car.x + dx, z: car.z, r: 1.15 }));
   t.setSights([{ id: 'huracan', ...car }]); t.setObstacles(circles);

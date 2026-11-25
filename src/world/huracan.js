@@ -1,19 +1,15 @@
-// A Lamborghini Huracán LP 610-4 (2014), parked on Hankou Road by the south kerb, nose toward the
-// Bund: the kind of car that is always parked somewhere near the Peace Hotel. It's the car the
-// purchase journey will make yours.
-// Model: "Lamborghini Huracan LP-6104 2014" by MdMahib on Sketchfab, CC-BY-4.0
-// (https://sketchfab.com/3d-models/lamborghini-huracan-lp-6104-2014-4b7b162bcb4f48849f30b1c25b3102a3),
-// supplied for this project; used as published (real scale, ~4.46 m). Loaded in the background:
-// the street doesn't wait for it.
+// The Corvina Strale (the game's own invented marque and car: world/supercarModel.js), parked on Hankou Road by the
+// south kerb, nose toward the Bund: the kind of car that is always parked somewhere near the Peace Hotel. It's the car
+// the purchase journey will make yours. Built from code, real scale (~4.5 m). The file keeps its old name (the id
+// 'huracan' is in saves).
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { capTextures } from './texCap.js';
+import { buildStrale } from './supercarModel.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { addDynamicCollider } from './layout.js';
 
 export const HURACAN_SPOT = { x: -40.6, z: 2.86 };            // Hankou Road, south kerb lane (kerb at z = 4), where people walk by
 
-// The model arrives as ~80 meshes; most share a material with others and never move relative to the
+// The car is built from ~70 meshes; most share a material with others and never move relative to the
 // body. Merged by material (the wheels left alone, they turn): about a third of the draw calls, the
 // same picture, the same materials (lamps and paint are still found by name).
 function mergeBody(root, keep) {
@@ -43,9 +39,8 @@ export function createHuracan(scene) {
   const group = new THREE.Group(); group.name = 'huracan'; scene.add(group);
   const collider = addDynamicCollider('car');
   const S = { root: null, wheels: [], lights: [] };
-  const ready = new GLTFLoader().loadAsync('./models/huracan.glb').then((gltf) => {
-    const root = gltf.scene;
-    capTextures(root, 2048);                                   // (two 4096 maps: 130 MB on the GPU for a parked car; world/texCap.js)
+  const ready = Promise.resolve().then(() => {
+    const root = buildStrale();
     root.updateMatrixWorld(true);
     // which way is the front: from the front wheels to the rear ones
     const pos = (n) => { const o = root.getObjectByName(n); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
@@ -95,7 +90,7 @@ export function createHuracan(scene) {
     Object.assign(collider, { minX: HURACAN_SPOT.x - size.x / 2, maxX: HURACAN_SPOT.x + size.x / 2, minZ: HURACAN_SPOT.z - size.z / 2, maxZ: HURACAN_SPOT.z + size.z / 2 });
     S.root = root; S.size = size; S.rf = rf;
     return { size, triangles: countTris(root) };
-  }).catch((err) => { console.warn('huracan: model not loaded', err); return null; });
+  }).catch((err) => { console.warn('supercar: not built', err); return null; });
   return {
     group, ready, collider,
     get loaded() { return !!S.root; },

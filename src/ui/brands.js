@@ -3,10 +3,10 @@
 // this is a private, non-commercial build). Brands Simple Icons doesn't carry (DiDi, JD, NIO, Li Auto,
 // AITO, UnionPay, China Merchants Bank, Manner) appear as their own name in their own colours,
 // a wordmark, not an invented symbol.
-import { siWechat, siAlipay, siTaobao, siStarbucks, siLamborghini, siApplepay, siVisa, siMastercard, siShanghaimetro, siHsbc } from 'simple-icons';
+import { siWechat, siAlipay, siTaobao, siStarbucks, siApplepay, siVisa, siMastercard, siShanghaimetro, siHsbc } from 'simple-icons';
 
-const SI = { wechat: siWechat, alipay: siAlipay, taobao: siTaobao, starbucks: siStarbucks, lamborghini: siLamborghini, applepay: siApplepay, visa: siVisa, mastercard: siMastercard, shanghaimetro: siShanghaimetro, hsbc: siHsbc };
-export const BRAND_COLOR = { wechat: '#07C160', alipay: '#1677FF', taobao: '#FF5000', jd: '#E1251B', didi: '#FF7A00', manner: '#111111', starbucks: '#006241', lamborghini: '#B6A272', unionpay: '#E21836', cmb: '#C8102E' };
+const SI = { wechat: siWechat, alipay: siAlipay, taobao: siTaobao, starbucks: siStarbucks, applepay: siApplepay, visa: siVisa, mastercard: siMastercard, shanghaimetro: siShanghaimetro, hsbc: siHsbc };
+export const BRAND_COLOR = { wechat: '#07C160', alipay: '#1677FF', taobao: '#FF5000', jd: '#E1251B', didi: '#FF7A00', manner: '#111111', starbucks: '#006241', corvina: '#B6A272', unionpay: '#E21836', cmb: '#C8102E' };
 
 // <svg> of a Simple Icons mark (24 x 24 viewBox), in a colour
 export function mark(slug, color = '#fff', size = 26) {
@@ -39,5 +39,6 @@ export function markCanvas(slug, { color = '#fff', bg = null, size = 256, pad = 
   if (i) { const p = new Path2D(i.path); const s = (size * (1 - 2 * pad)) / 24; x.translate(size * pad, size * pad); x.scale(s, s); x.fillStyle = color; x.fill(p); }
   return c;
 }
-// a car maker's badge as it reads on the car (wordmarks; the Huracán's own model carries its badges)
-export const CAR_BADGE = { 'nio-et5': 'NIO', 'li-l9': 'LI', 'aito-m9': 'AITO', 'luxeed-r7': 'LUXEED', taxi: '大众出租', sedan: null };
+// a maker's wordmark across the tail: the cars in traffic are lookalikes of no real maker, so they carry invented
+// names (the taxi a plain 出租)
+export const CAR_BADGE = { 'nio-et5': 'AURAE', 'li-l9': 'KUNLUN', 'aito-m9': 'TIANHENG', 'luxeed-r7': 'QINGYUN', taxi: '出租', sedan: null };

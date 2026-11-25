@@ -1,4 +1,4 @@
-// The Huracán, bought the way it's actually done (engine/carPurchase.js keeps the state and the money).
+// The Strale, bought the way it's actually done (engine/carPurchase.js keeps the state and the money).
 // In the world:
 //   - at the appointment Vivian (the sales consultant) waits on the pavement by the demo car on
 //     Hankou Road. E to talk: what she says, and what you can answer with 1-4
@@ -52,7 +52,7 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
   // the conversation at the car: a few small scenes, each a line and up to four answers
   const scenes = {
     hello: () => ({
-      text: B('纪先生？我是Vivian。这台是我们的试驾车，Huracán LP610-4，5.2升V10自然吸气，您随便看。', "Mr Ji? I'm Vivian. This is our demo car, the Huracán LP610-4: 5.2-litre naturally aspirated V10. Have a good look."),
+      text: B('纪先生？我是Vivian。这台是我们的试驾车，科尔维纳 Strale，5.2升V10自然吸气，您随便看。', "Mr Ji? I'm Vivian. This is our demo car, the Corvina Strale: 5.2-litre naturally aspirated V10. Have a good look."),
       choices: [[T('能坐进去看看吗？', 'Can I sit in it?'), 'sit'], [T('能开一圈吗？', 'Can I take it for a drive?'), 'drive'], [T('颜色和内饰有哪些？', 'What colours and interiors are there?'), 'colour'], [T('我再想想。', "I'll think about it."), 'bye']],
     }),
     engine: () => { audio && audio.cue && audio.cue('v10'); huracan.setLights(true); return {
@@ -165,7 +165,7 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
         if (car) {
           fitPlate(car.plate); huracan.setLights(true); audio && audio.cue && audio.cue('v10');
           show(VIV(), T(`恭喜提车！钥匙给您。${car.plate}，以后它就是您的了。`, `Congratulations! Here's the key. ${car.plate}: she's all yours now.`), null);
-          hud.toast(T('兰博基尼 Huracán 已是你的', 'The Huracán is yours'), 4);
+          hud.toast(T('科尔维纳 Strale 已是你的', 'The Strale is yours'), 4);
           setTimeout(() => { hide(); this.leave(); }, 4200);
           if (save) save();
         }
