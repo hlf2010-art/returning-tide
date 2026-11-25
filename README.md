@@ -16,7 +16,7 @@ one short street (Hankou Road), ~155 m of the Bund promenade with two conversing
 - **Getting around:** the Bund–Lujiazui ferry from the cruise pier (E at the green ferry board; every 15 min, 06:00–23:00, ¥2) and back from the ferry sign on West Lujiazui Road; DiDi as before.
 - **The notebook:** E at the desk in 612 (or N) opens Ji Bai's notebook: handwriting and pen sketches (the first week, the night gimbal before it exists, the robot arm, Dad); ← → turn the pages.
 - **The Huracán:** E at the parked car starts the purchase (Zhixia sends the dealer's card); Vivian offers a test drive ("Can I take it for a drive?"); a bought car is delivered on day 7 and drives from either side.
-- **Voices:** every scripted line is recorded in Mandarin and English (1,491 clips, Kokoro-82M via `tools/voice/generate.py`); only lines made up at runtime (free conversation, lines with live numbers) fall back to subtitles. The browser's synthetic speech is never used.
+- **Voices:** every scripted line is recorded in Mandarin and English (1,491 clips, Kokoro-82M via `tools/voice/generate.py`); only lines made up at runtime (free conversation, lines with live numbers) fall back to subtitles. 34 lines are ElevenLabs takes instead (`tools/voice/eleven.json`; free-plan, non-commercial: see Credits). The browser's synthetic speech is never used.
 - **Phone:** voice notes play with a progress bar (↑/↓ and Enter, or click), videos play in the chat, calls play their recorded lines.
 - **Streets:** pedestrians look ahead and pass each other, use kerbs and crossings without sticking, and flinch when they do brush; Manner has two baristas at work; the buses are painted metal with glass and an interior.
 - **UI:** Bund Deco (`src/ui/deco.css`, on the shared tokens in `src/ui/fonts.js`; icons in `src/ui/icons.js`), in the manner of the title screen, the character page and the season screen: river-night panels with a gold double rule, chamfered gold plaques for the main action, Cormorant / Noto Serif lettering spaced wide, Poiret One for small labels. It replaced the earlier liquid-glass layer; the phone keeps its own glass, as a 2026 phone would. Icons stand in where a word isn't needed.
@@ -1355,6 +1355,8 @@ click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.
 
 ## Credits
 
+The game shows these in Settings, under "Credits and licences" (`src/ui/credits.js`; `tests/credits.test.mjs` fails if a licensed model or recorded sound ships without an entry there). The music has its own list.
+
 - People: Microsoft Rocketbox avatars (MIT), 16 of them: Old Lin, Ms. Su, you, and 13 passers-by and visitors (8 added for the evening crowd: Female_Adult_04, 07, 11, 14, Business_Female_04, Male_Adult_02, 04, 12).
 - Photographed surfaces: Poly Haven (CC0), https://polyhaven.com
 - **"Lamborghini Huracan LP-6104 2014"** by MdMahib, CC-BY-4.0:
@@ -1363,7 +1365,9 @@ click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.
   extracted from a commercial mobile game, so the uploader's right to license it is uncertain.
   Treat it as fine for a private build only.
 - Manner and Starbucks cup props: made for this project (`docs/props/`).
-- Voices: **Kokoro-82M** by hexgrad (Apache-2.0), v1.1-zh for Mandarin and v1.0 for English: https://huggingface.co/hexgrad/Kokoro-82M. The clips in `public/voice/` were generated with it.
+- Voices: **Kokoro-82M** by hexgrad (Apache-2.0), v1.1-zh for Mandarin and v1.0 for English: https://huggingface.co/hexgrad/Kokoro-82M. Most clips in `public/voice/` were generated with it.
+- **ElevenLabs** (free plan: non-commercial use only, with attribution): 34 character lines in `public/voice/` (listed in `tools/voice/eleven.json`), the payment speakers, Ji Bai's breathing, the 22:00 sigh and the background beds. They must be regenerated on a paid plan or replaced before any commercial release; `docs/sound.md` lists every sound and its licence.
+- **"Byd Han"** by MattDoesBlender, CC BY 4.0: https://sketchfab.com/3d-models/f7ee6b12224543c38f17f9122b4f1eaf (scaled, interior removed, simplified; `public/models/cars/CREDITS.md`).
 - Brand marks: **Simple Icons** (CC0 data), https://simpleicons.org, including the Shanghai Metro mark on the station signs. The trademarks belong to their owners.
 - Shanghai Metro line colours (Line 2 #82BF25, Line 10 lilac): Wikipedia's Shanghai Metro palette, not an official specification. Exit positions from Shanghai Metro's own descriptions of East Nanjing Road station's exits (as quoted by Chinese Wikipedia and Baidu Baike).
 - In-browser model (optional): **WebLLM** (Apache-2.0) running Qwen2.5-1.5B-Instruct (Apache-2.0), downloaded by your browser when you turn it on. No model is bundled.
