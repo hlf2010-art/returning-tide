@@ -10,7 +10,7 @@ export const FIGHT_NAMES = {
 };
 // overheard as you come near, before you've done anything
 export const NOTICE = [
-  ['drunk', '加个微信怎么了？我又不是坏人！', "Add me on WeChat, what's the harm? I'm not a bad guy!"],
+  ['drunk', '加个信语怎么了？我又不是坏人！', "Add me on Xinyu, what's the harm? I'm not a bad guy!"],
   ['girl', '我说了不加。你让一下。', 'I said no. Let me past.'],
   ['drunk', '哎哟，还挺有脾气。走什么走，话还没讲完呢！', "Ooh, a temper on her. Where're you going? I'm not done talking!"],
   ['girl', '你别拉我！', "Don't grab me!"],

@@ -108,7 +108,7 @@ const fresh = () => { const L = createLife(); setupThreads(L); initYear(L); retu
   ok(good, 'each of the five: a name, a role, an ambition, an arc over five acts, her lines, in Chinese and English; in the phone\'s cast and the persona cards');
   ok(avatars.size === 5, `five different faces (${[...avatars].join(', ')}), all from the Rocketbox adults that exist`);
   ok(ROMANCE.every((id) => ROMANCE_NAMES[id][0] === CAST[id].name.zh) && ROMANCE_NAMES.nar[0] === '' && ROMANCE_CALLS['yuan-call'].from === 'yuan', 'their names for the scene box; their calls for the phone');
-  ok(/WeChat/.test(systemPrompt('gunian', 'x', { texting: true })) && !/stranger/.test(systemPrompt('gunian', 'x')) && /^纪白/.test(addressOf('zhiwei', 'zh')), 'the persona prompt does not call him a stranger');
+  ok(/Xinyu/.test(systemPrompt('gunian', 'x', { texting: true })) && !/stranger/.test(systemPrompt('gunian', 'x')) && /^纪白/.test(addressOf('zhiwei', 'zh')), 'the persona prompt does not call him a stranger');
 }
 
 // ================= playing it =================
@@ -222,7 +222,7 @@ const kept = {};
   const L = fresh();
   run(L, D(2, 19, 0), never); play(L, 'g-aia', [0, 0]);
   run(L, D(3, 13, 5), only('gunian'));
-  ok(L.threads.xuan.messages.some((m) => /顾念/.test(m.text) && !cjk(enText(m.text))) && presence(L, 'gunian').scene === 'g-manner', 'Gu Nian: she has asked Mingxuan who he is, and Mingxuan has something to say about it; at one she is at Manner on Hankou Road');
+  ok(L.threads.xuan.messages.some((m) => /顾念/.test(m.text) && !cjk(enText(m.text))) && presence(L, 'gunian').scene === 'g-manner', 'Gu Nian: she has asked Mingxuan who he is, and Mingxuan has something to say about it; at one she is at Linger on Hankou Road');
   play(L, 'g-manner', [1, 0]);
   ok(heart(L, 'gunian').stage === 'close', 'the tape and the coffee: close');
   run(L, D(4, 16, 0), only('gunian'));

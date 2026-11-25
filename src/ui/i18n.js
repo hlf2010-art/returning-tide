@@ -128,7 +128,7 @@ export const S = {
   ancOn: { zh: '降噪已开', en: 'Noise cancelling on' }, ancOff: { zh: '降噪已关', en: 'Noise cancelling off' },
   // DiDi
   rideArrived: { zh: '已到达', en: 'Arrived' }, rideContinue: { zh: '继续', en: 'Continue' },
-  pDidi: { zh: (p) => `滴滴 ${p}`, en: (p) => `DiDi ${p}` }, pGetIn: { zh: '上车', en: 'Get in' }, mapDidi: { zh: '你的车', en: 'Your ride' },
+  pDidi: { zh: (p) => `快马 ${p}`, en: (p) => `Kuaima ${p}` }, pGetIn: { zh: '上车', en: 'Get in' }, mapDidi: { zh: '你的车', en: 'Your ride' },
   rideHint: { zh: '1–4 回话 · 鼠标环顾', en: '1–4 to answer · mouse to look around' },
   // map areas
   areas: { hankou: { zh: '汉口路', en: 'Hankou Road' }, zhongshan: { zh: '中山东一路', en: 'Zhongshan Road (E-1)' }, promenade: { zh: '外滩观景平台', en: 'The Promenade' }, customs: { zh: '海关大楼', en: 'Customs House' }, nanjing: { zh: '南京东路步行街', en: 'Nanjing Road East' }, henan: { zh: '河南中路', en: 'Henan Road (M)' }, metro: { zh: '南京东路站', en: 'East Nanjing Rd Station' } },
@@ -136,7 +136,7 @@ export const S = {
 
 // Lujiazui's areas (world/lujiazuiLayout.js ljzZone)
 Object.assign(S.areas, { ring: { zh: '明珠环 · 人行天桥', en: 'The Mingzhu Ring' }, roundabout: { zh: '陆家嘴环岛', en: 'Lujiazui Roundabout' }, century: { zh: '世纪大道', en: 'Century Avenue' }, ifc: { zh: '国金中心', en: 'Shanghai IFC' },
-  apple: { zh: 'Apple 浦东', en: 'Apple Pudong' }, green: { zh: '陆家嘴中心绿地', en: 'Lujiazui Central Green' }, ljzMetro: { zh: '陆家嘴站', en: 'Lujiazui Station' } });
+  apple: { zh: 'Lumen 浦东', en: 'Lumen Pudong' }, green: { zh: '陆家嘴中心绿地', en: 'Lujiazui Central Green' }, ljzMetro: { zh: '陆家嘴站', en: 'Lujiazui Station' } });
 // Line 2's stations, under the street (world/metro.js areaKey)
 Object.assign(S.areas, { enrConc: { zh: '南京东路站 · 站厅', en: 'East Nanjing Rd · concourse' }, enrPlat: { zh: '南京东路站 · 2号线站台', en: 'East Nanjing Rd · Line 2' }, ljzConc: { zh: '陆家嘴站 · 站厅', en: 'Lujiazui · concourse' }, ljzPlat: { zh: '陆家嘴站 · 2号线站台', en: 'Lujiazui · Line 2' }, metroTrain: { zh: '地铁2号线 · 车厢', en: 'Line 2 · aboard' } });
 

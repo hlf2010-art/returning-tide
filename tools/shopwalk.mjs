@@ -1,4 +1,4 @@
-// Shoppers by DiDi: watch one story through: a car pulls in at the Peace Hotel kerb, someone gets out,
+// Shoppers by Kuaima: watch one story through: a car pulls in at the Peace Hotel kerb, someone gets out,
 // walks into a Nanjing Road shop, comes out with bags, walks to the pick-up kerb, gets a car and leaves.
 // (The shop is set to the nearest one and the time inside cut short, so it runs in a few minutes.)
 //   node tools/shopwalk.mjs (URL=, OUT=)

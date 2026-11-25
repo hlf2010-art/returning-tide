@@ -116,7 +116,7 @@ export function drawBlade(x, s, X, Y, W, H) {
   chars.forEach((c, i) => x.fillText(c, X + W / 2, Y + W * 0.25 + (H - W * 0.5) * (i + 0.5) / chars.length));
   x.restore();
 }
-// a brand mark: a simple-icons path (24 x 24), centred at (cx, cy), `size` across
+// a mark: a 24 x 24 SVG path, centred at (cx, cy), `size` across
 function logo(x, path, cx, cy, size, color, glow) {
   x.save(); x.translate(cx - size / 2, cy - size / 2); x.scale(size / 24, size / 24);
   x.fillStyle = color; if (glow) { x.shadowColor = glow; x.shadowBlur = 2; }

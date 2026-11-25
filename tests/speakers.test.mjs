@@ -24,7 +24,7 @@ ok(trackAt('cafe', 0, new Set([cafe[2]])).id === cafe[2] && trackAt('cafe', 999,
 
 // when and how loud
 ok(gainAt(V['nj-north'], 5, H(9, 59)) === 0 && gainAt(V['nj-north'], 5, H(10)) > 0 && gainAt(V['nj-north'], 5, H(21, 59)) > 0 && gainAt(V['nj-north'], 5, H(22)) === 0, 'the Nanjing Road shops play while they are open, 10:00 to 22:00');
-ok(gainAt(V.manner, 3, H(3)) > 0 && gainAt(V.manner, 3, H(3)) < gainAt(V.manner, 3, H(15)), 'Manner never closes in the game, so its playlist never stops; in the small hours it is turned down');
+ok(gainAt(V.manner, 3, H(3)) > 0 && gainAt(V.manner, 3, H(3)) < gainAt(V.manner, 3, H(15)), 'Linger never closes in the game, so its playlist never stops; in the small hours it is turned down');
 ok(gainAt(V.manner, 2, H(15)) > gainAt(V.manner, 8, H(15)) && gainAt(V.manner, 8, H(15)) > gainAt(V.manner, 16, H(15)) && gainAt(V.manner, V.manner.max, H(15)) === 0 && gainAt(V.manner, 60, H(15)) === 0, 'it falls away with distance and is gone by its edge');
 ok(gainAt(V['nj-south'], 6, H(15), 1) < gainAt(V['nj-south'], 6, H(15), 0) * 0.3, 'through a wall it is a quarter as loud');
 ok(cutoffAt(V['nj-south'], 30) < cutoffAt(V['nj-south'], 3) && cutoffAt(V['nj-south'], 3, 1) < cutoffAt(V['nj-south'], 3, 0), 'and duller from down the street, or from indoors');

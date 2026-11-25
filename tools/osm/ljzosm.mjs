@@ -102,7 +102,7 @@ const areas = {
   pearlPark: wayP(47280263),                                               // 东方明珠公园
   island: wayP(165367190),                                                 // the roundabout's grass island
   applePlaza: wayP(166128036),                                             // the paved round plaza (highway=pedestrian area)
-  appleStore: wayP(255624910),                                             // Apple 浦东, level -2, underground
+  appleStore: wayP(255624910),                                             // Lumen 浦东, level -2, underground
   ifcMall: wayP(526005642),                                                // 上海国金中心商场 (also among the buildings)
   ringBridge: flat(ways.get('48876367').p),                                // the Mingzhu Ring's centreline (bridge=yes footway)
 };

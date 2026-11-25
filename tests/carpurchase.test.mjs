@@ -1,4 +1,4 @@
-// Buying the Huracán (src/engine/carPurchase.js). npm test.
+// Buying the Strale (src/engine/carPurchase.js). npm test.
 import { createLife, balance, stamp, skipTo, drain } from '../src/engine/life.js';
 import { lead, contact, view, spec, payDeposit, choosePlate, payBalance, quote, stepPurchase, deliver, CAR, PLATE, auctionEligible } from '../src/engine/carPurchase.js';
 import { initYear } from '../src/engine/year.js';

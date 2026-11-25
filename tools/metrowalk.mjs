@@ -1,7 +1,7 @@
 // Walkthrough: Line 2, East Nanjing Road -> Lujiazui, done the way a player does it. Down Exit 7's stairs,
 // across the concourse, (with a bag: stopped at security, the bag on the belt), tap in at a gate, down the
 // escalator, wait behind the screen doors, board the eastbound train, ride it under the river, off at
-// Lujiazui, up, tap out (¥3 on Alipay), out by Exit 6 to Century Avenue. Screenshots on the way.
+// Lujiazui, up, tap out (¥3 on YiPay), out by Exit 6 to Century Avenue. Screenshots on the way.
 // (The plan, the floors and the timetable are tested in node: tests/metro.test.mjs.)
 //   URL=http://localhost:4181/ OUT=<dir> UILANG=en|zh [BAG=1] [HOUR=10:00] [SHOTS=0] node tools/metrowalk.mjs
 import { createRequire } from 'module';
@@ -121,7 +121,7 @@ const go = 1, before = await alipay();
 await walkL(L, GATE.a + 1.6, gateP(go), 20); await look(...W(L, GATE.a, gateP(go)), Y.C + 0.9); await settle(500);
 pr = await prompt(); ok(/Tap out|出站/.test(pr), `at an exit gate: "${pr}"`);
 await p.keyboard.press('KeyE'); await settle(1600);
-ok(before - (await alipay()) === 3, `¥3 off Alipay (${before} -> ${await alipay()})`);
+ok(before - (await alipay()) === 3, `¥3 off YiPay (${before} -> ${await alipay()})`);
 await walkL(L, GATE.a - 1.6, gateP(go), 10); await walkL(L, SEC.a - 1.2, -3.0, 20);
 const e6 = L.ways.exits.find((e) => e.exit === 6);
 await walkL(L, -6, 3, 20); await walkL(L, e6.land[0] + 2.6, 8, 20); await walkL(L, e6.land[0] + 2.6, e6.land[1], 15); await walkL(L, e6.land[0] - 0.5, e6.land[1], 10);

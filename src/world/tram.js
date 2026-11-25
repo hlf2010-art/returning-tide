@@ -347,6 +347,10 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
         else for (const im of carIM) im.setMatrixAt(i * nCars + k - 1, _m);
       }));
       for (const im of [...locoIM, ...carIM]) im.instanceMatrix.needsUpdate = true;
+      // (from the Bund, 600 m off behind the buildings, they aren't drawn at all: some 25 draw calls saved)
+      const shown = !eye || trains.some((t) => Math.abs(eye.x - t.pos[0].x) + Math.abs(eye.z - t.pos[0].z) < 420);
+      for (const im of [...locoIM, ...carIM]) im.visible = shown;
+      for (const t of trains) if (t.num) t.num.visible = shown;
       for (const t of trains) { const q = t.pos[t.pos.length - 1], c = Math.cos(q.yaw), s = Math.sin(q.yaw), back = CAR.len / 2 + 0.05; t.num.position.set(q.x - s * back, 0.72 + LAY.curbH, q.z - c * back); t.num.rotation.y = q.yaw + Math.PI; }
     },
     get state() { return trains.map((t) => ({ x: +t.pos[0].x.toFixed(1), z: +t.pos[0].z.toFixed(1), v: +t.v.toFixed(2), dwell: +t.dwell.toFixed(1), riders: t.riders.length })); },

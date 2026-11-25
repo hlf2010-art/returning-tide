@@ -69,3 +69,64 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
   than the sheet's soft tousled volume, and the fringe hides most brow movement.
 - Fixed on the way: MPFB's expression units load ten times too strong onto a baked mesh unless its scale factor
   (0.1) is set; the build sets it.
+
+## Ji Bai v2 (round 2, 25 November)
+
+- **Changed:** a narrower face tapering to the chin, higher cheekbones, a longer and narrower nose, larger eyes set
+  higher with the outer corners lifted, brows lower and finer, smaller and darker lips; warmer skin with cheek and
+  nose warmth and under-eye shadow; the GLB now carries baked normal (pores) and roughness maps as well as colour;
+  the hair has a parting with the fringe falling away from it, wider front cards, less lift and less shine.
+- **Renders:** `docs/hero-faces/jibai-v2-renders.jpg` (with the reference), `jibai-v2-threejs.jpg`.
+- **Most useful next steps:** a person's notes on the likeness; a portrait projection onto the head's UVs (research
+  step 3) for the skin; the `faceunits01` and visemes packs from the owner's Mac; a head for an NPC who really
+  has dialogue close-ups (Gu Nian first).
+
+## In the game (round 3, 25 November)
+
+- **Ji Bai's body now wears the MPFB face** (`people.json` `head` + `keepHair`, `swapHead` in `src/world/people.js`).
+  Only the skin of the Hunyuan head goes: its sculpted hair stays (it reads far better than v2's cards), and the
+  face, ears and neck come from `jibai/head.glb` with its eyeballs, brows, upper lashes and 34 face shapes. The
+  head is placed by the nose tip (the front-most skin-coloured point, so a fringe can't win), scaled to the old
+  face's nose-to-chin length and mouth-level width (the Hunyuan faces are smaller under a larger skull: Ji Bai's
+  comes out at 0.84, and deepened to fill the hair shell), skinned to the body's Head and Neck bones, the new skin
+  stopping 3 cm under the chin where the old neck takes over, and tinted to the body's skin from the texture.
+  Brows and lashes are matte (their grazing edges caught the sky as white fuzz). The first-person body hides it.
+- **v3 sheet:** v2 plus a flatter, wider, less pink mouth (v2's read as pursed). Every slider is still a guess.
+- **Gu Nian keeps her own face, repaired.** An MPFB face on her body (`sheets/gunian.json`) looked less like her
+  than her own texture, so instead `tools/characters/repair_eyes.py` rewrote her smeared right eye and brow from
+  her good left eye, mirrored across the face and feathered into the skin, and flattened the baked normal noise
+  over both eyes. Strands of hair over the face are left alone. `docs/hero-faces/gunian-eye-repair.jpg`; both faces before and after in the game's renderer:
+  `docs/hero-faces/faces-before-after.jpg`.
+- **Every Rocketbox NPC's hair** lost its grey slabs: the hair cards were catching specular at grazing angles;
+  `fixHair` gives them a matte physical material with alpha to coverage (`p5`'s blonde also gets a warmer tint).
+- **Check it:** `/tools/characters/faces.html` (every face at dialogue distance in the game's renderer and idle
+  pose; `?roles=player,gunian&yaw=40`, `swap=0` for the original head, `keephair=0` for the MPFB hair cards).
+- **Still off:** a patchy seam on Ji Bai's neck where the new skin meets the old (in shadow under the jaw in the
+  game, visible in the review page's studio light); Ji Bai's skin is as pale as his Hunyuan body and plain next to the AI portraits (no portrait
+  projection yet); the brows are a little stripy close up; Gu Nian's texture is low resolution around the eyes
+  and slightly smudged at the lips; her MPFB sheet needs a likeness pass before it is worth another try.
+
+## Round 4 (25 November): neck, skin tone, NPC hair
+
+- **Ji Bai's neck:** the new head's neck now takes the shape of the old neck it replaces (`conformNeck`: stretched
+  down to where the old neck skin ended, then each half-centimetre slice moved and scaled to the old slice), and
+  the old neck skin goes entirely. No more patchwork of two skins under the jaw, and nothing pokes through the
+  jacket.
+- **Ji Bai's skin:** tinted to a tone measured from his portrait (`people.json` `skinTone`, sRGB of the lit cheek
+  as the game renders it: `[120, 80, 64]`), not to the pale Hunyuan body; the build now bakes ambient occlusion
+  into the skin colour (eye sockets, nostrils, mouth corners, under the jaw); finer brows (density 0.7,
+  thickness 0.6). His hands are still the paler Hunyuan skin.
+- **NPC hair (all Rocketbox avatars):** the hair painted on the scalp under the cards is part of the glossy head
+  material, which made grey shiny streaks between the dark matte cards. `fixHair` now gives each head material a
+  roughness and specular map from its own texture: matte where it's dark (hair), unchanged on skin. Su's and
+  c5's cards are lightened to match their scalp colour (`hairTint`).
+- Before and after: `docs/hero-faces/round4-before-after.jpg`.
+
+## Round 5 (25 November): hands and Su's crown
+
+- **Ji Bai's hands** take the face's tone: with `skinTone` set, `swapHead` recolours the skin texels of his body's
+  colour map (warm and light, not hair or cloth) from the old face's mean to the same tone, in linear light.
+- **Hair cards on every Rocketbox avatar** are lit as facing outward: normals point away from the middle of the
+  head, and the back-face flip is off for them. Cards wound inward used to be lit as facing into the head and
+  showed as near-black slabs with hard edges (Su's crown). The su/c5 card lightening of round 4 is gone.
+- `docs/hero-faces/round5-hands-crown.jpg`.

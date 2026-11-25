@@ -128,7 +128,7 @@ export const PHOTO_TARGETS = [
   { id: 'peace', zh: '和平饭店绿顶', en: 'The Peace Hotel\'s green roof', x: -43, y: 66, z: -243, h: 26, near: 25, far: 260, min: 0.08 },
   { id: 'shtower', zh: '上海中心', en: 'Shanghai Tower', x: 860, y: 316, z: 395, h: 632, near: 400, far: 1800, min: 0.3 },
   { id: 'linsu', zh: '江边的老林和苏女士', en: 'Old Lin and Ms Su by the river', x: 23.7, y: 4.4, z: -15, h: 1.7, near: 2, far: 18, min: 0.12 },
-  { id: 'huracan', zh: '你的 Huracán', en: 'Your Huracán', x: 0, y: 0.6, z: 0, h: 1.2, near: 3, far: 25, min: 0.1, moving: true },
+  { id: 'huracan', zh: '你的 Strale', en: 'Your Strale', x: 0, y: 0.6, z: 0, h: 1.2, near: 3, far: 25, min: 0.1, moving: true },
   { id: 'trio', zh: '爵士吧的三重奏', en: 'The Jazz Bar trio', x: -38, y: 1.3, z: -221.2, h: 1.6, near: 2, far: 12, min: 0.15 },
   { id: 'ferry', zh: '夜里的游船', en: 'A cruise boat at night', x: 0, y: 3, z: 0, h: 8, near: 40, far: 600, min: 0.03, moving: true },
 ];

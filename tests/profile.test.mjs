@@ -9,7 +9,7 @@ let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
 const L = createLife(); initYear(L); updateQuests(L, QUESTS, 0);
 meet(L, 'nanxing'); setStage(L, 'nanxing', 'dating'); nudge(L, 'dad', 10, 't'); nudge(L, 'yuan', 4, 't');
-own(L, { kind: 'umbrella', id: 'umbrella', name: '自动折叠伞 黑色', en: 'Automatic folding umbrella, black', from: '京东' });
+own(L, { kind: 'umbrella', id: 'umbrella', name: '自动折叠伞 黑色', en: 'Automatic folding umbrella, black', from: '鲸送' });
 const zh = profileView(L, QUESTS, 'zh'), en = profileView(L, QUESTS, 'en');
 ok(zh.me.name === '纪白' && en.me.name === 'Ji Bai' && en.me.job === 'Consultant' && en.me.employer === 'Marlowe Finch', `who: ${en.me.name}, ${en.me.job} at ${en.me.employer}, ${en.me.date}`);
 ok(en.skills.length === 3 && en.skills.every((s) => s.level >= 0), 'three skills');

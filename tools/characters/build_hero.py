@@ -281,6 +281,24 @@ def skin_material():
             stub = 1.0
         scalp_t = 1.0 if hairline(c) and c.z > EYE_L.z - 0.02 else 0.0
         ca.data[i].color = (r, g, max(stub, 0.0), scalp_t)
+    # regional colour: warmth on the cheeks, nose tip and ears; shadow under the eyes and in the eye sockets
+    ca2 = hero.data.color_attributes.new("region", "FLOAT_COLOR", "POINT")
+    def blob(c, centre, rad):
+        return math.exp(-((c - centre).length / rad) ** 2)
+    eyes_c = (EYE_L, EYE_R)
+    nose_tip = Vector((0.0, min(v.co.y for v in hero.data.vertices if abs(v.co.x) < 0.01 and EYE_L.z - 0.06 < v.co.z < EYE_L.z - 0.02), EYE_L.z - 0.045))
+    for i, v in enumerate(hero.data.vertices):
+        c = v.co
+        warm = 0.0; shade = 0.0
+        for e in eyes_c:
+            cheek = Vector((e.x * 1.25, e.y - 0.004, e.z - 0.032))
+            warm = max(warm, 0.8 * blob(c, cheek, 0.022))
+            under = Vector((e.x, e.y - 0.006, e.z - 0.014))
+            shade = max(shade, blob(c, under, 0.011))
+        warm = max(warm, 0.9 * blob(c, nose_tip, 0.012))
+        ca2.data[i].color = (warm, shade, 0.0, 1.0)
+    reg = N.new("ShaderNodeAttribute"); reg.attribute_name = "region"
+    regs = N.new("ShaderNodeSeparateColor"); L.new(reg.outputs["Color"], regs.inputs[0])
     attr = N.new("ShaderNodeAttribute"); attr.attribute_name = "tint"
     sep = N.new("ShaderNodeSeparateColor"); L.new(attr.outputs["Color"], sep.inputs[0])
     base = N.new("ShaderNodeRGB"); base.outputs[0].default_value = (*s["base"], 1)
@@ -297,7 +315,17 @@ def skin_material():
     red = N.new("ShaderNodeMix"); red.data_type = "RGBA"
     mg = N.new("ShaderNodeMath"); mg.operation = "MULTIPLY"; mg.inputs[1].default_value = 0.35
     L.new(sep.outputs["Green"], mg.inputs[0]); L.new(mg.outputs[0], red.inputs["Factor"])
-    L.new(mot.outputs["Result"], red.inputs["A"]); L.new(redc.outputs[0], red.inputs["B"])
+    wm = N.new("ShaderNodeMix"); wm.data_type = "RGBA"
+    wm.inputs["B"].default_value = (0.62, 0.30, 0.25, 1)
+    wf = N.new("ShaderNodeMath"); wf.operation = "MULTIPLY"; wf.inputs[1].default_value = SHEET["skin"].get("blush", 0.35)
+    L.new(regs.outputs["Red"], wf.inputs[0]); L.new(wf.outputs[0], wm.inputs["Factor"])
+    L.new(mot.outputs["Result"], wm.inputs["A"])
+    sh = N.new("ShaderNodeMix"); sh.data_type = "RGBA"
+    sh.inputs["B"].default_value = (0.30, 0.19, 0.16, 1)
+    sf = N.new("ShaderNodeMath"); sf.operation = "MULTIPLY"; sf.inputs[1].default_value = 0.35
+    L.new(regs.outputs["Green"], sf.inputs[0]); L.new(sf.outputs[0], sh.inputs["Factor"])
+    L.new(wm.outputs["Result"], sh.inputs["A"])
+    L.new(sh.outputs["Result"], red.inputs["A"]); L.new(redc.outputs[0], red.inputs["B"])
     lip = N.new("ShaderNodeMix"); lip.data_type = "RGBA"
     L.new(sep.outputs["Red"], lip.inputs["Factor"])
     L.new(red.outputs["Result"], lip.inputs["A"]); L.new(lipc.outputs[0], lip.inputs["B"])
@@ -331,7 +359,7 @@ def skin_material():
     rr.inputs["To Max"].default_value = s["roughness"] + 0.08
     L.new(pores.outputs["Distance"], rr.inputs["Value"]); L.new(rr.outputs[0], bs.inputs["Roughness"])
     bs.inputs["Specular IOR Level"].default_value = 0.45
-    bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.12
+    bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.18
     bump.inputs["Distance"].default_value = 0.0004
     fine = N.new("ShaderNodeTexNoise"); fine.inputs["Scale"].default_value = 900.0
     L.new(tex.outputs["Object"], fine.inputs["Vector"])
@@ -515,8 +543,8 @@ def make_mesh(name, verts, faces, uvs, material):
 def hair_material(name, color, alpha_img=None, strand=False):
     mt, N, L, bs = mat(name)
     bs.inputs["Base Color"].default_value = (*color, 1)
-    bs.inputs["Roughness"].default_value = 0.5
-    bs.inputs["Specular IOR Level"].default_value = 0.35
+    bs.inputs["Roughness"].default_value = 0.62
+    bs.inputs["Specular IOR Level"].default_value = 0.22
     if alpha_img is not None:
         tx = N.new("ShaderNodeTexImage"); tx.image = alpha_img
         L.new(tx.outputs["Alpha"], bs.inputs["Alpha"])
@@ -539,7 +567,7 @@ def brows():
             t = (lx + 0.022) / 0.048  # 0 at the inner end, 1 at the tail
             if not (0.0 <= t <= 1.0):
                 return 0.0
-            centre = eye.z + 0.0185 + 0.004 * math.sin(t * math.pi * 0.9) - 0.002 * t
+            centre = eye.z + 0.0160 + 0.003 * math.sin(t * math.pi * 0.9) - 0.001 * t
             half = (0.0050 - 0.0030 * t) * b.get("thickness", 1.0)
             return 1.0 if abs(p.z - centre) < half else 0.0
         pts = surface_sample(head_vs, int(380 * b.get("density", 1.0)), in_brow)
@@ -637,8 +665,8 @@ def hair_cards():
     whorl_front = Vector((0.0, HEAD_J.y - 0.03, top))
     head_vs = [v.index for v in hero.data.vertices if v.co.z > EYE_L.z - 0.04 and abs(v.co.x) < 0.11]
     passes = [  # (cards, width, lift scale, length scale): a flat base layer that hides the scalp, then clumps
-        (160 if FAST else 260, (0.030, 0.042), 0.25, 0.85),
-        (220 if FAST else 380, (0.012, 0.022), 1.0, 1.0),
+        (200 if FAST else 320, (0.030, 0.045), 0.25, 0.9),
+        (200 if FAST else 340, (0.016, 0.028), 0.7, 1.0),
     ]
     length, fringe, wave = hs["length_cm"] / 100.0, hs["fringe_cm"] / 100.0, hs.get("wave", 0.5)
     for n_cards, (w0, w1), lift_k, len_k in passes:
@@ -649,7 +677,9 @@ def hair_cards():
         flow = p - src
         flow.z = min(flow.z, 0.0) - 0.02
         if front:
-            flow += Vector((-0.012, -0.04, -0.01))
+            part = hs.get("part_x", 0.012)  # the parting, on his left of centre: the fringe falls away from it
+            side = 1.0 if p.x > part else -1.0
+            flow += Vector((side * 0.03 * hs.get("curtain", 0.6), -0.04, -0.012))
         L_ = (fringe if front else length) * (0.6 + 0.6 * RNG.random()) * len_k
         layer = RNG.random()
         top_t = max(0.0, min(1.0, (p.z - (EYE_L.z + 0.05)) / 0.06))
@@ -721,8 +751,8 @@ def setup_render():
         ob.location = face + Vector(loc)
         d = (face - ob.location).normalized()
         ob.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
-    area("key", (0.9, -1.2, 0.55), 55, 0.9, (1.0, 0.95, 0.88))
-    area("fill", (-1.1, -0.9, 0.1), 14, 1.4, (0.85, 0.9, 1.0))
+    area("key", (0.9, -1.2, 0.55), 70, 0.9, (1.0, 0.95, 0.88))
+    area("fill", (-1.1, -0.9, 0.1), 7, 1.4, (0.85, 0.9, 1.0))
     area("rim", (-0.5, 1.2, 0.6), 45, 0.6, (0.9, 0.95, 1.0))
     area("rim2", (0.7, 1.0, 0.3), 25, 0.6)
     cam_d = bpy.data.cameras.new("cam"); cam_d.lens = 85
@@ -757,32 +787,66 @@ if "--render" in FLAGS:
 
 
 # ---------------------------------------------------------------------------------------------------- export
-def bake_color(ob, size, name):
-    """Bake the procedural base colour into a texture and swap the material for a glTF-friendly one."""
+def bake_maps(ob, size, name, extra=True):
+    """Bake the procedural colour (and, for skin, normal and roughness) into textures and rebuild the material
+    from them in a form the glTF exporter understands."""
     if not ob.data.uv_layers:
         return None
     mt = ob.data.materials[0]
-    img = bpy.data.images.new(name, size, size, alpha=False)
-    nodes = mt.node_tree.nodes
-    tx = nodes.new("ShaderNodeTexImage"); tx.image = img
-    nodes.active = tx
+    nodes, links = mt.node_tree.nodes, mt.node_tree.links
     bpy.ops.object.select_all(action="DESELECT")
     ob.select_set(True); bpy.context.view_layer.objects.active = ob
     scene.render.engine = "CYCLES"
     scene.cycles.samples = 4
     scene.render.bake.use_pass_direct = False
     scene.render.bake.use_pass_indirect = False
-    scene.render.bake.margin = 8
-    bpy.ops.object.bake(type="DIFFUSE", pass_filter={"COLOR"})
-    img.filepath_raw = os.path.join(OUT, name + ".png"); img.file_format = "PNG"; img.save()
+    scene.render.bake.margin = 12
+    imgs = {}
+    passes = [("color", "DIFFUSE", False)] + ([("normal", "NORMAL", True), ("rough", "ROUGHNESS", True)] if extra else [])
+    for key, kind, data in passes:
+        img = bpy.data.images.new("%s-%s" % (name, key), size, size, alpha=False, is_data=data)
+        tx = nodes.new("ShaderNodeTexImage"); tx.image = img
+        if data:
+            img.colorspace_settings.name = "Non-Color"
+        nodes.active = tx
+        if kind == "DIFFUSE":
+            bpy.ops.object.bake(type=kind, pass_filter={"COLOR"})
+        else:
+            bpy.ops.object.bake(type=kind)
+        img.filepath_raw = os.path.join(OUT, "%s-%s.png" % (name, key)); img.file_format = "PNG"; img.save()
+        imgs[key] = tx
+    if extra:
+        # ambient occlusion, multiplied into the colour: the depth a real face has in its eye sockets, nostrils,
+        # mouth corners and under the jaw, which three.js won't compute (the hair, brows and lashes are left out,
+        # or the fringe would paint a shadow on the forehead)
+        hidden = [o for o in scene.objects if o.type == "MESH" and o != ob and any(k in o.name for k in ("hair", "brow", "lash"))]
+        for o in hidden: o.hide_render = True
+        scene.cycles.samples = 32
+        ao = bpy.data.images.new("%s-ao" % name, size, size, alpha=False, is_data=True)
+        ao.colorspace_settings.name = "Non-Color"
+        tx = nodes.new("ShaderNodeTexImage"); tx.image = ao; nodes.active = tx
+        bpy.ops.object.bake(type="AO")
+        scene.cycles.samples = 4
+        for o in hidden: o.hide_render = False
+        import numpy as np
+        a = np.array(ao.pixels[:], np.float32).reshape(-1, 4)[:, 0]
+        c = np.array(imgs["color"].image.pixels[:], np.float32).reshape(-1, 4)
+        occ = np.clip(1 - a, 0, 1)[:, None]
+        c[:, :3] *= (1 - 0.6 * occ) * (np.array([1.0, 0.9, 0.85]) ** occ)   # darker, and a little warmer, in the creases
+        imgs["color"].image.pixels[:] = c.ravel()
+        imgs["color"].image.save()
+        nodes.remove(tx)
     bs = nodes["Principled BSDF"]
-    for link in list(bs.inputs["Base Color"].links):
-        mt.node_tree.links.remove(link)
-    mt.node_tree.links.new(tx.outputs["Color"], bs.inputs["Base Color"])
-    for inp in ("Roughness", "Normal"):
+    for inp in ("Base Color", "Roughness", "Normal"):
         for link in list(bs.inputs[inp].links):
-            mt.node_tree.links.remove(link)
-    return img
+            links.remove(link)
+    links.new(imgs["color"].outputs["Color"], bs.inputs["Base Color"])
+    if extra:
+        nm = nodes.new("ShaderNodeNormalMap")
+        links.new(imgs["normal"].outputs["Color"], nm.inputs["Color"]); links.new(nm.outputs[0], bs.inputs["Normal"])
+        sep = nodes.new("ShaderNodeSeparateColor")
+        links.new(imgs["rough"].outputs["Color"], sep.inputs[0]); links.new(sep.outputs["Green"], bs.inputs["Roughness"])
+    return imgs
 
 
 if "--export" in FLAGS:
@@ -799,11 +863,12 @@ if "--export" in FLAGS:
     bpy.ops.uv.select_all(action="SELECT")
     bpy.ops.uv.pack_islands(rotate=False, margin=0.004)
     bpy.ops.object.mode_set(mode="OBJECT")
-    bake_color(hero, 1024 if FAST else 2048, SHEET["id"] + "-skin")
+    bake_maps(hero, 1024 if FAST else 2048, SHEET["id"] + "-skin")
     for e in eyes:
         if not e.name.endswith("cornea"):
-            bake_color(e, 512, e.name + "-color")
-    hero.data.color_attributes.remove(hero.data.color_attributes["tint"])
+            bake_maps(e, 512, e.name, extra=False)
+    for nm_ in ("tint", "region"):
+        hero.data.color_attributes.remove(hero.data.color_attributes[nm_])
     for o in [o for o in scene.objects if o.type == "MESH" and o not in parts]:
         bpy.data.objects.remove(o)
     bpy.ops.object.select_all(action="DESELECT")

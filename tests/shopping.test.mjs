@@ -7,20 +7,20 @@ let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
 const run = (L, minutes, sink = []) => { for (let i = 0; i < minutes * 15; i++) { advance(L, 1); stepOrders(L); sink.push(...drain(L)); } return sink; };
 {
-  // to the hotel: one checkout split by shop; JD same evening, Taobao a couple of days; the desk signs
+  // to the hotel: one checkout split by shop; JD same evening, Wanji a couple of days; the desk signs
   const L = createLife(), a0 = balance(L, 'alipay');
   const r = placeOrder(L, { items: ['kettle', 'scarf'], method: 'alipay', address: 'hotel' }, rng(2));
-  ok(r.ok && r.orders.length === 2 && balance(L, 'alipay') === a0 - 199 - 459, 'one checkout, paid once, split into a JD and a Taobao order');
+  ok(r.ok && r.orders.length === 2 && balance(L, 'alipay') === a0 - 199 - 459, 'one checkout, paid once, split into a JD and a Wanji order');
   const jd = r.orders.find((o) => o.shop === 'jd'), tb = r.orders.find((o) => o.shop === 'taobao');
   ok(jd.times.delivered - jd.times.placed <= 4 * 60 && jd.times.delivered - jd.times.placed > 60, `JD before 7 pm: same evening (${((jd.times.delivered - jd.times.placed) / 60).toFixed(1)} h)`);
-  ok(tb.times.delivered - tb.times.placed >= 1.5 * 1440, `Taobao: a couple of days (${((tb.times.delivered - tb.times.placed) / 1440).toFixed(1)} days)`);
+  ok(tb.times.delivered - tb.times.placed >= 1.5 * 1440, `Wanji: a couple of days (${((tb.times.delivered - tb.times.placed) / 1440).toFixed(1)} days)`);
   ok(['packed', 'shipped', 'out', 'delivered'].every((k, i, a) => i === 0 || jd.times[k] >= jd.times[a[i - 1]]), 'steps happen in order');
   const ev = run(L, 4 * 60);
   ok(jd.status === 'delivered' && !ev.some((e) => e.type === 'courier'), 'the JD order reaches the hotel without sending anyone to the kerb');
   ok(waitingAt(L, 'hotel').some((i) => i.id === 'kettle') && !withMe(L).some((i) => i.id === 'kettle'), 'the kettle waits at the front desk, not in your hands');
   ok(L.threads.jd && L.threads.jd.messages.length >= 4, 'the shop keeps you posted in its chat');
   skipTo(L, stamp(L) + 4 * 1440); stepOrders(L);
-  ok(owns(L, 'clothing').length === 1 && /前台代收/.test(L.threads.taobao.messages.at(-1).text), 'Taobao delivers to the hotel too');
+  ok(owns(L, 'clothing').length === 1 && /前台代收/.test(L.threads.taobao.messages.at(-1).text), 'Wanji delivers to the hotel too');
 }
 {
   // JD express to "here": the courier waits at the kerb; you walk over; he hands it to you
@@ -51,7 +51,7 @@ const run = (L, minutes, sink = []) => { for (let i = 0; i < minutes * 15; i++) 
   const L = createLife();
   const w0 = balance(L, 'wechat');
   const r = placeOrder(L, { items: ['printer'], method: 'wechat' });
-  ok(!r.ok && r.reason === 'insufficient' && balance(L, 'wechat') === w0 && !(L.flags.orders || []).length, 'a ¥8,999 printer is more than the WeChat change: refused, nothing charged, no order');
+  ok(!r.ok && r.reason === 'insufficient' && balance(L, 'wechat') === w0 && !(L.flags.orders || []).length, 'a ¥8,999 printer is more than the Xinyu change: refused, nothing charged, no order');
   const r2 = placeOrder(L, { items: ['sofa'], method: 'card', address: 'here' });
   ok(r2.ok && r2.orders[0].address === 'hotel', 'a sofa never goes to the kerb: bulky things go to the hotel');
   const late = schedule('jd', 1 * 1440 + 21 * 60, rng(1));

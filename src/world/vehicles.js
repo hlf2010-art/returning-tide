@@ -25,10 +25,10 @@ const std = (o) => new THREE.MeshStandardMaterial(o);
 const TAIL_RUN = new THREE.Color(0.55, 0.02, 0.015), TAIL_BRAKE = new THREE.Color(4.2, 0.12, 0.06);
 
 // Side profiles: [z as a fraction of length (-0.5 rear .. +0.5 nose), height in m].
-// Approximations of each car's silhouette from public photographs, not measured CAD.
+// Generic shapes of cars on Shanghai's roads under invented makers' names (the ids are the old ones, kept for saves).
 const MODELS = {
   'nio-et5': {
-    name: 'NIO ET5', zh: '蔚来', paint: 0xb9c0c6, wheelD: 0.70, frontOverhang: 0.93,
+    name: 'Aurae S5', zh: '曜辰', paint: 0xb9c0c6, wheelD: 0.70, frontOverhang: 0.93,
     body: [[-0.5, 0.32], [-0.5, 0.62], [-0.47, 0.93], [-0.36, 0.96], [0.2, 0.93], [0.42, 0.78], [0.5, 0.6], [0.49, 0.32]],
     glass: [[-0.37, 0.95], [-0.14, 1.39], [0.03, 1.42], [0.21, 0.93]],
     lidar: 0.05,
@@ -36,7 +36,7 @@ const MODELS = {
     tail: { y: 0.9, h: 0.04, through: true },
   },
   'li-l9': {
-    name: 'Li Auto L9', zh: '理想', paint: 0x8f9a94, wheelD: 0.77, frontOverhang: 0.98,
+    name: 'Kunlun L9', zh: '昆仑', paint: 0x8f9a94, wheelD: 0.77, frontOverhang: 0.98,
     body: [[-0.5, 0.36], [-0.5, 1.06], [-0.47, 1.1], [0.27, 1.08], [0.4, 1.02], [0.5, 0.92], [0.5, 0.36]],
     glass: [[-0.475, 1.08], [-0.46, 1.74], [0.11, 1.75], [0.27, 1.08]],
     lidar: 0.1,
@@ -44,7 +44,7 @@ const MODELS = {
     tail: { y: 1.12, h: 0.06, through: true },
   },
   'luxeed-r7': {
-    name: 'Luxeed R7', zh: '智界', paint: 0xc8722f, wheelD: 0.74, frontOverhang: 0.95,
+    name: 'Qingyun R7', zh: '青云', paint: 0xc8722f, wheelD: 0.74, frontOverhang: 0.95,
     body: [[-0.5, 0.34], [-0.5, 0.78], [-0.46, 1.04], [-0.38, 1.03], [0.22, 0.99], [0.42, 0.88], [0.5, 0.66], [0.49, 0.34]],
     glass: [[-0.4, 1.02], [-0.12, 1.6], [0.05, 1.62], [0.23, 0.99]],
     lidar: 0.06,
@@ -52,7 +52,7 @@ const MODELS = {
     tail: { y: 1.0, h: 0.035, through: true },
   },
   'aito-m9': {
-    name: 'AITO M9', zh: '问界', paint: 0x45505c, wheelD: 0.77, frontOverhang: 1.0,
+    name: 'Tianheng M9', zh: '天衡', paint: 0x45505c, wheelD: 0.77, frontOverhang: 1.0,
     body: [[-0.5, 0.36], [-0.5, 1.0], [-0.46, 1.1], [0.25, 1.07], [0.42, 1.0], [0.5, 0.88], [0.5, 0.36]],
     glass: [[-0.455, 1.09], [-0.42, 1.74], [0.08, 1.76], [0.25, 1.07]],
     lidar: 0.08,

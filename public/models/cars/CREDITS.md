@@ -8,5 +8,6 @@ assigned by part, simplified to a traffic budget (a near and a far version).
 |---|---|---|---|
 | `byd-han.glb`, `byd-han-far.glb` | "Byd Han" | MattDoesBlender | https://sketchfab.com/3d-models/f7ee6b12224543c38f17f9122b4f1eaf |
 
-The BYD name, badge and design belong to BYD Company Ltd. The game shows them as a prototype; before any
-commercial release, either license them or remove the badges and rename the cars (as most games do).
+The game leaves the model's badges off (`src/world/fleet.js` skips the `logo5` parts) and never names the maker:
+drivers call it the Jinghe E7, an invented name. The body is still recognisably the real car's shape; a fully
+original body would remove that last resemblance.

@@ -13,7 +13,7 @@ const play = (L, realSecs, step = 1, r = rng(1)) => { for (let s = 0; s < realSe
   advance(L, 60); ok(L.clock.minute === 15 * 60 + 30 + TIME_RATE, `a real minute is ${TIME_RATE} game minutes`);
   // money
   const w0 = balance(L, 'wechat');
-  ok(pay(L, { method: 'wechat', amount: 15, to: 'Manner', memo: '拿铁' }).ok && balance(L, 'wechat') === w0 - 15, 'paying for a latte takes ¥15 from WeChat Pay');
+  ok(pay(L, { method: 'wechat', amount: 15, to: 'Linger', memo: '拿铁' }).ok && balance(L, 'wechat') === w0 - 15, 'paying for a latte takes ¥15 from Xinyu Pay');
   ok(!pay(L, { method: 'wechat', amount: 1e9, to: 'x' }).ok && balance(L, 'wechat') === w0 - 15, 'you cannot pay what you do not have (and nothing changes)');
   ok(topUp(L, 'wechat', 5000).ok && balance(L, 'wechat') === w0 - 15 + 5000, 'topping up from the bank');
   ok(pay(L, { method: 'card', amount: 2_000_000, to: 'Porsche' }).ok && balance(L, 'card') === 1_000_000, 'the card carries a large purchase');
@@ -55,8 +55,8 @@ const play = (L, realSecs, step = 1, r = rng(1)) => { for (let s = 0; s < realSe
 {
   // reactions to the world, and saving
   const L = createLife(); setupThreads(L);
-  pay(L, { method: 'wechat', amount: 15, to: 'Manner' }); react(L, { type: 'paid', to: 'Manner' }); play(L, 60);
-  ok(L.threads.yuan.messages.some((m) => /Manner/.test(m.text || '')), 'buying a coffee on Hankou Road: Yu\'an, who works nearby, guesses where you are');
+  pay(L, { method: 'wechat', amount: 15, to: 'Linger' }); react(L, { type: 'paid', to: 'Linger' }); play(L, 60);
+  ok(L.threads.yuan.messages.some((m) => /Linger/.test(m.text || '')), 'buying a coffee on Hankou Road: Yu\'an, who works nearby, guesses where you are');
   emit(L, { type: 'parcel', item: 'x' }); const out = drain(L);
   ok(out.length === 1 && drain(L).length === 0, 'world events are handed over once');
   own(L, { kind: 'gadget', name: '口袋激光雷达' });

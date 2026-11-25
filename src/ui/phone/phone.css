@@ -65,12 +65,12 @@
 #phone .card { background: #fff; border-radius: 10px; padding: 10px 12px; width: 220px; font-size: 13px; }
 #phone .card .k { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.06em; } #phone .card .ti { font-weight: 600; font-size: 14.5px; margin: 3px 0; } #phone .card .pl { color: #666; font-size: 12px; }
 #phone .card .act { display: flex; gap: 8px; margin-top: 8px; } #phone .btn { flex: 1; border: 0; border-radius: 8px; padding: 7px 0; font: 600 13px var(--ui); cursor: pointer; background: #e9e9ee; color: #222; }
-#phone .btn.go { background: #07c160; color: #fff; } #phone .btn.no { color: #c0392b; }
-#phone .card .st { margin-top: 6px; font-size: 12px; color: #07c160; font-weight: 600; } #phone .card .st.no { color: #999; }
+#phone .btn.go { background: #13a39c; color: #fff; } #phone .btn.no { color: #c0392b; }
+#phone .card .st { margin-top: 6px; font-size: 12px; color: #13a39c; font-weight: 600; } #phone .card .st.no { color: #999; }
 #phone .sys { align-self: center; font-size: 11px; color: #999; }
 #phone .replies { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px 22px; background: #f7f7f7; border-top: 1px solid #e3e3e8; }
 #phone .chip { border: 1px solid #d5d5dc; background: #fff; border-radius: 16px; padding: 6px 11px; font: 500 13px var(--ui); cursor: pointer; }
-#phone .chip:hover { border-color: #07c160; }
+#phone .chip:hover { border-color: #13a39c; }
 #phone .compose { padding: 10px 12px 24px; background: #f7f7f7; border-top: 1px solid #e3e3e8; font-size: 12px; color: #aaa; text-align: center; }
 
 /* wallet */
@@ -139,7 +139,7 @@
 /* writing to a friend in your own words */
 .compose.free { display: flex; gap: 6px; padding: 8px; }
 .compose.free input.say { flex: 1; min-width: 0; font: 500 13px inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; outline: none; }
-.compose.free input.say:focus { border-color: #07c160; }
+.compose.free input.say:focus { border-color: #13a39c; }
 .compose.free .btn { padding: 6px 12px; }
 .bar .sub { margin-left: 6px; font-size: 11px; color: #999; font-weight: 400; }
 
@@ -159,7 +159,7 @@
 .view.photos .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; }
 .view.photos .ph { background: #111; border-radius: 6px; overflow: hidden; font-size: 10px; color: #eee; }
 .view.photos .ph img, .view.photos .noimg { width: 100%; aspect-ratio: 16/9; display: block; object-fit: cover; background: #333; }
-.view.photos .cap { padding: 4px 6px 2px; } .view.photos .sh { padding: 2px 6px 6px; color: #07c160; } .view.photos .btn.sm { margin: 2px 6px 6px; padding: 3px 6px; font-size: 10px; }
+.view.photos .cap { padding: 4px 6px 2px; } .view.photos .sh { padding: 2px 6px 6px; color: #13a39c; } .view.photos .btn.sm { margin: 2px 6px 6px; padding: 3px 6px; font-size: 10px; }
 .hd2 { padding: 12px 12px 4px; font-weight: 700; font-size: 12px; color: #333; }
 .view.photos .ch, .view.sketch .bl { display: flex; justify-content: space-between; padding: 6px 12px; font-size: 12px; color: #888; border-bottom: 1px solid #eee; }
 .view.photos .ch.got, .view.sketch .bl.got { color: #111; }
@@ -173,7 +173,7 @@
 #phone .bub.voice .pi { width: 14px; text-align: center; font-size: 12px; }
 #phone .bub.voice .vt { margin-left: auto; font-variant-numeric: tabular-nums; }
 #phone .bub.voice .prog { position: absolute; left: 10px; right: 10px; bottom: 4px; height: 3px; border-radius: 2px; background: rgba(0,0,0,0.08); }
-#phone .bub.voice .prog u { display: block; height: 100%; width: 0; border-radius: 2px; background: #07c160; }
+#phone .bub.voice .prog u { display: block; height: 100%; width: 0; border-radius: 2px; background: #13a39c; }
 #phone .bub.voice .unplayed { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: #fa5151; }
 #phone .bub.vid { position: relative; padding: 0; overflow: hidden; width: 176px; background: #000; cursor: pointer; line-height: 0; }
 #phone .bub.vid canvas { display: block; width: 176px; height: 234px; }

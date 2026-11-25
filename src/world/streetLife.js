@@ -5,7 +5,7 @@
 //   - delivery riders: e-bikes are not allowed on the pedestrian street, so riders park at the mouths of
 //     the cross streets (a cluster of e-bikes with quilted windbreaks and branded boxes) and jog in on foot
 //     to a shop door, wait a moment inside, and come back out with the order in an insulated bag, then ride
-//     off up the side street. Liveries of 2025-26: Meituan yellow, 淘宝闪购 orange and black, JD red.
+//     off up the side street, in the game's delivery liveries (yellow, Wanji orange, Jingsong blue).
 //   - the queue at 真老大房 (the 1851 cake shop on the Fujian Road corner) for its fresh-meat mooncakes
 //     (鲜肉月饼), baked and sold at the street window: a line along the frontage, longest in the afternoon
 //     and toward supper, nearly everyone in it on their phone; the one at the front steps up, pays by

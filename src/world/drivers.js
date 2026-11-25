@@ -7,8 +7,8 @@
 // all); nothing in the text marks which is which.
 export const DRIVERS = [
   {
-    id: 'shi-gu', sex: 'm', rating: '4.9', name: '顾师傅', plate: '沪A·D7L192', car: 'BYD 汉 EV, dark grey', chatty: 0.75, mood: 'chatty',
-    who: 'Gu, 58, Shanghainese, drove a Dazhong taxi for 22 years before switching to DiDi; drops Shanghainese words into his Mandarin, opinionated about everything',
+    id: 'shi-gu', sex: 'm', rating: '4.9', name: '顾师傅', plate: '沪A·D7L192', car: '景和 E7 电动版, dark grey', chatty: 0.75, mood: 'chatty',
+    who: 'Gu, 58, Shanghainese, drove a Dazhong taxi for 22 years before switching to Kuaima; drops Shanghainese words into his Mandarin, opinionated about everything',
     topics: {
       traffic: [
         '这条路啊，十一月一到，晚上全是来拍照的。外滩嘛，拍不厌的。',
@@ -37,12 +37,12 @@ export const DRIVERS = [
     ],
   },
   {
-    id: 'xiao-zhao', sex: 'm', rating: '4.8', name: '赵师傅', plate: '沪A·F3K806', car: 'Tesla Model Y, white', chatty: 0.55, mood: 'cheerful',
+    id: 'xiao-zhao', sex: 'm', rating: '4.8', name: '赵师傅', plate: '沪A·F3K806', car: 'Jinghe Y5, white', chatty: 0.55, mood: 'cheerful',
     who: 'Zhao, 31, from Hefei, drives evenings after his day job selling software to factories; wants his own business; laughs at his own jokes',
     topics: {
       business: [
         '我白天卖软件，晚上开车。……不是缺钱啊，是——好吧，也缺。',
-        '现在做生意，你得有个“故事”。投资人听故事的。我的故事就是，我还在开滴滴。哈哈。',
+        '现在做生意，你得有个“故事”。投资人听故事的。我的故事就是，我还在开快马。哈哈。',
         '陆家嘴那帮人啊，我拉过好多，一上车就开会，耳机一戴，“对齐一下颗粒度”……我都会背了。',
       ],
       traffic: ['导航让我走这条，我不信它，但我还是走了。人跟导航，就是这种关系。'],
@@ -57,7 +57,7 @@ export const DRIVERS = [
     ],
   },
   {
-    id: 'liu-jie', sex: 'f', rating: '5.0', name: '刘师傅', plate: '沪A·DH0447', car: 'Li Auto L6, silver', chatty: 0.35, mood: 'tired',
+    id: 'liu-jie', sex: 'f', rating: '5.0', name: '刘师傅', plate: '沪A·DH0447', car: 'Kunlun L6, silver', chatty: 0.35, mood: 'tired',
     who: 'Liu, 44, from Zhoukou in Henan, has driven 11 hours today; quiet, polite, opens up about her son if asked',
     topics: {
       kids: [
@@ -72,7 +72,7 @@ export const DRIVERS = [
     ],
   },
   {
-    id: 'ma-ge', sex: 'm', rating: '4.7', name: '马师傅', plate: '沪A·D2X559', car: 'NIO ET5, blue', chatty: 0.65, mood: 'grumbly',
+    id: 'ma-ge', sex: 'm', rating: '4.7', name: '马师傅', plate: '沪A·D2X559', car: 'Aurae S5, blue', chatty: 0.65, mood: 'grumbly',
     who: 'Ma, 39, from Shandong, ex-army, used to drive for a property agency; complains about everything with affection',
     topics: {
       traffic: [
@@ -93,7 +93,7 @@ export const DRIVERS = [
     ],
   },
   {
-    id: 'chen-mei', sex: 'm', rating: '4.9', name: '陈师傅', plate: '沪A·DM1730', car: 'AITO M7, black', chatty: 0.2, mood: 'flat',
+    id: 'chen-mei', sex: 'm', rating: '4.9', name: '陈师傅', plate: '沪A·DM1730', car: 'Tianheng M7, black', chatty: 0.2, mood: 'flat',
     who: 'Chen, 50, a former restaurant owner from Ningbo; drives in silence with Yue opera on low; answers questions in a few words',
     topics: {
       weather: ['嗯，冷了。'],

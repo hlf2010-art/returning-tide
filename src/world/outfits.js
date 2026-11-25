@@ -119,17 +119,17 @@ export function dressHotelSecurity(person, { glasses: specs = false } = {}) {
   return person;
 }
 
-// ---- delivery riders: the 2025-26 liveries (Meituan yellow, 淘宝闪购 orange, JD 外卖 red), on the crowd body
-// in the red track jacket ('p3'), the jacket re-dyed, and a helmet in the same colour (helmets are the law
-// on Shanghai's e-bikes) ----
+// ---- delivery riders: the game's (invented) delivery companies, as on Henan Road (world/ebikeView.js): the
+// yellow one, Wanji 万集's orange and Jingsong 鲸送's blue (ui/brands.js); on the crowd body in the red track
+// jacket ('p3'), the jacket re-dyed, and a helmet in the same colour (helmets are the law on Shanghai's e-bikes) ----
 export const RIDER_BRANDS = {
-  meituan: { jacket: [246, 196, 0], helmet: 0xf2c200, box: 0xf2c200, label: '美团' },
-  shangou: { jacket: [255, 106, 0], helmet: 0xff6a00, box: 0x1a1a1a, label: '淘宝闪购' },
-  jd: { jacket: [214, 16, 24], helmet: 0xd61018, box: 0xd61018, label: '京东外卖' },
+  yellow: { jacket: [242, 194, 0], helmet: 0xf2c200, box: 0xf2c200 },
+  wanji: { jacket: [242, 103, 42], helmet: 0xf2672a, box: 0x1a1a1a },
+  jingsong: { jacket: [31, 127, 224], helmet: 0x1f7fe0, box: 0x1f7fe0 },
 };
 const helmetMats = {};
-export function dressRider(person, brand = 'meituan') {
-  const B = RIDER_BRANDS[brand] || RIDER_BRANDS.meituan, [hr, hg, hb] = B.jacket;
+export function dressRider(person, brand = 'yellow') {
+  const B = RIDER_BRANDS[brand] || RIDER_BRANDS.yellow, [hr, hg, hb] = B.jacket;
   person.root.traverse((o) => {
     if (!o.isMesh || !/_body$/.test(o.material.name)) return;
     // the red of the jacket to the brand's colour, keeping its shading; the rest as it was

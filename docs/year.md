@@ -132,6 +132,17 @@ seal intact, that answer gets the transfer stopped and the pitch frozen until th
 'held': shut, not sold); it proves nothing about the signature, which only the date does. With the seal broken, it
 is folded into telling her the date, and the stall is saved as before.
 
+**The last ferry** (`world/lastFerry.js`, played by `world/cruise.js`). Across Zhou's notice someone has written "Stop
+looking. If you want to know, take the last ferry", and an old Jinling Road ferry token is taped to its corner. Once the
+notice has been read (`flags.clueRead`), the 23:00 ferry from the Jinling Road East pier carries him to Old Fang, the
+deckhand Zhou rode home with for thirty years, who is waiting on the deck at Dongchang Road. Saying nothing ends it for
+the night (it can be tried again); answering gets the story (Zhou left his toolbox with Fang on the 29th and went to his
+sister's in Kunshan) and the toolbox itself (`flags.zhouBox`, two keepsakes): a repair-ticket book whose last page says he
+would not sign the stall over, and the watch Ji Bai broke at twelve, mended and never collected. The journal shows it as
+an optional step of the side story until he meets the daughter or June comes. With the box, his first answer to her is
+the book (`watch.told` 'book'), and it saves the stall whatever the seal: the nephew confesses to the forgery and to the
+line on the notice (`watch.book`).
+
 ## Free conversation
 
 `storyContext` now gives every friend, colleague and client `lifeContext(L)` and

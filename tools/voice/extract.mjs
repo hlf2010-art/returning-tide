@@ -64,7 +64,7 @@ for (const f of files('src')) {
       const [a, b, c] = n.elements.map(lit);
       if (a && /^[a-z]+$/.test(a) && b && cjk.test(b) && c && !cjk.test(c)) add(a, b, c);
     }
-    if (n.type === 'ObjectExpression') {                               // a WeChat voice note: { from, kind: 'voice', text }
+    if (n.type === 'ObjectExpression') {                               // a Xinyu voice note: { from, kind: 'voice', text }
       const g = (k) => { const q = n.properties.find((x) => x.key && x.key.name === k); return q && lit(q.value); };
       if (g('kind') === 'voice' && g('from')) { add(g('from'), g('text'), g('en')); const tq = n.properties.find((x) => x.key && x.key.name === 'text'); if (tq && tq.value.type === 'ConditionalExpression') { add(g('from'), lit(tq.value.consequent)); add(g('from'), lit(tq.value.alternate)); } }
     }

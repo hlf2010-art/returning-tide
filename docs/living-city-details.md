@@ -76,7 +76,7 @@ reference).
 | Staff handing out flyers at shop doors; a mascot outside a store | Shop fronts, opening hours | A few | Local knowledge | S | idea |
 | A queue outside a famous snack shop | 真老大房's mooncake window (Fujian Road corner) | Always while open, longer mid-afternoon and toward supper | Local knowledge | S | built (world/streetLife.js) |
 | Shopping bags in most hands; milk-tea cups | The street | 1 in 3 people | Architecture plan §5.2 | M | built (bags; cups still to do) |
-| Couriers on foot jogging in from the street's edge with a bag | Side-street mouths west of Henan Road | One per mouth near you | Architecture plan §5.2 | M | built (world/streetLife.js: Meituan, 淘宝闪购, JD liveries) |
+| Couriers on foot jogging in from the street's edge with a bag | Side-street mouths west of Henan Road | One per mouth near you | Architecture plan §5.2 | M | built (world/streetLife.js: the invented companies' liveries) |
 | Shoppers who come by DiDi: dropped at the Peace Hotel kerb, into a shop, out with one to three paper carrier bags, down the Bund's pavement to a pick-up, phone out, wave, gone (`world/shoppers.js`, `tools/shopwalk.mjs`) | Zhongshan Road west kerb, Nanjing Road shops west of the hotels | Two at a time | Owner's request, 25 Nov 2026 | M | done |
 | The Peace Hotel's security: middle-aged men in dark suits with earpieces, on the Nanjing Road door and at the lifts (`world/outfits.js`). Built from Old Lin's body (black hair, black suit, earpiece wire, gold lapel badge; glasses on the one at the lifts) until there's a face of their own | Peace Hotel door and lift lobby | Always | Owner (they wear suits, middle-aged); no photo reference yet | S | done |
 

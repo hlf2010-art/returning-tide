@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { covers } from './layout.js';
 import { stoneTexture, fluteTexture, facadeAtlas, pavingTextures, sidewalkTextures, asphaltTextures, wetnessTexture } from './textures.js';
+import { bundDoorTexture } from './surfaceDetail.js';
 
 // three's ACES curve carries a built-in 1/0.6 exposure, so these read ~2x brighter on screen
 export const FLOOD_COLOR = new THREE.Color(1.0, 0.5, 0.13);           // deep sodium gold, as the Bund's façade lighting reads at night (the reference photos)
@@ -214,6 +215,7 @@ export function createMaterials() {
   M.copper.uniforms.floodColor.value.setRGB(0.5, 1.0, 0.78);
   M.bronze = arch({ tint: 0x3a2c1c, floodGain: 0.7 });
   M.glassDark = arch({ tint: 0x0b0e14, floodGain: 0.1 });
+  M.door = arch({ map: bundDoorTexture(), floodGain: 0.8 });     // the rusticated ground floors' closed doors (world/bund.js rusticDoors)
 
   const pave = pavingTextures(), walk = sidewalkTextures(), asph = asphaltTextures();
   // after rain: damp everywhere, puddles only in the low spots (about one part in eight), not glass-smooth

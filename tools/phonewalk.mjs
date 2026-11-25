@@ -22,7 +22,7 @@ await p.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', n
 await p.evaluate(() => window.__bund.start()); await p.waitForTimeout(2000);
 await p.evaluate(() => { const s = document.createElement('style'); s.textContent = '#minimap,#dev{display:none!important}'; document.head.appendChild(s); });
 ok(await p.evaluate(() => window.__bund.audio.running), 'audio context running after start');
-// open the phone with P, unlock with Enter, open WeChat
+// open the phone with P, unlock with Enter, open Xinyu
 await p.keyboard.press('KeyP'); await p.waitForTimeout(700);
 await p.keyboard.press('Enter'); await p.waitForTimeout(1200);
 await p.click('#phone [data-act="app"][data-id="chats"] >> nth=0'); await p.waitForTimeout(500);

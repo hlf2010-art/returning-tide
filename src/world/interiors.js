@@ -28,6 +28,7 @@ import { dressHotelSecurity } from './outfits.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
+import { woodTextures, plasterTextures, brushedTextures, liftDoorTexture, staffDoorTexture, steelDoorTexture } from './surfaceDetail.js';
 
 export const PEACE = { x0: -60, x1: -35.4, z0: -244, z1: -212.6, h: 5.6, door: [-50, -46], oct: { x: -48, z: -229, r: 6.2, top: 10.5 } };
 export const AIA = { x0: -47, x1: -34.6, z0: -152, z1: -139, h: 6.2, door: [-147.2, -143.8], gateX: -41.5, gates: [-147.3, -146.1, -144.9, -143.7] };
@@ -86,6 +87,18 @@ const stainedGlass = () => canvasTex(1024, 1024, (x, w) => {
   for (let i = 0; i < 64; i++) { const a = (i / 64) * Math.PI * 2; x.beginPath(); x.moveTo(c + Math.cos(a) * c * 0.2, c + Math.sin(a) * c * 0.2); x.lineTo(c + Math.cos(a) * c, c + Math.sin(a) * c); x.stroke(); }
   const g = x.createRadialGradient(c, c, 0, c, c, c * 0.25); g.addColorStop(0, '#fff6d8'); g.addColorStop(1, 'rgba(255,230,160,0)'); x.fillStyle = g; x.fillRect(0, 0, w, w);
 });
+// the gilt frieze under the cornice: stepped chevrons and sunbursts in relief on walnut, 1.2 m a repeat
+const friezeTexture = () => { const t = canvasTex(512, 192, (x, w, h) => {
+  const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2a180d'); g.addColorStop(1, '#1a0e07'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+  const gilt = (draw) => { x.save(); x.translate(1.5, 2); x.strokeStyle = 'rgba(0,0,0,0.6)'; x.fillStyle = 'rgba(0,0,0,0.6)'; draw(); x.restore();
+    const gg = x.createLinearGradient(0, 0, 0, h); gg.addColorStop(0, '#f0d58e'); gg.addColorStop(0.5, '#b88a3c'); gg.addColorStop(1, '#e2c070'); x.strokeStyle = gg; x.fillStyle = gg; draw(); };
+  gilt(() => { x.fillRect(0, 8, w, 6); x.fillRect(0, h - 14, w, 6); });
+  // a sunburst in the middle of the repeat, chevrons stepping out either side
+  gilt(() => { x.lineWidth = 4; const cx = w / 2, cy = h - 22; for (let k = 0; k <= 10; k++) { const a = Math.PI + (k / 10) * Math.PI; x.beginPath(); x.moveTo(cx + Math.cos(a) * 18, cy + Math.sin(a) * 18); x.lineTo(cx + Math.cos(a) * 128, cy + Math.sin(a) * 128); x.stroke(); }
+    x.beginPath(); x.arc(cx, cy, 18, Math.PI, 0); x.fill(); });
+  gilt(() => { x.lineWidth = 5; for (const s of [-1, 1]) for (let k = 0; k < 4; k++) { const ox = w / 2 + s * (150 + k * 26); x.beginPath(); x.moveTo(ox - 13, h - 22); x.lineTo(ox, 30); x.lineTo(ox + 13, h - 22); x.stroke(); } });
+  gilt(() => { x.lineWidth = 3; for (const ex of [0, w]) { x.beginPath(); x.arc(ex, h / 2 + 8, 34, 0, Math.PI * 2); x.stroke(); x.beginPath(); x.arc(ex, h / 2 + 8, 18, 0, Math.PI * 2); x.stroke(); } });
+}); t.wrapS = THREE.RepeatWrapping; return t; };
 // the octagon inlaid in the floor: dark green marble ring, brass lines, a star
 const floorInlay = () => canvasTex(1024, 1024, (x, w) => {
   const c = w / 2; x.clearRect(0, 0, w, w);
@@ -105,14 +118,28 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const group = new THREE.Group(); group.name = 'interiors'; scene.add(group);
   const marble = new THREE.MeshStandardMaterial({ map: tx('marble_01_diff_1k.jpg', 3, true), normalMap: tx('marble_01_nor_gl_1k.jpg', 3, false), roughnessMap: tx('marble_01_rough_1k.jpg', 3, false), roughness: 0.6, color: 0xe8e2d6, envMapIntensity: 1.1 });
   const marbleDark = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, roughness: 0.25, color: 0x3d4a44, envMapIntensity: 1.3 });
-  const walnut = new THREE.MeshStandardMaterial({ color: 0x3b2416, roughness: 0.4, metalness: 0.05, emissive: 0x070302 });
-  const plaster = new THREE.MeshStandardMaterial({ color: 0xead8b8, roughness: 0.9, emissive: 0x3a2814 });   // warm: lamplight, not the blue night outside
-  const brass = new THREE.MeshStandardMaterial({ color: 0xc89b4a, roughness: 0.3, metalness: 1, envMapIntensity: 1.4 });
+  // close up these are grained walnut, trowelled plaster and brushed brass (world/surfaceDetail.js), not flat colours;
+  // UVs are in metres (metricUV below), so the grain and the trowel marks keep their size on every piece
+  const wd = woodTextures('walnut'), pl = plasterTextures(), br = brushedTextures();
+  const walnut = new THREE.MeshStandardMaterial({ map: wd.map, normalMap: wd.normalMap, normalScale: new THREE.Vector2(0.5, 0.5), roughnessMap: wd.roughnessMap, color: 0xf0dcc8, roughness: 0.55, metalness: 0.05, emissive: 0x070302 });
+  const plaster = new THREE.MeshStandardMaterial({ map: pl.map, normalMap: pl.normalMap, normalScale: new THREE.Vector2(0.6, 0.6), color: 0xead8b8, roughness: 0.9, emissive: 0x3a2814 });   // warm: lamplight, not the blue night outside
+  const brass = new THREE.MeshStandardMaterial({ color: 0xc89b4a, roughness: 0.55, roughnessMap: br.roughnessMap, normalMap: br.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), metalness: 1, envMapIntensity: 1.4 });
   const granite = new THREE.MeshStandardMaterial({ map: tx('granite_tile_04_diff_1k.jpg', 1, true), color: 0xb9b2a6, roughness: 0.5, emissive: 0x0d0c0a });
   const frosted = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.45, 1.22, 0.9) });             // lit glass (bloom makes it glow)
   const glass = new THREE.MeshStandardMaterial({ color: 0x9fb2b8, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
   const dark = new THREE.MeshStandardMaterial({ color: 0x141210, roughness: 0.7 });
-  const add = (geo, mat, x, y, z, ry = 0, rx = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); m.receiveShadow = true; group.add(m); return m; };
+  // a geometry's UVs in metres / tile (planes and boxes; anything else is left as it is)
+  const metricUV = (geo, tile = 1) => {
+    const p = geo.parameters || {}, uv = geo.attributes.uv;
+    if (geo.type === 'PlaneGeometry') { for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * p.width / tile, uv.getY(i) * p.height / tile); }
+    else if (geo.type === 'BoxGeometry') {
+      const dims = [[p.depth, p.height], [p.depth, p.height], [p.width, p.depth], [p.width, p.depth], [p.width, p.height], [p.width, p.height]];
+      for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) { const i = f * 4 + k; uv.setXY(i, uv.getX(i) * dims[f][0] / tile, uv.getY(i) * dims[f][1] / tile); }
+    }
+    return geo;
+  };
+  const TILED = new Set([walnut, plaster, brass]);
+  const add = (geo, mat, x, y, z, ry = 0, rx = 0) => { if (TILED.has(mat)) metricUV(geo, mat === plaster ? 2 : mat === brass ? 0.5 : 1); const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); m.receiveShadow = true; group.add(m); return m; };
   const box = (w, h, d, mat, x, y, z, ry = 0) => add(new THREE.BoxGeometry(w, h, d), mat, x, y + h / 2, z, ry);
   const rbox = (w, h, d, r, mat, x, y, z) => add(new RoundedBoxGeometry(w, h, d, 3, r), mat, x, y + h / 2, z);
   // an inward-facing wall from (ax, az) to (bx, bz), y0..y1, facing the point (cx, cz)
@@ -196,6 +223,39 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const sconce = (x, z, ry) => { const g = new THREE.Group(); g.position.set(x, Y0 + 2.6, z); g.rotation.y = ry; const f = new THREE.Mesh(new THREE.CircleGeometry(0.32, 3, -Math.PI / 6, Math.PI / 3 * 2), frosted); f.rotation.z = Math.PI; f.position.z = 0.05; g.add(f); const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), brass); b.position.set(0, 0.1, 0.03); g.add(b); group.add(g); };
   for (let x = P.x0 + 4; x < P.x1 - 3; x += 5) { sconce(x, P.z0 + 0.03, 0); }
   for (let z = P.z1 - 4; z > P.z0 + 3; z -= 5) sconce(P.x0 + 0.03, z, Math.PI / 2);
+  // the walls' dressing, as in the restored hall: a gilt Art Deco frieze under the cornice, the plaster between
+  // the pilasters set out in moulded panels, a brass dado rail on the walnut wainscot, a dark marble skirting
+  {
+    const friezeMat = new THREE.MeshStandardMaterial({ map: friezeTexture(), roughness: 0.45, metalness: 0.35, emissive: 0x1a1006 });
+    const fy = Y0 + P.h - 0.53, fh = 0.44;
+    const strip = (ax, az, bx, bz, nx, nz) => {
+      const len = Math.hypot(bx - ax, bz - az), g = new THREE.PlaneGeometry(len, fh), uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * len / 1.2);
+      const m = add(g, friezeMat, (ax + bx) / 2 + nx * 0.035, fy, (az + bz) / 2 + nz * 0.035, Math.atan2(nx, nz)); return m;
+    };
+    strip(P.x0, P.z0, P.x1, P.z0, 0, 1); strip(P.x0, P.z1, JAZZ.x0, P.z1, 0, -1); strip(P.x0, P.z0, P.x0, P.z1, 1, 0);
+    for (const [ax, az, bx, bz] of [[P.x0, P.z0, P.x1, P.z0], [P.x0, P.z1, JAZZ.x0, P.z1]]) {
+      const inward = az < -230 ? 1 : -1, zz = az + inward * 0.03, L = Math.abs(bx - ax);
+      box(L, 0.05, 0.05, brass, (ax + bx) / 2, Y0 + 1.28, zz + inward * 0.02);                              // dado rail
+      box(L, 0.16, 0.04, marbleDark, (ax + bx) / 2, Y0, zz + inward * 0.015);                              // skirting
+    }
+    box(0.05, 0.05, P.z1 - P.z0, brass, P.x0 + 0.05, Y0 + 1.28, pcz); box(0.04, 0.16, P.z1 - P.z0, marbleDark, P.x0 + 0.045, Y0, pcz);
+    // moulded panels between the pilasters (shorter over the lifts, none where the door or the bar is)
+    const mould = (cx, z, y0, y1, w, inward) => {
+      const t = 0.035, zz = z + inward * 0.05;
+      box(w, t, t, brass, cx, y0, zz); box(w, t, t, brass, cx, y1 - t, zz);
+      box(t, y1 - y0, t, brass, cx - w / 2 + t / 2, y0, zz); box(t, y1 - y0, t, brass, cx + w / 2 - t / 2, y0, zz);
+      const inner = 0.12;                                                                                     // an inner fillet, finer
+      for (const [a, b, c, d] of [[w - 2 * inner, 0.018, cx, y0 + inner], [w - 2 * inner, 0.018, cx, y1 - inner - 0.018]]) box(a, b, 0.02, brass, c, d, zz);
+      for (const sx of [-1, 1]) box(0.018, y1 - y0 - 2 * inner, 0.02, brass, cx + sx * (w / 2 - inner), y0 + inner, zz);
+    };
+    for (let x = P.x0 + 4; x + 1.6 < P.x1 - 0.3; x += 4) {
+      const overLift = [-52, -48, -44].some((lx) => Math.abs(lx - x) < 1.2);
+      mould(x, P.z0, overLift ? Y0 + 3.45 : Y0 + 1.7, Y0 + P.h - 0.95, 3.0, 1);
+      const nearDoor = x > P.door[0] - 2.5 && x < P.door[1] + 2.5;
+      if (!nearDoor && x + 1.6 < JAZZ.x0 - 0.6) mould(x, P.z1, Y0 + 1.7, Y0 + P.h - 0.95, 3.0, -1);
+    }
+  }
   // Art Deco detail: brass-capped walnut pilasters along the walls, a stepped cornice under the ceiling
   for (let x = P.x0 + 2; x < P.x1 - 1; x += 4) for (const z of [P.z0 + 0.12, P.z1 - 0.12]) { if (z > -213 && ((x > P.door[0] - 1 && x < P.door[1] + 1) || x > JAZZ.x0 - 0.5)) continue; box(0.34, P.h - 0.4, 0.14, walnut, x, Y0, z); box(0.4, 0.14, 0.18, brass, x, Y0 + P.h - 0.54, z); }
   for (const [ax, az, bx, bz] of [[P.x0, P.z0, P.x1, P.z0], [P.x0, P.z1, P.x1, P.z1]]) box(Math.abs(bx - ax), 0.22, 0.3, walnut, (ax + bx) / 2, Y0 + P.h - 0.26, az + (az < -230 ? 0.15 : -0.15));
@@ -208,8 +268,10 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   rbox(1.8, 1.1, 4, 0.04, walnut, P.x0 + 2.2, Y0, -237.5); box(1.9, 0.06, 4.2, marbleDark, P.x0 + 2.2, Y0 + 1.1, -237.5);
   for (let i = 0; i < 6; i++) box(0.36, 0.24, 0.3, new THREE.MeshStandardMaterial({ color: 0xa88458, roughness: 0.9 }), P.x0 + 0.35, Y0 + 0.4 + (i % 3) * 0.5, -236 - Math.floor(i / 3) * 0.6);   // parcels on the shelf
   // the lift lobby: three brass lift doors in the north wall, dials over them
+  const liftDoor = new THREE.MeshStandardMaterial({ map: liftDoorTexture(), color: 0xffffff, roughness: 0.38, metalness: 1, envMapIntensity: 1.5 });
   for (const x of [-52, -48, -44]) {
     box(1.4, 2.6, 0.08, brass, x, Y0, P.z0 + 0.06);
+    add(new THREE.PlaneGeometry(1.36, 2.56), liftDoor, x, Y0 + 1.3, P.z0 + 0.105);              // the engraved Art Deco face
     add(new THREE.CircleGeometry(0.28, 24, 0, Math.PI), brass, x, Y0 + 2.95, P.z0 + 0.06);
     box(1.8, 0.12, 0.12, walnut, x, Y0 + 2.62, P.z0 + 0.08);
   }
@@ -231,6 +293,9 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   // (the Jazz Bar, in the hall's south-east corner, is world/jazzBar.js)
   // the staff door
   box(0.1, 2.3, 1.3, dark, P.x0 + 0.06, Y0, P.z1 - 21.1);
+  add(new THREE.PlaneGeometry(1.26, 2.28), new THREE.MeshStandardMaterial({ map: staffDoorTexture([70, 64, 56]), roughness: 0.6, metalness: 0.1 }), P.x0 + 0.113, Y0 + 1.14, P.z1 - 21.1, Math.PI / 2);
+  for (const dz of [-0.7, 0.7]) box(0.06, 2.4, 0.08, walnut, P.x0 + 0.1, Y0, P.z1 - 21.1 + dz);   // the architrave
+  box(0.06, 0.08, 1.48, walnut, P.x0 + 0.1, Y0 + 2.36, P.z1 - 21.1);
   add(new THREE.PlaneGeometry(0.9, 0.22), new THREE.MeshBasicMaterial({ map: signTex([['员工通道  STAFF ONLY', 40]], { bg: '#2a2a2a', fg: '#ddd', w: 512, h: 120 }) }), P.x0 + 0.13, Y0 + 2.55, P.z1 - 21.1, Math.PI / 2);
   // outside on Nanjing Road: the bronze canopy, the revolving door, the name in bronze letters
   const doorX = (P.door[0] + P.door[1]) / 2;
@@ -321,7 +386,12 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const col = addDynamicCollider('gate'); Object.assign(col, { y0: 0, y1: 8, minX: A.gateX - 0.1, maxX: A.gateX + 0.1, minZ: z - 0.5, maxZ: z + 0.5 });
     flaps.push({ z, piv, pane, light, col, open: 0, until: 0 });
   }
-  for (const z of [-148.5, -145.5, -142.5]) box(1.4, 2.7, 0.08, new THREE.MeshStandardMaterial({ color: 0x8b9096, metalness: 1, roughness: 0.3 }), A.x0 + 0.06, Y0, z, Math.PI / 2);   // lift doors
+  const steelDoor = new THREE.MeshStandardMaterial({ map: steelDoorTexture(), color: 0xffffff, metalness: 1, roughness: 0.32 });
+  for (const z of [-148.5, -145.5, -142.5]) {
+    box(1.4, 2.7, 0.08, new THREE.MeshStandardMaterial({ color: 0x8b9096, metalness: 1, roughness: 0.3 }), A.x0 + 0.06, Y0, z, Math.PI / 2);   // lift doors
+    add(new THREE.PlaneGeometry(1.36, 2.66), steelDoor, A.x0 + 0.105, Y0 + 1.33, z, Math.PI / 2);
+    box(1.6, 0.12, 0.05, new THREE.MeshStandardMaterial({ color: 0x5c6166, metalness: 1, roughness: 0.4 }), A.x0 + 0.08, Y0 + 2.7, z, Math.PI / 2);   // the head
+  }
   for (const [x, z] of [[-41, -145.5], [-44.5, -149], [-37.5, -149]]) lights.push({ x, y: Y0 + A.h - 0.4, z, intensity: 12, distance: 10, color: new THREE.Color(0.95, 0.93, 0.88) });
 
   group.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });

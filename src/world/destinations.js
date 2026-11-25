@@ -288,11 +288,11 @@ export function createDestinations({ scene, people, hud, audio, getLife, save, p
     hide(); cur = null;
     travel(async () => {
       skipTo(l, stamp(l) + stay + d.mins);
-      const r = pay(l, { method: 'wechat', amount: back, to: '滴滴出行', memo: '快车 → 外滩', kind: 'ride' }); if (r.ok) r.entry.memoEn = 'DiDi Express to the Bund';
+      const r = pay(l, { method: 'wechat', amount: back, to: '快马出行', memo: '快车 → 外滩', kind: 'ride' }); if (r.ok) r.entry.memoEn = 'Kuaima Express to the Bund';
       groups[id].visible = false; here = null;
       player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0);
       save && save();
-    }, { line: T(`一辆滴滴把你送回了外滩 · ¥${back}`, `A DiDi brings you back to the Bund · ¥${back}`), hold: 1400, to: 'play' });
+    }, { line: T(`一辆快马把你送回了外滩 · ¥${back}`, `A Kuaima brings you back to the Bund · ¥${back}`), hold: 1400, to: 'play' });
   }
 
   const targets = () => {

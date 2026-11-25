@@ -43,7 +43,7 @@ await p.keyboard.press('Digit1'); await p.waitForTimeout(800);                  
 st = await p.evaluate(() => window.__bund.life.flags.carBuy);
 ok(st.stage === 'deposit' && st.colour === 'verde', `spec and deposit: ${st.stage}, ${st.colour}/${st.interior}`);
 await p.keyboard.press('Digit1'); await p.waitForTimeout(3000);
-// WeChat: plate, then finance
+// Xinyu: plate, then finance
 await p.keyboard.press('KeyP'); await p.waitForTimeout(500);
 await click('#phone [data-act="decline"]'); await p.waitForTimeout(400);   // Dad might be calling right now
 await click('#phone [data-act="back"]'); await p.waitForTimeout(300); await click('#phone [data-act="back"]'); await p.waitForTimeout(300);

@@ -19,6 +19,8 @@
 import * as THREE from 'three';
 import { Batch } from './geo.js';
 import { TOD } from './dayNight.js';
+import { brushedTextures } from './surfaceDetail.js';
+import { makeCanvas, tex, FONT } from './canvas.js';
 
 // the rooms, and which of their walls make a good back wall (0: the cube's +Z face, 1: +X, 2: -Z, 3: -X)
 export const ROOMS = {
@@ -205,8 +207,11 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
       g.computeBoundingSphere();
       const pools = new THREE.Mesh(g, spillMat); pools.name = 'shop-light-pools'; pools.renderOrder = 1; group.add(pools);
     }
-    const bronze = new THREE.MeshStandardMaterial({ color: 0x2a241d, metalness: 0.8, roughness: 0.34 });
-    const riser = new THREE.MeshStandardMaterial({ color: 0x1f1d1c, metalness: 0.05, roughness: 0.18 });
+    // close up: the frames are brushed bronze, the risers polished granite (UVs are metres / 2: geo.js Batch.box)
+    const br = brushedTextures(), brR = br.roughnessMap.clone(), brN = br.normalMap.clone(); brR.repeat.set(4, 4); brN.repeat.set(4, 4);
+    const bronze = new THREE.MeshStandardMaterial({ color: 0x2a241d, metalness: 0.8, roughness: 0.7, roughnessMap: brR, normalMap: brN, normalScale: new THREE.Vector2(0.25, 0.25) });
+    const riser = new THREE.MeshStandardMaterial({ color: 0x4a4642, metalness: 0.05, roughness: 0.16 });
+    if (typeof document !== 'undefined') new THREE.TextureLoader().load('./textures/granite_tile_04_diff_1k.jpg', (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1.3, 1.3); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; riser.map = t; riser.needsUpdate = true; });
     const led = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 2.2, 0.6) });
     if (metal.list.length) group.add(metal.mesh(bronze, 'shop-frames'));
     if (stone.list.length) group.add(stone.mesh(riser, 'shop-risers'));
@@ -223,6 +228,18 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
     leafFrames = new THREE.InstancedMesh(fg, leafFrameMat, Math.max(1, doors.length * 2)); leafFrames.name = 'shop-door-leaves';
     leafGlass = new THREE.InstancedMesh(gg, leafGlassMat, Math.max(1, doors.length * 2)); leafGlass.name = 'shop-door-glass'; leafGlass.renderOrder = 2;
     for (const im of [leafFrames, leafGlass, leafBands]) { im.frustumCulled = false; im.castShadow = false; group.add(im); }
+    // the stickers every Nanjing Road door wears on its fixed panels, at eye height: the opening hours on one side,
+    // the automatic-door and mind-the-glass notices on the other (they don't move with the leaves)
+    if (doors.length && typeof document !== 'undefined') {
+      const deco = new THREE.PlaneGeometry(0.3, 0.42);
+      for (const [kind, side] of [['hours', -1], ['notice', 1]]) {
+        const mat = new THREE.MeshStandardMaterial({ map: stickerTexture(kind), roughness: 0.6, transparent: true, emissive: 0xffffff, emissiveIntensity: 0.12, polygonOffset: true, polygonOffsetFactor: -2 });
+        mat.emissiveMap = mat.map;
+        const im = new THREE.InstancedMesh(deco, mat, doors.length); im.name = `shop-door-${kind}`; im.castShadow = false;
+        doors.forEach((d, i) => { _q.setFromAxisAngle(UP, Math.atan2(d.F.n.x, d.F.n.z)); _p.copy(d.F.at(d.u + side * (DOOR.leaf + 0.62), d.y0 + 1.38, 0.032)); _m.compose(_p, _q, _s); im.setMatrixAt(i, _m); });
+        im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); group.add(im);
+      }
+    }
     place(true);
     return group;
   }
@@ -272,6 +289,32 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
 }
 
 // the light pool: falling off away from the glass (v), and toward the two ends (u)
+// a door sticker, 300 x 420 mm, on clear film
+function stickerTexture(kind) {
+  const [c, x] = makeCanvas(256, 360);
+  x.clearRect(0, 0, 256, 360);
+  const round = (px, py, w, h, r) => { x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r); x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, r); x.closePath(); };
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  if (kind === 'hours') {
+    x.fillStyle = 'rgba(250,250,247,0.92)'; round(8, 8, 240, 220, 14); x.fill();
+    x.fillStyle = '#222'; x.font = `700 30px ${FONT.sans}`; x.fillText('营业时间', 128, 46);
+    x.font = `500 16px ${FONT.sans}`; x.fillText('OPENING HOURS', 128, 76);
+    x.fillStyle = '#b81c22'; x.fillRect(40, 94, 176, 2);
+    x.fillStyle = '#222'; x.font = `600 22px ${FONT.sans}`; x.fillText('周一至周日', 128, 124); x.font = `700 34px ${FONT.sans}`; x.fillText('10:00 – 22:00', 128, 166);
+    x.font = `500 14px ${FONT.sans}`; x.fillStyle = '#555'; x.fillText('MON – SUN', 128, 200);
+    x.fillStyle = 'rgba(250,250,247,0.92)'; round(78, 250, 100, 100, 10); x.fill();         // a payment QR card
+    x.fillStyle = '#111'; for (let i = 0; i < 9; i++) for (let j = 0; j < 9; j++) if ((i * 7 + j * 13 + i * j) % 3 === 0) x.fillRect(88 + i * 9, 260 + j * 9, 8, 8);
+    for (const [a, b] of [[88, 260], [146, 260], [88, 318]]) { x.fillRect(a, b, 22, 22); x.fillStyle = '#fff'; x.fillRect(a + 4, b + 4, 14, 14); x.fillStyle = '#111'; x.fillRect(a + 8, b + 8, 6, 6); }
+  } else {
+    x.fillStyle = 'rgba(28,98,170,0.95)'; round(18, 10, 220, 150, 12); x.fill();
+    x.fillStyle = '#fff'; x.font = `700 34px ${FONT.sans}`; x.fillText('自动门', 128, 60); x.font = `500 16px ${FONT.sans}`; x.fillText('AUTOMATIC DOOR', 128, 96);
+    x.font = `500 18px ${FONT.sans}`; x.fillText('请慢行  ⇆', 128, 128);
+    x.fillStyle = 'rgba(250,200,20,0.95)'; x.beginPath(); x.moveTo(128, 190); x.lineTo(218, 340); x.lineTo(38, 340); x.closePath(); x.fill();
+    x.strokeStyle = '#111'; x.lineWidth = 6; x.stroke(); x.fillStyle = '#111'; x.font = `900 64px ${FONT.sans}`; x.fillText('!', 128, 290);
+    x.font = `700 18px ${FONT.sans}`; x.fillText('小心玻璃', 128, 330);
+  }
+  return tex(c, { repeat: false });
+}
 function poolTexture() {
   if (typeof document === 'undefined') return null;
   const c = document.createElement('canvas'); c.width = 64; c.height = 64;

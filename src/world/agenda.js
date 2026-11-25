@@ -183,9 +183,9 @@ export function react(L, ev) {
     }[ev.id];
     if (lines && lines[ev.status]) (L.flags.pendingFollow ||= []).push({ at: stamp(L) + (ev.status === 'missed' ? 0 : 1), thread: ev.thread || ev.from, from: ev.from, text: lines[ev.status] });
   }
-  if (ev.type === 'paid' && ev.to === 'Manner' && !L.flags.firstManner) {
+  if (ev.type === 'paid' && ev.to === 'Linger' && !L.flags.firstManner) {
     L.flags.firstManner = true;
-    (L.flags.pendingFollow ||= []).push({ at: stamp(L) + 3, thread: 'yuan', from: 'yuan', text: '你是不是在汉口路那家Manner？我们工地的人天天去，燕麦拿铁不错。' });
+    (L.flags.pendingFollow ||= []).push({ at: stamp(L) + 3, thread: 'yuan', from: 'yuan', text: '你是不是在汉口路那家Linger？我们工地的人天天去，燕麦拿铁不错。' });
   }
   if (ev.type === 'call-declined') (L.flags.pendingFollow ||= []).push({ at: stamp(L) + 2, thread: ev.from, from: ev.from, text: ev.from === 'dad' ? '怎么不接电话？' : '在忙？' });
 }

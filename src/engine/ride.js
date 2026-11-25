@@ -52,7 +52,7 @@ export function requestRide(L, { to, drivers, rnd = Math.random, method = 'wecha
   return R;
 }
 
-const say = (L, text) => { thread(L, 'didi', { title: '滴滴出行', members: ['me', 'didi'], kind: 'service' }); post(L, 'didi', { from: 'didi', kind: 'text', text }); };
+const say = (L, text) => { thread(L, 'didi', { title: '快马出行', members: ['me', 'didi'], kind: 'service' }); post(L, 'didi', { from: 'didi', kind: 'text', text }); };
 
 // world: { carDist (m to the pickup), carStopped (at the kerb), boarded (you're in) }
 export function stepRide(L, R, dt, world = {}) {
@@ -88,7 +88,7 @@ export function stepRide(L, R, dt, world = {}) {
       }
       if (waited >= RIDE_RULES.cancelAt) {
         R.phase = 'cancelled'; L.flags.ride = null;
-        pay(L, { method: R.method, amount: RIDE_RULES.noShowFee, to: '滴滴出行', memo: '司机等待超时 取消费', kind: 'ride' });
+        pay(L, { method: R.method, amount: RIDE_RULES.noShowFee, to: '快马出行', memo: '司机等待超时 取消费', kind: 'ride' });
         say(L, `乘客未上车，订单已取消，收取取消费 ¥${RIDE_RULES.noShowFee}`);
         ev({ type: 'cancelled' });
       }
@@ -124,8 +124,8 @@ export function arrive(L, R) {
   if (R.phase !== 'riding') return null;
   const d = dest(R.to), extra = R.boardedAt - R.arrivedAt > RIDE_RULES.freeWait ? 2 : 0;
   const amount = Math.round((R.quote + extra) * 10) / 10;
-  const p = pay(L, { method: R.method, amount, to: '滴滴出行', memo: `快车 → ${d.zh}`, kind: 'ride' });
-  if (p.ok) p.entry.memoEn = `DiDi Express to ${d.en}`;
+  const p = pay(L, { method: R.method, amount, to: '快马出行', memo: `快车 → ${d.zh}`, kind: 'ride' });
+  if (p.ok) p.entry.memoEn = `Kuaima Express to ${d.en}`;
   const got = heard(R.talk);
   L.flags.heard = [...new Set([...(L.flags.heard || []), ...got.map((h) => h.id)])];
   (L.flags.rides ||= []).push({ to: R.to, driver: R.driver.id, at: stamp(L), fare: amount, heard: got.map((h) => h.id), talked: R.talk.warmth > 0.5 });

@@ -96,6 +96,11 @@
  },
  {
   "who": "lin",
+  "zh": "绳子松过，又绕回去了。……封条还在就好。辛苦你了。",
+  "en": "The string's been undone and wound back. ...The seal's still whole, and that's what matters. Thank you."
+ },
+ {
+  "who": "lin",
   "zh": "封条破了。……你看过了。那上面的日子，别跟别人提。",
   "en": "The seal's broken. ...You've read it. The date on that page, don't mention it to anyone."
  },
@@ -196,8 +201,8 @@
  },
  {
   "who": "driver:xiao-zhao",
-  "zh": "现在做生意，你得有个“故事”。投资人听故事的。我的故事就是，我还在开滴滴。哈哈。",
-  "en": "Business now, you need a 'story'. Investors buy stories. My story is I'm still driving for DiDi. Ha."
+  "zh": "现在做生意，你得有个“故事”。投资人听故事的。我的故事就是，我还在开快马。哈哈。",
+  "en": "Business now, you need a 'story'. Investors buy stories. My story is I'm still driving for Kuaima. Ha."
  },
  {
   "who": "driver:xiao-zhao",
@@ -596,7 +601,7 @@
  },
  {
   "who": "carPurchase.js",
-  "zh": "你好，我是知夏的朋友纪白，想了解一下 Huracán。",
+  "zh": "你好，我是知夏的朋友纪白，想了解一下 Strale。",
   "en": "me"
  },
  {
@@ -796,8 +801,8 @@
  },
  {
   "who": "onlooker",
-  "zh": "兰博基尼撞人了……",
-  "en": "A Lamborghini hit someone..."
+  "zh": "科尔维纳撞人了……",
+  "en": "A Corvina hit someone..."
  },
  {
   "who": "cop",
@@ -931,8 +936,8 @@
  },
  {
   "who": "vivian",
-  "zh": "纪先生？我是Vivian。这台是我们的试驾车，Huracán LP610-4，5.2升V10自然吸气，您随便看。",
-  "en": "Mr Ji? I'm Vivian. This is our demo car, the Huracán LP610-4: 5.2-litre naturally aspirated V10. Have a good look."
+  "zh": "纪先生？我是Vivian。这台是我们的试驾车，科尔维纳 Strale，5.2升V10自然吸气，您随便看。",
+  "en": "Mr Ji? I'm Vivian. This is our demo car, the Corvina Strale: 5.2-litre naturally aspirated V10. Have a good look."
  },
  {
   "who": "vivian",
@@ -956,8 +961,8 @@
  },
  {
   "who": "vivian",
-  "zh": "好的！定金收到了。上牌和尾款的事我微信上跟您确认～",
-  "en": "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on WeChat."
+  "zh": "好的！定金收到了。上牌和尾款的事我信语上跟您确认～",
+  "en": "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on Xinyu."
  },
  {
   "who": "vivian",
@@ -966,8 +971,28 @@
  },
  {
   "who": "vivian",
-  "zh": "好的，有问题随时微信我。",
+  "zh": "好的，有问题随时信语我。",
   "en": "Of course. Message me any time."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "申礼……我堂哥就在申礼，管开新店。上个月他还问我爸，这个摊位卖不卖。",
+  "en": "Shenli... My cousin works for Shenli, opening their new shops. Only last month he was asking my father whether he'd sell this pitch."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "……这是他的字。他写“不签”，就是不签。",
+  "en": "...That's his writing. When he writes \"won't\", he won't."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "昆山……他是去了我姑妈那儿。可我姑妈说他没到。",
+  "en": "Kunshan... So he was going to my aunt's. But she says he never got there."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "这本子我拿去派出所。你愿意写个情况说明，签个名字吗？",
+  "en": "I'm taking this book to the police. Would you write down how you came by it, and sign it?"
  },
  {
   "who": "zhoumin",
@@ -988,6 +1013,16 @@
   "who": "zhoumin",
   "zh": "……好。谢谢。要是想起什么，这是我的电话。",
   "en": "...All right. Thank you. If anything comes back to you, here's my number."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "“家属托付”……他也算家属。我爸不会托他的。",
+  "en": "\"From the family\"... He is family, I suppose. My father would never have asked him."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "你愿意把看见的写下来，签个名字吗？我拿去派出所。",
+  "en": "Would you write down what you saw and sign it? I'll take it to the police station."
  },
  {
   "who": "zhoumin",
@@ -2996,8 +3031,8 @@
  },
  {
   "who": "drunk",
-  "zh": "加个微信怎么了？我又不是坏人！",
-  "en": "Add me on WeChat, what's the harm? I'm not a bad guy!"
+  "zh": "加个信语怎么了？我又不是坏人！",
+  "en": "Add me on Xinyu, what's the harm? I'm not a bad guy!"
  },
  {
   "who": "girl",
@@ -3420,7 +3455,7 @@
   "en": "Sir! Sir, you need to badge in. No entry without an appointment."
  },
  {
-  "who": "门童",
+  "who": "保安",
   "zh": "晚上好，纪先生。",
   "en": "Good evening, Mr Ji."
  },
@@ -3471,8 +3506,8 @@
  },
  {
   "who": "调酒师",
-  "zh": "先生，微信好像没付成功。",
-  "en": "Sir, the WeChat payment didn't go through."
+  "zh": "先生，信语好像没付成功。",
+  "en": "Sir, the Xinyu payment didn't go through."
  },
  {
   "who": "调酒师",
@@ -3488,6 +3523,51 @@
   "who": "门口服务员",
   "zh": "晚上好，一位吗？这边请。",
   "en": "Good evening. Just one? This way, please."
+ },
+ {
+  "who": "fang",
+  "zh": "小白？……老周天天讲的那个小白？长这么高了。",
+  "en": "Little Bai? ...The Little Bai Zhou never stopped talking about? Look how tall you are."
+ },
+ {
+  "who": "fang",
+  "zh": "老周坐我这条船，坐了三十年。每天收了摊，末班，回浦东。",
+  "en": "Zhou rode this boat for thirty years. Every night, stall packed up, the last sailing home to Pudong."
+ },
+ {
+  "who": "fang",
+  "zh": "二十九号他没坐末班。六点钟就来了，拎着他那只工具箱，说去昆山他阿姐那儿住几天。",
+  "en": "On the twenty-ninth he didn't take the last one. He came at six with that toolbox of his and said he was off to his sister's in Kunshan for a few days."
+ },
+ {
+  "who": "fang",
+  "zh": "箱子他不带，叫我替他收着。他讲：“阿侄要是来问，就讲没看见我。”",
+  "en": "He wouldn't take the box. Asked me to keep it. He said: \"If my nephew comes asking, you haven't seen me.\""
+ },
+ {
+  "who": "fang",
+  "zh": "后来是有个年轻人来问过两回，拎只红纸袋。我讲没看见。",
+  "en": "And a young fellow did come asking, twice, with a red paper bag. I said I hadn't seen him."
+ },
+ {
+  "who": "fang",
+  "zh": "启事上那行字我也看见了。“乘末班轮渡”……写字的人，是想叫人以为他跳了江。他没有。",
+  "en": "I saw that line on the notice too. \"Take the last ferry\"... Whoever wrote it wants people to think he went into the river. He didn't."
+ },
+ {
+  "who": "fang",
+  "zh": "箱子你拿去，给他屋里人。我一个摇船的，派出所去不来。",
+  "en": "You take the box. Give it to his family. I'm a boatman; I can't be going to police stations."
+ },
+ {
+  "who": "fang",
+  "zh": "金陵东路的老筹码。这种早不用了。哪里来的？",
+  "en": "An old Jinling Road token. Nobody's used those for years. Where'd you get it?"
+ },
+ {
+  "who": "fang",
+  "zh": "……那就算了。夜里风大，早点回去。",
+  "en": "...Suit yourself. Windy out here at night. Get yourself home."
  },
  {
   "who": "maker",
@@ -3681,8 +3761,8 @@
  },
  {
   "who": "gunian",
-  "zh": "昨天谢谢你替我坐下。汉口路那家 Manner，我每天一点在。今天也在。",
-  "en": "Thank you for sitting down for me yesterday. I'm at the Manner on Hankou Road at one every day. Today as well."
+  "zh": "昨天谢谢你替我坐下。汉口路那家 Linger，我每天一点在。今天也在。",
+  "en": "Thank you for sitting down for me yesterday. I'm at the Linger on Hankou Road at one every day. Today as well."
  },
  {
   "who": "gunian",
