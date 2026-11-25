@@ -130,25 +130,29 @@ export const NJ_SHOPS = [
   S({ zh: '沈大成', en: 'SHEN DA CHENG · 1875', side: 'N', d0: 1124, d1: 1145, type: '糕团', since: '1875', sign: { style: 'plaque', bg: '#141010', font: 'kai' }, blade: { text: '沈大成', bladeStyle: 'plaque' } }),
   // south: Century Square opens off the street here (world/nanjingRoad.js); east of it, unknown frontages
 
+  // south, on the Zhejiang corner: New Wing On (新永安大楼, 1933, 七重天), its prow to Nanjing Road, bridged to Wing On
+  S({ zh: '七重天宾馆', en: 'SEVENTH HEAVEN HOTEL', side: 'S', d0: 1131, d1: 1145, type: 'hotel', room: 'royal_esplanade', landmark: 'newwingon', sign: { style: 'deco', bg: '#2a1c14', fg: '#f3e2c0', font: 'song', width: 10 },
+    more: [{ d: 1138, zh: '七重天宾馆', en: '', sign: { style: 'letters', fg: '#ff2b2b', glow: '#ff1a1a', font: 'song', width: 11, h: 1.8, y: 38.8 } }] }),
   // ---- Zhejiang to Guangxi North Road ----
   // south: Wing On (永安百货, 1918) on the Zhejiang corner, Giordano in its ground floor; ICBC; the Baolong Tower with
   // 宝大祥 (children's goods), 新雅粤菜馆 (Cantonese, 1926) and 吴良材眼镜 (opticians)
-  S({ zh: '永安百货', en: "WING ON · YONG'AN · 1918", side: 'S', d0: 1159, d1: 1235, type: '百货', room: 'royal_esplanade', since: '1918', sign: { style: 'deco', bg: '#1d2a3a', fg: '#e9d9a8', font: 'song', width: 12, at: 1190 },
-    more: [{ d: 1164, zh: '佐丹奴', en: 'GIORDANO', sign: { style: 'brand', bg: '#1f3f7a', fg: '#ffffff', width: 5 } }], building: { style: 'classic', up: 25.2, top: true } }),
-  S({ zh: '中国工商银行', en: 'ICBC', side: 'S', d0: 1235, d1: 1248, type: 'bank', room: 'royal_esplanade', sign: { style: 'brand', bg: '#c7000b', fg: '#ffffff' } }),
+  S({ zh: '永安百货', en: '', side: 'S', d0: 1159, d1: 1215, type: '百货', room: 'royal_esplanade', since: '1918', landmark: 'wingon', sign: { style: 'letters', fg: '#ff2b2b', glow: '#ff1a1a', font: 'song', width: 14, h: 3.2, y: 24.4, at: 1192 },
+    more: [{ d: 1168, zh: '', en: 'CHANEL', sign: { style: 'letters', board: '#141414', fg: '#ffffff', font: 'song', width: 4.5 } }, { d: 1188, zh: '', en: 'LANCÔME', sign: { style: 'letters', board: '#141414', fg: '#ffffff', font: 'song', width: 4.5 } }, { d: 1204, zh: '', en: 'SWAROVSKI', sign: { style: 'letters', board: '#141414', fg: '#ffffff', font: 'song', width: 5 } }] }),
+  S({ zh: '中国工商银行', en: 'ICBC', side: 'S', d0: 1222, d1: 1238, type: 'bank', room: 'royal_esplanade', sign: { style: 'brand', bg: '#c7000b', fg: '#ffffff' } }),
   S({ zh: '宝大祥', en: 'BAO DA XIANG', side: 'S', d0: 1248, d1: 1260, type: '时装', sign: { style: 'plaque', bg: '#5e0f12', font: 'wei' }, building: { style: 'deco', up: 43.2, top: true } }),
   S({ zh: '新雅粤菜馆', en: 'SUN YA · 1926', side: 'S', d0: 1260, d1: 1271, type: '酒家', since: '1926', sign: { style: 'plaque', bg: '#111010', font: 'kai' }, blade: { text: '新雅粤菜', bladeStyle: 'neon', neon: '#ff3b3b' } }),
   S({ zh: '吴良材眼镜', en: 'WU LIANG CAI', side: 'S', d0: 1271, d1: 1278, type: '眼镜', since: '1719', sign: { style: 'plaque', bg: '#0f2a4a', fg: '#e9cf8a', font: 'wei', width: 5.5 } }),
   // north: the Shanghai Fashion Store in the old Sincere building (先施公司, 1917), MINISO, Starbucks
-  S({ zh: '上海时装商店', en: 'SHANGHAI FASHION STORE', side: 'N', d0: 1180, d1: 1240, type: '时装', room: 'royal_esplanade', sign: { style: 'deco', bg: '#2a2119', fg: '#efe2c4', font: 'song', width: 12 }, building: { style: 'classic', up: 28.8, top: true } }),
-  S({ zh: '名创优品', en: 'MINISO', side: 'N', d0: 1240, d1: 1254, type: '纪念品', room: 'decor_shop', sign: { style: 'brand', bg: '#e8112d', fg: '#ffffff' } }),
-  S({ zh: '星巴克', en: 'STARBUCKS', side: 'N', d0: 1254, d1: 1270, type: '咖啡', sign: { style: 'brand', bg: '#00704a', fg: '#ffffff', logo: siStarbucks.path, logoFg: '#ffffff' } }),
+  S({ zh: '上海时装商店', en: 'SHANGHAI FASHION STORE', side: 'N', d0: 1159, d1: 1249, type: '时装', room: 'royal_esplanade', landmark: 'sincere', sign: { style: 'letters', fg: '#b8892e', font: 'song', width: 11, h: 0.9, y: 7.15, at: 1180 },
+    more: [{ d: 1163, zh: '锦江之星', en: 'JINJIANG INN', sign: { style: 'brand', bg: '#e60012', fg: '#ffffff', width: 4, h: 0.8, y: 15.2 } }] }),
+  S({ zh: '名创优品', en: 'MINISO', side: 'N', d0: 1249, d1: 1262, type: '纪念品', room: 'decor_shop', sign: { style: 'brand', bg: '#e8112d', fg: '#ffffff' } }),
+  S({ zh: '星巴克', en: 'STARBUCKS', side: 'N', d0: 1262, d1: 1276, type: '咖啡', sign: { style: 'brand', bg: '#00704a', fg: '#ffffff', logo: siStarbucks.path, logoFg: '#ffffff' } }),
 
   // ---- Guangxi North to Guizhou Road ----
   // north: McDonald's, the No.1 Food Store (第一食品商店, the old Sun Sun, 1926), Pizza Hut; south: Subway
-  S({ zh: '麦当劳', en: "McDonald's", side: 'N', d0: 1288, d1: 1302, type: '食品', room: 'comfy_cafe', sign: { style: 'brand', bg: '#da291c', fg: '#ffc72c', logo: siMcdonalds.path, logoFg: '#ffc72c' } }),
-  S({ zh: '第一食品商店', en: 'SHANGHAI NO.1 FOOD STORE', side: 'N', d0: 1302, d1: 1328, type: '食品', room: 'royal_esplanade', sign: { style: 'deco', bg: '#7a1418', fg: '#f6e2b0', font: 'song', width: 11 }, building: { style: 'classic', up: 21.6, top: true } }),
-  S({ zh: '必胜客', en: 'PIZZA HUT', side: 'N', d0: 1328, d1: 1338, type: '食品', room: 'warm_restaurant', sign: { style: 'brand', bg: '#c8102e', fg: '#ffffff' } }),
+  S({ zh: '上海市第一食品商店', en: 'FIRST FOODHALL', side: 'N', d0: 1288, d1: 1338, type: '食品', room: 'royal_esplanade', landmark: 'sunsun', sign: { style: 'brand', bg: '#c8102e', fg: '#ffffff', font: 'hei', width: 11, at: 1318 },
+    blade: { text: '第一食品商店', bladeStyle: 'plaque', bg: '#c8102e', fg: '#ffffff', at: -1305 },
+    more: [{ d: 1295, zh: '麦当劳', en: "McDonald's", sign: { style: 'brand', bg: '#da291c', fg: '#ffc72c', logo: siMcdonalds.path, logoFg: '#ffc72c', width: 5 } }, { d: 1331, zh: '必胜客', en: 'PIZZA HUT', sign: { style: 'brand', bg: '#c8102e', fg: '#ffffff', width: 4.5 } }] }),
   S({ zh: '赛百味', en: 'SUBWAY', side: 'S', d0: 1322, d1: 1338, type: '食品', room: 'comfy_cafe', sign: { style: 'brand', bg: '#008c15', fg: '#ffc600' } }),
 
   // ---- Guizhou Road to Xizang Middle Road ----
@@ -156,7 +160,8 @@ export const NJ_SHOPS = [
   // 1936) on the Xizang corner; south: Shimao Festival City with M&M's World on the corner
   S({ zh: '上海床上用品商店', en: 'SHANGHAI BEDDING STORE · 1942', side: 'N', d0: 1350, d1: 1370, type: '百货', room: 'decor_shop', since: '1942', sign: { style: 'deco', bg: '#253b2f', fg: '#efe2c4', font: 'song' } }),
   S({ zh: '茂昌眼镜', en: 'MAO CHANG OPTICAL', side: 'N', d0: 1370, d1: 1385, type: '眼镜', sign: { style: 'plaque', bg: '#0f2a4a', fg: '#e9cf8a', font: 'wei' } }),
-  S({ zh: '上海市第一百货商店', en: 'SHANGHAI NO.1 DEPARTMENT STORE', side: 'N', d0: 1430, d1: 1511, type: '百货', room: 'royal_esplanade', sign: { style: 'deco', bg: '#7a1418', fg: '#f6e2b0', font: 'song', width: 13, at: 1470 }, building: { style: 'deco', up: 36, top: true } }),
+  S({ zh: '第一百货商业中心', en: 'NO.1 SHOPPING CENTER', side: 'N', d0: 1457, d1: 1511, type: '百货', room: 'royal_esplanade', landmark: 'sunco', sign: { style: 'brand', bg: '#f4f4f0', fg: '#1f9a46', font: 'hei', width: 13, h: 0.75, y: 4.85, at: 1478 },
+    blade: { text: '第一百货', bladeStyle: 'plaque', bg: '#1f9a46', fg: '#ffffff', at: -1488 } }),
   S({ zh: '上海世茂广场', en: 'SHIMAO FESTIVAL CITY', side: 'S', d0: 1420, d1: 1511, type: '百货', room: 'royal_esplanade', sign: { style: 'letters', board: '#141414', fg: '#f3f0ea', font: 'song', width: 10, at: 1440 },
     more: [{ d: 1495, zh: '', en: "M&M'S WORLD", sign: { style: 'brand', bg: '#6b3a1f', fg: '#ffd400', width: 6 } }], building: { style: 'deco', up: 64.8, top: true } }),
 ];
