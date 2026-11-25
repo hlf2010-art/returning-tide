@@ -7,20 +7,20 @@ const B = (zh, en) => ({ zh, en });
 
 export const CREDITS = [
   {
-    id: 'elevenlabs',
-    what: B('部分配音（34 句角色台词）、收款播报、喘气声、晚上十点的惊叹声、背景环境声（人群、车流、江水、船、风）', 'Some voices (34 character lines), the payment speakers, Ji Bai\'s breathing, the 22:00 sigh, and the background beds (crowd, traffic, river, boats, wind)'),
-    who: 'Generated with ElevenLabs (elevenlabs.io)',
-    licence: B('ElevenLabs 服务条款（免费版：仅限非商业使用，须署名）', 'ElevenLabs terms (free plan: non-commercial use only, with attribution)'),
-    url: 'https://elevenlabs.io', licenceUrl: 'https://elevenlabs.io/terms-of-use',
-    files: ['public/ambience/beds', 'public/ambience/pay', 'public/ambience/breath', 'public/ambience/lights-out.mp3', 'tools/voice/eleven.json'],
-  },
-  {
     id: 'kokoro',
-    what: B('其余配音、人群低语、地铁广播', 'The other voices, the crowd\'s murmur, the metro announcements'),
+    what: B('全部配音、收款播报、人群低语与晚上十点的惊叹声、地铁广播', 'Every voice, the payment speakers, the crowd\'s murmur and the 22:00 sigh, the metro announcements'),
     who: 'Kokoro-82M by hexgrad',
     licence: B('Apache-2.0', 'Apache-2.0'),
     url: 'https://huggingface.co/hexgrad/Kokoro-82M', licenceUrl: 'https://www.apache.org/licenses/LICENSE-2.0',
-    files: ['public/ambience/murmur.mp3', 'public/voice'],
+    files: ['public/ambience/murmur.mp3', 'public/ambience/lights-out.mp3', 'public/ambience/pay', 'public/voice'],
+  },
+  {
+    id: 'synth',
+    what: B('背景环境声（车流、江水、船、风）与喘气声，由程序合成', 'The background beds (traffic, river, boats, wind) and Ji Bai\'s breathing, synthesised in code'),
+    who: 'Made for this game (tools/voice/ambience.py, tools/voice/breath.py; the crowd bed layers the Kokoro murmur)',
+    licence: B('随游戏', 'Part of the game'),
+    url: null, licenceUrl: null,
+    files: ['public/ambience/beds', 'public/ambience/breath'],
   },
   {
     id: 'byd-han',

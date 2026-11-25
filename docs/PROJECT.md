@@ -1,6 +1,6 @@
 # 回潮 Returning Tide: handover
 
-*Updated 25 November 2026. This replaces the handover of 16 November (branch `phase4`, commit `d265f73`), whose paths,
+*Updated 25 November 2026 (release blockers revised the same day). This replaces the handover of 16 November (branch `phase4`, commit `d265f73`), whose paths,
 branch names and git rules no longer apply. `README.md` is the full, current reference; this page is the map.*
 
 ## What it is
@@ -38,20 +38,23 @@ npm run playtest     # tools/playtest.mjs against the preview build (headless Ch
 
 ## Before any public or commercial release
 
-These are tracked in the release-blockers inventory (25 November 2026). In short:
+The release-blockers inventory (25 November 2026) listed five; four are fixed on `master`:
 
-- **ElevenLabs free-plan audio** is non-commercial and needs attribution: 34 character lines (`tools/voice/eleven.json`),
-  the payment speakers, breathing, the 22:00 sigh and every background bed. Regenerate on a paid plan or replace
-  (`docs/sound.md`).
-- **The Huracán model** (`public/models/huracan.glb`) probably comes from a commercial game, and the car and story use
-  the Lamborghini name. Replace it with a fictional car.
-- **Real brands**: car makers' names and badges (BYD, NIO, Li Auto, AITO, Luxeed), app and payment marks on the phone
-  (`src/ui/brands.js`), and about 80 real shops with their signs on Nanjing Road (`src/world/njShops.js`,
-  `shopSigns.js`). Clear or replace them.
-- **Character art provenance**: the AI-made character sheets and the Hunyuan 3D models of Ji Bai and Gu Nian need their
-  tools and terms recorded and checked.
-- **Credits**: Settings → "Credits and licences" lists every attribution (`src/ui/credits.js`); `tests/credits.test.mjs`
-  fails if a licensed model or recorded sound ships without one. Keep it up to date when adding assets.
+- **ElevenLabs free-plan audio:** gone. Every voice and the payment speakers are Kokoro (Apache-2.0); the beds and
+  breathing are synthesised in code; the 22:00 sigh is layered Kokoro voices (`docs/sound.md`).
+- **The Huracán:** replaced by the Corvina Strale, an invented marque and car modelled in code
+  (`src/world/supercarModel.js`). No Lamborghini name remains.
+- **Real brands:** car makers, phone apps, payment marks, cafés, banks, hotels and about 64 chain shops on Nanjing Road
+  and in Lujiazui are invented (`src/ui/brands.js`, `src/world/njShops.js`). Heritage 老字号 shops on Nanjing Road
+  keep their real names, as a place's history; review that choice before release.
+- **Credits:** Settings → "Credits and licences" (`src/ui/credits.js`); `tests/credits.test.mjs` fails if a licensed
+  asset ships uncredited or anything non-commercial is credited.
+
+Still open:
+
+- **Character art provenance:** the AI-made character sheets and the Hunyuan 3D models of Ji Bai and Gu Nian need
+  their tools and terms recorded and checked.
+- **The BYD Han model** (CC BY 4.0, badges removed) is credited; consider replacing it with an invented saloon.
 
 ## Working on the repo
 
