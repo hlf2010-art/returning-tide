@@ -121,3 +121,12 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
   roughness and specular map from its own texture: matte where it's dark (hair), unchanged on skin. Su's and
   c5's cards are lightened to match their scalp colour (`hairTint`).
 - Before and after: `docs/hero-faces/round4-before-after.jpg`.
+
+## Round 5 (25 November): hands and Su's crown
+
+- **Ji Bai's hands** take the face's tone: with `skinTone` set, `swapHead` recolours the skin texels of his body's
+  colour map (warm and light, not hair or cloth) from the old face's mean to the same tone, in linear light.
+- **Hair cards on every Rocketbox avatar** are lit as facing outward: normals point away from the middle of the
+  head, and the back-face flip is off for them. Cards wound inward used to be lit as facing into the head and
+  showed as near-black slabs with hard edges (Su's crown). The su/c5 card lightening of round 4 is gone.
+- `docs/hero-faces/round5-hands-crown.jpg`.

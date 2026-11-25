@@ -82,7 +82,7 @@ for (const role of roles) {
   root.updateMatrixWorld(true);
   const head = root.getObjectByName('Bip01_Head') || root.getObjectByName('Head');
   const hp = new THREE.Vector3(); if (head) head.getWorldPosition(hp); else hp.set(0, 1.6, 0);
-  const face = hp.clone().add(new THREE.Vector3(0, 0.07, 0));
+  const face = hp.clone().add(new THREE.Vector3(0, 0.07 + (+qs.get('aimy') || 0), 0));
   // which way the face looks: the root's +z (the avatars face +z)
   const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
   const cam = new THREE.PerspectiveCamera(24, 1, 0.01, 20);
