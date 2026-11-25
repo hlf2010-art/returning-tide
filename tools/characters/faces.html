@@ -17,10 +17,11 @@
 // Dev-only: every face in the game at dialogue distance, in the game's renderer and the shared idle pose.
 //   /tools/characters/faces.html            all roles in public/people/people.json
 //   /tools/characters/faces.html?roles=c4,c1&yaw=30
+//   debug: specks=0|1 (the shard cleaner), armout=<deg>, clips=player, ids=1|map, uvdbg=1 (UV as colour), tridbg=1 (triangle ids)
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { fixHair, swapHead } from '/src/world/people.js';
+import { fixHair, swapHead, cleanSpecks, spreadArms } from '/src/world/people.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 const qs = new URLSearchParams(location.search);
@@ -48,11 +49,18 @@ for (const role of roles) {
     fixHair(root, c.hairTint || null);
     if (c.head && qs.get('swap') !== '0') swapHead(root, (await loader.loadAsync('/people/' + c.head)).scene, { tint: c.headTint || null, keepHair: qs.has('keephair') ? qs.get('keephair') === '1' : !!c.keepHair, tone: qs.get('tone') ? qs.get('tone').split(',').map(Number) : (c.skinTone || null), ...(qs.has('drop') ? { drop: qs.get('drop').split(',').filter(Boolean) } : {}) });
   }
+  if (qs.get('game') !== '0' && (qs.has('specks') ? qs.get('specks') === '1' : c.cleanSpecks)) console.log('specks cleaned', role, cleanSpecks(root));
   if (qs.get('ids')) root.traverse((o) => {
     if (!o.isMesh) return; const n = o.material.name;
     const col = /body/.test(n) ? 0xff3030 : /head/.test(n) ? 0x30ff30 : 0x3060ff;
     o.material = new THREE.MeshBasicMaterial({ map: (/opacity/.test(n) || qs.get('ids') === 'map') ? o.material.map : null, color: qs.get('ids') === 'map' ? 0xffffff : col, alphaTest: o.material.alphaTest, side: THREE.DoubleSide });
   });
+  if (qs.get('uvdbg')) { const N = 1024, d = new Uint8Array(N * N * 4); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = (y * N + x) * 4; d[i] = x & 255; d[i + 1] = y & 255; d[i + 2] = ((x >> 8) << 4) | (y >> 8); d[i + 3] = 255; }
+    const t = new THREE.DataTexture(d, N, N); t.magFilter = t.minFilter = THREE.NearestFilter; t.flipY = false; t.needsUpdate = true;
+    root.traverse((o) => { if (o.isSkinnedMesh) o.material = new THREE.MeshBasicMaterial({ map: t }); }); renderer.toneMapping = THREE.NoToneMapping; renderer.outputColorSpace = THREE.LinearSRGBColorSpace; }
+  if (qs.get('tridbg')) root.traverse((o) => { if (!o.isSkinnedMesh) return; const g = o.geometry.toNonIndexed(), n = g.attributes.position.count, c = new Float32Array(n * 3);
+    for (let v = 0; v < n; v++) { const t = (v / 3) | 0; c[v * 3] = (t & 255) / 255; c[v * 3 + 1] = ((t >> 8) & 255) / 255; c[v * 3 + 2] = ((t >> 16) & 255) / 255; }
+    g.setAttribute('color', new THREE.BufferAttribute(c, 3)); o.geometry = g; o.material = new THREE.MeshBasicMaterial({ vertexColors: true }); renderer.toneMapping = THREE.NoToneMapping; renderer.outputColorSpace = THREE.LinearSRGBColorSpace; });
   if (qs.get('novc')) root.traverse((o) => { if (o.isMesh) { o.material.vertexColors = false; o.material.needsUpdate = true; } });
   if (qs.get('head')) root.traverse((o) => {
     if (!o.isMesh || !/head/.test(o.material.name)) return; const m = o.material, h = qs.get('head');
@@ -76,9 +84,9 @@ for (const role of roles) {
   const key = new THREE.DirectionalLight(0xfff0dd, 2.0); key.position.set(1, 1.8, 1.4);
   const rim = new THREE.DirectionalLight(0xdde8ff, 1.0); rim.position.set(-1, 1.6, -1.2);
   scene.add(key, rim);
-  const set = clips[c.sex] || clips.m;
+  const set = clips[qs.get('clips') || c.sex] || clips.m;
   const idle = set && set.find((a) => a.name === 'idle');
-  if (idle) { const mx = new THREE.AnimationMixer(root); mx.clipAction(idle).play(); mx.update(0.5); }
+  if (idle) { const mx = new THREE.AnimationMixer(root); mx.clipAction(idle).play(); mx.update(0.5); root.updateMatrixWorld(true); spreadArms(root, (qs.has('armout') ? +qs.get('armout') : (c.armOut || 0)) * Math.PI / 180); }
   root.updateMatrixWorld(true);
   const head = root.getObjectByName('Bip01_Head') || root.getObjectByName('Head');
   const hp = new THREE.Vector3(); if (head) head.getWorldPosition(hp); else hp.set(0, 1.6, 0);

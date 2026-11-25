@@ -128,10 +128,10 @@ function matteHairShell(m) {
 // cards) becomes a SkinnedMesh on the same skeleton, placed so its nose tip is where the old one was. Below the jaw
 // the skin blends from the head bone to the neck bone so the throat bends with the neck. Returns the new meshes.
 // read a material's colour map on the CPU: (u, v) -> [r, g, b] in 0..1 (sRGB, as painted)
-function texelReader(material) {
+function texelReader(material, max = 512) {
   const map = (Array.isArray(material) ? material[0] : material)?.map, img = map?.image;
   if (!img || typeof document === 'undefined') return null;
-  const w = Math.min(512, img.width), h = Math.min(512, img.height);
+  const w = Math.min(max, img.width), h = Math.min(max, img.height);
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   const cx = cv.getContext('2d', { willReadFrequently: true });
   if (map.flipY) { cx.translate(0, h); cx.scale(1, -1); }
@@ -202,6 +202,95 @@ function conformNeck(pos, bodyWorld, profile, chin) {
     p.applyMatrix4(toL); pos.setXYZ(v, p.x, p.y, p.z);
   }
   pos.needsUpdate = true;
+}
+
+// Hunyuan bakes leave shards: small triangles whose UVs fall across an island's edge onto other texels (skin, the
+// white shirt), so light slivers dot the dark trousers and jacket. A triangle lighter than edge neighbours that
+// are dark and agree with each other takes its own copy of its corners with the UV of the most typical neighbour:
+// it is drawn the colour of the cloth around it. Borders between two real colours survive, because there the
+// neighbours disagree.
+export function cleanSpecks(root, { diff = 0.04, agree = 0.04, share = 2 / 3, passes = 6 } = {}) {
+  let body = null;
+  root.traverse((o) => { if (o.isSkinnedMesh && (!body || o.geometry.attributes.position.count > body.geometry.attributes.position.count)) body = o; });
+  if (!body || !body.geometry.index) return 0;
+  const texel = texelReader(body.material, 2048);
+  if (!texel) return 0;
+  const g = body.geometry, pos = g.attributes.position, uv = g.attributes.uv, ix = Array.from(g.index.array), T = ix.length / 3;
+  // weld by position, so neighbours across UV seams count
+  const id = new Int32Array(pos.count), seen = new Map();
+  for (let v = 0; v < pos.count; v++) {
+    const k = `${Math.round(pos.getX(v) * 1e3)},${Math.round(pos.getY(v) * 1e3)},${Math.round(pos.getZ(v) * 1e3)}`;
+    if (!seen.has(k)) seen.set(k, seen.size); id[v] = seen.get(k);
+  }
+  const edges = new Map(), col = new Float32Array(T * 3), cuv = new Float32Array(T * 2);
+  const B = [[1 / 3, 1 / 3], [0.6, 0.2], [0.2, 0.6], [0.2, 0.2], [0.45, 0.45], [0.45, 0.1], [0.1, 0.45]];
+  for (let t = 0; t < T; t++) {
+    const a = ix[t * 3], b = ix[t * 3 + 1], c = ix[t * 3 + 2];
+    for (const [w0, w1] of B) {
+      const w2 = 1 - w0 - w1, u = uv.getX(a) * w0 + uv.getX(b) * w1 + uv.getX(c) * w2, v = uv.getY(a) * w0 + uv.getY(b) * w1 + uv.getY(c) * w2;
+      const px = texel(u, v); for (let j = 0; j < 3; j++) col[t * 3 + j] += px[j] / B.length;
+    }
+    cuv[t * 2] = (uv.getX(a) + uv.getX(b) + uv.getX(c)) / 3; cuv[t * 2 + 1] = (uv.getY(a) + uv.getY(b) + uv.getY(c)) / 3;
+    for (const [p, q] of [[a, b], [b, c], [c, a]]) {
+      const k = Math.min(id[p], id[q]) * 4194304 + Math.max(id[p], id[q]);
+      (edges.get(k) || edges.set(k, []).get(k)).push(t);
+    }
+  }
+  const nb = Array.from({ length: T }, () => []);
+  for (const list of edges.values()) for (const t of list) for (const u of list) if (t !== u && !nb[t].includes(u)) nb[t].push(u);
+  const dist = (t, r) => Math.max(Math.abs(col[t * 3] - r[0]), Math.abs(col[t * 3 + 1] - r[1]), Math.abs(col[t * 3 + 2] - r[2]));
+  const med = (xs) => { xs.sort((p, q) => p - q); return xs[xs.length >> 1]; };
+  const fix = new Map();
+  for (let pass = 0; pass < passes; pass++) {
+    for (let t = 0; t < T; t++) {
+      const n = nb[t]; if (fix.has(t) || n.length < 2) continue;
+      const ref = [0, 1, 2].map((j) => med(n.map((u) => col[u * 3 + j])));
+      if (dist(t, ref) < diff) continue;
+      // only light shards on dark cloth: a light trim one triangle wide (the jacket's hem) must stay
+      const L = (r, g, b) => 0.3 * r + 0.55 * g + 0.15 * b;
+      if (L(...ref) > 0.25 || L(col[t * 3], col[t * 3 + 1], col[t * 3 + 2]) < L(...ref) + diff) continue;
+      const near = n.filter((u) => dist(u, ref) < agree);
+      if (near.length < n.length * share) continue;
+      const d = near.reduce((best, u) => (dist(u, ref) < dist(best, ref) ? u : best));
+      fix.set(t, fix.has(d) ? fix.get(d) : d);
+      for (let j = 0; j < 3; j++) col[t * 3 + j] = col[d * 3 + j];
+    }
+  }
+  if (!fix.size) return 0;
+  // new corners for the fixed triangles (every attribute copied, the UV collapsed to the dark neighbour's middle)
+  const n0 = pos.count, add = fix.size * 3, ng = new THREE.BufferGeometry();
+  for (const [name, attr] of Object.entries(g.attributes)) {
+    // (read through the attribute: glTF attributes can be interleaved or sit in a larger buffer)
+    const S = attr.itemSize, arr = new (attr.isInterleavedBufferAttribute ? attr.data.array : attr.array).constructor((n0 + add) * S);
+    const src = attr.isInterleavedBufferAttribute ? attr.data.array : attr.array, st = attr.isInterleavedBufferAttribute ? attr.data.stride : S, off = attr.offset || 0;
+    for (let v = 0; v < n0; v++) for (let c = 0; c < S; c++) arr[v * S + c] = src[v * st + off + c];   // raw, not denormalized
+    let k = n0;
+    for (const t of fix.keys()) for (let j = 0; j < 3; j++, k++) for (let c = 0; c < S; c++) arr[k * S + c] = arr[ix[t * 3 + j] * S + c];
+    ng.setAttribute(name, new THREE.BufferAttribute(arr, attr.itemSize, attr.normalized));
+  }
+  let k = n0;
+  const nuv = ng.attributes.uv;
+  for (const [t, d] of fix) for (let j = 0; j < 3; j++, k++) { nuv.setXY(k, cuv[d * 2], cuv[d * 2 + 1]); ix[t * 3 + j] = k; }
+  ng.setIndex(ix); ng.groups = g.groups.map((x) => ({ ...x }));
+  ng.boundingBox = g.boundingBox; ng.boundingSphere = g.boundingSphere;
+  body.geometry = ng;
+  return fix.size;
+}
+
+// Hang the arms a little further from the body (rad, + = out), laid over whatever pose the mixer just set: the
+// Hunyuan bodies wear wider trousers than the Rocketbox bodies the clips were made for, and the hands of the idle
+// pose sank into them (skin showing through the cloth as light specks on the thighs). The avatars face +z, so the
+// left arm swings out about +z and the right about -z.
+const _sa = new THREE.Vector3(), _sq = new THREE.Quaternion(), _sr = new THREE.Quaternion();
+export function spreadArms(root, rad) {
+  if (!rad) return;
+  for (const s of ['L', 'R']) {
+    const b = root.getObjectByName(`Bip01_${s}_UpperArm`);
+    if (!b) continue;
+    root.getWorldQuaternion(_sq); _sa.set(0, 0, 1).applyQuaternion(_sq);
+    b.parent.getWorldQuaternion(_sq).invert(); _sa.applyQuaternion(_sq);
+    b.quaternion.premultiply(_sr.setFromAxisAngle(_sa, s === 'L' ? rad : -rad));
+  }
 }
 
 export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null, keepHair = false, tone = null } = {}) {
@@ -408,6 +497,7 @@ export async function loadPeople(base = './people/', { lean = false } = {}) {
       }
       fixHair(avatars[role], c.hairTint || null);
       if (c.head) swapHead(avatars[role], (await loader.loadAsync(base + c.head)).scene, { tint: c.headTint || null, keepHair: !!c.keepHair, tone: c.skinTone || null });
+      if (c.cleanSpecks) cleanSpecks(avatars[role]);
       // the children's rig is the same Biped, named Bip02: rename it so the shared clips bind to it
       if (c.child) avatars[role].traverse((o) => { if (o.name.startsWith('Bip02')) o.name = o.name.replace('Bip02', 'Bip01'); });
     }),
@@ -485,7 +575,7 @@ export function createPerson(people, role) {
     } else o.frustumCulled = false;
     meshes.push(o);
   });
-  const mixer = new THREE.AnimationMixer(root);
+  const mixer = new THREE.AnimationMixer(root), armOut = (cast.armOut || 0) * Math.PI / 180;
   const springs = createSprings(root);                                   // skirts, hair, hems that swing (tools/cloth/)
   const hand = people.umbrellaHand[sex], armRe = ARM(hand);
   const base = {}, arm = {};
@@ -562,7 +652,7 @@ export function createPerson(people, role) {
     },
     // look: world [x, z] to turn the head (and a little of the neck) toward, or null
     update(dt, look = null) {
-      if (dt > 0) mixer.update(dt);                                       // (nothing moves in no time; see play)
+      if (dt > 0) { mixer.update(dt); spreadArms(root, armOut); }       // (nothing moves in no time; see play)
       root.updateMatrixWorld(true);
       if (flinch && (Math.abs(flinch.twist) > 1e-3 || Math.abs(flinch.lean) > 1e-3)) {
         const ry = root.rotation.y;
