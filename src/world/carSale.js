@@ -1,4 +1,4 @@
-// The Huracán, bought the way it's actually done (engine/carPurchase.js keeps the state and the money).
+// The Strale, bought the way it's actually done (engine/carPurchase.js keeps the state and the money).
 // In the world:
 //   - at the appointment Vivian (the sales consultant) waits on the pavement by the demo car on
 //     Hankou Road. E to talk: what she says, and what you can answer with 1-4
@@ -52,7 +52,7 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
   // the conversation at the car: a few small scenes, each a line and up to four answers
   const scenes = {
     hello: () => ({
-      text: B('纪先生？我是Vivian。这台是我们的试驾车，Huracán LP610-4，5.2升V10自然吸气，您随便看。', "Mr Ji? I'm Vivian. This is our demo car, the Huracán LP610-4: 5.2-litre naturally aspirated V10. Have a good look."),
+      text: B('纪先生？我是Vivian。这台是我们的试驾车，科尔维纳 Strale，5.2升V10自然吸气，您随便看。', "Mr Ji? I'm Vivian. This is our demo car, the Corvina Strale: 5.2-litre naturally aspirated V10. Have a good look."),
       choices: [[T('能坐进去看看吗？', 'Can I sit in it?'), 'sit'], [T('能开一圈吗？', 'Can I take it for a drive?'), 'drive'], [T('颜色和内饰有哪些？', 'What colours and interiors are there?'), 'colour'], [T('我再想想。', "I'll think about it."), 'bye']],
     }),
     engine: () => { audio && audio.cue && audio.cue('v10'); huracan.setLights(true); return {
@@ -81,11 +81,11 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
       choices: [[T('今天先交定金。', "I'll pay the deposit today."), 'deposit'], [T('我再想想。', "I'll think about it."), 'bye']],
     }; },
     deposited: () => ({
-      text: B('好的！定金收到了。上牌和尾款的事我微信上跟您确认～', "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on WeChat."),
+      text: B('好的！定金收到了。上牌和尾款的事我信语上跟您确认～', "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on Xinyu."),
       choices: [[T('好，谢谢。', 'Great, thanks.'), 'bye']],
     }),
     short: () => ({ text: B('银行卡余额好像不够……没关系，您方便的时候再说。', "It looks like there isn't enough in the account... No problem, whenever suits you."), choices: [[T('好。', 'OK.'), 'bye']] }),
-    bye: () => ({ text: B('好的，有问题随时微信我。', 'Of course. Message me any time.'), choices: null, end: true }),
+    bye: () => ({ text: B('好的，有问题随时信语我。', 'Of course. Message me any time.'), choices: null, end: true }),
   };
   let picked = { colour: null, interior: null };
   function go(name) {
@@ -165,7 +165,7 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
         if (car) {
           fitPlate(car.plate); huracan.setLights(true); audio && audio.cue && audio.cue('v10');
           show(VIV(), T(`恭喜提车！钥匙给您。${car.plate}，以后它就是您的了。`, `Congratulations! Here's the key. ${car.plate}: she's all yours now.`), null);
-          hud.toast(T('兰博基尼 Huracán 已是你的', 'The Huracán is yours'), 4);
+          hud.toast(T('科尔维纳 Strale 已是你的', 'The Strale is yours'), 4);
           setTimeout(() => { hide(); this.leave(); }, 4200);
           if (save) save();
         }

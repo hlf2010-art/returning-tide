@@ -131,7 +131,7 @@ export function createRoadReactions({ scene, people, hud, audio, traffic, player
       const L = getLife(), res = applyIncident(L, 'scare', { kmh, zebra });
       save && save();
       after(3.2, () => hud.toast(res.ticketed
-        ? T(`交管12123：你在中山东一路汉口路斑马线未礼让行人，罚款 ¥${res.fine}，记 ${res.points} 分（已用微信支付）。`, `Traffic police (12123): failing to yield to pedestrians at the Zhongshan Road / Hankou Road crossing. Fine ¥${res.fine}, ${res.points} points (paid by WeChat).`)
+        ? T(`交管12123：你在中山东一路汉口路斑马线未礼让行人，罚款 ¥${res.fine}，记 ${res.points} 分（已用信语支付）。`, `Traffic police (12123): failing to yield to pedestrians at the Zhongshan Road / Hankou Road crossing. Fine ¥${res.fine}, ${res.points} points (paid by Xinyu).`)
         : T('有人说要举报你。慢一点。', 'Someone says they will report you. Slow down.'), 5));
     });
   }

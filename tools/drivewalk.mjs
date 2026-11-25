@@ -1,4 +1,4 @@
-// Driving the Huracán once it's yours: in at the driver's door, along Hankou Road, the kerb stops you,
+// Driving the Strale once it's yours: in at the driver's door, along Hankou Road, the kerb stops you,
 // traffic queues behind you on Zhongshan Road, park, out; it stays where you left it.
 // node tools/drivewalk.mjs (URL=, OUT=)
 import { createRequire } from 'module';
@@ -19,7 +19,7 @@ const hold = async (keys, secs) => { for (const k of keys) await p.keyboard.down
 // to the driver's door (north side: the car faces east, left-hand drive)
 await p.evaluate(() => window.__bund.player.teleport(-40.9, 0.2, Math.PI, -0.3)); await p.waitForTimeout(1500);
 let pr = await p.evaluate(() => document.getElementById('prompt').innerText.replace(/\n/g, ' '));
-ok(/Huracán.*Drive/.test(pr), `at the driver's door: "${pr}"`);
+ok(/Strale.*Drive/.test(pr), `at the driver's door: "${pr}"`);
 await p.keyboard.press('KeyE'); await p.waitForTimeout(1500);
 let s = await D(); ok(s.mode === 'drive', 'in the driver\'s seat');
 await p.screenshot({ path: `${dir}drive-start.png`, timeout: 120000 });

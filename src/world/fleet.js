@@ -54,6 +54,7 @@ export function createFleet({ base = './models/cars/' } = {}) {
     scene.traverse((o) => {
       if (!o.isMesh) return;
       let mat = o.material, kind = mat.name || '';
+      if (kind === 'logo5') return;   // the maker's badges: left off (the car runs under an invented name)
       if (kind === 'tail') mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
       else if (kind === 'paint') { mat = mat.clone(); mat.color.set(0xffffff); }
       const geo = o.geometry.clone().applyMatrix4(o.matrixWorld);

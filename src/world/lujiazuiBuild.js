@@ -3,7 +3,6 @@
 // geometry, merged per material (world/geo.js Batch and the Tris helper below). Where things are comes
 // from world/lujiazuiLayout.js; nothing here decides a position you can stand on.
 import * as THREE from 'three';
-import { siApple } from 'simple-icons';
 import { Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT, glowTexture } from './canvas.js';
 import { asLight, TOD } from './dayNight.js';
@@ -158,7 +157,7 @@ export function buildBridge(g, m, lights) {
 // ================= Apple Pudong =================
 function appleLogo() {
   const [c, x] = makeCanvas(512, 512); x.clearRect(0, 0, 512, 512);
-  const s = 512 * 0.8 / 24; x.translate(512 * 0.1, 512 * 0.1); x.scale(s, s); x.fillStyle = '#fff'; x.fill(new Path2D(siApple.path));
+  const s = 512 * 0.8 / 24; x.translate(512 * 0.1, 512 * 0.1); x.scale(s, s); x.fillStyle = '#fff'; x.beginPath(); x.arc(12, 12, 9, 0, Math.PI * 2); x.arc(12, 12, 5.2, 0, Math.PI * 2, true); x.fill('evenodd');   // Lumen's ring (an invented store)
   return tex(c, { repeat: false, aniso: 8 });
 }
 export function buildApple(g, m, lights, trees = []) {
@@ -221,7 +220,7 @@ export function buildApple(g, m, lights, trees = []) {
   const brand = (slug, color, text, ang, w) => { const [c, x] = makeCanvas(1024, 128); x.clearRect(0, 0, 1024, 128); x.drawImage(markCanvas(slug, { color, size: 120, pad: 0.04 }), 10, 4, 120, 120); x.fillStyle = slug === 'hsbc' ? '#222' : color; x.font = `800 92px ${FONT.sans}`; x.textBaseline = 'middle'; x.fillText(text, 150, 68);
     const mat = new THREE.MeshBasicMaterial({ map: tex(c, { repeat: false, aniso: 8 }), transparent: true, side: THREE.DoubleSide, depthWrite: false }); mat.userData.todSkip = true;
     const y = rampY(Math.abs(ang)) - 0.5, [px, pz] = applePt(ang, A.rampIn - 0.34), p = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 8), mat); p.position.set(px, y, pz); p.rotation.y = Math.atan2(...dirOf(B(ang) + 180)); p.renderOrder = 2; g.add(p); };
-  brand('hsbc', '#db0011', 'HSBC 汇丰', 112, 6.4); brand('starbucks', '#00704a', 'STARBUCKS', -128, 6.4);
+  brand('hsbc', '#1F4E79', '申江银行 SHENJIANG BANK', 112, 6.4); brand('starbucks', '#1E5C4F', 'HARBOUR COFFEE', -128, 6.4);
   // the cylinder's door: a flat glass canopy on a slim stainless frame
   { const c = P3(0, A.rCyl + 1.1, yP + 3.2), [dx, dz] = dirOf(E), [tx, tz] = dirOf(E + 90); obox(st, c[0], c[1], c[2], tx, tz, 5.0, 0.1, 2.2); const cg = new Tris(); cg.quad([c[0] - tx * 2.4 - dx * 1.0, c[1] + 0.11, c[2] - tz * 2.4 - dz * 1.0], [c[0] + tx * 2.4 - dx * 1.0, c[1] + 0.11, c[2] + tz * 2.4 - dz * 1.0], [c[0] + tx * 2.4 + dx * 1.0, c[1] + 0.11, c[2] + tz * 2.4 + dz * 1.0], [c[0] - tx * 2.4 + dx * 1.0, c[1] + 0.11, c[2] - tz * 2.4 + dz * 1.0]); gl.p.push(...cg.p); gl.n.push(...cg.n); gl.u.push(...cg.u);
     for (const s2 of [-2.3, 2.3]) { const hx = c[0] + tx * s2 + dx * 1.9, hz = c[2] + tz * s2 + dz * 1.9, ex = c[0] + tx * s2 * 0.9, ez = c[2] + tz * s2 * 0.9, dv = new THREE.Vector3(ex - hx, 2.2, ez - hz), L = dv.length(), geo = new THREE.BoxGeometry(0.02, 0.02, L); geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dv.normalize())); geo.translate((hx + ex) / 2, c[1] + 1.1, (hz + ez) / 2); st.push(geo); } }   // (hung on two rods from the glass)
@@ -310,7 +309,7 @@ export function buildApple(g, m, lights, trees = []) {
 function forumTex() {
   const [c, x] = makeCanvas(1024, 256), gd = x.createLinearGradient(0, 0, 1024, 256);
   gd.addColorStop(0, '#1d2b4a'); gd.addColorStop(0.5, '#5a3f7a'); gd.addColorStop(1, '#d8805a'); x.fillStyle = gd; x.fillRect(0, 0, 1024, 256);
-  x.fillStyle = 'rgba(255,255,255,0.85)'; x.font = `600 44px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('Today at Apple', 512, 128);
+  x.fillStyle = 'rgba(255,255,255,0.85)'; x.font = `600 44px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('Today at Lumen', 512, 128);
   return tex(c, { repeat: false, aniso: 8 });
 }
 // lit shop windows without any brand: warm rooms, plinths, a figure or two (the mall's fronts)
@@ -411,7 +410,7 @@ export function buildIfc(g, m, lights) {
     // a directory totem on the plaza side: the mall, Apple, the hotel in the south tower, the metro
     const tx = ex + F.nx * 6 + F.ex * 7.5, tz = ez + F.nz * 6 + F.ez * 7.5;
     if (!inBuilding(tx, tz, 1)) { obox(stone, tx, CH, tz, F.ex, F.ez, 1.1, 2.6, 0.3); addCircle(tx, tz, 0.6, { y1: 2 });
-      g.add(sign(['国金中心商场 · ifc mall', 'Apple · 浦东丽思卡尔顿酒店 Ritz-Carlton · 地铁2号线 Metro'], { w: 1.0, h: 1.9, x: tx + F.nx * 0.16, y: CH + 1.5, z: tz + F.nz * 0.16, ry, color: '#f2ede2', bg: '#2b2d31', ch: null, gain: 1.1 })); }
+      g.add(sign(['国金中心商场 · ifc mall', 'Lumen · 浦东江景酒店 Riverside Hotel · 地铁2号线 Metro'], { w: 1.0, h: 1.9, x: tx + F.nx * 0.16, y: CH + 1.5, z: tz + F.nz * 0.16, ry, color: '#f2ede2', bg: '#2b2d31', ch: null, gain: 1.1 })); }
     lights.push({ x: ex + F.nx * 3, y: 4.6, z: ez + F.nz * 3, intensity: 22, distance: 16, color: new THREE.Color(1.0, 0.92, 0.8) });
   }
   // the mall's glass toward the Apple court is braced by a giant steel X in each bay (as the photographs show)
@@ -719,7 +718,7 @@ export function buildStreet(g, m, lights) {
     for (const f of [1, -1]) g.add(sign([A.zh, `${A.en}`], { w: 1.5, h: 0.52, x: x + A.px * 0.03 * f, y: 2.75, z: z + A.pz * 0.03 * f, ry: Math.atan2(A.px * f, A.pz * f), bg: '#1d4f9c', color: '#fff' }));
   }
   // pedestrian wayfinding on the ring, at the head of each stair: what lies that way
-  const WAY = { 60: ['地铁2号线 1号口 · 世纪大道北侧 · 中心绿地', 'Metro Line 2 Exit 1 · Century Ave north · Central Green'], 190: ['陆家嘴环路 · 香格里拉', 'Lujiazui Ring Rd · Shangri-La'], 235: ['正大广场 · 陆家嘴西路', 'Super Brand Mall · West Lujiazui Rd'], 290: ['丰和路 · 国际会议中心', 'Fenghe Rd · Intl Convention Center'], 330: ['东方明珠广播电视塔', 'Oriental Pearl Tower'], 150: ['国金中心 · Apple · 地铁6号口', 'IFC · Apple · Metro Exit 6'] };
+  const WAY = { 60: ['地铁2号线 1号口 · 世纪大道北侧 · 中心绿地', 'Metro Line 2 Exit 1 · Century Ave north · Central Green'], 190: ['陆家嘴环路 · 东方饭店', 'Lujiazui Ring Rd · Orient Hotel'], 235: ['正大广场 · 陆家嘴西路', 'Super Brand Mall · West Lujiazui Rd'], 290: ['丰和路 · 国际会议中心', 'Fenghe Rd · Intl Convention Center'], 330: ['东方明珠广播电视塔', 'Oriental Pearl Tower'], 150: ['国金中心 · Lumen · 地铁6号口', 'IFC · Lumen · Metro Exit 6'] };
   for (const R of RAMPS) {
     const sp = R.kind === 'spur', [x, z] = sp ? rpolar(SPUR.b, RING.r1 + 1.2) : rpolar(R.b - 5.4, RING.r1 - 0.6), d = dirOf(R.b);
     const px = x + (sp ? dirOf(R.b + 90)[0] * 6.4 : 0), pz = z + (sp ? dirOf(R.b + 90)[1] * 6.4 : 0);

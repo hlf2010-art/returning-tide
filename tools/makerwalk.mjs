@@ -14,8 +14,8 @@ await p.evaluate(() => window.__bund.start()); await p.waitForTimeout(1500);
 await p.evaluate(() => { window.__bund.dtMax = 0.2; const s = document.createElement('style'); s.textContent = '#minimap,#dev{display:none!important}'; document.head.appendChild(s); });
 const prompt = () => p.evaluate(() => document.getElementById('prompt').classList.contains('on') ? document.getElementById('prompt').innerText.replace(/\n/g, ' ') : '');
 const mode = (m) => p.waitForFunction((m) => window.__bund.mode === m, m, { timeout: 60000 });
-// 1. there (the DiDi's arrival goes straight in)
-ok(await p.evaluate(() => window.__bund.world.makerspace.arrive('yangpu')), 'a DiDi to Yangpu: in through the door');
+// 1. there (the Kuaima's arrival goes straight in)
+ok(await p.evaluate(() => window.__bund.world.makerspace.arrive('yangpu')), 'a Kuaima to Yangpu: in through the door');
 await mode('play'); await p.waitForTimeout(2500);
 await p.screenshot({ path: `${dir}maker-space.png`, timeout: 120000 });
 // 2. the shelf: buy what the gimbal needs

@@ -25,7 +25,7 @@ ok(factsAbout(L, 'nanxing', 'date').length === 1 && factsAbout(L, null, 'career'
 ok(/start-up \(Tidewater\)/.test(lifeContext(L)) && /rented flat/.test(lifeContext(L)), `what characters are told: ${lifeContext(L)}`);
 // hearts
 ok(ROMANCE.length === 5 && heart(L, 'gunian').stage === 'stranger' && meet(L, 'gunian').stage === 'known' && feel(L, 'gunian', { trust: 12, attraction: 5 }, 'coffee').trust === 32, 'five people; meeting one; a feeling moves');
-remember(L, 'gunian', 'first-coffee', { where: 'Manner' }); remember(L, 'gunian', 'first-coffee');
+remember(L, 'gunian', 'first-coffee', { where: 'Linger' }); remember(L, 'gunian', 'first-coffee');
 ok(recalls(L, 'gunian', 'first-coffee') && heart(L, 'gunian').memories.length === 1 && setStage(L, 'gunian', 'dating').stage === 'dating' && seeing(L).join() === 'gunian', 'a memory is kept once; dating');
 setStage(L, 'gunian', 'over', 'she left'); ok(feel(L, 'gunian', { trust: 50 }).trust === 32 && seeing(L).length === 0, 'once it is over, it is over');
 const R = load(save(L)); ok(R.v === 1 && R.flags.year.career.track === 'startup' && R.flags.hearts.gunian.stage === 'over', 'it all saves in the same v1 format');

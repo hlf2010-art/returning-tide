@@ -116,7 +116,12 @@ export const LANDMARK_BUILDERS = {
     B.stone.box((xa + xb) / 2, 6.95, zf + dir * 1.35, xb - xa, 0.12, 0.3, { flood: 0.8 });
     // the tower, over the corner on Zhejiang Road (the east end)
     const tx = xb - 4.5, tz = zf - dir * 4.5;
-    B.stone.box(tx + 0.15, 0, tz + dir * 0.15, 9.3, 27.6, 9.3, { flood: 0.9 });          // the corner bay, carried up (a little proud of both faces)
+    // the corner bay, a little proud of both faces: arched openings under giant pilasters, carried up to the tower
+    { const cb = dir > 0 ? { x0: xb - 9.15, x1: xb + 0.15, z0: zf - 9.15, z1: zf + 0.15 } : { x0: xb - 9.15, x1: xb + 0.15, z0: zf - 0.15, z1: zf + 9.15 };
+      ctx.tiers(B, cb, 0, [
+        { h: 6.0, style: 'arched', bay: 3, f0: 0.6, f1: 0.5, cornice: { out: 0.6, h: 0.55 } },
+        { h: 21.6, style: 'flute', floors: 6, bay: 3, f0: 0.55, f1: 0.32, cornice: { out: 0.9, h: 1.0 } },
+      ], `${face}E`, ctx.seed + 7, { [face]: 1, E: 0.9 }); }
     const y0 = 27.6;
     const top = tower(B, { x: tx, z: tz, y0, stages: [
       { kind: 'box', w: 7.2, h: 5.2, cap: { out: 0.35, h: 0.45 } },                          // the clock stage
@@ -133,7 +138,7 @@ export const LANDMARK_BUILDERS = {
     fourFaces(ctx, clockTexture(), 3.4, tx, y0 + 2.6, tz, 3.62, { basic: false });
     // the MIDO screen: three faces at the foot of the tower (not the back)
     const scr = midoTexture();
-    for (const [dx, dz, ry] of [[0, 4.56 * dir, dir > 0 ? 0 : Math.PI], [4.56, 0, Math.PI / 2], [-4.56, 0, -Math.PI / 2]]) plane(ctx, scr, 8.6, 4.2, tx + dx, 25.2, tz + dz, ry, { light: 'screens' });
+    for (const [dx, dz, ry] of [[0, 4.78 * dir, dir > 0 ? 0 : Math.PI], [4.78, 0, Math.PI / 2], [-4.78, 0, -Math.PI / 2]]) plane(ctx, scr, 8.6, 4.2, tx + dx, 25.2, tz + dz, ry, { light: 'screens' });
     return top;
   },
 

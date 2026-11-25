@@ -111,7 +111,7 @@ function playYear({ road = 'consulting', picks = {}, absent = [], rent = null, e
   ok(b0 > 0, 'ok');
 }
 
-// ---- 3. a flat, through the agent on WeChat ----
+// ---- 3. a flat, through the agent on Xinyu ----
 {
   const { L } = playYear({ rent: 'rentNorthbund', road: 'consulting' });
   const H = home(L);
@@ -216,6 +216,27 @@ ok([...FIRM_SCENES.map((s) => s.id), ...Object.values(ROADS).flat().map((s) => s
   ok(work(opened.L).watch.result === 'lost' && work(opened.L).watch.unmet && /new sign/.test(q(opened.L).summary), 'never going back to the stall: it simply changes hands');
   const old = createLife(); recordHandoff(old, 'sealed'); updateQuests(old, QUESTS, stamp(old), { player: { x: 0, y: 0, z: 0 } });
   ok(old.flags.handoff.outcome === 'sealed' && journal(old, QUESTS, 'zh').find((x) => x.id === 'watch-repairer') && recordHandoff(old, 'opened').outcome === 'sealed', 'a six-day game remembers the pouch too, and the first outcome stands');
+}
+
+// ---- 8c. the last ferry: Old Fang, Zhou's toolbox, and the book that saves the stall without the date ----
+{
+  const { lastFerryDue, lastFerryScript, takeBox, hasBox, AFTER } = await import('../src/world/lastFerry.js');
+  const { FERRY } = await import('../src/engine/ferry.js');
+  const L = createLife(); setupThreads(L); initYear(L); recordHandoff(L, 'sealed');
+  ok(!lastFerryDue(L, FERRY.last), 'the last ferry holds nothing until the notice has been read');
+  L.flags.clueRead = true;
+  ok(lastFerryDue(L, FERRY.last) && !lastFerryDue(L, FERRY.last - 30), '...then only the 23:00 sailing does');
+  const ask = lastFerryScript(L).find((b) => !Array.isArray(b)).ask;
+  void ask[2].then; ok(!hasBox(L) && lastFerryDue(L, FERRY.last), 'saying nothing ends it for the night; it can be tried again');
+  const rev = ask[1].then; ok(hasBox(L) && rev.some((r) => /Kunshan/.test(r[2])) && rev.some((r) => /小白/.test(r[1])) && !lastFerryDue(L, FERRY.last), 'answering, he hears where Zhou went and is given the toolbox; it happens once');
+  ok(L.flags.zhouBox && !takeBox(L) && AFTER.en && AFTER.zh, 'the box is his, and taking it twice does nothing');
+  const tick = () => { runCareer(L); deliverFollowUps(L); updateQuests(L, QUESTS, stamp(L), { player: { x: 0, y: 0, z: 0 } }); };
+  skipTo(L, D(8, 12, 0)); rollover(L); tick();
+  const a2 = zhouMinScript(L).find((b) => !Array.isArray(b)).ask;
+  ok(a2.length === 3 && /工具箱/.test(a2[0].zh), 'at the stall the toolbox is his first answer, even with the seal whole');
+  void a2[0].then; tick(); skipTo(L, D(13, 19, 30)); rollover(L); tick(); tick();
+  ok(work(L).watch.result === 'saved' && work(L).watch.book && /修理单/.test(L.threads.zhoumin.messages.at(-1).text), 'the book saves the stall: the nephew admits the forgery and the line on the notice');
+  const q = journal(L, QUESTS, 'en').find((x) => x.id === 'watch-repairer'); ok(q && q.status === 'done', `the journal closes the side story (${q && q.summary})`);
 }
 
 // ---- 8b. the first evening is one path: little on the phone until the pouch and the hotel ----

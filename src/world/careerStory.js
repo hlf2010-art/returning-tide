@@ -8,8 +8,9 @@ import { work, story, startup, viable, home, hasFlat, handoff, inLimbo, dayName,
 
 const B = (zh, en) => ({ zh, en });
 const D = (day, h, m = 0) => day * 1440 + h * 60 + m;
-const DIDI = { x: -3.2, z: -18.5, label: B('打车点（或南京东路站，地铁 2 号线）', 'DiDi pickup (or East Nanjing Road station, Line 2)') };
+const DIDI = { x: -3.2, z: -18.5, label: B('打车点（或南京东路站，地铁 2 号线）', 'Kuaima pickup (or East Nanjing Road station, Line 2)') };
 const STALL = { x: -57, z: -5.7, label: B('汉口路 · 修表摊', "Hankou Road · the watch-repairer's stall") };
+const FERRY_PIER = { x: 24, z: 65, label: B('金陵东路渡口', 'Jinling Road East ferry pier') };
 const LIN = { x: 23.5, z: -2, label: B('老林 · 江边栏杆', 'Old Lin, at the river railing') };
 const sceneDone = (L, id) => Object.values(work(L).days).some((r) => r.scene === id);
 const firmDay = (id) => FIRM_SCENES.find((s) => s.id === id).day;
@@ -27,7 +28,7 @@ export const YEAR_QUESTS = [
     summary: B('迈芬咨询，国金中心二期 28 层。项目是东澜保险的理赔 AI 助手，带项目的是产品设计负责人许知微。工作日去上班；不去，是要算账的。', "Marlowe Finch, IFC Tower 2, 28th floor. The project is an AI claims assistant for Donglan Insurance; the engagement is run by its product design lead, Xu Zhiwei. Go to work on working days. Days you don't are counted."),
     start: (L) => isYear(L) && (!!L.flags.room612 || stamp(L) >= D(1, 19, 30) || L.clock.day >= 2),   // from the HR message in room 612
     steps: [
-      step('d2', B('11 月 10 日（周二）上午九点半前，到陆家嘴国金中心二期 28 层报到', 'Tuesday 10 November, by 9:30 am: report to the 28th floor of IFC Tower 2 in Lujiazui')),
+      step('d2', B('11 月 10 日（周二）上午十点前，到陆家嘴国金中心二期 28 层报到', 'Tuesday 10 November, by 10 am: report to the 28th floor of IFC Tower 2 in Lujiazui')),
       step('d3', B('周三：客户启动会', "Wednesday: the client's kick-off")),
       step('d4', B('周四：方案评审', 'Thursday: the design review')),
       step('d5', B('周五：评测表', 'Friday: the evaluation sheet')),
@@ -36,12 +37,12 @@ export const YEAR_QUESTS = [
   { id: 'act1-home', act: 1, giver: 'hr',
     title: B('找个住处', 'Somewhere to live'),
     summary: (L) => (hasFlat(L) ? B(`你租下了${LISTINGS[home(L).id].zh}，每月 ¥${home(L).rent.toLocaleString('en-US')}，房租跟着月份从银行卡走。`, `You have rented ${LISTINGS[home(L).id].en.toLowerCase()} at ¥${home(L).rent.toLocaleString('en-US')} a month. The rent leaves your bank account as the months pass.`)
-      : B('公司订的和平饭店只到 12 月 9 日，之后每月 ¥36,000 要自己付。中介会在微信上找你。', 'The firm has the Peace Hotel booked only to 9 December. After that it is ¥36,000 a month, and yours to pay. A letting agent will find you on WeChat.')),
+      : B('公司订的和平饭店只到 12 月 9 日，之后每月 ¥36,000 要自己付。中介会在信语上找你。', 'The firm has the Peace Hotel booked only to 9 December. After that it is ¥36,000 a month, and yours to pay. A letting agent will find you on Xinyu.')),
     start: (L) => isYear(L) && L.clock.day >= 2,
     steps: [
-      { id: 'agent', text: B('等中介的消息（周三下午以后，看微信）', "Wait to hear from the letting agent (WeChat, from Wednesday afternoon)"), done: (L) => !!L.threads.agent || hasFlat(L) },
-      { id: 'rent', optional: true, text: B('在微信上回中介，租下一套', 'Answer the agent on WeChat and take one of the flats'), done: (L) => hasFlat(L), fail: (L) => L.clock.day >= FINAL_DAY },
-      { id: 'sleep', optional: true, text: B('回自己租的房子睡一晚（滴滴 → “我的住处”）', 'Spend a night in the flat you rent (DiDi → "My flat")'), target: DIDI, done: (L) => !!work(L).sleptHome, fail: (L) => L.clock.day >= FINAL_DAY || !hasFlat(L) },
+      { id: 'agent', text: B('等中介的消息（周三下午以后，看信语）', "Wait to hear from the letting agent (Xinyu, from Wednesday afternoon)"), done: (L) => !!L.threads.agent || hasFlat(L) },
+      { id: 'rent', optional: true, text: B('在信语上回中介，租下一套', 'Answer the agent on Xinyu and take one of the flats'), done: (L) => hasFlat(L), fail: (L) => L.clock.day >= FINAL_DAY },
+      { id: 'sleep', optional: true, text: B('回自己租的房子睡一晚（快马 → “我的住处”）', 'Spend a night in the flat you rent (Kuaima → "My flat")'), target: DIDI, done: (L) => !!work(L).sleptHome, fail: (L) => L.clock.day >= FINAL_DAY || !hasFlat(L) },
     ] },
   // ======== Act II ========
   { id: 'act2-project', act: 2, main: true, giver: 'zhiwei',
@@ -69,13 +70,13 @@ export const YEAR_QUESTS = [
     title: B('立足', 'Building a life'),
     summary: (L) => { const c = career(L), s = startup(L), t = c.track;
       if (t === 'startup') return s && s.name ? B(`${s.nameZh}：${s.product ? STARTUP_PRODUCTS[s.product].zh : '还没定做什么'}。账上 ¥${Math.round(s.cash).toLocaleString('en-US')}${s.customer ? '，有了第一个客户' : '，还没有客户'}。`, `${s.name}: ${s.product ? STARTUP_PRODUCTS[s.product].en : 'what it makes is not yet decided'}. ¥${Math.round(s.cash).toLocaleString('en-US')} in the account${s.customer ? ', and a first customer' : ', and no customer yet'}.`) : B('国金中心 32 层，周学长借你的两张桌子。工作日去那儿，把公司办起来。', "IFC, 32nd floor: the two desks Zhou is lending you. Go there on working days and get the company started.");
-      if (t === 'family') return B('高铁从虹桥走（滴滴 → 虹桥火车站）。工作日回厂里，看那条新线。', 'The trains go from Hongqiao (DiDi → Hongqiao Station). On working days, go back to the works and look at the new line.');
+      if (t === 'family') return B('高铁从虹桥走（快马 → 虹桥火车站）。工作日回厂里，看那条新线。', 'The trains go from Hongqiao (Kuaima → Hongqiao Station). On working days, go back to the works and look at the new line.');
       if (t === 'switched') return B('屿深科技，世纪大道，14 层：自己说了算的产品。工作日去陆家嘴上班。', 'Yushen Technology, Century Avenue, 14th floor: a product that is yours to decide. Go to Lujiazui on working days.');
       if (t === 'consulting') return B('东澜二期。你带一块工作。工作日去 28 层。', "Donglan, phase two. A workstream of your own. The 28th floor, on working days.");
       return B('没有工作。明轩说 32 楼有两张空桌子；爸爸说厂里的系统一团糟。回哪一条消息，或者都不回，是你的事。', "No job. Mingxuan says there are two empty desks on the 32nd floor. Dad says the system at the works is a mess. Which message you answer, or neither, is up to you."); },
     start: (L) => isYear(L) && !!work(L).applied,
     steps: [
-      { id: 'choose', optional: true, text: (L) => (inLimbo(L) ? B('想清楚接下来做什么（看微信：明轩，爸爸）', 'Decide what comes next (WeChat: Mingxuan, Dad)') : B(`这条路：${TRACK_NAME[career(L).track].zh}`, `The road: ${TRACK_NAME[career(L).track].en}`)), done: (L) => !inLimbo(L), fail: (L) => L.clock.day >= FINAL_DAY },
+      { id: 'choose', optional: true, text: (L) => (inLimbo(L) ? B('想清楚接下来做什么（看信语：明轩，爸爸）', 'Decide what comes next (Xinyu: Mingxuan, Dad)') : B(`这条路：${TRACK_NAME[career(L).track].zh}`, `The road: ${TRACK_NAME[career(L).track].en}`)), done: (L) => !inLimbo(L), fail: (L) => L.clock.day >= FINAL_DAY },
       roadStep(0), roadStep(1), roadStep(2), roadStep(3),
       { id: 'autumn', text: B('到十一月', 'Reach November'), done: (L) => L.clock.day >= FINAL_DAY || !!L.invites.find((i) => i.id === 'dad-dinner') },
     ] },
@@ -83,6 +84,7 @@ export const YEAR_QUESTS = [
   { id: 'watch-repairer', giver: 'lin',
     title: B('修表匠', 'The missing watch-repairer'),
     summary: (L) => { const h = handoff(L), W = isYear(L) ? work(L).watch : {};
+      if (W.result === 'saved' && W.book) return B('老周找到了：昆山的医院，中风，五个月的“无名氏”。末班轮渡上的老方替他收着工具箱，修理单上他自己写着“不签”。他侄子认了：协议是仿的，启事上那行字也是他写的。摊子保住了。那块表，是给你修的。', "Old Zhou has been found: a hospital in Kunshan, a stroke, five months as \"name unknown\". Old Fang on the last ferry had kept his toolbox, and in the ticket book Zhou had written that he wouldn't sign. His nephew confessed: the agreement was forged, and the line on the notice was his. The stall is saved. The watch was mended for you.");
       if (W.result === 'saved') return B('老周找到了：昆山的医院，中风，五个月的“无名氏”。转让协议是他侄子仿的签名。因为你记得协议上的日期比他失踪晚两天，摊子保住了。', 'Old Zhou has been found: a hospital in Kunshan, a stroke, five months as "name unknown". His nephew forged the transfer. Because you remembered that its date was two days after he vanished, the stall is saved.');
       if (W.result === 'held') return B('老周找到了：昆山的医院，中风，五个月的“无名氏”。你说出了你看见的那个人，是他侄子。转让被叫停，摊位冻结，等法院判：摊子关着，但没有易主。', 'Old Zhou has been found: a hospital in Kunshan, a stroke, five months as "name unknown". You told his daughter about the man you saw; it was his nephew. The transfer has been stopped and the pitch frozen until the court decides: the stall is shut, but it has not changed hands.');
       if (W.result === 'lost') return W.unmet ? B('汉口路的修表摊换了招牌：手机贴膜。老周后来怎样，你没有再听说。', "The stall on Hankou Road has a new sign: phone screen protectors. What became of Old Zhou, you never heard.") : B('老周找到了，人还在。摊子没保住：转让早就办完了，没有人能说清袋子里那张纸上写的是哪一天。', 'Old Zhou has been found, alive. The stall is gone: the transfer went through long ago, and nobody could say what date was on the page in that pouch.');
@@ -93,6 +95,7 @@ export const YEAR_QUESTS = [
     steps: [
       { id: 'collect', text: B('到汉口路北侧的修表摊，取柜台上的文件袋', "Collect the pouch from the counter of the watch-repair stall, north side of Hankou Road"), target: STALL, done: (L) => !!handoff(L) || (L.flags.m1 || {}).step === 'carry' },
       { id: 'handed', text: (L) => (handoff(L) ? (handoff(L).outcome === 'opened' ? B('把文件袋交给了老林（封条已破）', 'Handed the pouch to Old Lin (seal broken)') : B('把文件袋交给了老林（封条完好）', 'Handed the pouch to Old Lin (seal intact)')) : B('把文件袋交给江边栏杆旁的老林', 'Bring the pouch to Old Lin at the river railing')), target: LIN, done: (L) => !!handoff(L) },
+      { id: 'ferry', optional: true, text: B('寻人启事上写着：“想晓得，就乘末班轮渡。”（金陵东路渡口，晚上十一点）', 'The notice says: "If you want to know, take the last ferry." (Jinling Road East pier, 11 pm)'), target: FERRY_PIER, done: (L) => !!L.flags.zhouBox, fail: (L) => !L.flags.zhouBox && (L.clock.day >= 13 || (isYear(L) && !!work(L).watch.met)) },
       { id: 'daughter', optional: true, text: B('一月以后，汉口路的修表摊前有人在打听老周', "From January, someone is at the stall on Hankou Road asking after Old Zhou"), target: STALL, done: (L) => isYear(L) && !!work(L).watch.met, fail: (L) => !isYear(L) || L.clock.day >= 13 },
       { id: 'news', optional: true, text: B('等消息', 'Wait for news'), done: (L) => isYear(L) && !!work(L).watch.result && !work(L).watch.unmet, fail: (L) => !isYear(L) || !!work(L).watch.unmet || L.clock.day >= FINAL_DAY },
     ] },
@@ -201,7 +204,7 @@ export function yearDinner(L) {
 
 // ---- the endings, a year on: the same six, told without the old week's furniture ----
 const YEAR_ENDINGS = {
-  together: B('第二年春天，你一周在南京，一周在上海。高铁上的一小时九分钟，你用来回消息。爸爸学会了用微信发语音，第一条是：“图纸收到了。”', 'The next spring you spend a week in Nanjing, a week in Shanghai. The hour and nine minutes on the train are for answering messages. Your father learns to send WeChat voice notes. The first one says: "Got the drawings."'),
+  together: B('第二年春天，你一周在南京，一周在上海。高铁上的一小时九分钟，你用来回消息。爸爸学会了用信语发语音，第一条是：“图纸收到了。”', 'The next spring you spend a week in Nanjing, a week in Shanghai. The hour and nine minutes on the train are for answering messages. Your father learns to send Xinyu voice notes. The first one says: "Got the drawings."'),
   stay: B('灯暗下来的时候，爸爸发来四个字：“注意身体。”上海的冬天，比你去年记得的还要冷一点。', 'As the lights dim, your father sends four words: "Look after your health." Shanghai\'s winter is a little colder even than you remember from last year.'),
   alone: B('爸爸一个月没有打电话。予安说他会想通的。那天晚上，外滩的灯照常在十点暗下来。', "Your father doesn't call for a month. Yu\'an says he'll come round. That night the Bund's lights dim at ten, as they always do."),
   home: B('走的那天，大家在虹桥送你。Momo 在候车厅的钢琴上弹了一首歌。你把一张外滩的照片贴在了厂里二楼的窗边。', 'The day you leave, they all see you off at Hongqiao. Momo plays a song on the station piano. You pin a photograph of the Bund beside the upstairs window at the works.'),

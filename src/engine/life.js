@@ -46,7 +46,7 @@ export function skipTo(L, absMinute) {          // sleep, a ride, waiting for an
 }
 
 // ---- money ----
-export const METHODS = { wechat: '微信支付', alipay: '支付宝', bank: '银行转账', card: '信用卡' };
+export const METHODS = { wechat: '信语支付', alipay: '易付', bank: '银行转账', card: '信用卡' };
 export function balance(L, method) {
   if (method === 'card') return L.wallet.card.limit - L.wallet.card.used;
   return L.wallet[method] ?? 0;

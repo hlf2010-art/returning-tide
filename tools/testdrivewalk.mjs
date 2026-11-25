@@ -1,5 +1,5 @@
-// A new game, the player's own way to the wheel: E at the parked Huracán on Hankou Road (Zhixia passes
-// on Vivian's card), add Vivian in WeChat, meet her at the car, "Can I take it for a drive?", and drive
+// A new game, the player's own way to the wheel: E at the parked Strale on Hankou Road (Zhixia passes
+// on Vivian's card), add Vivian in Xinyu, meet her at the car, "Can I take it for a drive?", and drive
 // it tens of metres with real key presses; stop, E, and it's back by the kerb with Vivian.
 // node tools/testdrivewalk.mjs (URL=, OUT=; LOCK=1 to leave pointer lock on, as a player has it)
 import { createRequire } from 'module';
@@ -20,11 +20,11 @@ const hold = async (keys, secs) => { for (const k of keys) await p.keyboard.down
 // 1. on the pavement beside the yellow car (south side, where people walk), looking at it
 await p.evaluate(() => window.__bund.player.teleport(-40.6, 5.6, 0, -0.35)); await p.waitForTimeout(1500);
 let pr = await prompt();
-ok(/Huracán/.test(pr), `at the parked car, a prompt: "${pr}"`);
+ok(/Strale/.test(pr), `at the parked car, a prompt: "${pr}"`);
 await p.keyboard.press('KeyE'); await p.waitForTimeout(800);
 let st = await p.evaluate(() => (window.__bund.life.flags.carBuy || {}).stage);
 ok(st === 'lead', `E: Zhixia sends Vivian's card (stage ${st})`);
-// 2. WeChat: add Vivian; she books the demo car here in twenty minutes
+// 2. Xinyu: add Vivian; she books the demo car here in twenty minutes
 await p.keyboard.press('KeyP'); await p.waitForTimeout(500); await p.keyboard.press('Enter'); await p.waitForTimeout(1200);
 await click('#phone [data-act="decline"]'); await p.waitForTimeout(300);   // a call might be ringing
 await click('#phone [data-act="app"][data-id="chats"]'); await p.waitForTimeout(400);

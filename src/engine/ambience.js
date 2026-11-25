@@ -161,7 +161,7 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
       shot({ id: `metro-pa:${at.id}`, kind: 'announcement', x: at.x, y: at.y + 3, z: at.z, at: (x, z) => paGain(Math.hypot(at.x - x, at.z - z)) }, buf.duration);
     } catch { /* no clip: nothing */ }
   }
-  // the counter's payment speaker: "支付宝到账二十五元", the recorded pieces back to back through a small
+  // the counter's payment speaker: "易付到账二十五元", the recorded pieces back to back through a small
   // plastic box on the counter (public/ambience/pay/, tools/voice/paybox.py)
   const payBuf = (id) => { const url = `./ambience/pay/${id}.mp3`; if (!payBufs.has(url)) payBufs.set(url, fetch(url).then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b))); return payBufs.get(url); };
   async function payment(x, z, { amount, method }, { own = false } = {}) {

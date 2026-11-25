@@ -167,7 +167,7 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
     const rows = MENU.map((m, i) => `<button data-i="${i}"><kbd>${i + 1}</kbd><span class="n">${T(m.zh, m.en)}</span><span class="q">${S.cart[m.id] ? `×${S.cart[m.id]}` : ''}</span><span class="p">¥${m.price}</span></button>`).join('');
     card.innerHTML = `<div class="in"><div class="h">${T('阿潮生煎 · 点单', 'A-Chao Shengjian · Order')}</div>${rows}
       <div class="t"><span>${T('合计', 'Total')}</span><b>¥${total()}</b></div>
-      <div class="a"><button data-a="pay" class="mbtn primary">${T('支付宝付款 (Enter)', 'Pay with Alipay (Enter)')}</button><button data-a="clear" class="mbtn">${T('清空 (0)', 'Clear (0)')}</button><button data-a="close" class="mbtn">${T('算了 (Esc)', 'Never mind (Esc)')}</button></div></div>`;
+      <div class="a"><button data-a="pay" class="mbtn primary">${T('易付付款 (Enter)', 'Pay with YiPay (Enter)')}</button><button data-a="clear" class="mbtn">${T('清空 (0)', 'Clear (0)')}</button><button data-a="close" class="mbtn">${T('算了 (Esc)', 'Never mind (Esc)')}</button></div></div>`;
   }
   card.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.i) add(+b.dataset.i); else if (b.dataset.a === 'pay') checkout(); else if (b.dataset.a === 'clear') { S.cart = {}; renderCard(); } else if (b.dataset.a === 'close') closeCard(); });
   const add = (i) => { const m = MENU[i]; if (!m) return; S.cart[m.id] = Math.min(4, (S.cart[m.id] || 0) + 1); renderCard(); };
@@ -177,7 +177,7 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
     const sum = total(); if (!sum) return;
     const l = L0(), items = MENU.filter((m) => S.cart[m.id]).map((m) => `${m.zh}×${S.cart[m.id]}`).join(' ');
     const r = pay(l, { method: 'alipay', amount: sum, to: '阿潮生煎', memo: items, kind: 'food' });
-    if (!r.ok) { hud.toast(T('支付宝余额不足。', 'Not enough on Alipay.'), 3); return; }
+    if (!r.ok) { hud.toast(T('易付余额不足。', 'Not enough on YiPay.'), 3); return; }
     audio && audio.cue && audio.cue('ping', 0, 0.8);
     const buns = MENU.reduce((s, m) => s + (S.cart[m.id] || 0) * (m.buns || 0), 0), soup = MENU.reduce((s, m) => s + (S.cart[m.id] || 0) * (m.soup || 0), 0), drink = MENU.reduce((s, m) => s + (S.cart[m.id] || 0) * (m.drink || 0), 0);
     S.order = { buns, soup, drink, number: 20 + Math.floor(Math.random() * 60), at: stamp(l) }; S.ready = 12;   // (a batch is already in the pan)

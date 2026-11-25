@@ -58,6 +58,15 @@ export const NJ = {
 export const njCross = (dir) => NJ.cross.filter((c) => !c.side || c.side === (dir > 0 ? 'N' : 'S'));
 // the street's frontage on a side, east to west, as [xEast, xWest] runs between the cross streets (and
 // Henan Road's pavements, and Century Square on the south side)
+// Nanjing Road's lamp posts: [x, z], every 24 m down both sides (not on Henan Road, not over a metro well)
+export function njLamps() {
+  const out = [];
+  for (let x = -46; x > NJ.xWest + 4; x -= 24) {
+    if (x < NJ.henan.x1 + 3 && x > NJ.henan.x0 - 3) continue;
+    for (const z of [NJ.z0 + 4.2, NJ.z1 - 1.4]) if (!METRO.some((m) => x > m.x0 - 1.5 && x < m.x1 + 1.5 && z < m.z1 + 1.5)) out.push([x, z]);
+  }
+  return out;
+}
 export function njRuns(dir) {
   const cuts = [...njCross(dir).map((c) => [c.x1, c.x0]), [NJ.henan.x1 + 5, NJ.henan.x0 - 5]];
   if (dir < 0) cuts.push([NJ.century.x1, NJ.century.x0]);
@@ -273,6 +282,12 @@ for (const p of crossing.pedPoles) around(p.x, p.z, 0.1, 0.1, 'signal');
   }
   // Century Square: open to the street, its back and sides walled
   { const C = NJ.century; box(C.x0, C.x1, NJ.z1 + C.depth, NJ.z1 + C.depth + 1, 'nj-south'); box(C.x0 - 1, C.x0, NJ.z1, NJ.z1 + C.depth + 1, 'nj-south'); box(C.x1, C.x1 + 1, NJ.z1, NJ.z1 + C.depth + 1, 'nj-south'); }
+  // Century Square's planters (each with a tree), benches and low side walls
+  { const C = NJ.century;
+    for (let x = C.x0 + 8; x < C.x1 - 6; x += 12) for (const z of [NJ.z1 + 12, NJ.z1 + 24]) { box(x - 1.3, x + 1.3, z - 1.3, z + 1.3, 'planter'); box(x + 2.1, x + 3.9, z - 0.25, z + 0.25, 'bench'); }
+    for (const x of [C.x0 + 1, C.x1 - 1]) box(x - 0.2, x + 0.2, NJ.z1 + 2, NJ.z1 + C.depth - 2, 'wall'); }
+  // the street's lamp posts (world/nanjingRoad.js puts them every 24 m both sides)
+  for (const [x, z] of njLamps()) around(x, z, 0.12, 0.12, 'lamp');
   // the west end: Xizang Road's kerb, railed
   box(NJ.xWest - 1, NJ.xWest - 0.2, NJ.z0 - 1, NJ.z1 + 1, 'boundary');
   { const D = DUMPLING; box(D.x0 - 0.3, D.x0 + 0.15, D.z0, D.z1 + 0.3, 'wall'); box(D.x1 - 0.15, D.x1 + 0.3, D.z0, D.z1 + 0.3, 'wall'); box(D.x0, D.x1, D.z1, D.z1 + 0.3, 'wall');

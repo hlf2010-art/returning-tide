@@ -18,7 +18,7 @@ ok(isZh('你好 hello') && !isZh('hello'), 'tells Mandarin from English');
 // the character cards
 const sys = systemPrompt('bartender', '21:40, a clear evening. The Peace Hotel Jazz Bar.', { lang: 'en' });
 ok(/bartender/.test(sys) && /Reply in natural spoken English/.test(sys) && /Never mention being an AI/.test(sys), 'a system prompt: who, where, how, and in which language');
-ok(/WeChat/.test(systemPrompt('xuan', 'x', { texting: true })) && /old friend/.test(systemPrompt('xuan', 'x')), 'friends talk like friends; texting reads like texting');
+ok(/Xinyu/.test(systemPrompt('xuan', 'x', { texting: true })) && /old friend/.test(systemPrompt('xuan', 'x')), 'friends talk like friends; texting reads like texting');
 ok(['driver:shi-gu', 'receptionist', 'visitor', 'yinuo', 'vivian'].every((k) => PERSONAS[k] && PERSONAS[k].voice), 'everyone you can talk to has a card and a voice');
 ok(isZh(cannedReply('elder', '你好', { lang: 'zh' })) && !isZh(cannedReply('visitor', 'hello', { lang: 'en' })), 'without a model: short replies in the language spoken to them');
 ok(/谢|客气|没事|应该/.test(cannedReply('office', '谢谢你', { lang: 'zh' })), 'and roughly the right reply (thanks -> you\'re welcome)');

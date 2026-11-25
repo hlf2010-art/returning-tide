@@ -18,11 +18,11 @@ const KBM = [
     [['W', '/', 'S'], '对话或特写时选上一项、下一项（↑↓ 和滚轮也行）', 'In a conversation or close-up: move the highlighted choice (↑↓ and the wheel work too)'],
     [['T'], '用自己的话和看着的人聊（打字或说话）', 'Talk to whoever you are looking at in your own words (type or speak)'],
     [['Enter'], '聊天时发出你打的话', 'In a conversation: send what you typed'],
-    [['1', '–', '4'], '坐着时（滴滴里、朋友家）选回答', 'When sitting (in a DiDi, at a friend\'s place): choose an answer'],
+    [['1', '–', '4'], '坐着时（快马里、朋友家）选回答', 'When sitting (in a Kuaima, at a friend\'s place): choose an answer'],
     [['Esc'], '离开对话、特写或提示', 'Leave a conversation, close-up or notice'],
   ] },
   { zh: '随身的东西', en: 'Your things', rows: [
-    [['P'], '手机：微信、支付宝、滴滴、购物、地图', 'Your phone: WeChat, Alipay, DiDi, shopping, maps'],
+    [['P'], '手机：信语、易付、快马、购物、地图', 'Your phone: Xinyu, YiPay, Kuaima, shopping, maps'],
     [['J'], '日志：任务的每一步、身边的人', 'The journal: each step of your quests, the people in your life'],
     [['I'], '人物页（← → 或 1–7 换页）', 'The character page (← → or 1–7 change tabs)'],
     [['N'], '本子（1–4 翻页）', 'Your notebook (1–4 turn its pages)'],

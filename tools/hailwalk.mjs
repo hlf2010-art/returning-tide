@@ -1,4 +1,4 @@
-// Other people getting DiDis: watch both kerbs until each has seen a car pull in, someone get in,
+// Other people getting Kuaimas: watch both kerbs until each has seen a car pull in, someone get in,
 // and it leave. node tools/hailwalk.mjs (URL=, OUT=)
 import { createRequire } from 'module';
 const { chromium } = createRequire(import.meta.url)('playwright');

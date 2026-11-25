@@ -1,4 +1,5 @@
-// Standalone Starbucks takeaway hot cup for the Bund RPG.
+// Standalone takeaway hot cup for the Bund RPG: Harbour Coffee, a café chain invented for the game
+// (the file keeps its old name; the sleeve shows the game's own ring-and-waves mark).
 //
 //   import * as THREE from 'three';
 //   import { createStarbucksCup } from './starbucks-cup.js';
@@ -6,7 +7,7 @@
 //
 // Origin = centre of the base (foot ring touches y = 0). The printed face on the sleeve is centred on
 // local +Z; the lid's sip opening is on the opposite side (-Z). Plain white paper cup, white dome lid,
-// smooth kraft sleeve with the green face artwork (optional). No liquid, steam or animation.
+// smooth kraft sleeve with the café's ring-and-waves mark (optional). No liquid, steam or animation.
 // The sleeve art is painted procedurally on one canvas (same colour-space handling as the game's
 // canvas.js `tex()` helper), so there are no image files. No game imports. Written for three r187.
 //
@@ -183,10 +184,12 @@ function paintSleeve(ctx, W, Hpx) {
     pts.forEach((p, i) => { const [x, y] = toPx(cropToSleeve(p)); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
     ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   };
-  for (const k of ['hairL', 'edgeL', 'bandR']) fillShape(ART[k], INK_CSS);
-  for (const s of ART.stripes) fillShape(s, INK_CSS);
-  for (const k of ['eyeL', 'eyeR', 'nose', 'mouth']) fillShape(ART[k], INK_CSS);
-  fillShape(ART.slitL, KRAFT_CSS); fillShape(ART.slitR, KRAFT_CSS);
+  void fillShape; void cropToSleeve; void thetaFace;
+  // the café's own mark (Harbour Coffee, invented for the game): a ring with three waves inside, printed in one ink
+  { const cx = W * 0.5, cy = Hpx * 0.5, R = Hpx * 0.3;
+    ctx.strokeStyle = INK_CSS; ctx.lineWidth = Hpx * 0.035; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = Hpx * 0.03; ctx.lineCap = 'round';
+    for (let k = -1; k <= 1; k++) { ctx.beginPath(); for (let i = 0; i <= 24; i++) { const t = i / 24, x = cx - R * 0.62 + t * R * 1.24, y = cy + k * R * 0.36 + Math.sin(t * Math.PI * 2) * R * 0.1; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); } }
 
   // Kraft fibre: sparse flecks, then fine per-pixel grain (same idea as canvas.js grain())
   const r = rng(7);

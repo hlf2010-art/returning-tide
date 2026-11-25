@@ -74,7 +74,7 @@ const P = {
     ended: B('行。至少这次你说了。', 'Fine. At least this time you said it.'),
     fight: B('我看见了。你以前连吵架都不会，现在学会动手了？上海把你怎么了。', "I saw that. You couldn't even argue, before. Now you've learned to use your fists? What has Shanghai done to you?"),
     heard: B('听说你跟人打架了？？你？那个在 BART 上被踩了脚还说 sorry 的人？', "I hear you were in a fight?? You? The man who said sorry when someone trod on his foot on BART?"),
-    online: B('我在小红书上刷到你了。算法真行，连你都推给我。', 'You came up on my Xiaohongshu feed. Quite an algorithm, pushing even you at me.'),
+    online: B('我在红叶上刷到你了。算法真行，连你都推给我。', 'You came up on my Hongye feed. Quite an algorithm, pushing even you at me.'),
     hurt: B('你脸怎么了。……别说没事。你每次说没事都是有事。', "What's happened to your face? ...Don't say it's nothing. Whenever you say that, it's something."),
     onesided: B('我发现了，这一年每次都是我先发。跟那两年一样。', "I've noticed: this whole year it's been me who writes first. Just like those two years."),
     yes: B('可以啊。', 'Sure.'), busy: B('这周在赶一个评审。周末？', "I've a design review this week. The weekend?"), mood: B('我现在不太想见你。让我缓缓。', "I don't much want to see you just now. Give me a while."), away: B('在苏州的工地，晚上回。', 'On a site in Suzhou. Back tonight.'), later: B('等这版图交了再说。', 'Ask me when these drawings are in.'),

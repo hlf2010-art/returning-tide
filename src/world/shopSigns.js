@@ -25,7 +25,7 @@ export function loadSignFonts(base = './fonts/') {
   return (fontsReady = Promise.all(faces).then(() => true));
 }
 
-const PX = 128;                                   // texture pixels per metre of sign height... per row
+const PX = 96;                                   // texture pixels per metre of sign height... per row
 // fit text into a width: the font size that makes it fit, no larger than `max`
 function fit(x, text, font, max, width, spacing = 0) {
   let s = max;
@@ -116,7 +116,7 @@ export function drawBlade(x, s, X, Y, W, H) {
   chars.forEach((c, i) => x.fillText(c, X + W / 2, Y + W * 0.25 + (H - W * 0.5) * (i + 0.5) / chars.length));
   x.restore();
 }
-// a brand mark: a simple-icons path (24 x 24), centred at (cx, cy), `size` across
+// a mark: a 24 x 24 SVG path, centred at (cx, cy), `size` across
 function logo(x, path, cx, cy, size, color, glow) {
   x.save(); x.translate(cx - size / 2, cy - size / 2); x.scale(size / 24, size / 24);
   x.fillStyle = color; if (glow) { x.shadowColor = glow; x.shadowBlur = 2; }
