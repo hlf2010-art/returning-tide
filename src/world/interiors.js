@@ -24,6 +24,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { L, colliders, addDynamicCollider } from './layout.js';
 import { createPerson } from './people.js';
+import { dressHotelSecurity } from './outfits.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
@@ -334,8 +335,11 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   };
   placePerson('receptionist', 'p2', P.x0 + 0.7, -227.6, Math.PI / 2);
   placePerson('concierge', 'p3', P.x0 + 0.7, -237.5, Math.PI / 2);
-  placePerson('liftGuard', 'p4', -46, P.z0 + 1.6, 0);
-  placePerson('doorman', 'p1', doorX + 2.6, -210.4, Math.PI);
+  // the hotel's security: middle-aged men in dark suits with earpieces, one on the Nanjing Road door, one
+  // at the lifts (world/outfits.js)
+  const guard = (id, x, z, yaw, o) => { const g = placePerson(id, 'lin', x, z, yaw); if (g) dressHotelSecurity(g, o); return g; };
+  guard('liftGuard', -46, P.z0 + 1.6, 0, { glasses: true });
+  guard('doorman', doorX + 2.6, -210.4, -0.35);                       // beside the revolving door, facing the street
   placePerson('guestA', 'vivian', -54.6, -221.0, -2.4, 'talk1');
   placePerson('guestB', 'p5', -55.8, -222.1, 0.8, 'talk2');
   placePerson('aiaDesk', 'p2', -38.5, -139.35, Math.PI);
@@ -397,7 +401,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     // the revolving door turns as you go through
     const inDoor = Math.abs(pp.x - doorX) < 1.4 && Math.abs(pp.z - -212.2) < 1.6;
     S.drumSpin += ((inDoor ? 1.6 : 0) - S.drumSpin) * Math.min(1, dt * 2); vanes.rotation.y += S.drumSpin * dt;
-    if (inDoor && !S.doormanSaid && ppl.doorman) { S.doormanSaid = true; say(T('门童', 'Doorman'), '晚上好，纪先生。', 'Good evening, Mr Ji.', 2.2); }
+    if (inDoor && !S.doormanSaid && ppl.doorman) { S.doormanSaid = true; say(T('保安', 'Security'), '晚上好，纪先生。', 'Good evening, Mr Ji.', 2.2); }
     if (!inDoor && pp.z > -209) S.doormanSaid = false;
   }
 
