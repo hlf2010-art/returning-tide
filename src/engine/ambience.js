@@ -15,17 +15,18 @@
 //   the clock    the Customs House: "The East Is Red" on the quarters, the hour struck
 // Everything is synthesised here except the murmur (tools/voice/walla.py) and the PA clips (Kokoro).
 import { riverExposure, windExposure, trafficBed, hornRate, HORN, BUS_SIGH, BOAT_HORN, reverbAt, pickTalkers,
-  DOOR_CHIME, METRO_PA, paGain, CLOCK, clockChime, clockGain, EAST_IS_RED, degreeHz } from './soundscape.js';
+  DOOR_CHIME, METRO_PA, paGain, CLOCK, clockChime, clockGain, EAST_IS_RED, degreeHz, PAYBOX, payTokens, crowdPayment } from './soundscape.js';
 
 export function createAmbience(audio, { clipUrl = null } = {}) {
   let ctx = null, env = null, sfx = null, out = null;
   let brown = null, white = null, rev = null, bed = null;
-  const S = { horns: 0, sighs: 0, slaps: 0, boatHorns: 0, chimes: 0, pa: 0, clock: 0, strikes: 0, talkerGrains: 0 };
+  const S = { pays: 0, horns: 0, sighs: 0, slaps: 0, boatHorns: 0, chimes: 0, pa: 0, clock: 0, strikes: 0, talkerGrains: 0 };
   const shots = [];                        // one-shots sounding now: { id, kind, x, y, z, until, level, ref }
   let lastHorn = -1e9, lastBoat = -1e9, slapIn = 2, paIn = 20, lastMinute = null, tNow = 0;
   const busV = new Map(), shopPhase = new Map(), lastChime = new Map();
   const talkers = [];
-  const paBufs = new Map();
+  const paBufs = new Map(), payBufs = new Map(), lastPay = new Map();
+  let lastL = { x: 0, z: 0 };
 
   function makeNoise(seconds, brownish) {
     const n = Math.floor(ctx.sampleRate * seconds), b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
@@ -153,6 +154,26 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
       shot({ id: `metro-pa:${at.id}`, kind: 'announcement', x: at.x, y: at.y + 3, z: at.z, at: (x, z) => paGain(Math.hypot(at.x - x, at.z - z)) }, buf.duration);
     } catch { /* no clip: nothing */ }
   }
+  // the counter's payment speaker: "支付宝到账二十五元", the recorded pieces back to back through a small
+  // plastic box on the counter (public/ambience/pay/, tools/voice/paybox.py)
+  const payBuf = (id) => { const url = `./ambience/pay/${id}.mp3`; if (!payBufs.has(url)) payBufs.set(url, fetch(url).then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b))); return payBufs.get(url); };
+  async function payment(x, z, { amount, method }, { own = false } = {}) {
+    if (!ctx) return;
+    const k = `${Math.round(x)}:${Math.round(z)}`;
+    if (Math.hypot(x - lastL.x, z - lastL.z) > PAYBOX.range || (!own && tNow - (lastPay.get(k) ?? -1e9) < PAYBOX.minGap)) return;
+    lastPay.set(k, tNow);
+    try {
+      const bufs = await Promise.all(payTokens(amount, method).map(payBuf));
+      S.pays++;
+      const t0 = ctx.currentTime + 0.05; let t = t0;
+      const hp = filt('highpass', 520, 0.8), lp = filt('lowpass', 3800, 0.8), pk = filt('peaking', 2300, 1.2); pk.gain.value = 6;
+      const g = gain(own ? 0.6 : 0.42), p = panAt(x, 1.1, z, { ref: 2.5, rolloff: 1.4 });
+      hp.connect(lp).connect(pk).connect(g).connect(p).connect(env);
+      for (const b of bufs) { const s = ctx.createBufferSource(); s.buffer = b; s.connect(hp); s.start(t); t += b.duration + PAYBOX.gap; }
+      shot({ id: `pay:${k}`, kind: 'shop', x, y: 1.1, z, level: 0.42, ref: 2.5, rolloff: 1.4 }, t - t0);
+      setTimeout(() => { try { p.disconnect(); } catch { /* gone */ } }, (t - t0 + 2) * 1000);
+    } catch { /* no clips: nothing */ }
+  }
   // a bell: a struck note with a bell's partials (hum, prime, tierce, quint, nominal), each dying away
   function bell(t, hz, level, dest, big = false) {
     const parts = big ? [[0.5, 1, 9], [1, 0.8, 6], [1.2, 0.45, 4], [1.5, 0.3, 3.5], [2, 0.5, 3], [2.5, 0.2, 2], [3, 0.12, 1.4]]
@@ -196,6 +217,8 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
 
   return {
     stats: S,
+    // someone paid at a counter at (x, z): { amount, method: 'alipay' | 'wechat' }; own: it was you
+    payment,
     // per frame. listener: { x, y (feet), z }; vehicles: the road's (as engine/audio.js gets them);
     // boats: [{ x, z }]; people: the crowd's agents and others near; minute: minute of the day (float);
     // metroOpen; shops: crowd agents in shops are read off people (state 'shop')
@@ -205,6 +228,7 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
       tNow += dt;
       for (let i = shots.length - 1; i >= 0; i--) if (shots[i].until < tNow) shots.splice(i, 1);
       const { x: lx, z: lz } = listener, ly = listener.y || 0, t = ctx.currentTime;
+      lastL = { x: lx, z: lz };
       // where you stand: the river's and the wind's share (engine/audio.js plays those)
       audio.setExposure && audio.setExposure(riverExposure(lx, lz, ly), windExposure(lx, lz, ly));
       // reverb
@@ -246,6 +270,7 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
         if (was && was !== ph && (ph === 'inside' || ph === 'outward')) {
           const door = a.shop.door, d = Math.hypot(door.x - lx, door.z - lz), k = `${Math.round(door.x)}:${Math.round(door.z)}`;
           if (d < DOOR_CHIME.range && tNow - (lastChime.get(k) ?? -1e9) > DOOR_CHIME.minGap) { lastChime.set(k, tNow); chime(door.x, door.z); }
+          if (ph === 'outward' && Math.random() < PAYBOX.crowdChance) payment(door.x, door.z, crowdPayment());   // they paid on the way out
         }
       }
       for (const id of shopPhase.keys()) if (!seen.has(id)) shopPhase.delete(id);

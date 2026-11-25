@@ -134,7 +134,7 @@ import { usePhotoSurfaces } from './world/photoTextures.js';
 import { createDidi, PICKUP } from './world/didi.js';
 import { createRideFlow } from './world/rideFlow.js';
 import { createShop } from './engine/errands.js';
-import { manner as mannerSpec, stall as stallSpot } from './world/layout.js';
+import { manner as mannerSpec, stall as stallSpot, DUMPLING } from './world/layout.js';
 import { createMinimap } from './ui/minimap.js';
 import { createLife, advance as lifeAdvance, lapse as lifeLapse, drain as lifeDrain, save as lifeSave, clockText as lifeClock, load as lifeLoad, post as lifePost, stamp as lifeStamp, thread as lifeThread, nudge as lifeNudge, skipTo as lifeSkipTo } from './engine/life.js';
 import { setupThreads, addVoicemail, runAgenda, deliverFollowUps, react as lifeReact, CALLS } from './world/agenda.js';
@@ -188,6 +188,8 @@ const hud = createHud();
 const titleScreen = createTitleScreen();   // the painted Bund behind the title; its gold line is the loading bar
 // people's voices: recorded clips per character (engine/voice.js); barks speak through the HUD
 const voice = createVoice({ audio, getLang, camera });
+// the counters with a payment speaker, by who the money goes to (the shengjian shop's order counter; Manner's, at its wall)
+const PAY_COUNTERS = { '阿潮生煎': { x: DUMPLING.x0 + 1.6, z: DUMPLING.z0 + 3.4 }, Manner: { x: mannerSpec.x, z: mannerSpec.zWall - 0.4 } }, payWatch = { led: null, n: 0 };
 const ambience = createAmbience(audio, { clipUrl: (lang, text) => voice.clipUrl(lang, text) });   // the city's sound by place: river, Nanjing Road, the road, the arcades, the clock (engine/ambience.js)
 const liveOverlay = createLiveOverlay({ getLang });   // the liveliness numbers (L, or ?live; world/liveliness.js)
 let liveliness = null;
@@ -1589,6 +1591,16 @@ function frame(now) {
   audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: heard, speech });
   ambience.update(mode === 'pause' ? 0 : dt, player.body, { vehicles: heard || [], boats: world.river.boats.map((bt) => bt.g.position), people: world.crowd ? world.crowd.agents.concat(LIN_SU) : LIN_SU,
     minute: life ? life.clock.minute + life.clock.sec / 60 : null, metroOpen: hourState.metro !== false, paused: mode === 'pause' || mode === 'entry' });
+  // your own payments at a counter: its speaker says what it got ("支付宝到账三十八元"), as for anyone else
+  { const led = life && life.wallet && life.wallet.ledger;
+    if (led) {
+      if (led !== payWatch.led) { payWatch.led = led; payWatch.n = led.length; }   // a new or loaded game: only what's paid from now on
+      for (; payWatch.n < led.length; payWatch.n++) {
+        const e = led[payWatch.n], at = PAY_COUNTERS[e.to];
+        if (!at || e.amount >= 0 || (e.method !== 'alipay' && e.method !== 'wechat')) continue;
+        if (Math.hypot(at.x - player.body.x, at.z - player.body.z) < 15) ambience.payment(at.x, at.z, { amount: -e.amount, method: e.method }, { own: true });
+      }
+    } }
   voice.update();                                                                  // where the listener is, for positional voices
   if (dialogueAudio) dialogueAudio.updateListener();
   if (conversation) conversation.update(mode === 'pause' ? 0 : dt);
