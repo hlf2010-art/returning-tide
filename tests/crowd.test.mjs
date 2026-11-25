@@ -86,4 +86,23 @@ ok(crossing.vehicles.every((v) => mix.find((m) => m.id === v.id)), "the crossing
   }
   ok(together && far / Math.max(1, n) < 0.03, `children keep within 2.5 m of their parent (${(100 * far / Math.max(1, n)).toFixed(1)}% of moments apart) and leave with them`);
 }
+// the Bund's two moments: the floods coming on (phones go up on the deck), and 22:00 (the railing empties)
+{
+  let s3 = 11; const r3 = () => ((s3 = (s3 * 16807) % 2147483647) / 2147483647);
+  const k = createCrowd({ density: 1.5, rnd: r3, roles: ['p1', 'p2', 'p3', 'p4', 'p5'] });
+  k.setActive(1, { instant: true });
+  for (let i = 0; i < 1800; i++) k.update(1 / 30, { player: { x: -300, z: 0 }, signal: 'walk' });
+  const deckWalkers = k.agents.filter((a) => !a.gone && a.state === 'walk' && a.x > 9 && a.x < 26).length;
+  const stopped = k.floodsOn({ share: 0.5, r: r3 });
+  ok(deckWalkers > 5 && stopped > 0 && stopped <= deckWalkers, `floods on: ${stopped} of ${deckWalkers} walkers on the deck stop to photograph the lights`);
+  for (let i = 0; i < 60; i++) k.update(1 / 30, { player: { x: -300, z: 0 }, signal: 'walk' });
+  const shooting = k.agents.filter((a) => !a.gone && a.state === 'act' && (a.act === 'photo' || a.act === 'selfie') && a.x > 9).length;
+  ok(shooting > 0, `and they're photographing (${shooting} with a phone up)`);
+  for (let i = 0; i < 900; i++) k.update(1 / 30, { player: { x: -300, z: 0 }, signal: 'walk' });
+  const atRail = k.agents.filter((a) => !a.gone && a.atRail && a.state === 'act');
+  const n = k.lightsOut(r3);
+  ok(n === atRail.length && atRail.every((a) => a.wait <= 303 && a.act !== 'photo' && a.act !== 'selfie'), `22:00: all ${n} at the railing lower their phones and leave within five minutes`);
+  for (let i = 0; i < 30 * 310; i += 3) k.update(0.1, { player: { x: -300, z: 0 }, signal: 'walk' });
+  ok(atRail.every((a) => a.gone || !a.atRail || a.wait > 0 && a.state === 'act' && !atRail.includes(a)), 'five minutes on, none of them is still standing at the railing');
+}
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);

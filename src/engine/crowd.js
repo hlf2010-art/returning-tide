@@ -730,6 +730,31 @@ export function createCrowd({ net = buildNet(), density = 1, rnd = Math.random, 
       a.state = 'goto'; a.goal = { x, z, face, act, wait }; a.act = null; a.gesture = null;
       return true;
     },
+    // 22:00, the Bund goes over to its late-night lighting: everyone at the railing lowers the phone and,
+    // over the next five minutes, drifts off (most within two). -> how many were at the railing
+    lightsOut(r = rnd) {
+      let n = 0;
+      for (const a of agents) {
+        if (a.gone || a.out || !a.atRail || a.state !== 'act') continue;
+        n++;
+        if (a.act === 'photo' || a.act === 'selfie') { a.act = 'look'; a.photoAt = null; }
+        const u = r();
+        a.wait = Math.min(a.wait, 2.5 + (u < 0.7 ? (u / 0.7) * 110 : 110 + ((u - 0.7) / 0.3) * 190));
+      }
+      return n;
+    },
+    // ~17:10, the floods come on: walkers on the promenade stop where they are and photograph the lit
+    // Bund behind them (most) or Pudong across the river, for 20-90 s. -> how many stopped
+    floodsOn({ share = 0.45, r = rnd } = {}) {
+      let n = 0;
+      for (const a of agents) {
+        if (a.gone || a.out || a.state !== 'walk' || a.x < 9 || a.x > 26) continue;   // (the deck)
+        if (r() > share) continue;
+        const bund = r() < 0.6, act = r() < 0.75 ? 'photo' : 'selfie', side = (bund ? -1 : 1) * (act === 'selfie' ? -1 : 1);
+        if (this.gather(a, a.x, a.z, { face: [a.x + side * 60, a.z + (r() - 0.5) * 40], act, wait: 20 + r() * 70 })) n++;
+      }
+      return n;
+    },
     stats,
     get clock() { return clock; },
     // a bus at this stop with its doors open: who was waiting gets on; some get off

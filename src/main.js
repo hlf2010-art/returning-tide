@@ -1448,6 +1448,8 @@ function applyHour(dt, { force = false } = {}) {
     if (world.crowd) world.crowd.setActive(s.crowd, { dawn: s.dawn, instant: jump || force });
     traffic.setDensity(s.traffic); world.henan.traffic.setDensity(s.traffic);
     if (prev != null && !jump && passedLateNight(prev, minute)) lateNight();
+    // the floods coming on (~17:10): phones go up along the promenade
+    if (prev != null && !jump && world.crowd && todState(prev).floods < 0.5 && s.floods >= 0.5) world.crowd.floodsOn();
   }
   // the captured environment (what wet stone and glass reflect) follows the light, now and then
   envWait -= Math.max(dt, 0.25);
@@ -1465,6 +1467,8 @@ function lateNight() {
   const out = !(world.upper.here || world.dest.here || world.makerspace.here || inR(PEACE) || inR(AIA));
   if (!out) return;
   life.flags.lightsOutSeen = true; saveLife();
+  if (world.crowd) world.crowd.lightsOut();   // the railing lowers its phones and drifts off over five minutes
+  ambience.lightsOut();                        // "awww": the railing's sigh
   hud.toast(tx('lateNightLights'), 5);
   if (world.crowd && world.crowdView) {
     const near = world.crowdView.nearAgents().filter((a) => Math.hypot(a.x - b.x, a.z - b.z) < 18).slice(0, 2);

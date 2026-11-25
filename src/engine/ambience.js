@@ -16,11 +16,12 @@
 // Everything is synthesised here except the murmur (tools/voice/walla.py) and the PA clips (Kokoro).
 import { riverExposure, windExposure, trafficBed, hornRate, HORN, BUS_SIGH, BOAT_HORN, reverbAt, pickTalkers,
   DOOR_CHIME, METRO_PA, paGain, CLOCK, clockChime, clockGain, EAST_IS_RED, degreeHz, PAYBOX, payTokens, crowdPayment } from './soundscape.js';
+import { L } from '../world/layout.js';
 
 export function createAmbience(audio, { clipUrl = null } = {}) {
   let ctx = null, env = null, sfx = null, out = null;
   let brown = null, white = null, rev = null, bed = null;
-  const S = { pays: 0, horns: 0, sighs: 0, slaps: 0, boatHorns: 0, chimes: 0, pa: 0, clock: 0, strikes: 0, talkerGrains: 0 };
+  const S = { lightsOut: 0, pays: 0, horns: 0, sighs: 0, slaps: 0, boatHorns: 0, chimes: 0, pa: 0, clock: 0, strikes: 0, talkerGrains: 0 };
   const shots = [];                        // one-shots sounding now: { id, kind, x, y, z, until, level, ref }
   let lastHorn = -1e9, lastBoat = -1e9, slapIn = 2, paIn = 20, lastMinute = null, tNow = 0;
   const busV = new Map(), shopPhase = new Map(), lastChime = new Map();
@@ -174,6 +175,22 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
       setTimeout(() => { try { p.disconnect(); } catch { /* gone */ } }, (t - t0 + 2) * 1000);
     } catch { /* no clips: nothing */ }
   }
+  // 22:00: the crowd at the railing sighs as the lights go over to the late-night wash ("awww", then a
+  // laugh), from the railing nearest you; as loud as you're open to the river (public/ambience/lights-out.mp3)
+  let sighBuf = null;
+  async function lightsOut() {
+    if (!ctx) return;
+    const lvl = 0.7 * riverExposure(lastL.x, lastL.z, lastL.y || 0);
+    if (lvl < 0.03) return;
+    try {
+      if (!sighBuf) sighBuf = fetch('./ambience/lights-out.mp3').then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b));
+      const buf = await sighBuf, s = ctx.createBufferSource(); s.buffer = buf;
+      const x = L.deckEdgeX, z = Math.max(-250, Math.min(88, lastL.z)), g = gain(lvl), p = panAt(x, 1.6, z, { ref: 14, rolloff: 0.6 });
+      s.connect(g).connect(p).connect(env); s.start();
+      S.lightsOut++;
+      shot({ id: 'lights-out', kind: 'crowd', x, y: 1.6, z, level: lvl, ref: 14, rolloff: 0.6 }, buf.duration);
+    } catch { /* no clip: nothing */ }
+  }
   // a bell: a struck note with a bell's partials (hum, prime, tierce, quint, nominal), each dying away
   function bell(t, hz, level, dest, big = false) {
     const parts = big ? [[0.5, 1, 9], [1, 0.8, 6], [1.2, 0.45, 4], [1.5, 0.3, 3.5], [2, 0.5, 3], [2.5, 0.2, 2], [3, 0.12, 1.4]]
@@ -219,6 +236,8 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
     stats: S,
     // someone paid at a counter at (x, z): { amount, method: 'alipay' | 'wechat' }; own: it was you
     payment,
+    // 22:00 (main.js lateNight): the railing's collective sigh
+    lightsOut,
     // per frame. listener: { x, y (feet), z }; vehicles: the road's (as engine/audio.js gets them);
     // boats: [{ x, z }]; people: the crowd's agents and others near; minute: minute of the day (float);
     // metroOpen; shops: crowd agents in shops are read off people (state 'shop')
@@ -228,7 +247,7 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
       tNow += dt;
       for (let i = shots.length - 1; i >= 0; i--) if (shots[i].until < tNow) shots.splice(i, 1);
       const { x: lx, z: lz } = listener, ly = listener.y || 0, t = ctx.currentTime;
-      lastL = { x: lx, z: lz };
+      lastL = { x: lx, z: lz, y: ly };
       // where you stand: the river's and the wind's share (engine/audio.js plays those)
       audio.setExposure && audio.setExposure(riverExposure(lx, lz, ly), windExposure(lx, lz, ly));
       // reverb
