@@ -61,9 +61,12 @@ export function createShoppers({ scene, people, traffic, vehicles, audio, rnd = 
   }
   const takenKerb = (k, me) => stories.some((s) => s !== me && (s.drop === k || s.pick === k));
 
-  function sendCar(k, npc) {
+  // strict: only a ride-hail-looking car (a BYD, or one of the EV lookalikes), as DiDi cars are; after a
+  // while of none coming, any car will do
+  function sendCar(k, npc, strict = false) {
     const stopS = k.dir > 0 ? k.z + 2.4 : -k.z + 2.4;
-    const list = traffic.vehicles.map((v, i) => ({ v, i })).filter(({ v }) => v.active && !v.bus && v.lane.dir === k.dir && !v.pickup && !v.hidden && stopS - v.s > 70 && stopS - v.s < 330);
+    const hail = (i) => !!(vehicles && vehicles.list[i] && (vehicles.list[i].fleetCar || vehicles.list[i].lookalike));
+    const list = traffic.vehicles.map((v, i) => ({ v, i })).filter(({ v, i }) => v.active && !v.bus && v.lane.dir === k.dir && !v.pickup && !v.hidden && stopS - v.s > 70 && stopS - v.s < 330 && (!strict || hail(i)));
     // a ride-hail car by preference (the BYDs), then the kerb lane, then the nearest
     const fleet = (i) => (vehicles && vehicles.list[i] && vehicles.list[i].fleetCar ? 1 : 0);
     list.sort((a, b) => fleet(b.i) - fleet(a.i) || (a.v.lane.id.endsWith('2') ? 1 : 0) - (b.v.lane.id.endsWith('2') ? 1 : 0) || b.v.s - a.v.s);
@@ -107,7 +110,9 @@ export function createShoppers({ scene, people, traffic, vehicles, audio, rnd = 
       const free = SHOPPER_KERBS.drop.filter((k) => !takenKerb(k, s));
       if (!free.length || !shops.length) { s.wait = 5; return null; }
       s.drop = free[Math.floor(rnd() * free.length)];
-      s.veh = sendCar(s.drop, `shopper${s.i}-drop`); if (!s.veh) { s.drop = null; s.wait = 3; return null; }
+      s.tries = (s.tries || 0) + 1;
+      s.veh = sendCar(s.drop, `shopper${s.i}-drop`, s.tries < 8); if (!s.veh) { s.drop = null; s.wait = 3; return null; }
+      s.tries = 0;
       body(s, ROLES[Math.floor(rnd() * ROLES.length)]);
       s.shop = shops[Math.floor(rnd() * shops.length)];
       s.nBags = 1 + Math.floor(rnd() * 3);
@@ -145,14 +150,15 @@ export function createShoppers({ scene, people, traffic, vehicles, audio, rnd = 
       }
     } else if (s.phase === 'outward') {
       moving = walk(s, dt, s.speed * 0.95, pp);
-      if (!moving) { s.phase = 'wait'; s.yaw = s.pick.face; s.ride = createRide(rnd); s.veh = null; s.t = 0; }
+      if (!moving) { s.phase = 'wait'; s.yaw = s.pick.face; s.ride = createRide(rnd); s.veh = null; s.t = 0; s.waited = 0; }
     } else if (s.phase === 'wait') {
       const r = s.ride, k = s.pick;
       if (s.veh && !s.veh.active) { s.veh.pickup = null; s.veh = null; }
       const car = s.veh && s.veh.pickup ? { dist: Math.max(0, s.veh.pickup.stopS - s.veh.s), stopped: s.veh.pickup.state === 'parked' } : null;
       stepRide(r, dt, car);
-      for (const e of r.events.splice(0)) if (e === 'accepted' && !s.veh) s.veh = sendCar(k, `shopper${s.i}-pick`);
-      if (r.phase !== 'request' && !s.veh && (s.t += dt) > 3) { s.t = 0; s.veh = sendCar(k, `shopper${s.i}-pick`); }
+      s.waited = (s.waited || 0) + dt;
+      for (const e of r.events.splice(0)) if (e === 'accepted' && !s.veh) s.veh = sendCar(k, `shopper${s.i}-pick`, s.waited < 25);
+      if (r.phase !== 'request' && !s.veh && (s.t += dt) > 3) { s.t = 0; s.veh = sendCar(k, `shopper${s.i}-pick`, s.waited < 25); }
       act = rideAction(r);
       if (act === 'lookStreet') look = [k.stand.x, k.stand.z - 40];
       if (r.phase === 'spotting' && s.veh) look = [s.veh.x, s.veh.z];

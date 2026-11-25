@@ -38,6 +38,7 @@ for (let i = 0; i < 360; i++) {
 const s = await st();
 ok(s.served >= 1, `one shopper through: ${s.log}`);
 for (const ph of ['riding', 'alight', 'toShop', 'inside', 'outward', 'wait', 'board', 'leaving']) ok(s.log.includes(ph) || seen.has(ph), `went through ${ph}`);
+const car = await p.evaluate(() => window.__bund.world.shoppers.state.stories[0]);
 const stuck = await p.evaluate(() => window.__bund.traffic.vehicles.filter((v) => v.pickup && /^shopper/.test(v.pickup.npc || '') && v.pickup.state === 'parked').length);
 ok(stuck === 0, `no shopper car left parked (${stuck})`);
 ok(errs.length === 0, `no errors (${errs.slice(0, 3).join(' | ')})`);
