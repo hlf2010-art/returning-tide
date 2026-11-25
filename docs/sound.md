@@ -61,6 +61,17 @@ What is not certain:
 
 Since 25 November the river, the wind, the city's wash, the traffic bed and the crowd are recorded beds (above). Once the crowd bed is playing, the synthesised wind, river and city layers and the murmur loop fade out, and the placed "talker" voices (grains of one murmur loop, heard as repeats) stop. If the beds can't load, the synthesised layers stay. The leaves, rain, footsteps, door chimes, payment speakers, the clock and the horns are unchanged.
 
+### Licence warning: ElevenLabs free-plan output is non-commercial
+
+Everything generated with ElevenLabs so far was made on the account's **free plan**, whose output may be used
+only non-commercially (with attribution) under ElevenLabs' terms: the payment speaker's pieces
+(`public/ambience/pay/`), the 22:00 sigh (`lights-out.mp3`), Ji Bai's breathing (`breath/`), the background beds
+(`beds/`) and the character lines voiced with ElevenLabs in earlier sessions (`tools/voice/eleven.json`). That's
+fine for a prototype played privately. **Before the game is sold or monetised in any way**, regenerate these on a
+paid plan (commercial rights cover what's generated while subscribed) or replace them from commercially usable
+sources (open-source models such as ACE-Step for music or Stable Audio Open for effects, CC0 or royalty-free
+recordings such as Freesound CC0 or the Sonniss GDC bundles). Check the provider's current terms at that time.
+
 ## Sources and licences
 
 | Sound | Made by | Where | File | Licence |
