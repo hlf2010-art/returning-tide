@@ -59,7 +59,7 @@ function metroSign(exit) {
   const logo = markCanvas('shanghaimetro', { color: '#EC1C24', bg: '#ffffff', size: 200, pad: 0.12 });
   x.drawImage(logo, 28, 28, 200, 200);
   x.fillStyle = '#fff'; x.textBaseline = 'middle'; x.textAlign = 'left';
-  x.font = `900 84px ${FONT.sans}`; x.fillText('南鲸送路站', 262, 92);
+  x.font = `900 84px ${FONT.sans}`; x.fillText('南京东路站', 262, 92);
   x.font = `600 38px ${FONT.sans}`; x.fillText('East Nanjing Road', 266, 176);
   [2, 10].forEach((n, i) => {
     const X = 690 + i * 88; x.fillStyle = LINE_COLOR[n]; x.fillRect(X, 140, 76, 76);

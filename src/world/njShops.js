@@ -76,7 +76,7 @@ export const NJ_SHOPS = [
   // ---- west of Henan Road (the map runs ~35 m on) ----
   // north: Puma on the corner, then Apple Nanjing East in the Henderson Metropolitan building (恒基名人购物中心), its glass wall and logo
   S({ zh: '', en: 'OCELOT', side: 'N', d0: 498, d1: 512, type: '运动', sign: { style: 'letters', board: '#141414', fg: '#ffffff', width: 6 } }),
-  S({ zh: '', en: 'Lumen 南鲸送路', side: 'N', d0: 512, d1: 600, type: '数码', room: 'phone_shop', sign: { style: 'letters', fg: '#f5f5f7', width: 2.6, h: 2.6, at: 557 }, front: { top: 9.6 }, building: { style: 'deco', up: 25.2, top: false } }),
+  S({ zh: '', en: 'Lumen 南京东路', side: 'N', d0: 512, d1: 600, type: '数码', room: 'phone_shop', sign: { style: 'letters', fg: '#f5f5f7', width: 2.6, h: 2.6, at: 557 }, front: { top: 9.6 }, building: { style: 'deco', up: 25.2, top: false } }),
   // south: Hongyi Plaza (宏伊国际广场, No.299) with Pop Mart, and the Samsung store facing Apple
   S({ zh: '宏远广场', en: 'HONGYUAN PLAZA', side: 'S', d0: 498, d1: 580, type: '数码', room: 'phone_shop', sign: { style: 'deco', bg: '#22262c', fg: '#f2f2f2', font: 'song', width: 8, at: 505 },
     more: [{ d: 527, zh: '趣盒', en: 'FUN BOX', sign: { style: 'brand', bg: '#e50012', fg: '#ffffff', width: 6 } }, { d: 562, zh: '', en: 'ORBIT', sign: { style: 'letters', board: '#141414', fg: '#ffffff', width: 6 } }],

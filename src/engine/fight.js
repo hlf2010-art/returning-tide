@@ -443,8 +443,8 @@ export const EN_FIGHT = {
   '[视频] 这个被推了都不还手的，是不是纪白': '[video] The one who gets shoved and doesn\'t shove back. Is that Ji Bai?',
   '是他！！评论区说“情绪稳定天花板”哈哈哈哈': 'It is!! Top comment: "the calmest man in Shanghai" hahaha',
   '你脸怎么了？谁告诉我的不重要。冰敷，别热敷。': 'What happened to your face? Never mind who told me. Ice, not heat.',
-  '【警情回执】您报告的南鲸送路纠纷警情已处置完毕，感谢您的配合。': '[Incident receipt] The dispute you reported on Nanjing Road East has been dealt with. Thank you for your cooperation.',
-  '【警情回执】南鲸送路纠纷已调解结案。请遵守法律，理性处理矛盾。': '[Incident receipt] The dispute on Nanjing Road East has been settled by mediation. Please keep within the law and settle differences calmly.',
+  '【警情回执】您报告的南京东路纠纷警情已处置完毕，感谢您的配合。': '[Incident receipt] The dispute you reported on Nanjing Road East has been dealt with. Thank you for your cooperation.',
+  '【警情回执】南京东路纠纷已调解结案。请遵守法律，理性处理矛盾。': '[Incident receipt] The dispute on Nanjing Road East has been settled by mediation. Please keep within the law and settle differences calmly.',
   '【行政处罚告知】因殴打他人，依据《治安管理处罚法》对您处以罚款，款项已缴纳。该记录将依法留存。': '[Notice of penalty] For striking another person you have been fined under the Public Security Administration Punishments Law. The fine is paid. A record will be kept as the law requires.',
   '昨晚……谢谢你。到家了我才开始后怕。': 'Last night… thank you. It only started to frighten me once I was home.',
   '昨晚的事我想了一路。你处理得很好。': 'I thought about last night the whole way home. You handled it well.',
@@ -471,7 +471,7 @@ export function morningMessages(R) {
     say('wuhu', dirty ? 'xuan' : 'zhixia', dirty ? '你们公司的人刷到怎么办。先动手的是你，视频里看得清清楚楚。' : '评论区都在说是那个人先动的手。');
   } else if (R.filmed && R.outcome === 'stood') { say('wuhu', 'zhixia', '[视频] 这个被推了都不还手的，是不是纪白'); say('wuhu', 'momo', '是他！！评论区说“情绪稳定天花板”哈哈哈哈'); }
   if (R.level >= 2) say('yuan', 'yuan', '你脸怎么了？谁告诉我的不重要。冰敷，别热敷。');
-  if (R.police) say('110', '110', { statement: '【警情回执】您报告的南鲸送路纠纷警情已处置完毕，感谢您的配合。', warning: '【警情回执】南鲸送路纠纷已调解结案。请遵守法律，理性处理矛盾。', fine: '【行政处罚告知】因殴打他人，依据《治安管理处罚法》对您处以罚款，款项已缴纳。该记录将依法留存。' }[R.police.verdict], { title: '110', kind: 'service' });
+  if (R.police) say('110', '110', { statement: '【警情回执】您报告的南京东路纠纷警情已处置完毕，感谢您的配合。', warning: '【警情回执】南京东路纠纷已调解结案。请遵守法律，理性处理矛盾。', fine: '【行政处罚告知】因殴打他人，依据《治安管理处罚法》对您处以罚款，款项已缴纳。该记录将依法留存。' }[R.police.verdict], { title: '110', kind: 'service' });
   // whoever was with you (unless the system that owns her has said it will write itself: R.companionWrites === false)
   if (R.companion && R.companionWrites !== false) {
     const id = R.companion.id, t = R.companion.as === 'target';

@@ -167,7 +167,7 @@ export const WORK_QUESTS = [
   { id: 'own-work', act: 1, giver: 'me',
     title: B('一件自己的东西', 'Something of your own'),
     summary: (L) => { const s = summary(L); return s.grade === 0 ? B('机械臂是别人的。你自己的那台云台，图纸还贴在阿凯的白板上。', "The robot arm is someone else's. Your own gimbal is still a sketch on Kai's whiteboard.")
-      : B(`夜行云台，第 ${s.rev} 版。白天改，天黑了拿到外滩给人用，夜里记下来。和爸爸吃饭那天，做到哪一版就是哪一版。`, `The night gimbal, version ${s.rev}. Revise it by day, put it in people's hands on the Bund after dark, write it up at night. Whatever version it has reached by the dinner with Dad is the one he'll see.`); },
+      : B(`夜行云台，第 ${s.rev} 版。白天改，天黑了拿到外滩给人用，夜里记下来。${isYear(L) ? '到十一月爸爸再来，' : '和爸爸吃饭那天，'}做到哪一版就是哪一版。`, `The night gimbal, version ${s.rev}. Revise it by day, put it in people's hands on the Bund after dark, write it up at night. Whatever version it has reached by ${isYear(L) ? 'November, when Dad comes back,' : 'the dinner with Dad'} is the one he'll see.`); },
     start: (L) => hasProduct(L) || stamp(L) >= D(2, 9, 30),
     steps: [
       { id: 'build', text: B('去杨浦的创客空间，把夜行云台做出来', 'At the Yangpu makerspace, build the night gimbal'), target: DIDI, done: (L) => hasProduct(L) },

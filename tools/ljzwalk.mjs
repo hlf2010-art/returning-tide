@@ -187,7 +187,7 @@ b = await body();
 { const l = await ledger(); ok(b.x < 0 && Math.abs(b.z + 19.7) < 2 && l && /快马/.test(l.to) && await ev(() => !window.__bund.world.ljz.active && window.__bund.scene.getObjectByName('street').visible), `a car back through the tunnel: on the Bund at the pick-up point, ¥${l && -l.amount} paid, the Bund drawn again`); }
 await shot('walk-bund-again');
 await stand(...wellPt(m6, m6.len - 1.8), -m6.depth, ...wellPt(m6, m6.len).slice(0, 1), -m6.depth + 1.6, wellPt(m6, m6.len)[1]);
-ok(await waitPrompt(/East Nanjing|南鲸送路/), `Lujiazui station, Exit 6's landing: "${await prompt()}"`);
+ok(await waitPrompt(/East Nanjing|南京东路/), `Lujiazui station, Exit 6's landing: "${await prompt()}"`);
 await p.keyboard.press('KeyE');
 await p.waitForFunction(() => window.__bund.player.body.x < -400 && window.__bund.mode === 'play', null, { timeout: 180000 }).catch(() => {});
 b = await body();

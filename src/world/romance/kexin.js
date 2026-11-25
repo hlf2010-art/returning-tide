@@ -87,7 +87,7 @@ const P = {
     canned: { zh: ['在化妆，一只手回你', '哈哈哈哈', '等下，我在直播，下播说', '收到～'], en: ['Doing my make-up. Typing with one hand', 'Hahaha', "Hang on, I'm live. After the stream", 'Got it~'] },
   },
   dates: {
-    'k-shengjian': { hm: [20, 0], needs: 'k-bar', days: [1, 12], title: B('吃生煎', 'Shengjian'), place: B('南鲸送路 · 生煎店门口', 'Nanjing Road East · outside the shengjian shop'), text: B('今天收工早。带你去吃生煎，南京路上那家。我做探店从来不拍它：拍了就要排队了。八点，店门口。', "I'm done early today. I'm taking you for shengjian, the place on Nanjing Road. I never film it for my food posts: if I did there'd be a queue. Eight, outside the shop."), yes: B('好，八点。', 'OK. Eight.'), no: B('今晚不行。', 'Not tonight.') },
+    'k-shengjian': { hm: [20, 0], needs: 'k-bar', days: [1, 12], title: B('吃生煎', 'Shengjian'), place: B('南京东路 · 生煎店门口', 'Nanjing Road East · outside the shengjian shop'), text: B('今天收工早。带你去吃生煎，南京路上那家。我做探店从来不拍它：拍了就要排队了。八点，店门口。', "I'm done early today. I'm taking you for shengjian, the place on Nanjing Road. I never film it for my food posts: if I did there'd be a queue. Eight, outside the shop."), yes: B('好，八点。', 'OK. Eight.'), no: B('今晚不行。', 'Not tonight.') },
     'k-jazz': { hm: [21, 30], needs: 'k-shengjian', days: [2, 13], title: B('发布会散场以后', 'After the launch'), place: B('和平饭店 · 爵士吧', 'Peace Hotel · the Jazz Bar'), text: B('今晚爵士吧有个香水的发布，我是嘉宾。结束以后那张桌子归我。来陪我坐到散场，不拍你。九点半。', "There's a perfume launch at the Jazz Bar tonight and I'm a guest. Afterwards the table is mine. Come and sit with me until closing. I won't film you. Half nine."), yes: B('我下来。', "I'll come down."), no: B('今晚不行。', 'Not tonight.') },
   },
   beats: [

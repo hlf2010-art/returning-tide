@@ -99,7 +99,7 @@ export const AFTER_MOVE = {
   ],
   police: [
     ['op', '110，请讲。', '110. Go ahead.'],
-    ['me', '南鲸送路外滩口，和平饭店门口。有个喝醉的男的拉着一个女生不让走。', "Nanjing Road East at the Bund, outside the Peace Hotel. A drunk man's got hold of a young woman and won't let her leave."],
+    ['me', '南京东路外滩口，和平饭店门口。有个喝醉的男的拉着一个女生不让走。', "Nanjing Road East at the Bund, outside the Peace Hotel. A drunk man's got hold of a young woman and won't let her leave."],
     ['op', '位置收到，民警马上到。请注意自身安全，不要和对方发生冲突。', "Location received. Officers are on their way. Keep yourself safe and don't get into it with him."],
     ['drunk', '报警？……神经病，多管闲事。', 'The police? …Lunatic. Mind your own business.'],
   ],

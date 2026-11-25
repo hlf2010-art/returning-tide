@@ -50,7 +50,7 @@ export function createBenchPanel({ onStart, getLang = () => 'en' }) {
   const again = css(document.createElement('button'), 'display:none;font:inherit;margin:8px 0 0 8px;padding:6px 14px;border-radius:6px;border:1px solid #556;background:transparent;color:#dfe8ee;cursor:pointer');
   el.append(h, p, btn, out, copy, again);
   const texts = () => (zh()
-    ? { h: '回潮 · 四个固定镜头的基准测试', p: '四个固定镜头（南鲸送路近河南中路 18:00、海关大楼前的观景平台 17:45、汉口路路口 18:15、早上八点的外滩），每个先稳定几秒，再测 12 秒。大约需要一分半钟。测完后结果会显示在这里，请复制发回。测试期间不会存档。', go: '开始测试', copy: '复制结果', copied: '已复制', again: '再测一次' }
+    ? { h: '回潮 · 四个固定镜头的基准测试', p: '四个固定镜头（南京东路近河南中路 18:00、海关大楼前的观景平台 17:45、汉口路路口 18:15、早上八点的外滩），每个先稳定几秒，再测 12 秒。大约需要一分半钟。测完后结果会显示在这里，请复制发回。测试期间不会存档。', go: '开始测试', copy: '复制结果', copied: '已复制', again: '再测一次' }
     : { h: 'Returning Tide · hero-shot benchmark', p: 'Four fixed shots (Nanjing Road East near Henan Road at 18:00, the promenade at the Customs House at 17:45, the Hankou Road crossing at 18:15, the Bund at 8 am). Each settles for a few seconds, then is measured for 12. About a minute and a half in all. The result appears here as text: copy it and send it back. Nothing is saved to your game while it runs.', go: 'Start the benchmark', copy: 'Copy the result', copied: 'Copied', again: 'Run it again' });
   const label = () => { const T = texts(); h.textContent = T.h; p.textContent = T.p; btn.textContent = T.go; copy.textContent = T.copy; again.textContent = T.again; };
   label();

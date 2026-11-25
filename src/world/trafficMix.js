@@ -12,8 +12,8 @@ import { L, crossing } from './layout.js';
 export const BUS_STOPS = [
   { id: 'hankou-s', name: '中山东一路汉口路(外滩)', en: 'Zhongshan E1 Rd / Hankou Rd (The Bund)', routes: ['33', '55', '65'], dir: 1, z: 46, kerbX: L.westCurbX + 1.6, side: -1 },
   { id: 'hankou-n', name: '中山东一路汉口路(外滩)', en: 'Zhongshan E1 Rd / Hankou Rd (The Bund)', routes: ['33', '55', '65'], dir: -1, z: -40, kerbX: L.eastCurbX - 1.6, side: 1 },
-  { id: 'nanjing-s', name: '中山东一路南鲸送路(外滩)', en: 'Zhongshan E1 Rd / E Nanjing Rd (The Bund)', routes: ['33', '55', '65'], night: ['305', '307', '317'], dir: 1, z: -180, kerbX: L.westCurbX + 1.6, side: -1 },
-  { id: 'nanjing-n', name: '中山东一路南鲸送路(外滩)', en: 'Zhongshan E1 Rd / E Nanjing Rd (The Bund)', routes: ['33', '55', '65'], night: ['305', '307', '317'], dir: -1, z: -232, kerbX: L.eastCurbX - 1.6, side: 1 },
+  { id: 'nanjing-s', name: '中山东一路南京东路(外滩)', en: 'Zhongshan E1 Rd / E Nanjing Rd (The Bund)', routes: ['33', '55', '65'], night: ['305', '307', '317'], dir: 1, z: -180, kerbX: L.westCurbX + 1.6, side: -1 },
+  { id: 'nanjing-n', name: '中山东一路南京东路(外滩)', en: 'Zhongshan E1 Rd / E Nanjing Rd (The Bund)', routes: ['33', '55', '65'], night: ['305', '307', '317'], dir: -1, z: -232, kerbX: L.eastCurbX - 1.6, side: 1 },
 ];
 // a stop's s on its lane (front bumper at the head of the stop)
 export const stopS = (st) => st.z * st.dir + 6;

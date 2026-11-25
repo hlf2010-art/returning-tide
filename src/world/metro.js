@@ -32,9 +32,9 @@ export const METRO_LINES = {
   arriveW: ['metropa', '开往徐泾东方向的列车即将进站，请站在黄色安全线以内候车，先下后上。', 'The train to East Xujing is arriving. Please stand behind the yellow line, and let passengers off first.'],
   closing: ['metropa', '车门即将关闭，请勿靠近车门。', 'The doors are closing. Please stand clear of the doors.'],
   departE: ['metropa', '欢迎乘坐轨道交通2号线，本次列车开往广兰路方向。下一站，陆家嘴，开左边门。', 'Welcome aboard Line 2. This train is bound for Guanglan Road. The next station is Lujiazui. Doors will open on the left.'],
-  departW: ['metropa', '欢迎乘坐轨道交通2号线，本次列车开往徐泾东方向。下一站，南鲸送路，可换乘10号线，开左边门。', 'Welcome aboard Line 2. This train is bound for East Xujing. The next station is East Nanjing Road, interchange with Line 10. Doors will open on the left.'],
+  departW: ['metropa', '欢迎乘坐轨道交通2号线，本次列车开往徐泾东方向。下一站，南京东路，可换乘10号线，开左边门。', 'Welcome aboard Line 2. This train is bound for East Xujing. The next station is East Nanjing Road, interchange with Line 10. Doors will open on the left.'],
   atLjz: ['metropa', '陆家嘴站到了。下车的乘客请带好随身物品，从左边门下车。', 'We are arriving at Lujiazui. Please take your belongings and leave by the doors on the left.'],
-  atEnr: ['metropa', '南鲸送路站到了，可换乘10号线。下车的乘客请带好随身物品，从左边门下车。', 'We are arriving at East Nanjing Road, interchange with Line 10. Please take your belongings and leave by the doors on the left.'],
+  atEnr: ['metropa', '南京东路站到了，可换乘10号线。下车的乘客请带好随身物品，从左边门下车。', 'We are arriving at East Nanjing Road, interchange with Line 10. Please take your belongings and leave by the doors on the left.'],
   nextE: ['metropa', '下一站，东昌路。', 'The next station is Dongchang Road.'],
   nextW: ['metropa', '下一站，人民广场，可换乘1号线、8号线。', "The next station is People's Square, interchange with Lines 1 and 8."],
   escalator: ['metropa', '乘坐扶梯时，请紧握扶手，照看好身边的老人和小孩。', 'On the escalator, please hold the handrail, and look after children and the elderly.'],
@@ -44,7 +44,7 @@ export const METRO_LINES = {
   bagOk: ['metrostaff', '好了，拿好您的包。', "That's fine. Here's your bag."],
   wrongGate: ['metrostaff', '这边是出站的，进站走右边。', "That's the way out. The way in is on the right."],
 };
-const NAMES = { enr: { zh: '南鲸送路', en: 'East Nanjing Rd' }, ljz: { zh: '陆家嘴', en: 'Lujiazui' } };
+const NAMES = { enr: { zh: '南京东路', en: 'East Nanjing Rd' }, ljz: { zh: '陆家嘴', en: 'Lujiazui' } };
 const BAG_KINDS = new Set(['gift', 'home', 'part', 'tool']);
 export const carryingBag = (L) => !!L && withMe(L).some((i) => BAG_KINDS.has(i.kind) || (i.kind === 'gadget' && !i.use));
 

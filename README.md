@@ -1048,7 +1048,7 @@ façades, the promenade lamps, the night sky), with soft contact shadows. One dr
 Zhongshan Road at medium (13 low, 37 ultra): taxis, private cars in the colours Shanghai actually
 drives, the four new-energy lookalikes, and city buses on routes 33, 55 and 65. Cars keep moving and
 stop only for the signal and for people. Buses indicate and pull in at the real stops on this stretch,
-中山东一路汉口路(外滩) and 中山东一路南鲸送路(外滩), in both directions (exact kerb positions placed by eye),
+中山东一路汉口路(外滩) and 中山东一路南京东路(外滩), in both directions (exact kerb positions placed by eye),
 open their doors with a kerbside announcement (voiced: 车辆进站，请注意安全…), let commuters off and on,
 close up, wait for a gap and pull out. The stops have shelters, lit advert panels and route boards (the Nanjing Road stop lists the
 night lines 305, 307, 317). The bus is a generic 12 m electric single-decker, not any operator's livery.
@@ -1090,8 +1090,8 @@ SSR and AO are off on Mac M4; auto resolution steps down if frames run long. If 
 
 A data-driven quest engine (tested in `tests/quests.test.mjs`): each quest is a list of steps with a
 `done` test on the life state, optional steps, a time to wait for, a place on the map and a way to
-fail. The main arc runs in three acts over six days: the first night back, Kai's robot arm (the
-makerspace), Dad's offer, and dinner with Dad at the Peace Hotel Jazz Bar on day 6 (his own avatar,
+fail. The main arc of a six-day game (one begun before the year) runs in three acts: the first night back,
+Kai's robot arm (the makerspace; in the year the arm belongs to Zhou's start-up on IFC 32F), Dad's offer, and dinner with Dad at the Peace Hotel Jazz Bar on day 6 (his own avatar,
 a sat-down conversation in recorded voices, 1-4 to answer). What you chose, what you built and how he
 feels about you lead to one of six endings, shown on a card after the late-night lighting at ten.
 **J** opens the journal: quests with their steps, track one (its next step is on screen and on the
@@ -1288,7 +1288,7 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
 
 - Walk from Hankou Road out onto Zhongshan East 1st Road, up the stair, along the promenade.
 - Barriers at both ends of the waterfront and a hoarding at the west end of Hankou Road mark the edges.
-- Missing-person notice taped to a lamp post by the river hinting at Mission One.
+- Missing-person notice taped to a lamp post by the river hinting at Mission One. The line scrawled across it and the ferry token on its corner lead to the 23:00 ferry and Old Fang (`src/world/lastFerry.js`, docs/year.md).
 - Two waterfront NPCs (`老林` / Old Lin and `苏女士` / Ms. Su) standing near the river railing beneath a promenade lamp, already conversing in Mandarin across three everyday-Shanghai exchanges with idle/listening/speaking gestures, non-repeating cadence, and a brief greeting interaction (`E`).
 - Audio & speech note: recorded Mandarin/Shanghainese voice clips are not yet shipped, so `src/engine/dialogueAudio.js` implements WebAudio `PannerNode` positional attenuation ready for recorded clips and falls back to browser Mandarin speech synthesis (`window.speechSynthesis`, `zh-CN`), clearly labeled in the subtitle bar. Browser `speechSynthesis` playback requires an OS/browser `zh-CN` TTS voice and uses utterance-start scalar distance volume rather than true binaural panning.
 

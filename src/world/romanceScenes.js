@@ -40,7 +40,7 @@ export const SPOTS = {
   peaceHall: { x: -48.6, z: -228.2, face: [-48, -240], name: B('和平饭店 · 八角厅', 'Peace Hotel · the octagon hall') },
   aiaLobby: { x: -38.6, z: -150.2, face: [-37, -146], name: B('友邦大楼 · 大堂', 'AIA Building · the lobby') },
   manner: { x: -74.1, z: -5.2, face: [-74, 0], name: B('汉口路 · Linger 窗口', 'Hankou Road · the Linger window') },
-  shengjian: { x: -142.4, z: -191.8, face: [-145, -197], name: B('南鲸送路 · 生煎店门口', 'Nanjing Road East · outside the shengjian shop') },
+  shengjian: { x: -142.4, z: -191.8, face: [-145, -197], name: B('南京东路 · 生煎店门口', 'Nanjing Road East · outside the shengjian shop') },
   jazzFloor: { x: -39.3, z: -218.0, face: [-38, -221], name: B('和平饭店 · 爵士吧', 'Peace Hotel · the Jazz Bar') },
   jazzTable: { x: -40.58, z: -220.0, yaw: -Math.PI / 2, seat: true, name: B('和平饭店 · 爵士吧', 'Peace Hotel · the Jazz Bar') },   // the chair across the table by the stage
   office: null,       // the firm's floor in Lujiazui (being built elsewhere)

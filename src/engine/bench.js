@@ -42,7 +42,7 @@ export function benchAt(u) {
 // can be put side by side with it. pos: the camera [x, y, z] (a person's eye height above the ground
 // there, as handheld footage is shot); look: the point it looks at; hour: [h, m].
 export const HERO_SHOTS = [
-  { id: 'nanjing', name: 'Nanjing Road East near Henan Road', zh: '南鲸送路·近河南中路', hour: [18, 0], pos: [-478, 1.83, -198.5], look: [-380, 6.5, -201.5] },
+  { id: 'nanjing', name: 'Nanjing Road East near Henan Road', zh: '南京东路·近河南中路', hour: [18, 0], pos: [-478, 1.83, -198.5], look: [-380, 6.5, -201.5] },
   { id: 'customs', name: 'The promenade at the Customs House', zh: '海关大楼前的观景平台', hour: [17, 45], pos: [21, 4.68, 2], look: [-36, 13, 34] },
   { id: 'hankou', name: 'The Hankou Road crossing', zh: '汉口路路口', hour: [18, 15], pos: [0.4, 1.83, 3.5], look: [-40, 3, -0.5] },
   { id: 'morning', name: 'The Bund at 8 am', zh: '早上八点的外滩', hour: [8, 0], pos: [21, 4.68, -38], look: [-24, 12, -160] },

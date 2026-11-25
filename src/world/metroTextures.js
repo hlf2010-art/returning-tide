@@ -12,7 +12,7 @@ export const L2 = '#82BF25', SIGN = '#2c3034', EXIT_Y = '#ffd400';
 export const LINE2 = [
   ['徐泾东', 'East Xujing'], ['虹桥火车站', 'Hongqiao Railway Stn'], ['虹桥2号航站楼', 'Hongqiao Airport T2'], ['淞虹路', 'Songhong Rd'], ['北新泾', 'Beixinjing'],
   ['威宁路', 'Weining Rd'], ['娄山关路', 'Loushanguan Rd'], ['中山公园', "Zhongshan Park"], ['江苏路', 'Jiangsu Rd'], ['静安寺', "Jing'an Temple"],
-  ['南京西路', 'West Nanjing Rd'], ['人民广场', "People's Square"], ['南鲸送路', 'East Nanjing Rd'], ['陆家嘴', 'Lujiazui'], ['东昌路', 'Dongchang Rd'],
+  ['南京西路', 'West Nanjing Rd'], ['人民广场', "People's Square"], ['南京东路', 'East Nanjing Rd'], ['陆家嘴', 'Lujiazui'], ['东昌路', 'Dongchang Rd'],
   ['世纪大道', 'Century Avenue'], ['上海科技馆', 'Science & Tech Museum'], ['世纪公园', 'Century Park'], ['龙阳路', 'Longyang Rd'], ['张江高科', 'Zhangjiang Hi-Tech Park'],
   ['金科路', 'Jinke Rd'], ['广兰路', 'Guanglan Rd'],
 ];

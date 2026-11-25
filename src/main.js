@@ -309,7 +309,7 @@ async function boot() {
   // places (phase 4.4): a shengjian shop on Nanjing Road (world/dumpling.js) and the river cruise from a
   // pier on the promenade (world/cruise.js)
   const dumpling = createDumpling({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), onMode: shopMode });
-  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); }, ferryTo: (info) => world.dest.arrive('lujiazui', info),
+  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); }, talk: () => world.sceneTalk, ferryTo: (info) => world.dest.arrive('lujiazui', info),
     roles: people ? Object.keys(people.manifest.cast).filter((r) => !people.manifest.cast[r].named && !['lin', 'su', 'player', 'dad'].includes(r)) : [],
     clock: () => (PIN_HOUR ? 17 * 60 + 42 : life.clock.minute + life.clock.sec / 60) });   // (measurement tools: alongside, as at 5:42 pm)
   // where you can go in: a pool of light at each open door, a label over it when it's in view
@@ -370,7 +370,7 @@ async function boot() {
   // Line 2: down an exit's stairs, through the gates, a real train under the river to Lujiazui and back (world/metro.js)
   world.metro = createMetro({ scene, camera, renderer: R.renderer, hud, audio, voice, player, people, travel, getLife: () => life, save: () => saveLife(), open: () => hourState.metro, onPudongSoon: () => world.ljz.buildAsync() });
   // the story: a sat-down conversation, and dinner with Dad (world/story.js, world/dinner.js)
-  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], ...MOMENT_NAMES } });
+  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], fang: ['老方', 'Old Fang'], ...MOMENT_NAMES } });
   world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
   // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
   world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
@@ -598,7 +598,7 @@ function begin() {
 function workReminder() {
   const s = workSummary(life), st = workState(life), left = finalDay(life) - life.clock.day, zhUI = getLang() === 'zh';
   const waiting = Object.entries(st.people).filter(([, p]) => p.promised != null).map(([id]) => (zhUI ? WORK_REG[id].name.zh : WORK_REG[id].name.en));
-  const dinner = life.flags.dinnerChoice || left < 0 ? '' : zhUI ? (left === 0 ? ' · 今晚和爸爸吃饭' : ` · 离和爸爸吃饭还有 ${left} 个晚上`) : (left === 0 ? ' · dinner with Dad tonight' : ` · ${left} ${left === 1 ? 'evening' : 'evenings'} until the dinner with Dad`);
+  const dinner = life.flags.dinnerChoice || left < 0 ? '' : isYear(life) && left > 1 ? (zhUI ? ` · 和爸爸吃饭：${yearDate(life, 'zh', finalDay(life))}` : ` · dinner with Dad: ${yearDate(life, 'en', finalDay(life))}`) : zhUI ? (left === 0 ? ' · 今晚和爸爸吃饭' : ` · 离和爸爸吃饭还有 ${left} 个晚上`) : (left === 0 ? ' · dinner with Dad tonight' : ` · ${left} ${left === 1 ? 'evening' : 'evenings'} until the dinner with Dad`);
   return zhUI ? `夜行云台 · 第 ${s.rev} 版${dinner}${waiting.length ? ` · ${waiting.join('、')}等着试改过的` : ''} · N 翻开本子` : `Night gimbal · version ${s.rev}${dinner}${waiting.length ? ` · ${waiting.join(' and ')} ${waiting.length === 1 ? 'is' : 'are'} waiting to try the changed one` : ''} · N for your notebook`;
 }
 function pause() {
@@ -1332,7 +1332,7 @@ function mapBlips() {
     { x: (PEACE_R.x0 + PEACE_R.x1) / 2, z: -211, glyph: '和', bg: '#2b2416', fg: '#e7b96a', name: { zh: '和平饭店（你住这里）', en: 'Peace Hotel (where you\'re staying)' } },
     { x: PICKUP.x, z: PICKUP.z, glyph: 'D', bg: '#ff7a00', fg: '#fff', name: { zh: '快马上车点', en: 'Kuaima pick-up' } },
     { x: L.facadeX + 1.5, z: (AIA_R.door[0] + AIA_R.door[1]) / 2, glyph: '友', bg: '#24303f', fg: '#cfe0f5', name: { zh: '友邦大厦（大堂）', en: 'The AIA Building (lobby)' } },
-    ...METRO_EXITS.map((m) => ({ x: m.top + Math.sign(m.top - m.bottom) * 1.5, z: (m.z0 + m.z1) / 2, glyph: String(m.exit), bg: '#c8161e', fg: '#fff', name: { zh: `南鲸送路站 ${m.exit} 号口`, en: `East Nanjing Rd station, Exit ${m.exit}` } })),
+    ...METRO_EXITS.map((m) => ({ x: m.top + Math.sign(m.top - m.bottom) * 1.5, z: (m.z0 + m.z1) / 2, glyph: String(m.exit), bg: '#c8161e', fg: '#fff', name: { zh: `南京东路站 ${m.exit} 号口`, en: `East Nanjing Rd station, Exit ${m.exit}` } })),
   ];
   if (tod >= 19 * 60 || tod < 60) out.push({ x: (JAZZ.x0 + JAZZ.x1) / 2, z: JAZZ.z0, glyph: '♪', bg: '#3b1f3f', fg: '#f3c6ff', name: { zh: '爵士吧', en: 'The Jazz Bar' } });
   out.push(world.cruise.mapBlip(), world.dumpling.mapBlip());

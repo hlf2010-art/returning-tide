@@ -120,13 +120,13 @@ const enrWays = (() => {
     const [a0, p0] = ENR_F.toL(m.x0, m.z0), [a1, p1] = ENR_F.toL(m.x1, m.z1);
     regions.push(R(a0, a1, p0, p1, 'well', ...BAND.well, { exit: m.exit }));
     const land = ENR_F.toL(m.bottom + Math.sign(m.bottom - m.top) * 0.9, (m.z0 + m.z1) / 2);
-    exits.push({ exit: m.exit, land, up: m.top > m.bottom ? 1 : -1, name: m.exit === 7 ? { zh: '天津路 · 外滩', en: 'Tianjin Rd · the Bund' } : { zh: '河南中路 · 南鲸送路', en: 'Henan Rd M · Nanjing Rd E' } });
+    exits.push({ exit: m.exit, land, up: m.top > m.bottom ? 1 : -1, name: m.exit === 7 ? { zh: '天津路 · 外滩', en: 'Tianjin Rd · the Bund' } : { zh: '河南中路 · 南京东路', en: 'Henan Rd M · Nanjing Rd E' } });
   }
   // between the two landings: the concourse reaches up to them under Henan Road
   regions.push(R(-27.4, -3.6, -13.6, -9.4, 'C', ...BAND.C));
   return { regions, obstacles: [], exits, passages: [], shutters: [[-27.25, -26.95, -13.6, -10], [-4.05, -3.75, -13.6, -10]] };
 })();
-export const ENR = station('enr', { zh: '南鲸送路', en: 'East Nanjing Road', py: 'Nanjing Donglu' }, ENR_F, enrWays);
+export const ENR = station('enr', { zh: '南京东路', en: 'East Nanjing Road', py: 'Nanjing Donglu' }, ENR_F, enrWays);
 
 // ---- Lujiazui: under Century Avenue, Exits 6 and 4 either side ----
 const W6 = METRO_LJZ.find((w) => w.exit === 6), W4 = METRO_LJZ.find((w) => w.exit === 4), W1 = METRO_LJZ.find((w) => w.exit === 1);

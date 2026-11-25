@@ -87,7 +87,7 @@ function quad(batch, F, pts, tileU = 1, tileV = 1) {
 }
 
 // the next stop each way from each station (Line 2: + toward Guanglan Road, - toward East Xujing)
-const NEXT_STOP = { enr: { 1: ['陆家嘴', 'Lujiazui'], [-1]: ['人民广场', "People's Square"] }, ljz: { 1: ['东昌路', 'Dongchang Road'], [-1]: ['南鲸送路', 'East Nanjing Road'] } };
+const NEXT_STOP = { enr: { 1: ['陆家嘴', 'Lujiazui'], [-1]: ['人民广场', "People's Square"] }, ljz: { 1: ['东昌路', 'Dongchang Road'], [-1]: ['南京东路', 'East Nanjing Road'] } };
 export function buildStation(root, S, m) {
   const F = S.F, g = new THREE.Group(); g.name = `metro-${S.id}`; root.add(g);
   const rotY = -F.rot;

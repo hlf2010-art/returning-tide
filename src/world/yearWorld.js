@@ -295,8 +295,8 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
   // ================= leaving =================
   function goDown() {
     const L = L0();
-    travel(async () => { skipTo(L, stamp(L) + 22); const r = pay(L, { method: 'alipay', amount: 3, to: '上海地铁 Shanghai Metro', memo: '2号线 陆家嘴→南鲸送路', kind: 'transport' }); if (r.ok) r.entry.memoEn = 'Line 2, Lujiazui to East Nanjing Road';
-      hide(); player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0); save && save(); }, { line: T('2 号线 · 陆家嘴 → 南鲸送路 · ¥3', 'Line 2 · Lujiazui → East Nanjing Road · ¥3'), hold: 1300, to: 'play' });
+    travel(async () => { skipTo(L, stamp(L) + 22); const r = pay(L, { method: 'alipay', amount: 3, to: '上海地铁 Shanghai Metro', memo: '2号线 陆家嘴→南京东路', kind: 'transport' }); if (r.ok) r.entry.memoEn = 'Line 2, Lujiazui to East Nanjing Road';
+      hide(); player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0); save && save(); }, { line: T('2 号线 · 陆家嘴 → 南京东路 · ¥3', 'Line 2 · Lujiazui → East Nanjing Road · ¥3'), hold: 1300, to: 'play' });
   }
   function leaveFlat() {
     const L = L0(), d = dest('home') || { km: 2, mins: 9 }, cost = fare(d, L.clock.minute);
