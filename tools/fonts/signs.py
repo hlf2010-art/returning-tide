@@ -1,5 +1,5 @@
 # The shop-sign faces (world/shopSigns.js): four SIL OFL fonts from Google Fonts, subset to the characters
-# the signs use (every CJK character in src/world/njShops.js and nanjingRoad.js, plus Latin), written as public/fonts/sign-*.woff2.
+# the signs use (every CJK character in src/world/njShops.js, nanjingRoad.js, streetLife.js and tram.js, plus Latin), written as public/fonts/sign-*.woff2.
 #   python3 tools/fonts/signs.py <download dir>        (needs: pip install fonttools brotli)
 import sys, os, re, urllib.request
 from fontTools import subset
@@ -12,7 +12,7 @@ FONTS = {   # file -> (Google Fonts family for the CSS API, output)
 }
 root = os.path.join(os.path.dirname(__file__), '..', '..')
 src = sys.argv[1]; os.makedirs(src, exist_ok=True)
-text = ''.join(open(os.path.join(root, 'src', 'world', f), encoding='utf-8').read() for f in ('njShops.js', 'nanjingRoad.js'))
+text = ''.join(open(os.path.join(root, 'src', 'world', f), encoding='utf-8').read() for f in ('njShops.js', 'nanjingRoad.js', 'streetLife.js', 'tram.js'))
 chars = sorted(set(re.findall(r'[　-〿㐀-鿿＀-￯]', text)))
 latin = ''.join(chr(c) for c in range(0x20, 0x7f)) + '·—–’&'
 print(len(chars), 'CJK characters')

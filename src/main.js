@@ -1555,7 +1555,7 @@ function frame(now) {
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
   world.shoppers.update(mode === 'pause' ? 0 : dt, player.body);                     // shoppers coming and going by DiDi
-  world.streetLife.update(mode === 'pause' ? 0 : dt, camera.position);                // the patrol, the delivery riders
+  world.streetLife.update(mode === 'pause' ? 0 : dt, camera.position, life.clock.minute);                // the patrol, the delivery riders
   if (life && (seasonT = (seasonT || 0) - dt) <= 0) { seasonT = 5; world.nanjing.season(dateOf(life)); }
   world.trams.update(mode === 'pause' ? 0 : dt, player.body, world.crowd ? world.crowd.agents : null, camera.position, life ? life.clock.minute : 720);   // Nanjing Road's sightseeing trains
   if (mode !== 'pause' && Math.abs(player.body.z + 201) < 60 && player.body.x < -20) {         // Nanjing Road's automatic doors: who's at them

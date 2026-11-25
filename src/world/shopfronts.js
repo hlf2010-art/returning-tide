@@ -180,7 +180,7 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
       const led = F.at(u + DOOR.half - 0.3, y0 + DOOR.h + 0.2, 0.31); lamp.box(led.x, led.y, led.z, 0.03, 0.03, 0.03);
       doors.push({ u, f, F, y0, open: 0, hold: 0, x: F.at(u, 0, 0).x, z: F.at(u, 0, 0).z });
     }
-    return { id, yaw };
+    return { id, yaw: ys[0] };
   }
 
   // ---- the meshes ----
