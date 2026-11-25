@@ -20,13 +20,17 @@ import { carToWorld, worldToCar, CAR_IN, CAR_SEATS, FLOOR } from './metroTrain.j
 
 const ROLES = ['p1', 'p2', 'p3', 'p4', 'p5', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'];
 const POOL = 52;
-// how busy the metro is at a minute of the day (0 shut .. 1 the rush): Shanghai's two peaks, a quiet
-// middle of the day, an evening that thins out; nobody new comes in after the last train (about 23:00)
-export function busyAt(min) {
+// how busy the metro is at a minute of the day (0 shut .. 1 packed). Weekdays: Shanghai's two commuter
+// peaks (about 8:15 and 18:05) packed, a quiet middle of the day, an evening that thins out. Weekends:
+// no commuter peaks; shoppers and visitors from late morning, busiest in the afternoon and early
+// evening (this is the Nanjing Road station) but never as packed as a weekday rush. Nobody new comes in
+// after the last train (about 23:00).
+export function busyAt(min, weekend = false) {
   const h = min / 60;
   if (h < 5.5 || h >= 23) return 0;
-  const peak = (c, w) => Math.exp(-(((h - c) / w) ** 2));
-  return Math.min(1, 0.22 + 0.78 * Math.max(peak(8.25, 0.9), peak(18.1, 1.0)) + (h > 11.5 && h < 13.5 ? 0.12 : 0) - (h > 21.5 ? (h - 21.5) * 0.1 : 0));
+  const peak = (c, w) => Math.exp(-(((h - c) / w) ** 2)), late = h > 21.5 ? (h - 21.5) * 0.1 : 0;
+  if (weekend) return Math.max(0.08, Math.min(0.62, 0.12 + 0.48 * peak(16, 3.6) - late));
+  return Math.min(1, 0.22 + 0.78 * Math.max(peak(8.25, 0.9), peak(18.1, 1.0)) + (h > 11.5 && h < 13.5 ? 0.12 : 0) - late);
 }
 const rnd = Math.random, pick = (a) => a[Math.floor(rnd() * a.length)];
 // the heading (world) of a local direction (along, across) in a station's frame
@@ -151,7 +155,7 @@ export function createMetroFolk({ root, people, metro }) {
 
   // a station already going when you arrive: people waiting at the doors, others on their way through
   function seed(st) {
-    const b = busyAt(metro.minute); if (b <= 0) return;      // (shut: nobody about)
+    const b = busyAt(metro.minute, metro.weekend); if (b <= 0) return;      // (shut: nobody about)
     for (let k = 0; k < Math.round(2 + 16 * b); k++) { const P = planIn(st), last = P.pts[P.pts.length - 1], ag = spawn(st, P, [last[0], last[1]]); if (ag) { ag.i = P.pts.length; ag.state = 'wait'; ag.y = Y.P; } }
     for (let k = 0; k < Math.round(1 + 6 * b); k++) { const P = planIn(st), j = 4 + Math.floor(rnd() * 3), q = P.pts[j], ag = spawn(st, P, [q[0], q[1]]); if (ag) { ag.i = j + 1; ag.y = Y.C; const [x, z] = st.F.toW(q[0], q[1]); ag.y = groundHeight(x, z, Y.C + 0.3); } }
   }
@@ -174,7 +178,7 @@ export function createMetroFolk({ root, people, metro }) {
     const pp = playerPos();
     const st = metro.stationNear(pp, 40) && pp.y < -1.6 ? metro.stationNear(pp, 40) : null;
     if (st !== S.st) { S.st = st; for (const ag of [...agents]) if (!ag.ride) free(ag); if (st) { staffFor(st); seed(st); } else for (const s of staff.splice(0)) { s.body.free = true; s.body.person.root.visible = false; } }
-    const busy = busyAt(metro.minute);
+    const busy = busyAt(metro.minute, metro.weekend);
     S.density = Math.min(1, agents.length / 18);
     // new people coming in
     if (st && playing) {

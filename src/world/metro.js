@@ -16,6 +16,7 @@ import { movers } from './layout.js';
 import { STATIONS, HOOK, Y, PLAT, GATE, gateP, SEC, ESC, CONC, CAR, metroZone, stationAt } from './metroLayout.js';
 import { trainsAt, trainClock, carAt, trackAt, lineAt, LENGTH, RUN, DOORS, STOP_S } from '../engine/metroLine.js';
 import { createMetroAudio } from '../engine/metroAudio.js';
+import { isWorkday } from '../engine/year.js';
 import { metroMaterials, buildStation, buildTunnels } from './metroBuild.js';
 import { createTrainSet, carToWorld, worldToCar, CAR_IN, CAR_SEATS, FLOOR } from './metroTrain.js';
 import { IDX, METRO_TEXT, alipayQr, makeCanvas } from './metroTextures.js';
@@ -454,6 +455,7 @@ export function createMetro({ scene, camera, renderer = null, hud, audio, voice,
     get near() { return S.near; },
     get clock() { return S.clock; },
     get minute() { const l = getLife(); return l.clock.minute + l.clock.sec / 60; },
+    get weekend() { const l = getLife(); try { return !isWorkday(l); } catch { return false; } },   // (the riders follow the day of the week: world/metroFolk.js busyAt)
     // where you are, for the map's label (ui/i18n.js areas)
     get areaKey() { if (S.ride) return 'metroTrain'; const z = S.zone; if (!z) return null; return `${z.st.id}${z.level === 'platform' || z.level === 'escalator' ? 'Plat' : 'Conc'}`; },
     // for whoever you're talking to (main.js sceneText)
