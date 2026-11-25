@@ -31,15 +31,15 @@ const Z = (zh, en) => (getLang() === 'zh' ? zh : en);
 const X = (text) => (getLang() === 'en' ? enText(text) : text);
 const nm = (id) => { const p = PEOPLE[id]; if (id === 'me') return Z(ME.name, ME.en); return p ? Z(p.name, p.en === 'Dad (Ji Jianguo)' ? 'Dad' : p.en) : id; };
 // English: given names (Mingxuan, Yu'an), as friends would; Momo stays Momo
-const shortEn = (id, p) => (id === 'dad' ? 'Dad' : id === 'manner' ? 'Manner' : /^[A-Za-z]/.test(p.short) ? p.short : (p.en || '').split(' ').slice(1).join(' ') || p.en);
+const shortEn = (id, p) => (id === 'dad' ? 'Dad' : id === 'manner' ? 'Linger' : /^[A-Za-z]/.test(p.short) ? p.short : (p.en || '').split(' ').slice(1).join(' ') || p.en);
 const short = (id) => { const p = PEOPLE[id]; return p ? Z(p.short, shortEn(id, p)) : id; };
 const GROUP_NAME = () => Z(GROUP.title, 'The Jinling Five +1');
-const METHOD = (k) => ({ wechat: Z('微信支付', 'WeChat Pay'), alipay: Z('支付宝', 'Alipay'), bank: Z('银行转账', 'Bank transfer'), card: Z('信用卡', 'Credit card') }[k]);
+const METHOD = (k) => ({ wechat: Z('信语支付', 'Xinyu Pay'), alipay: Z('易付', 'YiPay'), bank: Z('银行转账', 'Bank transfer'), card: Z('信用卡', 'Credit card') }[k]);
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 function threadTitle(t) {
   if (t.kind === 'group') return GROUP_NAME();
-  if (t.id === 'manner') return Z('Manner Coffee 汉口路店', 'Manner Coffee, Hankou Rd');
+  if (t.id === 'manner') return Z('Linger Coffee 汉口路店', 'Linger Coffee, Hankou Rd');
   if (PEOPLE[t.id]) return nm(t.id);
   return t.title;
 }
@@ -183,15 +183,15 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const unread = unreadTotal(l) - SHOP_APPS.reduce((n, k) => n + ((l.threads[k] && l.threads[k].unread) || 0), 0), shopUnread = (k) => (l.threads[k] && l.threads[k].unread) || 0;
     const app = (id, label, bg, glyph, badge = 0) => `<div class="app" data-act="app" data-id="${id}"><div class="ic" style="background:${bg}">${glyph}</div>${badge ? `<span class="badge">${badge}</span>` : ''}<span>${label}</span></div>`;
     return `<div class="view home"><div class="grid">
-      ${app('chats', Z('微信', 'WeChat'), BRAND_COLOR.wechat, appGlyph('wechat', 34), unread)}
+      ${app('chats', Z('信语', 'Xinyu'), BRAND_COLOR.wechat, appGlyph('wechat', 34), unread)}
       ${app('wallet', Z('钱包', 'Wallet'), 'linear-gradient(160deg,#2b2b2e,#000)', '¥')}
       ${app('calendar', Z('日历', 'Calendar'), '#fff;color:#e33', `<span style="color:#e33;font-size:24px">${isYear(l) ? dateOf(l).d : l.clock.day + 13}</span>`)}
       ${app('recents', Z('电话', 'Phone'), 'linear-gradient(160deg,#5ee47a,#22b24a)', '✆')}
-      ${app('jd', Z('京东', 'JD'), BRAND_COLOR.jd, appGlyph('jd'), shopUnread('jd'))}
-      ${app('taobao', Z('淘宝', 'Taobao'), BRAND_COLOR.taobao, appGlyph('taobao', 34), shopUnread('taobao'))}
-      ${app('didi', Z('滴滴出行', 'DiDi'), BRAND_COLOR.didi, appGlyph('didi'), shopUnread('didi'))}
-      ${app('manner', 'Manner', BRAND_COLOR.manner, appGlyph('manner'))}
-      ${app('alipayApp', Z('支付宝', 'Alipay'), BRAND_COLOR.alipay, appGlyph('alipay', 34))}
+      ${app('jd', Z('鲸送', 'Jingsong'), BRAND_COLOR.jd, appGlyph('jd'), shopUnread('jd'))}
+      ${app('taobao', Z('万集', 'Wanji'), BRAND_COLOR.taobao, appGlyph('taobao', 34), shopUnread('taobao'))}
+      ${app('didi', Z('快马出行', 'Kuaima'), BRAND_COLOR.didi, appGlyph('didi'), shopUnread('didi'))}
+      ${app('manner', 'Linger', BRAND_COLOR.manner, appGlyph('manner'))}
+      ${app('alipayApp', Z('易付', 'YiPay'), BRAND_COLOR.alipay, appGlyph('alipay', 34))}
       ${app('photos', Z('相册', 'Photos'), 'linear-gradient(160deg,#ffb347,#ff5e62 45%,#6a5acd)', '<span style="font-size:24px">✿</span>')}
       ${app('sketch', Z('速写本', 'Sketchbook'), 'linear-gradient(160deg,#f6f1e4,#e2d6b8)', '<span style="font-size:22px;color:#1d3a8a">✎</span>')}
       </div>
@@ -204,7 +204,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       const av = t.kind === 'group' ? `<div class="av" style="background:#5d6b82;font-size:12px">${Z('五虎', 'J5')}</div>` : avatar(t.members.find((m) => m !== 'me'));
       return `<div class="row" data-act="openThread" data-id="${esc(t.id)}">${av}${t.unread ? `<span class="badge">${t.unread}</span>` : ''}<div class="mid"><div class="n">${esc(threadTitle(t))}</div><div class="pv">${esc(who + (last ? previewOf(last) : ''))}</div></div><div class="tm">${last ? ago(l, last.at) : ''}</div></div>`;
     }).join('');
-    return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>${Z('微信', 'WeChat')}</div><div class="scroll">${rows}</div></div>`;
+    return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>${Z('信语', 'Xinyu')}</div><div class="scroll">${rows}</div></div>`;
   }
   function chatView(l, id) {
     const t = l.threads[id]; if (!t) return '';
@@ -286,8 +286,8 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     const memo = (e) => (getLang() === 'en' && e.memoEn ? e.memoEn : e.memo);
     const led = l.wallet.ledger.slice(-12).reverse().map((e) => `<div class="led"><span>${esc(e.to)}<br><small style="color:#999">${METHOD(e.method)} · ${clockText(e.at)} ${esc(memo(e))}</small></span><span class="a ${e.amount < 0 ? 'neg' : 'pos'}">${e.amount < 0 ? '−' : '+'}${yuan(e.amount)}</span></div>`).join('') || `<div class="led"><span style="color:#999">${Z('还没有交易', 'No transactions yet')}</span></div>`;
     return `<div class="view wallet"><div class="bar"><span class="back" data-act="back">‹</span>${Z('钱包', 'Wallet')}</div><div class="scroll">
-      ${acct('wechat', Z('微信支付 零钱', 'WeChat Pay balance'), 'linear-gradient(135deg,#07c160,#05984b)')}${acct('alipay', Z('支付宝 余额', 'Alipay balance'), 'linear-gradient(135deg,#1677ff,#0b4fc4)')}
-      ${acct('bank', Z('招商银行 储蓄卡 尾号 0731', 'China Merchants Bank debit ••0731'), 'linear-gradient(135deg,#a33,#6d1f1f)')}${acct('card', Z('信用卡 可用额度', 'Credit card, available'), 'linear-gradient(135deg,#333,#000)')}
+      ${acct('wechat', Z('信语支付 零钱', 'Xinyu Pay balance'), 'linear-gradient(135deg,#07c160,#05984b)')}${acct('alipay', Z('易付 余额', 'YiPay balance'), 'linear-gradient(135deg,#1677ff,#0b4fc4)')}
+      ${acct('bank', Z('申江银行 储蓄卡 尾号 0731', 'Shenjiang Bank debit ••0731'), 'linear-gradient(135deg,#a33,#6d1f1f)')}${acct('card', Z('信用卡 可用额度', 'Credit card, available'), 'linear-gradient(135deg,#333,#000)')}
       <div class="ledger">${led}</div><div class="sys" style="text-align:center;padding:4px 0 20px">${Z('游戏内虚拟资金', 'In-game money only')}</div></div></div>`;
   }
   function calendarView(l) {
@@ -297,14 +297,14 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>${Z('日历', 'Calendar')}</div><div class="scroll">${items || `<div class="row"><div class="mid"><div class="pv">${Z('暂无安排', 'Nothing planned')}</div></div></div>`}${pend}</div></div>`;
   }
   function recentsView(l) {
-    const rows = (l.flags.calls || []).slice().reverse().map((c) => `<div class="row">${avatar(c.from)}<div class="mid"><div class="n" style="${c.missed ? 'color:#e33' : ''}">${esc(nm(c.from))}</div><div class="pv">${c.missed ? Z('未接来电', 'Missed call') : Z('微信语音通话', 'Voice call')}</div></div><div class="tm">${clockText(c.at)}</div></div>`).join('');
+    const rows = (l.flags.calls || []).slice().reverse().map((c) => `<div class="row">${avatar(c.from)}<div class="mid"><div class="n" style="${c.missed ? 'color:#e33' : ''}">${esc(nm(c.from))}</div><div class="pv">${c.missed ? Z('未接来电', 'Missed call') : Z('信语语音通话', 'Voice call')}</div></div><div class="tm">${clockText(c.at)}</div></div>`).join('');
     const vm = l.threads.zhou ? l.threads.zhou.messages.filter((m) => m.kind === 'voice' && m.meta && m.meta.voicemail).map((m) => `<div class="row" data-act="openThread" data-id="zhou" style="cursor:pointer">${avatar(m.from)}<div class="mid"><div class="n">${esc(nm(m.from))}</div><div class="pv">${Z('语音留言', 'Voicemail')} · ${voiceSecs(m)}″${m.played ? '' : ` · ${Z('未听', 'not played')}`}</div></div><div class="tm">${clockText(m.at)}</div></div>`).join('') : '';
     return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>${Z('最近通话', 'Recents')}</div><div class="scroll">${vm}${rows || (vm ? '' : `<div class="row"><div class="mid"><div class="pv">${Z('没有通话记录', 'No calls yet')}</div></div></div>`)}</div></div>`;
   }
   function mannerView(l, t) {
-    if (t.done) return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>MANNER COFFEE</div><div class="ok"><div class="big">☕</div><div>${Z('下单成功', 'Order placed')}</div><div class="num">${t.done.num}</div><div style="color:#888;font-size:13px">${esc(Z(t.done.item.name, t.done.item.en))} · ${Z(`约 ${t.done.wait} 分钟`, `about ${t.done.wait} min`)}<br>${Z('做好会通知你，到窗口旁取', 'We\'ll message you when it\'s ready to collect')}</div></div></div>`;
+    if (t.done) return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>LINGER COFFEE</div><div class="ok"><div class="big">☕</div><div>${Z('下单成功', 'Order placed')}</div><div class="num">${t.done.num}</div><div style="color:#888;font-size:13px">${esc(Z(t.done.item.name, t.done.item.en))} · ${Z(`约 ${t.done.wait} 分钟`, `about ${t.done.wait} min`)}<br>${Z('做好会通知你，到窗口旁取', 'We\'ll message you when it\'s ready to collect')}</div></div></div>`;
     const items = MANNER_MENU.map((m) => `<div class="item"><div><div class="nm">${Z(m.name, m.en)}</div><div class="ds">${Z(m.desc, m.descEn)}</div></div><div style="display:flex;gap:12px;align-items:center"><span class="pr">¥${m.price}</span><button class="add" data-act="mannerAdd" data-id="${m.id}">+</button></div></div>`).join('');
-    return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>MANNER COFFEE<span class="sub">${Z('汉口路店', 'Hankou Rd')}</span></div><div class="scroll menu">${items}<div class="sys" style="text-align:center;padding:10px">${Z('自带杯减5元', 'Bring your own cup: ¥5 off')}</div></div></div>`;
+    return `<div class="view"><div class="bar"><span class="back" data-act="back">‹</span>LINGER COFFEE<span class="sub">${Z('汉口路店', 'Hankou Rd')}</span></div><div class="scroll menu">${items}<div class="sys" style="text-align:center;padding:10px">${Z('自带杯减5元', 'Bring your own cup: ¥5 off')}</div></div></div>`;
   }
   function sheetView(l) {
     const sh = S.sheet;
@@ -316,7 +316,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
   }
   function callView(l) {
     const c = S.call, p = person(c.from);
-    if (c.state === 'ringing') return `<div class="view call">${avatar(c.from)}<div class="nm">${esc(nm(c.from))}</div><div class="kind">${Z('微信语音通话', 'Voice call')}</div>
+    if (c.state === 'ringing') return `<div class="view call">${avatar(c.from)}<div class="nm">${esc(nm(c.from))}</div><div class="kind">${Z('信语语音通话', 'Voice call')}</div>
       <div class="btns"><button class="rb red" data-act="decline">✕</button><button class="rb green" data-act="accept">✆</button></div></div>`;
     const line = c.script.lines[c.i];
     // your turn: what they just said stays on screen above your answers
@@ -339,7 +339,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     S.call = { from: script.from, script, scriptId, i: 0, secs: 0, state: 'ringing', ringFor: 0 };
     // it rings in your pocket: a banner and the ringtone; P brings the phone up to answer
     const p = person(script.from);
-    banner.innerHTML = noteCard(getLife(), { from: script.from, thread: script.from, text: Z('微信语音通话', 'WeChat voice call'), at: stamp(getLife()) }, { hint: Z('P 接听', 'P to answer') }); void p;
+    banner.innerHTML = noteCard(getLife(), { from: script.from, thread: script.from, text: Z('信语语音通话', 'Xinyu voice call'), at: stamp(getLife()) }, { hint: Z('P 接听', 'P to answer') }); void p;
     banner.classList.add('on'); clearTimeout(bannerTimer); buzz();
     if (S.open) render();
     if (audio && audio.cue) audio.cue('ring');
@@ -393,7 +393,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
     else if (act === 'playVoice') { const m = findMsg(l, id); if (m) { const had = !!m.transcribed; media.toggleVoice(m); if (!!m.transcribed !== had) render(); else refreshMedia(); } }   // (no recording: the transcript opens)
     else if (act === 'seekVideo') { const m = findMsg(l, id), r = el.getBoundingClientRect(); if (m) { media.seek(m, (e.clientX - r.left) / Math.max(1, r.width)); refreshMedia(); } }
     else if (act === 'playVideo') { const m = findMsg(l, id); if (m) { media.playVideo(m); refreshMedia(); } }
-    else if (act === 'mannerAdd') { const item = MANNER_MENU.find((m) => m.id === id); S.sheet = { to: 'Manner', amount: item.price, memo: item.name, memoEn: item.en, method: 'wechat', item }; render(); }
+    else if (act === 'mannerAdd') { const item = MANNER_MENU.find((m) => m.id === id); S.sheet = { to: 'Linger', amount: item.price, memo: item.name, memoEn: item.en, method: 'wechat', item }; render(); }
     else if (act === 'method') { const order = ['wechat', 'alipay', 'card']; S.sheet.method = order[(order.indexOf(S.sheet.method) + 1) % order.length]; S.sheet.error = ''; render(); }
     else if (act === 'confirmPay') confirmPay();
     else if (act === 'accept') { if (!S.call || S.call.state !== 'ringing') return; S.call.state = 'active'; S.call.started = performance.now(); banner.classList.remove('on'); media.callStart(); render(); advanceCall(); }
@@ -467,7 +467,7 @@ export function createPhone({ getLife, calls, audio = null, onChange = null, onE
       if (r.ok && sh.item) {
         const num = String(100 + Math.floor(Math.random() * 800)), wait = 2 + Math.floor(Math.random() * 3);
         top().done = { num, item: sh.item, wait };
-        if (onEvent) onEvent({ type: 'paid', to: 'Manner', item: sh.item, num, wait });
+        if (onEvent) onEvent({ type: 'paid', to: 'Linger', item: sh.item, num, wait });
       }
       render();
     }, 900);

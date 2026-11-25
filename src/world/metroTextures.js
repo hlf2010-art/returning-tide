@@ -18,7 +18,7 @@ export const LINE2 = [
 ];
 export const IDX = { enr: 12, ljz: 13 };
 export const TERMINUS = { 1: ['广兰路', 'Guanglan Rd'], [-1]: ['徐泾东', 'East Xujing'] };
-export const METRO_TEXT = LINE2.flat().join('') + '号线往方向出口站厅站台服务中心售票机安检请主动接受勿携带危险品小心站台间隙先下后上下一站本站到达开左边门门即将关闭请勿靠近车门禁止吸烟饮食扶梯紧握扶手照看好老人小孩乘车码支付宝刷码进站出站余额元东路陆家嘴南京换乘暂停使用卫生间无障碍电梯紧急停止按钮天津路外滩河南中路国金中心世纪大道北侧东方明珠环路通道上海地铁欢迎您 Line Exit To Station Next Doors open left Mind the gap Service Center Tickets Security Please stand on the right 0123456789';
+export const METRO_TEXT = LINE2.flat().join('') + '号线往方向出口站厅站台服务中心售票机安检请主动接受勿携带危险品小心站台间隙先下后上下一站本站到达开左边门门即将关闭请勿靠近车门禁止吸烟饮食扶梯紧握扶手照看好老人小孩乘车码易付刷码进站出站余额元东路陆家嘴南京换乘暂停使用卫生间无障碍电梯紧急停止按钮天津路外滩河南中路国金中心世纪大道北侧东方明珠环路通道上海地铁欢迎您 Line Exit To Station Next Doors open left Mind the gap Service Center Tickets Security Please stand on the right 0123456789';
 
 function badge(x, X, Y, s, n = 2) {
   x.fillStyle = L2; x.fillRect(X, Y, s, s);

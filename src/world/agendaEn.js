@@ -120,7 +120,7 @@ export const EN = {
   '昨晚说好的呢？？位置给你留到十点': 'What happened last night?? I held your seat till ten', '资料晚点发你，NDA 先签一下哈': 'I\'ll send the deck later. Sign the NDA first',
   '好吧，那我先自己去': 'OK, I\'ll go on my own then', '昨天下午人呢？学长还问起你': 'Where were you yesterday afternoon? He asked about you',
   '嗯。我把地址和时间发你。': 'Mm. I\'ll send you the address and time.', '好。': 'OK.', '我自己去看了。': 'I went to see it myself.',
-  '你是不是在汉口路那家Manner？我们工地的人天天去，燕麦拿铁不错。': 'Are you at the Manner on Hankou Road? The guys from our site go every day. The oat latte\'s good.',
+  '你是不是在汉口路那家Linger？我们工地的人天天去，燕麦拿铁不错。': 'Are you at the Linger on Hankou Road? The guys from our site go every day. The oat latte\'s good.',
   '怎么不接电话？': 'Why aren\'t you picking up?', '在忙？': 'Busy?',
   // default answers to invitations
   // the Strale: Zhixia's card, Vivian
@@ -163,7 +163,7 @@ import { DRIVER_NAME_EN } from './driversEn.js';
 const ITEM_EN = Object.fromEntries(CATALOGUE.map((c) => [c.name, c.en]));
 const SHOP_EN = {
   您的订单已打包: 'Your order is packed', 您的订单已发货: 'Your order has shipped', '快递员正在派送，预计45分钟内送达': 'Out for delivery, arriving within 45 minutes',
-  '快递员已到汉口路路口（Manner门口），请下楼取件': 'Your courier is at the Hankou Road corner, outside Manner. Please come and collect',
+  '快递员已到汉口路路口（Linger门口），请下楼取件': 'Your courier is at the Hankou Road corner, outside Linger. Please come and collect',
   已由前台代收: 'Signed for at the front desk', 已签收: 'Received', '联系不上您，快递已放和平饭店前台': 'Couldn\'t reach you, so it\'s at the Peace Hotel front desk',
 };
 // Manner's ready message is built per order

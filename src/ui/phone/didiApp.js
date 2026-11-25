@@ -20,7 +20,7 @@ export function createDidiApp({ L, Z, esc, go, render, top, getRide, onRequest, 
     if (R && R.phase !== 'arrived' && R.phase !== 'cancelled') return rideView(l, R);
     const rows = DESTINATIONS.map((d) => `<div class="drow" data-act="didiTo" data-id="${d.id}"><div class="mid"><div class="n">${esc(Z(d.zh, d.en))}</div>
       <div class="pv">${d.km} km · ${Z(`约${d.mins}分钟`, `about ${d.mins} min`)}</div></div><div class="pr">¥${fare(d, l.clock.minute).toFixed(1)}</div></div>`).join('');
-    return `<div class="view didi"><div class="bar didibar"><span class="back" data-act="back">‹</span>${Z('滴滴出行', 'DiDi')}</div>${map(Z('你在这里', 'You are here'))}
+    return `<div class="view didi"><div class="bar didibar"><span class="back" data-act="back">‹</span>${Z('快马出行', 'Kuaima')}</div>${map(Z('你在这里', 'You are here'))}
       <div class="dfrom"><i class="dot g"></i>${esc(pickup())}</div><div class="plabel">${Z('你要去哪儿', 'Where to?')}</div><div class="scroll">${rows}</div></div>`;
   }
 
@@ -39,17 +39,17 @@ export function createDidiApp({ L, Z, esc, go, render, top, getRide, onRequest, 
         ${R.phase !== 'riding' ? `<div class="plabel">${Z('给司机发消息', 'Message your driver')}</div><div class="chips">${QUICK.map((q, i) => `<button class="chip" data-act="didiMsg" data-i="${i}">${esc(Z(q.zh, q.en))}</button>`).join('')}</div>
         <button class="btn no dcancel" data-act="didiCancel">${Z('取消行程', 'Cancel ride')}</button>` : ''}`;
     }
-    return `<div class="view didi"><div class="bar didibar"><span class="back" data-act="back">‹</span>${Z('滴滴出行', 'DiDi')}</div>${map(Z(d.zh, d.en))}
+    return `<div class="view didi"><div class="bar didibar"><span class="back" data-act="back">‹</span>${Z('快马出行', 'Kuaima')}</div>${map(Z(d.zh, d.en))}
       <div class="dfrom"><i class="dot g"></i>${esc(pickup())}</div><div class="dfrom"><i class="dot o"></i>${esc(Z(d.zh, d.en))}</div>${body}</div>`;
   }
 
   function confirmView(l, t) {
     const d = DESTINATIONS.find((x) => x.id === t.id);
-    return `<div class="view didi"><div class="bar didibar"><span class="back" data-act="back">‹</span>${Z('滴滴出行', 'DiDi')}</div>${map(Z(d.zh, d.en))}
+    return `<div class="view didi"><div class="bar didibar"><span class="back" data-act="back">‹</span>${Z('快马出行', 'Kuaima')}</div>${map(Z(d.zh, d.en))}
       <div class="dfrom"><i class="dot g"></i>${esc(pickup())}</div><div class="dfrom"><i class="dot o"></i>${esc(Z(d.zh, d.en))}</div>
       <div class="dquote"><div class="k">${Z('快车', 'Express')}</div><div class="amt">¥${fare(d, l.clock.minute).toFixed(1)}</div><div class="pv">${Z(`预估价 · 约${d.mins}分钟 · ${d.km}公里`, `Estimate · about ${d.mins} min · ${d.km} km`)}</div></div>
-      <div class="pnote" style="padding:0 16px">${Z('车费在下车时用微信支付扣款（游戏内虚拟资金）', 'The fare is charged to WeChat Pay when you get out (in-game money)')}</div>
-      <button class="btn go dcall" data-act="didiCall" data-id="${d.id}">${Z('呼叫快车', 'Call DiDi Express')}</button></div>`;
+      <div class="pnote" style="padding:0 16px">${Z('车费在下车时用信语支付扣款（游戏内虚拟资金）', 'The fare is charged to Xinyu Pay when you get out (in-game money)')}</div>
+      <button class="btn go dcall" data-act="didiCall" data-id="${d.id}">${Z('呼叫快车', 'Call Kuaima Express')}</button></div>`;
   }
 
   function act(a, id, el) {

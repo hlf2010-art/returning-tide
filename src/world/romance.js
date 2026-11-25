@@ -280,7 +280,7 @@ const CAR = {
   yuan: { heard: B('听说你车出事了？撞到人了？你给我打个电话。', 'I hear something happened with the car? You hit someone? Call me.'),
     seen: B('纪白。视频都传到我们所的群里了。你没事吧？那个行人呢？你在湾区连黄灯都不抢的。', "Ji Bai. The video's reached our office chat. Are you all right? And the pedestrian? In the Bay Area you wouldn't even run an amber light.") },
   kexin: { heard: B('听说你在外滩撞了人？还好没人拍，不然你就火了。', "I hear you hit someone on the Bund? Lucky nobody filmed it, or you'd be famous."),
-    seen: B('有人在小红书发了你的车和斑马线，还没火。我认识几个号，能压就压。但你得保证没有第二次。', "Someone posted your car and the zebra crossing on Xiaohongshu. It hasn't taken off yet. I know a few accounts; I'll keep it down if I can. But promise me there won't be a second time."),
+    seen: B('有人在红叶发了你的车和斑马线，还没火。我认识几个号，能压就压。但你得保证没有第二次。', "Someone posted your car and the zebra crossing on Hongye. It hasn't taken off yet. I know a few accounts; I'll keep it down if I can. But promise me there won't be a second time."),
     trending: B('你上热搜了，不是好的那种。“外滩科尔维纳撞人”。别发声明，别删评论。先去看看那个人，带点东西。拍不拍随你。', "You're trending, and not the good way. 'Corvina hits pedestrian on the Bund'. No statement, don't delete comments. Go and see the person first, take something. Whether you film it is up to you.") },
 };
 for (const who of Object.keys(CAR)) for (const l of Object.values(CAR[who])) t(l.zh, l.en);

@@ -1,4 +1,4 @@
-// Walkthrough: Lujiazui. Arrive by Line 2 and by DiDi, walk the ring bridge and its stairs, down into
+// Walkthrough: Lujiazui. Arrive by Line 2 and by Kuaima, walk the ring bridge and its stairs, down into
 // across the Apple plaza and down the spiral stair to the store, the metro exit, the Green's paths, IFC's lobby up
 // to the 32nd floor and back; and photograph each landmark by day and at dusk.
 // (The ground and collisions are tested in node: tests/lujiazui.test.mjs.)
@@ -153,13 +153,13 @@ ok(await ev(() => window.__bund.world.ljz.zone(window.__bund.player.body) === 'g
 await walkTo(...fromAP(500, -222), 40, true); b = await body();
 ok(!inLake(...toAP(b.x, b.z)) && inLake(...toAP(b.x, b.z), 2.5), 'the lake is water: you stop at its edge');
 await shot('walk-green');
-// 5. by DiDi; IFC: the lobby door up to the 32nd floor, the lift back down to the lobby
+// 5. by Kuaima; IFC: the lobby door up to the 32nd floor, the lift back down to the lobby
 await ev(() => { const L = window.__bund.life, i = L.invites.find((q) => q.id === 'xuan-arm'); if (i) { i.at = L.clock.day * 1440 + L.clock.minute; i.status = 'accepted'; i.kept = false; } });
 const hasInvite = await ev(() => !!window.__bund.life.invites.find((q) => q.id === 'xuan-arm'));
-await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'wechat', fare: 31.5, invite: window.__bund.life.invites.find((q) => q.id === 'xuan-arm') ? 'xuan-arm' : null }));   // what a DiDi's arrival calls (world/rideFlow.js finish)
+await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'wechat', fare: 31.5, invite: window.__bund.life.invites.find((q) => q.id === 'xuan-arm') ? 'xuan-arm' : null }));   // what a Kuaima's arrival calls (world/rideFlow.js finish)
 await p.waitForFunction(([x, z]) => { const q = window.__bund.player.body; return Math.hypot(q.x - x, q.z - z) < 1 && window.__bund.mode === 'play'; }, [LJZ.kerbPickup.x, LJZ.kerbPickup.z], { timeout: 120000 }).catch(() => {});
 b = await body();
-ok(near(b, LJZ.kerbPickup, 1) && Math.abs(b.y - 0.15) < 0.05 && !(await ev(() => window.__bund.world.dest.here)), 'by DiDi (the arrival a ride ends with): set down at IFC\'s kerb on Century Avenue, at street level');
+ok(near(b, LJZ.kerbPickup, 1) && Math.abs(b.y - 0.15) < 0.05 && !(await ev(() => window.__bund.world.dest.here)), 'by Kuaima (the arrival a ride ends with): set down at IFC\'s kerb on Century Avenue, at street level');
 await shot('walk-kerb');
 const lob = LJZ.ifcLobbyDoor;
 await walkTo(lob.x + lob.nx * 2.6, lob.z + lob.nz * 2.6, 60);
@@ -184,7 +184,7 @@ ok(await waitPrompt(/Bund|外滩/), `the ride-hailing point: "${await prompt()}"
 await p.keyboard.press('KeyE');
 await p.waitForFunction(() => window.__bund.player.body.x < 30 && window.__bund.mode === 'play', null, { timeout: 120000 }).catch(() => {});
 b = await body();
-{ const l = await ledger(); ok(b.x < 0 && Math.abs(b.z + 19.7) < 2 && l && /滴滴/.test(l.to) && await ev(() => !window.__bund.world.ljz.active && window.__bund.scene.getObjectByName('street').visible), `a car back through the tunnel: on the Bund at the pick-up point, ¥${l && -l.amount} paid, the Bund drawn again`); }
+{ const l = await ledger(); ok(b.x < 0 && Math.abs(b.z + 19.7) < 2 && l && /快马/.test(l.to) && await ev(() => !window.__bund.world.ljz.active && window.__bund.scene.getObjectByName('street').visible), `a car back through the tunnel: on the Bund at the pick-up point, ¥${l && -l.amount} paid, the Bund drawn again`); }
 await shot('walk-bund-again');
 await stand(...wellPt(m6, m6.len - 1.8), -m6.depth, ...wellPt(m6, m6.len).slice(0, 1), -m6.depth + 1.6, wellPt(m6, m6.len)[1]);
 ok(await waitPrompt(/East Nanjing|南京东路/), `Lujiazui station, Exit 6's landing: "${await prompt()}"`);

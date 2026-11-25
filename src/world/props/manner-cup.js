@@ -4,7 +4,7 @@
 //   import { createCoffeeCup } from './coffee-cup.js';
 //   const cup = createCoffeeCup(THREE);          // THREE.Group, metres, Y-up
 //
-// Origin = centre of the base (foot ring touches y = 0). The MANNER logo faces local +Z.
+// Origin = centre of the base (foot ring touches y = 0). The café's mark (Linger, invented for the game) faces local +Z.
 // No game imports, no liquid/steam/animation. The label is drawn procedurally on a canvas
 // (same approach and colour-space handling as the game's canvas.js `tex()` helper), so
 // there are no image files to load. Written against three r187 (WebGL2, r152+ colour management).
@@ -160,26 +160,13 @@ function paintLabel(ctx, W, H) {
   };
   ctx.strokeStyle = INK_CSS; ctx.fillStyle = PAPER_CSS; ctx.lineJoin = 'miter'; ctx.miterLimit = 3; ctx.lineCap = 'butt';
 
-  // Inverted triangle (measured from the photo: ~31 mm wide, a little flatter than equilateral)
-  const tw = 0.031, th = 0.0245, yTop = 0.0490;
-  trace([[-tw / 2, yTop], [tw / 2, yTop], [0, yTop - th]], true);
-  ctx.lineWidth = 0.0005 * pxPerM; ctx.stroke();
-
-  // Tilted name plate (rises to the right ~5 deg), paper-filled so it interrupts the triangle sides
-  const th2 = 5 * Math.PI / 180, cy = yTop - 0.40 * th, bw = 0.0236, bh = 0.0056;
-  const rot = (x, y) => [x * Math.cos(th2) - y * Math.sin(th2), cy + x * Math.sin(th2) + y * Math.cos(th2)];
-  trace([[-bw / 2, -bh / 2], [bw / 2, -bh / 2], [bw / 2, bh / 2], [-bw / 2, bh / 2]].map(([x, y]) => rot(x, y)), true);
-  ctx.fill(); ctx.lineWidth = 0.0005 * pxPerM; ctx.stroke();
-
-  // MANNER, drawn as vector strokes so it does not depend on installed fonts
-  const cap = 0.0035, gap = 0.2;
-  let x = -bw / 2 + 0.0007;
-  ctx.lineWidth = 0.0006 * pxPerM;
-  for (const ch of 'MANNER') {
-    const g = STROKES[ch];
-    for (const stroke of g.p) { trace(stroke.map(([sx, sy]) => rot(x + sx * cap, (sy - 0.5) * cap)), false); ctx.stroke(); }
-    x += (g.w + gap) * cap;
-  }
+  void trace; void pxPerM; void STROKES;
+  // Linger (a café invented for the game): its name in a thin ring, printed in one ink on the paper
+  { const [cx, cy] = toPx(0, 0.040), R = 0.0125 * W / (2 * Math.PI * rAt(0.040));
+    ctx.strokeStyle = INK_CSS; ctx.fillStyle = INK_CSS; ctx.lineWidth = R * 0.06;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+    ctx.font = `600 ${Math.round(R * 0.42)}px "Cormorant Garamond", Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('LINGER', cx, cy); }
 }
 
 function makeCanvas(w, h, factory) {

@@ -119,12 +119,12 @@ export function createManner(curbH, { x = MANNER.x, zWall = MANNER.zWall } = {})
   const name = panel(W, 0.5, (c, w, h) => {
     c.fillStyle = '#0d0d0d'; c.fillRect(0, 0, w, h);
     c.fillStyle = '#fff'; c.textBaseline = 'middle'; c.textAlign = 'center';
-    c.font = `800 ${h * 0.46}px ${UI}`; c.fillText('MANNER COFFEE', w / 2, h * 0.52);
+    c.font = `800 ${h * 0.46}px ${UI}`; c.fillText('LINGER COFFEE', w / 2, h * 0.52);
   }, { emissive: 0.9 });
   name.position.set(x, y0 + 3.35, zf + 0.01); g.add(name);
   const blade = panel(0.5, 0.5, (c, w, h) => {
     c.fillStyle = '#fff'; c.fillRect(0, 0, w, h); c.fillStyle = '#0d0d0d'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = `800 ${h * 0.2}px ${UI}`; c.fillText('MANNER', w / 2, h * 0.42); c.font = `600 ${h * 0.11}px ${FONT.sans}`; c.fillText('咖啡', w / 2, h * 0.66);
+    c.font = `800 ${h * 0.2}px ${UI}`; c.fillText('LINGER', w / 2, h * 0.42); c.font = `600 ${h * 0.11}px ${FONT.sans}`; c.fillText('咖啡', w / 2, h * 0.66);
   }, { emissive: 0.8, px: 128 });
   blade.position.set(x + W / 2 + 0.05, y0 + 2.9, zf + 0.3); blade.rotation.y = Math.PI / 2; g.add(blade);
   // pavement: an A-frame with today's special

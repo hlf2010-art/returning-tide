@@ -12,7 +12,7 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 const HAN = /[一-鿿]/, LATIN = /[A-Za-z]{3,}/;
-// visible text of an element, minus what belongs to the world or to brands (Manner, WeChat names in the zh UI are fine)
+// visible text of an element, minus what belongs to the world or to brands (Linger, Xinyu names in the zh UI are fine)
 const text = (sel) => page.evaluate((s) => { const e = document.querySelector(s); return e ? e.innerText : ''; }, sel);
 
 await page.goto(url + '?q=5&nolock&life=1', { waitUntil: 'load' });
@@ -46,7 +46,7 @@ await page.waitForTimeout(2500);
 await page.keyboard.press('KeyP'); await page.waitForTimeout(900);
 await page.keyboard.press('Enter'); await page.waitForTimeout(1500);
 let ph = await text('#phone');
-ok(HAN.test(ph) && !/WeChat|Wallet|Calendar|unlock/.test(ph), 'phone home screen in Chinese');
+ok(HAN.test(ph) && !/Xinyu|Wallet|Calendar|unlock/.test(ph), 'phone home screen in Chinese');
 await page.screenshot({ path: `${out}/lang-phone-zh.png` });
 await page.evaluate(() => window.__bund.setLang('en'));
 await page.waitForTimeout(600);

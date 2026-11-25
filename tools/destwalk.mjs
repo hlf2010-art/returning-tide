@@ -1,4 +1,4 @@
-// Places a DiDi takes you to, when you were asked: by car to IFC 32F for Xuan's robot-arm review
+// Places a Kuaima takes you to, when you were asked: by car to IFC 32F for Xuan's robot-arm review
 // (the whole ride), the scene answered 1-4, back by the lift; then the North Bund flat with Yinuo.
 // node tools/destwalk.mjs (URL=, OUT=)
 import { createRequire } from 'module';
@@ -26,7 +26,7 @@ async function playScene(tag) {
   }
   return asks;
 }
-// ---- 1. by DiDi to Lujiazui, asked to be there now ----
+// ---- 1. by Kuaima to Lujiazui, asked to be there now ----
 await invite('xuan-arm', 'xuan');
 await p.evaluate(() => window.__bund.player.teleport(-3.2, -17.0, Math.PI / 2 + 0.25, -0.05));
 await p.keyboard.press('KeyP'); await p.waitForTimeout(600);
@@ -63,7 +63,7 @@ ok(/Lift/.test(pr), `at the lift: "${pr}"`);
 const w0 = await p.evaluate(() => window.__bund.life.wallet.wechat);
 await p.keyboard.press('KeyE'); await p.waitForFunction(() => window.__bund.mode === 'play' && !window.__bund.world.dest.here, null, { timeout: 60000 });
 s = await p.evaluate(() => ({ x: window.__bund.player.body.x, z: window.__bund.player.body.z, y: window.__bund.player.body.y, w: window.__bund.life.wallet.wechat }));
-ok(Math.abs(s.z - -19.7) < 1 && s.y < 1 && s.w < w0, `back on the Bund by DiDi (paid ¥${(w0 - s.w).toFixed(1)})`);
+ok(Math.abs(s.z - -19.7) < 1 && s.y < 1 && s.w < w0, `back on the Bund by Kuaima (paid ¥${(w0 - s.w).toFixed(1)})`);
 // ---- 2. the North Bund flat ----
 await invite('yinuo-flat', 'yinuo');
 await p.evaluate(() => window.__bund.world.dest.arrive('northbund'));

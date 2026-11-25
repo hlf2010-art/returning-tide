@@ -71,14 +71,6 @@ export const CREDITS = [
     files: ['public/fonts'],
   },
   {
-    id: 'simpleicons',
-    what: B('品牌标志的矢量图形（商标归各自所有者）', 'Brand marks\' vector shapes (the trademarks belong to their owners)'),
-    who: 'Simple Icons',
-    licence: B('CC0（图形数据）', 'CC0 (the shape data)'),
-    url: 'https://simpleicons.org', licenceUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
-    files: ['src/ui/brands.js'],
-  },
-  {
     id: 'east-is-red',
     what: B('海关大楼的报时曲《东方红》', 'The Customs House chimes, "The East Is Red"'),
     who: 'Traditional Shaanbei folk melody, played as synthesised chimes',

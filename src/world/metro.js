@@ -174,18 +174,18 @@ export function createMetro({ scene, camera, renderer = null, hud, audio, voice,
   }
   function tapIn(st, i) {
     if (!open()) { maud.denied(); hud.toast(T('闸机关着。末班车已经开走了，首班车早上五点半左右。', 'The gates are shut. The last train has gone; the first is at about 5:30 am.'), 3.6); return; }
-    showQr(() => { maud.gate(); openGate(st, i); S.tapIn = { st: st.id, at: stamp(getLife()) }; hud.toast(T('刷码进站 · 支付宝乘车码', 'In · Alipay transit code'), 2.2); });
+    showQr(() => { maud.gate(); openGate(st, i); S.tapIn = { st: st.id, at: stamp(getLife()) }; hud.toast(T('刷码进站 · 易付乘车码', 'In · YiPay transit code'), 2.2); });
   }
   function tapOut(st, i) {
     const L = getLife(), from = S.tapIn ? S.tapIn.st : st.id;
     showQr(() => {
       if (L && L.wallet) {
         const r = lifePay(L, { method: 'alipay', amount: 3, to: '上海地铁 Shanghai Metro', memo: `2号线 ${NAMES[from].zh}→${NAMES[st.id].zh}`, kind: 'transport' });
-        if (!r.ok) { maud.denied(); hud.toast(T('支付宝余额不足。到服务中心补票，或者先充值。', 'Not enough on Alipay. Top up first.'), 3.4); return; }
+        if (!r.ok) { maud.denied(); hud.toast(T('易付余额不足。到服务中心补票，或者先充值。', 'Not enough on YiPay. Top up first.'), 3.4); return; }
         r.entry.memoEn = `Line 2, ${NAMES[from].en} to ${NAMES[st.id].en}`; save && save();
       }
       maud.gate(); openGate(st, i); S.tapIn = null;
-      hud.toast(T(`刷码出站 · 支付宝 −¥3 · ${NAMES[st.id].zh}`, `Out · Alipay −¥3 · ${NAMES[st.id].en}`), 2.6);
+      hud.toast(T(`刷码出站 · 易付 −¥3 · ${NAMES[st.id].zh}`, `Out · YiPay −¥3 · ${NAMES[st.id].en}`), 2.6);
     });
   }
   // ---- security: your bag on the belt ----
@@ -215,7 +215,7 @@ export function createMetro({ scene, camera, renderer = null, hud, audio, voice,
       const out = dir === 'out', wrong = out ? +i >= GATE.out : +i < GATE.out;
       if (wrong) return { target: T('闸机', 'Gate'), action: out ? T('这是进站闸机 · 走左边出站', 'An entry gate · the way out is on the left') : T('这是出站闸机 · 进站走右边', 'An exit gate · the way in is on the right') };
       if (!out && !open()) return { target: T(`${NAMES[sid].zh}站 · 已停运`, `${NAMES[sid].en} · closed`), action: T('末班车已开走 · 首班车约5:30', 'Last train gone · first ~5:30') };
-      return out ? { target: T('出站闸机', 'Exit gate'), action: T('刷支付宝乘车码出站（¥3）', 'Tap out with Alipay (¥3)') } : { target: T('进站闸机 · 2号线', 'Entry gate · Line 2'), action: T('刷支付宝乘车码进站', 'Tap in with Alipay') };
+      return out ? { target: T('出站闸机', 'Exit gate'), action: T('刷易付乘车码出站（¥3）', 'Tap out with YiPay (¥3)') } : { target: T('进站闸机 · 2号线', 'Entry gate · Line 2'), action: T('刷易付乘车码进站', 'Tap in with YiPay') };
     }
     if (kind === 'xray') return { target: T('安检机', 'X-ray belt'), action: T('把包放上传送带', 'Put your bag on the belt') };
     if (id === 'metro:ex1') return { target: T('1号口通道', 'The passage to Exit 1'), action: T('往东方明珠 · 陆家嘴环路', 'To the Oriental Pearl · Ring Rd') };

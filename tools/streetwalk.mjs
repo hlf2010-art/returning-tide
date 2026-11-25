@@ -126,7 +126,7 @@ await p.keyboard.press('KeyE'); await p.waitForTimeout(800);
 await answer('Digit2');
 ok(await until(() => (window.__bund.life.flags.moments || {}).phone === 'returned'), 'given back');
 const w1 = await ev(() => window.__bund.life.wallet.ledger.length);
-ok((await quest('m-phone')) === 'done' && w1 > w0, `side quest done; a coffee's worth sent to you on WeChat (${w1 - w0} new wallet entry)`);
+ok((await quest('m-phone')) === 'done' && w1 > w0, `side quest done; a coffee's worth sent to you on Xinyu (${w1 - w0} new wallet entry)`);
 
 ok(errors.length === 0, `no errors (${errors.slice(0, 3).join(' | ')})`);
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');

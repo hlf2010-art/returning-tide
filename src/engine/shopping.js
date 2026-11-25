@@ -14,8 +14,8 @@
 import { pay, stamp, own, emit, post, thread } from './life.js';
 
 export const SHOPS = {
-  jd: { name: '京东', en: 'JD', color: '#e1251b', sameDayBefore: 19 * 60, sameDayHours: 3, nextMorning: 9 * 60 + 30, expressUntil: 22 * 60, expressMin: [28, 50] },
-  taobao: { name: '淘宝', en: 'Taobao', color: '#ff5000', days: [2, 3] },
+  jd: { name: '鲸送', en: 'Jingsong', color: '#e1251b', sameDayBefore: 19 * 60, sameDayHours: 3, nextMorning: 9 * 60 + 30, expressUntil: 22 * 60, expressMin: [28, 50] },
+  taobao: { name: '万集', en: 'Wanji', color: '#ff5000', days: [2, 3] },
 };
 export const ADDRESSES = {
   here: { zh: '外滩 汉口路（当面签收）', en: 'Hankou Road, the Bund (hand it to me)' },
@@ -116,7 +116,7 @@ export function stepOrders(L) {
       if (o.status === 'out') {
         if (o.address === 'here') {
           o.waitUntil = now + COURIER_WAIT;
-          post(L, o.shop, { from: o.shop, kind: 'text', text: `快递员已到汉口路路口（Manner门口），请下楼取件：${names(o)}` });
+          post(L, o.shop, { from: o.shop, kind: 'text', text: `快递员已到汉口路路口（Linger门口），请下楼取件：${names(o)}` });
           emit(L, { type: 'courier', order: o.id, shop: o.shop, items: o.items });
         } else post(L, o.shop, { from: o.shop, kind: 'text', text: `快递员正在派送，预计45分钟内送达：${names(o)}` });
       }

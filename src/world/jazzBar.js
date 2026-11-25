@@ -274,7 +274,7 @@ export function createJazzBar({ scene, people, hud, audio, getLife, save, player
     else if (id === 'jSeat') sit();
     else if (id === 'jBar') {
       const r = pay(l, { method: 'wechat', amount: 128, to: '和平饭店爵士吧', memo: 'Whisky sour', kind: 'purchase' });
-      if (!r.ok) { say(T('调酒师', 'Bartender'), '先生，微信好像没付成功。', "Sir, the WeChat payment didn't go through.", 2.4); return true; }
+      if (!r.ok) { say(T('调酒师', 'Bartender'), '先生，信语好像没付成功。', "Sir, the Xinyu payment didn't go through.", 2.4); return true; }
       S.drinks++;
       say(T('调酒师', 'Bartender'), '威士忌酸，您慢用。', 'A whisky sour, sir. Enjoy.', 2.2);
       const until = stamp(l) + 20;

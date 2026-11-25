@@ -1,6 +1,6 @@
 // Talking to people in your own words, against a running OpenAI-compatible model server (Ollama on
 // your machine; here llama.cpp with a small Qwen): the front desk in Mandarin then English, a
-// passer-by, Xuan on WeChat; recorded voices for scripted lines. node tools/talkwalk.mjs (URL=, OUT=)
+// passer-by, Xuan on Xinyu; recorded voices for scripted lines. node tools/talkwalk.mjs (URL=, OUT=)
 import { createRequire } from 'module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const dir = (process.env.OUT || '.') + '/';
@@ -32,7 +32,7 @@ await p.keyboard.press('Escape'); await p.waitForTimeout(800);
 ok(await p.evaluate(() => window.__bund.mode === 'play'), 'Esc: back to walking');
 const mem = await p.evaluate(() => (window.__bund.life.flags.talked || {}).receptionist || []);
 ok(mem.length >= 4, `she remembers what was said (${mem.length} lines)`);
-// 2. WeChat: write to Xuan
+// 2. Xinyu: write to Xuan
 await p.keyboard.press('KeyP'); await p.waitForTimeout(600); await p.keyboard.press('Enter'); await p.waitForTimeout(1000);
 await p.evaluate(() => document.querySelector('#phone [data-act="app"][data-id="chats"]').click()); await p.waitForTimeout(500);
 await p.evaluate(() => document.querySelector('#phone [data-act="openThread"][data-id="xuan"]').click()); await p.waitForTimeout(600);

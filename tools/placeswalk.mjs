@@ -80,7 +80,7 @@ ok(/Buy a ticket/.test(pr), `at the pier gate: "${pr}"`);
 await p.screenshot({ path: `${out}/cruise-pier.png` });
 const l1 = await ledger();
 await key('KeyE', 1200);
-ok((await ledger()) === l1 + 1 && (await ev(() => window.__bund.life.flags.cruise.ticket)) === 1200, 'ticket bought (¥120, Alipay)');
+ok((await ledger()) === l1 + 1 && (await ev(() => window.__bund.life.flags.cruise.ticket)) === 1200, 'ticket bought (¥120, YiPay)');
 // walk out along the pier and on board
 for (const x of [26.6, 29, 32, 35, 37.2, 38.6, 40.2, 41.5]) { await ev((x) => { const b = window.__bund.player; b.body.x = x; b.body.z = 65; }, x); await ev(() => window.__bund.player.update(0.05)); await p.waitForTimeout(250); }
 await p.waitForTimeout(800);
