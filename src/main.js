@@ -309,7 +309,7 @@ async function boot() {
   // places (phase 4.4): a shengjian shop on Nanjing Road (world/dumpling.js) and the river cruise from a
   // pier on the promenade (world/cruise.js)
   const dumpling = createDumpling({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), onMode: shopMode });
-  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); }, ferryTo: (info) => world.dest.arrive('lujiazui', info),
+  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); }, talk: () => world.sceneTalk, ferryTo: (info) => world.dest.arrive('lujiazui', info),
     roles: people ? Object.keys(people.manifest.cast).filter((r) => !people.manifest.cast[r].named && !['lin', 'su', 'player', 'dad'].includes(r)) : [],
     clock: () => (PIN_HOUR ? 17 * 60 + 42 : life.clock.minute + life.clock.sec / 60) });   // (measurement tools: alongside, as at 5:42 pm)
   // where you can go in: a pool of light at each open door, a label over it when it's in view
@@ -370,7 +370,7 @@ async function boot() {
   // Line 2: down an exit's stairs, through the gates, a real train under the river to Lujiazui and back (world/metro.js)
   world.metro = createMetro({ scene, camera, renderer: R.renderer, hud, audio, voice, player, people, travel, getLife: () => life, save: () => saveLife(), open: () => hourState.metro, onPudongSoon: () => world.ljz.buildAsync() });
   // the story: a sat-down conversation, and dinner with Dad (world/story.js, world/dinner.js)
-  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], ...MOMENT_NAMES } });
+  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], fang: ['老方', 'Old Fang'], ...MOMENT_NAMES } });
   world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
   // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
   world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
