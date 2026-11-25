@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-const NEAR = 38, MAX = 32;            // m to the lighter version; cars of one model at most
+const NEAR = 38, MAX = 64;            // m to the lighter version; cars of one model at most
 const TAIL_RUN = new THREE.Color(0.55, 0.02, 0.015), TAIL_BRAKE = new THREE.Color(4.2, 0.12, 0.06);
 export const FLEET_MODELS = {
   'byd-han': { file: 'byd-han.glb', far: 'byd-han-far.glb', len: 4.995, width: 1.91, height: 1.495, wheelbase: 2.92 },
@@ -24,6 +24,11 @@ function plateTexture() {
   });
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; return tex;
 }
+
+// One fleet for the whole city: the Bund road's traffic and Henan Road's share its models and its
+// instanced parts (one load, one draw call per part for every car of a model on both roads).
+let shared = null;
+export function sharedFleet() { return shared || (shared = createFleet()); }
 
 export function createFleet({ base = './models/cars/' } = {}) {
   const group = new THREE.Group(); group.name = 'fleet';
@@ -52,7 +57,7 @@ export function createFleet({ base = './models/cars/' } = {}) {
       if (kind === 'tail') mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
       else if (kind === 'paint') { mat = mat.clone(); mat.color.set(0xffffff); }
       const geo = o.geometry.clone().applyMatrix4(o.matrixWorld);
-      const im = new THREE.InstancedMesh(geo, mat, MAX); im.count = 0; im.frustumCulled = false;
+      const im = new THREE.InstancedMesh(geo, mat, MAX); im.count = 0; im.frustumCulled = false; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       im.castShadow = castShadow && kind !== 'glass'; im.receiveShadow = true; im.name = `fleet-${kind || 'part'}`;
       im.userData.kind = kind;
       if (kind === 'paint' || kind === 'tail') { for (let i = 0; i < MAX; i++) im.setColorAt(i, new THREE.Color(1, 1, 1)); }
@@ -74,6 +79,13 @@ export function createFleet({ base = './models/cars/' } = {}) {
   return {
     group,
     models: FLEET_MODELS,
+    // a model built in code (the street's generic sedan and the taxi, world/vehicles.js): its meshes
+    // become instanced parts at once; no lighter version, no plates (it carries its own)
+    addTemplate(id, scene) {
+      if (models[id]) return;
+      const rec = models[id] = { cars: [], ready: true, loading: Promise.resolve(), template: true };
+      rec.near = parts(scene, true); rec.far = rec.near; rec.plates = [];
+    },
     // a car of this model: returns its handle (the vehicle's group still carries position and children)
     add(id, { paint = 0xeeeeee } = {}) {
       const rec = models[id] || (models[id] = { cars: [], ready: false, loading: null });
@@ -92,14 +104,14 @@ export function createFleet({ base = './models/cars/' } = {}) {
         for (const car of rec.cars) {
           const o = car.obj; if (!o || !car.visible) continue;
           o.updateMatrixWorld(); _m.copy(o.matrixWorld);
-          const near = !eye || Math.hypot(o.position.x - eye.x, o.position.z - eye.z) < NEAR;
+          const near = rec.template || !eye || Math.hypot(_m.elements[12] - eye.x, _m.elements[14] - eye.z) < NEAR;   // (eye in world coordinates)
           const set = near ? rec.near : rec.far, k = near ? nNear++ : nFar++;
           for (const im of set) {
             im.setMatrixAt(k, _m);
             if (im.userData.kind === 'paint') im.setColorAt(k, car.paint);
             else if (im.userData.kind === 'tail') im.setColorAt(k, car.braking ? TAIL_BRAKE : TAIL_RUN);
           }
-          if (near) {
+          if (near && !rec.template) {
             // plates: front and rear, on the bumpers
             const M = FLEET_MODELS[car.id], pi = car.plate, pm = rec.plates[pi];
             for (const [z, ry] of [[M.len / 2 + 0.01, 0], [-M.len / 2 - 0.01, Math.PI]]) {
@@ -109,9 +121,9 @@ export function createFleet({ base = './models/cars/' } = {}) {
             }
           }
         }
-        for (const im of rec.near) { im.count = nNear; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
-        for (const im of rec.far) { im.count = nFar; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
-        rec.plates.forEach((im, i) => { im.count = counts[i]; im.instanceMatrix.needsUpdate = true; });
+        for (const im of rec.near) { im.count = nNear; im.visible = nNear > 0; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
+        if (rec.far !== rec.near) for (const im of rec.far) { im.count = nFar; im.visible = nFar > 0; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
+        rec.plates.forEach((im, i) => { im.count = counts[i]; im.visible = counts[i] > 0; im.instanceMatrix.needsUpdate = true; });
       }
     },
   };

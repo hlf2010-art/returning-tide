@@ -17,7 +17,7 @@ import { createInstancer, mergeStatic } from './instancer.js';
 import { assembleCar } from './carbody.js';
 import { CARS } from './carModels.js';
 import { buildCityBus, busWheelParts } from './cityBus.js';
-import { createFleet, FLEET_MODELS } from './fleet.js';
+import { sharedFleet, createFleet, FLEET_MODELS } from './fleet.js';
 import { T } from './text.js';
 import { makeCanvas, tex, FONT } from './canvas.js';
 
@@ -162,6 +162,38 @@ function buildLookalike(spec, plateText) {
   return { g: group, wheels: wl, wheelRadius: M.wheelD / 2, setBraking(b) { tailMat.color.copy(b ? TAIL_BRAKE : TAIL_RUN); brakeOnly.color.setRGB(b ? 4 : 0.05, b ? 0.1 : 0, b ? 0.05 : 0); } };
 }
 
+// The street's generic sedan and the taxi, drawn by the fleet (living-city Phase 3): every car of
+// the two is one instanced draw per part (paint, glass, rubber, lamps, the taxi's roof sign), paint and
+// brake lights per car. Their wheels still turn, through the wheel instancer. Taxis come in the
+// companies' colours (Dazhong's turquoise most of all).
+const TAXI_LIVERIES = [0x0c8f8a, 0x0c8f8a, 0x0c8f8a, 0xd9b52a, 0x2f64a8, 0xeeeeea, 0x3f8a43];
+function genericTemplate(fleet, taxi) {
+  const id = taxi ? 'gen-taxi' : 'gen-sedan';
+  if (fleet.ready(id)) return id;
+  const c = buildCar(0xffffff, taxi, { moving: true, wheelMesh: () => new THREE.Object3D() });
+  c.g.traverse((o) => { if (o.isMesh && o.material === c.tailMat) o.material.name = 'tail'; });
+  const lamps = [-1, 1].map((s) => { const h = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 0.03)); h.position.set(s * 0.62, 0.62, 2.35); return h; });
+  c.g.add(new THREE.Mesh(mergeStatic(lamps), headMat));
+  // merge what shares a material; the body's material is the paint
+  const body = c.g.children.find((o) => o.isMesh && o.material.color && o.material.color.getHex() === 0xffffff && o.material.metalness === 0.55);
+  if (body) body.material.name = 'paint';
+  const byMat = new Map();
+  c.g.updateMatrixWorld(true);
+  for (const o of [...c.g.children]) { if (!o.isMesh) continue; if (!byMat.has(o.material)) byMat.set(o.material, []); byMat.get(o.material).push(o); c.g.remove(o); }
+  const scene = new THREE.Group();
+  for (const [mat, list] of byMat) scene.add(new THREE.Mesh(mergeStatic(list, { uv: !!mat.map }), mat));
+  fleet.addTemplate(id, scene);
+  return id;
+}
+function buildInstancedGeneric(spec, fleet, i) {
+  const taxi = spec.model === 'taxi', id = genericTemplate(fleet, taxi);
+  const paint = taxi ? TAXI_LIVERIES[(i * 5 + 3) % TAXI_LIVERIES.length] : spec.paint ?? 0x101216;
+  const g = new THREE.Group(), wl = [];
+  for (const sx of [-1, 1]) for (const sz of [-1.42, 1.4]) { const w = wheelPivot(0.66)(); w.position.set(sx * 0.8, 0.33, sz); w.rotation.y = sx < 0 ? Math.PI : 0; g.add(w); wl.push(w); }
+  const car = fleet.add(id, { paint });
+  return { g, wheels: wl, wheelRadius: 0.33, instCar: car, setBraking(b) { car.braking = !!b; } };
+}
+
 function buildGeneric(spec) {
   const taxi = spec.model === 'taxi';
   const c = buildCar(taxi ? 0x0c8f8a : spec.paint ?? 0x101216, taxi, { moving: true, wheelMesh: wheelPivot(0.66) });
@@ -213,27 +245,38 @@ function buildFleetCar(spec, fleet, i) {
   return { g: stand.g, wheels: stand.wheels, wheelRadius: 0.34, fleetCar: car, fleetId: id, standIn: stand, setBraking(b) { car.braking = !!b; stand.setBraking(b); } };
 }
 
-export function createVehicles(specs) {
+// frameZ: the vehicles' group sits this far along z in the world (Henan Road's junction frame), so
+// the eye they're given (in that frame) can be put back in the world for the shared fleet
+// far: beyond this, only a vehicle's lamps are drawn (world/vehicleLamps.js), not its body
+export const BODY_FAR = 150, BUS_DETAIL = 45;
+// shared: one fleet with the other roads of the Bund side (Lujiazui keeps its own: it is drawn apart)
+export function createVehicles(specs, { frameZ = 0, shared = true } = {}) {
   const group = new THREE.Group(); group.name = 'traffic-vehicles';
   wheels = createInstancer('traffic-wheels');
-  const fleet = createFleet(); group.add(fleet.group);
+  const fleet = shared ? sharedFleet() : createFleet(); if (!fleet.group.parent) group.add(fleet.group);
+  const instGeneric = typeof document !== 'undefined';
   const list = specs.map((spec, i) => {
     const fleetCar = FLEET_MODELS[spec.model] || FLEET_FOR[spec.model];
-    const v = fleetCar ? buildFleetCar(spec, fleet, i) : CARS[spec.model] ? buildLookalike(spec, T.plates[i % T.plates.length]) : spec.model === 'bus' ? buildBus(spec) : buildGeneric(spec);
+    const v = fleetCar ? buildFleetCar(spec, fleet, i) : CARS[spec.model] ? buildLookalike(spec, T.plates[i % T.plates.length]) : spec.model === 'bus' ? buildBus(spec) : instGeneric ? buildInstancedGeneric(spec, fleet, i) : buildGeneric(spec);
     v.g.name = `vehicle-${spec.id}`;
     group.add(v.g);
     return { ...v, id: spec.id, model: spec.model, lookalike: !!CARS[spec.model] || !!fleetCar, bus: spec.model === 'bus', braking: null };
   });
   wheels.build(); group.add(wheels.group);
   const instancer = wheels;
+  const _we = { x: 0, z: 0 };
   return {
     group, list,
     // sim: traffic.vehicles (same order as specs)
     update(sim, eye = null) {
       for (let i = 0; i < list.length; i++) {
         const v = list[i], s = sim[i];
-        v.g.visible = s.active && !s.hidden && !(eye && Math.abs(s.z - eye.z) > 340);   // hidden: you're inside it (world/didi.js draws the cabin)
-        for (const w of v.wheels) w.visibleOwner = s.active && !s.hidden;
+        // hidden: you're inside it (world/didi.js draws the cabin); far: only its lamps (vehicleLamps.js)
+        const far = !!eye && (s.x - eye.x) ** 2 + (s.z - eye.z) ** 2 > BODY_FAR * BODY_FAR && !v.bus;
+        v.g.visible = s.active && !s.hidden && !far && !(eye && Math.abs(s.z - eye.z) > 340);
+        for (const w of v.wheels) w.visibleOwner = s.active && !s.hidden && !far;
+        if (v.instCar) { v.instCar.obj = v.g; v.instCar.visible = v.g.visible; }
+        if (v.detail) { const near = !eye || (s.x - eye.x) ** 2 + (s.z - eye.z) ** 2 < BUS_DETAIL * BUS_DETAIL; if (near !== v.detailOn) { v.detailOn = near; for (const m of v.detail) m.visible = near; } }
         if (!s.active) continue;
         v.g.position.set(s.x, 0, s.z); v.g.rotation.y = s.yaw;
         const ang = s.wheelDist / v.wheelRadius;
@@ -249,7 +292,8 @@ export function createVehicles(specs) {
         if (real && !v.swapped) { v.swapped = true; v.g.traverse((o) => { if (o.isMesh) o.visible = false; }); }
         if (real) for (const w of v.wheels) w.visibleOwner = false;
       }
-      fleet.sync(eye);
+      if (eye) { _we.x = eye.x; _we.z = eye.z + frameZ; }
+      fleet.sync(eye ? _we : null);
       instancer.sync();
     },
   };
