@@ -79,7 +79,7 @@ const BASE_QUESTS = [
     fail: (L) => { const i = inv(L, 'momo-gig'); return !!i && (i.status === 'declined' || i.status === 'missed' || lapsed(L, 'momo-gig', i.at + 120)); },
     steps: [
       { id: 'yes', invite: 'momo-gig', text: B('在微信上答应他', 'Say yes on WeChat'), done: (L) => (inv(L, 'momo-gig') || {}).status === 'accepted' },
-      { id: 'there', text: (L) => B('九点半前到爵士吧', 'Be at the Jazz Bar by 9:30 pm'), target: PLACE.jazz, wait: (L) => (inv(L, 'momo-gig') || { at: 0 }).at - 20, done: (L) => kept(L, 'momo-gig') },
+      { id: 'there', text: (L) => (inv(L, 'momo-gig') || {}).at % 1440 === 21 * 60 + 30 ? B('九点半前到爵士吧', 'Be at the Jazz Bar by 9:30 pm') : B('八点前到爵士吧（睡觉会错过）', 'Be at the Jazz Bar by 8 pm (going to bed misses it)'), target: PLACE.jazz, wait: (L) => (inv(L, 'momo-gig') || { at: 0 }).at - 20, done: (L) => kept(L, 'momo-gig') },
     ] },
   // (the robot arm and Dad's offer: the first week's two pulls, still open when the year moves on)
   { id: 'robot-arm', act: 1, main: true, giver: 'xuan',

@@ -437,7 +437,12 @@ async function boot() {
   world.nephew = createNephew({ scene, people });
   nephewSeen = createWitness();
   mission1.mission.on('reset', () => { world.nephew.reset(); nephewSeen.reset(); });
-  mission1.mission.on('complete', ({ outcome, witnessed, string }) => { world.year.handoff(outcome, { saw: !!witnessed, string }); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
+  mission1.mission.on('complete', ({ outcome, witnessed, string }) => { world.year.handoff(outcome, { saw: !!witnessed, string }); });
+  // a reloaded game picks Mission One up where it was: handed over (flags.handoff), or under way (flags.m1)
+  { const h = life.flags.handoff, m = life.flags.m1;
+    if (h) mission1.restore({ step: 'complete', outcome: h.outcome, string: h.string, witnessed: !!h.saw });
+    else if (m && (m.step === 'collect' || m.step === 'carry')) mission1.restore(m); }
+  mission1.mission.on('change', (s) => { if (s.step === 'collect' || s.step === 'carry') life.flags.m1 = { step: s.step, sealed: s.sealed, string: s.string, witnessed: s.witnessed }; else delete life.flags.m1; saveLife(); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
   document.getElementById('inspect-paper').appendChild(clue.canvas);
   player.update(0);
   R.renderer.compile(scene, camera);
@@ -629,7 +634,7 @@ function closeInspect() {
   hud.show('inspect', false);
   exitInteraction();
   if (!clueRead) {
-    clueRead = true;
+    clueRead = true; life.flags.clueRead = true; saveLife();
     hud.thought('末班轮渡。金陵东路渡口，沿江往南。', 'The last ferry. Jinling East Road pier, south along the water.');   // (one shown, by language)
   }
 }
@@ -923,6 +928,7 @@ const LIFE_KEY = slotKey(currentSlot());   // the slot you're playing (ui/saves.
 let life = null;
 try { life = params.has('fresh') ? null : lifeLoad(localStorage.getItem(LIFE_KEY)); } catch { life = null; }
 if (!life) { life = createLife(); setupThreads(life); initYear(life); } else addVoicemail(life, { atEnd: true });   // a new game is a year long (engine/year.js); older saves keep their six days (and get Old Zhou's voicemail)
+clueRead = !!life.flags.clueRead;   // the missing-person notice, read in an earlier session
 if (params.has('legacy') && params.has('fresh')) delete life.flags.year;   // tools: a new six-day game, as before the year existed
 if (params.has('hour')) { const [h, m] = params.get('hour').split(':').map(Number); if (h >= 0 && h < 24) { life.clock.minute = h * 60 + (m || 0); life.clock.sec = 0; } }
 let saves = null;
@@ -1006,7 +1012,7 @@ function updateTips(dt) {
   if (playTime > 15 && life.quests && Object.keys(life.quests.list).length) tips.show('journal');
   if (playTime > 40) tips.show('phone');
   if (playTime > 75) tips.show('map');
-  if (playTime > 120) tips.show('talk');
+  if (playTime > 120 && (life.flags.handoff || life.clock.day >= 2)) tips.show('talk');   // (free conversation waits until the pouch is delivered: one thing at a time on the first evening)
   if (hourJumped) tips.show('hour');
   if (world.moments.active) tips.show('moment');
   if (Math.hypot(b.x - 24, b.z - 65) < 12) tips.show('cruise');

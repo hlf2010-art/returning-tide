@@ -10,6 +10,7 @@ const B = (zh, en) => ({ zh, en });
 const D = (day, h, m = 0) => day * 1440 + h * 60 + m;
 const DIDI = { x: -3.2, z: -18.5, label: B('打车点（或南京东路站，地铁 2 号线）', 'DiDi pickup (or East Nanjing Road station, Line 2)') };
 const STALL = { x: -57, z: -5.7, label: B('汉口路 · 修表摊', "Hankou Road · the watch-repairer's stall") };
+const LIN = { x: 23.5, z: -2, label: B('老林 · 江边栏杆', 'Old Lin, at the river railing') };
 const sceneDone = (L, id) => Object.values(work(L).days).some((r) => r.scene === id);
 const firmDay = (id) => FIRM_SCENES.find((s) => s.id === id).day;
 const step = (id, text) => ({ id, optional: true, text, target: DIDI, wait: () => D(firmDay(id), 8, 30), done: (L) => sceneDone(L, id), fail: (L) => L.clock.day > firmDay(id) });
@@ -24,7 +25,7 @@ export const YEAR_QUESTS = [
   { id: 'act1-work', act: 1, main: true, giver: 'zhiwei',
     title: B('迈芬的第一周', 'The first week at Marlowe Finch'),
     summary: B('迈芬咨询，国金中心二期 28 层。项目是东澜保险的理赔 AI 助手，带项目的是产品设计负责人许知微。工作日去上班；不去，是要算账的。', "Marlowe Finch, IFC Tower 2, 28th floor. The project is an AI claims assistant for Donglan Insurance; the engagement is run by its product design lead, Xu Zhiwei. Go to work on working days. Days you don't are counted."),
-    start: (L) => isYear(L) && (stamp(L) >= D(1, 18, 5) || L.clock.day >= 2),
+    start: (L) => isYear(L) && (!!L.flags.room612 || stamp(L) >= D(1, 19, 30) || L.clock.day >= 2),   // from the HR message in room 612
     steps: [
       step('d2', B('11 月 10 日（周二）上午九点半前，到陆家嘴国金中心二期 28 层报到', 'Tuesday 10 November, by 9:30 am: report to the 28th floor of IFC Tower 2 in Lujiazui')),
       step('d3', B('周三：客户启动会', "Wednesday: the client's kick-off")),
@@ -85,10 +86,13 @@ export const YEAR_QUESTS = [
       if (W.result === 'saved') return B('老周找到了：昆山的医院，中风，五个月的“无名氏”。转让协议是他侄子仿的签名。因为你记得协议上的日期比他失踪晚两天，摊子保住了。', 'Old Zhou has been found: a hospital in Kunshan, a stroke, five months as "name unknown". His nephew forged the transfer. Because you remembered that its date was two days after he vanished, the stall is saved.');
       if (W.result === 'held') return B('老周找到了：昆山的医院，中风，五个月的“无名氏”。你说出了你看见的那个人，是他侄子。转让被叫停，摊位冻结，等法院判：摊子关着，但没有易主。', 'Old Zhou has been found: a hospital in Kunshan, a stroke, five months as "name unknown". You told his daughter about the man you saw; it was his nephew. The transfer has been stopped and the pitch frozen until the court decides: the stall is shut, but it has not changed hands.');
       if (W.result === 'lost') return W.unmet ? B('汉口路的修表摊换了招牌：手机贴膜。老周后来怎样，你没有再听说。', "The stall on Hankou Road has a new sign: phone screen protectors. What became of Old Zhou, you never heard.") : B('老周找到了，人还在。摊子没保住：转让早就办完了，没有人能说清袋子里那张纸上写的是哪一天。', 'Old Zhou has been found, alive. The stall is gone: the transfer went through long ago, and nobody could say what date was on the page in that pouch.');
+      if (!h) return B('老林托你去汉口路老周的修表摊，取柜台上一个封好的文件袋，说是周家留的。袋子上的红字，和寻人启事上那行是同一个人写的。', "Old Lin has asked you to fetch a sealed pouch from the counter of Old Zhou's stall on Hankou Road; the family left it, he says. The red writing on it is in the same hand as the line across the missing-person notice.");
       return h.outcome === 'opened' ? B('你撕开过封条：一份摊位转让协议，签着老周的名字，日期是 10 月 31 日，比他失踪晚两天。老林看见了破掉的封条。', "You broke the seal: an agreement transferring the stall, signed in Old Zhou's name and dated 31 October, two days after he vanished. Old Lin saw the torn seal.") : B('封条完好地交给了老林。里面写的是什么，你不知道。', 'The seal went to Old Lin intact. What the page inside says, you do not know.'); },
-    start: (L) => !!handoff(L),
+    // from the moment he says yes to Old Lin (main.js keeps Mission One's step in flags.m1 while it runs)
+    start: (L) => !!handoff(L) || !!L.flags.m1,
     steps: [
-      { id: 'handed', text: (L) => (handoff(L).outcome === 'opened' ? B('把文件袋交给了老林（封条已破）', 'Handed the pouch to Old Lin (seal broken)') : B('把文件袋交给了老林（封条完好）', 'Handed the pouch to Old Lin (seal intact)')), done: () => true },
+      { id: 'collect', text: B('到汉口路北侧的修表摊，取柜台上的文件袋', "Collect the pouch from the counter of the watch-repair stall, north side of Hankou Road"), target: STALL, done: (L) => !!handoff(L) || (L.flags.m1 || {}).step === 'carry' },
+      { id: 'handed', text: (L) => (handoff(L) ? (handoff(L).outcome === 'opened' ? B('把文件袋交给了老林（封条已破）', 'Handed the pouch to Old Lin (seal broken)') : B('把文件袋交给了老林（封条完好）', 'Handed the pouch to Old Lin (seal intact)')) : B('把文件袋交给江边栏杆旁的老林', 'Bring the pouch to Old Lin at the river railing')), target: LIN, done: (L) => !!handoff(L) },
       { id: 'daughter', optional: true, text: B('一月以后，汉口路的修表摊前有人在打听老周', "From January, someone is at the stall on Hankou Road asking after Old Zhou"), target: STALL, done: (L) => isYear(L) && !!work(L).watch.met, fail: (L) => !isYear(L) || L.clock.day >= 13 },
       { id: 'news', optional: true, text: B('等消息', 'Wait for news'), done: (L) => isYear(L) && !!work(L).watch.result && !work(L).watch.unmet, fail: (L) => !isYear(L) || !!work(L).watch.unmet || L.clock.day >= FINAL_DAY },
     ] },
