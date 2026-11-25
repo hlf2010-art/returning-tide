@@ -545,7 +545,7 @@ export function createSkyline() {
     // x, z, w, d, h
     [520, -330, 60, 40, 150], [560, -250, 46, 46, 110], [515, -170, 70, 36, 46],
     [545, 70, 50, 44, 185], [520, 150, 44, 44, 110], [600, 120, 40, 40, 150],
-    [690, 60, 44, 44, 205], [740, -70, 50, 50, 230], [760, -170, 46, 46, 200],
+    [690, 12, 44, 44, 205], [740, -70, 50, 50, 230], [760, -170, 46, 46, 200],
     [700, 300, 46, 42, 165], [640, 250, 40, 40, 130], [560, 300, 60, 40, 95],
     [720, 420, 50, 50, 240], [600, 470, 54, 46, 190], [530, 430, 60, 36, 90],
     [840, -40, 56, 56, 260], [900, -180, 50, 50, 280], [820, -300, 54, 54, 220],
@@ -581,7 +581,7 @@ export function createSkyline() {
   // the banks' names on their towers, as the photos show them (facing the Bund)
   const roof = (i) => { const [x, z, w, , h] = anchors[i]; return { x: x - w / 2 - 0.6, y: h, z }; };
   { const a = roof(8); sign(group, ['中国银行'], '#ffe2a8', a.x, a.y - 9, a.z, 40, 10); }
-  { const a = roof(6); sign(group, ['震旦'], '#ff2a22', a.x, a.y - 10, a.z, 30, 14, 2.2); }
+  { const a = roof(6); sign(group, ['震旦'], '#ff2a22', a.x, a.y - 13, a.z, 44, 20, 2.4); }
   { const a = roof(1); sign(group, ['DBS', '星展银行'], '#ffffff', a.x, a.y - 9, a.z, 36, 13); }
   { const a = roof(3); sign(group, ['citi', '花旗银行'], '#cfe6ff', a.x, a.y - 9, a.z, 34, 13); }
   for (let i = 0; i < 46; i++) {
