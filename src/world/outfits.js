@@ -118,3 +118,36 @@ export function dressHotelSecurity(person, { glasses: specs = false } = {}) {
   person.outfit = 'hotelSecurity';
   return person;
 }
+
+// ---- delivery riders: the 2025-26 liveries (Meituan yellow, 淘宝闪购 orange, JD 外卖 red), on the crowd body
+// in the red track jacket ('p3'), the jacket re-dyed, and a helmet in the same colour (helmets are the law
+// on Shanghai's e-bikes) ----
+export const RIDER_BRANDS = {
+  meituan: { jacket: [246, 196, 0], helmet: 0xf2c200, box: 0xf2c200, label: '美团' },
+  shangou: { jacket: [255, 106, 0], helmet: 0xff6a00, box: 0x1a1a1a, label: '淘宝闪购' },
+  jd: { jacket: [214, 16, 24], helmet: 0xd61018, box: 0xd61018, label: '京东外卖' },
+};
+const helmetMats = {};
+export function dressRider(person, brand = 'meituan') {
+  const B = RIDER_BRANDS[brand] || RIDER_BRANDS.meituan, [hr, hg, hb] = B.jacket;
+  person.root.traverse((o) => {
+    if (!o.isMesh || !/_body$/.test(o.material.name)) return;
+    // the red of the jacket to the brand's colour, keeping its shading; the rest as it was
+    o.material = recolor(o.material, `rider-${brand}`, (r, g, b) => {
+      if (!(r > g * 1.5 && r > b * 1.4 && r > 60)) return null;
+      const k = Math.min(1.25, (0.3 * r + 0.59 * g + 0.11 * b) / 70);
+      return [Math.min(255, hr * k), Math.min(255, hg * k), Math.min(255, hb * k)];
+    });
+  });
+  const head = bodyPoints(person, /_head$/);
+  if (head.length) {
+    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity);
+    const m = helmetMats[brand] || (helmetMats[brand] = new THREE.MeshStandardMaterial({ color: B.helmet, roughness: 0.35, metalness: 0.1 }));
+    const g = new THREE.Group();
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.135, 16, 10, 0, Math.PI * 2, 0, Math.PI / 1.85), m); shell.scale.set(1, 0.95, 1.12); g.add(shell);
+    const peak = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.012, 0.06), frameMat); peak.position.set(0, 0.0, 0.14); g.add(peak);
+    attach(person, 'Bip01_Head', g, new THREE.Vector3(0, top - 0.1, 0.005));
+  }
+  person.outfit = `rider-${brand}`;
+  return person;
+}

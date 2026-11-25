@@ -95,7 +95,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   for (let x = -40; x > h.x1 + 1; x -= 6) P.granite.floor(x - 0.2, x + 0.2, NJ.z0 + (METRO.some((m) => x > m.x0 && x < m.x1) ? 3.6 : 0), NJ.z1, CH + 0.004);
   // west of Henan Road the 1999 street's 金带: a 4.2 m strip of red granite a little north of the centre line,
   // the sightseeing train's lane (world/tram.js) along its south side
-  P.belt = new Batch(); P.belt.floor(NJ.xWest + 2, h.x0 - 1, NJ.zc - 1.3 - 2.1, NJ.zc - 1.3 + 2.1, CH + 0.006, 3.2);
+  P.belt = new Batch(); P.belt.floor(NJ.xWest + 2, h.x0 - 1, NJ.zc - 1.3 - 2.1, NJ.zc - 1.3 + 2.1, CH + 0.008, 1.6);
   // Henan Road: carriageway, kerbs, its pavements (beyond the junction too, for the view), markings
   const HL = 420;
   P.asphalt.floor(h.x0, h.x1, NJ.zc - HL, NJ.zc + HL, 0, 6);
@@ -357,7 +357,13 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   pageMats(letters, signAt, (t) => { const m = new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.5 }); m.color.setScalar(1.5); return asLight(m, 'signs', 0.7); });
   pageMats(blades, bladeAt, (t) => { const m = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); m.color.setScalar(1.5); return asLight(m, 'signs', 0.6); });
   group.add(boards.mesh(boardMat, 'nj-sign-boards'));
-  group.add(P.belt.mesh(new THREE.MeshStandardMaterial({ color: 0x7a2e28, roughness: 0.32, metalness: 0.05 }), 'nj-golden-belt'));
+  { // polished red granite: speckled, slab joints every 1.6 m
+    const [c, x] = makeCanvas(256, 256), r0 = rng(1999);
+    x.fillStyle = '#6b2a22'; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 2600; i++) { const v = r0(); x.fillStyle = v < 0.45 ? 'rgba(40,12,10,0.55)' : v < 0.8 ? 'rgba(170,90,78,0.45)' : 'rgba(225,200,190,0.5)'; x.fillRect(r0() * 256, r0() * 256, 1 + r0() * 2, 1 + r0() * 2); }
+    x.fillStyle = 'rgba(20,8,6,0.8)'; x.fillRect(0, 0, 256, 2); x.fillRect(0, 0, 2, 256);
+    const belt = new THREE.MeshStandardMaterial({ map: tex(c), roughness: 0.3, metalness: 0.05 });
+    group.add(P.belt.mesh(belt, 'nj-golden-belt')); }
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
   group.add(P.paint.mesh(paint, 'henan-paint'), P.yellow.mesh(yellow, 'henan-yellow'));
