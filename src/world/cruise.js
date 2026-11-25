@@ -294,9 +294,9 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
       const l = L0(), c = C(), st = S.st;
       if (id === 'cruise:ferry') {
         const n = nextFerry(l.clock.minute);
-        if (n == null) { hud.toast(T('今天的轮渡已经停了。地铁2号线（南京东路站）或叫车也能过江。', 'No more ferries today. Line 2 (East Nanjing Road) or a DiDi still cross.'), 3.6); return true; }
+        if (n == null) { hud.toast(T('今天的轮渡已经停了。地铁2号线（南鲸送路站）或叫车也能过江。', 'No more ferries today. Line 2 (East Nanjing Road) or a Kuaima still cross.'), 3.6); return true; }
         const r = pay(l, { method: 'alipay', amount: FERRY.fare, to: '上海轮渡 Shanghai Ferry', memo: '金陵东路 → 东昌路', kind: 'transport' });
-        if (!r.ok) { hud.toast(T('支付宝余额不足。', 'Not enough on Alipay.'), 3); return true; }
+        if (!r.ok) { hud.toast(T('易付余额不足。', 'Not enough on YiPay.'), 3); return true; }
         r.entry.memoEn = 'Jinling Rd E → Dongchang Rd ferry';
         audio && audio.cue && audio.cue('ping', 0, 0.6);
         const arrive = Math.floor(stamp(l) / 1440) * 1440 + n + FERRY.crossing;
@@ -310,7 +310,7 @@ export function createCruise({ scene, people, player, hud, audio, voice, getLife
       }
       if (st.status === 'docked' && st.next != null) {
         const r = pay(l, { method: 'alipay', amount: FARE, to: '浦江游览 Huangpu River Cruise', memo: `${clockText(st.next)} 班`, kind: 'leisure' });
-        if (!r.ok) { hud.toast(T('支付宝余额不足。', 'Not enough on Alipay.'), 3); return true; }
+        if (!r.ok) { hud.toast(T('易付余额不足。', 'Not enough on YiPay.'), 3); return true; }
         c.ticket = st.next; save && save();
         audio && audio.cue && audio.cue('ping', 0, 0.8);
         hud.toast(T(`扫码进闸 · ¥${FARE} · ${clockText(st.next)} 开船，可以上船了`, `Through the gate · ¥${FARE} · sails at ${clockText(st.next)}, boarding now`), 3.6);

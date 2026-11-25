@@ -37,7 +37,7 @@ await p.screenshot({ path: `${dir}didi-${lang}-plate.png` });
 await p.evaluate(([x, z]) => window.__bund.player.teleport(x + 2.3, z + 0.3, Math.atan2(2.3, 0), -0.15), [car.x, car.z]);
 await p.waitForTimeout(1200);
 const prompt = await p.evaluate(() => document.getElementById('prompt').classList.contains('on') ? document.getElementById('prompt').innerText : '');
-ok(/DiDi|滴滴/.test(prompt), `prompt at the door: "${prompt.replace(/\n/g, ' ')}"`);
+ok(/Kuaima|快马/.test(prompt), `prompt at the door: "${prompt.replace(/\n/g, ' ')}"`);
 await p.keyboard.press('KeyE'); await p.waitForTimeout(2500);
 ok(await p.evaluate(() => window.__bund.mode === 'ride'), 'E: in the back seat');
 await p.screenshot({ path: `${dir}didi-${lang}-cabin.png` });

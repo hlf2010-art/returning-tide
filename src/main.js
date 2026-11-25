@@ -507,11 +507,11 @@ function sceneText(extra = '') {
     : inR(PEACE_R) ? 'the Peace Hotel\'s great hall on the Bund (1929): marble, brass, the stained-glass rotunda overhead'
     : inR(AIA_R) ? 'the granite lobby of the AIA Building on the Bund, by the face-recognition gates'
     : b.x > L.wallX ? 'the Bund promenade by the Huangpu river, Pudong\'s towers and the Oriental Pearl lit up across the water, people taking photos'
-    : Math.abs(b.z) < 6 && b.x < L.westCurbX ? 'Hankou Road just off the Bund, by the Manner Coffee window and the old Customs House'
+    : Math.abs(b.z) < 6 && b.x < L.westCurbX ? 'Hankou Road just off the Bund, by the Linger Coffee window and the old Customs House'
     : b.z < -190 && b.z > -215 && b.x < L.westCurbX ? 'Nanjing Road East at the Bund, outside the Peace Hotel, crowds and shopping bags'
     : 'Zhongshan East 1st Road on the Bund, the old banks floodlit gold, traffic going by';
   const wx = weather.rain > 0.3 ? 'a light drizzle' : 'a cool clear November evening, a breeze off the river';
-  const has = [cupFor > 0 ? 'he is holding a Manner coffee' : '', world.belongings && world.belongings.umbrellaUp ? 'he has an umbrella up' : '', l.flags.car ? 'he owns a new yellow Corvina Strale (parked nearby)' : ''].filter(Boolean).join('; ');
+  const has = [cupFor > 0 ? 'he is holding a Linger coffee' : '', world.belongings && world.belongings.umbrellaUp ? 'he has an umbrella up' : '', l.flags.car ? 'he owns a new yellow Corvina Strale (parked nearby)' : ''].filter(Boolean).join('; ');
   return `${clockOf(m)}, ${wx}. ${where}.${has ? ` (${has}.)` : ''}${extra ? ` ${extra}` : ''}`;
 }
 // talking: whoever it is stops and turns to you; the conversation has the keyboard
@@ -521,7 +521,7 @@ function startTalk(t, { inRide = false, opener = null } = {}) {
   talkHold = t; t.hold && t.hold(true, player.body);
   if (!inRide) { mode = 'talk'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null; }
   world.rideFlow.quiet = inRide;
-  talk.start({ id: t.persona, opener, greet: !opener, scene: () => `${sceneText(inRide ? `You are driving him in your DiDi${world.rideFlow.ride ? ` to ${world.rideFlow.ride.to}` : ''}.` : '')} ${storyContext(life, t.persona)}`.trim(), at: () => [t.x, t.y, t.z], onClose: () => {
+  talk.start({ id: t.persona, opener, greet: !opener, scene: () => `${sceneText(inRide ? `You are driving him in your Kuaima${world.rideFlow.ride ? ` to ${world.rideFlow.ride.to}` : ''}.` : '')} ${storyContext(life, t.persona)}`.trim(), at: () => [t.x, t.y, t.z], onClose: () => {
     if (talkHold && talkHold.hold) talkHold.hold(false, player.body); talkHold = null; world.rideFlow.quiet = false;
     if (mode === 'talk') { mode = 'play'; player.enabled = true; player.clearInput(); }
   } });
@@ -924,9 +924,9 @@ const PROMPTS = {
   pouch: () => ({ target: tx('pPouch'), action: tx('pLook') }),
   manner: () => {
     const mo = life.flags.mannerOrder;
-    if (mo && !mo.done && mo.notified) return { target: 'Manner Coffee', action: tx('pCollect', mo.num) };
-    if (mo && !mo.done) return { target: 'Manner Coffee', action: tx('pBeingMade') };
-    return { target: 'Manner Coffee', action: tx('pOrder') };
+    if (mo && !mo.done && mo.notified) return { target: 'Linger Coffee', action: tx('pCollect', mo.num) };
+    if (mo && !mo.done) return { target: 'Linger Coffee', action: tx('pBeingMade') };
+    return { target: 'Linger Coffee', action: tx('pOrder') };
   },
 };
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
@@ -1269,7 +1269,7 @@ function updateLife(dt) {
   const mo = life.flags.mannerOrder;
   if (mo && !mo.notified && lifeStamp(life) >= mo.ready) {
     mo.notified = true;
-    lifeThread(life, 'manner', { title: 'Manner Coffee', members: ['me', 'manner'], kind: 'service' });
+    lifeThread(life, 'manner', { title: 'Linger Coffee', members: ['me', 'manner'], kind: 'service' });
     lifePost(life, 'manner', { from: 'manner', kind: 'text', text: `您的${mo.item.name}已做好，取餐号 ${mo.num}，请到窗口取餐` });
   }
   if (world && world.year) world.year.tick(dt);                               // a new day: salary, rent, absences, the date; the year's messages
@@ -1328,11 +1328,11 @@ function storyTarget() {
 // and (with the gimbal) the photo subjects you haven't got yet
 function mapBlips() {
   const tod = life.clock.minute, out = [
-    { x: mannerSpec.queue[0].x, z: mannerSpec.zWall, glyph: 'M', bg: '#111', fg: '#fff', name: { zh: 'Manner 咖啡', en: 'Manner Coffee' } },
+    { x: mannerSpec.queue[0].x, z: mannerSpec.zWall, glyph: 'M', bg: '#111', fg: '#fff', name: { zh: 'Linger 咖啡', en: 'Linger Coffee' } },
     { x: (PEACE_R.x0 + PEACE_R.x1) / 2, z: -211, glyph: '和', bg: '#2b2416', fg: '#e7b96a', name: { zh: '和平饭店（你住这里）', en: 'Peace Hotel (where you\'re staying)' } },
-    { x: PICKUP.x, z: PICKUP.z, glyph: 'D', bg: '#ff7a00', fg: '#fff', name: { zh: '滴滴上车点', en: 'DiDi pick-up' } },
+    { x: PICKUP.x, z: PICKUP.z, glyph: 'D', bg: '#ff7a00', fg: '#fff', name: { zh: '快马上车点', en: 'Kuaima pick-up' } },
     { x: L.facadeX + 1.5, z: (AIA_R.door[0] + AIA_R.door[1]) / 2, glyph: '友', bg: '#24303f', fg: '#cfe0f5', name: { zh: '友邦大厦（大堂）', en: 'The AIA Building (lobby)' } },
-    ...METRO_EXITS.map((m) => ({ x: m.top + Math.sign(m.top - m.bottom) * 1.5, z: (m.z0 + m.z1) / 2, glyph: String(m.exit), bg: '#c8161e', fg: '#fff', name: { zh: `南京东路站 ${m.exit} 号口`, en: `East Nanjing Rd station, Exit ${m.exit}` } })),
+    ...METRO_EXITS.map((m) => ({ x: m.top + Math.sign(m.top - m.bottom) * 1.5, z: (m.z0 + m.z1) / 2, glyph: String(m.exit), bg: '#c8161e', fg: '#fff', name: { zh: `南鲸送路站 ${m.exit} 号口`, en: `East Nanjing Rd station, Exit ${m.exit}` } })),
   ];
   if (tod >= 19 * 60 || tod < 60) out.push({ x: (JAZZ.x0 + JAZZ.x1) / 2, z: JAZZ.z0, glyph: '♪', bg: '#3b1f3f', fg: '#f3c6ff', name: { zh: '爵士吧', en: 'The Jazz Bar' } });
   out.push(world.cruise.mapBlip(), world.dumpling.mapBlip());

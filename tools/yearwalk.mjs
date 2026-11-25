@@ -1,6 +1,6 @@
 // Walkthrough: the year. In the game itself:
 //   the date on screen; Tuesday 10 November, the first day at Marlowe Finch (IFC 28F): the scene,
-//   the desk, the lift home; a flat rented on WeChat, and the night in it that carries him to
+//   the desk, the lift home; a flat rented on Xinyu, and the night in it that carries him to
 //   January (the fade says how long, the salary arrives, the rent goes); the watch-repairer's
 //   daughter at the stall; Tuesday 20 April, the crisis and what he does about it; the start-up's
 //   founding day on 32F; Saturday 13 November 2027, the dinner, and an ending with its afterword.
@@ -105,7 +105,7 @@ await p.waitForFunction(() => window.__bund.life.flags.year.home.kind === 'flat'
 y = await Y(); ok(y.home.id === 'northbund' && y.home.rent === 12800 && (await ev(() => window.__bund.life.wallet.ledger.some((e) => e.kind === 'rent' && e.amount === -32000))), 'the North Bund flat is his: deposit, first month and fee paid from the bank');
 await setClock(6, 21, 40);
 const bank6 = await ev(() => window.__bund.life.wallet.bank);
-await ev(() => window.__bund.world.dest.arrive('home', { method: 'wechat' }));       // (what a DiDi to "My flat" does)
+await ev(() => window.__bund.world.dest.arrive('home', { method: 'wechat' }));       // (what a Kuaima to "My flat" does)
 await p.waitForFunction(() => window.__bund.world.year.here === 'flat', null, { timeout: 120000 }); await veilClear(); await p.waitForTimeout(800);
 await ev(() => { const F = window.__bund.world.year.FLATS; window.__bund.player.teleport(40.6, -703.4, 1.0, -0.1, F.y.northbund); }); await p.waitForTimeout(1200);
 await shot('flat');
@@ -220,7 +220,7 @@ await p.waitForFunction(() => window.__bund.life.threads.dad.messages.some((m) =
 await ev(() => { window.__bund.life.flags.goFamily = true; });
 await p.waitForFunction(() => window.__bund.life.flags.year.career.track === 'family', null, { timeout: 60000 });
 await setClock(13, 8, 30);
-await ev(() => window.__bund.world.dest.arrive('hongqiao', { method: 'wechat' }));   // (what a DiDi to Hongqiao Station does)
+await ev(() => window.__bund.world.dest.arrive('hongqiao', { method: 'wechat' }));   // (what a Kuaima to Hongqiao Station does)
 await p.waitForFunction(() => document.getElementById('year-card').classList.contains('on') && window.__bund.world.sceneTalk.active, null, { timeout: 120000 }); await p.waitForTimeout(2500);
 await shot('card-works');
 const cardText = await ev(() => document.querySelector('#year-card h1').textContent);

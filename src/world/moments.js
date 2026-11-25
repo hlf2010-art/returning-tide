@@ -27,7 +27,7 @@ export const MOMENT_QUESTS = [
     summary: B('一位外国游客在南京路上找地铁站。', 'A visitor from abroad is looking for the metro on Nanjing Road.'),
     start: (L) => M(L).lost === 'walk', onStart: (L) => { questState(L).tracked = 'm-lost'; },
     fail: (L) => M(L).lost === 'gone',
-    steps: [{ id: 'walk', text: B('带他走到南京东路站的入口', 'Walk him to the entrance of East Nanjing Road station'), target: (L) => M(L).lostTo || null, done: (L) => M(L).lost === 'arrived' }] },
+    steps: [{ id: 'walk', text: B('带他走到南鲸送路站的入口', 'Walk him to the entrance of East Nanjing Road station'), target: (L) => M(L).lostTo || null, done: (L) => M(L).lost === 'arrived' }] },
   { id: 'm-photo', giver: 'couple', title: B('帮忙拍照', 'Take our photo'),
     summary: B('江边一对情侣想请你帮他们和东方明珠合个影。', 'A couple at the railing would like a picture with the Pearl behind them.'),
     start: (L) => M(L).photo === 'framing', onStart: (L) => { questState(L).tracked = 'm-photo'; },
@@ -42,7 +42,7 @@ export const MOMENT_QUESTS = [
 
 // ---- the lines (recorded: tools/voice/extract.mjs finds [who, zh, en]) ----
 const LOST_METRO = [
-  ['tourist', '不好意思……请问，地铁二号线，南京东路站，怎么走？', 'Excuse me, sorry. Line 2, East Nanjing Road station, which way is it?'],
+  ['tourist', '不好意思……请问，地铁二号线，南鲸送路站，怎么走？', 'Excuse me, sorry. Line 2, East Nanjing Road station, which way is it?'],
   ['tourist', '我的地图一直在转圈。', 'My map keeps spinning round.'],
 ];
 const LOST_BUND = [['tourist', '你好！请问南京路步行街往哪边走？', 'Hi! Which way is the Nanjing Road shopping street?']];

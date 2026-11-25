@@ -75,7 +75,7 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arrive
     cancel() {
       if (!R || !['matching', 'coming', 'waiting'].includes(R.phase)) return;
       const L = getLife();
-      if (R.phase === 'waiting') pay(L, { method: R.method, amount: 5, to: '滴滴出行', memo: '取消费', kind: 'ride' });
+      if (R.phase === 'waiting') pay(L, { method: R.method, amount: 5, to: '快马出行', memo: '取消费', kind: 'ride' });
       R.phase = 'cancelled'; L.flags.ride = null; didi.cancel();
       post(L, 'didi', { from: 'didi', kind: 'text', text: '行程已取消' });
     },
@@ -152,7 +152,7 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arrive
       // the evening there passes; a DiDi back to the Bund
       const stay = kept ? 120 : 45, back = fare(d, (L.clock.minute + stay) % 1440);
       skipTo(L, stamp(L) + stay + d.mins);
-      pay(L, { method: R.method, amount: back, to: '滴滴出行', memo: `快车 → 外滩`, kind: 'ride' });
+      pay(L, { method: R.method, amount: back, to: '快马出行', memo: `快车 → 外滩`, kind: 'ride' });
       card = { d, res, kept, back };
       const c = el('ride-card');
       if (c) {
@@ -163,7 +163,7 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arrive
           ? (zh ? `你准时到了。${inv.title}。待了两个小时。` : `You made it on time: ${enText(inv.title)}. You stayed a couple of hours.`)
           : (zh ? '你在那边待了一会儿。' : 'You spent a while there.');
         c.querySelector('.fare').textContent = zh ? `车费 ¥${res.amount} · 回程 ¥${back}` : `Fare ¥${res.amount} · ride back ¥${back}`;
-        c.querySelector('.back').textContent = zh ? '一辆滴滴把你送回了外滩。' : 'A DiDi brought you back to the Bund.';
+        c.querySelector('.back').textContent = zh ? '一辆快马把你送回了外滩。' : 'A Kuaima brought you back to the Bund.';
         c.querySelector('.go').textContent = t('rideContinue');
         c.classList.add('on');
       }

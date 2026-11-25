@@ -52,13 +52,13 @@ ok(consequence('startle').total === 0 && consequence('glare').total === 0, 'star
   const L = createLife(); initYear(L);
   const w0 = balance(L, 'wechat');
   const r = applyIncident(L, 'scare', { kmh: 20, zebra: true });
-  ok(r.ticketed && balance(L, 'wechat') === w0 - 200 && L.flags.carPoints === 3 && L.flags.carWarnings === 1, 'a scare on the zebra: ¥200 from WeChat, 3 points, a warning');
+  ok(r.ticketed && balance(L, 'wechat') === w0 - 200 && L.flags.carPoints === 3 && L.flags.carWarnings === 1, 'a scare on the zebra: ¥200 from Xinyu, 3 points, a warning');
   const r2 = applyIncident(L, 'scare', { kmh: 20, zebra: true });
   ok(!r2.ticketed && L.flags.carWarnings === 2 && L.flags.carPoints === 3, 'a second straight after: the same notice (no second ticket), another warning');
   ok(year(L).rep.street < 50 && !drivingSuspended(L), 'street reputation dips; still allowed to drive');
   const w1 = balance(L, 'wechat');
   const h = applyIncident(L, 'hit', { kmh: 42, zebra: true, filmed: true });
-  ok(h.paid === h.total && balance(L, 'wechat') === w1 - h.total, `a hit: ¥${h.total} paid by WeChat`);
+  ok(h.paid === h.total && balance(L, 'wechat') === w1 - h.total, `a hit: ¥${h.total} paid by Xinyu`);
   ok(L.flags.carHits === 1 && L.flags.carPoints === 6 && drivingSuspended(L), 'a hit: on the record, 3 more points, no driving until morning');
   ok(year(L).rep.online < 50 && year(L).facts.some((f) => f.type === 'car' && f.tier === 'hit'), 'filmed: online reputation too; a fact for the characters');
   ok(L.wallet.ledger.some((x) => x.memoEn && /accident/i.test(x.memoEn)) && L.flags.carIncidents.length === 3, 'ledger memos and the incidents list');
@@ -69,7 +69,7 @@ ok(consequence('startle').total === 0 && consequence('glare').total === 0, 'star
 {
   const L = createLife(); L.wallet.wechat = 50;
   const h = applyIncident(L, 'hit', { kmh: 31 });
-  ok(h.paid === h.total && L.wallet.alipay < 12400, 'not enough in WeChat: Alipay pays');
+  ok(h.paid === h.total && L.wallet.alipay < 12400, 'not enough in Xinyu: YiPay pays');
   ok(applyIncident(createLife(), 'startle').paid === 0 && incidentText(createLife()) === '', 'startles leave no record');
 }
 

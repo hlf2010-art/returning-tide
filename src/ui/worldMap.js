@@ -20,7 +20,7 @@ const B = { X0: -1610, X1: 1340, Z0: -310, Z1: 500 }, P = 1.6;     // painted bo
 const LABELS = [
   { x: 14, z: -80, zh: '外滩 · 滨江步道', en: 'The Bund promenade', rot: -Math.PI / 2, size: 13 },
   { x: -16, z: 60, zh: '中山东一路', en: 'Zhongshan Rd E-1', rot: -Math.PI / 2, size: 11 },
-  { x: -300, z: -195, zh: '南京东路步行街', en: 'Nanjing Rd East (pedestrian)', rot: 0, size: 12 },
+  { x: -300, z: -195, zh: '南鲸送路步行街', en: 'Nanjing Rd East (pedestrian)', rot: 0, size: 12 },
   { x: -505, z: -120, zh: '河南中路', en: 'Henan Rd M', rot: -Math.PI / 2, size: 11 },
   { x: -95, z: 6, zh: '汉口路', en: 'Hankou Rd', rot: 0, size: 11 },
   { x: 250, z: -150, zh: '黄 浦 江', en: 'H U A N G P U   R I V E R', rot: -Math.PI / 2, size: 15, water: true },

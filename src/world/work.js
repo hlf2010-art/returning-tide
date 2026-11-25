@@ -161,7 +161,7 @@ export const speakerOf = (t) => (REG[t.who] ? REG[t.who].name : PERSONA_NAME[t.p
 
 // ---- the side quest that teaches the loop (engine/quests.js; a new id, beside the story's) ----
 const RAIL = { x: 23.5, z: 22, label: B('江边（天黑以后）', 'The river railing, after dark') };
-const DIDI = { x: -3.2, z: -18.5, label: B('打车点', 'DiDi pickup') };
+const DIDI = { x: -3.2, z: -18.5, label: B('打车点', 'Kuaima pickup') };
 const HOTEL = { x: -48, z: -209.5, label: B('和平饭店 · 612 的书桌', 'Peace Hotel · the desk in 612') };
 export const WORK_QUESTS = [
   { id: 'own-work', act: 1, giver: 'me',

@@ -295,13 +295,13 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
   // ================= leaving =================
   function goDown() {
     const L = L0();
-    travel(async () => { skipTo(L, stamp(L) + 22); const r = pay(L, { method: 'alipay', amount: 3, to: '上海地铁 Shanghai Metro', memo: '2号线 陆家嘴→南京东路', kind: 'transport' }); if (r.ok) r.entry.memoEn = 'Line 2, Lujiazui to East Nanjing Road';
-      hide(); player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0); save && save(); }, { line: T('2 号线 · 陆家嘴 → 南京东路 · ¥3', 'Line 2 · Lujiazui → East Nanjing Road · ¥3'), hold: 1300, to: 'play' });
+    travel(async () => { skipTo(L, stamp(L) + 22); const r = pay(L, { method: 'alipay', amount: 3, to: '上海地铁 Shanghai Metro', memo: '2号线 陆家嘴→南鲸送路', kind: 'transport' }); if (r.ok) r.entry.memoEn = 'Line 2, Lujiazui to East Nanjing Road';
+      hide(); player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0); save && save(); }, { line: T('2 号线 · 陆家嘴 → 南鲸送路 · ¥3', 'Line 2 · Lujiazui → East Nanjing Road · ¥3'), hold: 1300, to: 'play' });
   }
   function leaveFlat() {
     const L = L0(), d = dest('home') || { km: 2, mins: 9 }, cost = fare(d, L.clock.minute);
-    travel(async () => { skipTo(L, stamp(L) + d.mins + 4); const r = pay(L, { method: 'wechat', amount: cost, to: '滴滴出行', memo: '快车 → 外滩', kind: 'ride' }); if (r.ok) r.entry.memoEn = 'DiDi Express to the Bund';
-      hide(); player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0); save && save(); }, { line: T(`一辆滴滴把你送到了外滩 · ¥${cost}`, `A DiDi takes you to the Bund · ¥${cost}`), hold: 1300, to: 'play' });
+    travel(async () => { skipTo(L, stamp(L) + d.mins + 4); const r = pay(L, { method: 'wechat', amount: cost, to: '快马出行', memo: '快车 → 外滩', kind: 'ride' }); if (r.ok) r.entry.memoEn = 'Kuaima Express to the Bund';
+      hide(); player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0); save && save(); }, { line: T(`一辆快马把你送到了外滩 · ¥${cost}`, `A Kuaima takes you to the Bund · ¥${cost}`), hold: 1300, to: 'play' });
   }
   function commute() {
     const L = L0(), t = todaysWork(L); if (!t) return;
@@ -349,7 +349,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
   }
   function todayHint() {
     const L = L0(), t = todaysWork(L); if (!t || t.done || L.clock.minute > WORK_HOURS.late) return;
-    hud.toast(T(`今天上班：${TB(t.def.place)} · ${TB(t.def.title)}${t.via === 'hongqiao' ? '（滴滴 → 虹桥火车站）' : '（地铁 2 号线，或滴滴 → 陆家嘴）'}`, `Work today: ${TB(t.def.place)} · ${TB(t.def.title)} ${t.via === 'hongqiao' ? '(DiDi → Hongqiao Station)' : '(Line 2, or DiDi → Lujiazui)'}`), 7);
+    hud.toast(T(`今天上班：${TB(t.def.place)} · ${TB(t.def.title)}${t.via === 'hongqiao' ? '（快马 → 虹桥火车站）' : '（地铁 2 号线，或快马 → 陆家嘴）'}`, `Work today: ${TB(t.def.place)} · ${TB(t.def.title)} ${t.via === 'hongqiao' ? '(Kuaima → Hongqiao Station)' : '(Line 2, or Kuaima → Lujiazui)'}`), 7);
   }
 
   // ================= what you can act on =================
@@ -373,7 +373,7 @@ export function createYearWorld({ scene, people, player, hud, audio, voice = nul
     yCoffee: () => [T('咖啡机', 'Coffee machine'), T('接一杯', 'Pour one')],
     yWindow: () => [T('窗外', 'The window'), T('看看', 'Look out')],
     yBed: () => [T('床', 'Bed'), nightNow(L0()) ? T('睡到早上', 'Sleep till morning') : T('躺一会儿', 'Lie down a while')],
-    yDoor: () => [T('门', 'Door'), T('出门，打车去外滩', 'Out, and a DiDi to the Bund')],
+    yDoor: () => [T('门', 'Door'), T('出门，打车去外滩', 'Out, and a Kuaima to the Bund')],
     yCommute: () => [T('外套和包', 'Coat and bag'), T('去上班', 'Go to work')],
     yHomeDesk: () => [T('书桌', 'Desk'), T('翻开本子', 'Open your notebook')],
     yHomeWindow: () => [T('窗', 'Window'), T('看看', 'Look out')],

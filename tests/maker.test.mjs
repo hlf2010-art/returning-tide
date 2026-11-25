@@ -9,7 +9,7 @@ const c0 = canBuild(L, 'gimbal');
 ok(c0.reason === 'parts' && c0.missing.gimbalMotor === 3 && !c0.missing.pla, 'the gimbal needs parts (the space has the filament)');
 const w0 = L.wallet.wechat;
 for (const [k, n] of Object.entries(missing(L, 'gimbal'))) ok(buyPart(L, k, n).ok, `bought ${n} × ${k}`);
-ok(w0 - L.wallet.wechat === 45 + 29 + 68 * 3 + 59, `paid for them from WeChat Pay (¥${w0 - L.wallet.wechat})`);
+ok(w0 - L.wallet.wechat === 45 + 29 + 68 * 3 + 59, `paid for them from Xinyu Pay (¥${w0 - L.wallet.wechat})`);
 const s = startBuild(L, 'gimbal');
 ok(s.ok && maker(L).parts.gimbalMotor === 0, 'starting the build uses the parts');
 ok(solderJoint(0.5, 1) === 1 && solderJoint(0.5 + solderWindow(1) - 0.001, 1) >= 0.6 && solderJoint(0.95, 1) < 0.2, 'a joint is good in the middle of the window, poor outside it');

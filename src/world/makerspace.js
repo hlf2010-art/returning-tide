@@ -142,7 +142,7 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
       return `<div class="bp ${have ? 'done' : ''}"><div class="n">${esc(T(B.zh, B.en))}<small>${T('创客', 'Maker')} ${B.level} · +${B.xp} XP</small></div><div class="u">${esc(T(B.use.zh, B.use.en))}</div><div class="ps">${parts}</div>
         ${c.ok ? `<button data-b="build:${id}">${T('开始制作', 'Build it')}</button>` : `<div class="why">${why}</div>`}</div>`;
     }).join('');
-    else if (S.tab === 'parts') body = Object.entries(PARTS).filter(([k]) => k !== 'pla').map(([k, P]) => `<div class="pt"><span>${esc(T(P.zh, P.en))}</span><span class="h">${T('有', 'have')} ${m.parts[k] || 0}</span><button data-b="buy:${k}">¥${P.price}</button></div>`).join('') + `<div class="note">${T('货架上的零件用微信支付；也可以在淘宝、京东下单送到酒店。', 'Shelf parts are paid with WeChat Pay; or order them on Taobao or JD to the hotel.')}</div>`;
+    else if (S.tab === 'parts') body = Object.entries(PARTS).filter(([k]) => k !== 'pla').map(([k, P]) => `<div class="pt"><span>${esc(T(P.zh, P.en))}</span><span class="h">${T('有', 'have')} ${m.parts[k] || 0}</span><button data-b="buy:${k}">¥${P.price}</button></div>`).join('') + `<div class="note">${T('货架上的零件用信语支付；也可以在万集、鲸送下单送到酒店。', 'Shelf parts are paid with Xinyu Pay; or order them on Wanji or Jingsong to the hotel.')}</div>`;
     else body = Object.entries(PERKS).map(([n, p]) => `<div class="pk ${lv >= +n ? 'on' : ''}"><b>${T('创客', 'Maker')} ${n}</b> ${esc(T(p.zh, p.en))}</div>`).join('') + `<div class="note">${T(`粉丝 ${m.followers.toLocaleString()} · 成就 ${m.achievements.length}`, `Followers ${m.followers.toLocaleString()} · Achievements ${m.achievements.length}`)}</div>`;
     el.innerHTML = `${head}<div class="body">${body}</div>`;
   }
@@ -151,7 +151,7 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
     if (a === 'close') close();
     else if (a === 'work') { close(); if (!S.open && onWork) onWork(); }                 // the notebook, at the bench (ui/workbook.js)
     else if (a === 'tab') { S.tab = v; render(); }
-    else if (a === 'buy') { const r = buyPart(l, v, 1); if (!r.ok) hud.toast(T('余额不足', 'Not enough in WeChat Pay'), 2); else { audio && audio.cue && audio.cue('ping', 0, 0.3); save && save(); } render(); }
+    else if (a === 'buy') { const r = buyPart(l, v, 1); if (!r.ok) hud.toast(T('余额不足', 'Not enough in Xinyu Pay'), 2); else { audio && audio.cue && audio.cue('ping', 0, 0.3); save && save(); } render(); }
     else if (a === 'build') build(v);
   });
   function open() { S.open = true; S.tab = 'plans'; S.step = null; el.classList.add('on'); render(); onMode && onMode('build'); }
@@ -183,9 +183,9 @@ export function createMakerspace({ scene, people, hud, audio, getLife, save, pla
     const l = L0(), d = dest('yangpu'), back = fare(d, l.clock.minute);
     travel(async () => {
       skipTo(l, stamp(l) + 10 + d.mins);
-      const r = pay(l, { method: 'wechat', amount: back, to: '滴滴出行', memo: '快车 → 外滩', kind: 'ride' }); if (r.ok) r.entry.memoEn = 'DiDi Express to the Bund';
+      const r = pay(l, { method: 'wechat', amount: back, to: '快马出行', memo: '快车 → 外滩', kind: 'ride' }); if (r.ok) r.entry.memoEn = 'Kuaima Express to the Bund';
       S.here = false; group.visible = false; player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0); save && save();
-    }, { line: T(`一辆滴滴把你送回了外滩 · ¥${back}`, `A DiDi brings you back to the Bund · ¥${back}`), hold: 1400, to: 'play' });
+    }, { line: T(`一辆快马把你送回了外滩 · ¥${back}`, `A Kuaima brings you back to the Bund · ¥${back}`), hold: 1400, to: 'play' });
   }
   const targets = [
     { id: 'kBench', x: B.x, y: F + 1.0, z: B.z + 0.4, reach: 2.6 },

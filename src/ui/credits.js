@@ -48,7 +48,7 @@ export const CREDITS = [
   },
   {
     id: 'osm',
-    what: B('南京东路的店铺位置、陆家嘴的建筑轮廓与高度', 'Nanjing Road\'s shop positions, Lujiazui\'s building footprints and heights'),
+    what: B('南鲸送路的店铺位置、陆家嘴的建筑轮廓与高度', 'Nanjing Road\'s shop positions, Lujiazui\'s building footprints and heights'),
     who: '© OpenStreetMap contributors',
     licence: B('ODbL 1.0', 'ODbL 1.0'),
     url: 'https://www.openstreetmap.org/copyright', licenceUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
@@ -69,14 +69,6 @@ export const CREDITS = [
     licence: B('SIL Open Font License 1.1', 'SIL Open Font License 1.1'),
     url: 'https://openfontlicense.org', licenceUrl: './fonts/LICENSE.md',
     files: ['public/fonts'],
-  },
-  {
-    id: 'simpleicons',
-    what: B('品牌标志的矢量图形（商标归各自所有者）', 'Brand marks\' vector shapes (the trademarks belong to their owners)'),
-    who: 'Simple Icons',
-    licence: B('CC0（图形数据）', 'CC0 (the shape data)'),
-    url: 'https://simpleicons.org', licenceUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
-    files: ['src/ui/brands.js'],
   },
   {
     id: 'east-is-red',

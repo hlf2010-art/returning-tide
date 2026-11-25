@@ -4,7 +4,7 @@
 //   day 2   Gu Nian testing a start-up's camera in the AIA lobby; Nanxing's invitation, accepted on the phone; the
 //           lights at ten opposite the Customs House: "is this a date?"
 //   day 3   the Jazz Bar, sat across the table from her; "I live upstairs"; the cut to the morning
-//   day 4   the journal's People tab; one o'clock at Manner with Gu Nian; her invitation
+//   day 4   the journal's People tab; one o'clock at Linger with Gu Nian; her invitation
 //   day 5   the cruise pier at four: the tickets, the fade, the sunset
 //   then    T: talking to Nanxing in your own words (no model here: one of her own lines), and
 //           asking to see her from the phone
@@ -83,7 +83,7 @@ ok(/long exposure|长曝光/.test(pr), `at the railing, a tripod: "${pr}"`);
 await shot('nanxing-rail');
 await p.keyboard.press('KeyE'); await playScene([1, 1, 0], { watch: 3, shots: { 3: 'nanxing-rail-line' } });
 h = await H('nanxing');
-ok(h.stage === 'known' && h.memories[0].key === 'n-rail' && !!(await ev(() => window.__bund.life.threads.nanxing)), 'met: she is in his WeChat');
+ok(h.stage === 'known' && h.memories[0].key === 'n-rail' && !!(await ev(() => window.__bund.life.threads.nanxing)), 'met: she is in his Xinyu');
 await p.waitForTimeout(1500); pr = await prompt();
 ok(/Nanxing|南星/.test(pr) || pr === '', `afterwards she is still there, by name: "${pr}"`);
 
@@ -145,10 +145,10 @@ ok((zh ? /沈南星/ : /Shen Nanxing/).test(txt) && (zh ? /在约会/ : /Seeing 
 await shot('journal');
 await p.keyboard.press('KeyJ'); await mode('play');
 
-// ---- day 4: one o'clock at Manner; her invitation; day 5: the cruise ----
+// ---- day 4: one o'clock at Linger; her invitation; day 5: the cruise ----
 await setClock(4, 13, 3);
 await stand('manner', [0.3, 1], 1.8); await actor('gunian'); await p.waitForTimeout(2500);
-pr = await prompt(); ok(/Gu Nian|顾念/.test(pr), `at the Manner window at one: "${pr}"`);
+pr = await prompt(); ok(/Gu Nian|顾念/.test(pr), `at the Linger window at one: "${pr}"`);
 await shot('gunian-manner');
 await p.keyboard.press('KeyE'); await playScene([1, 0], { watch: 2 });
 ok((await H('gunian')).stage === 'close', 'the camera and the coffee: close');

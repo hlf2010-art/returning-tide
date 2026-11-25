@@ -17,7 +17,7 @@ export const DRIVER_EN = {
   '你要吃面，去我阿弟那边，云南路那家，葱油拌面……不是做广告啊，真的好吃。': "If you want noodles, go to my brother's place on Yunnan Road. Scallion-oil noodles... I'm not advertising. They're really good.",
   // Zhao
   '我白天卖软件，晚上开车。……不是缺钱啊，是——好吧，也缺。': "I sell software in the day and drive at night. ...Not that I need the money, it's... OK, I need the money.",
-  '现在做生意，你得有个“故事”。投资人听故事的。我的故事就是，我还在开滴滴。哈哈。': "Business now, you need a 'story'. Investors buy stories. My story is I'm still driving for DiDi. Ha.",
+  '现在做生意，你得有个“故事”。投资人听故事的。我的故事就是，我还在开快马。哈哈。': "Business now, you need a 'story'. Investors buy stories. My story is I'm still driving for Kuaima. Ha.",
   '陆家嘴那帮人啊，我拉过好多，一上车就开会，耳机一戴，“对齐一下颗粒度”……我都会背了。': "The Lujiazui crowd, I've driven loads of them. Get in, earbuds in, straight onto a call: 'let's align on the granularity'... I know it by heart.",
   '导航让我走这条，我不信它，但我还是走了。人跟导航，就是这种关系。': "The sat-nav said go this way. I don't trust it, but I went anyway. That's people and sat-navs for you.",
   '昨天那场你看了吗？申花……算了，不说了，说了心痛。': "Did you see the game yesterday? Shenhua... never mind. Too painful.",

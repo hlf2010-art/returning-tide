@@ -33,7 +33,7 @@ export const T = {
         lines: [
           { id: 'breeze-1', speaker: 'su', text: '下过雨之后江风一下就凉了，早知道多带条围巾。', en: "After the rain the wind off the river turns cold so fast. Should've brought a scarf." },
           { id: 'breeze-2', speaker: 'lin', text: '十一月就这样，白天看着还暖和，一过五点天就暗下来了。', en: "That's November. Looks warm in the daytime, then after five it's dark." },
-          { id: 'breeze-3', speaker: 'su', text: '我刚从南京东路走过来，地铁口那家糖炒栗子已经排起长队了。', en: 'I walked over from Nanjing Road just now. The chestnut place by the metro already has a queue.' },
+          { id: 'breeze-3', speaker: 'su', text: '我刚从南鲸送路走过来，地铁口那家糖炒栗子已经排起长队了。', en: 'I walked over from Nanjing Road just now. The chestnut place by the metro already has a queue.' },
           { id: 'breeze-4', speaker: 'lin', text: '那家做了很多年了，这个点买一袋揣兜里，刚好暖暖手。', en: "They've been there for years. Get a bag at this hour, keep it in your pocket, warms your hands." },
         ],
       },

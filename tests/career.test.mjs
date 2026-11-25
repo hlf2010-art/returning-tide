@@ -111,7 +111,7 @@ function playYear({ road = 'consulting', picks = {}, absent = [], rent = null, e
   ok(b0 > 0, 'ok');
 }
 
-// ---- 3. a flat, through the agent on WeChat ----
+// ---- 3. a flat, through the agent on Xinyu ----
 {
   const { L } = playYear({ rent: 'rentNorthbund', road: 'consulting' });
   const H = home(L);

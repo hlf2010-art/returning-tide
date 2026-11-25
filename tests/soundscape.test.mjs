@@ -64,17 +64,17 @@ ok(atProm > 0.6 && atNj > 0 && atNj < 0.1, `the clock carries: ${atProm.toFixed(
 ok(paGain(0) > paGain(10) && paGain(METRO_PA.range) === 0, 'the station\'s announcements: loud at the stairwell, gone 55 m off');
 // the counter's payment speaker: amounts read the Chinese way, and every piece has a recording
 {
-  const Z = { alipay: '支付宝到账', wechat: '微信收款', d0: '零', d1: '一', d2: '二', d3: '三', d4: '四', d5: '五', d6: '六', d7: '七', d8: '八', d9: '九', shi: '十', bai: '百', qian: '千', dian: '点', yuan: '元' };
+  const Z = { alipay: '易付到账', wechat: '信语收款', d0: '零', d1: '一', d2: '二', d3: '三', d4: '四', d5: '五', d6: '六', d7: '七', d8: '八', d9: '九', shi: '十', bai: '百', qian: '千', dian: '点', yuan: '元' };
   const say = (a, m) => payTokens(a, m).map((t) => Z[t]).join('');
-  const cases = [[10, '支付宝到账十元'], [15, '支付宝到账十五元'], [25, '支付宝到账二十五元'], [105, '支付宝到账一百零五元'], [110, '支付宝到账一百一十元'], [128, '支付宝到账一百二十八元'],
-    [1005, '支付宝到账一千零五元'], [1010, '支付宝到账一千零一十元'], [2008, '支付宝到账二千零八元'], [30.5, '支付宝到账三十点五元'], [0, '支付宝到账零元']];
+  const cases = [[10, '易付到账十元'], [15, '易付到账十五元'], [25, '易付到账二十五元'], [105, '易付到账一百零五元'], [110, '易付到账一百一十元'], [128, '易付到账一百二十八元'],
+    [1005, '易付到账一千零五元'], [1010, '易付到账一千零一十元'], [2008, '易付到账二千零八元'], [30.5, '易付到账三十点五元'], [0, '易付到账零元']];
   ok(cases.every(([a, w]) => say(a, 'alipay') === w), 'amounts read the Chinese way (十五, 一百零五, 一百一十, 三十点五)');
-  ok(say(18, 'wechat') === '微信收款十八元', 'WeChat says 微信收款');
+  ok(say(18, 'wechat') === '信语收款十八元', 'Xinyu says 信语收款');
   let all = true; for (let a = 0; a < 10000; a += 7) for (const t of payTokens(a + 0.5)) if (!Z[t]) all = false;
   ok(all, 'every amount is made only of recorded pieces');
   ok(Object.keys(Z).every((id) => existsSync(new URL(`../public/ambience/pay/${id}.mp3`, import.meta.url))), 'every piece is on disk (tools/voice/paybox.py)');
   let r = 0; const rnd = () => ((r = (r * 9301 + 49297) % 233280) / 233280);
-  ok(Array.from({ length: 200 }, () => crowdPayment(rnd)).every((p) => p.amount >= 12 && p.amount < 2000 && (p.method === 'alipay' || p.method === 'wechat')), 'a customer pays between ¥12 and ¥2,000, by Alipay or WeChat');
+  ok(Array.from({ length: 200 }, () => crowdPayment(rnd)).every((p) => p.amount >= 12 && p.amount < 2000 && (p.method === 'alipay' || p.method === 'wechat')), 'a customer pays between ¥12 and ¥2,000, by YiPay or Xinyu');
 }
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);

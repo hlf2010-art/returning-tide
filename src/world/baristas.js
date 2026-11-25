@@ -29,7 +29,7 @@ const apronMat = (() => {
   const [c, x] = makeCanvas(128, 256);
   x.fillStyle = '#151515'; x.fillRect(0, 0, 128, 256);
   for (let i = 0; i < 2600; i++) { x.fillStyle = `rgba(255,255,255,${Math.random() * 0.035})`; x.fillRect(Math.random() * 128, Math.random() * 256, 1, 2); }   // canvas weave
-  x.fillStyle = 'rgba(255,255,255,0.85)'; x.textAlign = 'center'; x.font = '800 15px "Inter", sans-serif'; x.fillText('MANNER', 64, 52);
+  x.fillStyle = 'rgba(255,255,255,0.85)'; x.textAlign = 'center'; x.font = '800 15px "Inter", sans-serif'; x.fillText('LINGER', 64, 52);
   x.fillStyle = 'rgba(255,255,255,0.12)'; x.fillRect(22, 150, 84, 2); x.fillRect(22, 150, 2, 40); x.fillRect(104, 150, 2, 40); x.fillRect(64, 150, 1, 40);   // the front pocket's stitching
   return new THREE.MeshStandardMaterial({ map: tex(c, { repeat: false }), roughness: 0.92, side: THREE.DoubleSide });
 })();

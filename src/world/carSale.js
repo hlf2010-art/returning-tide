@@ -81,11 +81,11 @@ export function createCarSale({ scene, people, huracan, hud, audio, camera, play
       choices: [[T('今天先交定金。', "I'll pay the deposit today."), 'deposit'], [T('我再想想。', "I'll think about it."), 'bye']],
     }; },
     deposited: () => ({
-      text: B('好的！定金收到了。上牌和尾款的事我微信上跟您确认～', "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on WeChat."),
+      text: B('好的！定金收到了。上牌和尾款的事我信语上跟您确认～', "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on Xinyu."),
       choices: [[T('好，谢谢。', 'Great, thanks.'), 'bye']],
     }),
     short: () => ({ text: B('银行卡余额好像不够……没关系，您方便的时候再说。', "It looks like there isn't enough in the account... No problem, whenever suits you."), choices: [[T('好。', 'OK.'), 'bye']] }),
-    bye: () => ({ text: B('好的，有问题随时微信我。', 'Of course. Message me any time.'), choices: null, end: true }),
+    bye: () => ({ text: B('好的，有问题随时信语我。', 'Of course. Message me any time.'), choices: null, end: true }),
   };
   let picked = { colour: null, interior: null };
   function go(name) {

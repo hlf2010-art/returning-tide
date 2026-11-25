@@ -295,7 +295,7 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
       audio && audio.cue && audio.cue('ping', 1.3, 0.5);
     } else if (id === 'uDoorOut') {
       if (S.door > 0.5) setDoor(false);
-      else if (hasFlat(l)) { hud.toast(T('房卡失效了：你已经退房，搬去了租的房子（滴滴 → “我的住处”）。', 'The card no longer works: you have checked out and moved to the flat you rent (DiDi → "My flat").'), 4); audio && audio.cue && audio.cue('bump', 0, 0.3); }
+      else if (hasFlat(l)) { hud.toast(T('房卡失效了：你已经退房，搬去了租的房子（快马 → “我的住处”）。', 'The card no longer works: you have checked out and moved to the flat you rent (Kuaima → "My flat").'), 4); audio && audio.cue && audio.cue('bump', 0, 0.3); }
       else if (!l.flags.hotelKey) { hud.toast(T('需要房卡（在前台取）', 'It needs a key card (from the front desk)'), 2.6); audio && audio.cue && audio.cue('bump', 0, 0.3); }
       else { readerLed.material.color.setRGB(0.2, 1.6, 0.4); audio && audio.cue && audio.cue('ping', 0, 0.3); setDoor(true); if (!S.said.room) { S.said.room = true; l.flags.room612 = true; if (l.flags.room612At == null) l.flags.room612At = stamp(l); save && save(); } }
     } else if (id === 'uDoorIn') setDoor(S.door < 0.5);
