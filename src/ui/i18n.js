@@ -77,6 +77,7 @@ export const S = {
   tipsSetting: { zh: '新手提示', en: 'Tips' },
   musicSetting: { zh: '店里和车里的音乐', en: 'Music in shops and cars' },
   musicCredits: { zh: '音乐署名', en: 'Music credits' },
+  credits: { zh: '其他署名与许可', en: 'Credits and licences' },
   benchmark: { zh: '性能测试', en: 'Benchmark' }, benchRun: { zh: '运行（约 30 秒）', en: 'Run (about 30 s)' },
   waypoint: { zh: '路标', en: 'Waypoint' }, waypointHere: { zh: '到了。', en: 'You\'re there.' },
   day: { zh: (n) => `第 ${n} 天`, en: (n) => `Day ${n}` },
