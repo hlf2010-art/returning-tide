@@ -59,7 +59,7 @@ reference).
 | Detail | Where / when | How often | Rests on | Cost | Status |
 |---|---|---|---|---|---|
 | Payment QR codes taped to every counter and stall | All counters | Everywhere | Local knowledge | S | idea |
-| Quilted windbreaks on e-bike handlebars in November; riders in helmets | Side streets | Most e-bikes | Local knowledge (architecture plan §5.2) | S | idea |
+| Quilted windbreaks on e-bike handlebars in November; riders in helmets | Side streets | Most e-bikes | Local knowledge (architecture plan §5.2) | S | built (parked at the Nanjing Road mouths) |
 | Walls of shared bikes in painted bays, three generic operator colours | Corners, metro exits; not on the Bund pavement | Fixed | Architecture plan §5.2 | S | idea |
 | Sanitation workers in orange with long tongs and a cart | Everywhere, more at dawn and after crowds | A few on the map | Local knowledge | M | idea |
 | Plane-tree leaves falling and drifting at the kerb | Hankou Road, Jiujiang Road, late November | Constant in season | Local knowledge (check timing) | S | idea |
@@ -72,11 +72,11 @@ reference).
 
 | Detail | Where / when | How often | Rests on | Cost | Status |
 |---|---|---|---|---|---|
-| The little sightseeing tram running the length of the street, bell ringing | The pedestrian street | Every few minutes | Local knowledge | M | idea |
+| The little sightseeing tram running the length of the street, bell ringing | The pedestrian street | Every few minutes | Local knowledge | M | built (world/tram.js: rideable, kiosks with fare board and pay codes) |
 | Staff handing out flyers at shop doors; a mascot outside a store | Shop fronts, opening hours | A few | Local knowledge | S | idea |
-| A queue outside a famous (invented) snack shop | One shop front | Always, longer at meal times | Local knowledge | S | idea |
-| Shopping bags in most hands; milk-tea cups | The street | 1 in 3 people | Architecture plan §5.2 | M | idea |
-| Couriers on foot jogging in from the street's edge with a bag | Ends of the street | One or two per 100 m | Architecture plan §5.2 | M | idea |
+| A queue outside a famous snack shop | 真老大房's mooncake window (Fujian Road corner) | Always while open, longer mid-afternoon and toward supper | Local knowledge | S | built (world/streetLife.js) |
+| Shopping bags in most hands; milk-tea cups | The street | 1 in 3 people | Architecture plan §5.2 | M | built (bags; cups still to do) |
+| Couriers on foot jogging in from the street's edge with a bag | Side-street mouths west of Henan Road | One per mouth near you | Architecture plan §5.2 | M | built (world/streetLife.js: Meituan, 淘宝闪购, JD liveries) |
 | Shoppers who come by DiDi: dropped at the Peace Hotel kerb, into a shop, out with one to three paper carrier bags, down the Bund's pavement to a pick-up, phone out, wave, gone (`world/shoppers.js`, `tools/shopwalk.mjs`) | Zhongshan Road west kerb, Nanjing Road shops west of the hotels | Two at a time | Owner's request, 25 Nov 2026 | M | done |
 | The Peace Hotel's security: middle-aged men in dark suits with earpieces, on the Nanjing Road door and at the lifts (`world/outfits.js`). Built from Old Lin's body (black hair, black suit, earpiece wire, gold lapel badge; glasses on the one at the lifts) until there's a face of their own | Peace Hotel door and lift lobby | Always | Owner (they wear suits, middle-aged); no photo reference yet | S | done |
 

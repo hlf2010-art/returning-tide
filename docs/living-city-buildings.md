@@ -78,4 +78,26 @@ about 35 m (`layout.js:32, 39-43`). The promenade runs from x 2 to x 26.
 
 *25 Nov 2026: the shop windows and doors are rebuilt (`world/shopfronts.js`): real 360-degree photographs of shop interiors (Poly Haven, CC0) seen through the glass with true depth (interior mapping), reflective glass, stone stall risers, bronze frames, automatic sliding doors that open for whoever walks up, warm light on the paving after dark. The photographs are of shops elsewhere; 360-degree photos taken inside real Nanjing Road shops would drop straight in (`tools/rooms/make.py`).*
 
+*25 Nov 2026, visual review (a screenshot walk of the whole map, day, dusk, night and drizzle), fixed:*
+- *Blade signs showed as black slabs (their faces sat inside the backing board).*
+- *The ambient-occlusion pass streaked the sky (the sky sphere is now hidden for it).*
+- *The grey "window card" boxes along Henan Road and Xizang Road, with sheared window patterns, are replaced by real façades from the street kit. Rows of blocks now stand behind both frontages west of Henan Road, open at the side streets, so Century Square and the side-street mouths look onto city instead of the river.*
+- *The Xizang Road end: Nanjing West Road runs on west between New World City, with the Radisson New World's saucer-topped tower behind it, and People's Park's trees.*
+- *Century Square has real plane trees.*
+- *The paving is dry unless it has rained lately: no permanent puddles, no sunlit glare blob.*
+- *At night the street is lit kerb to kerb by its shops and signs.*
+- *The tram kiosks are real ticket booths.*
+- *The metro exits carry lit Shanghai Metro boards instead of black panels.*
+- *Umbrellas are domed and ribbed, held clear of heads.*
+- *Shop rooms are turned per bay, so the same photo isn't repeated next to itself, and fashion shops no longer show a yarn shop.*
+- *Flags on the Bund carry the five stars; Lujiazui's day glass is blue-grey rather than pastel.*
+
+*Still open from that review:*
+- *The Peace Hotel and AIA lobbies need their real art deco interiors (the octagon, the amber glass skylight, marble).*
+- *The crowd reads as cloned (too few outfits; people walk in files along the parapet).*
+- *Tram riders' arms pass through the window pillar.*
+- *Pudong lights up before the Bund floods at 17:20.*
+- *The Yangpu Bridge pulled into the centre of the Bund vista.*
+- *Henan Road's street-name boards are blank.*
+
 Sources: [apple.com.cn Nanjing East](https://www.apple.com.cn/retail/nanjingeast/), [Henderson Metropolitan](https://www.hld.com/en/properties-in-mainland-china/properties-for-lease/henderson-metropolitan), [The Bund (Wikipedia)](https://en.wikipedia.org/wiki/The_Bund), [thepaper.cn](https://www.thepaper.cn/newsDetail_forward_5700079).
