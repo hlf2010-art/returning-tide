@@ -61,7 +61,17 @@ export function facadeGlass(map, { tint = [0.78, 0.86, 0.93], f0 = 0.3, frame = 
       varying vec3 vFW; varying vec3 vFN; varying vec2 vFU;
       uniform float todDay, todWin, todAmb, skDay, skNight, skGlow, skSide, skHaze, fF0, fSpan, fSeed; uniform vec3 skSun, fTint, fFrame, fBody;
       ${GLSL}`)
-      .replace('#include <map_fragment>', `#include <map_fragment>
+      .replace('#include <map_fragment>', `
+      #ifdef USE_MAP
+      {
+        // the atlas is 24 floors x 16 bays (100.8 m x 24 m); a tall tower would show the same pattern
+        // every 100 m, so each repeat is shifted by whole bays and floors (seams stay on the frames)
+        vec2 tl = floor(vMapUv), mUv = vMapUv;
+        mUv.x += floor(fh(vec2(tl.y, tl.x + fSeed + 3.0)) * 16.0) / 16.0;
+        mUv.y += floor(fh(vec2(tl.x, tl.y + fSeed + 5.0)) * 24.0) / 24.0;
+        diffuseColor *= textureGrad(map, mUv, dFdx(vMapUv), dFdy(vMapUv));
+      }
+      #endif
       {
         vec3 V = normalize(vFW - cameraPosition), N = dot(vFN, vFN) > 1e-4 ? normalize(vFN) : -V;
         vec2 g = vFU * vec2(16.0, 24.0), cell = floor(g), fu = fract(g), fw = max(fwidth(g), vec2(1e-4));
@@ -78,54 +88,97 @@ export function facadeGlass(map, { tint = [0.78, 0.86, 0.93], f0 = 0.3, frame = 
         float span = roof ? 0.0 : mix(fSpan, 1.0 - smoothstep(fSpan - fw.y, fSpan + fw.y, fu.y), detail);
         vec3 R = reflect(V, N);
         float ct = clamp(dot(-V, N), 0.0, 1.0), F = fF0 + (1.0 - fF0) * pow(1.0 - ct, 5.0);
-        vec3 refl = fCity(R, fSky(R)) * fTint;
+        // (after dark the sky it mirrors is Shanghai's: lit from below, purple-orange low down)
+        vec3 refl = fCity(R, fSky(R) * mix(1.7, 1.0, todDay) + vec3(0.06, 0.042, 0.05) * (1.0 - smoothstep(-0.05, 0.4, R.y)) * (1.0 - todDay)) * fTint;
         // the rooms behind the glass: the atlas, faint by day (lit offices only just show), the lit floors by night
         float l = dot(diffuseColor.rgb, vec3(0.3, 0.55, 0.15));
-        vec3 inside = mix(diffuseColor.rgb * mix(0.35, 1.0, todWin), fBody * todAmb * (0.7 + 0.6 * h1) + diffuseColor.rgb * 0.12 * smoothstep(0.25, 0.6, l), todDay);
+        float lw = smoothstep(0.1, 0.4, l) * (1.0 - todDay);
+        vec3 inside = mix(diffuseColor.rgb * mix(0.35, 1.0, todWin) + fBody * 0.3 * (0.5 + h1) * (1.0 - todDay), fBody * todAmb * (0.7 + 0.6 * h1) + diffuseColor.rgb * 0.12 * smoothstep(0.25, 0.6, l), todDay);
         vec3 spanC = mix(fBody * 0.6, fBody * 1.6, todDay) * (0.9 + 0.2 * h2);
-        vec3 c = mix(mix(inside, spanC, span), refl, mix(F, min(1.0, F * 1.6 + 0.08), span));
+        vec3 c = mix(mix(inside, spanC, span), refl, mix(F, min(1.0, F * 1.6 + 0.08), span) * (1.0 - 0.7 * lw * (1.0 - span)));
         vec3 frameC = fFrame * todAmb * (0.55 + 0.45 * max(dot(vFN, normalize(skSun + vec3(0.0, 0.3, 0.0))), 0.0)) + fFrame * 0.04;
         c = mix(c, frameC, clamp(mull, 0.0, 1.0) * 0.85);
         if (roof) c = mix(vec3(0.02), vec3(0.3, 0.31, 0.32), todDay) * (0.8 + 0.3 * h1);
         diffuseColor.rgb = c;
       }`);
   };
-  m.customProgramCacheKey = () => 'facade-glass-v3';
+  m.customProgramCacheKey = () => 'facade-glass-v4';
   return m;
 }
 
-// The far towers (world/skyline.js, seen from the Bund across the river): their window atlas by night as
-// before; by day, instead of one flat tint, the tint where the glass is seen straight on and the sky it
-// faces (the afterglow in the west at dusk, the haze, the sun) where it is seen at an angle.
-export function skylineGlass(m, dayColor = [0.46, 0.53, 0.6], f0 = 0.2) {
+// The far towers (world/skyline.js, seen from the Bund across the river). One map holds what each
+// tower shows at night (lit floors, slab lines, LED mesh); the shader builds the rest from the UVs:
+//  - with `grid` ([bays per u, floors per v]) the curtain wall itself: mullions at every bay, an
+//    opaque spandrel at every slab, each panel set a hair off true so reflections break at the joints,
+//    all box-filtered so far off they average into a tone instead of shimmering;
+//  - by day the glass's own tint where it is seen straight on, the sky and the city it faces at an
+//    angle (Fresnel), the sunny side lit and the far side in shade, aluminium frames catching the sun;
+//  - after dark the unlit glass still mirrors the city-lit sky (Shanghai's low sky glows), so the
+//    towers read as glass and as form, not as flat black cut-outs with lights on them;
+//  - aerial haze: far and low towers drift toward the horizon colour, tops stand out clearer.
+export function skylineGlass(m, dayColor = [0.46, 0.53, 0.6], f0 = 0.2, { grid = null, haze = 1 } = {}) {
   if (!m || m.userData.tod) return m;
   m.userData.tod = 'glass';
   const glass = { value: new THREE.Color(...dayColor) };
+  if (grid && m.map) m.defines = { ...(m.defines || {}), SKY_GRID: 1 };
+  const U = { fGrid: { value: new THREE.Vector2(...(grid || [1, 1])) }, fHaze: { value: haze } };
   m.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, { todDay: TOD.day, todWin: TOD.windows, todAmb: TOD.amb, todGlass: glass, skDay: SKY.day, skNight: SKY.night, skGlow: SKY.glow, skSide: SKY.side, skHaze: SKY.haze, skSun: SKY.sunDir, fF0: { value: f0 } });
+    Object.assign(sh.uniforms, U, { todDay: TOD.day, todWin: TOD.windows, todAmb: TOD.amb, todGlass: glass, skDay: SKY.day, skNight: SKY.night, skGlow: SKY.glow, skSide: SKY.side, skHaze: SKY.haze, skSun: SKY.sunDir, fF0: { value: f0 } });
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vFW; varying vec3 vFN;')
       .replace('#include <fog_vertex>', '#include <fog_vertex>\nvFW = (modelMatrix * vec4(transformed, 1.0)).xyz; vFN = normalize(mat3(modelMatrix) * normal);');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
       varying vec3 vFW; varying vec3 vFN;
-      uniform float todDay, todWin, todAmb, skDay, skNight, skGlow, skSide, skHaze, fF0; uniform vec3 todGlass, skSun;
+      uniform float todDay, todWin, todAmb, skDay, skNight, skGlow, skSide, skHaze, fF0, fHaze; uniform vec3 todGlass, skSun; uniform vec2 fGrid;
       ${GLSL}`)
       .replace('#include <map_fragment>', `#include <map_fragment>
       { float l = clamp(dot(diffuseColor.rgb, vec3(0.3, 0.55, 0.15)), 0.0, 1.0);
-        vec3 V = normalize(vFW - cameraPosition), N = dot(vFN, vFN) > 1e-4 ? normalize(vFN) : -V, R = reflect(V, N);   // (no normals: seen straight on)
+        vec3 V = normalize(vFW - cameraPosition), N0 = dot(vFN, vFN) > 1e-4 ? normalize(vFN) : -V, N = N0;   // (no normals: seen straight on)
+        bool roof = abs(N0.y) > 0.6;
+        float mullV = 0.0, mull = 0.0, span = 0.0, detail = 0.0, h1 = 0.5, h2 = 0.5;
+        #if defined(SKY_GRID) && defined(USE_MAP)
+        if (!roof) {
+          vec2 g = vMapUv * fGrid, cell = floor(g), fu = fract(g), fw = max(fwidth(g), vec2(1e-4));
+          detail = 1.0 - smoothstep(0.2, 0.75, max(fw.x, fw.y));
+          h1 = fh(cell); h2 = fh(cell.yx + 17.0);
+          vec3 T = normalize(vec3(-N0.z, 0.0, N0.x) + 1e-4);
+          N = normalize(N0 + (T * (h1 - 0.5) * 0.007 + vec3(0.0, 1.0, 0.0) * (h2 - 0.5) * 0.005) * detail);   // (a few mrad: the city's reflection breaks at the joints, still reads as a reflection)
+          float dx = min(fu.x, 1.0 - fu.x);
+          mullV = mix(0.12, 1.0 - smoothstep(0.06 - fw.x, 0.06 + fw.x, dx), detail);
+          float sl = 1.0 - smoothstep(0.16 - fw.y, 0.16 + fw.y, fu.y);
+          span = mix(0.16, sl, detail);
+          mull = max(mullV, mix(0.04, 1.0 - smoothstep(0.03 - fw.y, 0.03 + fw.y, abs(fu.y - 0.16)), detail));
+        }
+        #endif
+        vec3 R = reflect(V, N);
         float F = fF0 + (1.0 - fF0) * pow(1.0 - clamp(dot(-V, N), 0.0, 1.0), 5.0);
         // by day: the glass's own colour, deeper and more saturated than a grey haze, the window grid kept,
         // the sunny side lit and the far side in shade, then the sky in it at a glancing angle
-        float g = dot(todGlass, vec3(0.33));
-        vec3 deep = mix(vec3(g), todGlass, 1.4);
-        float sunlit = 0.62 + 0.75 * max(dot(N, normalize(skSun)), 0.0);
-        vec3 tint = deep * todAmb * (0.42 + 0.95 * l) * sunlit;
-        vec3 refl = fCity(R, fSky(R)) * mix(vec3(1.0), deep * 1.9, 0.55);
-        vec3 day = abs(N.y) > 0.6 ? tint * 0.8 : mix(tint, refl, clamp(F * 1.25, 0.0, 1.0));
-        diffuseColor.rgb = mix(diffuseColor.rgb * mix(0.35, 1.0, todWin) + refl * F * 0.5 * skGlow * (1.0 - todDay), day, todDay); }`);
+        float gg = dot(todGlass, vec3(0.33));
+        vec3 deep = mix(vec3(gg), todGlass, 1.4);
+        float sunlit = 0.62 + 0.75 * max(dot(N0, normalize(skSun)), 0.0);
+        vec3 tint = deep * todAmb * (0.42 + 0.5 * l) * sunlit * (0.88 + 0.24 * h1);
+        vec3 refl = fCity(R, fSky(R)) * mix(vec3(1.0), deep * 1.9, 0.65);
+        vec3 glassD = mix(tint, refl, clamp(F * 1.4 + 0.05, 0.0, 1.0));
+        vec3 spanD = deep * todAmb * sunlit * 0.36 + refl * 0.14;
+        vec3 frameD = mix(deep, vec3(0.62, 0.64, 0.67), 0.4) * todAmb * (0.3 + 0.5 * max(dot(N0, normalize(skSun)), 0.0));
+        vec3 day = roof ? tint * 0.8 : mix(mix(glassD, spanD, span * 0.85), frameD, mull * 0.5);
+        // after dark: the lit floors (mullions cross them), and where a floor is dark the glass mirrors
+        // the city-lit sky and the towers around
+        vec3 nsky = fSky(R) * 1.7 + vec3(0.06, 0.042, 0.05) * (1.0 - smoothstep(-0.05, 0.4, R.y)) * (1.0 - todDay);
+        vec3 nrefl = fCity(R, nsky);
+        vec3 lit = diffuseColor.rgb * mix(0.35, 1.0, todWin) * (1.0 - 0.45 * mullV * detail);
+        float dark = 1.0 - smoothstep(0.08, 0.35, l);
+        vec3 night = roof ? diffuseColor.rgb * 0.5 : lit + nrefl * clamp(F * 1.2 + 0.06, 0.0, 1.0) * dark * (1.0 - 0.4 * span) + vec3(0.016, 0.018, 0.024) * mull * detail * dark;
+        vec3 c = mix(night, day, todDay);
+        // aerial haze: distance thickens it, height thins it
+        float dist = length(vFW - cameraPosition);
+        vec3 hzC = fSky(normalize(vec3(V.x, 0.04, V.z))) * mix(1.6, 1.0, todDay) + vec3(0.05, 0.036, 0.045) * (1.0 - todDay);
+        float hz = (1.0 - exp(-dist / 1400.0)) * (1.0 - 0.6 * smoothstep(20.0, 420.0, vFW.y)) * mix(0.42, 0.12, todDay) * fHaze;
+        diffuseColor.rgb = mix(c, hzC, hz); }`);
   };
-  m.customProgramCacheKey = () => 'skyline-glass-v4';
+  m.customProgramCacheKey = () => 'skyline-glass-v5' + (grid ? 'g' : '');
   m.needsUpdate = true;
   return m;
 }
