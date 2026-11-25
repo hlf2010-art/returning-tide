@@ -60,8 +60,8 @@ async function talk(pick, until, timeout = 600000) {
 const quick = (day, picks) => ev(([day, picks]) => { const B = window.__bund, L = B.life, R = B.world.year.rules; L.clock.day = day; B.setHour(9, 0); R.rollover(L); R.runCareer(L); const t = R.arriveAtWork(L); if (!t) return null; R.playScene(L, t.def, picks || []); L.clock.minute = 18 * 60 + 30; R.workFull(L); return t.def.id; }, [day, picks]);
 
 // ---- 1. the date ----
-const chip = await shown(zh ? /第一幕.*11 月 9 日/ : /Act I.*New Beginnings.*9 Nov/);
-ok(zh ? /第一幕.*11 月 9 日/.test(chip) : /Act I.*New Beginnings.*9 Nov/.test(chip), `the chapter title gives the act and the date: "${chip}"`);
+const chip = await shown(zh ? /第一幕.*11 月 9 日/ : /Act I.*New Beginnings.*9 Nov/i);
+ok(zh ? /第一幕.*11 月 9 日/.test(chip) : /Act I.*New Beginnings.*9 Nov/i.test(chip), `the chapter title gives the act and the date: "${chip}"`);
 await ev(() => window.__bund.updateStory());
 await ev(() => window.__bund.world.year.handoff('opened'));                 // (Mission One, played to its end with the seal broken: tests/mission.test.mjs, tools/playtest.mjs)
 
@@ -117,9 +117,9 @@ await p.waitForFunction(() => document.getElementById('veil').classList.contains
 const line = await ev(() => document.getElementById('veil').dataset.line); await p.waitForTimeout(700); await shot('gap');
 ok(zh ? /2 个月后 · 2027 年 1 月 11 日 周一/.test(line) : /2 months later · Mon 11 Jan 2027/.test(line), `the fade says how long has passed: "${line}"`);
 await veilClear(); await p.waitForFunction(() => window.__bund.life.flags.year.work.through === 7, null, { timeout: 60000 }); await p.waitForTimeout(600);
-const jan = { bank: await ev(() => window.__bund.life.wallet.bank), toast: await shown(/84,000/), chip: await shown(zh ? /第二幕/ : /Act II/) };
+const jan = { bank: await ev(() => window.__bund.life.wallet.bank), toast: await shown(/84,000/), chip: await shown(zh ? /第二幕/ : /Act II/i) };
 ok(jan.bank === bank6 + 2 * 42000 - 2 * 12800 && /84,000/.test(jan.toast) && /25,600/.test(jan.toast), `two months' salary in, two months' rent out: "${jan.toast}"`);
-ok((zh ? /第二幕/ : /Act II/).test(jan.chip) && (zh ? /1 月 11 日/ : /11 Jan/).test(jan.chip), `Act II is announced with its date: "${jan.chip}"`);
+ok((zh ? /第二幕/ : /Act II/i).test(jan.chip) && (zh ? /1 月 11 日/ : /11 Jan/i).test(jan.chip), `Act II is announced with its date: "${jan.chip}"`);
 await shot('january');
 await ev(() => window.__bund.world.year.interact('yDoor')); await p.waitForFunction(() => window.__bund.world.year.here === null, null, { timeout: 60000 }); await veilClear();
 // the journal: the date, the acts, the year's page
@@ -164,7 +164,7 @@ ok(true, 'Mingxuan offers the two desks on 32F; he says yes (never forced: tests
 
 // ---- 6. June: the founding day, upstairs ----
 await mark(); await setClock(13, 9, 0);
-const june = await shown(/7 Jun 2027|6 月 7 日/); ok(/7 Jun 2027|6 月 7 日/.test(june), `June: "${june}"`);
+const june = await shown(/7 Jun 2027|6 月 7 日/i); ok(/7 Jun 2027|6 月 7 日/i.test(june), `June: "${june}"`);
 await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro', up: true }));
 await p.waitForFunction(() => window.__bund.world.dest.here === 'lujiazui', null, { timeout: 120000 }); await veilClear();
 await p.waitForFunction(() => window.__bund.world.year.running === 's1' && window.__bund.world.sceneTalk.active, null, { timeout: 120000 }); await p.waitForTimeout(1500);
@@ -182,8 +182,8 @@ await p.waitForFunction(() => window.__bund.life.invites.some((i) => i.id === 'd
 await ev(() => { const i = window.__bund.life.invites.find((x) => x.id === 'dad-dinner'); i.status = 'accepted'; });
 await mark(); await setClock(17, 19, 50);
 const nov = await ev(() => ({ q: Object.fromEntries(Object.entries(window.__bund.life.quests.list).map(([k, v]) => [k, v.status])) }));
-nov.chip = await shown(zh ? /第五幕/ : /Act V/);
-ok((zh ? /第五幕/ : /Act V/).test(nov.chip) && nov.q.dinner === 'active' && nov.q['act4-road'] === 'done', `the last day: "${nov.chip}"`);
+nov.chip = await shown(zh ? /第五幕/ : /Act V/i);
+ok((zh ? /第五幕/ : /Act V/i).test(nov.chip) && nov.q.dinner === 'active' && nov.q['act4-road'] === 'done', `the last day: "${nov.chip}"`);
 await ev(() => window.__bund.player.teleport(-42.4, -218.4, Math.PI - 0.4, -0.05)); await p.waitForTimeout(2500);
 await ev(() => { const b = window.__bund.player; b.yaw = Math.atan2(-(-40.58 - b.body.x), -(-220.0 - b.body.z)); b.pitch = -0.08; }); await p.waitForTimeout(1500);
 ok((zh ? /坐下/ : /Sit down with him/).test(await prompt()), 'Dad is at the table in the Jazz Bar');
