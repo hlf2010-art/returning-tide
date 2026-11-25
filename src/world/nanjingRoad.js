@@ -15,7 +15,7 @@ import { towerAtlas } from './skyline.js';
 import { markCanvas } from '../ui/brands.js';
 import { createShopfronts } from './shopfronts.js';
 import { createSignAtlas, loadSignFonts } from './shopSigns.js';
-import { LANDMARK_BUILDERS } from './njLandmarks.js';
+import { LANDMARK_BUILDERS, tower } from './njLandmarks.js';
 import { placedShops } from './njShops.js';
 
 const CH = L.curbH;
@@ -131,8 +131,10 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   // a vertical sign standing out from the façade, both faces
   const bladeSign = (spec, bx, zf, dir, y0, hgt) => {
     const f = bladeAt.add(spec, hgt / 1.1 * 0.9, { blade: true });
-    quad(onPage(blades, f[4]), bx, zf + dir * 0.3, bx, zf + dir * 1.4, y0, y0 + hgt, f);
-    quad(onPage(blades, f[4]), bx, zf + dir * 1.4, bx, zf + dir * 0.3, y0, y0 + hgt, [f[2], f[1], f[0], f[3]]);
+    // each face just proud of its side of the 8 cm board (on the board's own plane they'd be inside it)
+    const fa = bx - dir * 0.046, fb = bx + dir * 0.046;
+    quad(onPage(blades, f[4]), fa, zf + dir * 0.3, fa, zf + dir * 1.4, y0, y0 + hgt, f);
+    quad(onPage(blades, f[4]), fb, zf + dir * 1.4, fb, zf + dir * 0.3, y0, y0 + hgt, [f[2], f[1], f[0], f[3]]);
     boards.box(bx, y0 - 0.05, zf + dir * 0.85, 0.08, hgt + 0.1, 1.2);
   };
   // the shopfronts: glass with the real shop behind it, frames, automatic doors (world/shopfronts.js)
@@ -230,19 +232,67 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     tiers(B, fp, 0, [{ h: 5.4, style: 'rustic', bay: 4, f0: 0.5, f1: 0.4, cornice: { out: 0.3, h: 0.45 } }, { h: 18, style: 'classic', floors: 5, bay: 4, f0: 0.45, f1: 0.25, cornice: { out: 0.5, h: 0.6 } }], dir > 0 ? 'W' : 'E', seed++, { W: 1, E: 1 });
     fronts.addFront({ axis: 'z', plane: xf, out: -dir }, za + 0.3, zb - 0.3, { y0: CH });
   }
-  // and further along Henan Road: the street's walls, seen in perspective (simple massing, lit windows)
-  const far = new Batch(), fr = rng(77), farX = new Batch(), fr0 = rng(78);
-  for (const [x0, x1] of [[h.x1 + 5, h.x1 + 30], [h.x0 - 30, h.x0 - 5]]) for (const sgn of [-1, 1]) {
-    let z = sgn < 0 ? NJ.z0 - 34 : NJ.z1 + 34;
-    while (Math.abs(z - NJ.zc) < HL) {
-      const d = 20 + fr() * 25, hh = 18 + fr() * fr() * 60, g = new THREE.BoxGeometry(x1 - x0, hh, d), uv = g.attributes.uv;
-      for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * d) / 3 / 64 + fr(), (uv.getY(i) * hh) / 4 / 64);
-      g.translate((x0 + x1) / 2, hh / 2, z + sgn * d / 2); far.push(g); z += sgn * (d + 0.3);
+  // ---- the city behind and around: real façades (the street's own kit), not cards ----
+  // backdrop(fp, faces, rr): one block of the 1920s-30s fabric (rusticated base, four to seven storeys of
+  // stone, deco or brick, sometimes a set-back attic), or now and then a later glass tower behind it.
+  // Faces toward the viewer at full light, the rest in shade.
+  const parkTrees = [];
+  const far = new Batch(), towerUV = (g, w, d, hh, rr) => { const uv = g.attributes.uv, ou = rr(), ov = rr(); for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * Math.max(w, d)) / 3 / 64 + ou, (uv.getY(i) * hh) / 4 / 64 + ov); };
+  const backdrop = (fp, faces, rr, { front = faces[0], tall = 0.12 } = {}) => {
+    const gains = { N: 0.6, S: 0.6, E: 0.6, W: 0.6, [front]: 1 };
+    const w = fp.x1 - fp.x0, d = fp.z1 - fp.z0;
+    if (rr() < tall && w > 14 && d > 14) {                  // a 1990s-2000s tower on a stone podium
+      tiers(B, fp, 0, [{ h: 5.4, style: 'rustic', bay: 4, f0: 0.5, f1: 0.4, cornice: { out: 0.3, h: 0.45 } }, { h: 10.8, style: 'classic', floors: 3, bay: 4, f0: 0.45, f1: 0.3, cornice: { out: 0.4, h: 0.5 } }], faces, seed++, gains);
+      const tw = Math.min(w, d) - 6, hh = 45 + rr() * 70, g = new THREE.BoxGeometry(tw, hh, tw);
+      towerUV(g, tw, tw, hh, rr); g.translate((fp.x0 + fp.x1) / 2, 16.2 + hh / 2, (fp.z0 + fp.z1) / 2); far.push(g);
+      return;
     }
+    const style = ['classic', 'deco', 'arched', 'brick', 'classic'][Math.floor(rr() * 5)], up = 10.8 + Math.floor(rr() * 5) * 3.6;
+    tiers(B, fp, 0, [
+      { h: 5.4, style: 'rustic', bay: 4, f0: 0.5, f1: 0.4, cornice: { out: 0.3, h: 0.45 } },
+      { h: up, style, floors: Math.round(up / 3.6), bay: style === 'deco' ? 3 : 4, f0: 0.45, f1: 0.25, cornice: { out: 0.5, h: 0.6 } },
+      ...(rr() < 0.35 ? [{ h: 7.2, style, floors: 2, bay: 4, inset: 2.5, f0: 0.35, f1: 0.2, cornice: { out: 0.3, h: 0.4 } }] : []),
+    ], faces, seed++, gains);
+  };
+  // a run of blocks along x (a frontage facing `front`) from xa down to xb, skipping the gaps
+  const runX = (xa, xb, z0, z1, faces, rr, gaps = [], opts) => {
+    let x = xa;
+    while (x > xb + 6) {
+      const inGap = gaps.find(([g0, g1]) => x > g0 - 0.3 && x <= g1 + 0.6);
+      if (inGap) { x = inGap[0] - 0.6; continue; }
+      let w = Math.min(x - xb, 14 + rr() * 18);
+      const cut = gaps.find(([, g1]) => g1 < x && g1 > x - w); if (cut) w = x - cut[1] - 0.6;
+      if (w > 5) backdrop({ x0: x - w, x1: x, z0, z1 }, faces, rr, opts);
+      x -= Math.max(w, 1) + 0.4;
+    }
+  };
+  // and a run along z (a frontage facing E or W)
+  const runZ = (za, zb, x0, x1, faces, rr, opts) => {
+    let z = za;
+    while (z < zb - 6) { const d = Math.min(zb - z, 16 + rr() * 22); backdrop({ x0, x1, z0: z, z1: z + d }, faces, rr, opts); z += d + 0.4; }
+  };
+  { const rb = rng(77);
+    // Henan Road, beyond the junction's own buildings, both sides, both ways
+    for (const [x0, x1, face] of [[h.x1 + 5, h.x1 + 30, 'W'], [h.x0 - 30, h.x0 - 5, 'E']]) {
+      runZ(NJ.zc - HL, NJ.z0 - 34, x0, x1, face + 'NS', rb, { front: face });
+      runZ(NJ.z1 + 34, NJ.zc + HL, x0, x1, face + 'NS', rb, { front: face });
+    }
+    // behind both frontages west of Henan Road: a first row (open where the side streets run north and
+    // south) and a deeper row that closes the side streets' views; seen over the roofs, down the side
+    // streets and across Century Square
+    const xa = h.x0 - 31, xb = NJ.xizang.x1 + 1, C = NJ.century;
+    const gapsN = njCross(1).map((c) => [c.x0, c.x1]), gapsS = [...njCross(-1).map((c) => [c.x0, c.x1]), [C.x0 - 7, C.x1 + 7]];
+    runX(xa, xb, NJ.z0 - 50, NJ.z0 - 19, 'SEW', rb, gapsN, { front: 'S' });
+    runX(xa, xb, NJ.z0 - 88, NJ.z0 - 51, 'SEW', rb, [], { front: 'S', tall: 0.3 });
+    runX(xa, xb, NJ.z1 + 19, NJ.z1 + 50, 'NEW', rb, gapsS, { front: 'N' });
+    runX(xa, C.x1 + 7, NJ.z1 + 51, NJ.z1 + 88, 'NEW', rb, [], { front: 'N', tall: 0.3 });
+    runX(C.x0 - 7, xb, NJ.z1 + 51, NJ.z1 + 88, 'NEW', rb, [], { front: 'N', tall: 0.3 });
+    runX(C.x1 + 7, C.x0 - 7, NJ.z1 + 57, NJ.z1 + 88, 'NEW', rb, [], { front: 'N', tall: 0.5 });
+    // Xizang Road's east side, north and south of the street's corner blocks, facing the road
+    runZ(NJ.zc - 165, NJ.z0 - 89, NJ.xizang.x1 + 1, NJ.xizang.x1 + 26, 'WNS', rb, { front: 'W' });
+    runZ(NJ.z1 + 89, NJ.zc + 165, NJ.xizang.x1 + 1, NJ.xizang.x1 + 26, 'WNS', rb, { front: 'W' });
   }
-  const farMat = glassByDay(new THREE.MeshBasicMaterial({ map: towerAtlas(31, 0.75) }), [0.44, 0.45, 0.47]); farMat.color.setScalar(0.85);
-  group.add(far.mesh(farMat, 'henan-walls'));
-  const trunks = new Batch(), crowns = new Batch();
+  const farMat = glassByDay(new THREE.MeshBasicMaterial({ map: towerAtlas(31, 0.75) }), [0.36, 0.42, 0.5]); farMat.color.setScalar(0.85);
   // ---- the cross streets: closed off a few metres in (roadworks hoardings), on the sides they open ----
   const hoard = (x0, x1, z0, z1) => { P.hoard.box((x0 + x1) / 2, 0, (z0 + z1) / 2, Math.max(0.12, x1 - x0), 2.5, Math.max(0.12, z1 - z0)); };
   for (const c of njCross(1)) { hoard(c.x0, c.x1, NJ.z0 - 8.6, NJ.z0 - 8.48); P.paving.box((c.x0 + c.x1) / 2, -0.3, NJ.z0 - 4.3, c.x1 - c.x0, 0.3 + CH, 8.6, { tile: 2.4 }); }
@@ -260,7 +310,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     fronts.addFront({ axis: 'x', plane: zb, out: -1 }, C.x0 - 4, C.x1 + 4, { y0: CH, type: '百货' });
     for (const x of [C.x0 + 1, C.x1 - 1]) P.granite.box(x, CH, NJ.z1 + C.depth / 2, 0.4, 0.5, C.depth - 4);   // low walls down the sides
     for (let x = C.x0 + 8; x < C.x1 - 6; x += 12) for (const z of [NJ.z1 + 12, NJ.z1 + 24]) {
-      P.granite.box(x, CH, z, 2.6, 0.5, 2.6); trunks.cyl(x, CH + 0.5, z, 0.12, 0.16, 2.6, 7); crowns.add(new THREE.IcosahedronGeometry(1.9, 1), { x, y: CH + 4.2, z });   // planters, each with a tree
+      P.granite.box(x, CH, z, 2.6, 0.5, 2.6); parkTrees.push({ x, y: CH + 0.5, z, h: 6.5 + ((x + z) % 3 + 3) % 3 * 0.5, species: 'plane', seed: 700 + parkTrees.length, bare: 0.18 });   // planters, each with a plane tree (late November: turning)
       P.steel.box(x + 3, CH + 0.42, z, 1.8, 0.06, 0.5);                                                  // and a bench
     }
   }
@@ -283,16 +333,65 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     // the pedestrian railing along the kerb (Shanghai's white-and-grey steel), with its posts
     for (let z = NJ.z0 - 1; z <= NJ.z1 + 1; z += 2.2) P.steel.box(X.x1 + 0.4, CH, z, 0.06, 1.1, 0.06);
     for (const y of [0.35, 1.05]) P.steel.box(X.x1 + 0.4, CH + y, NJ.zc, 0.05, 0.05, NJ.z1 - NJ.z0 + 2);
-    // the far side: People's Square's edge and the buildings along Xizang Road, in perspective
-    for (const [za, zb] of [[NJ.zc - HZ, NJ.z0 - 2], [NJ.z1 + 2, NJ.zc + HZ]]) {
-      let z = za;
-      while (z < zb - 4) { const d = Math.min(zb - z, 18 + fr0() * 20), hh = 20 + fr0() * fr0() * 70, g = new THREE.BoxGeometry(24, hh, d), uv = g.attributes.uv;
-        for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * d) / 3 / 64 + fr0(), (uv.getY(i) * hh) / 4 / 64);
-        g.translate(X.x0 - 14, hh / 2, z + d / 2); farX.push(g); z += d + 0.4; }
-    }
-    { const g = new THREE.BoxGeometry(60, 34, 60), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * 60) / 3 / 64, (uv.getY(i) * 34) / 4 / 64); g.translate(X.x0 - 40, 17, NJ.zc - 2); farX.push(g); }   // across the road: the New World City block
-    group.add(farX.mesh(farMat, 'xizang-walls'));
+    // across the road: Nanjing West Road runs on west between New World City (新世界城, the north-west
+    // corner, the Radisson New World's saucer-topped tower rising behind it) and People's Park (the
+    // south-west corner: trees behind a low railing); buildings line Xizang Road north and south of them
+    const W0 = X.x0, WZ0 = NJ.zc - 11, WZ1 = NJ.zc + 11, rx = rng(78);
+    P.asphalt.floor(W0 - 260, W0, WZ0 + 3.5, WZ1 - 3.5, 0, 6);
+    for (const sx of [-0.18, 0.18]) P.yellow.floor(W0 - 260, W0, NJ.zc + sx - 0.07, NJ.zc + sx + 0.07, 0.012);
+    for (const [za, zb] of [[WZ0, WZ0 + 3.5], [WZ1 - 3.5, WZ1]]) { P.paving.box(W0 - 130, -0.3, (za + zb) / 2, 260, 0.3 + CH, zb - za, { tile: 2.4 }); P.granite.box(W0 - 130, -0.3, za < NJ.zc ? zb + 0.08 : za - 0.08, 260, 0.3 + CH + 0.005, 0.16); }
+    for (const [za, zb] of [[NJ.zc - 165, WZ0 + 3.5], [WZ1 - 3.5, NJ.zc + 165]]) {      // Xizang Road's west pavement and kerb
+      P.paving.box(W0 - 3, -0.3, (za + zb) / 2, 6, 0.3 + CH, zb - za, { tile: 2.4 }); P.granite.box(W0 - 0.08, -0.3, (za + zb) / 2, 0.16, 0.3 + CH + 0.005, zb - za); }
+    // New World City: a broad 1990s block on the corner, its own LED screen over the corner
+    tiers(B, { x0: W0 - 92, x1: W0 - 4, z0: NJ.zc - 80, z1: WZ0 }, 0, [
+      { h: 6, style: 'rustic', bay: 4, f0: 0.6, f1: 0.5, cornice: { out: 0.3, h: 0.45 } },
+      { h: 28.8, style: 'deco', floors: 8, bay: 3, f0: 0.55, f1: 0.3, cornice: { out: 0.55, h: 0.7 } },
+      { h: 10.8, style: 'deco', floors: 3, bay: 3, inset: 5, f0: 0.4, f1: 0.25 },
+    ], 'ESW', 1993, { E: 1, S: 1, W: 0.6 });
+    // the Radisson Collection Hotel New World (208 m): a round shaft, the 'flying saucer' near the top, a mast
+    { const rxz = { x: W0 - 46, z: NJ.zc - 52 };
+      tower(B, { ...rxz, y0: 45.6, flood: 0.5, stages: [
+        { kind: 'cyl', w: 30, h: 128, mat: 'stone', flood: 0.35 },
+        { kind: 'cyl', w: 31, h: 1.2, mat: 'stoneDark' },
+        { kind: 'cyl', w: 46, w0: 34, h: 6, mat: 'glassDark', flood: 0.9 },
+        { kind: 'cyl', w: 34, w0: 46, h: 5, mat: 'stone', flood: 0.9 },
+        { kind: 'cyl', w: 22, h: 8, mat: 'glassDark' },
+        { kind: 'dome', w: 22, h: 4, mat: 'stone' },
+        { kind: 'pole', w: 1, h: 10 },
+      ] }); }
+    runZ(NJ.zc - 165, NJ.zc - 81, W0 - 30, W0 - 4, 'ENS', rx, { front: 'E' });
+    // People's Park: a low railing on the corner, the park's trees (world/trees.js), the city beyond
+    for (let x = W0 - 4; x > W0 - 140; x -= 2.4) P.steel.box(x, CH, WZ1 + 0.6, 0.05, 1.0, 0.05);
+    P.steel.box(W0 - 72, CH + 0.9, WZ1 + 0.6, 136, 0.05, 0.05);
+    for (let z = WZ1 + 0.6; z < NJ.zc + 130; z += 2.4) P.steel.box(W0 - 6.2, CH, z, 0.05, 1.0, 0.05);
+    P.steel.box(W0 - 6.2, CH + 0.9, (WZ1 + NJ.zc + 130) / 2, 0.05, 0.05, NJ.zc + 130 - WZ1);
+    P.paving.box(W0 - 86, -0.3, NJ.zc + 72, 160, 0.3 + CH - 0.02, 120, { tile: 2.4 });
+    { const T = (x, z) => parkTrees.push({ x, y: CH, z, h: 9 + rx() * 5, species: rx() < 0.6 ? 'camphor' : 'plane', seed: 900 + parkTrees.length });   // its edge rows only: the
+      for (let x = W0 - 10; x > W0 - 95; x -= 8.5 + rx() * 2) { T(x, WZ1 + 4 + rx()); T(x - 4, WZ1 + 11 + rx() * 2); }                       // park reads from its kerb
+      for (let z = WZ1 + 18; z < NJ.zc + 100; z += 10 + rx() * 3) T(W0 - 11 - rx(), z); }
+    runZ(NJ.zc + 132, NJ.zc + 165, W0 - 30, W0 - 4, 'ENS', rx, { front: 'E' });
+    // the vista down Nanjing West Road: the Park Hotel's quarter, a kilometre off
+    runZ(WZ0 - 40, WZ1 + 40, W0 - 300, W0 - 270, 'ENS', rx, { front: 'E', tall: 0.6 });
+    runX(W0 - 96, W0 - 268, NJ.zc - 60, WZ0, 'SEW', rx, [], { front: 'S', tall: 0.3 });
   }
+  group.add(far.mesh(farMat, 'nj-backdrop-towers'));
+  // ---- the night glow on the paving: the street is lit kerb to kerb by its shop windows, signs and
+  // screens (brightest along the frontages, never black in the middle); an additive wash that comes up
+  // with the shop lights ----
+  { const [c, x] = makeCanvas(4, 256), g = x.createLinearGradient(0, 0, 0, 256);
+    for (const [t, a] of [[0, 1], [0.12, 0.7], [0.3, 0.48], [0.5, 0.42], [0.7, 0.48], [0.88, 0.7], [1, 1]]) { const v = Math.round(a * 255); g.addColorStop(t, `rgb(${v},${v},${v})`); }   // (an alphaMap reads green)
+    x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+    // (the paving's own texture through it, so the stones still read: the wash on uv, the gradient on uv1)
+    const t = tex(c, { repeat: false }); t.channel = 1;
+    const glow = new THREE.MeshBasicMaterial({ map: M.sidewalk.map, alphaMap: t, color: new THREE.Color(1.6, 1.22, 0.88), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+    asLight(glow, 'signs');                                // dusk to 11 pm, as the neon
+    const wash = new Batch();
+    for (const [xa, xb] of [[h.x1 + 0.5, -40], [NJ.xWest, h.x0 - 0.5]]) {
+      wash.floor(xa, xb, NJ.z0, NJ.z1, CH + 0.012, 2.4); const g2 = wash.list[wash.list.length - 1], uv = g2.attributes.uv, uv1 = uv.clone();
+      for (let i = 0; i < uv.count; i++) uv1.setXY(i, 0.5, (uv.getY(i) * 2.4 + NJ.z1) / (NJ.z1 - NJ.z0));
+      g2.setAttribute('uv1', uv1);
+    }
+    const m = wash.mesh(glow, 'nj-night-glow'); m.renderOrder = 2; group.add(m); }
   for (const z of [NJ.z0 - h.walkTo - 0.5, NJ.z1 + h.walkTo + 0.5]) { hoard(h.x1, h.x1 + 5, z - 0.06, z + 0.06); hoard(h.x0 - 5, h.x0, z - 0.06, z + 0.06); }
   // ---- lamp posts down both sides ----
   const lampGlass = new Batch();
@@ -368,13 +467,13 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
   group.add(P.paint.mesh(paint, 'henan-paint'), P.yellow.mesh(yellow, 'henan-yellow'));
   const steel = new THREE.MeshStandardMaterial({ color: 0x8a9096, metalness: 0.85, roughness: 0.35 });
-  if (trunks.list.length) group.add(trunks.mesh(new THREE.MeshStandardMaterial({ color: 0x4a3b2c, roughness: 0.9 }), 'nj-trunks'), crowns.mesh(new THREE.MeshStandardMaterial({ color: 0x3f6b3a, roughness: 0.85, flatShading: true }), 'nj-crowns'));
   group.add(P.steel.mesh(steel, 'nj-steel'), P.hoard.mesh(new THREE.MeshStandardMaterial({ color: 0x2f6aa8, roughness: 0.7 }), 'nj-hoarding'));
   group.add(P.tile.mesh(new THREE.MeshStandardMaterial({ color: 0x8e8b86, roughness: 0.35 }), 'metro-landing'), walls.mesh(new THREE.MeshStandardMaterial({ color: 0xa9aba9, roughness: 0.45 }), 'metro-walls'));
   group.add(P.dark.mesh(new THREE.MeshStandardMaterial({ color: 0x15181c, roughness: 0.15, metalness: 0.6 }), 'metro-panels'));
   group.add(glassB.mesh(glassMat, 'metro-glass'), strips.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.6, 1.7) }), 'metro-strips'));
   return {
     group, lights, doors: doorList, fronts, signAtlas: signAt, bladeAtlas: bladeAt, placed: PLACED,
+    trees: parkTrees,                                    // for world/trees.js (Century Square, People's Park)
     update(t) { scrTex.offset.y = (Math.floor(t / 6) % 4) * 0.25; },
     // the season's decorations: date = { m, d }
     season(date) { xmas.visible = !!date && ((date.m === 11 && date.d >= 22) || date.m === 12 || (date.m === 1 && date.d <= 3)); },

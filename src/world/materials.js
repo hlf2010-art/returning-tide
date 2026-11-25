@@ -110,6 +110,7 @@ const arch = archMaterial;
 // 1 = freshly rained on. Covered footprints (shop canopy, portico) never get the extra wetness.
 export const weatherUniforms = {
   wetBoost: { value: 0 },
+  groundDamp: { value: 0 },           // 0 = dry stone (no rain lately: no puddles, matte), 1 = the after-rain look
   rainRipples: { value: 0 },          // 0..1: drizzle intensity, drives ripple density
   rippleTime: { value: 0 },           // seconds, frozen while paused
   coverXZ: { value: covers.map((c) => new THREE.Vector4(c.x0, c.x1, c.z0, c.z1)) },
@@ -119,6 +120,7 @@ export const weatherUniforms = {
 function puddles(material) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.wetBoost = weatherUniforms.wetBoost;
+    shader.uniforms.groundDamp = weatherUniforms.groundDamp;
     shader.uniforms.coverXZ = weatherUniforms.coverXZ;
     shader.uniforms.rainRipples = weatherUniforms.rainRipples;
     shader.uniforms.rippleTime = weatherUniforms.rippleTime;
@@ -127,7 +129,7 @@ function puddles(material) {
       .replace('#include <project_vertex>', '#include <project_vertex>\n  vWetXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-      varying vec2 vWetXZ; uniform float wetBoost, rainRipples, rippleTime; uniform vec4 coverXZ[${covers.length}];
+      varying vec2 vWetXZ; uniform float wetBoost, groundDamp, rainRipples, rippleTime; uniform vec4 coverXZ[${covers.length}];
       float rHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       // Raindrop rings: each cell of a jittered grid hosts one ring at a time, born at a random
       // moment, expanding and fading. Returns the surface slope (d height / d x, d height / d z).
@@ -149,6 +151,11 @@ function puddles(material) {
         return slope;
       }`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      // dry ground: the puddle map's low spots fill back in to matte stone, a shade lighter, its fine
+      // relief calmed (no foil-like glint in low sun); the after-rain look comes back with the rain
+      roughnessFactor = mix(max(roughnessFactor, 0.86), roughnessFactor, groundDamp);
+      diffuseColor.rgb *= mix(1.07, 1.0, groundDamp);
+      normal = normalize(mix(nonPerturbedNormal, normal, mix(0.6, 1.0, groundDamp)));
       float exposed = 1.0;
       for (int i = 0; i < ${covers.length}; i++) { vec4 c = coverXZ[i]; if (vWetXZ.x > c.x && vWetXZ.x < c.y && vWetXZ.y > c.z && vWetXZ.y < c.w) exposed = 0.0; }
       float wetW = wetBoost * exposed;

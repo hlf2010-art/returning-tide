@@ -50,6 +50,44 @@ function signTexture() {
   x.font = `500 20px ${FONT.sans}`; x.fillStyle = '#e8dcc0'; x.fillText('NANJING ROAD SIGHTSEEING TRAM', 256, 78);
   return tex(c, { repeat: false, aniso: 4 });
 }
+// the ticket kiosk's faces: front (toward the lane) with its service window, the fare board and the QR
+// codes taped by the counter (everyone pays by phone); back and ends with the route and the green stripe
+function kioskFaces() {
+  const face = (w, h, draw) => { const [c, x] = makeCanvas(w, h); draw(x, w, h); return tex(c, { repeat: false, aniso: 4 }); };
+  const base = (x, w, h) => {
+    x.fillStyle = '#eceae4'; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < w; i += 64) { x.fillStyle = 'rgba(0,0,0,0.07)'; x.fillRect(i, 0, 2, h); }      // panel joints
+    x.fillStyle = '#1f6e3a'; x.fillRect(0, h - 70, w, 70); x.fillStyle = '#c9a24a'; x.fillRect(0, h - 74, w, 4);   // the green skirt, a gilt line
+  };
+  const qr = (x, X, Y, s, seed) => { let r = seed; const rn = () => ((r = (r * 16807) % 2147483647) / 2147483647);
+    x.fillStyle = '#fff'; x.fillRect(X - 6, Y - 6, s + 12, s + 12); x.fillStyle = '#111'; const n = 21, k = s / n;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { const fin = (i < 7 && j < 7) || (i > 13 && j < 7) || (i < 7 && j > 13);
+      if (fin ? (i % 6 === 0 || j % 6 === 0 || (i % 14 > 1 && i % 14 < 5 && j % 14 > 1 && j % 14 < 5)) : rn() < 0.5) x.fillRect(X + i * k, Y + j * k, k + 0.5, k + 0.5); } };
+  const front = face(512, 640, (x, w, h) => {
+    base(x, w, h);
+    x.fillStyle = '#0d1419'; x.fillRect(56, 120, 400, 250);                                              // the service window
+    x.fillStyle = 'rgba(255,236,200,0.22)'; x.fillRect(70, 134, 372, 222);
+    x.fillStyle = 'rgba(255,255,255,0.18)'; x.beginPath(); x.moveTo(90, 134); x.lineTo(170, 134); x.lineTo(110, 356); x.lineTo(70, 356); x.fill();
+    x.fillStyle = '#9aa0a6'; x.fillRect(40, 370, 432, 18);                                               // the counter
+    x.fillStyle = '#c8102e'; x.fillRect(56, 20, 400, 84); x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = `800 44px ${FONT.sans}`; x.fillText('售票处', 256, 52); x.font = `600 18px ${FONT.sans}`; x.fillText('TICKETS', 256, 88);
+    x.fillStyle = '#1c1c1c'; x.font = `700 30px ${FONT.sans}`; x.fillText('观光车 每位 5元', 256, 425);
+    x.font = `500 18px ${FONT.sans}`; x.fillText('Sightseeing Tram  ¥5 per person', 256, 458);
+    x.font = `500 17px ${FONT.sans}`; x.fillText('营业时间 08:30 – 22:00', 256, 490);
+    qr(x, 60, 500, 54, 7); qr(x, 398, 500, 54, 11);
+    x.fillStyle = '#1677ff'; x.fillRect(54, 494, 66, 4); x.fillStyle = '#07c160'; x.fillRect(392, 494, 66, 4);   // Alipay blue, WeChat green
+  });
+  const side = face(512, 640, (x, w, h) => {
+    base(x, w, h);
+    x.fillStyle = '#1c1c1c'; x.textAlign = 'center'; x.font = `700 28px ${FONT.sans}`; x.fillText('线路图  ROUTE', 256, 70);
+    x.strokeStyle = '#1f6e3a'; x.lineWidth = 8; x.beginPath(); x.moveTo(60, 200); x.lineTo(452, 200); x.stroke();
+    [['西藏中路', 60], ['世纪广场', 256], ['河南中路', 452]].forEach(([n, X]) => { x.fillStyle = '#fff'; x.beginPath(); x.arc(X, 200, 14, 0, 7); x.fill(); x.strokeStyle = '#1f6e3a'; x.lineWidth = 5; x.stroke();
+      x.fillStyle = '#1c1c1c'; x.font = `600 20px ${FONT.sans}`; x.fillText(n, X, 246); });
+    x.font = `500 18px ${FONT.sans}`; x.fillStyle = '#444'; x.fillText('请勿在车道内停留  Please keep clear of the lane', 256, 330);
+  });
+  const glow = face(512, 640, (x) => { x.fillStyle = '#000'; x.fillRect(0, 0, 512, 640); x.fillStyle = '#fff'; x.fillRect(70, 134, 372, 222); x.fillStyle = '#888'; x.fillRect(56, 20, 400, 84); });   // the lit window and the red header
+  return { front, side, glow };
+}
 function locoParts() {
   const b = { body: new Batch(), trim: new Batch(), roof: new Batch(), frame: new Batch(), glass: new Batch(), lamp: new Batch(), tyre: new Batch(), sign: new Batch() };
   const { len, w, h } = LOCO, hl = len / 2;
@@ -97,6 +135,7 @@ function trailerParts() {
 
 export function createTrams({ scene, people, audio, addCollider, rnd = Math.random, n = 2, route = TRAM_ROUTE, look = TRAM_LOOK }) {
   const P = makePath(route), group = new THREE.Group(); group.name = 'trams'; scene.add(group);
+  let kioskGlow = null;                                   // the kiosk's window, lit while it's selling after dark
   const mats = {
     body: new THREE.MeshStandardMaterial({ color: look.body, roughness: 0.42, metalness: 0.15 }),
     trim: new THREE.MeshStandardMaterial({ color: look.trim, roughness: 0.3, metalness: 0.85 }),
@@ -125,16 +164,22 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
   // fleet numbers on the back of each train's last trailer
   const numMats = look.numbers.map((n) => { const [c, x] = makeCanvas(128, 96); x.fillStyle = '#f4f4f0'; x.fillRect(0, 0, 128, 96); x.fillStyle = '#1f6e3a'; x.fillRect(0, 70, 128, 26); x.fillStyle = '#1c1c1c'; x.font = `800 60px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(n, 64, 38); return new THREE.MeshStandardMaterial({ map: tex(c, { repeat: false }), roughness: 0.5 }); });
   trains.forEach((t, i) => { t.num = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.45), numMats[i % numMats.length]); group.add(t.num); });
-  // ticket kiosks at the stops, on the 金带 beside the lane (white and green, a sign on top)
-  { const kb = new Batch(), kt = new Batch(), sign = new THREE.MeshBasicMaterial({ map: signTexture() });
+  // ticket kiosks at the stops, on the 金带 beside the lane: a white booth with its window to the lane, a
+  // fare board and pay-by-phone codes, a dark roof cap and the line's name on top
+  { const kt = new Batch(), sign = new THREE.MeshBasicMaterial({ map: signTexture() }), F = kioskFaces();
+    const fm = new THREE.MeshStandardMaterial({ map: F.front, roughness: 0.45, emissive: 0xffe6c0, emissiveIntensity: 0, emissiveMap: F.glow });
+    const sm = new THREE.MeshStandardMaterial({ map: F.side, roughness: 0.45 }), plain = new THREE.MeshStandardMaterial({ color: 0xeceae4, roughness: 0.5 });
+    kioskGlow = fm;
     for (const x of route.stops) {
       const kz = NJ.zc - 1.3 - 2.1 - 0.9;                                                 // (north of the 金带, clear of the crowd's middle walk)
-      kb.box(x, 0.15, kz, 1.8, 2.3, 1.3); kt.box(x, 2.45, kz, 2.2, 0.16, 1.7); kt.box(x, 0.15, kz, 1.82, 0.4, 1.32);
+      const booth = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.3, 1.3), [sm, sm, plain, plain, fm, sm]);   // +z (the lane side) is the front
+      booth.position.set(x, 0.15 + 1.15, kz); booth.castShadow = booth.receiveShadow = true; group.add(booth);
+      kt.box(x, 2.45, kz, 2.2, 0.16, 1.7); kt.box(x, 0.15, kz, 1.84, 0.08, 1.34);
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.36), sign); pl.position.set(x, 2.78, kz); group.add(pl);
       const pl2 = pl.clone(); pl2.rotation.y = Math.PI; group.add(pl2);
       if (addCollider) { const b = addCollider('shop'); b.minX = x - 0.95; b.maxX = x + 0.95; b.minZ = kz - 0.7; b.maxZ = kz + 0.7; }
     }
-    group.add(kb.mesh(mats.body, 'tram-kiosks'), kt.mesh(mats.trim, 'tram-kiosk-trim')); }
+    group.add(kt.mesh(new THREE.MeshStandardMaterial({ color: 0x23282c, roughness: 0.4, metalness: 0.6 }), 'tram-kiosk-trim')); }
 
   // ---- people aboard: a driver, and a few on the benches of each trailer (near you only) ----
   const SEATS = []; for (const z of [-1.35, -0.45, 0.45, 1.35]) for (const x of [-0.48, 0, 0.48]) SEATS.push({ x, z });
@@ -255,6 +300,7 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
     update(dt, player, agents, eye, minute = 720) {
       if (!dt) return;
       const open = minute >= route.open[0] && minute < route.open[1]; lastOpen = open;
+      if (kioskGlow) kioskGlow.emissiveIntensity = open && (minute < 420 || minute > 1035) ? 0.45 : 0;
       // far from both: nothing to draw (the instanced meshes aren't frustum-culled)
       group.visible = !eye || trains.some((t) => Math.abs(eye.x - t.pos[0].x) < 260) || Math.abs(eye.z - NJ.zc) < 40 && eye.x < -480;
       for (const t of trains) {

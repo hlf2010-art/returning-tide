@@ -67,7 +67,15 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null, gfx =
   gtao.updateGtaoMaterial({ radius: 0.55, distanceExponent: 1.4, thickness: 1.2, scale: 1, samples: 12 });
   gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 });
   const gtaoRender = gtao.render.bind(gtao);
-  gtao.render = (...a) => { aoCam.copy(camera, false); aoCam.layers.mask = camera.layers.mask & ~(1 << 2); gtaoRender(...a); };
+  // (the sky is a 1 m sphere round the eye drawn behind everything; the AO pass's own depth/normal render
+  // ignores its depthWrite:false, so it is hidden for that render or it smears the sky with dark streaks)
+  let sky = null;
+  gtao.render = (...a) => {
+    aoCam.copy(camera, false); aoCam.layers.mask = camera.layers.mask & ~(1 << 2);
+    if (!sky || !sky.parent) sky = scene.getObjectByName('sky');
+    const was = sky ? sky.visible : false; if (sky) sky.visible = false;
+    try { gtaoRender(...a); } finally { if (sky) sky.visible = was; }
+  };
   composer.addPass(gtao);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());

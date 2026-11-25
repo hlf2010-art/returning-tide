@@ -285,6 +285,7 @@ async function boot() {
   const trees = createTrees([
     ...streetTrees.map((t, i) => ({ x: t.x, y: L.curbH, z: t.z, h: 8.4 + (i % 2) * 0.7, species: 'plane', seed: 31 + i, bare: 0.12, away: [0, -Math.sign(t.z)] })),
     ...planterIslands.map((p, i) => ({ x: (p.x0 + p.x1) / 2, y: L.deckY + 0.5, z: (p.z0 + p.z1) / 2 + (i % 2 ? 1.5 : -1.5), h: 4.2 + (i % 3) * 0.3, species: 'camphor', seed: 1 + i })),
+    ...nanjing.trees,                                                     // Century Square's planes, People's Park
   ], { wetBoost: weatherUniforms.wetBoost });
   scene.add(trees.group);
   // Manner Coffee's takeaway front on Hankou Road (world/shops.js), lit from inside
@@ -904,6 +905,7 @@ for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => {
 
 // ---- frame ----
 let target = null, boundaryCooldown = 0, talkTarget = null;   // target: { id, dist, cos } or null
+let groundDamp = -1;                                           // see the weather in the frame loop
 const debug = { noReflect: false, freezeTraffic: false };   // freezeTraffic: screenshot tool only
 debug.music = worldMusic;                                     // music in the world: what plays where (tools)
 const _v = new THREE.Vector3(), _d = new THREE.Vector3();
@@ -1616,6 +1618,11 @@ function frame(now) {
   if (mode !== 'pause') wind.update(dt, weather.rain);
   world.trees.update(weatherTime, wind.level, weather.rain, wind.dir);
   weatherUniforms.wetBoost.value = weather.wet;
+  // the ground's own memory of rain: wet within half a minute of real drizzle, dry again over about twenty
+  // minutes (eighty on the city's clock) once it stops; puddles only while it's damp
+  if (groundDamp < 0) groundDamp = weather.wet;
+  if (mode !== 'pause') groundDamp = weather.rain > 0.25 ? Math.min(1, groundDamp + dt / 30) : Math.max(weather.wet, groundDamp - dt / 1200);
+  weatherUniforms.groundDamp.value = groundDamp;
   weatherUniforms.rainRipples.value = weather.rain; weatherUniforms.rippleTime.value = weatherTime;
   applyHour(dt);
   scene.fog.density = FOG_DENSITY * hourState.fog + HAZE_DENSITY * weather.haze;
