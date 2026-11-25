@@ -280,7 +280,7 @@ function buildShanghaiTower(group, x, z) {
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex(idx); g.computeVertexNormals();
   const mat = basic(shanghaiTowerTexture(), 1.05);
-  mat.userData.glass = { day: [0.58, 0.67, 0.72], f0: 0.24, grid: [16, 128] };
+  mat.userData.glass = { day: [0.46, 0.58, 0.67], f0: 0.24, grid: [16, 128] };
   group.add(Object.assign(new THREE.Mesh(g, mat), { name: 'shanghai-tower' }));
   // the lit crown
   const crown = new Batch();
@@ -309,7 +309,7 @@ function buildSWFC(group, x, z) {
   // 492 m "bottle opener": square base resolving to a single diagonal blade with a trapezoid opening
   const H = 492, b = 29, yCut = 432;
   const mat = basic(swfcTexture(), 1.05);
-  mat.userData.glass = { day: [0.4, 0.5, 0.6], f0: 0.22, grid: [32, 100] };
+  mat.userData.glass = { day: [0.28, 0.4, 0.55], f0: 0.22, grid: [32, 100] };
   const ring = (y) => {
     const t = y / H, s = 1 - t;                         // two corners close in, two stay out
     const q = b * 1.41 * (0.1 + 0.9 * s), p = b * 1.41 * (1 - 0.1 * t);
@@ -640,8 +640,8 @@ export function createSkyline() {
   // dull fixtures, the far bank's lamps and the aircraft lights off; the LED walls are their own
   // (a sunny day: blue-green and bronze glass, steel-grey Jin Mao, white stone, not one pale grey)
   // (by day Lujiazui is mostly blue-grey and silver curtain wall; the night palettes' tints only a hint)
-  const DAY_GLASS = { 'towers-a': [0.26, 0.36, 0.46], 'towers-b': [0.36, 0.36, 0.37], 'towers-gold': [0.42, 0.4, 0.36], 'towers-white': [0.48, 0.52, 0.56],
-    'towers-violet': [0.3, 0.35, 0.44], 'towers-green': [0.27, 0.35, 0.38], jinmao: [0.34, 0.36, 0.4], 'swfc-top': [0.36, 0.48, 0.6], globes: [0.62, 0.66, 0.72], shore: [0.26, 0.3, 0.24] };
+  const DAY_GLASS = { 'towers-a': [0.16, 0.28, 0.42], 'towers-b': [0.24, 0.3, 0.37], 'towers-gold': [0.34, 0.32, 0.28], 'towers-white': [0.32, 0.4, 0.5],
+    'towers-violet': [0.2, 0.26, 0.4], 'towers-green': [0.16, 0.3, 0.33], jinmao: [0.34, 0.36, 0.4], 'swfc-top': [0.28, 0.4, 0.55], globes: [0.62, 0.66, 0.72], shore: [0.26, 0.3, 0.24] };
   // the curtain wall's bays and floors in each atlas's own units (tower(): 3 m x 4 m cells, 64 to the
   // atlas; metreTower(): 16 bays across, 256 storeys up)
   const GRID = { 'towers-a': [64, 64], 'towers-b': [64, 64], 'towers-gold': [16, 256], 'towers-white': [16, 256], 'towers-violet': [16, 256], 'towers-green': [16, 256] };
@@ -650,7 +650,7 @@ export function createSkyline() {
     if (!o.material || o.material.userData.tod) return;
     const m = o.material;
     const gl = m.userData.glass || {};
-    if (m.isMeshBasicMaterial && !m.transparent && m.blending !== THREE.AdditiveBlending && (m.map || DAY_GLASS[o.name])) skylineGlass(m, gl.day || DAY_GLASS[o.name] || [0.46, 0.53, 0.6], gl.f0 ?? 0.2, { grid: gl.grid || GRID[o.name] });
+    if (m.isMeshBasicMaterial && !m.transparent && m.blending !== THREE.AdditiveBlending && (m.map || DAY_GLASS[o.name])) skylineGlass(m, gl.day || DAY_GLASS[o.name] || [0.3, 0.4, 0.52], gl.f0 ?? 0.2, { grid: gl.grid || GRID[o.name] });
     else if (m.isMeshBasicMaterial || m.isPointsMaterial) asLight(m, 'outline', 0.3);
   });
 

@@ -159,8 +159,8 @@ export function skylineGlass(m, dayColor = [0.46, 0.53, 0.6], f0 = 0.2, { grid =
         vec3 deep = mix(vec3(gg), todGlass, 1.4);
         float sunlit = 0.62 + 0.75 * max(dot(N0, normalize(skSun)), 0.0);
         vec3 tint = deep * todAmb * (0.42 + 0.5 * l) * sunlit * (0.88 + 0.24 * h1);
-        vec3 refl = fCity(R, fSky(R)) * mix(vec3(1.0), deep * 1.9, 0.65);
-        vec3 glassD = mix(tint, refl, clamp(F * 1.4 + 0.05, 0.0, 1.0));
+        vec3 refl = fCity(R, fSky(R)) * mix(vec3(1.0), deep * 1.9, 0.85);   // (tinted glass tints what it mirrors)
+        vec3 glassD = mix(tint, refl, clamp(F * 1.25 + 0.03, 0.0, 1.0));
         vec3 spanD = deep * todAmb * sunlit * 0.36 + refl * 0.14;
         vec3 frameD = mix(deep, vec3(0.62, 0.64, 0.67), 0.4) * todAmb * (0.3 + 0.5 * max(dot(N0, normalize(skSun)), 0.0));
         vec3 day = roof ? tint * 0.8 : mix(mix(glassD, spanD, span * 0.85), frameD, mull * 0.5);
