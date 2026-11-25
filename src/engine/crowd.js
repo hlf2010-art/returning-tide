@@ -280,6 +280,7 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
   };
   const deckEnds = ['P0', 'P15'].map((id) => ends.find((e) => e.id === ((net.ends && net.ends[id]) || id))).filter(Boolean);
   function trip(a, { midway = false } = {}) {
+    a.bags = a.kind === 'jogger' || a.kind === 'stander' ? 0 : rnd() < 0.1 ? 1 : 0;   // shopping bags in hand (more after a shop: below)
     if (a.kind === 'jogger' && deckEnds.length === 2) {             // the length of the promenade and back off it
       const k = rnd() < 0.5 ? 0 : 1, p = route(net, deckEnds[k].id, deckEnds[1 - k].id);
       if (p && p.length > 1) {
@@ -601,7 +602,7 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
           }
         } else if (a.state === 'shop') {
           const sh = a.shop;
-          if (sh.phase === 'inside') { sh.wait -= dta; tx = a.x; tz = a.z; speed = 0; if (sh.wait <= 0) { sh.phase = 'outward'; sh.t = 0; a.x = sh.step.x; a.z = sh.step.z; a.inside = false; } }   // (out of the door on to the step)
+          if (sh.phase === 'inside') { sh.wait -= dta; tx = a.x; tz = a.z; speed = 0; if (sh.wait <= 0) { sh.phase = 'outward'; sh.t = 0; a.x = sh.step.x; a.z = sh.step.z; a.inside = false; if (rnd() < 0.65) a.bags = Math.min(3, (a.bags || 0) + 1 + (rnd() < 0.3 ? 1 : 0)); } }   // (out of the door on to the step)
           else {
             const g = sh.phase === 'in' ? sh.step : sh.out;                // to the doorstep (then through it), or back out
             tx = g.x; tz = g.z; speed = 1.0;
