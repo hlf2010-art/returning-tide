@@ -116,7 +116,7 @@ import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
 import { createSeasonPlan } from './ui/season.js';
 import { createProfile } from './ui/profile.js';
 import { timeVariant, timeAfterword } from './world/allotEvents.js';
-import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText } from './engine/year.js';
+import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText, isWorkday } from './engine/year.js';
 import { runRomance, romanceCallChoice, guardTalk, ROMANCE_CALLS } from './world/romance.js';   // the five he might come to love (engine/hearts.js)
 import { createRomanceScenes } from './world/romanceScenes.js';
 const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the story's, the street moments' (world/moments.js), and the gimbal's week (world/work.js)
@@ -346,7 +346,8 @@ async function boot() {
     const roles = Object.keys(people.manifest.cast).filter((r) => !people.manifest.cast[r].named && !['lin', 'su', 'player', 'dad'].includes(r));
     const det = gfxDetail({ ...gfx, lod: bootLod });
     const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0 : det.crowd;   // tools: none unless asked
-    world.crowd = createCrowd({ density, roles });
+    // the preset's population at its busiest (engine/gfx.js LOD people); ?crowd=<density> (tools) as before
+    world.crowd = createCrowd({ density, count: params.has('crowd') || params.has('q') ? null : det.people, roles });
     world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, camera });
     traffic.setExtraPeople(() => world.crowd.onCarriageway());
     henan.traffic.setExtraPeople(() => world.crowd.onHenan());
@@ -1377,7 +1378,7 @@ function updateTraffic(dt) {
     others.push(...world.hearts.others());
     others.push(...world.confront.others());                                        // (the crowd walks round a row, too)
     cr.setCars(traffic.obstacles);                                                   // the Huracán, parked or driven: walked round, not through
-    cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others });
+    cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others, focus: eye });
     world.crowdView.update(dt, eye, { rain: weather.rain });
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
     crowdHear -= dt;
@@ -1445,7 +1446,8 @@ function applyHour(dt, { force = false } = {}) {
   R.renderer.toneMappingExposure = THREE.MathUtils.lerp(s.exposure * (1 + 0.25 * inside * s.daylight), 0.92, under);
   R.bloom.strength = s.bloom;
   if (world) {
-    if (world.crowd) world.crowd.setActive(s.crowd, { dawn: s.dawn, instant: jump || force });
+    // the hour's share of everyone; a weekday has about three quarters of a weekend's visitors
+    if (world.crowd) world.crowd.setActive(s.crowd * (life && !isWorkday(life) ? 1 : 0.75), { dawn: s.dawn, instant: jump || force });
     traffic.setDensity(s.traffic); world.henan.traffic.setDensity(s.traffic);
     if (prev != null && !jump && passedLateNight(prev, minute)) lateNight();
     // the floods coming on (~17:10): phones go up along the promenade

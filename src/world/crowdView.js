@@ -178,6 +178,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   const UMB_COLORS = ['#1b1b1f', '#1f2a44', '#6e1d29', '#d8d1c2', '#5a5f66', '#2f4a36', '#a8812e', '#1b1b1f', '#3b2f4f', '#b9c2c8'].map((c) => new THREE.Color(c));
   const hash = (i, k) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
   const uOpen = new Float32Array(N);
+  const tint = new Float32Array(N * 3), tintAt = new Int32Array(N).fill(-1); let frameNo = 0;   // (each figure's light, kept: see update)
   const canopyGeo = new THREE.ConeGeometry(0.5, 0.26, 12, 1, true); canopyGeo.translate(0, -0.13, 0);
   const canopyMat = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0, side: THREE.DoubleSide });
   const canopies = new THREE.InstancedMesh(canopyGeo, canopyMat, N); canopies.frustumCulled = false; canopies.count = 0; canopies.name = 'crowd-umbrellas';
@@ -293,6 +294,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         f.rotation.y = g.heading + Math.PI / 2 + Math.sin(performance.now() / 600 + i) * 0.25;
       });
       // the far crowd
+      frameNo++;
       let n = 0, nu = 0;
       for (const a of crowd.agents) {
         if (a.gone || a.out || a.inside || live.has(a.id)) continue;
@@ -302,7 +304,9 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         const pose = a.v > 0.2 ? Math.floor(a.phase * 8) % 8 : a.state === 'act' && (a.act === 'photo' || a.act === 'selfie') ? 9 : 8;
         iPos.setXYZW(n, a.x, a.y, a.z, a.heading);
         iCell.setXYZW(n, c[0], c[1], pose, a.scale || 1);
-        const [r, g, bl] = lightAt(a.x, a.z, a.y); iTint.setXYZ(n, r, g, bl);
+        // the light they stand in changes slowly: worked out for an eighth of the crowd each frame
+        if (tintAt[a.id] < 0 || ((frameNo + a.id) & 7) === 0) { const t3 = lightAt(a.x, a.z, a.y); tint[a.id * 3] = t3[0]; tint[a.id * 3 + 1] = t3[1]; tint[a.id * 3 + 2] = t3[2]; tintAt[a.id] = frameNo; }
+        iTint.setXYZ(n, tint[a.id * 3], tint[a.id * 3 + 1], tint[a.id * 3 + 2]);
         _m.makeTranslation(a.x, a.y + 0.02, a.z); blobs.setMatrixAt(n, _m);
         // an umbrella over the card: up in the raised hand, held a little forward
         const u = umbrellaFor(a, dt);

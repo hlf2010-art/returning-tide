@@ -102,7 +102,8 @@ ok(crossing.vehicles.every((v) => mix.find((m) => m.id === v.id)), "the crossing
   const atRail = k.agents.filter((a) => !a.gone && a.atRail && a.state === 'act');
   const n = k.lightsOut(r3);
   ok(n === atRail.length && atRail.every((a) => a.wait <= 303 && a.act !== 'photo' && a.act !== 'selfie'), `22:00: all ${n} at the railing lower their phones and leave within five minutes`);
-  for (let i = 0; i < 30 * 310; i += 3) k.update(0.1, { player: { x: -300, z: 0 }, signal: 'walk' });
-  ok(atRail.every((a) => a.gone || !a.atRail || a.wait > 0 && a.state === 'act' && !atRail.includes(a)), 'five minutes on, none of them is still standing at the railing');
+  const left = new Set();
+  for (let i = 0; i < 30 * 310; i += 3) { k.update(0.1, { player: { x: -300, z: 0 }, signal: 'walk' }); for (const a of atRail) if (a.gone || !a.atRail) left.add(a); }
+  ok(atRail.every((a) => left.has(a)), `within five minutes every one of them has left the railing (${left.size} of ${atRail.length}; some may come back later as new visitors)`);
 }
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);
