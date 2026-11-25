@@ -52,8 +52,9 @@ The release-blockers inventory (25 November 2026) listed five; four are fixed on
 
 Still open:
 
-- **Character art provenance:** the AI-made character sheets and the Hunyuan 3D models of Ji Bai and Gu Nian need
-  their tools and terms recorded and checked.
+- **Character art provenance:** what is and isn't recorded is in `tools/jibai/README.md` ("Provenance"). Missing:
+  which image tool made the character sheets (and its plan and terms), and whether the Hunyuan 3D bodies came from
+  Tencent's hosted service or the open weights (whose licence excludes the EU, the UK and South Korea).
 - **The BYD Han model** (CC BY 4.0, badges removed) is credited; consider replacing it with an invented saloon.
 
 ## Working on the repo

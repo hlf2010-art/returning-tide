@@ -5,7 +5,7 @@
 // shapes drawn for the game (24 x 24 paths); the slugs are the old ones, so callers don't change.
 const G = (title, path) => ({ title, path });
 const SI = {
-  wechat: G('Xinyu', 'M9 4C4.6 4 1 6.9 1 10.5c0 2 1.1 3.8 2.9 5l-.7 2.6 3.1-1.6c.9.3 1.8.4 2.7.4h.4a5.6 5.6 0 0 1-.2-1.4c0-3.6 3.4-6.5 7.6-6.5h.4C16.5 6.1 13.1 4 9 4zm8 6.5c-3.5 0-6.3 2.3-6.3 5.2s2.8 5.2 6.3 5.2c.7 0 1.4-.1 2.1-.3l2.4 1.3-.6-2.1c1.5-1 2.4-2.4 2.4-4.1 0-2.9-2.8-5.2-6.3-5.2z'),
+  wechat: G('Xinyu', 'M8 3h8a6 6 0 0 1 6 6v3a6 6 0 0 1-6 6h-5.5l-5 3.6 1-4.3A6 6 0 0 1 2 12V9a6 6 0 0 1 6-6zM6.5 8.2v2l5.5 4 5.5-4v-2l-5.5 4z'),   // one bubble with a letter's fold (信, a letter)
   alipay: G('YiPay', 'M12 1a11 11 0 1 0 0 22 11 11 0 0 0 0-22zm4.6 5-3.3 5.2H16v1.6h-3v1.6h3v1.6h-3V19h-2v-3H8v-1.6h3v-1.6H8v-1.6h2.7L7.4 6h2.3L12 9.9 14.3 6z'),
   taobao: G('Wanji', 'M7 7V6a5 5 0 0 1 10 0v1h3l1 15H3L4 7zm2 0h6V6a3 3 0 0 0-6 0z'),
   starbucks: G('Harbour Coffee', 'M12 1a11 11 0 1 0 0 22 11 11 0 0 0 0-22zm0 2a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM5.5 9.2c1.1-.9 2.1-.9 3.2 0s2.1.9 3.3 0 2.1-.9 3.3 0 2.1.9 3.2 0v1.6c-1.1.9-2.1.9-3.2 0s-2.2-.9-3.3 0-2.2.9-3.3 0-2.1-.9-3.2 0zm0 4c1.1-.9 2.1-.9 3.2 0s2.1.9 3.3 0 2.1-.9 3.3 0 2.1.9 3.2 0v1.6c-1.1.9-2.1.9-3.2 0s-2.2-.9-3.3 0-2.2.9-3.3 0-2.1-.9-3.2 0z'),
@@ -15,12 +15,12 @@ const SI = {
   shanghaimetro: G('Metro', 'M12 1a11 11 0 1 0 0 22 11 11 0 0 0 0-22zM6 17V7h2.2L12 12.4 15.8 7H18v10h-2.2v-6.4L12 15.8l-3.8-5.2V17z'),
   hsbc: G('Shenjiang Bank', 'M12 2 21 7v10l-9 5-9-5V7zm0 4-5 3v6l5 3 5-3V9z'),
 };
-export const BRAND_COLOR = { wechat: '#1FAE6A', alipay: '#2A6DF4', taobao: '#F2672A', jd: '#3B7DD8', didi: '#F5A623', manner: '#1d1d1f', starbucks: '#1E5C4F', corvina: '#B6A272', unionpay: '#B02A37', cmb: '#1F4E79' };
+export const BRAND_COLOR = { wechat: '#13A39C', alipay: '#2A6DF4', taobao: '#F2672A', jd: '#3B7DD8', didi: '#F5A623', manner: '#1d1d1f', starbucks: '#1E5C4F', corvina: '#B6A272', unionpay: '#B02A37', cmb: '#1F4E79' };
 
 // <svg> of a mark (24 x 24 viewBox), in a colour
 export function mark(slug, color = '#fff', size = 26) {
   const i = SI[slug]; if (!i) return '';
-  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" role="img" aria-label="${i.title}"><path d="${i.path}" fill="${color}"/></svg>`;
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" role="img" aria-label="${i.title}"><path d="${i.path}" fill="${color}" fill-rule="evenodd"/></svg>`;
 }
 // a wordmark for brands without a vector mark here
 const WORD = {
