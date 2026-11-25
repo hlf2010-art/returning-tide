@@ -145,7 +145,7 @@ export function createPromenade(M) {
   const std = (o) => new THREE.MeshStandardMaterial(o);
   flush(B, {
     ...M, bark: std({ color: 0x3a3229, roughness: 0.9 }), leaf: std({ color: 0x2c4a2c, roughness: 0.8, emissive: 0x0b140a }),
-    binBlue: std({ color: 0x1c4f8f, roughness: 0.5, metalness: 0.3 }), binGrey: std({ color: 0x3a3d40, roughness: 0.5, metalness: 0.3 }),
+    binBlue: std({ color: 0x1c4f8f, roughness: 0.5, metalness: 0.3 }), binGrey: std({ color: 0x16171a, roughness: 0.5, metalness: 0.3 }),
   }, group, 'prom-');
   return { group };
 }

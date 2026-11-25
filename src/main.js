@@ -118,7 +118,7 @@ import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
 import { createSeasonPlan } from './ui/season.js';
 import { createProfile } from './ui/profile.js';
 import { timeVariant, timeAfterword } from './world/allotEvents.js';
-import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText, isWorkday } from './engine/year.js';
+import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText, isWorkday, dateOf } from './engine/year.js';
 import { runRomance, romanceCallChoice, guardTalk, ROMANCE_CALLS } from './world/romance.js';   // the five he might come to love (engine/hearts.js)
 import { createRomanceScenes } from './world/romanceScenes.js';
 const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the story's, the street moments' (world/moments.js), and the gimbal's week (world/work.js)
@@ -1299,7 +1299,7 @@ function mapObjective() {
   return null;
 }
 // your own waypoint (set on the map) comes first, until you get there
-let waypoint = null;
+let waypoint = null, seasonT = 0;
 function mapTarget() { return waypoint ? { ...waypoint, label: waypoint.label ? QT(waypoint.label) : tx('waypoint') } : storyTarget(); }
 function storyTarget() {
   const r = world && world.rideFlow && world.rideFlow.ride;
@@ -1532,6 +1532,7 @@ function frame(now) {
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
   world.shoppers.update(mode === 'pause' ? 0 : dt, player.body);                     // shoppers coming and going by DiDi
+  if (life && (seasonT = (seasonT || 0) - dt) <= 0) { seasonT = 5; world.nanjing.season(dateOf(life)); }
   world.trams.update(mode === 'pause' ? 0 : dt, player.body, world.crowd ? world.crowd.agents : null, camera.position, life ? life.clock.minute : 720);   // Nanjing Road's sightseeing trains
   if (mode !== 'pause' && Math.abs(player.body.z + 201) < 60 && player.body.x < -20) {         // Nanjing Road's automatic doors: who's at them
     const b = player.body, near = [b];
