@@ -17,6 +17,7 @@ import { createInstancer, mergeStatic } from './instancer.js';
 import { assembleCar } from './carbody.js';
 import { CARS } from './carModels.js';
 import { buildCityBus, busWheelParts } from './cityBus.js';
+import { createFleet, FLEET_MODELS } from './fleet.js';
 import { T } from './text.js';
 import { makeCanvas, tex, FONT } from './canvas.js';
 
@@ -199,14 +200,29 @@ const buildBus = (spec) => buildCityBus(spec, { headMat, tailRun: TAIL_RUN, tail
 
 export const PLACEHOLDER_MODELS = Object.keys(MODELS);
 
+// Real models (world/fleet.js) stand in for the four procedural placeholders of the new-energy cars;
+// the ride-hail fleet is mostly BYDs. A car's paint, when its spec has none, from the usual colours.
+const FLEET_FOR = { 'nio-et5': 'byd-han', 'li-l9': 'byd-han', 'aito-m9': 'byd-han', 'luxeed-r7': 'byd-han' };
+const FLEET_PAINT = [0xf1f1ef, 0x16181c, 0xb9bdc2, 0x22324a, 0xf1f1ef, 0x6b6f75];
+// a car drawn by the fleet: its group carries the position (and anything attached to the car); until
+// the model has loaded, the street's generic car stands in
+function buildFleetCar(spec, fleet, i) {
+  const id = FLEET_MODELS[spec.model] ? spec.model : FLEET_FOR[spec.model];
+  const stand = buildGeneric({ ...spec, model: 'sedan', paint: spec.paint ?? FLEET_PAINT[i % FLEET_PAINT.length] });
+  const car = fleet.add(id, { paint: spec.paint ?? FLEET_PAINT[i % FLEET_PAINT.length] });
+  return { g: stand.g, wheels: stand.wheels, wheelRadius: 0.34, fleetCar: car, fleetId: id, standIn: stand, setBraking(b) { car.braking = !!b; stand.setBraking(b); } };
+}
+
 export function createVehicles(specs) {
   const group = new THREE.Group(); group.name = 'traffic-vehicles';
   wheels = createInstancer('traffic-wheels');
+  const fleet = createFleet(); group.add(fleet.group);
   const list = specs.map((spec, i) => {
-    const v = CARS[spec.model] ? buildLookalike(spec, T.plates[i % T.plates.length]) : spec.model === 'bus' ? buildBus(spec) : buildGeneric(spec);
+    const fleetCar = FLEET_MODELS[spec.model] || FLEET_FOR[spec.model];
+    const v = fleetCar ? buildFleetCar(spec, fleet, i) : CARS[spec.model] ? buildLookalike(spec, T.plates[i % T.plates.length]) : spec.model === 'bus' ? buildBus(spec) : buildGeneric(spec);
     v.g.name = `vehicle-${spec.id}`;
     group.add(v.g);
-    return { ...v, id: spec.id, model: spec.model, lookalike: !!CARS[spec.model], bus: spec.model === 'bus', braking: null };
+    return { ...v, id: spec.id, model: spec.model, lookalike: !!CARS[spec.model] || !!fleetCar, bus: spec.model === 'bus', braking: null };
   });
   wheels.build(); group.add(wheels.group);
   const instancer = wheels;
@@ -225,6 +241,15 @@ export function createVehicles(specs) {
         v.g.updateMatrixWorld(true);
         if (s.braking !== v.braking) { v.braking = s.braking; v.setBraking(s.braking); }
       }
+      // the fleet's cars: the real model once it's loaded (the stand-in's body and wheels hidden)
+      for (const v of list) {
+        if (!v.fleetCar) continue;
+        const real = fleet.ready(v.fleetId);
+        v.fleetCar.obj = v.g; v.fleetCar.visible = v.g.visible && real;
+        if (real && !v.swapped) { v.swapped = true; v.g.traverse((o) => { if (o.isMesh) o.visible = false; }); }
+        if (real) for (const w of v.wheels) w.visibleOwner = false;
+      }
+      fleet.sync(eye);
       instancer.sync();
     },
   };

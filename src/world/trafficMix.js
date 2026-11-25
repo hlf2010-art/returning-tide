@@ -23,7 +23,9 @@ const CARS = [
   ['taxi', 4.6, 1.78, 1.5, 2.82], ['taxi', 4.6, 1.78, 1.5, 2.82], ['taxi', 4.6, 1.78, 1.5, 2.82],
   ['sedan', 4.6, 1.78, 1.5, 2.82, 0xe8e8e6], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x9aa0a6], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x101216],
   ['sedan', 4.6, 1.78, 1.5, 2.82, 0xf2f2f0], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x2a2e36],
-  ['nio-et5', 4.790, 1.960, 1.499, 2.888], ['li-l9', 5.218, 1.998, 1.800, 3.105], ['aito-m9', 5.230, 1.999, 1.800, 3.110], ['luxeed-r7', 4.956, 1.999, 1.656, 2.950],
+  // ride-hail and private new-energy cars: BYD Hans (a real model, world/fleet.js) in the usual colours
+  ['byd-han', 4.995, 1.91, 1.495, 2.92, 0xf1f1ef], ['byd-han', 4.995, 1.91, 1.495, 2.92, 0x16181c], ['byd-han', 4.995, 1.91, 1.495, 2.92, 0xb9bdc2],
+  ['byd-han', 4.995, 1.91, 1.495, 2.92, 0x22324a], ['byd-han', 4.995, 1.91, 1.495, 2.92, 0xf1f1ef],
 ];
 export const BUS = { model: 'bus', len: 12.0, width: 2.55, height: 3.15, wheelbase: 6.1 };
 
