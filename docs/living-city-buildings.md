@@ -70,7 +70,7 @@ about 35 m (`layout.js:32, 39-43`). The promenade runs from x 2 to x 26.
 2. Model the Peace Hotel's Nanjing Road front and the Swatch hotel.
 3. Give Apple a glass front and its logo.
 4. Survey the real tenants from the Bund to Henan Road and use the real names.
-5. Give shoppers bags when they come out.
+5. Give shoppers bags when they come out. (*Started 25 Nov: the ride-hail shoppers in `world/shoppers.js` come out with one to three bags; the crowd's own shop visitors still don't.*)
 6. Add the sightseeing tram.
 7. More and bigger LED screens and rooftop signs: today only 12% of wide buildings get a screen, cycling four generic slides (`nanjingRoad.js:276`).
 8. Street furniture: planters, benches, kiosks.

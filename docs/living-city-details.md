@@ -77,6 +77,8 @@ reference).
 | A queue outside a famous (invented) snack shop | One shop front | Always, longer at meal times | Local knowledge | S | idea |
 | Shopping bags in most hands; milk-tea cups | The street | 1 in 3 people | Architecture plan §5.2 | M | idea |
 | Couriers on foot jogging in from the street's edge with a bag | Ends of the street | One or two per 100 m | Architecture plan §5.2 | M | idea |
+| Shoppers who come by DiDi: dropped at the Peace Hotel kerb, into a shop, out with one to three paper carrier bags, down the Bund's pavement to a pick-up, phone out, wave, gone (`world/shoppers.js`, `tools/shopwalk.mjs`) | Zhongshan Road west kerb, Nanjing Road shops west of the hotels | Two at a time | Owner's request, 25 Nov 2026 | M | done |
+| The Peace Hotel's security: middle-aged men in dark suits with earpieces, on the Nanjing Road door and at the lifts (`world/outfits.js`). Built from Old Lin's body (black hair, black suit, earpiece wire, gold lapel badge; glasses on the one at the lifts) until there's a face of their own | Peace Hotel door and lift lobby | Always | Owner (they wear suits, middle-aged); no photo reference yet | S | done |
 
 ## People's habits
 
