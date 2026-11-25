@@ -57,6 +57,10 @@ What is not certain:
 - **No new spoken shop announcements.** The game has no recorded line for one, and the Kokoro voice model was not run in this container, so no new lines were recorded. The street's announcements here are the metro's, rising out of the exits.
 - Whether Nanjing Road's shops are allowed to use outdoor loudspeakers was not checked.
 
+### The beds replaced the synthesised layers
+
+Since 25 November the river, the wind, the city's wash, the traffic bed and the crowd are recorded beds (above). Once the crowd bed is playing, the synthesised wind, river and city layers and the murmur loop fade out, and the placed "talker" voices (grains of one murmur loop, heard as repeats) stop. If the beds can't load, the synthesised layers stay. The leaves, rain, footsteps, door chimes, payment speakers, the clock and the horns are unchanged.
+
 ## Sources and licences
 
 | Sound | Made by | Where | File | Licence |
@@ -70,6 +74,7 @@ What is not certain:
 | The payment speaker's pieces (支付宝到账, 微信收款, 零-九, 十, 百, 千, 点, 元) | ElevenLabs (eleven_v3, premade voice "Lily"), one take cut at the pauses by `tools/voice/paybox.py`; checked by transcribing stitched amounts | every counter | `public/ambience/pay/*.mp3` (17 files, about 40 KB) | made for this project (generated speech, used under the ElevenLabs terms) |
 | Ji Bai catching his breath (two loops: heavy, easing) | ElevenLabs sound generation, looped with their breathing envelopes by `tools/voice/breath.py` | you, after running out of stamina | `public/ambience/breath/{heavy,ease}.mp3` + `.json` (about 140 KB) | made for this project (generated audio, used under the ElevenLabs terms) |
 | The railing's sigh at 22:00 ("awww", then a laugh) | ElevenLabs sound generation | the promenade, at the late-night switch | `public/ambience/lights-out.mp3` (49 KB) | made for this project (generated audio, used under the ElevenLabs terms) |
+| The background beds: crowds (3 takes), traffic (2), the river at the wall (2), boats on the river (2), wind (2) | ElevenLabs sound generation, folded into loops and levelled by `tools/voice/ambience.py` (wind-1 is wind-2 reversed and slowed); played by `engine/beds.js`, one take at a time from a random point at a slightly different speed, crossfaded over 4 s to another take | everywhere: the crowd by how many people are near you, the traffic placed where the cars are, the river from the railing nearest you, the boats from the nearest boat, the wind by how open it is | `public/ambience/beds/*.mp3` (11 files, 1.9 MB) | made for this project (generated audio, used under the ElevenLabs terms) |
 | The crowd's murmur | made for this project with Kokoro-82M (Apache-2.0), `tools/voice/walla.py` | everywhere people are; the placed voices | `public/ambience/murmur.mp3` (already shipped) | made for this project |
 | Metro announcements (3 lines) | made for this project with Kokoro-82M (Apache-2.0), `tools/voice/generate.py` | Exits 7 and 2 at Henan Road | `public/voice/*.mp3` (already shipped) | made for this project |
 

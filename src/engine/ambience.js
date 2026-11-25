@@ -16,10 +16,12 @@
 // Everything is synthesised here except the murmur (tools/voice/walla.py) and the PA clips (Kokoro).
 import { riverExposure, windExposure, trafficBed, hornRate, HORN, BUS_SIGH, BOAT_HORN, reverbAt, pickTalkers,
   DOOR_CHIME, METRO_PA, paGain, CLOCK, clockChime, clockGain, EAST_IS_RED, degreeHz, PAYBOX, payTokens, crowdPayment } from './soundscape.js';
+import { peopleNear } from './soundscape.js';
 import { L } from '../world/layout.js';
+import { createBeds } from './beds.js';
 
 export function createAmbience(audio, { clipUrl = null } = {}) {
-  let ctx = null, env = null, sfx = null, out = null;
+  let ctx = null, env = null, sfx = null, out = null, beds = null, bedsOn = false;
   let brown = null, white = null, rev = null, bed = null;
   const S = { lightsOut: 0, pays: 0, horns: 0, sighs: 0, slaps: 0, boatHorns: 0, chimes: 0, pa: 0, clock: 0, strikes: 0, talkerGrains: 0 };
   const shots = [];                        // one-shots sounding now: { id, kind, x, y, z, until, level, ref }
@@ -74,6 +76,10 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
     const sfxSend = gain(0), envSend = gain(0), tone = filt('lowpass', 3000, 0.5), ret = gain(0.9);
     sfx.connect(sfxSend); env.connect(envSend); sfxSend.connect(conv); envSend.connect(conv); conv.connect(tone).connect(ret).connect(out);
     rev = { sfxSend, envSend, tone, wet: 0, id: null };
+    // the recorded beds (engine/beds.js): crowds, traffic, river, boats, wind; the placed ones give a
+    // direction only (their loudness is ours, below)
+    beds = createBeds(ctx, { dest: env, placeNode: () => { const pn = ctx.createPanner(); pn.panningModel = 'equalpower'; pn.distanceModel = 'linear'; pn.rolloffFactor = 0; pn.maxDistance = 1e4; return pn; } });
+    beds.load();
     // the traffic bed: a low wash and a band of tyre hiss, placed where the traffic is (loudness: ours)
     const p = panAt(0, 0.6, 0, { linear: true }); p.connect(env);
     const low = filt('lowpass', 260, 0.6), hiss = filt('bandpass', 1100, 0.5), g = gain(0), hg = gain(0);
@@ -260,7 +266,7 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
       // the traffic bed
       const tb = trafficBed(vehicles, lx, lz);
       bed.level = tb.level; bed.count = tb.count; bed.x = tb.x; bed.z = tb.z;
-      bed.g.gain.setTargetAtTime(0.42 * tb.level, t, 0.5); bed.hg.gain.setTargetAtTime(0.035 * tb.level, t, 0.5);
+      bed.g.gain.setTargetAtTime(bedsOn ? 0 : 0.42 * tb.level, t, 0.5); bed.hg.gain.setTargetAtTime(bedsOn ? 0 : 0.035 * tb.level, t, 0.5);
       place(bed.p, tb.x, 0.6, tb.z, 0.6);
       // horns (rare) and buses sighing to a stop
       for (const v of vehicles) {
@@ -300,7 +306,8 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
         if (at && at[0] < METRO_PA.range) announce(at[1], lx, lz);
       }
       // talkers
-      const buf = audio.murmurBuffer;
+      const buf = bedsOn ? null : audio.murmurBuffer;
+      for (const s of (bedsOn ? talkers : [])) s.g.gain.setTargetAtTime(0, t, 0.5);
       if (buf) {
         while (talkers.length < 3) talkers.push(talkerSlot());
         const want = pickTalkers(people, lx, lz, { n: 3 });
@@ -310,6 +317,25 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
           const who = want.find((w) => !talkers.some((o) => o !== s && o.who === w && tNow < o.until));
           if (who) grain(s, buf, who); else { s.who = null; s.rest = 1; }
         }
+      }
+      // the recorded beds: how loud each is where you stand, and where the placed ones come from
+      if (beds) {
+        const rx = riverExposure(lx, lz, ly), wx = windExposure(lx, lz, ly), pn = peopleNear(people, lx, lz, ly, 30);
+        let nb = null, nd = 1e9; for (const b of boats) { const d = Math.hypot(b.x - lx, b.z - lz); if (d < nd) { nd = d; nb = b; } }
+        const crowd = Math.min(1, pn.level * 0.9);
+        beds.set('crowd', 0.06 + 0.62 * Math.pow(crowd, 0.8), { tau: 1.2 });                 // a city is never silent: a little far-off murmur always
+        beds.set('traffic', Math.min(0.75, 0.05 + 0.85 * tb.level), { placed: true, tau: 0.8 });
+        beds.set('river', 0.55 * rx * rx, { placed: true, tau: 1 });
+        beds.set('boats', rx * (0.1 + 0.55 / (1 + (nd / 70) ** 2)), { placed: true, tau: 1.5 });
+        beds.set('wind', 0.12 + 0.3 * wx, { tau: 2 });
+        beds.place('traffic', tb.count ? tb.x : lx - 20, 0.6, tb.count ? tb.z : lz);
+        beds.place('river', L.deckEdgeX + 2, -0.5, Math.max(-255, Math.min(92, lz)));
+        if (nb) beds.place('boats', nb.x, 1, nb.z); else beds.place('boats', L.deckEdgeX + 120, 1, lz);
+        beds.update(dt);
+        // once the crowd bed plays, the old synthesised layers and the murmur loop stand down
+        const on = beds.playing('crowd');
+        if (on !== bedsOn) { bedsOn = on; audio.useBeds && audio.useBeds(on); }
+        S.beds = Object.fromEntries(beds.names().map((n) => [n, +beds.level(n).toFixed(2)]));
       }
       // the clock
       if (minute != null) {

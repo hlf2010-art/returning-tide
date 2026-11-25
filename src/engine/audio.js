@@ -30,6 +30,7 @@ export function createAudio() {
   const loops = [];                                          // every looping source ever started (for the duplicate check)
   // the crowd's murmur (tools/voice/walla.py: many people talking at once, recorded voices): fetched
   // and decoded as the page loads, so the loop is there the moment the graph is built
+  const synth = { wind: null, river: null, city: null, off: false };
   let murmurBuf = null, murmur = null, lastCrowd = -1, lastStreet = -1, boat = null, lastBoat = -1;
   if (typeof window !== 'undefined' && window.OfflineAudioContext && typeof fetch === 'function') {
     fetch('./ambience/murmur.mp3').then((r) => (r.ok ? r.arrayBuffer() : null))
@@ -126,19 +127,21 @@ export function createAudio() {
     // how open you are to the river and the wind (setExposure, engine/soundscape.js): full on the promenade,
     // much less down the street canyons
     windExp = gainNode(1); windExp.connect(env); riverExp = gainNode(1); riverExp.connect(env);
-    const windPan = ctx.createStereoPanner(); windPan.connect(windExp);
+    // the synthesised layers, faded out when the recorded beds take over (useBeds; engine/beds.js)
+    synth.wind = gainNode(1); synth.wind.connect(windExp); synth.river = gainNode(1); synth.river.connect(riverExp); synth.city = gainNode(1); synth.city.connect(env);
+    const windPan = ctx.createStereoPanner(); windPan.connect(synth.wind);
     const wf = filt('lowpass', 320, 0.4), wg = gainNode(0.26);
     loop(buf, wf, wg, windPan);
     lfo(0.07, 140, wf.frequency); const gust = lfo(0.031, 0.08, wg.gain); lfo(0.017, 0.35, windPan.pan);
     const wf2 = filt('bandpass', 700, 0.6), wg2 = gainNode(0.035);
-    loop(buf, wf2, wg2, windExp); lfo(0.043, 250, wf2.frequency);
+    loop(buf, wf2, wg2, synth.wind); lfo(0.043, 250, wf2.frequency);
     // leaves in the wind: a dry high rustle, only near the trees and only as strong as the wind
     const lf = filt('bandpass', 3400, 0.5), lg = gainNode(0), lp2 = filt('lowpass', 7000, 0.5);
     loop(white, lf, lp2, lg, env); lfo(0.19, 900, lf.frequency); lfo(0.13, 0.4, lf.Q);
     wind = { wg, leaves: lg, gust };
 
     // the Huangpu against the river wall: placed out over the water, level with the listener
-    const rp = panner(6, 1.0); rp.connect(riverExp);
+    const rp = panner(6, 1.0); rp.connect(synth.river);
     const lap = filt('bandpass', 900, 1.2), lapG = gainNode(0.32);
     loop(buf, lap, lapG, rp); lfo(0.31, 350, lap.frequency); lfo(0.11, 0.08, lapG.gain);
     const body = filt('lowpass', 180, 0.5), bodyG = gainNode(0.22);
@@ -146,7 +149,7 @@ export function createAudio() {
     river = { p: rp, g: lapG, body: bodyG };
 
     // the city, far off, behind the Bund buildings (west); a low wash, not a hum
-    const cp = panner(40, 1.0); cp.connect(env);
+    const cp = panner(40, 1.0); cp.connect(synth.city);
     const cf = filt('lowpass', 240, 0.6), cg = gainNode(0.9);
     loop(buf, cf, cg, cp); lfo(0.023, 0.2, cg.gain);
     city = { p: cp, g: cg };
@@ -468,7 +471,7 @@ export function createAudio() {
       if (v === lastCrowd) return;
       lastCrowd = v;
       const t = ctx.currentTime;
-      murmur.g.gain.setTargetAtTime(0.5 * Math.pow(v, 1.3), t, 0.9);
+      murmur.g.gain.setTargetAtTime(synth.off ? 0 : 0.5 * Math.pow(v, 1.3), t, 0.9);
       murmur.lp.frequency.setTargetAtTime(2200 + 4500 * Math.min(1, v), t, 0.9);   // a few people far off: duller
     },
     get crowdLevel() { return murmur ? murmur.g.gain.value : 0; },
@@ -478,7 +481,7 @@ export function createAudio() {
       const v = Math.round(Math.max(0, Math.min(1, level)) * 20) / 20;
       if (v === lastStreet) return;
       lastStreet = v;
-      murmur.street.gain.setTargetAtTime(0.55 * v, ctx.currentTime, 1.2);
+      murmur.street.gain.setTargetAtTime(synth.off ? 0 : 0.55 * v, ctx.currentTime, 1.2);
     },
     setPaused(p) {
       paused = !!p;
@@ -504,7 +507,17 @@ export function createAudio() {
     getEnvBus() { return env; },                 // the street's sounds: ducked under speech, muffled indoors (engine/ambience.js)
     getSfxBus() { return sfx; },                 // footsteps and cues (the reverb listens to these)
     getOutBus() { return pauseBus; },            // straight to the output (the reverb's return)
-    get murmurBuffer() { return murmurBuf; },    // the crowd's murmur, for the voices placed nearby
+    get murmurBuffer() { return murmurBuf; },
+    // the recorded beds are playing (engine/ambience.js): the synthesised wind, river and city wash and the
+    // murmur loop fade out (and come back if the beds stop). The leaves, rain, steps and cues stay.
+    useBeds(on) {
+      synth.off = !!on;
+      if (!ctx || !synth.wind) return;
+      const t = ctx.currentTime, v = on ? 0 : 1;
+      for (const g of [synth.wind, synth.river, synth.city]) g.gain.setTargetAtTime(v, t, 1.5);
+      if (murmur) { murmur.g.gain.setTargetAtTime(on ? 0 : murmur.g.gain.value, t, 1.5); if (murmur.street) murmur.street.gain.setTargetAtTime(on ? 0 : murmur.street.gain.value, t, 1.5); }
+      lastCrowd = -1; lastStreet = -1;
+    },    // the crowd's murmur, for the voices placed nearby
     // how open the listener is to the river (0..1) and to the wind (0..1)
     setExposure(rv, wd) {
       if (!ctx || !riverExp) return;
