@@ -69,6 +69,23 @@ the background beds and Ji Bai's breathing are synthesised from noise and oscill
 and `tools/voice/breath.py` (the crowd bed layers the Kokoro murmur); the 22:00 sigh is two dozen Kokoro voices
 layered by `tools/voice/sigh.py`. `tests/credits.test.mjs` fails if anything non-commercial is credited again.
 
+## Licence check (26 November 2026)
+
+Every sound file the game ships was listed and matched to where it came from:
+
+| Folder | Files | Where from | Licence | Credited in Settings |
+|---|---|---|---|---|
+| `public/voice/` | 2,175 | Kokoro-82M, generated for this game (all 24 kHz mono, Kokoro's own output) | Apache-2.0 (the model); the clips are the game's | Kokoro |
+| `public/ambience/murmur.mp3`, `lights-out.mp3`, `pay/` | 19 | Kokoro-82M voices, layered or strung together by `tools/voice/` | Apache-2.0 (the model) | Kokoro |
+| `public/ambience/beds/`, `breath/` | 13 | synthesised by `tools/voice/ambience.py` and `breath.py` (the crowd bed layers the Kokoro murmur) | the game's own | Made for this game |
+| `public/music/` | 14 | OpenGameArt | CC0 1.0 | Music in shops and cars (`engine/speakers.js` TRACKS) |
+| Everything else you hear | – | Web Audio synthesis at run time | the game's own | – |
+
+- No file carries an ElevenLabs tag, and no file is at the 44.1 kHz ElevenLabs puts out except the music, the beds and the 22:00 sigh, whose sources are above.
+- The leftover compiled ElevenLabs client (`tools/voice/__pycache__/eleven.*.pyc`) was removed from the repository; Python caches are now ignored.
+- "The East Is Red" (东方红): the melody is the Shaanbei folk song it was set to; the words, by Li Youyuan (d. 1955), are out of copyright in China and are not sung in the game anyway.
+- `tests/credits.test.mjs` now walks all of `public/` and fails if any sound file (mp3, ogg, wav, m4a, aac, flac, opus, webm) is not covered by a credit or a credited shop track.
+
 ## Sources and licences
 
 | Sound | Made by | Where | File | Licence |
@@ -107,4 +124,5 @@ Credits:
 | Metro announcement | Played at the top of Exit 7 at level 0.10 (since raised to about 0.17) |
 | Door chime | Fired |
 
+- The benchmark's "audible sources" count (`docs/living-city.md`) counts the recorded beds once they play (crowd as chatter, traffic, river as water, boats, wind) and no longer counts the synthesised layers and placed talkers they replace (26 November).
 - What was not judged: whether any of it *sounds* right. That needs ears, ideally against the reference footage's soundtrack.

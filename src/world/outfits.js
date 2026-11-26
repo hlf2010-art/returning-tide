@@ -202,7 +202,7 @@ export function greyHair(person) {
 // ---- a front-desk receptionist's uniform: the coat taken to a dark suit (shirt and hands as they were) and a red silk
 // scarf knotted at the throat, as corporate front desks in China often dress their staff; sets her apart from an
 // agent in her own clothes on the same body ----
-const scarfMat = new THREE.MeshStandardMaterial({ color: 0xb3122a, roughness: 0.45, sheen: 0.5 });
+const scarfMat = new THREE.MeshStandardMaterial({ color: 0xb3122a, roughness: 0.45 });
 export function dressReceptionist(person, { scarf = true, badge = false } = {}) {
   person.root.traverse((o) => { if (o.isMesh && /_body$/.test(o.material.name)) o.material = recolor(o.material, 'suit', SUIT.body); });
   const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
@@ -228,66 +228,6 @@ export function dressReceptionist(person, { scarf = true, badge = false } = {}) 
   return person;
 }
 
-// ---- the Peace Hotel's front desk: on the body in the brown knitted dress and boots ('c2', her hair already up in a
-// bun), the dress taken to near-black and the boots to black, her legs as they are (in that map the legs are the two
-// pieces either side of the dress's strip, below its hem), a gold name badge. Behind the desk only the top shows ----
-export function dressFrontDesk(person) {
-  person.root.traverse((o) => {
-    if (!o.isMesh || !/_body$/.test(o.material.name)) return;
-    o.material = recolor(o.material, 'attendant', (r, g, b, a, u, v) => {
-      if (v > 0.12 && v < 0.39 && (u < 0.33 || u > 0.675)) return null;                 // the legs
-      if (v > 0.72 && (u < 0.2 || u > 0.8)) return null;                                 // the hands
-      const l = lum(r, g, b);
-      if (u > 0.42 && u < 0.58 && v > 0.34 && v < 0.52 && r > 120 && r > b * 1.2 && g > b * 1.02) return null;        // the skin at the neckline
-      if (r > 170 && g > 140 && b < 90) return null;                                    // the belt's brass buckle
-      const k = Math.min(255, 14 + l * 0.42); return [k * 0.95, k * 0.97, k * 1.05];
-    });
-  });
-  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
-  if (head.length && body.length) {
-    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), neckY = top - 0.24;
-    const fr = body.filter((p) => Math.abs(p.y - (neckY - 0.2)) < 0.02 && p.x > 0.05 && p.x < 0.12), pin = fr.length ? fr.reduce((m, p) => (p.z > m.z ? p : m), fr[0]) : null;
-    if (pin) attach(person, 'Bip01_Spine2', new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.018, 0.003), goldMat), new THREE.Vector3(pin.x, pin.y, pin.z + 0.003));
-  }
-  person.outfit = 'frontDesk';
-  return person;
-}
-
-// ---- a "Peace Ambassador": the front-of-house team the Peace Hotel put in bespoke black tuxedos for its Art Deco
-// lobby (Shanghai Daily, 2015), the ones who greet guests and press the lift for them. On the body in the tweed
-// jacket, white shirt and dark trousers ('p2'): jacket, trousers and shoes to black, the shirt as it is, a black satin
-// bow tie at the collar, a gold name bar on the left breast ----
-const satin = new THREE.MeshStandardMaterial({ color: 0x060606, roughness: 0.28, metalness: 0.1 });
-export function dressPeaceAmbassador(person) {
-  // (in this map the hands are the bottom corners and the skin at the neck the opening at the centre; the shirt is the
-  // light strip at the top. The tweed jacket's lighter threads pass for skin by colour, so it goes by place.)
-  person.root.traverse((o) => {
-    if (!o.isMesh || !/_body$/.test(o.material.name)) return;
-    o.material = recolor(o.material, 'tuxedo', (r, g, b, a, u, v) => {
-      const l = lum(r, g, b), mx = Math.max(r, g, b), sat = mx ? (mx - Math.min(r, g, b)) / mx : 0;
-      if (v > 0.72 && (u < 0.22 || u > 0.78)) return null;                                   // the hands
-      if (u > 0.42 && u < 0.58 && v > 0.4 && v < 0.56 && r > 110 && r > b * 1.2) return null;   // the skin at the neck
-      if (l > 120 && sat < 0.2) return null;                                                  // the white shirt, its cuffs
-      const k = Math.min(255, 8 + l * 0.22); return [k * 0.95, k * 0.97, k * 1.04];            // jacket, trousers, shoes: black
-    });
-  });
-  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
-  if (head.length && body.length) {
-    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), neckY = top - 0.24;
-    const ring = body.filter((p) => Math.abs(p.y - neckY) < 0.015);
-    if (ring.length > 4) {
-      const front = ring.reduce((m, p) => (p.z > m.z ? p : m), ring[0]);
-      const bow = new THREE.Group();
-      for (const s of [-1, 1]) { const wing = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.04, 4), satin); wing.rotation.z = s * Math.PI / 2; wing.scale.set(1, 1, 0.35); wing.position.x = s * 0.02; bow.add(wing); }
-      bow.add(new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.016, 0.01), satin));
-      attach(person, 'Bip01_Neck', bow, new THREE.Vector3(front.x, neckY - 0.035, front.z + 0.01));
-    }
-    const fr = body.filter((p) => Math.abs(p.y - (neckY - 0.2)) < 0.02 && p.x > 0.05 && p.x < 0.12), pin = fr.length ? fr.reduce((m, p) => (p.z > m.z ? p : m), fr[0]) : null;
-    if (pin) attach(person, 'Bip01_Spine2', new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.016, 0.003), goldMat), new THREE.Vector3(pin.x, pin.y, pin.z + 0.003));
-  }
-  person.outfit = 'peaceAmbassador';
-  return person;
-}
 
 // ---- a hotel concierge: the coat (on the red track-jacket body, 'p3') taken to a dark charcoal suit, the white shirt
 // as it was, and on each lapel the crossed golden keys that concierges of Les Clefs d'Or wear ----
@@ -312,5 +252,49 @@ export function dressConcierge(person) {
     }
   }
   person.outfit = 'concierge';
+  return person;
+}
+
+// ---- the Peace Hotel's lobby staff at the lifts: the hotel's "Peace Ambassadors" (和平大使) work the lobby in
+// bespoke black tuxedos (Shanghai Daily, "Stories behind upscale hotel uniforms"). The hotel's lifts have had no
+// operator for years; one of them waits by the lift lobby, greets guests, calls the lift and sees them in.
+// On the body in the tweed jacket ('p4'): the tweed to black barathea (the weave kept, just), the maroon at the
+// open neck to a white dress shirt, trousers black; a black silk bow tie, a white pocket square, a gold name
+// badge on the left breast ----
+const silkBlack = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.32, metalness: 0.0 });
+const squareWhite = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.6 });
+export function dressPeaceAmbassador(person) {
+  person.root.traverse((o) => {
+    if (!o.isMesh || !/_body$/.test(o.material.name)) return;
+    o.material = recolor(o.material, 'tuxedo', (r, g, b) => {
+      const l = lum(r, g, b), mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
+      if (r > 120 && r > b + 30 && g > b && sat > 0.18 && sat < 0.6 && l > 110) return null;              // skin (the hands)
+      if (r > g * 1.35 && r > b * 1.3 && r > 50) { const k = 168 + Math.min(1, l / 110) * 80; return [k, k, k * 1.01]; }   // the maroon at the neck: a white shirt
+      const k = 7 + l * 0.16; return [k * 0.98, k, k * 1.05];                                            // tweed and trousers: black, the weave a whisper
+    });
+  });
+  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
+  if (head.length && body.length) {
+    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), neckY = top - 0.245;
+    const front = (y, x0, x1) => { const pts = body.filter((p) => Math.abs(p.y - y) < 0.015 && p.x > x0 && p.x < x1); return pts.length ? pts.reduce((m, p) => (p.z > m.z ? p : m), pts[0]) : null; };
+    const collar = front(neckY - 0.02, -0.03, 0.03);
+    if (collar) {                                                      // the bow tie: two wings and a knot, a hair proud of the collar
+      const g = new THREE.Group();
+      for (const s of [-1, 1]) {
+        const sh = new THREE.Shape(); sh.moveTo(0, -0.008); sh.lineTo(s * 0.045, -0.022); sh.quadraticCurveTo(s * 0.052, 0, s * 0.045, 0.022); sh.lineTo(0, 0.008); sh.closePath();
+        const wing = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.002, bevelSegments: 2, curveSegments: 6 }), silkBlack); g.add(wing);
+      }
+      const knot = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.02, 0.014), silkBlack); knot.position.z = 0.005; g.add(knot);
+      attach(person, 'Bip01_Neck', g, new THREE.Vector3(collar.x, collar.y - 0.012, collar.z + 0.004));
+    }
+    const pocket = front(neckY - 0.17, 0.07, 0.13);                    // the breast pocket, his left: a square folded in two points
+    if (pocket) {
+      const sh = new THREE.Shape(); sh.moveTo(-0.022, 0); sh.lineTo(-0.012, 0.022); sh.lineTo(0, 0.008); sh.lineTo(0.01, 0.026); sh.lineTo(0.022, 0); sh.closePath();
+      attach(person, 'Bip01_Spine2', new THREE.Mesh(new THREE.ShapeGeometry(sh), squareWhite), new THREE.Vector3(pocket.x, pocket.y, pocket.z + 0.004));
+    }
+    const pin = front(neckY - 0.215, 0.05, 0.12);
+    if (pin) attach(person, 'Bip01_Spine2', new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.014, 0.003), goldMat), new THREE.Vector3(pin.x, pin.y, pin.z + 0.004));
+  }
+  person.outfit = 'peaceAmbassador';
   return person;
 }

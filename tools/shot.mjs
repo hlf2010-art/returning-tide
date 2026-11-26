@@ -34,6 +34,8 @@ if (hero) {
     const shot = await page.evaluate((i) => window.__bund.heroShot(i), id);
     if (!shot) { console.log(`no hero shot ${id}`); continue; }
     await page.waitForTimeout(9000);                                                   // settle: the hour's lights, crowd and traffic
+    // shop music within earshot has started (software rendering loads it slowly; a real browser in a second or two)
+    await page.waitForFunction(() => window.__bund.music.debug().every((m) => m.gain < 0.01 || !m.paused), null, { timeout: 20000 }).catch(() => {});
     const samples = [];
     for (let k = 0; k < 5; k++) { samples.push(await page.evaluate(() => window.__bund.live())); await page.waitForTimeout(700); }
     const mean = (f) => Math.round(samples.reduce((s, x) => s + f(x), 0) / samples.length * 10) / 10;

@@ -1,6 +1,6 @@
 # Music in the world
 
-There is no score laid over the game. The music you hear comes from a source in the world: Manner's playlist behind its window on Hankou Road, the doors of two stores on Nanjing Road East while they are open, and a DiDi driver's radio. Placement and loudness: `src/engine/speakers.js`. Playback: `src/world/music.js`. Off switch and credits: Settings, under "Music in shops and cars".
+There is no score laid over the game. The music you hear comes from a source in the world: Manner's playlist behind its window on Hankou Road, the doors of seven stores and a tea bar on Nanjing Road East while they are open, and a DiDi driver's radio. Placement and loudness: `src/engine/speakers.js`. Playback: `src/world/music.js`. Off switch and credits: Settings, under "Music in shops and cars".
 
 ## The tracks: public domain, no licence and no royalties
 
@@ -30,7 +30,7 @@ Processing: levelled to -18 LUFS (true peak -1.5 dB), mixed to mono, 44.1 kHz, 8
 | Undefined Emotion | Gena Sealov | radio | `undefined-emotion.mp3` | [opengameart.org/content/undefined-emotion](https://opengameart.org/content/undefined-emotion) |
 | Jamie | lifeasaghost | radio | `jamie.mp3` | [opengameart.org/content/jamie](https://opengameart.org/content/jamie) |
 
-Playlists: **cafe** (Manner Coffee, Hankou Road (all day; turned down 01:00-07:00)): Chill lofi inspired, Mocha Frapp, Slow Stride, Funky Hip Hop Lofi Jam, lofi Compilation; **shop** (Two store doors on Nanjing Road East (10:00-22:00)): Funky Disco Beats to Boogie/Woogie to, Wednesday Night [Funk Fusion], Rhythm Garden, Red Moon, DJ Synth Wave / Funk; **radio** (A DiDi driver's radio (while you ride)): After midnight, Melancholic Void, Jamie, Undefined Emotion.
+Playlists: **cafe** (Manner Coffee, Hankou Road (all day; turned down 01:00-07:00)): Chill lofi inspired, Mocha Frapp, Slow Stride, Funky Hip Hop Lofi Jam, lofi Compilation; **shop** (seven store doors on Nanjing Road East (10:00-22:00); the tea bar there plays the cafe list): Funky Disco Beats to Boogie/Woogie to, Wednesday Night [Funk Fusion], Rhythm Garden, Red Moon, DJ Synth Wave / Funk; **radio** (A DiDi driver's radio (while you ride)): After midnight, Melancholic Void, Jamie, Undefined Emotion.
 
 Credits:
 

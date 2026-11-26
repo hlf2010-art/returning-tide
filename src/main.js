@@ -11,7 +11,7 @@ import '@fontsource/inter/600.css';
 import '@fontsource/inter/800.css';
 import * as THREE from 'three';
 import { createRenderer } from './engine/renderer.js';
-import { loadGfx, saveGfx, tweak as gfxTweak, detail as gfxDetail, shouldDraw, treeStep, resolve as gfxResolve } from './engine/gfx.js';
+import { loadGfx, saveGfx, tweak as gfxTweak, detail as gfxDetail, shouldDraw, treeStep, resolve as gfxResolve, loadCrowd, saveCrowd, crowdCounts } from './engine/gfx.js';
 import { createPlayer } from './engine/player.js';
 import { createAudio } from './engine/audio.js';
 import { L, NJ, npcs as npcLayout } from './world/layout.js';
@@ -139,6 +139,8 @@ import { careerEvent } from './world/career.js';   // a row outside the Peace Ho
 import { createDinner } from './world/dinner.js';
 import { createJournal } from './ui/journal.js';
 import { createCrowdView } from './world/crowdView.js';
+import { createThrongView } from './world/throngView.js';
+import { throngPeople } from './engine/throng.js';
 import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
 import { usePhotoSurfaces } from './world/photoTextures.js';
 import { createDidi, PICKUP } from './world/didi.js';
@@ -190,6 +192,8 @@ let gfx = loadGfx(gpuName);
 if (params.has('gfx')) gfx = gfxResolve({ preset: params.get('gfx') });
 if (params.has('lod')) gfx = { ...gfx, lod: gfxResolve({ ...gfx, preset: 'custom', lod: params.get('lod') }).lod };
 if (BENCH_URL && !params.has('gfx')) gfx = gfxResolve({ preset: 'mac' });   // a known preset (not saved)
+let crowdLevel = params.has('q') || BENCH_URL ? 'medium' : loadCrowd();   // Crowds (Settings > Graphics); tools and the benchmark measure the default
+const bootCrowd = crowdLevel;
 const bootLod = gfx.lod;                                         // crowd and traffic sizes are set when the world is built
 const R = createRenderer(canvas, scene, camera, { fixedLevel: params.has('q') ? Number(params.get('q')) : null, gfx });
 const player = createPlayer(camera, canvas);
@@ -302,7 +306,7 @@ async function boot() {
     traffic.setObstacles([-1.5, 0, 1.5].map((dx) => ({ x: HURACAN_SPOT.x + dx, z: HURACAN_SPOT.z, r: 1.15 })));   // and walk round it
   });
   // the Peace Hotel's ground floor and the AIA lobby (world/interiors.js); their lamps join the light pool
-  const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp(), renderer: R.renderer });
+  const interiors = createInteriors({ scene, renderer: R.renderer, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp() });
   const aiaLife = createAiaLife({ scene, people, hud, getLife: () => life });   // agents and their clients in the AIA lobby (world/aiaLife.js)
   // up the lifts: the sixth floor and room 612 (world/hotelUpper.js)
   const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, renderer: R.renderer });
@@ -379,11 +383,17 @@ async function boot() {
     const det = gfxDetail({ ...gfx, lod: bootLod });
     const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0 : det.crowd;   // tools: none unless asked
     // the preset's population at its busiest (engine/gfx.js LOD people); ?crowd=<density> (tools) as before
-    world.crowd = createCrowd({ net: keepShopsWithDoors(buildNet(), nanjing.doors), density, count: params.has('crowd') || params.has('q') ? null : det.people, roles });
-    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, midCount: params.get('t1') === '0' ? 0 : det.mid || 0, camera, lod: params.get('midlod') !== '0' });
+    const cc = crowdCounts(bootLod, bootCrowd);                                          // (the Crowds setting's share of it)
+    world.crowd = createCrowd({ net: keepShopsWithDoors(buildNet(), nanjing.doors), density, count: params.has('crowd') || params.has('q') ? null : cc.people, roles });
+    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : cc.nearPeople, midCount: params.get('t1') === '0' ? 0 : cc.mid, camera, lod: params.get('midlod') !== '0' });
+    // Nanjing Road's throng beyond the simulated crowd (engine/throng.js, world/throngView.js): GPU-moved
+    // cards, one draw call; ?throng=0 turns it off, ?throng=<n> sets how many at the busiest
+    // (built for the most the Crowds setting allows, then drawn as many as it asks: it changes at once)
+    const nThrong = params.has('throng') ? Number(params.get('throng')) : params.has('q') ? 0 : crowdCounts(bootLod, 'high').throng;
+    if (nThrong > 0) { world.throng = createThrongView({ group: world.crowdView.group, atlas: world.crowdView.atlas, roles, count: nThrong }); if (!params.has('throng')) world.throng.setCount(cc.throng); }
     traffic.setExtraPeople(() => world.crowd.onCarriageway());
     henan.traffic.setExtraPeople(() => world.crowd.onHenan());
-    crowdBoxes = Array.from({ length: (params.has('q') ? 5 : det.nearPeople) + 2 }, () => addDynamicCollider('npc'));
+    crowdBoxes = Array.from({ length: (params.has('q') ? 5 : cc.nearPeople) + 2 }, () => addDynamicCollider('npc'));
   }
   // the friends in person after the first days (world/friendScenes.js): Yu'an at the AIA, Momo in 612, LiDAR scans
   world.friends = createFriendScenes({ scene, people, hud, audio, voice, getLife: () => life, save: () => saveLife(), player, interiors });
@@ -712,7 +722,7 @@ function syncSettings() {
     const c = llm.conf();
     const k = seg.dataset.setting;
     const cur = k.startsWith('g.') ? String(typeof gfx[k.slice(2)] === 'boolean' ? +gfx[k.slice(2)] : gfx[k.slice(2)])
-      : { music: worldMusic.on ? 'on' : 'off', lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.newLines === 'server' ? 'server' : voice.newLines, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
+      : { crowd: crowdLevel, music: worldMusic.on ? 'on' : 'off', lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.newLines === 'server' ? 'server' : voice.newLines, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
     for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
   }
   syncGfx();
@@ -733,9 +743,25 @@ function syncGfx() {
   if (!sl) return;
   if (document.activeElement !== sl) sl.value = Math.round(gfx.scale * 100);
   const [w, h] = R.pixels; out.textContent = `${Math.round(gfx.scale * 100)}% · ${w}×${h}`;
-  document.querySelector('#settings .g-reload').hidden = gfx.lod === bootLod;
+  document.querySelector('#settings .g-reload').hidden = gfx.lod === bootLod && crowdCounts(bootLod, crowdLevel).people <= crowdCounts(bootLod, bootCrowd).people;
   const st = document.getElementById('g-status');
   if (st) st.textContent = tx('gStatus', (gpuName.replace(/^ANGLE \(|\)$/g, '').replace(/\s*\(0x[0-9a-f]+\)|Direct3D.*|ANGLE Metal Renderer: |, Unspecified Version/gi, '').split(',').slice(-1)[0] || '?').trim().slice(0, 40), Math.round(1000 / R.frameMs), R.frameMs.toFixed(1), w, h, R.drop);
+}
+// Crowds: lowering it takes effect at once (fewer of the people already made are out, fewer near and middle
+// ones drawn, the throng thinned); raising it past what was built at load needs a reload
+function crowdThin() { const a = crowdCounts(bootLod, crowdLevel).people, b = crowdCounts(bootLod, bootCrowd).people; return Math.min(1, a / Math.max(1, b)); }
+function crowdMidShare() { const a = crowdCounts(bootLod, crowdLevel).mid, b = crowdCounts(bootLod, bootCrowd).mid; return b ? Math.min(1, a / b) : 1; }
+function setCrowdLevel(v) {
+  if (!saveCrowd(v)) return;
+  crowdLevel = v;
+  if (world) {
+    const now = crowdCounts(bootLod, v), boot = crowdCounts(bootLod, bootCrowd);
+    if (world.throng) world.throng.setCount(now.throng);
+    if (world.crowdView) world.crowdView.setNearCount(Math.min(now.nearPeople, boot.nearPeople));
+    midDrop = -1;                                                                       // (the middle tier's share, next frame)
+    if (world.crowd && world.crowdShare != null) world.crowd.setActive(world.crowdShare * crowdThin());
+  }
+  syncSettings();
 }
 function setGfx(key, value) {
   gfx = gfxTweak(gfx, key, value);
@@ -760,6 +786,7 @@ document.addEventListener('click', (e) => {
   if (b) {
     const k = b.parentElement.dataset.setting, v = b.dataset.v;
     if (k.startsWith('g.')) { if (!b.disabled) setGfx(k.slice(2), ['ao', 'ssr', 'bloom', 'auto'].includes(k.slice(2)) ? v === '1' : ['preset', 'lod'].includes(k.slice(2)) ? v : Number(v)); return; }
+    if (k === 'crowd') { setCrowdLevel(v); return; }
     if (k === 'lang') setLang(v);
     if (k === 'subs') subtitlesOn = v === 'on';
     if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
@@ -1107,6 +1134,7 @@ function liveSources() {
     for (const a of world.crowd.agents) if (!a.gone && !a.out && !a.inside) people.push({ x: a.x, y: a.y, z: a.z, near: near.has(a.id), state: a.state, act: a.act, kind: a.kind, v: a.v, phone: a.phone, kid: a.kid, leader: a.leader, partner: a.partner, window: a.atRail && a.x < L.facadeX });
   }
   if (traffic) for (const p of traffic.peds) people.push({ x: p.x, y: p.y ?? L.curbH, z: p.z, near: true, activity: p.errand ? 'getting a coffee' : p.crossing ? 'crossing the road' : p.phoneWalk ? 'walking on the phone' : 'walking' });
+  if (world.throng && world.throng.mesh.visible) for (const p of throngPeople(world.throng.data, world.throng.time, world.throng.active, camera.position.x, camera.position.z, world.throng.count)) people.push({ x: p.x, y: 0.15, z: p.z, near: false, activity: p.activity });
   for (const n of LIN_SU) people.push({ ...n, near: true, activity: 'chatting' });
   for (const o of world.dawn.others()) people.push({ x: o.x, y: L.deckY, z: o.z, near: true, activity: 'tai chi' });
   if (traffic) for (const v of traffic.vehicles) if (v.active) vehicles.push({ x: v.x, z: v.z, model: v.model });
@@ -1433,6 +1461,7 @@ function updateTraffic(dt) {
     cr.setCars(traffic.obstacles);                                                   // the Strale, parked or driven: walked round, not through
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others, focus: eye });
     world.crowdView.update(dt, eye, { rain: weather.rain });
+    if (world.throng) world.throng.update(dt, world.crowdShare ?? 1, weather.rain);
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
     crowdHear -= dt;
     // (everyone counts: the crowd, the crossing's walkers, Old Lin and Ms. Su, the tai chi group... engine/soundscape.js)
@@ -1504,7 +1533,8 @@ function applyHour(dt, { force = false } = {}) {
   R.bloom.strength = s.bloom;
   if (world) {
     // the hour's share of everyone; a weekday has about three quarters of a weekend's visitors
-    if (world.crowd) world.crowd.setActive(s.crowd * (life && !isWorkday(life) ? 1 : 0.75), { dawn: s.dawn, instant: jump || force });
+    world.crowdShare = s.crowd * (life && !isWorkday(life) ? 1 : 0.75);
+    if (world.crowd) world.crowd.setActive(world.crowdShare * crowdThin(), { dawn: s.dawn, instant: jump || force });
     traffic.setDensity(s.traffic); world.henan.traffic.setDensity(s.traffic);
     if (prev != null && !jump && passedLateNight(prev, minute)) lateNight();
     // the floods coming on (~17:10): phones go up along the promenade
@@ -1657,7 +1687,7 @@ function frame(now) {
   { const tl = params.has('q') ? R.level : treeStep(gfx, R.drop); if (tl !== treeLevel) { treeLevel = tl; world.trees.setQuality(tl); } }
   // when frames run long the crowd's middle tier is the first thing thinned (half at the first step,
   // a quarter from the fourth), before resolution and shadows go (docs/living-city-architecture.md §6.8)
-  if (world.crowdView && world.crowdView.setMidCount && R.drop !== midDrop) { midDrop = R.drop; world.crowdView.setMidCount(Math.round(world.crowdView.midMax * (midDrop >= 4 ? 0.25 : midDrop >= 1 ? 0.5 : 1))); }
+  if (world.crowdView && world.crowdView.setMidCount && R.drop !== midDrop) { midDrop = R.drop; world.crowdView.setMidCount(Math.round(world.crowdView.midMax * crowdMidShare() * (midDrop >= 4 ? 0.25 : midDrop >= 1 ? 0.5 : 1))); }
   if (world.playerBody) world.playerBody.shadow.visible = world.lighting.shadowCount > 0;   // the shadow copy only matters with shadows
   world.lighting.update(camera.position, dt);
   // environment yields to NPC speech: fully while in conversation, by audibility otherwise

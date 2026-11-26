@@ -65,7 +65,7 @@ if (lockedRun) console.log('SKIP  mouse look under pointer lock: synthetic mouse
 else ok(s.yaw < yaw0 - 0.05 && s.pitch > pitch0 + 0.02, `mouse look (drag fallback, same handler as pointer lock) turns right and up (dyaw=${(s.yaw - yaw0).toFixed(3)}, dpitch=${(s.pitch - pitch0).toFixed(3)})`);
 
 // collision in the live page: walk into the Customs House wall
-await tp(-60, 3, Math.PI, 0);              // facing south (+z)
+await tp(-70, 3, Math.PI, 0);              // facing south (+z), clear of the street cabinet at x -60 (dressingData.js)
 s = await hold(['ShiftLeft', 'KeyW'], (q) => q.hit === 'customs', 30000);
 await page.waitForTimeout(600); s = await S();
 ok(s.z < 6.5 - 0.3 && s.z > 5.9, `wall stops the player (z=${s.z.toFixed(2)}, wall at 6.50)`);

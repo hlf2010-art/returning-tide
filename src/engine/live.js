@@ -92,6 +92,14 @@ export function frameWindow(n = LIVE.window) {
   };
 }
 // sound sources [{ id, kind, level }] -> the ones loud enough to hear, loudest first, and how many of each kind
+// the recorded beds (engine/beds.js) as sound sources: each bed that is playing, by what it is of. Once they
+// play, the synthesised wind, river and city layers and the murmur loop are faded out (audio.useBeds), so
+// the beds are what is heard and must be what is counted
+export const BED_KIND = { crowd: 'chatter', traffic: 'traffic', river: 'water', boats: 'boat', wind: 'wind' };
+export function bedSources(levels) {
+  return Object.entries(levels || {}).filter(([n]) => BED_KIND[n]).map(([n, level]) => ({ id: `bed:${n}`, kind: BED_KIND[n], level }));
+}
+
 export function audibleSummary(sources) {
   const on = sources.filter((s) => s && s.level >= LIVE.audible).sort((a, b) => b.level - a.level);
   const kinds = {};
