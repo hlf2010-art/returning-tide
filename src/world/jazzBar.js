@@ -18,6 +18,7 @@ import { createPerson } from './people.js';
 import { createSeatedPose, twoBone, turn } from './driverPose.js';
 import { createJazzPlayer } from '../engine/jazzPlayer.js';
 import { getLang } from '../ui/i18n.js';
+import { woodTextures, plasterTextures } from './surfaceDetail.js';
 import { stamp, nudge, post, skipTo, pay, clockText } from '../engine/life.js';
 
 const Y0 = L.curbH;
@@ -55,9 +56,11 @@ const photoWall = () => canvasTex(1024, 256, (x, w, h) => {
 
 export function createJazzBar({ scene, people, hud, audio, getLife, save, player, travel, onMode }) {
   const group = new THREE.Group(); group.name = 'jazz-bar'; scene.add(group);
-  const walnut = new THREE.MeshStandardMaterial({ color: 0x3b2416, roughness: 0.4, metalness: 0.05, emissive: 0x070302 });
+  // the partition's hall side matches the hall (world/interiors.js): grained walnut, trowelled plaster
+  const wd = woodTextures('walnut'), pl = plasterTextures();
+  const walnut = new THREE.MeshStandardMaterial({ map: wd.map, color: 0xf0dcc8, roughness: 0.55, metalness: 0.05, emissive: 0x070302 });
   const panel = new THREE.MeshStandardMaterial({ map: panelTex(), roughness: 0.45, emissive: 0x0d0703 });
-  const plaster = new THREE.MeshStandardMaterial({ color: 0xead8b8, roughness: 0.9, emissive: 0x3a2814 });
+  const plaster = new THREE.MeshStandardMaterial({ map: pl.map, color: 0xece0c8, roughness: 0.9, emissive: 0x22180c });
   const brass = new THREE.MeshStandardMaterial({ color: 0xc89b4a, roughness: 0.3, metalness: 1, envMapIntensity: 1.4 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x0f0b09, roughness: 0.8 });
   const lacquer = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.12, metalness: 0.2, envMapIntensity: 1.5 });
@@ -82,6 +85,17 @@ export function createJazzBar({ scene, people, hud, audio, getLife, save, player
   hallSide(J.x0 - 0.2, J.z0 - 0.2, J.x0 - 0.2, J.z1, -50, jcz);
   hallSide(J.x0 - 0.2, J.z0 - 0.2, J.door[0], J.z0 - 0.2, jcx, -230); hallSide(J.door[1], J.z0 - 0.2, J.x1, J.z0 - 0.2, jcx, -230);
   wall(J.door[0], J.z0 - 0.2, J.door[1], J.z0 - 0.2, Y0 + 2.6, Y0 + 5.6, plaster, jcx, -230);
+  // and its dressing as along the hall's walls: brass dado rail, dark marble skirting, moulded panels in brass between
+  // walnut pilasters, a walnut cornice
+  { const skirt = new THREE.MeshStandardMaterial({ color: 0x1d1e21, roughness: 0.25 }), xw = J.x0 - 0.2 - 0.03, zn = J.z0 - 0.2 - 0.03;
+    box(0.05, 0.05, J.z1 - zn, brass, xw, Y0 + 1.28, (zn + J.z1) / 2); box(0.04, 0.16, J.z1 - zn, skirt, xw, Y0, (zn + J.z1) / 2);
+    box(J.x1 - (J.x0 - 0.2), 0.05, 0.05, brass, (J.x0 - 0.2 + J.x1) / 2, Y0 + 1.28, zn); box(J.x1 - (J.x0 - 0.2), 0.16, 0.04, skirt, (J.x0 - 0.2 + J.x1) / 2, Y0, zn);
+    box(0.3, 0.22, J.z1 - zn, walnut, xw - 0.12, Y0 + 5.6 - 0.26, (zn + J.z1) / 2); box(J.x1 - (J.x0 - 0.2), 0.22, 0.3, walnut, (J.x0 - 0.2 + J.x1) / 2, Y0 + 5.6 - 0.26, zn - 0.12);
+    const mould = (cx, cz, w, alongZ) => { const y0 = Y0 + 1.7, y1 = Y0 + 4.65, t = 0.035, B = (bw, bh, bd, x, y, z) => box(bw, bh, bd, brass, x, y, z);
+      if (alongZ) { B(t, t, w, cx, y0, cz); B(t, t, w, cx, y1 - t, cz); B(t, y1 - y0, t, cx, y0, cz - w / 2); B(t, y1 - y0, t, cx, y0, cz + w / 2); }
+      else { B(w, t, t, cx, y0, cz); B(w, t, t, cx, y1 - t, cz); B(t, y1 - y0, t, cx - w / 2, y0, cz); B(t, y1 - y0, t, cx + w / 2, y0, cz); } };
+    for (let z = zn + 2; z < J.z1 - 1; z += 2.6) { box(0.14, 5.2, 0.34, walnut, xw - 0.04, Y0, z - 1.3 + 0.17); mould(xw - 0.03, z, 2.0, true); }
+    for (let x = J.door[1] + 1.8; x < J.x1 - 1; x += 2.6) mould(x, zn - 0.03, 2.0, false); }
   for (const x of J.door) box(0.08, 2.6, 0.24, brass, x, Y0, J.z0 - 0.1);
   box(J.door[1] - J.door[0] + 0.16, 0.08, 0.24, brass, (J.door[0] + J.door[1]) / 2, Y0 + 2.6, J.z0 - 0.1);
   wall(J.door[0], J.z0 - 0.2, J.door[0], J.z0, Y0, Y0 + 2.6, walnut, (J.door[0] + J.door[1]) / 2, J.z0 - 0.1); wall(J.door[1], J.z0 - 0.2, J.door[1], J.z0, Y0, Y0 + 2.6, walnut, (J.door[0] + J.door[1]) / 2, J.z0 - 0.1);

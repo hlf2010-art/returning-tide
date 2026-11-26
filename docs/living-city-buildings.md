@@ -93,7 +93,20 @@ about 35 m (`layout.js:32, 39-43`). The promenade runs from x 2 to x 26.
 - *Flags on the Bund carry the five stars; Lujiazui's day glass is blue-grey rather than pastel.*
 
 *Still open from that review:*
-- *The Peace Hotel and AIA lobbies need their real art deco interiors (the octagon, the amber glass skylight, marble).*
+- *The AIA lobby is still plain; the Peace Hotel's is done (below).*
+
+*26 Nov 2026, the Peace Hotel lobby rebuilt from published descriptions of the 2007-10 restoration:*
+- *An octagonal stained-glass laylight in warm yellows, geometric, on steel ribs (HBA: "octagonal stained glass ceiling with geometric patterns and warm yellow tones"; Arcplus: a double-layer steel octagonal skylight). It had been hidden above a plaster cap; it is now visible from the hall.*
+- *The antique brass octagonal chandelier of black metal and translucent glass engraved with interlocking curves and V shapes (Gold Mantis).*
+- *A silver-leaf relief of the Bund on the atrium's elevations (外滩景观银箔浮雕, Arcplus; Gold Mantis: "huge reliefs outlining the Bund in the era of the Republic of China"), here round the drum.*
+- *Cream marble floors, with stones of other textures along the octagon's joints (Gold Mantis).*
+- *Coffered-beam flat ceilings with simplified classical mouldings in pale tones over the arcades (井格梁平顶, 淡雅色调, Arcplus).*
+- *Antique bronze openwork wall lights giving a dim, soft glow (古铜镂花壁灯, Arcplus).*
+- *The glass peace dove given by the glass artist 施森彬 for the hotel's ninetieth year.*
+- *Not from a source:* the pillars' form, the laylight's exact pattern, the inlay's stones and the Lalique-manner panels' motifs are the game's own, in the period's manner.
+
+Sources: [HBA](https://hba.com/projects/fairmont-peace-hotel/), [Arcplus via The Paper](https://m.thepaper.cn/baijiahao_26000920), [Gold Mantis](https://www.goldmantis.com/case/250), [The Paper on the peace dove](https://www.thepaper.cn/newsDetail_forward_26059709), [Hospitality Design](https://hospitalitydesign.com/news/fairmont-peace-hotel-opens-in-shanghai/23575).
+
 - *The crowd reads as cloned (too few outfits; people walk in files along the parapet).*
 - *Tram riders' arms pass through the window pillar.*
 - *Pudong lights up before the Bund floods at 17:20.*

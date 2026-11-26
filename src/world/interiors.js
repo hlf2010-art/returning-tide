@@ -2,10 +2,15 @@
 //
 // THE PEACE HOTEL (No.20, Sassoon House, 1929), entered from Nanjing Road East through the revolving
 // door under the bronze canopy, as the real main entrance is (the Bund door has been shut for decades).
-//   - one great hall laid out as the original arcades crossing at an octagon: eight marble pillars,
-//     an inlaid octagon in the marble floor, and above it the octagonal drum and the stained-glass
-//     rotunda (restored 2010), lit from within
-//   - Art Deco: walnut wainscot, cream plaster, brass, frosted glass lights in the Lalique manner
+//   - one great hall laid out as the original arcades crossing at an octagon (the 2007-10 restoration took
+//     out the concrete mezzanine that had filled it): cream marble underfoot with bands of other stones round
+//     the octagon; eight octagonal cream marble pillars with bronze Deco capitals; above, the drum carrying a
+//     silver-leaf relief of the Bund, and the octagonal stained-glass laylight in warm yellows on steel ribs;
+//     the antique brass chandelier of black metal and engraved glass hanging from its heart; the glass peace
+//     dove (施森彬, for the hotel's ninetieth year) on a plinth in the middle
+//   - the arcades: pale coffered-beam ceilings (井格梁平顶), antique bronze openwork wall lights (古铜镂花壁灯),
+//     walnut wainscot, cream plaster in brass-moulded panels, frosted relief glass in the Lalique manner
+//   Sources: docs/living-city-buildings.md (the Peace Hotel lobby)
 //   - the front desk (they know you: you told your father you're staying here) and the concierge,
 //     who holds what couriers left for you
 //   - the Jasmine Lounge along the Bund windows; the Jazz Bar's door (world/jazzBar.js)
@@ -22,6 +27,7 @@
 // (the hotel's name, signs) stays as it would be on site.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { L, colliders, addDynamicCollider } from './layout.js';
 import { createPerson } from './people.js';
 import { dressHotelSecurity } from './outfits.js';
@@ -48,8 +54,9 @@ function carve() {
   ]);
   for (let i = 0; i < 8; i++) {                                     // the eight pillars round the octagon
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8, x = P.oct.x + Math.cos(a) * P.oct.r, z = P.oct.z + Math.sin(a) * P.oct.r;
-    colliders.push({ minX: x - 0.42, maxX: x + 0.42, minZ: z - 0.42, maxZ: z + 0.42, tag: 'pillar' });
+    colliders.push({ minX: x - 0.5, maxX: x + 0.5, minZ: z - 0.5, maxZ: z + 0.5, tag: 'pillar' });
   }
+  colliders.push({ minX: P.oct.x - 0.6, maxX: P.oct.x + 0.6, minZ: P.oct.z - 0.6, maxZ: P.oct.z + 0.6, tag: 'pillar' });   // the dove's plinth
   replace('aia-block', [
     [-140, L.facadeX, -190, A.z0], [-140, L.facadeX, A.z1, -131], [-140, A.x0, A.z0, A.z1],
     [A.x1, L.facadeX, A.z0, A.door[0], 'aia-front'], [A.x1, L.facadeX, A.door[1], A.z1, 'aia-front'],
@@ -70,22 +77,104 @@ for (const c of colliders) if (['desk', 'piano', 'pillar', 'gates'].includes(c.t
 const loader = new THREE.TextureLoader();
 function tx(name, rep, srgb) { const t = loader.load(`./textures/${name}`); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; t.anisotropy = 8; return t; }
 function canvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
-// stained glass: concentric rings of amber, green and blue panes in a leaded octagon pattern
+// the octagonal stained-glass laylight over the atrium, as restored in 2010: geometric Art Deco leading in warm
+// yellows (honey, amber, pale gold, cream), a sunburst at the heart, rings of chevrons and stepped diamonds, a
+// stepped border; a few small panes of teal and garnet for the jewel notes. Drawn flat, seen from below.
 const stainedGlass = () => canvasTex(1024, 1024, (x, w) => {
-  const c = w / 2; x.fillStyle = '#1a1208'; x.fillRect(0, 0, w, w);
-  const cols = ['#f0b33c', '#d98a28', '#6fae6a', '#3d7fb0', '#e8d29a', '#c25a3a'];
-  for (let ring = 9; ring >= 0; ring--) {
-    const r = (ring + 1) * c / 10, n = 8 * (ring + 1);
-    for (let i = 0; i < n; i++) {
-      const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2;
-      x.beginPath(); x.moveTo(c, c); x.arc(c, c, r, a0, a1); x.closePath();
-      x.fillStyle = cols[(ring * 3 + i * (ring % 2 ? 1 : 2)) % cols.length]; x.globalAlpha = 0.75 + 0.25 * ((i * 7 + ring) % 3) / 2; x.fill();
-    }
+  const c = w / 2, oct = (r, rot = Math.PI / 8) => { x.beginPath(); for (let i = 0; i <= 8; i++) { const a = (i / 8) * Math.PI * 2 + rot; i ? x.lineTo(c + Math.cos(a) * r, c + Math.sin(a) * r) : x.moveTo(c + Math.cos(a) * r, c + Math.sin(a) * r); } x.closePath(); };
+  const HONEY = '#e9b64c', AMBER = '#c98428', GOLD = '#f5d985', CREAM = '#f6ead0', DEEP = '#a8621f', TEAL = '#5a8f7c', GARNET = '#9a4a2a';
+  x.fillStyle = '#14100a'; x.fillRect(0, 0, w, w);
+  // segments of each ring between angle a0..a1 and radii r0..r1, as wedges
+  const wedge = (r0, r1, a0, a1, col) => { x.beginPath(); x.arc(c, c, r1, a0, a1); x.arc(c, c, r0, a1, a0, true); x.closePath(); x.fillStyle = col; x.fill(); };
+  // the border: stepped zigzag in amber and cream
+  oct(c * 0.995); x.fillStyle = DEEP; x.fill();
+  for (let i = 0; i < 64; i++) { const a0 = (i / 64) * Math.PI * 2, a1 = ((i + 1) / 64) * Math.PI * 2; wedge(c * 0.86, c * (i % 2 ? 0.95 : 0.91), a0, a1, i % 2 ? CREAM : HONEY); }
+  // stepped diamonds: 16 round, honey on amber, a teal or garnet jewel in every fourth
+  for (let i = 0; i < 16; i++) { const a0 = (i / 16) * Math.PI * 2; wedge(c * 0.62, c * 0.86, a0, a0 + Math.PI / 8, i % 2 ? AMBER : HONEY);
+    const am = a0 + Math.PI / 16, rm = c * 0.74; x.beginPath(); x.moveTo(c + Math.cos(am) * (rm + c * 0.06), c + Math.sin(am) * (rm + c * 0.06)); x.lineTo(c + Math.cos(am + 0.06) * rm, c + Math.sin(am + 0.06) * rm); x.lineTo(c + Math.cos(am) * (rm - c * 0.06), c + Math.sin(am) * (rm - c * 0.06)); x.lineTo(c + Math.cos(am - 0.06) * rm, c + Math.sin(am - 0.06) * rm); x.closePath();
+    x.fillStyle = i % 4 === 0 ? TEAL : i % 4 === 2 ? GARNET : GOLD; x.fill(); x.strokeStyle = '#17110a'; x.lineWidth = 3; x.stroke(); }
+  // chevrons pointing in, 32 round
+  for (let i = 0; i < 32; i++) { const a0 = (i / 32) * Math.PI * 2, a1 = a0 + Math.PI / 16, am = (a0 + a1) / 2;
+    x.beginPath(); x.moveTo(c + Math.cos(a0) * c * 0.6, c + Math.sin(a0) * c * 0.6); x.lineTo(c + Math.cos(am) * c * 0.42, c + Math.sin(am) * c * 0.42); x.lineTo(c + Math.cos(a1) * c * 0.6, c + Math.sin(a1) * c * 0.6); x.closePath(); x.fillStyle = i % 2 ? CREAM : GOLD; x.fill();
+    x.beginPath(); x.moveTo(c + Math.cos(a0) * c * 0.42, c + Math.sin(a0) * c * 0.42); x.lineTo(c + Math.cos(am) * c * 0.42, c + Math.sin(am) * c * 0.42); x.lineTo(c + Math.cos(a0) * c * 0.6, c + Math.sin(a0) * c * 0.6); x.closePath(); x.fillStyle = AMBER; x.fill(); }
+  // the sunburst: rays of alternating gold and cream from a white-gold heart
+  for (let i = 0; i < 24; i++) { const a0 = (i / 24) * Math.PI * 2; wedge(c * 0.1, c * 0.42, a0, a0 + Math.PI / 12, i % 2 ? GOLD : CREAM); }
+  const g = x.createRadialGradient(c, c, 0, c, c, c * 0.14); g.addColorStop(0, '#fffaf0'); g.addColorStop(1, GOLD); x.beginPath(); x.arc(c, c, c * 0.12, 0, Math.PI * 2); x.fillStyle = g; x.fill();
+  // the leading: rings, radial lines, a little irregular hand-made texture in each pane
+  x.strokeStyle = '#17110a'; x.lineCap = 'round';
+  x.lineWidth = 7; for (const r of [0.12, 0.42, 0.6, 0.62, 0.86, 0.995]) { oct(c * r); x.stroke(); }
+  x.lineWidth = 3; for (const r of [0.91, 0.95]) { x.beginPath(); x.arc(c, c, c * r, 0, Math.PI * 2); x.stroke(); }
+  for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2; x.lineWidth = 3; x.beginPath(); x.moveTo(c + Math.cos(a) * c * 0.12, c + Math.sin(a) * c * 0.12); x.lineTo(c + Math.cos(a) * c * 0.42, c + Math.sin(a) * c * 0.42); x.stroke(); }
+  for (let i = 0; i < 64; i++) { const a = (i / 64) * Math.PI * 2; x.lineWidth = 2.5; x.beginPath(); x.moveTo(c + Math.cos(a) * c * 0.86, c + Math.sin(a) * c * 0.86); x.lineTo(c + Math.cos(a) * c * 0.95, c + Math.sin(a) * c * 0.95); x.stroke(); }
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; x.lineWidth = 9; x.beginPath(); x.moveTo(c + Math.cos(a) * c * 0.12, c + Math.sin(a) * c * 0.12); x.lineTo(c + Math.cos(a) * c, c + Math.sin(a) * c); x.stroke(); }   // the steel ribs' shadow lines
+  const img = x.getImageData(0, 0, w, w), d = img.data;                                                            // seedy, uneven antique glass
+  for (let i = 0; i < d.length; i += 4) { const n = ((Math.sin(i * 12.9898) * 43758.5453) % 1) * 18 - 9; d[i] += n; d[i + 1] += n * 0.9; d[i + 2] += n * 0.6; }
+  x.putImageData(img, 0, 0);
+});
+// a silver-leaf relief of the Bund (the restored atrium has one along its elevations): the waterfront's skyline,
+// left to right from the Peace Hotel's pyramid to the Customs House clock tower and the HSBC dome, the river
+// and a steamer in front; drawn as a height map, shaded to read as raised silver
+const bundRelief = () => {
+  const W = 2048, H = 256, [cv, x] = (() => { const c = document.createElement('canvas'); c.width = W; c.height = H; return [c, c.getContext('2d')]; })();
+  const r = (() => { let s = 7; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
+  const v = (h) => `rgb(${h},${h},${h})`;
+  x.fillStyle = v(46); x.fillRect(0, 0, W, H);                                                                 // the ground of the relief
+  const sky = 196;                                                                                                // the river line
+  // building silhouettes: [x, width, height, top]
+  const B = [[20, 120, 120, 'flat'], [150, 90, 104, 'flat'], [250, 150, 150, 'pyramid'], [410, 120, 130, 'flat'], [540, 110, 120, 'stepped'], [660, 140, 100, 'flat'], [810, 100, 110, 'flat'],
+    [920, 130, 120, 'flat'], [1060, 110, 180, 'clock'], [1180, 180, 150, 'dome'], [1370, 120, 110, 'flat'], [1500, 130, 125, 'stepped'], [1640, 110, 100, 'flat'], [1760, 140, 118, 'cupola'], [1910, 120, 96, 'flat']];
+  for (const [bx, bw, bh, top] of B) {
+    const y0 = sky - bh;
+    x.fillStyle = v(150); x.fillRect(bx, y0, bw, bh);
+    x.fillStyle = v(118); for (let fy = y0 + 18; fy < sky - 14; fy += 26) for (let fx = bx + 12; fx < bx + bw - 12; fx += 20) x.fillRect(fx, fy, 8, 13);   // windows, sunk
+    x.fillStyle = v(172); for (let fx = bx + 6; fx < bx + bw - 4; fx += 40) x.fillRect(fx, y0 + 8, 4, bh - 10);                                    // pilasters, raised
+    x.fillStyle = v(180); x.fillRect(bx - 3, y0, bw + 6, 5);                                                      // cornice
+    x.fillStyle = v(165);
+    if (top === 'pyramid') { x.beginPath(); x.moveTo(bx + bw * 0.3, y0); x.lineTo(bx + bw / 2, y0 - 46); x.lineTo(bx + bw * 0.7, y0); x.fill(); }
+    if (top === 'stepped') { x.fillRect(bx + bw * 0.2, y0 - 14, bw * 0.6, 14); x.fillRect(bx + bw * 0.35, y0 - 26, bw * 0.3, 12); }
+    if (top === 'clock') { x.fillRect(bx + bw * 0.3, y0 - 60, bw * 0.4, 60); x.fillStyle = v(205); x.beginPath(); x.arc(bx + bw / 2, y0 - 38, 11, 0, Math.PI * 2); x.fill(); x.fillStyle = v(165); x.beginPath(); x.moveTo(bx + bw * 0.3, y0 - 60); x.lineTo(bx + bw / 2, y0 - 84); x.lineTo(bx + bw * 0.7, y0 - 60); x.fill(); }
+    if (top === 'dome') { x.beginPath(); x.ellipse(bx + bw / 2, y0, bw * 0.24, 40, 0, Math.PI, 0); x.fill(); x.fillRect(bx + bw / 2 - 3, y0 - 54, 6, 14); }
+    if (top === 'cupola') { x.fillRect(bx + bw * 0.4, y0 - 20, bw * 0.2, 20); x.beginPath(); x.ellipse(bx + bw / 2, y0 - 20, bw * 0.12, 14, 0, Math.PI, 0); x.fill(); }
   }
-  x.globalAlpha = 1; x.strokeStyle = '#15100a'; x.lineWidth = 5;
-  for (let ring = 1; ring <= 10; ring++) { x.beginPath(); x.arc(c, c, ring * c / 10, 0, Math.PI * 2); x.stroke(); }
-  for (let i = 0; i < 64; i++) { const a = (i / 64) * Math.PI * 2; x.beginPath(); x.moveTo(c + Math.cos(a) * c * 0.2, c + Math.sin(a) * c * 0.2); x.lineTo(c + Math.cos(a) * c, c + Math.sin(a) * c); x.stroke(); }
-  const g = x.createRadialGradient(c, c, 0, c, c, c * 0.25); g.addColorStop(0, '#fff6d8'); g.addColorStop(1, 'rgba(255,230,160,0)'); x.fillStyle = g; x.fillRect(0, 0, w, w);
+  // the river: ripples, a steamer with two funnels, a junk's sail
+  for (let y = sky + 6; y < H - 4; y += 7) { x.fillStyle = v(70 + r() * 30); for (let xx = 0; xx < W; xx += 30 + r() * 30) x.fillRect(xx, y, 14 + r() * 20, 2); }
+  x.fillStyle = v(175); x.fillRect(700, sky + 18, 220, 22); x.fillRect(740, sky + 4, 120, 14); x.fillRect(770, sky - 18, 16, 22); x.fillRect(812, sky - 18, 16, 22);
+  x.beginPath(); x.moveTo(1500, sky + 36); x.lineTo(1560, sky + 36); x.lineTo(1540, sky + 46); x.lineTo(1512, sky + 46); x.fill(); x.beginPath(); x.moveTo(1528, sky + 34); x.quadraticCurveTo(1520, sky - 6, 1532, sky - 24); x.lineTo(1556, sky + 34); x.fill();
+  // shade the height map as raised silver: light from the upper left
+  const hm = x.getImageData(0, 0, W, H).data, out = x.createImageData(W, H), o = out.data;
+  for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) {
+    const i = (yy * W + xx) * 4, hgt = hm[i], hl = hm[(yy * W + Math.max(0, xx - 2)) * 4], hu = hm[(Math.max(0, yy - 2) * W + xx) * 4];
+    const slope = (hgt - hl) * 0.9 + (hgt - hu) * 0.9, base = 150 + hgt * 0.22 + slope;
+    o[i] = Math.max(40, Math.min(255, base * 0.97)); o[i + 1] = Math.max(40, Math.min(255, base * 0.98)); o[i + 2] = Math.max(40, Math.min(255, base * 1.02)); o[i + 3] = 255;
+  }
+  x.putImageData(out, 0, 0);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+};
+// a frosted relief glass panel in the Lalique manner (moulded, satin, lit from behind): a stylised fountain of
+// leaves and falling water, framed in a stepped border
+const laliqueGlass = () => canvasTex(256, 768, (x, w, h) => {
+  const g = x.createLinearGradient(0, 0, w, 0); g.addColorStop(0, '#cfc6b4'); g.addColorStop(0.5, '#f4eee2'); g.addColorStop(1, '#cfc6b4'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+  x.strokeStyle = 'rgba(120,108,90,0.55)'; x.lineWidth = 4; x.strokeRect(10, 10, w - 20, h - 20); x.strokeRect(22, 22, w - 44, h - 44);
+  const leaf = (cx, cy, a, l) => { x.save(); x.translate(cx, cy); x.rotate(a); x.beginPath(); x.moveTo(0, 0); x.quadraticCurveTo(l * 0.3, -l * 0.18, l, 0); x.quadraticCurveTo(l * 0.3, l * 0.18, 0, 0); x.fillStyle = 'rgba(255,255,255,0.75)'; x.fill(); x.strokeStyle = 'rgba(110,98,80,0.5)'; x.lineWidth = 2; x.stroke(); x.restore(); };
+  for (let k = 0; k < 9; k++) { const y = h - 90 - k * 66; for (const s of [-1, 1]) leaf(w / 2, y, s > 0 ? -0.5 - k * 0.04 : Math.PI + 0.5 + k * 0.04, 60 + (k % 3) * 8); }
+  x.strokeStyle = 'rgba(255,255,255,0.8)'; x.lineWidth = 3; for (let k = -3; k <= 3; k++) { x.beginPath(); x.moveTo(w / 2 + k * 6, 60); x.bezierCurveTo(w / 2 + k * 22, 160, w / 2 + k * 30, 300, w / 2 + k * 34, h - 60); x.stroke(); }
+  x.fillStyle = 'rgba(110,98,80,0.35)'; x.beginPath(); x.moveTo(w / 2 - 50, h - 50); x.lineTo(w / 2 + 50, h - 50); x.lineTo(w / 2 + 30, h - 80); x.lineTo(w / 2 - 30, h - 80); x.fill();
+});
+// the chandelier's glass: translucent, engraved with interlocking curves and V shapes (as described of the
+// octagon's antique brass chandelier)
+const chandelierGlass = () => canvasTex(256, 384, (x, w, h) => {
+  const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#fff3d6'); g.addColorStop(1, '#f2d39a'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+  x.strokeStyle = 'rgba(150,110,60,0.55)'; x.lineWidth = 5;
+  for (let k = 0; k < 4; k++) { const y = 40 + k * 90; x.beginPath(); x.moveTo(20, y); x.lineTo(w / 2, y + 60); x.lineTo(w - 20, y); x.stroke(); }                 // the V's
+  x.lineWidth = 3; for (let k = 0; k < 3; k++) { const y = 85 + k * 90; x.beginPath(); x.arc(w * 0.3, y, 34, 0, Math.PI * 2); x.stroke(); x.beginPath(); x.arc(w * 0.7, y, 34, 0, Math.PI * 2); x.stroke(); }   // interlocking rings
+  x.strokeRect(6, 6, w - 12, h - 12);
+});
+// the openwork of a bronze wall light: a pierced lattice of lozenges and scrolls (alpha: the holes let the glow out)
+const fretwork = () => canvasTex(256, 256, (x, w, h) => {
+  x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.globalCompositeOperation = 'destination-out';
+  for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { const cx = 32 + i * 64, cy = 32 + j * 64; x.beginPath(); x.moveTo(cx, cy - 24); x.lineTo(cx + 18, cy); x.lineTo(cx, cy + 24); x.lineTo(cx - 18, cy); x.closePath(); x.fill();
+    x.beginPath(); x.arc(cx + 32, cy + 32, 7, 0, Math.PI * 2); x.fill(); }
+  x.globalCompositeOperation = 'source-over';
 });
 // the gilt frieze under the cornice: stepped chevrons and sunbursts in relief on walnut, 1.2 m a repeat
 const friezeTexture = () => { const t = canvasTex(512, 192, (x, w, h) => {
@@ -99,15 +188,20 @@ const friezeTexture = () => { const t = canvasTex(512, 192, (x, w, h) => {
   gilt(() => { x.lineWidth = 5; for (const s of [-1, 1]) for (let k = 0; k < 4; k++) { const ox = w / 2 + s * (150 + k * 26); x.beginPath(); x.moveTo(ox - 13, h - 22); x.lineTo(ox, 30); x.lineTo(ox + 13, h - 22); x.stroke(); } });
   gilt(() => { x.lineWidth = 3; for (const ex of [0, w]) { x.beginPath(); x.arc(ex, h / 2 + 8, 34, 0, Math.PI * 2); x.stroke(); x.beginPath(); x.arc(ex, h / 2 + 8, 18, 0, Math.PI * 2); x.stroke(); } });
 }); t.wrapS = THREE.RepeatWrapping; return t; };
-// the octagon inlaid in the floor: dark green marble ring, brass lines, a star
+// the octagon inlaid in the cream marble floor: bands of other stones round it (black Marquina, a red-brown
+// Rosso, a grey-green), brass strips between, a compass of eight points in cream and grey at the heart
 const floorInlay = () => canvasTex(1024, 1024, (x, w) => {
   const c = w / 2; x.clearRect(0, 0, w, w);
   const oct = (r) => { x.beginPath(); for (let i = 0; i <= 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; const px = c + Math.cos(a) * r, py = c + Math.sin(a) * r; i ? x.lineTo(px, py) : x.moveTo(px, py); } x.closePath(); };
-  oct(c * 0.98); x.fillStyle = 'rgba(28,52,44,0.92)'; x.fill();
-  oct(c * 0.86); x.fillStyle = 'rgba(214,206,190,0.95)'; x.fill();
-  x.strokeStyle = '#b8924a'; x.lineWidth = 7; oct(c * 0.98); x.stroke(); oct(c * 0.86); x.stroke(); oct(c * 0.5); x.stroke();
-  x.fillStyle = 'rgba(28,52,44,0.9)';
-  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; x.beginPath(); x.moveTo(c, c); x.lineTo(c + Math.cos(a - 0.12) * c * 0.48, c + Math.sin(a - 0.12) * c * 0.48); x.lineTo(c + Math.cos(a) * c * 0.8, c + Math.sin(a) * c * 0.8); x.lineTo(c + Math.cos(a + 0.12) * c * 0.48, c + Math.sin(a + 0.12) * c * 0.48); x.closePath(); x.fill(); }
+  const vein = (col, n) => { x.save(); x.clip(); x.strokeStyle = col; for (let k = 0; k < n; k++) { x.lineWidth = 0.5 + Math.random() * 1.5; x.beginPath(); let px = Math.random() * w, py = Math.random() * w; x.moveTo(px, py); for (let s2 = 0; s2 < 8; s2++) { px += (Math.random() - 0.4) * 90; py += (Math.random() - 0.5) * 60; x.lineTo(px, py); } x.stroke(); } x.restore(); };
+  oct(c * 0.99); x.fillStyle = '#16171a'; x.fill(); oct(c * 0.99); vein('rgba(230,230,230,0.35)', 40);              // Nero Marquina, white-veined
+  oct(c * 0.9); x.fillStyle = '#7a3a2c'; x.fill(); oct(c * 0.9); vein('rgba(220,190,170,0.25)', 30);                // Rosso
+  oct(c * 0.84); x.fillStyle = '#e9e0cf'; x.fill(); oct(c * 0.84); vein('rgba(150,135,110,0.25)', 50);               // the cream field
+  for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, a2 = a + Math.PI / 16 * (i % 2 ? 1 : 1), l = i % 2 ? c * 0.36 : c * 0.62;   // the compass
+    for (const [side, col] of [[-1, i % 2 ? '#9aa39b' : '#5f6b63'], [1, i % 2 ? '#c9c2b3' : '#e9e0cf']]) { x.beginPath(); x.moveTo(c, c); x.lineTo(c + Math.cos(a + side * 0.13) * c * 0.16, c + Math.sin(a + side * 0.13) * c * 0.16); x.lineTo(c + Math.cos(a) * l, c + Math.sin(a) * l); x.closePath(); x.fillStyle = col; x.fill(); } void a2; }
+  x.beginPath(); x.arc(c, c, c * 0.06, 0, Math.PI * 2); x.fillStyle = '#16171a'; x.fill();
+  x.strokeStyle = '#c8a050'; x.lineWidth = 6; for (const r of [0.99, 0.9, 0.84, 0.66]) { oct(c * r); x.stroke(); }
+  x.lineWidth = 3; x.beginPath(); x.arc(c, c, c * 0.06, 0, Math.PI * 2); x.stroke();
 });
 const signTex = (lines, { bg = '#1a1510', fg = '#d9b46a', w = 512, h = 128 } = {}) => canvasTex(w, h, (x) => {
   x.fillStyle = bg; x.fillRect(0, 0, w, h); x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
@@ -116,13 +210,13 @@ const signTex = (lines, { bg = '#1a1510', fg = '#d9b46a', w = 512, h = 128 } = {
 
 export function createInteriors({ scene, people, hud, audio, getLife, save, player, onCard, onLift }) {
   const group = new THREE.Group(); group.name = 'interiors'; scene.add(group);
-  const marble = new THREE.MeshStandardMaterial({ map: tx('marble_01_diff_1k.jpg', 3, true), normalMap: tx('marble_01_nor_gl_1k.jpg', 3, false), roughnessMap: tx('marble_01_rough_1k.jpg', 3, false), roughness: 0.6, color: 0xe8e2d6, envMapIntensity: 1.1 });
+  const marble = new THREE.MeshStandardMaterial({ map: tx('marble_01_diff_1k.jpg', 3, true), normalMap: tx('marble_01_nor_gl_1k.jpg', 3, false), roughnessMap: tx('marble_01_rough_1k.jpg', 3, false), roughness: 0.42, color: 0xefe7d8, envMapIntensity: 1.2 });
   const marbleDark = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, roughness: 0.25, color: 0x3d4a44, envMapIntensity: 1.3 });
   // close up these are grained walnut, trowelled plaster and brushed brass (world/surfaceDetail.js), not flat colours;
   // UVs are in metres (metricUV below), so the grain and the trowel marks keep their size on every piece
   const wd = woodTextures('walnut'), pl = plasterTextures(), br = brushedTextures();
   const walnut = new THREE.MeshStandardMaterial({ map: wd.map, normalMap: wd.normalMap, normalScale: new THREE.Vector2(0.5, 0.5), roughnessMap: wd.roughnessMap, color: 0xf0dcc8, roughness: 0.55, metalness: 0.05, emissive: 0x070302 });
-  const plaster = new THREE.MeshStandardMaterial({ map: pl.map, normalMap: pl.normalMap, normalScale: new THREE.Vector2(0.6, 0.6), color: 0xead8b8, roughness: 0.9, emissive: 0x3a2814 });   // warm: lamplight, not the blue night outside
+  const plaster = new THREE.MeshStandardMaterial({ map: pl.map, normalMap: pl.normalMap, normalScale: new THREE.Vector2(0.6, 0.6), color: 0xece0c8, roughness: 0.9, emissive: 0x22180c });   // warm: lamplight, not the blue night outside
   const brass = new THREE.MeshStandardMaterial({ color: 0xc89b4a, roughness: 0.55, roughnessMap: br.roughnessMap, normalMap: br.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), metalness: 1, envMapIntensity: 1.4 });
   const granite = new THREE.MeshStandardMaterial({ map: tx('granite_tile_04_diff_1k.jpg', 1, true), color: 0xb9b2a6, roughness: 0.5, emissive: 0x0d0c0a });
   const frosted = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.45, 1.22, 0.9) });             // lit glass (bloom makes it glow)
@@ -183,46 +277,146 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     add(new THREE.PlaneGeometry(Math.abs(z1 - z0), 3.6), glass, P.x1 + 0.05, Y0 + 1.8, (z0 + z1) / 2, Math.PI / 2);
     box(0.1, 0.12, Math.abs(z1 - z0) + 0.2, brass, P.x1 - 0.05, Y0 + 3.6, (z0 + z1) / 2);
   }
-  // ceiling with the octagon open to the drum and the rotunda
+  // ceiling with the octagon open to the drum and the laylight
+  const ringPt = (i, r) => { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; return [P.oct.x + Math.cos(a) * r, P.oct.z + Math.sin(a) * r]; };
+  const R0 = P.oct.r + 0.6, ceilY = Y0 + P.h;
+  const bronzeDark = new THREE.MeshStandardMaterial({ color: 0x3b2a18, roughness: 0.4, metalness: 0.9, envMapIntensity: 1.2 });
+  const blackMetal = new THREE.MeshStandardMaterial({ color: 0x141312, roughness: 0.45, metalness: 0.8 });
+  const paleBeam = new THREE.MeshStandardMaterial({ map: pl.map, normalMap: pl.normalMap, normalScale: new THREE.Vector2(0.4, 0.4), color: 0xf3ead8, roughness: 0.85, emissive: 0x1a130a });
   {
     // (shape y becomes world z once turned face-down by +90° about x)
     const sh = new THREE.Shape(); sh.moveTo(P.x0, P.z0); sh.lineTo(P.x1, P.z0); sh.lineTo(P.x1, P.z1); sh.lineTo(P.x0, P.z1); sh.closePath();
-    const hole = new THREE.Path(); for (let i = 0; i <= 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; const x = P.oct.x + Math.cos(a) * (P.oct.r + 0.6), z = P.oct.z + Math.sin(a) * (P.oct.r + 0.6); i ? hole.lineTo(x, z) : hole.moveTo(x, z); }
+    const hole = new THREE.Path(); for (let i = 0; i <= 8; i++) { const [x, z] = ringPt(i, R0); i ? hole.lineTo(x, z) : hole.moveTo(x, z); }
     sh.holes.push(hole);
-    const ceil = add(new THREE.ShapeGeometry(sh), plaster, 0, Y0 + P.h, 0, 0, Math.PI / 2); ceil.material = plaster.clone(); ceil.material.side = THREE.DoubleSide;
-    // coffers: brass-lined frosted panels in a grid (the Lalique-style light)
-    for (let x = P.x0 + 3; x < P.x1 - 2; x += 4.4) for (let z = P.z1 - 3; z > P.z0 + 2; z -= 4.4) {
-      if (Math.hypot(x - P.oct.x, z - P.oct.z) < P.oct.r + 2) continue;
-      add(new THREE.PlaneGeometry(1.1, 1.1), frosted, x, Y0 + P.h - 0.02, z, 0, Math.PI / 2);
-      box(1.3, 0.06, 0.06, brass, x, Y0 + P.h - 0.08, z - 0.62); box(1.3, 0.06, 0.06, brass, x, Y0 + P.h - 0.08, z + 0.62);
-    }
-    // the drum: eight panels rising from the ceiling to the rotunda, clerestory glazing near the top
+    const ceil = add(new THREE.ShapeGeometry(sh), plaster, 0, ceilY, 0, 0, Math.PI / 2); ceil.material = plaster.clone(); ceil.material.side = THREE.DoubleSide; ceil.material.color.set(0xf1e6d0);
+    // the arcades' coffered-beam ceiling (井格梁平顶, pale, simplified classical mouldings): beams on a 3.1 m grid,
+    // each with a fillet under it; in alternate coffers an octagonal flush light of frosted glass in a brass ring
+    const beams = [], flush = [], CELL = 3.1, near = (x, z) => Math.hypot(x - P.oct.x, z - P.oct.z) < R0 + 0.4;
+    const beam = (x, z, lx, lz) => { if (near(x, z)) return; const g = new THREE.BoxGeometry(lx, 0.34, lz); g.translate(x, ceilY - 0.17, z); beams.push(g); const f = new THREE.BoxGeometry(lx + (lx > lz ? 0 : 0.12), 0.05, lz + (lz > lx ? 0 : 0.12)); f.translate(x, ceilY - 0.365, z); beams.push(f); };
+    for (let x = P.x0 + CELL; x < P.x1 - 0.5; x += CELL) for (let z = P.z0; z < P.z1 - 0.01; z += CELL / 2) beam(x, Math.min(z + CELL / 4, P.z1 - 0.1), 0.3, Math.min(CELL / 2, P.z1 - z));
+    for (let z = P.z0 + CELL; z < P.z1 - 0.5; z += CELL) for (let x = P.x0; x < P.x1 - 0.01; x += CELL / 2) beam(Math.min(x + CELL / 4, P.x1 - 0.1), z, Math.min(CELL / 2, P.x1 - x), 0.3);
+    let k = 0;
+    for (let x = P.x0 + CELL / 2; x < P.x1; x += CELL) for (let z = P.z0 + CELL / 2; z < P.z1; z += CELL) { if (near(x, z) || ((k++) % 2)) continue; flush.push([x, z]); }
+    if (beams.length) { const m = new THREE.Mesh(mergeGeometries(beams), paleBeam); m.receiveShadow = true; group.add(m); }
+    const fg = new THREE.CircleGeometry(0.42, 8, Math.PI / 8).rotateX(Math.PI / 2), rg = new THREE.TorusGeometry(0.44, 0.03, 4, 8).rotateX(Math.PI / 2);
+    for (const [x, z] of flush) { const f = new THREE.Mesh(fg, frosted); f.position.set(x, ceilY - 0.02, z); group.add(f); const r = new THREE.Mesh(rg, brass); r.position.set(x, ceilY - 0.03, z); group.add(r); }
+    // the drum: eight panels rising from the ceiling to the laylight; on each, a stretch of the silver-leaf relief of
+    // the Bund, framed in brass; clerestory glazing above, a moulded ring at the foot
+    const relief = bundRelief(), top = Y0 + P.oct.top;
+    const silver = new THREE.MeshStandardMaterial({ map: relief, color: 0xf0f2f5, roughness: 0.38, metalness: 0.55, envMapIntensity: 1.6, emissive: 0x5a5650, emissiveMap: relief });   // (silver leaf under warm lamplight)
     for (let i = 0; i < 8; i++) {
-      const a0 = (i / 8) * Math.PI * 2 + Math.PI / 8, a1 = ((i + 1) / 8) * Math.PI * 2 + Math.PI / 8, r = P.oct.r + 0.6;
-      const ax = P.oct.x + Math.cos(a0) * r, az = P.oct.z + Math.sin(a0) * r, bx = P.oct.x + Math.cos(a1) * r, bz = P.oct.z + Math.sin(a1) * r;
-      wall(ax, az, bx, bz, Y0 + P.h, Y0 + P.oct.top - 0.9, plaster, P.oct.x, P.oct.z);
-      wall(ax, az, bx, bz, Y0 + P.oct.top - 0.9, Y0 + P.oct.top - 0.45, clerestory, P.oct.x, P.oct.z);
-      wall(ax, az, bx, bz, Y0 + P.oct.top - 0.45, Y0 + P.oct.top, plaster, P.oct.x, P.oct.z);
+      const [ax, az] = ringPt(i, R0), [bx, bz] = ringPt(i + 1, R0);
+      wall(ax, az, bx, bz, ceilY, top - 0.9, plaster, P.oct.x, P.oct.z);
+      wall(ax, az, bx, bz, top - 0.9, top - 0.45, clerestory, P.oct.x, P.oct.z);
+      wall(ax, az, bx, bz, top - 0.45, top, plaster, P.oct.x, P.oct.z);
+      // the relief panel: 1.6 m tall, a little in from the panel's corners, a face of the panorama each
+      const ins = 0.12, cx = (ax + bx) / 2, cz = (az + bz) / 2, toC = Math.hypot(P.oct.x - cx, P.oct.z - cz), nx = (P.oct.x - cx) / toC, nz = (P.oct.z - cz) / toC;
+      const len = Math.hypot(bx - ax, bz - az) * (1 - 2 * ins), g = new THREE.PlaneGeometry(len, 1.6), uv = g.attributes.uv;
+      for (let j = 0; j < uv.count; j++) uv.setX(j, ((i % 4) + uv.getX(j)) / 4);   // (the skyline twice round the drum)
+      const m = new THREE.Mesh(g, silver); m.position.set(cx + nx * 0.03, ceilY + 2.05, cz + nz * 0.03); m.rotation.y = Math.atan2(nx, nz); group.add(m);
+      const frame = (w, h, y, off) => { const f = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.05), brass); f.position.set(cx + nx * 0.05, y, cz + nz * 0.05); f.rotation.y = Math.atan2(nx, nz); f.translateX(off); group.add(f); };
+      frame(len + 0.1, 0.06, ceilY + 2.88, 0); frame(len + 0.1, 0.06, ceilY + 1.22, 0); frame(0.06, 1.72, ceilY + 2.05, -len / 2 - 0.02); frame(0.06, 1.72, ceilY + 2.05, len / 2 + 0.02);
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(bx - ax, bz - az) + 0.1, 0.3, 0.16), paleBeam); foot.position.set(cx + nx * 0.08, ceilY + 0.15, cz + nz * 0.08); foot.rotation.y = Math.atan2(nx, nz); group.add(foot);
     }
-    // the rotunda: a shallow dome of stained glass, its pattern laid on flat from above (as a laylight
-    // reads from below), lit from behind
-    const dg = new THREE.SphereGeometry(P.oct.r + 0.6, 40, 12, 0, Math.PI * 2, 0, Math.PI / 2.6), R0 = P.oct.r + 0.6, pos = dg.attributes.position, uv = dg.attributes.uv;
-    for (let i = 0; i < pos.count; i++) uv.setXY(i, 0.5 + pos.getX(i) / (2 * R0 * 0.92), 0.5 + pos.getZ(i) / (2 * R0 * 0.92));
-    const dome = add(dg, new THREE.MeshBasicMaterial({ map: stainedGlass(), side: THREE.BackSide, color: new THREE.Color(1.25, 1.12, 0.95) }), P.oct.x, Y0 + P.oct.top - 0.3, P.oct.z);
-    dome.scale.y = 0.45;
-    const cap = add(new THREE.CircleGeometry(P.oct.r + 0.75, 8, Math.PI / 8), plaster, P.oct.x, Y0 + P.oct.top + 0.02, P.oct.z, 0, Math.PI / 2);   // the drum's ceiling round the glass
-    cap.material = plaster.clone(); cap.material.side = THREE.DoubleSide;
+    // the laylight: the stained glass in a shallow faceted octagonal dome on eight steel ribs, lit from behind
+    // (daylight by day, the cavity's lamps at night); a plain ring of plaster round it at the drum's head
+    {
+      const rise = [0, 0.55, 1.0], radii = [R0, R0 * 0.55, 0], pos = [], uvs = [], idx = [];
+      const vtx = (i, ring) => { const [x, z] = ring === 2 ? [P.oct.x, P.oct.z] : ringPt(i, radii[ring]); pos.push(x - P.oct.x, rise[ring], z - P.oct.z); uvs.push(0.5 + (x - P.oct.x) / (2 * R0), 0.5 - (z - P.oct.z) / (2 * R0)); return pos.length / 3 - 1; };
+      for (let i = 0; i < 8; i++) { const a0 = vtx(i, 0), a1 = vtx(i + 1, 0), b0 = vtx(i, 1), b1 = vtx(i + 1, 1), c = vtx(i, 2); idx.push(a0, a1, b1, a0, b1, b0, b0, b1, c); }
+      const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); lg.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); lg.setIndex(idx); lg.computeVertexNormals();
+      const lay = new THREE.Mesh(lg, new THREE.MeshBasicMaterial({ map: stainedGlass(), side: THREE.DoubleSide, color: new THREE.Color(1.3, 1.18, 1.0) })); lay.position.set(P.oct.x, top, P.oct.z); group.add(lay);
+      for (let i = 0; i < 8; i++) {                                                                         // the ribs
+        const [x0, z0] = ringPt(i, R0), [x1, z1] = ringPt(i, R0 * 0.55);
+        for (const [pa, pb] of [[[x0, top, z0], [x1, top + 0.55, z1]], [[x1, top + 0.55, z1], [P.oct.x, top + 1.0, P.oct.z]]]) {
+          const A = new THREE.Vector3(...pa), Bv = new THREE.Vector3(...pb), rib = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, A.distanceTo(Bv)), blackMetal);
+          rib.position.copy(A).add(Bv).multiplyScalar(0.5); rib.lookAt(Bv); rib.position.y -= 0.04; group.add(rib);
+        }
+      }
+      const ring = new THREE.Shape(); for (let i = 0; i <= 8; i++) { const [x, z] = ringPt(i, R0 + 0.9); i ? ring.lineTo(x, z) : ring.moveTo(x, z); }
+      const rh = new THREE.Path(); for (let i = 0; i <= 8; i++) { const [x, z] = ringPt(i, R0); i ? rh.lineTo(x, z) : rh.moveTo(x, z); } ring.holes.push(rh);
+      const cap = add(new THREE.ShapeGeometry(ring), plaster, 0, top + 0.01, 0, 0, Math.PI / 2); cap.material = plaster.clone(); cap.material.side = THREE.DoubleSide;
+    }
+    // the octagon's chandelier: antique brass and black metal, an octagonal lantern of translucent engraved glass,
+    // a stepped crown and a pointed finial, on a rod from the laylight's heart
+    {
+      const ch = new THREE.Group(); ch.position.set(P.oct.x, Y0 + 7.0, P.oct.z); group.add(ch);
+      const glassM = new THREE.MeshBasicMaterial({ map: chandelierGlass(), color: new THREE.Color(1.5, 1.32, 1.05), side: THREE.DoubleSide });
+      const rr = 0.72, hh = 1.15, side = 2 * rr * Math.tan(Math.PI / 8);
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2, px = Math.sin(a) * rr, pz = Math.cos(a) * rr;
+        const pane = new THREE.Mesh(new THREE.PlaneGeometry(side, hh), glassM); pane.position.set(px, 0, pz); pane.rotation.y = a; ch.add(pane);
+        const ca = a + Math.PI / 8, rc = rr / Math.cos(Math.PI / 8), post = new THREE.Mesh(new THREE.BoxGeometry(0.05, hh + 0.1, 0.05), blackMetal); post.position.set(Math.sin(ca) * rc, 0, Math.cos(ca) * rc); post.rotation.y = ca; ch.add(post);
+      }
+      const band = (r, h, y, m, r2 = r) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(r, r2, h, 8, 1), m); b.rotation.y = Math.PI / 8; b.position.y = y; ch.add(b); return b; };
+      band(rr / Math.cos(Math.PI / 8) + 0.05, 0.1, hh / 2 + 0.05, brass); band(rr / Math.cos(Math.PI / 8) + 0.05, 0.1, -hh / 2 - 0.05, brass);
+      band(0.62, 0.16, hh / 2 + 0.18, blackMetal, 0.8); band(0.4, 0.16, hh / 2 + 0.34, brass, 0.6); band(0.18, 0.2, hh / 2 + 0.52, blackMetal, 0.36);        // the stepped crown
+      band(0.05, 0.4, -hh / 2 - 0.28, brass, 0.72);                                                                             // the finial, a glass point in brass
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.5, 8), glassM); tip.rotation.set(Math.PI, Math.PI / 8, 0); tip.position.y = -hh / 2 - 0.36; ch.add(tip);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), brass); knob.position.y = -hh / 2 - 0.64; ch.add(knob);
+      const rodLen = top + 1.0 - (Y0 + 7.0 + hh / 2 + 0.62), rod = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, rodLen, 8), blackMetal); rod.position.y = hh / 2 + 0.62 + rodLen / 2; ch.add(rod);
+      lights.push({ x: P.oct.x, y: Y0 + 6.6, z: P.oct.z, intensity: 22, distance: 15, color: new THREE.Color(1.0, 0.84, 0.6) });
+    }
   }
-  // the eight marble pillars, brass capitals and bases
+  // the eight pillars round the octagon: octagonal shafts of cream marble on black Marquina plinths, a stepped
+  // bronze Deco capital with a band of frosted glass, lit from within
+  const marbleCream = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, roughnessMap: marble.roughnessMap, color: 0xf3ead9, roughness: 0.35, envMapIntensity: 1.3 });
+  const marquina = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, color: 0x1d1e21, roughness: 0.2, envMapIntensity: 1.4 });
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8, x = P.oct.x + Math.cos(a) * P.oct.r, z = P.oct.z + Math.sin(a) * P.oct.r;
-    add(new THREE.CylinderGeometry(0.36, 0.38, P.h - 0.6, 20), marbleDark, x, Y0 + 0.3 + (P.h - 0.6) / 2, z);
-    box(0.95, 0.3, 0.95, brass, x, Y0, z); box(0.95, 0.3, 0.95, brass, x, Y0 + P.h - 0.3, z);
+    const shaft = add(new THREE.CylinderGeometry(0.4, 0.4, P.h - 1.45, 8), marbleCream, x, Y0 + 0.55 + (P.h - 1.45) / 2, z); shaft.rotation.y = Math.PI / 8;
+    const pl0 = add(new THREE.CylinderGeometry(0.52, 0.56, 0.5, 8), marquina, x, Y0 + 0.25, z); pl0.rotation.y = Math.PI / 8;
+    const pl1 = add(new THREE.CylinderGeometry(0.46, 0.5, 0.06, 8), brass, x, Y0 + 0.53, z); pl1.rotation.y = Math.PI / 8;
+    [[0.44, 0.08, P.h - 0.9, brass], [0.47, 0.22, P.h - 0.75, frosted], [0.5, 0.08, P.h - 0.5, brass], [0.56, 0.12, P.h - 0.4, bronzeDark], [0.64, 0.14, P.h - 0.26, brass]]
+      .forEach(([r, h, y, m]) => { const c = add(new THREE.CylinderGeometry(r, r, h, 8), m, x, Y0 + y + h / 2, z); c.rotation.y = Math.PI / 8; });
   }
-  // wall lights: frosted Art Deco fans on brass, along every wall
-  const sconce = (x, z, ry) => { const g = new THREE.Group(); g.position.set(x, Y0 + 2.6, z); g.rotation.y = ry; const f = new THREE.Mesh(new THREE.CircleGeometry(0.32, 3, -Math.PI / 6, Math.PI / 3 * 2), frosted); f.rotation.z = Math.PI; f.position.z = 0.05; g.add(f); const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), brass); b.position.set(0, 0.1, 0.03); g.add(b); group.add(g); };
-  for (let x = P.x0 + 4; x < P.x1 - 3; x += 5) { sconce(x, P.z0 + 0.03, 0); }
-  for (let z = P.z1 - 4; z > P.z0 + 3; z -= 5) sconce(P.x0 + 0.03, z, Math.PI / 2);
+  // the peace dove (和平鸽): a glass dove taking wing on a black marble plinth at the heart of the octagon, given to
+  // the hotel by the glass artist Shi Senbin (施森彬) for its ninetieth year
+  {
+    const plinth = add(new THREE.CylinderGeometry(0.5, 0.55, 0.95, 8), marquina, P.oct.x, Y0 + 0.475, P.oct.z); plinth.rotation.y = Math.PI / 8;
+    const lip = add(new THREE.CylinderGeometry(0.56, 0.56, 0.05, 8), brass, P.oct.x, Y0 + 0.97, P.oct.z); lip.rotation.y = Math.PI / 8;
+    const block = add(new THREE.BoxGeometry(0.34, 0.1, 0.34), new THREE.MeshStandardMaterial({ color: 0xdfeaf0, roughness: 0.05, transparent: true, opacity: 0.55, envMapIntensity: 2 }), P.oct.x, Y0 + 1.05, P.oct.z); block.rotation.y = 0.4;   // a clear glass base
+    const dove = new THREE.Group(); dove.position.set(P.oct.x, Y0 + 1.3, P.oct.z); dove.rotation.y = 0.4; dove.scale.setScalar(1.7); group.add(dove);   // (facing the door, a little turned)
+    const crystal = new THREE.MeshStandardMaterial({ color: 0xeaf3f8, roughness: 0.05, metalness: 0.15, transparent: true, opacity: 0.82, envMapIntensity: 2.6, emissive: 0x2a3a42 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.15, 20, 14), crystal); body.scale.set(0.8, 0.75, 1.6); body.rotation.x = -0.35; dove.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 12), crystal); head.position.set(0, 0.17, 0.25); dove.add(head);
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.07, 8), crystal); beak.rotation.x = Math.PI / 2; beak.position.set(0, 0.16, 0.34); dove.add(beak);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.3, 10, 1, true), crystal); tail.scale.set(1, 1, 0.25); tail.rotation.x = -Math.PI / 2 - 0.5; tail.position.set(0, -0.12, -0.32); dove.add(tail);
+    // the wings: a feathered outline (scalloped trailing edge), raised in a V and swept back
+    const wing = new THREE.Shape(); wing.moveTo(0, 0); wing.bezierCurveTo(0.18, 0.12, 0.42, 0.2, 0.62, 0.16);
+    for (let f = 0; f < 5; f++) { const x0 = 0.62 - f * 0.12, x1 = x0 - 0.12; wing.quadraticCurveTo(x0 - 0.02, 0.02 - f * 0.012, x1, 0.05 - f * 0.01); }
+    wing.lineTo(0, -0.06); wing.closePath();
+    const wg = new THREE.ExtrudeGeometry(wing, { depth: 0.012, bevelEnabled: true, bevelSize: 0.006, bevelThickness: 0.006, bevelSegments: 1 });
+    for (const s2 of [1, -1]) { const w = new THREE.Mesh(wg, crystal); w.scale.x = s2; w.position.set(s2 * 0.05, 0.04, 0.02); w.rotation.set(-0.1, s2 * 0.5, s2 * 0.42); dove.add(w); }
+    lights.push({ x: P.oct.x, y: Y0 + 2.4, z: P.oct.z, intensity: 4, distance: 4, color: new THREE.Color(0.95, 0.97, 1.0) });   // a pin spot on it
+  }
+  // wall lights: antique bronze openwork (古铜镂花) half-lanterns on every wall, a dim warm glow through the fret
+  const fret = fretwork(), fretMat = new THREE.MeshStandardMaterial({ color: 0x5a3e22, metalness: 0.9, roughness: 0.4, alphaMap: fret, alphaTest: 0.5, side: THREE.DoubleSide });
+  const glowIn = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.15, 0.7) });
+  const sconce = (x, z, ry) => {
+    const g = new THREE.Group(); g.position.set(x, Y0 + 2.5, z); g.rotation.y = ry; group.add(g);
+    const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.12, 0.5, 12, 1, true, -Math.PI / 2, Math.PI), fretMat); sh.position.z = 0.02; g.add(sh);
+    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.07, 0.4, 10, 1, true, -Math.PI / 2, Math.PI), glowIn); core.position.z = 0.02; g.add(core);
+    for (const [y, r] of [[0.27, 0.19], [-0.27, 0.14]]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.04, 12, 1, false, -Math.PI / 2, Math.PI), bronzeDark); c.position.set(0, y, 0.02); g.add(c); }
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.7, 0.03), bronzeDark); back.position.z = 0.015; g.add(back);
+  };
+  for (let x = P.x0 + 4; x < P.x1 - 3; x += 4) { if (Math.abs(x - -50) > 0.8 && Math.abs(x - -46) > 0.8 && [-52, -48, -44].every((lx) => Math.abs(lx - x) > 0.9)) sconce(x, P.z0 + 0.03, 0); }
+  for (let z = P.z1 - 4; z > P.z0 + 3; z -= 4) { if (Math.abs(z - (P.z1 - 21.1)) > 1.2 && Math.abs(z - -228.9) > 3.3) sconce(P.x0 + 0.03, z, Math.PI / 2); }
+  // the Lalique-manner glass: tall frosted relief panels, backlit, between the lift doors and flanking the desk's sign
+  {
+    const lal = new THREE.MeshBasicMaterial({ map: laliqueGlass(), color: new THREE.Color(1.15, 1.08, 0.98) });
+    const panel = (x, z, ry) => { const g = new THREE.Group(); g.position.set(x, Y0 + 1.6, z); g.rotation.y = ry; group.add(g);
+      const p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 1.86), lal); p2.position.z = 0.05; g.add(p2);
+      for (const [w, h, px, py] of [[0.74, 0.06, 0, 0.96], [0.74, 0.06, 0, -0.96], [0.06, 1.98, -0.37, 0], [0.06, 1.98, 0.37, 0]]) { const f = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.06), brass); f.position.set(px, py, 0.05); g.add(f); } };
+    for (const x of [-50, -46]) panel(x, P.z0 + 0.04, 0);
+    for (const z of [-224.9, -232.9]) panel(P.x0 + 0.04, z, Math.PI / 2);
+  }
+  // the front desk's lamps: two Deco lamps of frosted glass on stepped brass bases
+  for (const z of [-226.2, -231.6]) {
+    box(0.22, 0.05, 0.22, brass, P.x0 + 2.4, Y0 + 1.13, z); box(0.14, 0.05, 0.14, brass, P.x0 + 2.4, Y0 + 1.18, z);
+    add(new THREE.CylinderGeometry(0.015, 0.015, 0.32, 8), brass, P.x0 + 2.4, Y0 + 1.39, z);
+    add(new THREE.CylinderGeometry(0.1, 0.17, 0.2, 8, 1), frosted, P.x0 + 2.4, Y0 + 1.6, z);
+  }
   // the walls' dressing, as in the restored hall: a gilt Art Deco frieze under the cornice, the plaster between
   // the pilasters set out in moulded panels, a brass dado rail on the walnut wainscot, a dark marble skirting
   {
