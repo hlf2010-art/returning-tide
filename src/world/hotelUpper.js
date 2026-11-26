@@ -184,7 +184,7 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
   const doorCol = addDynamicCollider('door'); Object.assign(doorCol, { minX: C.x1, maxX: R.x0, minZ: R.door[0], maxZ: R.door[1], y0: F - 0.3, y1: F + H });
   // the hoarding: white boards across the corridor, a printed notice
   box(C.x1 - C.x0, H, 0.06, paint, ccx, F, C.z1 - 0.03);
-  add(new THREE.PlaneGeometry(1.4, 0.9), new THREE.MeshStandardMaterial({ map: signTex([['施工中 · 敬请谅解', 64, '#1f3d36'], ['六楼南侧客房改造 2026.9 – 2027.3', 34], ['Refurbishment in progress', 40, '#1f3d36'], ['We apologise for any inconvenience', 30]]), roughness: 0.6, emissive: 0x191512 }), ccx, F + 1.5, C.z1 - 0.065, Math.PI);
+  add(new THREE.PlaneGeometry(1.4, 0.9), new THREE.MeshStandardMaterial({ map: signTex([['施工中 · 敬请谅解', 64, '#1f3d36'], ['六楼南侧客房改造 2026.9 – 2027.3', 34], ['Refurbishment in progress', 40, '#1f3d36'], ['We apologise for any inconvenience', 30]], { h: 494 }), roughness: 0.6, emissive: 0x191512 }), ccx, F + 1.5, C.z1 - 0.065, Math.PI);
   for (const [x, z] of [[lcx, lcz], [ccx, -236], [ccx, -226]]) lights.push({ x, y: F + H - 0.3, z, intensity: 6, distance: 8, color: new THREE.Color(1.0, 0.8, 0.56) });
 
   // ================= room 612 =================

@@ -7,6 +7,12 @@ export const FONT = {
   hand: '"Ma Shan Zheng", "Kaiti SC", "KaiTi", cursive',
 };
 
+// fillText that never runs off its board: when the text is wider than maxW the font shrinks to fit
+export function fitText(ctx, text, x, y, maxW) {
+  const w = ctx.measureText(text).width;
+  if (w > maxW) { const m = /(\d+(?:\.\d+)?)px/.exec(ctx.font); if (m) ctx.font = ctx.font.replace(m[0], `${(+m[1] * maxW / w).toFixed(2)}px`); }
+  ctx.fillText(text, x, y);
+}
 export function makeCanvas(w, h) {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
