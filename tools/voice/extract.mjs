@@ -51,6 +51,11 @@ for (const f of files('src')) {
   walk.full(ast, (n) => {
     if (n.type === 'CallExpression') {
       const name = n.callee.type === 'Identifier' ? n.callee.name : n.callee.type === 'MemberExpression' && n.callee.property.name;
+      // the Peace Ambassador at the lifts (world/interiors.js): liftSay(zh, en, secs), either may be a ? : of two lines
+      if (name === 'liftSay' && n.arguments.length >= 2) {
+        const [a0, a1] = n.arguments, pair = (z, e) => { const zh = lit(z), en = lit(e); if (zh && cjk.test(zh)) add('hotellift', zh, en); };
+        if (a0.type === 'ConditionalExpression' && a1.type === 'ConditionalExpression') { pair(a0.consequent, a1.consequent); pair(a0.alternate, a1.alternate); } else pair(a0, a1);
+      }
       if (name === 'say' && n.arguments.length >= 3) {
         // say(who, zh, en) or say(label, whoKey, zh, en): the first Chinese literal is the line
         const args = n.arguments.map(lit), i = args.findIndex((x) => x && cjk.test(x) && x.length > 2 && !/^[\u4e00-\u9fff]{1,5}$/.test(x));

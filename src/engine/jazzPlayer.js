@@ -8,7 +8,9 @@
 // It also keeps what was struck when, for the band on the stage to follow (hits).
 import { makeTune, midiHz, BOOK } from './jazzScore.js';
 
-export function createJazzPlayer(audio) {
+// solo: one pianist on his own (the Peace Hotel's Jasmine Lounge at afternoon tea): the walking bass becomes his left
+// hand an octave up, no drums, a slower tempo, no applause, a longer room
+export function createJazzPlayer(audio, { solo = false } = {}) {
   let ctx = null, out = null, lp = null, pan = null, wet = null, noise = null;
   let tune = null, t0 = 0, idx = 0, playing = false, gap = 0, tuneNo = 0, seed = 1;
   const hits = { piano: [], lead: -1, leadMidi: 72, comp: -1, compMidi: 60, bass: -1, bassMidi: 40, ride: -1, snare: -1, kick: -1, hat: -1, tuneStart: -1, tuneEnd: -1, applause: -1 };
@@ -24,7 +26,7 @@ export function createJazzPlayer(audio) {
     const conv = ctx.createConvolver(); wet = ctx.createGain(); wet.gain.value = 0.22;
     const len = Math.floor(ctx.sampleRate * 1.3), ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
-    conv.buffer = ir;
+    conv.buffer = ir; if (solo) wet.gain.value = 0.32;
     lp.connect(dry).connect(pan); lp.connect(conv).connect(wet).connect(pan); pan.connect(out); out.connect(bus);
     noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     return true;
@@ -60,7 +62,7 @@ export function createJazzPlayer(audio) {
     hits.applause = t;
   }
   function begin(at) {
-    tuneNo++; tune = makeTune(seed * 3 + tuneNo, seed * 31 + tuneNo); t0 = at; idx = 0; hits.tuneStart = at; hits.tuneEnd = at + tune.beats * 60 / tune.bpm;
+    tuneNo++; tune = makeTune(seed * 3 + tuneNo, seed * 31 + tuneNo, solo ? { choruses: 3 } : undefined); if (solo) tune.bpm = Math.round(tune.bpm * 0.72); t0 = at; idx = 0; hits.tuneStart = at; hits.tuneEnd = at + tune.beats * 60 / tune.bpm;
     for (const fn of listeners) fn({ type: 'tune', no: tuneNo, title: tune.title, at, end: hits.tuneEnd });
   }
   return {
@@ -77,7 +79,7 @@ export function createJazzPlayer(audio) {
       if (!ctx || !playing) return;
       const now = ctx.currentTime, ahead = 0.7;
       out.gain.setTargetAtTime(level, now, 0.25); lp.frequency.setTargetAtTime(cutoff, now, 0.25); pan.pan.setTargetAtTime(panTo, now, 0.25);
-      wet.gain.setTargetAtTime(0.22 + (1 - Math.min(1, cutoff / 6000)) * 0.2, now, 0.3);
+      wet.gain.setTargetAtTime((solo ? 0.32 : 0.22) + (1 - Math.min(1, cutoff / 6000)) * 0.2, now, 0.3);
       if (!tune) { if (now >= gap) begin(now + 0.3); return; }
       const spb = 60 / tune.bpm;
       while (idx < tune.events.length) {
@@ -86,7 +88,8 @@ export function createJazzPlayer(audio) {
         idx++;
         if (t < now - 0.05 && e.part !== 'end') continue;                       // a stall: skip, don't pile up
         const dur = e.dur * spb;
-        if (e.part === 'bass') { bass(e.midi, t, dur, e.vel); hits.bass = t; hits.bassMidi = e.midi; }
+        if (solo && ['ride', 'hat', 'kick', 'snare'].includes(e.part)) continue;
+        if (e.part === 'bass') { if (solo) piano(e.midi + 12, t, dur * 0.9, e.vel * 0.55); else bass(e.midi, t, dur, e.vel); hits.bass = t; hits.bassMidi = e.midi; }
         else if (e.part === 'lead') { piano(e.midi, t, dur, e.vel); hits.lead = t; hits.leadMidi = e.midi; }
         else if (e.part === 'comp') { for (const n of e.notes) piano(n, t + Math.random() * 0.012, dur, e.vel * 0.8); hits.comp = t; hits.compMidi = e.notes[0]; }
         else if (e.part === 'ride') { ride(t, e.vel); hits.ride = t; }
@@ -94,7 +97,7 @@ export function createJazzPlayer(audio) {
         else if (e.part === 'kick') { kick(t, e.vel); hits.kick = t; }
         else if (e.part === 'snare') { snare(t, e.vel); hits.snare = t; }
         else if (e.part === 'end') {
-          applause(t - 1.2); const no = tuneNo; tune = null; gap = t + 5 + Math.random() * 4;
+          if (!solo) applause(t - 1.2); const no = tuneNo; tune = null; gap = t + (solo ? 3 : 5) + Math.random() * 4;
           for (const fn of listeners) fn({ type: 'end', no, at: t });
           break;
         }

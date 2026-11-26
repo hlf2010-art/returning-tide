@@ -76,16 +76,22 @@ vec3 windOffset(vec3 p, vec4 base, vec4 br, vec2 leaf) {
 // never sudden. `override` (dev control) pins it to calm / breeze / windy / gale.
 export const WIND_LEVELS = { calm: 0.05, breeze: 0.35, windy: 0.8, gale: 1.3 };
 export function createWind() {
-  let level = WIND_LEVELS.breeze, override = null;
+  let level = WIND_LEVELS.breeze, override = null, day = null;
+  const dir = [-0.848, 0.53], dirWant = [-0.848, 0.53];
   return {
     update(dt, rain = 0) {
-      const target = override != null ? WIND_LEVELS[override] : WIND_LEVELS.breeze + 0.3 * rain;
-      level += (target - level) * (1 - Math.exp(-dt / 3));
+      // a dev override, else the day's wind (engine/climate.js), else a breeze stiffening with the rain; gusting a little
+      const base = override != null ? WIND_LEVELS[override] : day != null ? WIND_LEVELS[day] : WIND_LEVELS.breeze + 0.3 * rain;
+      level += (base - level) * (1 - Math.exp(-dt / 3));
+      const k = 1 - Math.exp(-dt / 20); dir[0] += (dirWant[0] - dir[0]) * k; dir[1] += (dirWant[1] - dir[1]) * k;
+      const l = Math.hypot(dir[0], dir[1]) || 1; dir[0] /= l; dir[1] /= l;
       return level;
     },
     setOverride(name) { if (name != null && !(name in WIND_LEVELS)) throw new Error(`unknown wind "${name}"`); override = name; },
+    // the day's weather: its wind and where it blows from (a direction it turns toward over a few seconds)
+    setDay(name, d = null) { if (name != null && !(name in WIND_LEVELS)) throw new Error(`unknown wind "${name}"`); day = name; if (d) { dirWant[0] = d[0]; dirWant[1] = d[1]; } },
     cycle() { const k = [null, 'calm', 'breeze', 'windy', 'gale'], i = k.indexOf(override); override = k[(i + 1) % k.length]; return override; },
     get level() { return level; }, get override() { return override; },
-    dir: [-0.848, 0.53],                                 // blowing off the Huangpu (east) inland, bending a little south (north is -z)
+    dir,                                                  // blowing off the Huangpu (east) inland, bending a little south (north is -z), or the day's
   };
 }

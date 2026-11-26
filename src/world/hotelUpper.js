@@ -18,10 +18,9 @@ import { getLang } from '../ui/i18n.js';
 import { stamp, skipTo, clockText, pay } from '../engine/life.js';
 import { logTime, slept } from '../engine/allot.js';
 import { isYear, dateOf } from '../engine/year.js';
-import { rng } from './canvas.js';
+import { plan as climatePlan, nextDay } from '../engine/climate.js';
 import { passLine, hasFlat } from './career.js';
 import { ROOM, room612Colliders, buildRoom612 } from './room612.js';
-import { TOD } from './dayNight.js';
 
 export const SIX = {
   y: 23.5, h: 3.3,
@@ -88,22 +87,27 @@ const signTex = (lines, { bg = '#f1ece1', fg = '#2a2620', w = 768, h = 384 } = {
   x.fillStyle = bg; x.fillRect(0, 0, w, h); x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
   lines.forEach(([t, size, col], i) => { x.fillStyle = col || fg; x.font = `600 ${size}px "Noto Sans SC", sans-serif`; x.fillText(t, w / 2, h * (i + 1) / (lines.length + 1)); });
 });
-// tomorrow in Shanghai, for the turndown card and the television: the month's usual range, a day's own swing, and
-// skies that keep to what the game's weather can show (no rain promised)
-const CLIMATE = [[8, 1], [10, 3], [14, 6], [20, 11], [25, 16], [28, 20], [32, 25], [32, 25], [28, 21], [23, 16], [17, 10], [11, 3]];   // mean high, low (°C)
-const SKIES = [['晴', 'Sunny', 'sun'], ['多云', 'Cloudy', 'cloud'], ['晴转多云', 'Sunny, then cloudy', 'suncloud'], ['阴', 'Overcast', 'cloud']];
+// tomorrow in Shanghai, for the turndown card and the television: the day's own weather (engine/climate.js), so what
+// the card says is what tomorrow brings
 const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'], WEEK_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 function forecast(L) {
-  const t = dateOf(L), d = new Date(Date.UTC(t.y, t.m - 1, t.d) + 86400000), m = d.getUTCMonth(), r = rng(d.getUTCFullYear() * 400 + m * 31 + d.getUTCDate());
-  const [hi, lo] = CLIMATE[m], sky = SKIES[Math.floor(r() * SKIES.length)], dh = Math.round((r() - 0.5) * 4), dl = Math.round((r() - 0.5) * 4);
-  return { m: m + 1, d: d.getUTCDate(), w: d.getUTCDay(), hi: hi + dh, lo: Math.min(lo + dl, hi + dh - 4), zh: sky[0], en: sky[1], icon: sky[2] };
+  const t = dateOf(L), [y, m, d] = nextDay(t.y, t.m, t.d), p = climatePlan(y, m, d), w = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return { m, d, w, hi: p.hi, lo: p.lo, zh: p.summary.zh, en: p.summary.en, icon: p.summary.icon };
 }
 function skyIcon(x, cx, cy, r, icon) {
+  if (icon === 'rain' || icon === 'storm' || icon === 'snow' || icon === 'fog') {
+    x.fillStyle = icon === 'fog' ? '#d6dadd' : '#9aa6b0'; for (const [dx, dy, rr] of [[-0.3, 0.05, 0.4], [0.1, -0.1, 0.5], [0.45, 0.1, 0.35]]) { x.beginPath(); x.arc(cx + dx * r, cy + dy * r, rr * r, 0, 6.283); x.fill(); } x.fillRect(cx - 0.6 * r, cy + 0.05 * r, 1.2 * r, 0.35 * r);
+    if (icon === 'rain' || icon === 'storm') { x.strokeStyle = '#4a7ab8'; x.lineWidth = 3; for (let i = 0; i < 4; i++) { x.beginPath(); x.moveTo(cx - 0.45 * r + i * 0.3 * r, cy + 0.55 * r); x.lineTo(cx - 0.55 * r + i * 0.3 * r, cy + 0.85 * r); x.stroke(); } }
+    if (icon === 'storm') { x.fillStyle = '#f2c232'; x.beginPath(); x.moveTo(cx, cy + 0.4 * r); x.lineTo(cx - 0.15 * r, cy + 0.75 * r); x.lineTo(cx + 0.02 * r, cy + 0.72 * r); x.lineTo(cx - 0.08 * r, cy + 1.05 * r); x.lineTo(cx + 0.2 * r, cy + 0.62 * r); x.lineTo(cx + 0.04 * r, cy + 0.65 * r); x.closePath(); x.fill(); }
+    if (icon === 'snow') { x.fillStyle = '#ffffff'; x.strokeStyle = '#8fb3d9'; for (let i = 0; i < 4; i++) { x.beginPath(); x.arc(cx - 0.45 * r + i * 0.3 * r, cy + 0.7 * r, 0.07 * r, 0, 6.283); x.fill(); x.stroke(); } }
+    if (icon === 'fog') { x.strokeStyle = '#b7bec4'; x.lineWidth = 4; for (let i = 0; i < 3; i++) { x.beginPath(); x.moveTo(cx - 0.7 * r, cy + (0.55 + i * 0.18) * r); x.lineTo(cx + 0.7 * r, cy + (0.55 + i * 0.18) * r); x.stroke(); } }
+    return;
+  }
   if (icon !== 'cloud') { x.fillStyle = '#f2b632'; x.beginPath(); x.arc(cx - (icon === 'suncloud' ? r * 0.35 : 0), cy - (icon === 'suncloud' ? r * 0.3 : 0), r * 0.55, 0, 6.283); x.fill(); }
   if (icon !== 'sun') { x.fillStyle = '#c9d1d8'; for (const [dx, dy, rr] of [[-0.3, 0.15, 0.4], [0.1, 0.0, 0.5], [0.45, 0.2, 0.35]]) { x.beginPath(); x.arc(cx + dx * r, cy + dy * r, rr * r, 0, 6.283); x.fill(); } x.fillRect(cx - 0.6 * r, cy + 0.15 * r, 1.2 * r, 0.35 * r); }
 }
 
-export function createHotelUpper({ scene, hud, audio, getLife, save, player, travel, renderer, getWorld = () => null }) {
+export function createHotelUpper({ scene, hud, audio, getLife, save, player, travel, getWorld = () => null }) {
   const group = new THREE.Group(); group.name = 'peace-6f'; scene.add(group);
   const lights = [];
   const walnut = new THREE.MeshStandardMaterial({ color: 0x3b2416, roughness: 0.38, metalness: 0.05, emissive: 0x080402 });
@@ -222,7 +226,7 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
     x.fillStyle = '#7a5c2e'; x.textAlign = 'center'; x.font = '600 22px "Noto Serif SC", serif'; x.fillText('和平饭店 · 明日天气', w / 2, 44);
     x.font = '500 18px "Noto Serif SC", serif'; x.fillText(`${f.m} 月 ${f.d} 日 ${WEEK[f.w]} · 上海`, w / 2, 74);
     skyIcon(x, 92, 150, 46, f.icon);
-    x.fillStyle = '#2a2a2a'; x.textAlign = 'left'; x.font = '600 34px "Noto Serif SC", serif'; x.fillText(f.zh, 160, 140); x.font = '500 28px "Noto Serif SC", serif'; x.fillText(`${f.lo} – ${f.hi} ℃`, 160, 182);
+    x.fillStyle = '#2a2a2a'; x.textAlign = 'left'; x.font = '600 30px "Noto Serif SC", serif'; x.fillText(f.zh, 160, 140, w - 180); x.font = '500 28px "Noto Serif SC", serif'; x.fillText(`${f.lo} – ${f.hi} ℃`, 160, 182);
     x.fillStyle = '#7a5c2e'; x.textAlign = 'center'; x.font = 'italic 18px "Noto Serif SC", serif'; x.fillText('祝您晚安 · Good night', w / 2, h - 26);
   }
   const NEWS = [
@@ -413,13 +417,6 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
       group.visible = pp.y > F - 6;                                          // only drawn when you're up here
       if (!group.visible) return;
       updateRoom(dt, pp);
-      // the room's glass and mirrors: their probes, taken half a second after you're first inside (world/glass.js)
-      if (renderer) for (const pr of room.probes) {
-        const b = pr.box, inside = pp.x > b.min[0] && pp.x < b.max[0] && pp.z > b.min[2] && pp.z < b.max[2] && pp.y > b.min[1] && pp.y < b.max[1];
-        if (!inside) { pr.wait = 0.5; continue; }
-        if (pr.p.taken && pr.p.day === Math.round(TOD.day.value)) continue;
-        if ((pr.wait -= dt) <= 0) pr.p.take(renderer, scene);
-      }
       // 612's door: swings in, closes itself once you're through
       S.doorT = Math.max(0, S.doorT - dt);
       const inDoorway = Math.abs(pp.x - (R.x0 - 0.15)) < 0.7 && pp.z > R.door[0] - 0.4 && pp.z < R.door[1] + 0.4;

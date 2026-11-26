@@ -49,6 +49,10 @@ import { createMissionOne } from './missionOne.js';
 import { pickTarget, segmentHitsBox, BLOCKING_TAGS } from './engine/targeting.js';
 import { createWeather } from './engine/weather.js';
 import { createRain, RAIN_LAYER } from './world/rain.js';
+import { createSnow } from './world/snow.js';
+import { createSharedBikes } from './world/sharedBikes.js';
+import { createPeaceStreet, STREET_NAMES } from './world/peaceStreet.js';
+import { plan as climatePlan, at as climateAt } from './engine/climate.js';
 import { weatherUniforms, ssrMask, setArchLight } from './world/materials.js';
 import { todState, passedLateNight } from './engine/timeOfDay.js';
 import { applyDayNight, autoLights } from './world/dayNight.js';
@@ -258,7 +262,7 @@ async function boot() {
   const playerBody = people && people.avatars.player && params.get('body') !== '0' ? createPlayerBody(people, { walk: WALK_SPEED, run: RUN_SPEED }) : null;
   if (playerBody) scene.add(playerBody.root);
   const pouch = createPouch();
-  const rain = createRain();
+  const rain = createRain(), snow = createSnow();
   // the signal-controlled crossing: one controller, through traffic, background pedestrians
   // how much traffic: the level of detail; tools (?q=) keep the crossing's own seven unless ?traffic=<factor>
   const vehSpecs = params.has('traffic') ? trafficSpecs(Number(params.get('traffic'))) : params.has('q') ? crossing.vehicles : trafficSpecs(gfxDetail({ ...gfx, lod: bootLod }).traffic);
@@ -287,7 +291,7 @@ async function boot() {
   pedBoxes = traffic.peds.map((p) => { const b = addDynamicCollider('npc'); b.id = p.id; return b; });
   traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(vehSpecs[i].model); });   // petrol engines get an engine note
   scene.add(sky.mesh, skyline.group, bridges.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
-    vehicles.group, signals.group, pedestrians.group, rain.mesh, buses.group);
+    vehicles.group, signals.group, pedestrians.group, rain.mesh, snow.mesh, buses.group);
   // trees: London planes on Hankou Road (November: turning, some twigs already bare), camphor
   // laurels in the promenade planters
   const trees = createTrees([
@@ -310,7 +314,7 @@ async function boot() {
   const interiors = createInteriors({ scene, renderer: R.renderer, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp() });
   const aiaLife = createAiaLife({ scene, people, hud, getLife: () => life });   // agents and their clients in the AIA lobby (world/aiaLife.js)
   // up the lifts: the sixth floor and room 612 (world/hotelUpper.js)
-  const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, renderer: R.renderer, getWorld: () => world });
+  const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, getWorld: () => world });
   // the Jazz Bar off the hall: the trio, Momo's night (world/jazzBar.js)
   // places a DiDi takes you that you can walk into (the North Bund flat, IFC 32F)
   const dests = createDestinations({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, voice });
@@ -376,7 +380,7 @@ async function boot() {
     });
     ebikeView = createEbikeView({ scene, people, roles: ['c5', 'c1'].filter((r) => people.manifest.cast[r]) });
   }
-  world = { peopleMirror: createPeopleReflection(), ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }), aiaLife };
+  world = { peopleMirror: createPeopleReflection(), ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, snow, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }), aiaLife };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -401,10 +405,10 @@ async function boot() {
   // Line 2: down an exit's stairs, through the gates, a real train under the river to Lujiazui and back (world/metro.js)
   world.metro = createMetro({ scene, camera, renderer: R.renderer, hud, audio, voice, player, people, travel, getLife: () => life, save: () => saveLife(), open: () => hourState.metro, onPudongSoon: () => world.ljz.buildAsync() });
   // the story: a sat-down conversation, and dinner with Dad (world/story.js, world/dinner.js)
-  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], fang: ['老方', 'Old Fang'], ...MOMENT_NAMES } });
+  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], fang: ['老方', 'Old Fang'], ...MOMENT_NAMES, ...STREET_NAMES } });
   world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
   // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
-  world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
+  world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(), getBikes: () => world.bikes,
     getHour: () => life.clock.minute, isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active, enabled: !!people && (!params.has('q') || params.has('moments')) && !BENCH_URL });
   // something of your own (engine/studio.js): lending the gimbal on the promenade at dusk, the desk in 612
   world.fieldTest = createFieldTest({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), getCrowdView: () => world.crowdView, getRain: () => weather.rain,
@@ -413,7 +417,10 @@ async function boot() {
   // the year (world/yearWorld.js): Marlowe Finch on IFC 28F, the flat he rents, days played as a card, the stall; arrivals at Lujiazui go through it
   world.year = createYearWorld({ scene, people, player, hud, audio, voice, travel, sceneTalk: world.sceneTalk, dests, getLife: () => life, save: () => saveLife(), lifeOn: params.get('life') !== '0',
     freeze: (on) => { player.enabled = !on && mode === 'play'; if (on) { player.clearInput(); hud.prompt(false); } }, onWork: () => openWork('desk'), onSeason: (days, gap) => openSeason(days, gap) });
-  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk];
+  world.bikes = createSharedBikes({ scene, player, hud, audio, getLife: () => life, save: () => saveLife() });   // shared bikes in their bays off the Bund and by the metro
+  // outside the Peace Hotel's door: the heritage plaques, a volunteer, a street sweeper (world/peaceStreet.js)
+  world.peaceStreet = createPeaceStreet({ scene, people, player, sceneTalk: world.sceneTalk, onCard: showInfoCard, getMinute: () => life.clock.minute, getRain: () => weather.rain });
+  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk, world.bikes, world.peaceStreet];
   places.push(world.year);
   // the sightseeing trains: E at a stopped one to ride (seat mode; world/tram.js has the seat)
   places.push({ candidates: () => world.trams.candidates(player.body), owns: (id) => id === 'tram',
@@ -499,8 +506,9 @@ function lock() {
   try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch { /* handled by pointerlockerror */ }
 }
 // a card for an evening somewhere (the Jazz Bar): E or click to carry on
-function showInfoCard({ place, line, fare = '', back = '' }) {
+function showInfoCard({ place, line, fare = '', back = '', kicker = null }) {
   const c = document.getElementById('ride-card'); if (!c) return;
+  const k = c.querySelector('.kicker [data-t]'); if (k) k.textContent = kicker || tx('rideArrived');
   c.querySelector('.place').textContent = place; c.querySelector('.line').textContent = line;
   c.querySelector('.fare').textContent = fare; c.querySelector('.back').textContent = back; c.querySelector('.go').textContent = tx('rideContinue');
   c.classList.add('on'); c.dataset.info = '1';
@@ -513,7 +521,7 @@ function travel(during, opts) {
   const from = mode; mode = 'travel'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
   veil.cover(during, opts).then(() => { if (mode === 'travel') { mode = opts && opts.to ? opts.to : from === 'travel' ? 'play' : from; player.enabled = mode === 'play'; if (mode === 'play') player.lookOnly = false; player.clearInput(); } });
 }
-function closeInfoCard() { const c = document.getElementById('ride-card'); if (c && c.dataset.info) { c.classList.remove('on'); delete c.dataset.info; return true; } return false; }
+function closeInfoCard() { const c = document.getElementById('ride-card'); if (c && c.dataset.info) { c.classList.remove('on'); delete c.dataset.info; const k = c.querySelector('.kicker [data-t]'); if (k) k.textContent = tx('rideArrived'); return true; } return false; }
 // talking with Vivian at the car (1-4), or sat in it (the car sale has the camera)
 function saleMode(m) {
   if (m === 'sale') { mode = 'sale'; player.enabled = false; player.lookOnly = false; player.clearInput(); hud.prompt(false); target = null; }
@@ -847,6 +855,7 @@ window.addEventListener('keydown', (e) => {
   }
   if (k === 'F7' && devControls) {
     e.preventDefault();
+    climateOn = false;   // (the weather set by hand: the day's own stops for this session)
     hud.toast(weather.toggle() === 'drizzle' ? tx('devDrizzle') : tx('devClear'), 2.4);
     return;
   }
@@ -1513,7 +1522,34 @@ function nanjingDin(b) {
 }
 let lampSources = [];
 let crowdHear = 0, envCaptures = 0, world0 = null, hourState = todState(17 * 60 + 42), hourAt = -1, hourTick = 0, envAt = null, envWait = 0, lastHourMin = null;
-const _hazeFog = new THREE.Color(), DAY_HAZE_FOG = new THREE.Color(0.64, 0.66, 0.68);
+const _hazeFog = new THREE.Color(), DAY_HAZE_FOG = new THREE.Color(0.64, 0.66, 0.68), FOG_WX_DENSITY = 0.0065;
+// ---- the day's weather (engine/climate.js): Shanghai's climate for the date the game stands on, the same each time
+// that day is played; it sets what the weather heads for (engine/weather.js), the wind, and a storm's lightning.
+// Off for tools (?q=) unless ?climate=1, and whenever the weather is set by hand (?weather=, the dev key) ----
+let climateOn = params.get('climate') === '1' || (!params.has('q') && !params.has('weather')), climateKey = '', climateDay = null, climateT = 0, climateLast = null, boltT = 8;
+const flashEl = (() => { const d = document.createElement('div'); d.id = 'lightning'; d.style.cssText = 'position:fixed;inset:0;background:#dfe6ff;opacity:0;pointer-events:none;z-index:5;transition:opacity 0.12s ease-out'; document.body.appendChild(d); return d; })();
+function updateClimate(dt) {
+  if (!climateOn || !life) return;
+  climateT -= dt; if (climateT > 0) return; climateT = 1;
+  const t = dateOf(life), key = `${t.y}-${t.m}-${t.d}`, m = life.clock.minute;
+  if (key !== climateKey) { climateKey = key; climateDay = climatePlan(t.y, t.m, t.d); debug.weatherDay = climateDay; }
+  const w = climateAt(climateDay, m), now = lifeStamp(life);
+  const jump = climateLast == null || Math.abs(now - climateLast) > 20;   // (a night's sleep, a ride: the sky is simply as it is now)
+  climateLast = now;
+  weather.setTargets(w, { instant: jump });
+  wind.setDay(w.wind, climateDay.windDir);
+  // a thunderstorm: lightning now and then, the thunder after it (sooner and louder the nearer)
+  if (w.storm > 0.4 && mode === 'play') {
+    boltT -= 1;
+    if (boltT <= 0) {
+      boltT = 6 + Math.random() * 18; const near = Math.random();
+      flashEl.style.opacity = String(0.18 + near * 0.3); setTimeout(() => { flashEl.style.opacity = '0'; }, 90 + Math.random() * 80);
+      if (Math.random() < 0.5) setTimeout(() => { flashEl.style.opacity = String(0.12 + near * 0.2); setTimeout(() => { flashEl.style.opacity = '0'; }, 70); }, 160);
+      audio.cue('thunder', 0.4 + (1 - near) * 3.5, 0.5 + near * 0.6);
+    }
+  }
+}
+debug.climate = { get on() { return climateOn; }, set on(v) { climateOn = !!v; }, plan: climatePlan, at: climateAt };
 // tools: ?hour=HH:MM sets today's clock at load (the screenshots of the day); debug.setHour too
 function applyHour(dt, { force = false } = {}) {
   const w = world || world0; if (!w) return;
@@ -1531,7 +1567,7 @@ function applyHour(dt, { force = false } = {}) {
   const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
   const under = world && world.metro ? world.metro.under : 0;                         // down in the metro: its own light, not the sky's
   const inside = Math.max(under, world && (world.upper.here || world.dest.here || world.makerspace.here) ? 1 : inR(PEACE) || inR(AIA) ? 0.8 : 0);
-  w.lighting.setTime(s, inside, under);
+  w.lighting.setCover(weather.cover); w.lighting.setTime(s, inside, under);
   R.renderer.toneMappingExposure = THREE.MathUtils.lerp(s.exposure * (1 + 0.25 * inside * s.daylight), 0.92, under);
   R.bloom.strength = s.bloom;
   if (world) {
@@ -1545,9 +1581,9 @@ function applyHour(dt, { force = false } = {}) {
   }
   // the captured environment (what wet stone and glass reflect) follows the light, now and then
   envWait -= Math.max(dt, 0.25);
-  const want = { d: s.daylight, n: s.night, f: s.floods, m: s.media };
+  const want = { d: s.daylight, n: s.night, f: s.floods, m: s.media, c: weather.cover };
   if (!envAt) envAt = want;
-  else if (world && envWait <= 0 && (Math.abs(want.d - envAt.d) > 0.12 || Math.abs(want.n - envAt.n) > 0.3 || Math.abs(want.f - envAt.f) > 0.3 || Math.abs(want.m - envAt.m) > 0.5 || (jump && (want.d !== envAt.d || want.f !== envAt.f)))) {
+  else if (world && envWait <= 0 && (Math.abs(want.d - envAt.d) > 0.12 || Math.abs(want.n - envAt.n) > 0.3 || Math.abs(want.f - envAt.f) > 0.3 || Math.abs(want.m - envAt.m) > 0.5 || Math.abs(want.c - (envAt.c || 0)) > 0.3 || (jump && (want.d !== envAt.d || want.f !== envAt.f)))) {
     envAt = want; envWait = 4; envCaptures++;
     const old = scene.environment; scene.updateMatrixWorld(true); captureEnvironment(R.renderer, scene); if (old && old !== scene.environment) old.dispose();
   }
@@ -1656,17 +1692,23 @@ function frame(now) {
   else if (!riding && mode !== 'sale-seat' && mode !== 'bench') player.update(mode === 'pause' ? 0 : dt);
   const seated = mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat') || driving;
   { const st = player.stamina, show = mode === 'play' && (player.running || st.level < 0.995 || st.winded > 0); hud.stamina(st.level, show, st.exhausted || st.winded > 0); }
-  if (world.playerBody) { world.playerBody.setVisible(!riding && !seated); if (!riding && !seated) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
+  if (world.bikes) world.bikes.update(mode === 'pause' ? 0 : dt);
+  if (world.peaceStreet) world.peaceStreet.update(mode === 'pause' ? 0 : dt, player.body);
+  const onBike = world.bikes && world.bikes.riding && !world.bikes.pushing;   // (on a bike his standing legs would be wrong: the bike's bars are what you see)
+  if (world.playerBody) { world.playerBody.setVisible(!riding && !seated && !onBike); if (!riding && !seated) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
   world.confront.late(mode === 'pause' ? 0 : dt);                                      // ...and after it: its people, your hands, the camera's kicks
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0
   if (mode !== 'pause') {
+    updateClimate(dt);
     weather.update(dt); weatherTime += dt;
     // Ms. Su opens her umbrella once it is properly drizzling, folds it when it has stopped
     const want = weather.rain > 0.3 ? 1 : weather.rain < 0.08 ? 0 : suUmbrella > 0.5 ? 1 : 0;
     suUmbrella = Math.max(0, Math.min(1, suUmbrella + (want ? dt : -dt) / 1.4));
   }
-  world.rain.update(weatherTime, weather.rain, camera);
+  const windDrift = 0.3 + wind.level * 1.6;   // the drops' and flakes' drift on the wind (m/s)
+  world.rain.update(weatherTime, weather.rain, camera, { heavy: weather.heavy, wind: [wind.dir[0] * windDrift, wind.dir[1] * windDrift] });
+  world.snow.update(weatherTime, weather.snow, camera, { wind: [wind.dir[0] * windDrift * 0.8, wind.dir[1] * windDrift * 0.8], viewH: R.renderer.domElement.height });
   if (mode !== 'pause') wind.update(dt, weather.rain);
   world.trees.update(weatherTime, wind.level, weather.rain, wind.dir);
   weatherUniforms.wetBoost.value = weather.wet;
@@ -1677,13 +1719,13 @@ function frame(now) {
   weatherUniforms.groundDamp.value = groundDamp;
   weatherUniforms.rainRipples.value = weather.rain; weatherUniforms.rippleTime.value = weatherTime;
   applyHour(dt);
-  scene.fog.density = FOG_DENSITY * hourState.fog + HAZE_DENSITY * weather.haze;
-  fogColorAt(hourState, scene.fog.color).lerp(_hazeFog.copy(HAZE_FOG).lerp(DAY_HAZE_FOG, hourState.daylight), weather.haze);
+  scene.fog.density = FOG_DENSITY * hourState.fog + HAZE_DENSITY * weather.haze + FOG_WX_DENSITY * weather.fog;   // (a morning fog: thick, grey)
+  fogColorAt(hourState, scene.fog.color).lerp(_hazeFog.copy(HAZE_FOG).lerp(DAY_HAZE_FOG, hourState.daylight), Math.min(1, weather.haze + weather.fog));
   if (world.metro.under > 0) { const u = world.metro.under; scene.fog.density = THREE.MathUtils.lerp(scene.fog.density, 0.0026, u); scene.fog.color.lerp(_metroFog, u); }   // a long platform's own haze
-  audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye) || world.belongings.umbrellaUp);
+  audio.setRain(Math.min(1.5, weather.rain * (1 + 0.5 * weather.heavy)), underCover(player.body.x, player.body.z, player.body.y + L.eye) || world.belongings.umbrellaUp);
   // the light shows (the Pearl's colours, LED façades, boats' strips, screens); debug.freezeShow holds them for tools
   const showT = debug.freezeShow ? 0 : t;
-  world.sky.update(t, weather.haze); world.skyline.update(showT); world.river.update(t, dt, showT); world.bund.update(t); world.street.update(t); world.nanjing.update(showT);
+  world.sky.update(t, weather.haze, weather.cover); world.skyline.update(showT); world.river.update(t, dt, showT); world.bund.update(t); world.street.update(t); world.nanjing.update(showT);
   world.ljz.update(mode === 'pause' ? 0 : dt, player.body, { eye: camera.position, hour: hourState, playing: mode === 'play' });   // Lujiazui (only when you're there)
   world.metro.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });         // Line 2 (only near a station or aboard)
   world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);

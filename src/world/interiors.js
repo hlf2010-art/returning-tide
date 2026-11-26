@@ -30,7 +30,10 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { L, colliders, addDynamicCollider } from './layout.js';
 import { createPerson } from './people.js';
-import { dressHotelSecurity, dressReceptionist, dressConcierge, dressPeaceAmbassador } from './outfits.js';
+import { dressHotelSecurity, dressReceptionist, dressConcierge, dressPeaceAmbassador, dressPianist } from './outfits.js';
+import { createJazzPlayer } from '../engine/jazzPlayer.js';
+import { createSeatedPose } from './driverPose.js';
+import { createPeaceGuests } from './peaceGuests.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
@@ -1103,14 +1106,55 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   };
   { const r = placePerson('receptionist', 'p2', P.x0 + 0.7, -227.6, Math.PI / 2); if (r) dressReceptionist(r, { scarf: false, badge: true }); }   // the hotel's front-desk dark suit, a gold name badge
   { const c = placePerson('concierge', 'p3', P.x0 + 0.7, -237.5, Math.PI / 2); if (c) dressConcierge(c); }                                     // the concierge: dark suit, the golden crossed keys on his lapels
-  // the hotel's security: middle-aged men in dark suits with earpieces, one on the Nanjing Road door, one
-  // at the lifts (world/outfits.js)
+  // the hotel's security: a middle-aged man in a dark suit with an earpiece on the Nanjing Road door (world/outfits.js).
+  // (No guard at the lifts: the Peace Ambassador is the one person there.)
   const guard = (id, x, z, yaw, o) => { const g = placePerson(id, 'lin', x, z, yaw); if (g) dressHotelSecurity(g, o); return g; };
-  guard('liftGuard', -42.75, P.z0 + 0.95, -0.6, { glasses: true });   // (by the end lift's jamb, back to the wall, turned toward the hall: out of the way)
   // the lift attendant: one of the hotel's Peace Ambassadors in a black tuxedo, standing by the call button (the
   // hotel's lifts have had no operator for years: someone waits in the lift lobby, greets you, presses the call
   // button for you and sees you in)
   { const a = placePerson('liftMan', 'p4', -50.25, P.z0 + 0.78, 0.45); if (a) dressPeaceAmbassador(a); }
+  // the Jasmine Lounge's pianist: at the grand piano for afternoon tea, 14:30-17:30 (guests describe an older man
+  // playing jazz at three, on an antique Steinway in the lounge). Seated on the bench, feet at the pedals, his hands
+  // over the keys where the music is (engine/jazzPlayer.js, solo: the tunes are the game's own)
+  const PIANO = { x: -40.4, z: -242.6, hours: [14 * 60 + 30, 17 * 60 + 30] };
+  const pianist = (() => {
+    if (!people) return null;
+    const frame = new THREE.Group(); frame.position.set(PIANO.x, Y0, PIANO.z); group.add(frame);
+    const p = createPerson(people, 'lin'); frame.add(p.root); p.play('idle', 0); p.update(0); dressPianist(p);
+    p.root.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    const pose = createSeatedPose(p, { recline: -0.14, elbows: 0.3 });
+    // the keyboard runs across the piano's local x, the bass at +x (his left as he faces +z); hands a wrist short of
+    // the keys' front edge (local z -0.275)
+    const keyX = (m) => 0.62 - (Math.max(21, Math.min(108, m)) - 21) / 87 * 1.24, hand = { L: new THREE.Vector3(0.25, 0.8, -0.34), R: new THREE.Vector3(-0.15, 0.8, -0.34) };
+    const cabin = { hip: new THREE.Vector3(0, 0.6, -0.76), pedals: [new THREE.Vector3(0.16, 0.05, -0.32), new THREE.Vector3(-0.07, 0.1, 0.06)],
+      rimPoint(a, out) { return out.copy(a < 0 ? hand.L : hand.R).applyMatrix4(frame.matrixWorld); } };
+    const music = createJazzPlayer(audio, { solo: true });
+    frame.visible = false;
+    return { p, frame, pose, cabin, hand, keyX, music, playing: false };
+  })();
+  function updatePianist(dt, pp) {
+    const q = pianist; if (!q) return;
+    const m = nowMin(), on = m >= PIANO.hours[0] && m < PIANO.hours[1], inHall = pp.y < Y0 + 4 && pp.z < -205 && pp.z > -250 && pp.x > P.x0 - 4 && pp.x < P.x1 + 6;
+    q.frame.visible = on;
+    if (on && inHall && !q.playing) { q.music.start((getLife && getLife() ? getLife().clock.day : 1) * 7 + 11); q.playing = true; }
+    if ((!on || !inHall) && q.playing) { q.music.stop(); q.playing = false; }
+    if (q.playing) {
+      // in the same open hall: only the distance softens it (outside the hotel he isn't heard)
+      const dx = PIANO.x - pp.x, dz = PIANO.z - pp.z, d = Math.hypot(dx, dz), inside = pp.x > P.x0 && pp.x < P.x1 && pp.z > P.z0 && pp.z < P.z1;
+      const yaw = player.yaw || 0, rx = Math.cos(yaw), rz = -Math.sin(yaw);
+      q.music.update(inside ? 0.62 / (1 + d / 5) : 0.1 / (1 + d / 3), inside ? 16000 : 1500, d > 0.5 ? Math.max(-0.7, Math.min(0.7, (dx * rx + dz * rz) / d)) : 0);
+    }
+    if (!on || Math.hypot(PIANO.x - pp.x, PIANO.z - pp.z) > 30) return;
+    // the hands follow what's being played: the right over the melody, the left over the chords and the walking line;
+    // each dips a centimetre as a note is struck
+    const h = q.music.hits, now = q.music.now();
+    const lm = h.compMidi > 0 ? (h.comp > h.bass ? h.compMidi : h.bassMidi + 12) : 52, rm = h.leadMidi || 72;
+    const lx = Math.max(0.05, Math.min(0.55, q.keyX(lm))), rxk = Math.min(-0.02, Math.max(-0.55, q.keyX(rm)));
+    const k = Math.min(1, dt * 10);
+    q.hand.L.x += (lx - q.hand.L.x) * k; q.hand.R.x += (rxk - q.hand.R.x) * k;
+    q.hand.L.y = 0.8 - (now - Math.max(h.comp, h.bass) < 0.09 ? 0.012 : 0); q.hand.R.y = 0.8 - (now - h.lead < 0.09 ? 0.012 : 0);
+    q.p.update(dt, null); q.frame.updateMatrixWorld(true); q.pose(q.cabin, q.frame);
+  }
   guard('doorman', doorX + 2.6, -210.4, -0.35);                       // beside the revolving door, facing the street
   placePerson('guestA', 'vivian', -54.6, -221.0, -2.4, 'talk1');
   placePerson('guestB', 'p5', -55.8, -222.1, 0.8, 'talk2');
@@ -1124,6 +1168,9 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   // what the hotel's staff say depends on the hour: the greeting, and what the Jazz Bar is doing (doors at 19:00,
   // the band from 20:00 to 00:30)
   const nowMin = () => { const L = getLife && getLife(); return L ? L.clock.minute : 1200; };
+  // the hall's comings and goings: check-ins and check-outs, the museum tours, couples taking photos, the evening's
+  // jazz crowd, the lounge at mealtimes, the bellman and his cart (world/peaceGuests.js)
+  const guests = createPeaceGuests({ scene: group, people, Y0, player, getMinute: nowMin, getDay: () => (getLife && getLife() ? getLife().clock.day : 1) });
   const part = () => { const m = nowMin(); return m < 4 * 60 ? 'evening' : m < 11 * 60 ? 'morning' : m < 13 * 60 ? 'noon' : m < 18 * 60 ? 'afternoon' : 'evening'; };
   const DOOR_HELLO = { morning: ['hotelguard', '早上好，纪先生。', 'Good morning, Mr Ji.'], noon: ['hotelguard', '中午好，纪先生。', 'Good afternoon, Mr Ji.'], afternoon: ['hotelguard', '下午好，纪先生。', 'Good afternoon, Mr Ji.'], evening: ['hotelguard', '晚上好，纪先生。', 'Good evening, Mr Ji.'] };
   const DESK_KEY = {
@@ -1196,7 +1243,6 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   const manner = (id, o) => { if (ppl[id]) manners[id] = createManner(ppl[id], { home: ppl[id].home, ...o }); };
   manner('receptionist', { kind: 'desk', notice: 4.6, greet: 3.7 });
   manner('concierge', { kind: 'desk', notice: 4.6, greet: 3.7 });
-  manner('liftGuard', { kind: 'guard', notice: 4.5, greet: 2.4 });
   manner('doorman', { kind: 'host', notice: 4.8, greet: 3.0, step: 0.25, onGreet: (a) => {
     if (a.id === 'player') sayLine(DOOR_HELLO[part()], 2.2);
     else if (a.id === 'guestC') guestLine(ppl.doorman, a.leaving ? '您慢走。' : '欢迎光临。', a.leaving ? 'Have a good evening.' : 'Welcome.');
@@ -1205,14 +1251,17 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   function updatePeace(dt, pp) {
     const actors = [{ id: 'player', x: pp.x, z: pp.z, y: pp.y }];
     const gc = ppl.guestC; if (gc && gc.root.visible && GC.phase !== 'inCar') actors.push({ id: 'guestC', x: gc.root.position.x, z: gc.root.position.z, leaving: GC.phase === 'out' });
-    for (const [id, m] of Object.entries(manners)) m.update(dt, actors);
+    const mannerActors = actors.concat(guests.actors());
+    for (const [id, m] of Object.entries(manners)) m.update(dt, mannerActors);
     for (const id of ['guestA', 'guestB']) if (ppl[id]) ppl[id].update(dt, null);
     // the revolving door turns as anyone goes through
     const inDoor = (x, z) => Math.abs(x - doorX) < 1.4 && Math.abs(z - -212.2) < 1.6;
-    const turning = actors.some((a) => inDoor(a.x, a.z));
+    const turning = actors.some((a) => inDoor(a.x, a.z)) || guests.inDoor(inDoor);
     S.drumSpin += ((turning ? 1.6 : 0) - S.drumSpin) * Math.min(1, dt * 2); vanes.rotation.y += S.drumSpin * dt;
     updateGuest(dt, pp);
     updateLift(dt, pp, actors);
+    updatePianist(dt, pp);
+    guests.update(dt, pp);
   }
 
   // ---------- a guest of the hotel's: in through the revolving door, up in the lift; later down and out ----------
@@ -1261,12 +1310,13 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   // ---------- the lift lobby: the attendant, the call, the lift coming down, its doors ----------
   const LIFT = { x: LIFT_X, btn: new THREE.Vector3(-50.85, Y0 + 1.21, P.z0 + 0.052), stand: { x: -50.25, z: P.z0 + 0.78, yaw: 0.45 } };
   const LIFT_HELLO = {
-    morning: ['早上好，纪先生。上楼吗？我帮您叫电梯。', 'Good morning, Mr Ji. Going up? Let me call the lift for you.'],
-    noon: ['中午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
-    afternoon: ['下午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
-    evening: ['晚上好，纪先生。上楼吗？我帮您叫电梯。', 'Good evening, Mr Ji. Going up? Let me call the lift for you.'],
+    morning: ['hotellift', '早上好，纪先生。上楼吗？我帮您叫电梯。', 'Good morning, Mr Ji. Going up? Let me call the lift for you.'],
+    noon: ['hotellift', '中午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
+    afternoon: ['hotellift', '下午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
+    evening: ['hotellift', '晚上好，纪先生。上楼吗？我帮您叫电梯。', 'Good evening, Mr Ji. Going up? Let me call the lift for you.'],
   };
-  const GUEST_HELLO = { morning: ['早上好，先生，我帮您叫电梯。', 'Good morning, sir. Let me call the lift.'], noon: ['中午好，先生，我帮您叫电梯。', 'Good afternoon, sir. Let me call the lift.'], afternoon: ['下午好，先生，我帮您叫电梯。', 'Good afternoon, sir. Let me call the lift.'], evening: ['晚上好，先生，我帮您叫电梯。', 'Good evening, sir. Let me call the lift.'] };
+  const GUEST_HELLO = { morning: ['hotellift', '早上好，先生，我帮您叫电梯。', 'Good morning, sir. Let me call the lift.'], noon: ['hotellift', '中午好，先生，我帮您叫电梯。', 'Good afternoon, sir. Let me call the lift.'], afternoon: ['hotellift', '下午好，先生，我帮您叫电梯。', 'Good afternoon, sir. Let me call the lift.'], evening: ['hotellift', '晚上好，先生，我帮您叫电梯。', 'Good evening, sir. Let me call the lift.'] };
+  // (voiced: tools/voice/extract.mjs reads liftSay's lines and the greetings above as 'hotellift')
   const liftSay = (zh, en, secs = 3) => { const a = ppl.liftMan; hud.bark({ speaker: { zh: '和平大使', en: 'Peace Ambassador' }, text: { zh, en }, seconds: secs, at: a ? [a.root.position.x, a.root.position.y + 1.6, a.root.position.z] : null, sex: 'm' }); };
   const _reach = new THREE.Vector3(), _pole = new THREE.Vector3(), _gest = new THREE.Vector3();
   const turnTo = (p, yaw, dt, rate = 5) => { const d = wrapA(yaw - p.root.rotation.y); p.root.rotation.y += d * Math.min(1, dt * rate); return Math.abs(d) < 0.06; };
@@ -1331,9 +1381,9 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
         if (q) {
           L1.greeted[q.id] = true; L1.bowT = 0;
           if (q.id === 'player') {
-            if (hasKey) { const [zh, en] = LIFT_HELLO[part()]; liftSay(zh, en, 3); L1.client = 'player'; L1.phase = 'greet'; L1.t = 1.5; }
+            if (hasKey) { const [, zh, en] = LIFT_HELLO[part()]; liftSay(zh, en, 3); L1.client = 'player'; L1.phase = 'greet'; L1.t = 1.5; }
             else { liftSay('您好，先生。请问您是住店客人吗？电梯需要刷房卡。', 'Good day, sir. Are you staying with us? The lifts take a room card.', 3.4); }
-          } else { const [zh, en] = GUEST_HELLO[part()]; if (nearPlayer(a, 10)) liftSay(zh, en, 2.4); L1.client = q.id; L1.phase = 'greet'; L1.t = 1.5; }
+          } else { const [, zh, en] = GUEST_HELLO[part()]; if (nearPlayer(a, 10)) liftSay(zh, en, 2.4); L1.client = q.id; L1.phase = 'greet'; L1.t = 1.5; }
         }
         // someone stepping out of the lift: a nod and a word
         if (L1.byeFor && L1.doors > 0.5) { const who = L1.byeFor; L1.byeFor = null; L1.bowT = 0;
@@ -1406,9 +1456,11 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
       if (items.length) { for (const it of items) it.where = 'me'; say(T('礼宾部', 'Concierge'), `纪先生，您的快递，一共${items.length}件，都在这儿。`, `Mr Ji, your parcels: ${items.length}, all here.`, 3); hud.toast(T(`取回：${items.map((i) => i.name).join('、')}`, `Collected: ${items.map((i) => i.en).join(', ')}`), 3.6); save && save(); }
       else say(T('礼宾部', 'Concierge'), '目前没有您的快递哦。需要叫车的话我帮您约。', "Nothing waiting for you at the moment. If you need a car, I can book one.", 3);
     } else if (id === 'pLifts') {
-      if (!(S.key || l.flags.hotelKey)) say(T('保安', 'Security'), '先生，电梯需要刷房卡，住客才能上去。', 'Sorry, sir, the lifts need a room card. Guests only.', 3);
+      // (the Peace Ambassador by the call button says it; with nobody at the lifts the card reader does)
+      const amb = ppl.liftMan && ppl.liftMan.root.visible;
+      if (!(S.key || l.flags.hotelKey)) { if (amb) liftSay('先生，电梯需要刷房卡，住客才能上去。', 'Sorry, sir, the lifts need a room card. Guests only.', 3); else hud.toast(T('电梯需要刷房卡', 'The lifts need a room card'), 2.4); }
       else if (S.lift.doors > 0.6) {
-        if (!S.said.lift) { S.said.lift = true; say(T('保安', 'Security'), '纪先生，六楼南边在装修，您那间不受影响。', "Mr Ji. The south end of six is being refitted, sir; your room's not affected.", 3.4); }
+        if (!S.said.lift && amb) { S.said.lift = true; liftSay('纪先生，六楼南边在装修，您那间不受影响。', "Mr Ji. The south end of six is being refitted, sir; your room's not affected.", 3.4); }
         S.lift.doorsWant = 0; onLift && onLift();
       } else if (!S.lift.called) {
         // the attendant does it for you, if he's there; otherwise you press it yourself
@@ -1447,11 +1499,11 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
         who: { a: { persona: 'office', card: 'a woman in her forties from Hong Kong staying at the Peace Hotel for a family wedding, chatty', at: at(a) }, b: { persona: 'office', card: 'her younger sister who lives in Shanghai, dry, practical', at: at(b) } } }];
     },
     talkables() {
-      const P2 = { receptionist: 'receptionist', concierge: 'concierge', liftGuard: 'liftGuard', liftMan: 'liftMan', doorman: 'doorman', aiaDesk: 'aiaDesk', aiaGuard: 'aiaGuard' };
+      const P2 = { receptionist: 'receptionist', concierge: 'concierge', liftMan: 'liftMan', doorman: 'doorman', aiaDesk: 'aiaDesk', aiaGuard: 'aiaGuard' };
       return Object.entries(P2).filter(([k]) => ppl[k] && ppl[k].root.visible).map(([k, persona]) => { const r = ppl[k].root.position; return { key: k, persona, x: r.x, y: r.y + 1.62, z: r.z, hold() {} }; });
     },
     update(dt, pp) {
-      captureLobbies(renderer, scene, pp); updateLobbyGlass(dt, pp);
+      captureLobbies(renderer, scene, pp, false, dt); updateLobbyGlass(dt, pp);
       const nearPeace = pp.z < -200 && pp.z > -262, nearAia = pp.z < -125 && pp.z > -165;
       if (nearPeace) updatePeace(dt, pp);
       if (nearAia) updateAia(dt, pp);

@@ -3980,19 +3980,94 @@
   "en": "Sir! Sir, you need to badge in. No entry without an appointment."
  },
  {
+  "who": "hotellift",
+  "zh": "早上好，纪先生。上楼吗？我帮您叫电梯。",
+  "en": "Good morning, Mr Ji. Going up? Let me call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "中午好，纪先生。上楼吗？我帮您叫电梯。",
+  "en": "Good afternoon, Mr Ji. Going up? Let me call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "下午好，纪先生。上楼吗？我帮您叫电梯。",
+  "en": "Good afternoon, Mr Ji. Going up? Let me call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "晚上好，纪先生。上楼吗？我帮您叫电梯。",
+  "en": "Good evening, Mr Ji. Going up? Let me call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "早上好，先生，我帮您叫电梯。",
+  "en": "Good morning, sir. Let me call the lift."
+ },
+ {
+  "who": "hotellift",
+  "zh": "中午好，先生，我帮您叫电梯。",
+  "en": "Good afternoon, sir. Let me call the lift."
+ },
+ {
+  "who": "hotellift",
+  "zh": "下午好，先生，我帮您叫电梯。",
+  "en": "Good afternoon, sir. Let me call the lift."
+ },
+ {
+  "who": "hotellift",
+  "zh": "晚上好，先生，我帮您叫电梯。",
+  "en": "Good evening, sir. Let me call the lift."
+ },
+ {
+  "who": "hotellift",
+  "zh": "您好，先生。请问您是住店客人吗？电梯需要刷房卡。",
+  "en": "Good day, sir. Are you staying with us? The lifts take a room card."
+ },
+ {
+  "who": "hotellift",
+  "zh": "纪先生，这么晚还出去？外面凉，您慢走。",
+  "en": "Going out this late, Mr Ji? It's cool out there. Take care."
+ },
+ {
+  "who": "hotellift",
+  "zh": "纪先生，您慢走。",
+  "en": "Have a good day, Mr Ji."
+ },
+ {
+  "who": "hotellift",
+  "zh": "您慢走。",
+  "en": "Have a good evening, sir."
+ },
+ {
+  "who": "hotellift",
+  "zh": "电梯到了，纪先生，您请。",
+  "en": "Here's the lift, Mr Ji. After you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "电梯到了，您请。",
+  "en": "Here it is, sir. After you."
+ },
+ {
   "who": "礼宾部",
   "zh": "目前没有您的快递哦。需要叫车的话我帮您约。",
   "en": "Nothing waiting for you at the moment. If you need a car, I can book one."
  },
  {
-  "who": "保安",
+  "who": "hotellift",
   "zh": "先生，电梯需要刷房卡，住客才能上去。",
   "en": "Sorry, sir, the lifts need a room card. Guests only."
  },
  {
-  "who": "保安",
+  "who": "hotellift",
   "zh": "纪先生，六楼南边在装修，您那间不受影响。",
   "en": "Mr Ji. The south end of six is being refitted, sir; your room's not affected."
+ },
+ {
+  "who": "hotellift",
+  "zh": "好的，纪先生，我来。",
+  "en": "Allow me, Mr Ji."
  },
  {
   "who": "前台",
@@ -4268,6 +4343,161 @@
   "who": "owner",
   "zh": "好人啊，谢谢谢谢！",
   "en": "You're a good one. Thanks, really!"
+ },
+ {
+  "who": "family",
+  "zh": "你好！能帮我们一家拍张照吗？要把门头上“和平饭店”那几个字拍进去。",
+  "en": "Hi! Could you take a picture of the three of us? With the \"Peace Hotel\" letters over the door in it."
+ },
+ {
+  "who": "family",
+  "zh": "拍得真好，连上面的字都拍清楚了！谢谢你！",
+  "en": "That's lovely, you can even read the name! Thank you!"
+ },
+ {
+  "who": "family",
+  "zh": "上面“和平饭店”几个字没拍进去，能再来一张吗？",
+  "en": "The hotel's name over the door isn't in it. One more?"
+ },
+ {
+  "who": "family",
+  "zh": "哎呀，我们的头被切掉了，再拍一张吧？",
+  "en": "Oh dear, you've cut our heads off. One more?"
+ },
+ {
+  "who": "family",
+  "zh": "可以再近一点吗？人太小了。",
+  "en": "Could you come a bit closer? We're tiny."
+ },
+ {
+  "who": "family",
+  "zh": "没事没事，就这张吧，谢谢！",
+  "en": "Never mind, that one will do. Thanks!"
+ },
+ {
+  "who": "family",
+  "zh": "好吧，没关系，谢谢。",
+  "en": "Oh, all right. Thanks anyway."
+ },
+ {
+  "who": "bikevisitor",
+  "zh": "你好，不好意思……你会用这个单车吗？",
+  "en": "Hi, sorry… do you know how these bikes work?"
+ },
+ {
+  "who": "bikevisitor",
+  "zh": "我扫了码，可它一直要我填中国的手机号。",
+  "en": "I scanned the code, but it keeps asking for a Chinese phone number."
+ },
+ {
+  "who": "bikevisitor",
+  "zh": "我只是想骑着到处转转。",
+  "en": "I only wanted to ride around a bit."
+ },
+ {
+  "who": "bikevisitor",
+  "zh": "真的吗？太感谢了！我先推到江边拍几张照，再骑，骑完一定锁在停车点。",
+  "en": "Really? Thank you so much! I'll walk it to the river for a few photos first, then ride, and lock it in a bay after."
+ },
+ {
+  "who": "bikevisitor",
+  "zh": "我试试……绑上了！开锁了！太棒了，谢谢你！",
+  "en": "Let me try… It's added! It's unlocked! Brilliant, thank you!"
+ },
+ {
+  "who": "bikevisitor",
+  "zh": "没关系，那我还是走路吧。",
+  "en": "No worries, I'll walk then."
+ },
+ {
+  "who": "hotelguard",
+  "zh": "房卡？谢谢您，纪先生。我马上交给前台，他们会把这张卡注销，再给客人补一张。",
+  "en": "A key card? Thank you, Mr Ji. I'll take it to the front desk now; they'll cancel it and make the guest a new one."
+ },
+ {
+  "who": "teatourist",
+  "zh": "不好意思！能问你个事吗？",
+  "en": "Excuse me! Can I ask you something?"
+ },
+ {
+  "who": "teatourist",
+  "zh": "这两位说附近有个茶艺节，请我一起去喝茶。这个……正常吗？",
+  "en": "These two say there's a tea festival nearby and they've invited me along. Is that… normal?"
+ },
+ {
+  "who": "teagirl",
+  "zh": "就在旁边，很近的！传统茶艺，很有意思的。",
+  "en": "It's just round the corner! A traditional tea ceremony, really interesting."
+ },
+ {
+  "who": "teagirl",
+  "zh": "……算了，我们走吧。",
+  "en": "…Forget it. Let's go."
+ },
+ {
+  "who": "teatourist",
+  "zh": "天哪，我差点就去了。真的谢谢你！",
+  "en": "Oh my god, I nearly went. Thank you, really!"
+ },
+ {
+  "who": "teatourist",
+  "zh": "好主意，我自己去。谢谢！",
+  "en": "Good idea. I'll go on my own. Thanks!"
+ },
+ {
+  "who": "teatourist",
+  "zh": "好吧……那我跟她们去看看。",
+  "en": "Oh, okay… I'll go and have a look with them, then."
+ },
+ {
+  "who": "volunteer",
+  "zh": "您好，需要帮忙吗？",
+  "en": "Hello, can I help you?"
+ },
+ {
+  "who": "volunteer",
+  "zh": "外滩防汛墙上面的观景平台有公共厕所，从这里上去，往南走一点就到。",
+  "en": "There are public toilets up on the promenade along the flood wall. Go up from here and walk a little way south."
+ },
+ {
+  "who": "volunteer",
+  "zh": "坐地铁二号线，南京东路站上车，坐一站就到陆家嘴。想看江景的话，去金陵东路坐轮渡。",
+  "en": "Line 2 from East Nanjing Road, one stop to Lujiazui. For the view of the river, take the ferry from Jinling Road East."
+ },
+ {
+  "who": "volunteer",
+  "zh": "大堂可以进去看看，很漂亮的。楼上是客房，就不好随便上去了。",
+  "en": "You can go in and look round the lobby, it's beautiful. Upstairs is guest rooms, so not without a room."
+ },
+ {
+  "who": "volunteer",
+  "zh": "步行街和外滩不能骑车。九江路、汉口路路口都有停车点，在画线的地方还车。",
+  "en": "No cycling on the shopping street or the Bund. There are bays at the Jiujiang Road and Hankou Road corners; lock it inside the lines."
+ },
+ {
+  "who": "volunteer",
+  "zh": "好的，祝您玩得开心！",
+  "en": "All right, enjoy your day!"
+ },
+ {
+  "who": "sweeper",
+  "zh": "早啊。这条路一天要扫好几遍，人多嘛。",
+  "en": "Morning. This road gets swept several times a day. It's the crowds."
+ },
+ {
+  "who": "sweeper",
+  "zh": "灯一亮，人又多起来了。你让一让，当心扫帚。",
+  "en": "Once the lights come on, the crowds are back. Step aside a bit, mind the broom."
+ },
+ {
+  "who": "sweeper",
+  "zh": "下雨天人少，就是叶子粘在地上，不好扫。",
+  "en": "Fewer people when it rains, but the wet leaves stick to the ground."
+ },
+ {
+  "who": "sweeper",
+  "zh": "垃圾要分类啊，湿垃圾、干垃圾分开扔。",
+  "en": "Sort your rubbish, mind: wet and dry in separate bins."
  },
  {
   "who": "gunian",
