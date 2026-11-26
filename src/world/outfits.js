@@ -126,6 +126,27 @@ export function dressHotelSecurity(person, { glasses: specs = false } = {}) {
   return person;
 }
 
+// ---- the pianist at the Jasmine Lounge's afternoon tea (an older man, as guests describe him): on Old Lin's body,
+// the navy suit to black, his grey hair as it is, glasses, a black bow tie ----
+export function dressPianist(person) {
+  person.root.traverse((o) => { if (o.isMesh && /_body$/.test(o.material.name)) o.material = recolor(o.material, 'suit', SUIT.body); });
+  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
+  if (head.length) {
+    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity);
+    const eyes = head.filter((p) => p.y < top - 0.085 && p.y > top - 0.12 && Math.abs(p.x) < 0.05), front = eyes.length ? eyes.reduce((m, p) => (p.z > m.z ? p : m), eyes[0]) : null;
+    if (front) attach(person, 'Bip01_Head', glasses(), new THREE.Vector3(0, front.y + 0.002, front.z - 0.006));
+    const neckY = top - 0.24, ring = body.filter((p) => Math.abs(p.y - neckY) < 0.015);
+    if (ring.length > 4) {
+      const f = ring.reduce((m, p) => (p.z > m.z ? p : m), ring[0]), bow = new THREE.Group();
+      for (const s2 of [-1, 1]) { const wing = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.038, 4), frameMat); wing.rotation.z = s2 * Math.PI / 2; wing.scale.set(1, 1, 0.35); wing.position.x = s2 * 0.019; bow.add(wing); }
+      bow.add(new THREE.Mesh(new THREE.BoxGeometry(0.013, 0.015, 0.01), frameMat));
+      attach(person, 'Bip01_Neck', bow, new THREE.Vector3(f.x, neckY - 0.035, f.z + 0.01));
+    }
+  }
+  person.outfit = 'pianist';
+  return person;
+}
+
 // ---- delivery riders: the game's (invented) delivery companies, as on Henan Road (world/ebikeView.js): the
 // yellow one, Wanji 万集's orange and Jingsong 鲸送's blue (ui/brands.js); on the crowd body in the red track
 // jacket ('p3'), the jacket re-dyed, and a helmet in the same colour (helmets are the law on Shanghai's e-bikes) ----

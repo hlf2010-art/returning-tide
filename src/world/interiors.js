@@ -30,7 +30,9 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { L, colliders, addDynamicCollider } from './layout.js';
 import { createPerson } from './people.js';
-import { dressHotelSecurity, dressReceptionist, dressConcierge, dressPeaceAmbassador } from './outfits.js';
+import { dressHotelSecurity, dressReceptionist, dressConcierge, dressPeaceAmbassador, dressPianist } from './outfits.js';
+import { createJazzPlayer } from '../engine/jazzPlayer.js';
+import { createSeatedPose } from './driverPose.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
@@ -1110,6 +1112,48 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   // hotel's lifts have had no operator for years: someone waits in the lift lobby, greets you, presses the call
   // button for you and sees you in)
   { const a = placePerson('liftMan', 'p4', -50.25, P.z0 + 0.78, 0.45); if (a) dressPeaceAmbassador(a); }
+  // the Jasmine Lounge's pianist: at the grand piano for afternoon tea, 14:30-17:30 (guests describe an older man
+  // playing jazz at three, on an antique Steinway in the lounge). Seated on the bench, feet at the pedals, his hands
+  // over the keys where the music is (engine/jazzPlayer.js, solo: the tunes are the game's own)
+  const PIANO = { x: -40.4, z: -242.6, hours: [14 * 60 + 30, 17 * 60 + 30] };
+  const pianist = (() => {
+    if (!people) return null;
+    const frame = new THREE.Group(); frame.position.set(PIANO.x, Y0, PIANO.z); group.add(frame);
+    const p = createPerson(people, 'lin'); frame.add(p.root); p.play('idle', 0); p.update(0); dressPianist(p);
+    p.root.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    const pose = createSeatedPose(p, { recline: -0.14, elbows: 0.3 });
+    // the keyboard runs across the piano's local x, the bass at +x (his left as he faces +z); hands a wrist short of
+    // the keys' front edge (local z -0.275)
+    const keyX = (m) => 0.62 - (Math.max(21, Math.min(108, m)) - 21) / 87 * 1.24, hand = { L: new THREE.Vector3(0.25, 0.8, -0.34), R: new THREE.Vector3(-0.15, 0.8, -0.34) };
+    const cabin = { hip: new THREE.Vector3(0, 0.6, -0.76), pedals: [new THREE.Vector3(0.16, 0.05, -0.32), new THREE.Vector3(-0.07, 0.1, 0.06)],
+      rimPoint(a, out) { return out.copy(a < 0 ? hand.L : hand.R).applyMatrix4(frame.matrixWorld); } };
+    const music = createJazzPlayer(audio, { solo: true });
+    frame.visible = false;
+    return { p, frame, pose, cabin, hand, keyX, music, playing: false };
+  })();
+  function updatePianist(dt, pp) {
+    const q = pianist; if (!q) return;
+    const m = nowMin(), on = m >= PIANO.hours[0] && m < PIANO.hours[1], inHall = pp.y < Y0 + 4 && pp.z < -205 && pp.z > -250 && pp.x > P.x0 - 4 && pp.x < P.x1 + 6;
+    q.frame.visible = on;
+    if (on && inHall && !q.playing) { q.music.start((getLife && getLife() ? getLife().clock.day : 1) * 7 + 11); q.playing = true; }
+    if ((!on || !inHall) && q.playing) { q.music.stop(); q.playing = false; }
+    if (q.playing) {
+      // in the same open hall: only the distance softens it (outside the hotel he isn't heard)
+      const dx = PIANO.x - pp.x, dz = PIANO.z - pp.z, d = Math.hypot(dx, dz), inside = pp.x > P.x0 && pp.x < P.x1 && pp.z > P.z0 && pp.z < P.z1;
+      const yaw = player.yaw || 0, rx = Math.cos(yaw), rz = -Math.sin(yaw);
+      q.music.update(inside ? 0.62 / (1 + d / 5) : 0.1 / (1 + d / 3), inside ? 16000 : 1500, d > 0.5 ? Math.max(-0.7, Math.min(0.7, (dx * rx + dz * rz) / d)) : 0);
+    }
+    if (!on || Math.hypot(PIANO.x - pp.x, PIANO.z - pp.z) > 30) return;
+    // the hands follow what's being played: the right over the melody, the left over the chords and the walking line;
+    // each dips a centimetre as a note is struck
+    const h = q.music.hits, now = q.music.now();
+    const lm = h.compMidi > 0 ? (h.comp > h.bass ? h.compMidi : h.bassMidi + 12) : 52, rm = h.leadMidi || 72;
+    const lx = Math.max(0.05, Math.min(0.55, q.keyX(lm))), rxk = Math.min(-0.02, Math.max(-0.55, q.keyX(rm)));
+    const k = Math.min(1, dt * 10);
+    q.hand.L.x += (lx - q.hand.L.x) * k; q.hand.R.x += (rxk - q.hand.R.x) * k;
+    q.hand.L.y = 0.8 - (now - Math.max(h.comp, h.bass) < 0.09 ? 0.012 : 0); q.hand.R.y = 0.8 - (now - h.lead < 0.09 ? 0.012 : 0);
+    q.p.update(dt, null); q.frame.updateMatrixWorld(true); q.pose(q.cabin, q.frame);
+  }
   guard('doorman', doorX + 2.6, -210.4, -0.35);                       // beside the revolving door, facing the street
   placePerson('guestA', 'vivian', -54.6, -221.0, -2.4, 'talk1');
   placePerson('guestB', 'p5', -55.8, -222.1, 0.8, 'talk2');
@@ -1211,6 +1255,7 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
     S.drumSpin += ((turning ? 1.6 : 0) - S.drumSpin) * Math.min(1, dt * 2); vanes.rotation.y += S.drumSpin * dt;
     updateGuest(dt, pp);
     updateLift(dt, pp, actors);
+    updatePianist(dt, pp);
   }
 
   // ---------- a guest of the hotel's: in through the revolving door, up in the lift; later down and out ----------
