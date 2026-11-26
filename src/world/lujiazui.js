@@ -24,9 +24,13 @@ import {
   C, RING, ARMS, RAMPS, SPUR, APPLE, METRO_LJZ, IFC, BUILDINGS, GREEN, LAKE, YIN, ZEBRAS, AVE, CH, LJZ,
   dirOf, polar, rpolar, fromAP, toAP, applePt, wellPt, wellLocal, PEARL_PARK, RC, carriage, zebra, inPudong, ljzZone, ljzState, signalAt,
 } from './lujiazuiLayout.js';
-import { buildGround, buildMarkings, railTexture } from './lujiazuiGround.js';
-import { ljzMaterials, buildBridge, buildApple, buildIfc, buildMetro, buildTrees, buildGreen, buildSurroundings, buildStreet, lampKit, LJZ_TEXT } from './lujiazuiBuild.js';
-import { createLjzTraffic, createLjzPeople } from './lujiazuiLife.js';
+import { LJZ_TEXT } from './lujiazuiLayout.js';
+// The district's builders (ground, structures, traffic and people: some 120 KB) are a chunk of their
+// own, not in the startup bundle: fetched in the background once the game is up, and waited for before
+// the district is first built.
+let mods = null, modsP = null;
+const loadMods = () => modsP || (modsP = Promise.all([import('./lujiazuiGround.js'), import('./lujiazuiBuild.js'), import('./lujiazuiLife.js')])
+  .then(([g, b, l]) => (mods = { ...g, ...b, ...l })));
 
 export { LJZ };
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
@@ -42,7 +46,9 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   // the district is made in steps: all at once (build), or a step at a time between frames (buildAsync,
   // started while you ride Line 2 east, so it's ready when the train comes out under Pudong)
   let steps = null, building = null;
+  if (typeof window !== 'undefined') setTimeout(() => loadMods().catch((e) => console.warn('Lujiazui: modules failed to load', e)), 1500);
   function makeSteps() {
+    const { buildGround, buildMarkings, railTexture, ljzMaterials, buildBridge, buildApple, buildIfc, buildMetro, buildTrees, buildGreen, buildSurroundings, buildStreet, lampKit, createLjzTraffic, createLjzPeople } = mods;
     const t0 = performance.now(), m = ljzMaterials(M), kit = lampKit(m), trees = [], C = { t0 };
     return [
       () => {
@@ -63,7 +69,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
         const L = LJZ.ifcLobbyDoor, K = LJZ.kerbPickup, AD = LJZ.appleCylinderDoor, toC = dirOf(APPLE.entry);
         ent = createEntrances({ scene, camera, list: [
           { id: 'ljz-ifc', name: ['国金中心 · 办公楼', 'IFC · the office tower'], act: ['上楼', 'go up'], x: L.x, z: L.z, nx: L.nx, nz: L.nz, y: CH, w: 5 },
-          { id: 'ljz-apple', name: ['Apple 浦东', 'Apple Pudong'], act: ['进去 · 旋转楼梯', 'in, down the spiral stair'], x: AD.x - toC[0] * 0.4, z: AD.z - toC[1] * 0.4, nx: toC[0], nz: toC[1], y: APPLE.yPlaza, w: 3, glow: false },
+          { id: 'ljz-apple', name: ['Lumen 浦东', 'Lumen Pudong'], act: ['进去 · 旋转楼梯', 'in, down the spiral stair'], x: AD.x - toC[0] * 0.4, z: AD.z - toC[1] * 0.4, nx: toC[0], nz: toC[1], y: APPLE.yPlaza, w: 3, glow: false },
           ...METRO_LJZ.map((W) => ({ id: `ljz-m${W.exit}`, name: [`陆家嘴站 ${W.exit} 号口`, `Lujiazui station, Exit ${W.exit}`], act: ['下楼 · 2号线', 'down to Line 2'], x: W.top[0] - W.dx * 0.8, z: W.top[1] - W.dz * 0.8, nx: -W.dx, nz: -W.dz, y: CH, w: 3, open: metroOpen, glow: false })),
           { id: 'ljz-ferry', name: ['轮渡 · 东昌路码头', 'Ferry · Dongchang Rd pier'], act: ['回外滩', 'back to the Bund'], x: LJZ.ferrySign.x, z: LJZ.ferrySign.z, nx: Math.sin(65 * Math.PI / 180), nz: -Math.cos(65 * Math.PI / 180), y: CH, w: 3, glow: false },
           { id: 'ljz-didi', name: ['网约车上下客点', 'Ride-hailing point'], act: ['回外滩', 'a car back to the Bund'], x: K.x, z: K.z, nx: LJZ.ifcLobbyStand.x - K.x, nz: LJZ.ifcLobbyStand.z - K.z, y: CH, w: 3, glow: false },
@@ -86,16 +92,17 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
       },
     ];
   }
+  // (true once built; false while its modules are still on their way: update() tries again each frame)
   function build() {
-    if (built) return;
+    if (built) return true;
+    if (!mods) { loadMods(); return false; }
     if (!steps) steps = makeSteps();
     while (steps.length) steps.shift()();
-    built = true;
+    built = true; return true;
   }
   function buildAsync() {
     if (built || building) return building;
-    if (!steps) steps = makeSteps();
-    building = (async () => { while (steps.length && !built) { steps.shift()(); await new Promise((r) => setTimeout(r, 40)); } built = true; })();
+    building = (async () => { await loadMods(); if (!steps) steps = makeSteps(); while (steps.length && !built) { steps.shift()(); await new Promise((r) => setTimeout(r, 40)); } built = true; })();
     return building;
   }
   function show(on) {
@@ -117,8 +124,8 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     const behind = info.method === 'metro' || info.method === 'ferry';   // already behind that journey's own fade
     pending = { method: behind ? 'alipay' : info.method || 'wechat', invite: info.invite || null, at: stamp(getLife()) };
     let done = false;
-    const go = () => {
-      if (done) return; done = true; build();
+    const go = async () => {
+      if (done) return; done = true; await loadMods(); build();
       const p = info.method === 'metro' ? LJZ.metroArrive : info.method === 'ferry' ? LJZ.ferryArrive : LJZ.kerbPickup;
       player.teleport(p.x, p.z, p.yaw, 0, p.y); show(true);
       if (info.method === 'ferry') hud.toast(T('东昌路轮渡码头 · 沿陆家嘴西路走上来', 'Off the Dongchang Road ferry · up West Lujiazui Road'), 3.6);
@@ -142,14 +149,14 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   // down again: the lift opens on the lobby, you step out onto Century Avenue
   dests.exitTo = (id, finish) => {
     if (id !== 'lujiazui') return false;
-    travel(async () => { finish(); build(); const p = LJZ.ifcLobbyStand; player.teleport(p.x, p.z, p.yaw, 0, p.y); show(true); save && save(); }, { line: T('国金中心 · 一楼大堂', 'IFC · the ground-floor lobby'), hold: 700, to: 'play' });
+    travel(async () => { finish(); await loadMods(); build(); const p = LJZ.ifcLobbyStand; player.teleport(p.x, p.z, p.yaw, 0, p.y); show(true); save && save(); }, { line: T('国金中心 · 一楼大堂', 'IFC · the ground-floor lobby'), hold: 700, to: 'play' });
     return true;
   };
   // back to the Bund: a car from the kerb (through the Yan'an East Road tunnel), the ferry, or Line 2 (world/metro.js)
   function ferryBack() {
     const l = getLife(), n = nextFerry(l.clock.minute);
-    if (n == null) { hud.toast(T('今天的轮渡已经停了。地铁或者叫车都能回外滩。', 'No more ferries today. The metro or a DiDi will take you back.'), 3.6); return; }
-    const r = pay(l, { method: 'alipay', amount: FERRY.fare, to: '上海轮渡 Shanghai Ferry', memo: '东昌路 → 金陵东路', kind: 'transport' }); if (!r.ok) { hud.toast(T('支付宝余额不足。', 'Not enough on Alipay.'), 3); return; }
+    if (n == null) { hud.toast(T('今天的轮渡已经停了。地铁或者叫车都能回外滩。', 'No more ferries today. The metro or a Kuaima will take you back.'), 3.6); return; }
+    const r = pay(l, { method: 'alipay', amount: FERRY.fare, to: '上海轮渡 Shanghai Ferry', memo: '东昌路 → 金陵东路', kind: 'transport' }); if (!r.ok) { hud.toast(T('易付余额不足。', 'Not enough on YiPay.'), 3); return; }
     r.entry.memoEn = 'Dongchang Rd → Jinling Rd E ferry';
     travel(async () => {
       skipTo(l, Math.floor(stamp(l) / 1440) * 1440 + n + FERRY.crossing);
@@ -160,9 +167,9 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     const l = getLife(), d = dest('lujiazui'), back = fare(d, l.clock.minute);
     travel(async () => {
       skipTo(l, stamp(l) + d.mins);
-      const r = pay(l, { method: (pending && pending.method) || 'wechat', amount: back, to: '滴滴出行', memo: '快车 → 外滩', kind: 'ride' }); if (r.ok) r.entry.memoEn = 'DiDi Express to the Bund';
+      const r = pay(l, { method: (pending && pending.method) || 'wechat', amount: back, to: '快马出行', memo: '快车 → 外滩', kind: 'ride' }); if (r.ok) r.entry.memoEn = 'Kuaima Express to the Bund';
       player.teleport(PICKUP.x, PICKUP.z - 1.2, Math.PI / 2, 0); show(false); save && save();
-    }, { line: T(`滴滴快车 · 延安东路隧道 → 外滩 · ¥${back}`, `DiDi Express · the Yan'an East Road tunnel → the Bund · ¥${back}`), hold: 1500, to: 'play' });
+    }, { line: T(`快马快车 · 延安东路隧道 → 外滩 · ¥${back}`, `Kuaima Express · the Yan'an East Road tunnel → the Bund · ¥${back}`), hold: 1500, to: 'play' });
   }
   // ---- what E does here ----
   const TARGETS = [];
@@ -176,7 +183,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
   function mapBlips() {
     const out = [
       { x: LJZ.ifcLobbyDoor.x, z: LJZ.ifcLobbyDoor.z, glyph: '国', bg: '#24303f', fg: '#cfe0f5', name: { zh: '国金中心（办公楼大堂）', en: 'IFC (office lobby)' } },
-      { x: APPLE.x, z: APPLE.z, glyph: 'A', bg: '#e9ecee', fg: '#111', name: { zh: 'Apple 浦东', en: 'Apple Pudong' } },
+      { x: APPLE.x, z: APPLE.z, glyph: 'A', bg: '#e9ecee', fg: '#111', name: { zh: 'Lumen 浦东', en: 'Lumen Pudong' } },
       { x: LJZ.ferrySign.x, z: LJZ.ferrySign.z, glyph: '⛴', bg: '#0f2a24', fg: '#ffe08a', name: { zh: '轮渡（东昌路 → 外滩）', en: 'Ferry (Dongchang Rd → the Bund)' } },
       { x: LJZ.kerbPickup.x, z: LJZ.kerbPickup.z, glyph: 'D', bg: '#ff7a00', fg: '#fff', name: { zh: '网约车上下客点（国金中心）', en: 'Ride-hailing point (IFC)' } },
       { x: LJZ.greenGate.x, z: LJZ.greenGate.z, glyph: '绿', bg: '#2f5a34', fg: '#e3f2dc', name: { zh: '陆家嘴中心绿地', en: 'Lujiazui Central Green' } },
@@ -221,7 +228,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
     sceneLine(clock, raining, extra = '') {
       const b = player.body, z = ljzZone(b.x, b.z, b.y);
       const where = { ring: 'the Mingzhu Ring, the circular footbridge over the Lujiazui roundabout in Pudong, traffic going round below, the Oriental Pearl Tower just to the north-north-west',
-        apple: b.y < APPLE.yPlaza - 3 ? 'the Apple store under the sunken court at IFC in Lujiazui, long oak tables, the spiral glass stair up into the glass cylinder' : 'the sunken round court of Apple Pudong in front of the IFC mall: the 13-metre glass cylinder with the spiral stair in it, broad steps up toward the Oriental Pearl Tower, curved walkways round the wall over an HSBC branch and a Starbucks, trees in planters',
+        apple: b.y < APPLE.yPlaza - 3 ? 'the Lumen store under the sunken court at IFC in Lujiazui, long oak tables, the spiral glass stair up into the glass cylinder' : 'the sunken round court of Lumen Pudong in front of the IFC mall: the 13-metre glass cylinder with the spiral stair in it, broad steps up toward the Oriental Pearl Tower, curved walkways round the wall over a Shenjiang Bank branch and a Harbour Coffee, trees in planters',
         green: 'Lujiazui Central Green, the lawn and the lake in the middle of the towers: Jin Mao, the World Financial Center and the Shanghai Tower to the south-east',
         ljzMetro: 'an exit of Lujiazui metro station (Line 2), by the roundabout', ifc: 'outside Shanghai IFC on Century Avenue in Lujiazui, the office tower\'s lobby behind, taxis at the kerb',
         roundabout: 'the pavement by the Lujiazui roundabout in Pudong, under the ring footbridge, the Oriental Pearl Tower above', century: 'Century Avenue in Lujiazui, Pudong, among the office towers' }[z] || 'Lujiazui, Pudong';
@@ -259,7 +266,7 @@ export function createLujiazui({ scene, camera, M, people, hud, audio, player, t
       const want = inPudong(body.x, body.y);
       if (want && !built) build();                             // (a save loaded here, a tool's teleport)
       if (want !== active) show(want);
-      if (!active) return;
+      if (!active || !built) return;
       clock += dt;
       if (hour) traffic.setDensity(Math.max(0.3, hour.traffic));
       const onRoad = body.y < 1 && carriage(body.x, body.z) ? ((_p.x = body.x), (_p.z = body.z), _p) : null;

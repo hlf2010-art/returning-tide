@@ -8,3 +8,4 @@ All SIL Open Font License 1.1 (https://openfontlicense.org/open-font-license-off
 - `serif-en-*.woff2`: Cormorant Garamond (Copyright The Cormorant Project Authors).
 - `deco.woff2`: Limelight (Copyright Eben Sorkin).
 - `deco-thin.woff2`: Poiret One (Copyright Denis Masharov).
+- `sign-kai.woff2`: Ma Shan Zheng; `sign-wei.woff2`: ZCOOL XiaoWei (Copyright The ZCOOL XiaoWei Project Authors); `sign-song.woff2`: Noto Serif SC Black; `sign-hei.woff2`: Noto Sans SC Black (Copyright Google LLC / Adobe). Nanjing Road's shop signs (world/shopSigns.js), subset to the shop names by tools/fonts/signs.py.

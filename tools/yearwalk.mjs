@@ -1,6 +1,6 @@
 // Walkthrough: the year. In the game itself:
 //   the date on screen; Tuesday 10 November, the first day at Marlowe Finch (IFC 28F): the scene,
-//   the desk, the lift home; a flat rented on WeChat, and the night in it that carries him to
+//   the desk, the lift home; a flat rented on Xinyu, and the night in it that carries him to
 //   January (the fade says how long, the salary arrives, the rent goes); the watch-repairer's
 //   daughter at the stall; Tuesday 20 April, the crisis and what he does about it; the start-up's
 //   founding day on 32F; Saturday 13 November 2027, the dinner, and an ending with its afterword.
@@ -21,6 +21,10 @@ async function open() {
   p.on('pageerror', (e) => errors.push(e.message));
   await p.goto(`${url}?q=4&nolock&fresh&lang=${lang}&tod`, { waitUntil: 'load' });
   await p.waitForFunction(() => window.__bund && window.__bund.mode === 'entry', null, { timeout: 300000 });
+  // everything the HUD puts up (toasts, the chapter title, act banners) is queued behind the titles, so a check reads
+  // what has been shown since the clock moved, not what happens to be up at that instant
+  await p.evaluate(() => { window.__seen = []; const grab = () => { for (const id of ['toast', 'chapter-card', 'achv']) { const e = document.getElementById(id); const t = e && e.innerText.replace(/\n+/g, ' · ').trim(); if (t && window.__seen[window.__seen.length - 1] !== t) window.__seen.push(t); } };
+    new MutationObserver(grab).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class'] }); });
   await p.evaluate(() => { window.__bund.start(); window.__bund.dtMax = 0.25; const s = document.createElement('style'); s.textContent = '#minimap,#dev,#tip{display:none!important}'; document.head.appendChild(s); });
   await p.waitForTimeout(2000);
   return p;
@@ -31,10 +35,15 @@ const shot = (name) => p.screenshot({ path: `${out}year-${name}${zh ? '-zh' : ''
 const mode = (m, t = 120000) => p.waitForFunction((m) => window.__bund.mode === m, m, { timeout: t });
 const veilClear = () => p.waitForFunction(() => !document.getElementById('veil').classList.contains('on') && window.__bund.mode === 'play', null, { timeout: 120000 });
 const toast = () => ev(() => document.getElementById('toast').textContent);
+// has the HUD shown something matching re (since the last mark)? waits for the title queue
+const mark = () => ev(() => { window.__mark = window.__seen.length; });
+const shown = (re, timeout = 45000) => p.waitForFunction(([src, fl]) => window.__seen.slice(window.__mark || 0).find((t) => new RegExp(src, fl).test(t)), [re.source, re.flags], { timeout }).then((h) => h.jsonValue()).catch(() => ev(() => `(not seen; last: ${window.__seen.slice(-3).join(' | ')})`));
 const prompt = () => ev(() => (document.getElementById('prompt').classList.contains('on') ? document.getElementById('prompt').innerText.replace(/\n/g, ' ') : ''));
 const Y = () => ev(() => JSON.parse(JSON.stringify(window.__bund.life.flags.year)));
 // the clock: set it, and let the game notice the new day (salary, rent, absences, messages)
-const setClock = async (day, h, m = 0) => { await ev(([day, h, m]) => { const L = window.__bund.life; L.clock.day = day; window.__bund.setHour(h, m); }, [day, h, m]); await p.waitForFunction((day) => window.__bund.life.flags.year.work.through === day, day, { timeout: 60000 }); await p.waitForTimeout(700); };
+const setClock = async (day, h, m = 0) => { await ev(([day, h, m]) => { const L = window.__bund.life; L.clock.day = day; window.__bund.setHour(h, m); }, [day, h, m]); await p.waitForFunction((day) => window.__bund.life.flags.year.work.through === day, day, { timeout: 60000 }); await p.waitForTimeout(700); await planSeason(); };
+// a night across weeks opens the season plan (ui/season.js): take its default plan, as yearsmoke.mjs does
+async function planSeason() { for (let k = 0; k < 3; k++) { if (await ev(() => window.__bund.mode) !== 'season') return; await ev(() => { const g = document.querySelector('#season [data-go]'); if (g) g.click(); }); for (let j = 0; j < 6; j++) { await p.waitForTimeout(400); const r = await ev(() => { const d = document.querySelector('#season [data-ch]'); if (d) { d.click(); return 1; } const c = document.querySelector('#season [data-close]'); if (c) { c.click(); return 2; } return 0; }); if (r !== 1) break; } await p.waitForTimeout(600); } }
 // look at a point from where you stand (the prompt needs it in view)
 const lookAt = (x, y, z) => ev(([x, y, z]) => { const b = window.__bund.player, c = window.__bund.camera.position; b.yaw = Math.atan2(-(x - b.body.x), -(z - b.body.z)); b.pitch = Math.atan2(y - c.y, Math.hypot(x - b.body.x, z - b.body.z)); }, [x, y, z]);
 // answer the scene as it asks: pick(choices) -> 1..4
@@ -51,14 +60,14 @@ async function talk(pick, until, timeout = 600000) {
 const quick = (day, picks) => ev(([day, picks]) => { const B = window.__bund, L = B.life, R = B.world.year.rules; L.clock.day = day; B.setHour(9, 0); R.rollover(L); R.runCareer(L); const t = R.arriveAtWork(L); if (!t) return null; R.playScene(L, t.def, picks || []); L.clock.minute = 18 * 60 + 30; R.workFull(L); return t.def.id; }, [day, picks]);
 
 // ---- 1. the date ----
-const chip = await ev(() => { const c = document.getElementById('year-chip'); return { on: c.classList.contains('on'), text: c.textContent }; });
-ok(chip.on && (zh ? /11 月 9 日 周一 · 第一幕/.test(chip.text) : /Mon 9 Nov · Act I · New Beginnings/.test(chip.text)), `the date is on screen: "${chip.text}"`);
+const chip = await shown(zh ? /第一幕.*11 月 9 日/ : /Act I.*New Beginnings.*9 Nov/i);
+ok(zh ? /第一幕.*11 月 9 日/.test(chip) : /Act I.*New Beginnings.*9 Nov/i.test(chip), `the chapter title gives the act and the date: "${chip}"`);
 await ev(() => window.__bund.updateStory());
 await ev(() => window.__bund.world.year.handoff('opened'));                 // (Mission One, played to its end with the seal broken: tests/mission.test.mjs, tools/playtest.mjs)
 
 // ---- 2. Tuesday 10 November: the first day at the firm ----
-await setClock(2, 9, 5);
-ok(/Tue 10 Nov|11 月 10 日|Work today|今天上班/.test(await toast()), `a new day is announced: "${await toast()}"`);
+await mark(); await setClock(2, 9, 5);
+const d2 = await shown(/Tue 10 Nov|11 月 10 日|Work today|今天上班/); ok(/Tue 10 Nov|11 月 10 日|Work today|今天上班/.test(d2), `a new day is announced: "${d2}"`);
 await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro', up: true }));   // (what the metro's gate does: world/metro.js)
 await p.waitForFunction(() => window.__bund.world.year.here === 'firm', null, { timeout: 120000 }); await veilClear();
 const at = await ev(() => ({ y: window.__bund.player.body.y, x: window.__bund.player.body.x }));
@@ -96,21 +105,21 @@ await p.waitForFunction(() => window.__bund.life.flags.year.home.kind === 'flat'
 y = await Y(); ok(y.home.id === 'northbund' && y.home.rent === 12800 && (await ev(() => window.__bund.life.wallet.ledger.some((e) => e.kind === 'rent' && e.amount === -32000))), 'the North Bund flat is his: deposit, first month and fee paid from the bank');
 await setClock(6, 21, 40);
 const bank6 = await ev(() => window.__bund.life.wallet.bank);
-await ev(() => window.__bund.world.dest.arrive('home', { method: 'wechat' }));       // (what a DiDi to "My flat" does)
+await ev(() => window.__bund.world.dest.arrive('home', { method: 'wechat' }));       // (what a Kuaima to "My flat" does)
 await p.waitForFunction(() => window.__bund.world.year.here === 'flat', null, { timeout: 120000 }); await veilClear(); await p.waitForTimeout(800);
 await ev(() => { const F = window.__bund.world.year.FLATS; window.__bund.player.teleport(40.6, -703.4, 1.0, -0.1, F.y.northbund); }); await p.waitForTimeout(1200);
 await shot('flat');
 await ev(() => { const F = window.__bund.world.year.FLATS; window.__bund.player.teleport(39.2, -704.3, 1.0, -0.1, F.y.northbund); }); await p.waitForTimeout(600);
 await lookAt(37.6, 70.6, -704.6); await p.waitForTimeout(900);
 const pb = await prompt(); ok(zh ? /睡到早上/.test(pb) : /Sleep till morning/.test(pb), `in the flat: "${pb}"`);
-await p.keyboard.press('KeyE');
+await mark(); await p.keyboard.press('KeyE');
 await p.waitForFunction(() => document.getElementById('veil').classList.contains('on') && /2027/.test(document.getElementById('veil').dataset.line), null, { timeout: 60000 });
 const line = await ev(() => document.getElementById('veil').dataset.line); await p.waitForTimeout(700); await shot('gap');
 ok(zh ? /2 个月后 · 2027 年 1 月 11 日 周一/.test(line) : /2 months later · Mon 11 Jan 2027/.test(line), `the fade says how long has passed: "${line}"`);
 await veilClear(); await p.waitForFunction(() => window.__bund.life.flags.year.work.through === 7, null, { timeout: 60000 }); await p.waitForTimeout(600);
-const jan = await ev(() => ({ bank: window.__bund.life.wallet.bank, toast: document.getElementById('toast').textContent, chip: document.getElementById('year-chip').textContent, achv: document.getElementById('achv') ? document.getElementById('achv').innerText.replace(/\n/g, ' ') : '' }));
+const jan = { bank: await ev(() => window.__bund.life.wallet.bank), toast: await shown(/84,000/), chip: await shown(zh ? /第二幕/ : /Act II/i) };
 ok(jan.bank === bank6 + 2 * 42000 - 2 * 12800 && /84,000/.test(jan.toast) && /25,600/.test(jan.toast), `two months' salary in, two months' rent out: "${jan.toast}"`);
-ok((zh ? /第二幕/ : /Act II/).test(jan.achv + jan.chip) && (zh ? /2027 年 1 月 11 日/ : /Mon 11 Jan 2027/).test(jan.chip), `Act II is announced (${jan.achv}); the date reads "${jan.chip}"`);
+ok((zh ? /第二幕/ : /Act II/i).test(jan.chip) && (zh ? /1 月 11 日/ : /11 Jan/i).test(jan.chip), `Act II is announced with its date: "${jan.chip}"`);
 await shot('january');
 await ev(() => window.__bund.world.year.interact('yDoor')); await p.waitForFunction(() => window.__bund.world.year.here === null, null, { timeout: 60000 }); await veilClear();
 // the journal: the date, the acts, the year's page
@@ -154,8 +163,8 @@ await p.waitForFunction(() => window.__bund.life.flags.year.career.track === 'st
 ok(true, 'Mingxuan offers the two desks on 32F; he says yes (never forced: tests/career.test.mjs plays the year without it)');
 
 // ---- 6. June: the founding day, upstairs ----
-await setClock(13, 9, 0);
-const june = await toast(); ok(/7 Jun 2027|6 月 7 日/.test(june), `June: "${june}"`);
+await mark(); await setClock(13, 9, 0);
+const june = await shown(/7 Jun 2027|6 月 7 日/i); ok(/7 Jun 2027|6 月 7 日/i.test(june), `June: "${june}"`);
 await ev(() => window.__bund.world.dest.arrive('lujiazui', { method: 'metro', up: true }));
 await p.waitForFunction(() => window.__bund.world.dest.here === 'lujiazui', null, { timeout: 120000 }); await veilClear();
 await p.waitForFunction(() => window.__bund.world.year.running === 's1' && window.__bund.world.sceneTalk.active, null, { timeout: 120000 }); await p.waitForTimeout(1500);
@@ -171,9 +180,10 @@ y = await Y(); ok(y.career.startup.customer === 'works' && y.career.startup.cont
 await ev(() => { const L = window.__bund.life; L.flags.calls = [{ from: 'dad', script: 'dad-arrival' }, { from: 'dad', script: 'dad-plans' }]; L.relations.dad = { affinity: 62, mood: 'ok', last: 0 }; L.clock.day = 16; window.__bund.setHour(19, 30); });
 await p.waitForFunction(() => window.__bund.life.invites.some((i) => i.id === 'dad-dinner'), null, { timeout: 60000 });
 await ev(() => { const i = window.__bund.life.invites.find((x) => x.id === 'dad-dinner'); i.status = 'accepted'; });
-await setClock(17, 19, 50);
-const nov = await ev(() => ({ chip: document.getElementById('year-chip').textContent, q: Object.fromEntries(Object.entries(window.__bund.life.quests.list).map(([k, v]) => [k, v.status])) }));
-ok((zh ? /11 月 13 日 周六 · 第五幕/ : /Sat 13 Nov 2027 · Act V/).test(nov.chip) && nov.q.dinner === 'active' && nov.q['act4-road'] === 'done', `the last day: "${nov.chip}"`);
+await mark(); await setClock(17, 19, 50);
+const nov = await ev(() => ({ q: Object.fromEntries(Object.entries(window.__bund.life.quests.list).map(([k, v]) => [k, v.status])) }));
+nov.chip = await shown(zh ? /第五幕/ : /Act V/i);
+ok((zh ? /第五幕/ : /Act V/i).test(nov.chip) && nov.q.dinner === 'active' && nov.q['act4-road'] === 'done', `the last day: "${nov.chip}"`);
 await ev(() => window.__bund.player.teleport(-42.4, -218.4, Math.PI - 0.4, -0.05)); await p.waitForTimeout(2500);
 await ev(() => { const b = window.__bund.player; b.yaw = Math.atan2(-(-40.58 - b.body.x), -(-220.0 - b.body.z)); b.pitch = -0.08; }); await p.waitForTimeout(1500);
 ok((zh ? /坐下/ : /Sit down with him/).test(await prompt()), 'Dad is at the table in the Jazz Bar');
@@ -210,7 +220,7 @@ await p.waitForFunction(() => window.__bund.life.threads.dad.messages.some((m) =
 await ev(() => { window.__bund.life.flags.goFamily = true; });
 await p.waitForFunction(() => window.__bund.life.flags.year.career.track === 'family', null, { timeout: 60000 });
 await setClock(13, 8, 30);
-await ev(() => window.__bund.world.dest.arrive('hongqiao', { method: 'wechat' }));   // (what a DiDi to Hongqiao Station does)
+await ev(() => window.__bund.world.dest.arrive('hongqiao', { method: 'wechat' }));   // (what a Kuaima to Hongqiao Station does)
 await p.waitForFunction(() => document.getElementById('year-card').classList.contains('on') && window.__bund.world.sceneTalk.active, null, { timeout: 120000 }); await p.waitForTimeout(2500);
 await shot('card-works');
 const cardText = await ev(() => document.querySelector('#year-card h1').textContent);

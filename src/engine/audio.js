@@ -30,6 +30,7 @@ export function createAudio() {
   const loops = [];                                          // every looping source ever started (for the duplicate check)
   // the crowd's murmur (tools/voice/walla.py: many people talking at once, recorded voices): fetched
   // and decoded as the page loads, so the loop is there the moment the graph is built
+  const synth = { wind: null, river: null, city: null, off: false };
   let murmurBuf = null, murmur = null, lastCrowd = -1, lastStreet = -1, boat = null, lastBoat = -1;
   if (typeof window !== 'undefined' && window.OfflineAudioContext && typeof fetch === 'function') {
     fetch('./ambience/murmur.mp3').then((r) => (r.ok ? r.arrayBuffer() : null))
@@ -126,19 +127,21 @@ export function createAudio() {
     // how open you are to the river and the wind (setExposure, engine/soundscape.js): full on the promenade,
     // much less down the street canyons
     windExp = gainNode(1); windExp.connect(env); riverExp = gainNode(1); riverExp.connect(env);
-    const windPan = ctx.createStereoPanner(); windPan.connect(windExp);
+    // the synthesised layers, faded out when the recorded beds take over (useBeds; engine/beds.js)
+    synth.wind = gainNode(1); synth.wind.connect(windExp); synth.river = gainNode(1); synth.river.connect(riverExp); synth.city = gainNode(1); synth.city.connect(env);
+    const windPan = ctx.createStereoPanner(); windPan.connect(synth.wind);
     const wf = filt('lowpass', 320, 0.4), wg = gainNode(0.26);
     loop(buf, wf, wg, windPan);
     lfo(0.07, 140, wf.frequency); const gust = lfo(0.031, 0.08, wg.gain); lfo(0.017, 0.35, windPan.pan);
     const wf2 = filt('bandpass', 700, 0.6), wg2 = gainNode(0.035);
-    loop(buf, wf2, wg2, windExp); lfo(0.043, 250, wf2.frequency);
+    loop(buf, wf2, wg2, synth.wind); lfo(0.043, 250, wf2.frequency);
     // leaves in the wind: a dry high rustle, only near the trees and only as strong as the wind
     const lf = filt('bandpass', 3400, 0.5), lg = gainNode(0), lp2 = filt('lowpass', 7000, 0.5);
     loop(white, lf, lp2, lg, env); lfo(0.19, 900, lf.frequency); lfo(0.13, 0.4, lf.Q);
     wind = { wg, leaves: lg, gust };
 
     // the Huangpu against the river wall: placed out over the water, level with the listener
-    const rp = panner(6, 1.0); rp.connect(riverExp);
+    const rp = panner(6, 1.0); rp.connect(synth.river);
     const lap = filt('bandpass', 900, 1.2), lapG = gainNode(0.32);
     loop(buf, lap, lapG, rp); lfo(0.31, 350, lap.frequency); lfo(0.11, 0.08, lapG.gain);
     const body = filt('lowpass', 180, 0.5), bodyG = gainNode(0.22);
@@ -146,7 +149,7 @@ export function createAudio() {
     river = { p: rp, g: lapG, body: bodyG };
 
     // the city, far off, behind the Bund buildings (west); a low wash, not a hum
-    const cp = panner(40, 1.0); cp.connect(env);
+    const cp = panner(40, 1.0); cp.connect(synth.city);
     const cf = filt('lowpass', 240, 0.6), cg = gainNode(0.9);
     loop(buf, cf, cg, cp); lfo(0.023, 0.2, cg.gain);
     city = { p: cp, g: cg };
@@ -201,11 +204,15 @@ export function createAudio() {
     }
   }
 
+  // whoever wants to know a ship sounded (world/pulse.js turns heads toward the river): fn(x, z)
+  const hornHeard = new Set();
+  const heard = (x, z) => { for (const fn of hornHeard) try { fn(x, z); } catch (e) { /* */ } };
   function horn() {
     // a far ship on the Huangpu: three detuned notes, out over the water
     stats.horns++;
     const t = ctx.currentTime, g = gainNode(0), f = filt('lowpass', 420), p = panner(60, 1);
-    place(p, 220, 2, (Math.random() - 0.5) * 600, 0.001);
+    const hz = (Math.random() - 0.5) * 600;
+    place(p, 220, 2, hz, 0.001); heard(220, hz);
     const peak = 0.5 + Math.random() * 0.3, len = 3.5 + Math.random() * 2.5, base = 0.92 + Math.random() * 0.16;
     g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + 0.5); g.gain.setValueAtTime(peak, t + len - 1); g.gain.exponentialRampToValueAtTime(0.0005, t + len + 2.5);
     for (const hz of [98, 123.5, 147]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz * base; o.connect(f); o.start(t); o.stop(t + len + 2.6); }
@@ -273,9 +280,28 @@ export function createAudio() {
       burst(t + 0.07, { type: 'bandpass', f: 1800, q: 1.2, gain: 0.24 * level, attack: 0.001, decay: 0.045 });
     } else if (name === 'shiphorn') {
       // a ship's horn: a long low chord, swelling and dying, as a boat pulls away
+      heard(null, null);
       const g = gainNode(0), lp = filt('lowpass', 520, 0.7); lp.connect(g).connect(env || sfx);
       for (const f of [98, 147, 196]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = Math.random() * 6 - 3; o.connect(lp); o.start(t); o.stop(t + 2.6); }
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.09 * level, t + 0.25); g.gain.setValueAtTime(0.09 * level, t + 1.9); g.gain.linearRampToValueAtTime(0, t + 2.5);
+    } else if (name === 'tramBell') {
+      // the sightseeing train's bell: two strokes on a small brass bell (inharmonic partials, a long ring)
+      for (const t0 of [t, t + 0.36]) for (const [k, g, d] of [[1, 0.09, 1.3], [2.76, 0.045, 0.7], [5.4, 0.025, 0.35], [8.9, 0.012, 0.18]]) {
+        const o = ctx.createOscillator(), e = gainNode(0); o.type = 'sine'; o.frequency.value = 1180 * k;
+        e.gain.setValueAtTime(0, t0); e.gain.linearRampToValueAtTime(g * level, t0 + 0.004); e.gain.exponentialRampToValueAtTime(0.0006, t0 + d);
+        o.connect(e).connect(sfx); o.start(t0); o.stop(t0 + d + 0.05);
+      }
+    } else if (name === 'liftBell') {
+      // a lift arriving: one soft stroke on the hall lantern's gong (a low bell, its partials dying slowly)
+      for (const [k, g, d] of [[1, 0.075, 1.8], [2.01, 0.026, 1.0], [2.93, 0.016, 0.6], [4.16, 0.007, 0.3]]) {
+        const o = ctx.createOscillator(), e = gainNode(0); o.type = 'sine'; o.frequency.value = 698 * k;
+        e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g * level, t + 0.006); e.gain.exponentialRampToValueAtTime(0.0005, t + d);
+        o.connect(e).connect(sfx); o.start(t); o.stop(t + d + 0.05);
+      }
+    } else if (name === 'click') {
+      // a button pressed: a short dry click
+      burst(t, { type: 'bandpass', f: 3000, q: 1.4, gain: 0.2 * level, attack: 0.001, decay: 0.016 });
+      burst(t + 0.05, { type: 'bandpass', f: 2200, q: 1.2, gain: 0.1 * level, attack: 0.001, decay: 0.012 });
     } else if (name === 'chime') {
       // an achievement: three rising bell notes
       [1047, 1319, 1568].forEach((f, i) => ping(t + i * 0.11, f, 0.06 * level, 0.5));
@@ -363,21 +389,47 @@ export function createAudio() {
   // Breathing after a run: an exhale (warm, mouth) then an inhale (thinner), at the rate the head
   // motion uses, louder and quicker the more spent you are. Silent at rest.
   let breathPhase = 0, breathLevel = 0, lastWind = -1;
-  function breathe(dt) {
-    if (!ctx || muted || paused || breathLevel < 0.12 || dt <= 0) return;
-    const rate = 0.24 + 0.75 * breathLevel, before = breathPhase;
-    breathPhase += rate * dt;
-    if (Math.floor(breathPhase) !== Math.floor(before)) {
-      const t = ctx.currentTime + 0.01, g = 0.05 * breathLevel * breathLevel, len = 0.5 / rate;
-      burst(t, { buffer: buf, f: rnd(900, 1200), q: 0.7, gain: g * 2.2, attack: 0.06, decay: len * 0.55, rate: rnd(1.6, 2.1) });
-      burst(t + len * 0.95, { f: rnd(1700, 2300), q: 0.9, gain: g * 0.8, attack: 0.12, decay: len * 0.45, rate: rnd(0.9, 1.1) });
-      stats.breaths = (stats.breaths || 0) + 1;
+  // catching his breath: two recorded loops (tools/voice/breath.py), heavy (just run out) and easing
+  // (recovering), crossfaded by how hard he's breathing. Their loudness envelopes say where in a breath
+  // he is now, so the camera rises and falls on the breaths you hear (breathEnvelope, headMotion.js).
+  const BR = { heavy: null, ease: null, loading: false };
+  const sm = (a, b, x) => { const k = Math.max(0, Math.min(1, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+  function loadBreath() {
+    BR.loading = true;
+    for (const k of ['heavy', 'ease']) {
+      Promise.all([fetch(`./ambience/breath/${k}.mp3`).then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b)), fetch(`./ambience/breath/${k}.json`).then((r) => r.json())])
+        .then(([buf, env]) => { const sn = ctx.createBufferSource(); sn.buffer = buf; sn.loop = true; const g = gainNode(0); sn.connect(g).connect(sfx); const t0 = ctx.currentTime + 0.05; sn.start(t0); BR[k] = { g, env, t0, dur: buf.duration, w: 0 }; })
+        .catch(() => { /* no clips: silence */ });
     }
   }
+  function breathe() {
+    if (!ctx) return;
+    if (breathLevel > 0.1 && !BR.loading) loadBreath();
+    const heavy = sm(0.5, 0.85, breathLevel), ease = sm(0.12, 0.42, breathLevel) * (1 - heavy), on = !muted && !paused;
+    for (const [k, w, top] of [['heavy', heavy, 0.5], ['ease', ease, 0.34]]) {
+      const b = BR[k]; if (!b) continue;
+      b.w = w; b.g.gain.setTargetAtTime(on ? top * w : 0, ctx.currentTime, 0.3);
+      if (w > 0.02) stats.breaths = (stats.breaths || 0) + 1;
+    }
+  }
+  // 0..1: how far into a breath he is right now (from the recording playing), or null when he isn't
+  // breathing hard enough to hear
+  function breathEnvelope() {
+    if (!ctx) return null;
+    let e = 0, w = 0;
+    for (const k of ['heavy', 'ease']) {
+      const b = BR[k]; if (!b || b.w < 0.02) continue;
+      const pos = (((ctx.currentTime - b.t0) % b.dur) + b.dur) % b.dur, i = Math.min(b.env.env.length - 1, Math.floor(pos * b.env.fps));
+      e += b.env.env[i] * b.w; w += b.w;
+    }
+    return w > 0.05 ? e / w : null;
+  }
+
 
   const muteListeners = new Set();
   return {
     start, step, cue,
+    onHorn(fn) { hornHeard.add(fn); return () => hornHeard.delete(fn); },
     // per frame: listener position, the crossing's vehicles, how much an NPC is speaking (0..1)
     update(dt, x, { z = 0, vehicles = null, speech = 0 } = {}) {
       if (!ctx) return;
@@ -390,10 +442,11 @@ export function createAudio() {
       if (d !== lastDuck) { lastDuck = d; duck.gain.setTargetAtTime(duckGain(d), t, 0.3); }   // ~1 s to settle: no abrupt drop
       // far ships on the river: rare (ships may sound their horns here only in an emergency; engine/soundscape.js)
       if (hornTimer < 0) { hornTimer = 420 + Math.random() * 600; if (!muted && !paused && (!riverExp || riverExp.gain.value > 0.1)) horn(); }
-      breathe(dt);
+      breathe();
     },
     // how hard the player is breathing, 0..1 (stamina.js)
     setBreath(level) { breathLevel = Math.max(0, Math.min(1, level)); },
+    breathEnvelope,
     // wind 0..~1.3 (wind.js); nearTree 0..1: how close the nearest tree is
     setWind(level, nearTree = 0) {
       if (!ctx || !wind) return;
@@ -442,7 +495,7 @@ export function createAudio() {
       if (v === lastCrowd) return;
       lastCrowd = v;
       const t = ctx.currentTime;
-      murmur.g.gain.setTargetAtTime(0.5 * Math.pow(v, 1.3), t, 0.9);
+      murmur.g.gain.setTargetAtTime(synth.off ? 0 : 0.5 * Math.pow(v, 1.3), t, 0.9);
       murmur.lp.frequency.setTargetAtTime(2200 + 4500 * Math.min(1, v), t, 0.9);   // a few people far off: duller
     },
     get crowdLevel() { return murmur ? murmur.g.gain.value : 0; },
@@ -452,7 +505,7 @@ export function createAudio() {
       const v = Math.round(Math.max(0, Math.min(1, level)) * 20) / 20;
       if (v === lastStreet) return;
       lastStreet = v;
-      murmur.street.gain.setTargetAtTime(0.55 * v, ctx.currentTime, 1.2);
+      murmur.street.gain.setTargetAtTime(synth.off ? 0 : 0.55 * v, ctx.currentTime, 1.2);
     },
     setPaused(p) {
       paused = !!p;
@@ -478,7 +531,17 @@ export function createAudio() {
     getEnvBus() { return env; },                 // the street's sounds: ducked under speech, muffled indoors (engine/ambience.js)
     getSfxBus() { return sfx; },                 // footsteps and cues (the reverb listens to these)
     getOutBus() { return pauseBus; },            // straight to the output (the reverb's return)
-    get murmurBuffer() { return murmurBuf; },    // the crowd's murmur, for the voices placed nearby
+    get murmurBuffer() { return murmurBuf; },
+    // the recorded beds are playing (engine/ambience.js): the synthesised wind, river and city wash and the
+    // murmur loop fade out (and come back if the beds stop). The leaves, rain, steps and cues stay.
+    useBeds(on) {
+      synth.off = !!on;
+      if (!ctx || !synth.wind) return;
+      const t = ctx.currentTime, v = on ? 0 : 1;
+      for (const g of [synth.wind, synth.river, synth.city]) g.gain.setTargetAtTime(v, t, 1.5);
+      if (murmur) { murmur.g.gain.setTargetAtTime(on ? 0 : murmur.g.gain.value, t, 1.5); if (murmur.street) murmur.street.gain.setTargetAtTime(on ? 0 : murmur.street.gain.value, t, 1.5); }
+      lastCrowd = -1; lastStreet = -1;
+    },    // the crowd's murmur, for the voices placed nearby
     // how open the listener is to the river (0..1) and to the wind (0..1)
     setExposure(rv, wd) {
       if (!ctx || !riverExp) return;
@@ -495,10 +558,12 @@ export function createAudio() {
       if (!ctx || !wind) return out;
       const att = (d, ref, ro) => ref / (ref + ro * (Math.max(d, ref) - ref));
       const wx = windExp ? windExp.gain.value : 1, rx = riverExp ? riverExp.gain.value : 1;
-      out.push({ id: 'wind', kind: 'wind', level: wind.wg.gain.value * 0.6 * wx });
+      // the synthesised wind, river and city wash, as far as they are still up (useBeds fades them out)
+      const sw = synth.wind ? synth.wind.gain.value : 1, sr = synth.river ? synth.river.gain.value : 1, sc = synth.city ? synth.city.gain.value : 1;
+      out.push({ id: 'wind', kind: 'wind', level: wind.wg.gain.value * 0.6 * wx * sw });
       if (wind.leaves.gain.value > 0.001) out.push({ id: 'leaves', kind: 'wind', level: wind.leaves.gain.value });
-      out.push({ id: 'river', kind: 'water', level: 0.4 * rx * att(Math.abs(32 - lx), 6, 1) });
-      out.push({ id: 'city', kind: 'traffic', level: 0.9 * 0.05 * att(Math.hypot(-150 - lx, 0.3 * lz), 40, 1) });
+      out.push({ id: 'river', kind: 'water', level: 0.4 * rx * sr * att(Math.abs(32 - lx), 6, 1) });
+      out.push({ id: 'city', kind: 'traffic', level: 0.9 * 0.05 * sc * att(Math.hypot(-150 - lx, 0.3 * lz), 40, 1) });
       if (murmur) { out.push({ id: 'murmur', kind: 'chatter', level: murmur.g.gain.value }); if (murmur.street) out.push({ id: 'nanjing-din', kind: 'chatter', level: murmur.street.gain.value }); }
       if (rain) out.push({ id: 'rain', kind: 'rain', level: rain.g.gain.value });
       if (boat) out.push({ id: 'boat', kind: 'boat', level: boat.bg.gain.value * 0.3 });

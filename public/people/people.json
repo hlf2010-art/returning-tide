@@ -42,17 +42,21 @@
    "avatar": "JiBai (Hunyuan3D from his character sheet; Rocketbox Biped rig)",
    "sex": "m",
    "file": "player.glb",
+   "head": "jibai/head.glb",
+   "keepHair": true,
+   "skinTone": [120, 80, 64], "armOut": 7, "cleanSpecks": true,
    "bytes": 4440904
   },
   "gunian": {
    "avatar": "GuNian (Hunyuan3D from her character sheet; Rocketbox Biped rig)",
    "sex": "f",
    "named": true,
-   "file": "gunian.glb",
-   "bytes": 4883096
+   "file": "gunian.glb", "armOut": 6, "cleanSpecks": true,
+   "bytes": 4964280
   },
   "p5": {
    "avatar": "Business_Female_02",
+   "hairTint": [1.12, 0.96, 0.68],
    "sex": "f",
    "file": "p5.glb",
    "bytes": 3013068

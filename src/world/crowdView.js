@@ -8,18 +8,22 @@
 // Far figures are lit by where they stand: the gold wash off the Bund's façades, the promenade
 // lamps, the blue of the night sky.
 import * as THREE from 'three';
+import { PEOPLE_LAYER } from './peopleReflect.js';
 import { createPerson } from './people.js';
 import { holdPhone } from './pedestriansReal.js';
 import { twoBone } from './driverPose.js';
 import { L, deckLamps, DECK_LAMP_X } from './layout.js';
 import { flinchPose } from '../engine/flinch.js';
 import { nearRank, viewCos } from '../engine/crowd.js';
+import { bakeBones } from './crowdBake.js';
+import { createCrowdMid } from './crowdMid.js';
+import { canopyGeometry } from './umbrella.js';
 
 // a reaction to being bumped (engine/social.js kinds, set by main.js on a crowd person) -> clip
 const GESTURE = { sorry: 'wave', fine: 'shrug', scold: 'angry', tut: 'look', look: 'look' };
 
-const COLS = 10, ROWS = 8, CW = 48, CH = 96, GRID = 4;     // per avatar: 8 walk steps + standing + phone, 8 sides
-const FRAME_W = 1.1, FRAME_H = 2.2;                        // the card in metres (people are ~1.6-1.9 m)
+export const COLS = 10, ROWS = 8, CW = 48, CH = 96, GRID = 4;     // per avatar: 8 walk steps + standing + phone, 8 sides
+export const FRAME_W = 1.1, FRAME_H = 2.2;                        // the card in metres (people are ~1.6-1.9 m)
 
 // ---- the impostor atlas: rendered once at load ----
 export function bakeImpostors(renderer, people, roles) {
@@ -124,8 +128,23 @@ function impostorMaterial(atlas, size) {
   });
 }
 
+// November coats (docs/living-city-architecture.md D5): a colour per person multiplied into the body
+// material, so the same avatar in a camel coat and in black reads as two people, and summer clothes
+// darken toward a 12-degree evening. Kept on the person through every tier: the full person, the
+// middle tier and (paler) the far card. Light colours are mixed toward white so they tint, not paint.
+const COATS = ['#2a2a2e', '#1f2740', '#45464c', '#a98a62', '#8b8468', '#6a2a33', '#d9d2c4', '#3c4a3e', '#5b4636', '#ffffff', '#ffffff', '#ffffff']
+  .map((c) => new THREE.Color(c));
+const _coat = new THREE.Color();
+export function coatOf(id, out = _coat) {
+  const k = Math.sin(id * 91.17 + 7.3) * 43758.5453, h = k - Math.floor(k);
+  const c = COATS[Math.floor(h * COATS.length)];
+  return out.copy(c).lerp(WHITE, 0.25);
+}
+const WHITE = new THREE.Color(1, 1, 1);
+
 // the hour's part in it (setCrowdLight, from engine/timeOfDay.js)
 const LT = { day: 0, floods: 1, lamps: 1, shops: 1, night: 0 };
+export const crowdDaylight = () => LT.day;
 export function setCrowdLight(s) { LT.day = s.daylight; LT.floods = s.floods; LT.lamps = s.lamps; LT.shops = s.shops; LT.night = s.night; }
 // the light a figure stands in (rgb multiplier on the neutrally lit atlas): at night the sky, the
 // floodlit façades, the lamps; by day the hazy daylight
@@ -155,9 +174,30 @@ function flagMesh(color) {
   return g;
 }
 
-export function createCrowdView({ scene, renderer, people, crowd, roles, nearCount = 16, camera }) {
+export function createCrowdView({ scene, renderer, people, crowd, roles, nearCount = 16, midCount = 0, camera, lod = true }) {
   const group = new THREE.Group(); group.name = 'crowd'; scene.add(group);
   const atlas = bakeImpostors(renderer, people, roles);
+  // the middle tier: GPU-skinned instances from a baked bone texture (world/crowdBake.js, crowdMid.js)
+  let mid = null;
+  if (midCount > 0) {
+    try { mid = createCrowdMid({ group, people, bake: bakeBones(people, roles), roles, max: midCount }); } catch (err) { console.warn('crowd middle tier unavailable', err); mid = null; }
+  }
+  // Phase 2b: each avatar's lighter one-mesh version, made in the background an avatar at a time
+  // (world/crowdLod.js); until it's ready the middle tier draws the full meshes
+  const lodStats = { done: 0, tris: 0, from: 0, ms: 0 };
+  if (mid && lod) {
+    import('./crowdLod.js').then(async ({ buildLod, lodReady }) => {
+      await lodReady;
+      for (const role of mid.roles()) {
+        await new Promise((r) => setTimeout(r, 30));
+        const t0 = performance.now();
+        try { const l = buildLod(people.avatars[role]); if (l && mid.upgrade(role, l)) { lodStats.done++; lodStats.tris += l.tris; lodStats.from += l.from; } } catch (err) { console.warn('crowd lod', role, err); }
+        lodStats.ms += performance.now() - t0;
+      }
+      console.info('crowd middle tier: lighter meshes', { avatars: lodStats.done, tris: Math.round(lodStats.tris), from: Math.round(lodStats.from), ms: Math.round(lodStats.ms) });
+    }).catch((err) => console.warn('crowd lod unavailable', err));
+  }
+  const MID_FAR = 30, MID_FADE = 0.35, midMax = midCount;
   // the far crowd: one instanced card per person
   const N = crowd.agents.length;
   const base = new THREE.PlaneGeometry(FRAME_W, FRAME_H); base.translate(0, FRAME_H / 2, 0);
@@ -167,10 +207,10 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   geo.setAttribute('iPos', iPos); geo.setAttribute('iCell', iCell); geo.setAttribute('iTint', iTint);
   geo.instanceCount = 0;
   const mat = impostorMaterial(atlas.texture, atlas.size); mat.uniforms.atlas.value = atlas.texture;
-  const far = new THREE.Mesh(geo, mat); far.frustumCulled = false; far.name = 'crowd-impostors';
+  const far = new THREE.Mesh(geo, mat); far.frustumCulled = false; far.name = 'crowd-impostors'; far.layers.enable(PEOPLE_LAYER);   // (in the paving's reflection: world/peopleReflect.js)
   group.add(far);
   // soft contact shadows under the far figures
-  const blobTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,0.55)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+  const blobTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,0.72)'); g.addColorStop(0.45, 'rgba(0,0,0,0.42)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
   const blobs = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.9, 0.9).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), N);
   blobs.frustumCulled = false; blobs.count = 0; blobs.name = 'crowd-blobs'; group.add(blobs);
   const _m = new THREE.Matrix4();
@@ -179,16 +219,17 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   const UMB_COLORS = ['#1b1b1f', '#1f2a44', '#6e1d29', '#d8d1c2', '#5a5f66', '#2f4a36', '#a8812e', '#1b1b1f', '#3b2f4f', '#b9c2c8'].map((c) => new THREE.Color(c));
   const hash = (i, k) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
   const uOpen = new Float32Array(N);
-  const canopyGeo = new THREE.ConeGeometry(0.5, 0.26, 12, 1, true); canopyGeo.translate(0, -0.13, 0);
+  const tint = new Float32Array(N * 3), tintAt = new Int32Array(N).fill(-1); let frameNo = 0;   // (each figure's light, kept: see update)
+  const canopyGeo = canopyGeometry({ r: 0.5, h: 0.22, perRib: 2, rings: 4 });           // (apex at the origin)
   const canopyMat = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0, side: THREE.DoubleSide });
-  const canopies = new THREE.InstancedMesh(canopyGeo, canopyMat, N); canopies.frustumCulled = false; canopies.count = 0; canopies.name = 'crowd-umbrellas';
+  const canopies = new THREE.InstancedMesh(canopyGeo, canopyMat, N); canopies.frustumCulled = false; canopies.count = 0; canopies.name = 'crowd-umbrellas'; canopies.layers.enable(PEOPLE_LAYER);
   for (let i = 0; i < N; i++) canopies.setColorAt(i, UMB_COLORS[0]);
   group.add(canopies);
   const _um = new THREE.Matrix4(), _uq = new THREE.Quaternion(), _us = new THREE.Vector3(), _up = new THREE.Vector3(), _ue = new THREE.Euler();
   let rain = 0;
   function umbrellaFor(a, dt) {
-    const carries = !a.child && a.kind !== 'jogger' && hash(a.id, 1) < 0.62;
-    const th = 0.14 + hash(a.id, 2) * 0.4;
+    const carries = !a.child && a.kind !== 'jogger' && hash(a.id, 1) < 0.76;   // (Shanghai opens umbrellas at the first drops)
+    const th = 0.1 + hash(a.id, 2) * 0.3;
     const want = carries && (rain > th || (uOpen[a.id] > 0.5 && rain > th - 0.1)) ? 1 : 0;
     uOpen[a.id] += Math.sign(want - uOpen[a.id]) * Math.min(Math.abs(want - uOpen[a.id]), dt / 1.4);
     return uOpen[a.id];
@@ -205,18 +246,27 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     if (made >= cap) return null;
     made++;
     const person = createPerson(people, role);
-    person.root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    let bodyMat = null;
+    person.root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true;
+      if (!bodyMat && o.material && /_body$/i.test(o.material.name || '')) { o.material = bodyMat = o.material.clone(); }   // (its own, for the coat)
+    });
     const phone = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.15, 0.009), phoneMat); phone.visible = false;
     group.add(person.root, phone);
     const umb = new THREE.Group(); umb.visible = false;
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.72, 6), phoneMat); shaft.position.y = 0.36;
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.92, 6), phoneMat); shaft.position.y = 0.46;
     const cmat = new THREE.MeshStandardMaterial({ roughness: 0.45, side: THREE.DoubleSide });
-    const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.3, 14, 1, true), cmat); canopy.position.y = 0.7; canopy.castShadow = true;
+    const canopy = new THREE.Mesh(canopyGeometry({ r: 0.55, h: 0.24 }), cmat); canopy.position.y = 0.95; canopy.castShadow = true;   // (apex: clear of the head)
     umb.add(shaft, canopy); group.add(umb);
-    const b = { person, phone, agent: null, flag: null, umb, canopy };
+    // paper carrier bags (after a shop), in the hands
+    const bags = [0, 1, 2].map(() => { const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ roughness: 0.75 }); const bx = new THREE.Mesh(BAG_BOX, m); bx.position.y = -0.27; bx.castShadow = true; g.add(bx, new THREE.Mesh(BAG_CORD, phoneMat)); g.children[1].position.y = -0.1; g.visible = false; group.add(g); return g; });
+    const b = { person, phone, agent: null, flag: null, umb, canopy, bodyMat, bags };
     pool.push(b);
     return b;
   }
+  const BAG_BOX = new THREE.BoxGeometry(0.3, 0.34, 0.11), BAG_CORD = new THREE.TorusGeometry(0.055, 0.006, 4, 12, Math.PI);
+  const BAG_COLORS = [0xf3f1ec, 0x1a1a1c, 0xb98a55, 0xb3262e, 0xe7d9c4, 0x2b4a7a, 0xe86a2a].map((c) => new THREE.Color(c));
   const flags = crowd.tours.map((t, i) => { const f = flagMesh(t.flag || FLAG_COLORS[i % 4]); group.add(f); return f; });
   const _e = new THREE.Vector3(), _t = new THREE.Vector3(), _p = new THREE.Vector3(), _h = new THREE.Vector3();
   function raise(b, tx, tz, up = 0) {
@@ -227,22 +277,30 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     twoBone(bones[0], bones[1], bones[2], _t, _p);
   }
   let nearSet = new Set(), rankT = 0, rankFx = 0, rankFz = 0;
-  const _fwd = new THREE.Vector3();
-  const S = { near: 0, far: 0 };
+  const S = { near: 0, mid: 0, far: 0 };
+  // middle tier state per agent: in it (fading in), leaving it (fading out); its own stride phase
+  let midSet = new Set();
+  const midFade = new Float32Array(N), midPhase = new Float32Array(N), midYaw = new Float32Array(N).fill(NaN);
+  const fading = new Set();
+  const _fw = new THREE.Vector3();
   const view = {
     group, atlas, stats: S,
     setNearCount(n) { nearCount = n; },
+    // (the renderer's step-down thins the middle tier first: engine/renderer.js, main.js)
+    setMidCount(n) { midCount = Math.max(0, Math.min(n, midMax)); },
+    get midCount() { return midCount; }, get midMax() { return midMax; },
     // who's near enough to be a full person (and to talk to, bump into)
     nearAgents() { return [...live.keys()].map((id) => crowd.agents[id]).filter(Boolean); },
     bodyOf(a) { return live.get(a.id) || null; },
     update(dt, eye, opts = {}) {
+      const t0 = performance.now() / 260;
       rain = opts.rain || 0;
       // every quarter second, or at once when you turn: the nearest few become full people, those in
       // view first (engine/crowd.js nearRank), with some hysteresis
       let fx = 0, fz = 0, cosHalf = -1;
       if (camera) {
-        camera.getWorldDirection(_fwd); const h = Math.hypot(_fwd.x, _fwd.z);
-        if (h > 0.2) { fx = _fwd.x / h; fz = _fwd.z / h; cosHalf = viewCos(camera.fov, camera.aspect); }
+        camera.getWorldDirection(_fw); const h = Math.hypot(_fw.x, _fw.z);
+        if (h > 0.2) { fx = _fw.x / h; fz = _fw.z / h; cosHalf = viewCos(camera.fov, camera.aspect); }
       }
       rankT -= dt;
       if ((fx || fz) && (rankFx || rankFz) && fx * rankFx + fz * rankFz < 0.9) rankT = 0;   // turned more than ~25 degrees since the last ranking
@@ -251,22 +309,43 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         const cand = [];
         for (const a of crowd.agents) if (!a.gone && !a.out && !a.inside) {
           const dy = (a.y - eye.y) * 2, d = Math.hypot(a.x - eye.x, a.z - eye.z, dy);
-          if (d < 44) cand.push([nearRank(a.x - eye.x, a.z - eye.z, fx, fz, cosHalf, d) - (nearSet.has(a.id) ? 4 : 0), a]);
+          if (d < 44) cand.push([nearRank(a.x - eye.x, a.z - eye.z, fx, fz, cosHalf, d) - (nearSet.has(a.id) ? 4 : 0), a, d]);   // (d: the middle tier's distance)
         }
         cand.sort((p, q) => p[0] - q[0]);
         nearSet = new Set(cand.slice(0, nearCount).map(([, a]) => a.id));
+        if (mid) {
+          // the next ones within 30 m and in front of you (or close enough to turn round on) are the middle tier
+          if (camera) camera.getWorldDirection(_fw); else _fw.set(0, 0, -1);
+          const fl = Math.hypot(_fw.x, _fw.z) || 1, fx = _fw.x / fl, fz = _fw.z / fl;
+          const next = new Set();
+          for (const [, a, d] of cand) {
+            if (next.size >= midCount) break;
+            if (nearSet.has(a.id) || !mid.has(a.role)) continue;
+            if (d > MID_FAR + (midSet.has(a.id) ? 1.5 : 0)) continue;
+            if (d > 8 && ((a.x - eye.x) * fx + (a.z - eye.z) * fz) / d < -0.25) continue;
+            next.add(a.id);
+          }
+          for (const id of midSet) if (!next.has(id)) { if (nearSet.has(id)) midFade[id] = 0; else fading.add(id); }
+          for (const id of next) { fading.delete(id); if (!midSet.has(id) && midFade[id] === 0) midYaw[id] = NaN; }
+          midSet = next;
+        }
         for (const [id, b] of live) if (!nearSet.has(id)) { b.agent = null; b.person.root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); }
         for (const id of nearSet) if (!live.has(id)) {
           const a = crowd.agents[id], b = body(a.role);
           if (!b) { nearSet.delete(id); continue; }
-          b.agent = a; live.set(id, b); b.person.root.visible = true; b.person.root.rotation.y = a.heading;
+          b.agent = a; live.set(id, b); b.person.root.visible = true; b.person.root.rotation.y = Number.isNaN(midYaw[id]) ? a.heading : midYaw[id];
           b.person.root.scale.setScalar(0.01 * (a.scale || 1));                     // the same height as their card
+          if (b.bodyMat) coatOf(a.id, b.bodyMat.color);
+          if (midFade[id] > 0 && a.v > 0.2 && b.person.actions.base.walk) {         // (in step with how they were walking a moment ago)
+            b.person.play('walk', 0); b.person.actions.base.walk.time = midPhase[id] * b.person.actions.base.walk.getClip().duration;
+          }
+          midFade[id] = 0; fading.delete(id);
         }
       }
       // full people
       for (const [id, b] of live) {
         const a = crowd.agents[id], root = b.person.root;
-        if (a.gone || a.out || a.inside) { b.agent = null; root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); nearSet.delete(id); continue; }
+        if (a.gone || a.out || a.inside) { b.agent = null; root.visible = false; b.phone.visible = false; b.umb.visible = false; for (const g of b.bags) g.visible = false; live.delete(id); nearSet.delete(id); continue; }
         root.position.set(a.x, a.y, a.z);
         let dh = a.heading - root.rotation.y; while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2;
         root.rotation.y += dh * Math.min(1, dt * 6);
@@ -282,7 +361,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         // a bump: the shoulder swings back, a lean away, a glance at whoever it was (engine/flinch.js)
         const fp = a.flinch ? flinchPose(a.flinch) : null;
         b.person.setFlinch(fp);
-        b.person.update(dt, fp && fp.look ? fp.look : a.faceTo || (Math.hypot(eye.x - a.x, eye.z - a.z) < 3.5 ? [eye.x, eye.z] : null));
+        b.person.update(dt, fp && fp.look ? fp.look : (a.glance && a.glance.until > a.glance.now && a.glance.now > a.glance.from ? a.glance.at : null) || a.faceTo || (Math.hypot(eye.x - a.x, eye.z - a.z) < 3.5 ? [eye.x, eye.z] : null));
         b.umb.visible = u > 0.02;
         if (b.umb.visible) {
           b.canopy.material.color.copy(UMB_COLORS[Math.floor(hash(a.id, 3) * UMB_COLORS.length)]);
@@ -295,6 +374,15 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         if (act === 'selfie') raise(b, a.x - 50, a.z, 0.18);
         b.phone.visible = photo || phoneWalk;
         if (b.phone.visible) { holdPhone(b.phone, b.person, root.rotation.y); if (act === 'photo') b.phone.rotateZ(Math.PI / 2); }
+        // bags: shared between the hands, or all in the left while the right holds a phone or an umbrella
+        const nb = a.bags || 0, busyR = b.phone.visible || b.umb.visible || photo, sn = Math.sin(root.rotation.y), cs = Math.cos(root.rotation.y);
+        b.bags.forEach((g, i) => {
+          g.visible = i < nb; if (!g.visible) return;
+          const right = !busyR && i % 2 === 0, bone = right ? b.person.bones.R : b.person.bones.L; if (!bone) { g.visible = false; return; }
+          bone.getWorldPosition(_h); const off = (right ? -1 : 1) * 0.08 * (right ? i >> 1 : busyR ? i : i >> 1);
+          g.position.set(_h.x + cs * off, _h.y, _h.z - sn * off); g.rotation.set(moving ? Math.sin(t0 + i) * 0.08 : 0, root.rotation.y + (right ? -0.15 : 0.2), 0);
+          g.children[0].material.color.copy(BAG_COLORS[Math.floor(hash(a.id, 7 + i) * BAG_COLORS.length)]);
+        });
       }
       // the guides' flags: in the hand when near, held up above the card when far
       crowd.tours.forEach((t, i) => {
@@ -304,22 +392,73 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         else f.position.set(g.x + Math.cos(g.heading) * 0.25, g.y + 1.25, g.z - Math.sin(g.heading) * 0.25);
         f.rotation.y = g.heading + Math.PI / 2 + Math.sin(performance.now() / 600 + i) * 0.25;
       });
+      // the middle tier
+      if (mid) {
+        mid.begin();
+        const now = performance.now() / 1000;
+        const drawMid = (id, inTier) => {
+          const a = crowd.agents[id];
+          if (!a || a.gone || a.out || a.inside || live.has(id)) { midFade[id] = 0; return false; }
+          midFade[id] = Math.max(0, Math.min(1, midFade[id] + (inTier ? dt : -dt) / MID_FADE));
+          if (midFade[id] <= 0) return false;
+          const bk = mid.clipsOf(a.role);
+          let yaw = midYaw[id]; if (Number.isNaN(yaw)) yaw = a.heading;
+          let dh = a.heading - yaw; while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2;
+          midYaw[id] = yaw = yaw + dh * Math.min(1, dt * 6);
+          const moving = a.v > 0.2, act = a.state === 'act' ? a.act : null;
+          let clip, t;
+          if (moving) {
+            clip = a.kind === 'jogger' && a.v > 1.6 ? 'jog' : 'walk';
+            const c = bk.clips[clip], sp = (bk.speeds && bk.speeds[clip]) || 1.1;
+            midPhase[id] = (midPhase[id] + a.v * dt / (sp * c.dur)) % 1; t = midPhase[id];
+          } else {
+            clip = act === 'photo' || act === 'selfie' || a.phone ? 'phone' : act === 'look' || a.kind === 'guide' ? 'look' : act === 'talk' ? 'talk1' : 'idle';
+            const c = bk.clips[clip] || bk.clips.idle; t = now / c.dur + hash(id, 5);
+          }
+          return mid.push(a.role, a.x, a.y, a.z, yaw, a.scale || 1, clip, t, midFade[id], coatOf(id));
+        };
+        for (const id of midSet) drawMid(id, true);
+        for (const id of fading) if (!drawMid(id, false)) fading.delete(id);
+        mid.end();
+        S.mid = mid.stats.drawn;
+      }
       // the far crowd
+      frameNo++;
       let n = 0, nu = 0;
       for (const a of crowd.agents) {
-        if (a.gone || a.out || a.inside || live.has(a.id)) continue;
+        if (a.gone || a.out || a.inside) continue;
+        // the full people near you: a contact shadow under them too (the sun's shadow map only reaches them
+        // where the sun does; in Nanjing Road's shade, at night and indoors, this is what grounds them)
+        if (live.has(a.id)) { _m.makeTranslation(a.x, a.y + 0.02, a.z); blobs.setMatrixAt(n, _m); iPos.setXYZW(n, a.x, -1000, a.z, a.heading); iCell.setXYZW(n, 0, 0, 8, 0); iTint.setXYZ(n, 0, 0, 0); n++; continue; }
+        const inMid = midFade[a.id] >= 1;
         const dx = a.x - eye.x, dz = a.z - eye.z;
         if (dx * dx + dz * dz > 330 * 330) continue;
         const c = atlas.cells[a.role] || [0, 0];
         const pose = a.v > 0.2 ? Math.floor(a.phase * 8) % 8 : a.state === 'act' && (a.act === 'photo' || a.act === 'selfie') ? 9 : 8;
+        if (inMid) {                                          // (drawn in the middle tier: only its umbrella and blob here)
+          _m.makeTranslation(a.x, a.y + 0.02, a.z); blobs.setMatrixAt(n, _m);
+          const u = umbrellaFor(a, dt);
+          if (u > 0.02) {
+            const h = (a.child ? 1.42 : 2.1) * (a.scale || 1);
+            _up.set(a.x + Math.sin(a.heading) * 0.08, a.y + h, a.z + Math.cos(a.heading) * 0.08);
+            _us.set(0.15 + 0.85 * u, 0.5 + 0.5 * u, 0.15 + 0.85 * u);
+            _um.compose(_up, _uq.setFromEuler(_ue.set(0.06, a.heading, 0, 'YXZ')), _us); canopies.setMatrixAt(nu, _um);
+            canopies.setColorAt(nu, UMB_COLORS[Math.floor(hash(a.id, 3) * UMB_COLORS.length)]); nu++;
+          }
+          iPos.setXYZW(n, a.x, -1000, a.z, a.heading); iCell.setXYZW(n, 0, 0, 8, 0); iTint.setXYZ(n, 0, 0, 0);
+          n++; continue;
+        }
         iPos.setXYZW(n, a.x, a.y, a.z, a.heading);
         iCell.setXYZW(n, c[0], c[1], pose, a.scale || 1);
-        const [r, g, bl] = lightAt(a.x, a.z, a.y); iTint.setXYZ(n, r, g, bl);
+        // the light they stand in changes slowly: worked out for an eighth of the crowd each frame
+        if (tintAt[a.id] < 0 || ((frameNo + a.id) & 7) === 0) { const t3 = lightAt(a.x, a.z, a.y); tint[a.id * 3] = t3[0]; tint[a.id * 3 + 1] = t3[1]; tint[a.id * 3 + 2] = t3[2]; tintAt[a.id] = frameNo; }
+        const cc = coatOf(a.id), ck = 0.45;                  // (the coat, paler: the card is the whole figure, face and all)
+        iTint.setXYZ(n, tint[a.id * 3] * (1 - ck + ck * cc.r), tint[a.id * 3 + 1] * (1 - ck + ck * cc.g), tint[a.id * 3 + 2] * (1 - ck + ck * cc.b));
         _m.makeTranslation(a.x, a.y + 0.02, a.z); blobs.setMatrixAt(n, _m);
         // an umbrella over the card: up in the raised hand, held a little forward
         const u = umbrellaFor(a, dt);
         if (u > 0.02) {
-          const h = (a.child ? 1.35 : 2.02) * (a.scale || 1);
+          const h = (a.child ? 1.42 : 2.1) * (a.scale || 1);
           _up.set(a.x + Math.sin(a.heading) * 0.08, a.y + h, a.z + Math.cos(a.heading) * 0.08);
           _us.set(0.15 + 0.85 * u, 0.5 + 0.5 * u, 0.15 + 0.85 * u);
           _um.compose(_up, _uq.setFromEuler(_ue.set(0.06, a.heading, 0, 'YXZ')), _us); canopies.setMatrixAt(nu, _um);

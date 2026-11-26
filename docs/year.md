@@ -17,8 +17,8 @@ journal's act labels and the watch-repairer's side story.
 | `src/world/careerRoads.js` | Act IV: four roads of four working days each (consulting, a new employer, a start-up, the family works). |
 | `src/world/career.js` | The rules, pure: a day at work, a day skipped, `rollover` (absences, salary, rent, the start-up's month), the Act III decision, the flat, the watch-repairer afterwards, the messages, `careerEvent`. |
 | `src/world/careerStory.js` | The act quests, the dinner a year on, the endings' texts and afterwords, what free conversation is told, colleagues' persona cards. |
-| `src/world/yearWorld.js` | In the world: the firm's floor, the flat, days played over a card, the stall, the date chip, the new day's announcement, the routing of arrivals. |
-| `src/ui/year.css`, `src/ui/journal.js` | The date chip and card; the journal's five acts, date, side story and "The year" page. |
+| `src/world/yearWorld.js` | In the world: the firm's floor, the flat, days played over a card, the stall, the chapter title (act and date), the new day's announcement, the routing of arrivals. |
+| `src/ui/year.css`, `src/ui/journal.js` | The chapter title and the day card; the journal's five acts, date, side story and "The year" page. |
 | `src/world/story.js` | Acts renumbered; year-aware texts; `endingOf`, `afterword`; `storyContext` with the ledger of facts. |
 | `tests/career.test.mjs`, `tools/yearwalk.mjs` | The year in node (every road to every ending); the year in the browser. |
 
@@ -28,8 +28,8 @@ State: everything is under `life.flags.year` (`year.work = { through, days, stor
 
 ## The calendar in play
 
-- The clock still runs real hours inside a playable day. The HUD carries the date and the act
-  ("Tue 10 Nov · Act I · New Beginnings"); the phone's lock screen and calendar, the journal, the map
+- The clock still runs real hours inside a playable day. A chapter title gives the act and the date
+  when an act begins and when you come back to the game, and each new day's notice gives the date; the phone's lock screen and calendar, the journal, the map
   and the save slots show the date too. A six-day game still says "Day N".
 - Sleep (the bed in 612, or in the flat) from 18:30 in a year game. When the night crosses a gap the
   fade says so ("2 months later · Mon 11 Jan 2027"), and so does a wait from the journal.
@@ -132,6 +132,17 @@ seal intact, that answer gets the transfer stopped and the pitch frozen until th
 'held': shut, not sold); it proves nothing about the signature, which only the date does. With the seal broken, it
 is folded into telling her the date, and the stall is saved as before.
 
+**The last ferry** (`world/lastFerry.js`, played by `world/cruise.js`). Across Zhou's notice someone has written "Stop
+looking. If you want to know, take the last ferry", and an old Jinling Road ferry token is taped to its corner. Once the
+notice has been read (`flags.clueRead`), the 23:00 ferry from the Jinling Road East pier carries him to Old Fang, the
+deckhand Zhou rode home with for thirty years, who is waiting on the deck at Dongchang Road. Saying nothing ends it for
+the night (it can be tried again); answering gets the story (Zhou left his toolbox with Fang on the 29th and went to his
+sister's in Kunshan) and the toolbox itself (`flags.zhouBox`, two keepsakes): a repair-ticket book whose last page says he
+would not sign the stall over, and the watch Ji Bai broke at twelve, mended and never collected. The journal shows it as
+an optional step of the side story until he meets the daughter or June comes. With the box, his first answer to her is
+the book (`watch.told` 'book'), and it saves the stall whatever the seal: the nephew confesses to the forgery and to the
+line on the notice (`watch.book`).
+
 ## Free conversation
 
 `storyContext` now gives every friend, colleague and client `lifeContext(L)` and
@@ -161,4 +172,4 @@ they say changes anything. No model output is read back into the game.
 - Colleagues have no recorded voices (subtitles only) and stand rather than sit.
 - The consulting road's Act IV is on the same floor with the same cast.
 - Only the first eligible answer to Mingxuan or Dad starts a road; there is no road change after June.
-- `tests/career.test.mjs` is not in `npm test` (package.json was not to be edited): run it by name.
+- The first evening (day 1) is kept to one path; `tests/career.test.mjs` checks what reaches the phone before 19:30.

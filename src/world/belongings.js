@@ -7,6 +7,7 @@
 // Anything left at the Peace Hotel front desk waits there (the phone's orders page says so).
 import * as THREE from 'three';
 import { createCourier, makeParcel } from './courier.js';
+import { canopyGeometry } from './umbrella.js';
 import { stepOrders, handOver, canUse, item } from '../engine/shopping.js';
 import { t, tr } from '../ui/i18n.js';
 
@@ -25,7 +26,7 @@ export function createBelongings({ scene, people, camera, hud, audio, getLife, s
   const umb = new THREE.Group(); umb.visible = false; umb.name = 'player-umbrella';
   // the underside of a black umbrella at night: faint sheen from the street lights, eight silver ribs
   const canopyMat = new THREE.MeshStandardMaterial({ color: 0x1a1d24, roughness: 0.62, side: THREE.DoubleSide, emissive: new THREE.Color(0.018, 0.02, 0.028) });
-  const canopy = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.26, 24, 3, true), canopyMat); canopy.position.y = 0.38;
+  const canopy = new THREE.Mesh(canopyGeometry({ r: 0.62, h: 0.26, perRib: 6, rings: 8 }), canopyMat); canopy.position.y = 0.51;
   const ribPts = [];
   for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; ribPts.push(0, 0.125, 0, Math.cos(a) * 0.6, -0.12, Math.sin(a) * 0.6); }
   const ribGeo = new THREE.BufferGeometry(); ribGeo.setAttribute('position', new THREE.Float32BufferAttribute(ribPts, 3));

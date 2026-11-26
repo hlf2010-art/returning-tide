@@ -24,7 +24,7 @@ const TX = {
   again: m('又一次？？白白你认真的吗', 'Again?? Baibai, are you serious'),
   yinuo: m('我妈的牌友群都在转。你最近低调点。', "My mum's mahjong group is forwarding it. Keep your head down for a while."),
   dad: m('你二姑把视频发给我了。人家伤得重不重？该赔的赔，该道歉的上门道歉。车先别开了。', 'Your aunt sent me the video. How badly is the person hurt? Pay what you owe, and go and apologise in person. Leave the car alone for now.'),
-  news: m('外滩一辆黄色兰博基尼在斑马线前撞倒行人，司机已被交警罚款记分。现场视频在网上流传，网友：有钱就能这么开？', "On the Bund, a yellow Lamborghini knocked down a pedestrian at a zebra crossing; the driver was fined and given points by the traffic police. Video from the scene is circulating online. Commenters: 'So money means you can drive like that?'"),
+  news: m('外滩一辆黄色科尔维纳在斑马线前撞倒行人，司机已被交警罚款记分。现场视频在网上流传，网友：有钱就能这么开？', "On the Bund, a yellow Corvina knocked down a pedestrian at a zebra crossing; the driver was fined and given points by the traffic police. Video from the scene is circulating online. Commenters: 'So money means you can drive like that?'"),
 };
 const morning = (L) => (L.clock.day + 1) * 1440 + 8 * 60;
 const later = (L, mins, thread, from, text) => (L.flags.pendingFollow ||= []).push({ at: stamp(L) + mins, thread, from, text });
@@ -53,7 +53,7 @@ export function runCarFallout(L) {
   if (!isYear(L)) return due.length;
   for (const { level } of due) {
     const news = level >= 3;
-    rep(L, 'online', news ? -14 : -8, news ? 'in the news: a Lamborghini hitting a pedestrian on the Bund' : 'trending: "Lamborghini hits pedestrian on the Bund"');
+    rep(L, 'online', news ? -14 : -8, news ? 'in the news: a Corvina hitting a pedestrian on the Bund' : 'trending: "Corvina hits pedestrian on the Bund"');
     if (news) rep(L, 'street', -4, 'recognised from the news');
     careerEvent(L, 'online', { delta: news ? -10 : -6, why: 'the video of him hitting a pedestrian on the Bund' });
     nudge(L, 'dad', news ? -10 : -6, 'the video of the car'); for (const id of FRIENDS) nudge(L, id, -2, 'it went everywhere');

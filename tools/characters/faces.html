@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cast face check</title>
+<style>
+  html, body { margin: 0; background: #1b1d22; color: #ddd; font: 12px system-ui, sans-serif; }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; padding: 8px; }
+  figure { margin: 0; } figcaption { padding: 4px 2px; color: #aaa; }
+  canvas { width: 100%; aspect-ratio: 1; display: block; background: #2a2d33; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="grid"></div>
+<script type="module">
+// Dev-only: every face in the game at dialogue distance, in the game's renderer and the shared idle pose.
+//   /tools/characters/faces.html            all roles in public/people/people.json
+//   /tools/characters/faces.html?roles=c4,c1&yaw=30
+//   debug: specks=0|1 (the shard cleaner), armout=<deg>, clips=player, ids=1|map, uvdbg=1 (UV as colour), tridbg=1 (triangle ids), hide=<regex> (meshes), names=1, morph=jawOpen:0.3,mouthSmile:0.7
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { fixHair, swapHead, cleanSpecks, spreadArms } from '/src/world/people.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+
+const qs = new URLSearchParams(location.search);
+const yaw = (+qs.get('yaw') || 0) * Math.PI / 180;
+const dist = +qs.get('dist') || 0.55;
+const manifest = await (await fetch('/people/people.json')).json();
+const roles = (qs.get('roles') || Object.keys(manifest.cast).join(',')).split(',');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(600, 600); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const pmrem = new THREE.PMREMGenerator(renderer);
+const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+const loader = new GLTFLoader();
+const clips = {};
+for (const [sex, c] of Object.entries(manifest.clips)) clips[sex] = (await loader.loadAsync('/people/' + c.file)).animations;
+const grid = document.getElementById('grid');
+for (const role of roles) {
+  const c = manifest.cast[role]; if (!c) continue;
+  const gltf = await loader.loadAsync('/people/' + c.file);
+  const root = SkeletonUtils.clone(gltf.scene);
+  if (c.child) root.traverse((o) => { if (o.name.startsWith('Bip02')) o.name = o.name.replace('Bip02', 'Bip01'); });
+  const scene = new THREE.Scene(); scene.environment = env; scene.background = new THREE.Color(0x2a2d33);
+  scene.add(root);
+  if (qs.get('game') !== '0') {   // what loadPeople does (game=0: the raw files)
+    fixHair(root, c.hairTint || null);
+    if (c.head && qs.get('swap') !== '0') swapHead(root, (await loader.loadAsync('/people/' + c.head)).scene, { tint: c.headTint || null, keepHair: qs.has('keephair') ? qs.get('keephair') === '1' : !!c.keepHair, tone: qs.get('tone') ? qs.get('tone').split(',').map(Number) : (c.skinTone || null), ...(qs.has('drop') ? { drop: qs.get('drop').split(',').filter(Boolean) } : {}) });
+  }
+  if (qs.get('game') !== '0' && (qs.has('specks') ? qs.get('specks') === '1' : c.cleanSpecks)) console.log('specks cleaned', role, cleanSpecks(root));
+  if (qs.get('ids')) root.traverse((o) => {
+    if (!o.isMesh) return; const n = o.material.name;
+    const col = /body/.test(n) ? 0xff3030 : /head/.test(n) ? 0x30ff30 : 0x3060ff;
+    o.material = new THREE.MeshBasicMaterial({ map: (/opacity/.test(n) || qs.get('ids') === 'map') ? o.material.map : null, color: qs.get('ids') === 'map' ? 0xffffff : col, alphaTest: o.material.alphaTest, side: THREE.DoubleSide });
+  });
+  if (qs.get('uvdbg')) { const N = 2048, d = new Uint8Array(N * N * 4); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = (y * N + x) * 4; d[i] = x & 255; d[i + 1] = y & 255; d[i + 2] = ((x >> 8) << 4) | (y >> 8); d[i + 3] = 255; }
+    const t = new THREE.DataTexture(d, N, N); t.magFilter = t.minFilter = THREE.NearestFilter; t.flipY = false; t.needsUpdate = true;
+    root.traverse((o) => { if (o.isSkinnedMesh) o.material = new THREE.MeshBasicMaterial({ map: t }); }); renderer.toneMapping = THREE.NoToneMapping; renderer.outputColorSpace = THREE.LinearSRGBColorSpace; }
+  if (qs.get('tridbg')) root.traverse((o) => { if (!o.isSkinnedMesh) return; const g = o.geometry.toNonIndexed(), n = g.attributes.position.count, c = new Float32Array(n * 3);
+    for (let v = 0; v < n; v++) { const t = (v / 3) | 0; c[v * 3] = (t & 255) / 255; c[v * 3 + 1] = ((t >> 8) & 255) / 255; c[v * 3 + 2] = ((t >> 16) & 255) / 255; }
+    g.setAttribute('color', new THREE.BufferAttribute(c, 3)); o.geometry = g; o.material = new THREE.MeshBasicMaterial({ vertexColors: true }); renderer.toneMapping = THREE.NoToneMapping; renderer.outputColorSpace = THREE.LinearSRGBColorSpace; });
+  if (qs.get('nonormal')) root.traverse((o) => { if (o.isSkinnedMesh && !/^hero-/.test(o.name)) { o.material.normalMap = null; o.material.needsUpdate = true; } });
+  if (qs.get('novc')) root.traverse((o) => { if (o.isMesh) { o.material.vertexColors = false; o.material.needsUpdate = true; } });
+  if (qs.get('head')) root.traverse((o) => {
+    if (!o.isMesh || !/head/.test(o.material.name)) return; const m = o.material, h = qs.get('head');
+    if (h.includes('n')) m.normalMap = null;
+    if (h.includes('r')) m.roughness = 0.75;
+    if (h.includes('e')) m.envMapIntensity = 0.3;
+    if (h === 'N') { o.material = new THREE.MeshNormalMaterial(); return; }
+    if (h === 'L') { o.material = new THREE.MeshLambertMaterial({ map: m.map }); return; }
+    m.needsUpdate = true;
+  });
+  if (qs.get('fix')) root.traverse((o) => {
+    if (!o.isMesh || !/opacity/.test(o.material.name)) return;
+    const m = o.material; m.envMapIntensity = +(qs.get('env') ?? 0.25); m.roughness = 0.9;
+    if (qs.get('fix') === '2') { m.alphaToCoverage = true; }
+    if (qs.get('fix') === 'lambert') o.material = new THREE.MeshLambertMaterial({ map: m.map, alphaTest: m.alphaTest, side: m.side });
+    if (qs.get('fix') === 'basic') o.material = new THREE.MeshBasicMaterial({ map: m.map, alphaTest: m.alphaTest, side: m.side });
+    if (qs.get('fix') === 'normals') o.material = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide });
+  });
+  if (qs.get('nohero')) root.traverse((o) => { if (/^hero-/.test(o.name)) o.visible = false; });
+  if (qs.get('morph')) for (const kv of qs.get('morph').split(',')) { const [k, w] = kv.split(':'); root.traverse((o) => { const i = o.morphTargetDictionary?.[k]; if (i !== undefined) o.morphTargetInfluences[i] = +w; }); }
+  if (qs.get('hide')) { const re = new RegExp(qs.get('hide')); root.traverse((o) => { if (o.isMesh && re.test(o.name)) o.visible = false; }); }
+  if (qs.get('names')) root.traverse((o) => { if (o.isMesh) console.log('mesh', o.name, o.material.name, o.material.color?.getHexString(), o.geometry.attributes.position.count, !!o.material.vertexColors, o.visible); });
+  root.scale.setScalar(0.01);
+  const key = new THREE.DirectionalLight(0xfff0dd, 2.0); key.position.set(1, 1.8, 1.4);
+  const rim = new THREE.DirectionalLight(0xdde8ff, 1.0); rim.position.set(-1, 1.6, -1.2);
+  scene.add(key, rim);
+  const set = clips[qs.get('clips') || c.sex] || clips.m;
+  const idle = set && set.find((a) => a.name === 'idle');
+  if (idle) { const mx = new THREE.AnimationMixer(root); mx.clipAction(idle).play(); mx.update(0.5); root.updateMatrixWorld(true); spreadArms(root, (qs.has('armout') ? +qs.get('armout') : (c.armOut || 0)) * Math.PI / 180); }
+  root.updateMatrixWorld(true);
+  const head = root.getObjectByName('Bip01_Head') || root.getObjectByName('Head');
+  const hp = new THREE.Vector3(); if (head) head.getWorldPosition(hp); else hp.set(0, 1.6, 0);
+  const face = hp.clone().add(new THREE.Vector3(+qs.get('aimx') || 0, 0.07 + (+qs.get('aimy') || 0), 0));
+  // which way the face looks: the root's +z (the avatars face +z)
+  const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+  const cam = new THREE.PerspectiveCamera(24, 1, 0.01, 20);
+  cam.position.copy(face).addScaledVector(fwd, dist); cam.lookAt(face);
+  renderer.render(scene, cam);
+  const fig = document.createElement('figure'), cv = document.createElement('canvas');
+  cv.width = cv.height = 600; cv.getContext('2d').drawImage(renderer.domElement, 0, 0);
+  const cap = document.createElement('figcaption'); cap.textContent = `${role} (${c.avatar || c.file})`;
+  fig.append(cv, cap); grid.appendChild(fig);
+}
+window.__ready = true;
+</script>
+</body>
+</html>

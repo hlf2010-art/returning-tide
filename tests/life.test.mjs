@@ -13,7 +13,7 @@ const play = (L, realSecs, step = 1, r = rng(1)) => { for (let s = 0; s < realSe
   advance(L, 60); ok(L.clock.minute === 15 * 60 + 30 + TIME_RATE, `a real minute is ${TIME_RATE} game minutes`);
   // money
   const w0 = balance(L, 'wechat');
-  ok(pay(L, { method: 'wechat', amount: 15, to: 'Manner', memo: '拿铁' }).ok && balance(L, 'wechat') === w0 - 15, 'paying for a latte takes ¥15 from WeChat Pay');
+  ok(pay(L, { method: 'wechat', amount: 15, to: 'Linger', memo: '拿铁' }).ok && balance(L, 'wechat') === w0 - 15, 'paying for a latte takes ¥15 from Xinyu Pay');
   ok(!pay(L, { method: 'wechat', amount: 1e9, to: 'x' }).ok && balance(L, 'wechat') === w0 - 15, 'you cannot pay what you do not have (and nothing changes)');
   ok(topUp(L, 'wechat', 5000).ok && balance(L, 'wechat') === w0 - 15 + 5000, 'topping up from the bank');
   ok(pay(L, { method: 'card', amount: 2_000_000, to: 'Porsche' }).ok && balance(L, 'card') === 1_000_000, 'the card carries a large purchase');
@@ -25,21 +25,26 @@ const play = (L, realSecs, step = 1, r = rng(1)) => { for (let s = 0; s < realSe
   const L = createLife(); setupThreads(L);
   ok(unreadTotal(L) === 0 && L.threads.wuhu.messages.length > 0, 'chats start with a little history, nothing unread');
   play(L, 60 * 5);                         // five real minutes = 20 game minutes
-  ok(unreadTotal(L) >= 6, `after a while, people have been in touch (${unreadTotal(L)} unread)`);
-  ok(L.invites.some((i) => i.id === 'momo-gig') && L.invites.some((i) => i.id === 'xuan-arm'), 'invitations arrive: Momo\'s gig, Xuan\'s prototype review');
-  ok(L.outbox.some((e) => e.type === 'call' && e.from === 'dad'), 'Dad calls');
+  // the first evening is kept to one path: Momo's gig and Yu'an's hello, nothing else yet (world/agenda.js)
+  ok(unreadTotal(L) >= 3 && unreadTotal(L) <= 6, `after a while, people have been in touch (${unreadTotal(L)} unread)`);
+  ok(L.invites.some((i) => i.id === 'momo-gig') && !L.invites.some((i) => i.id === 'xuan-arm'), 'Momo\'s gig arrives; Xuan\'s prototype review waits');
+  // invitations have consequences
+  const a0 = L.relations.momo ? L.relations.momo.affinity : 50;
+  respondToInvite(L, 'momo-gig', true); play(L, 30);
+  ok(L.relations.momo.affinity > a0 && L.calendar.some((c) => c.id === 'momo-gig'), 'accepting Momo\'s invite warms him and goes in the calendar');
+  ok(L.threads.wuhu.messages.some((m) => /报我名字/.test(m.text || '')), '... and he answers');
+  play(L, 60 * 6);
+  ok(L.outbox.some((e) => e.type === 'call' && e.from === 'dad'), 'Dad calls (at the railing, or forty game minutes in)');
+  play(L, 60 * 60 * 4.2);                  // to Tuesday morning
+  ok(L.invites.some((i) => i.id === 'xuan-arm'), 'Tuesday morning: Xuan\'s prototype review');
+  const x0 = L.relations.xuan ? L.relations.xuan.affinity : 50;   // (left unanswered: it lapses at noon)
+  play(L, 60 * 60 * 1.2);                  // past lunch
   const zv = L.threads.zhixia.messages.find((m) => m.kind === 'voice');
   ok(zv && zv.replies && zv.replies.length === 2, 'Zhixia sends a voice note you can answer');
   reply(L, 'zhixia', zv.id, 0); play(L, 30);
   ok(L.flags.carCurious && L.threads.zhixia.messages.at(-1).from === 'zhixia', 'answering it moves things on (she follows up; the car thread starts)');
   ok(reply(L, 'zhixia', zv.id, 1) === null, 'a message can only be answered once');
   markRead(L, 'zhixia'); ok(L.threads.zhixia.unread === 0, 'reading a chat clears it');
-  // invitations have consequences
-  const a0 = L.relations.momo ? L.relations.momo.affinity : 50;
-  respondToInvite(L, 'momo-gig', true); play(L, 30);
-  ok(L.relations.momo.affinity > a0 && L.calendar.some((c) => c.id === 'momo-gig'), 'accepting Momo\'s invite warms him and goes in the calendar');
-  ok(L.threads.wuhu.messages.some((m) => /报我名字/.test(m.text || '')), '... and he answers');
-  const x0 = L.relations.xuan ? L.relations.xuan.affinity : 50;
   play(L, 60 * 60 * 6);                    // let the deadlines pass without answering Xuan
   const xi = L.invites.find((i) => i.id === 'xuan-arm');
   ok(xi.status === 'missed' && L.relations.xuan.affinity < x0, 'ignoring Xuan\'s invitation until it lapses costs you with him');
@@ -50,8 +55,8 @@ const play = (L, realSecs, step = 1, r = rng(1)) => { for (let s = 0; s < realSe
 {
   // reactions to the world, and saving
   const L = createLife(); setupThreads(L);
-  pay(L, { method: 'wechat', amount: 15, to: 'Manner' }); react(L, { type: 'paid', to: 'Manner' }); play(L, 60);
-  ok(L.threads.yuan.messages.some((m) => /Manner/.test(m.text || '')), 'buying a coffee on Hankou Road: Yu\'an, who works nearby, guesses where you are');
+  pay(L, { method: 'wechat', amount: 15, to: 'Linger' }); react(L, { type: 'paid', to: 'Linger' }); play(L, 60);
+  ok(L.threads.yuan.messages.some((m) => /Linger/.test(m.text || '')), 'buying a coffee on Hankou Road: Yu\'an, who works nearby, guesses where you are');
   emit(L, { type: 'parcel', item: 'x' }); const out = drain(L);
   ok(out.length === 1 && drain(L).length === 0, 'world events are handed over once');
   own(L, { kind: 'gadget', name: '口袋激光雷达' });

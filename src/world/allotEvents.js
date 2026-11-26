@@ -82,7 +82,7 @@ export function launch(L) {
   if (c && c.track === 'startup' && c.startup) { c.startup.owed = (c.startup.owed || 0) + Math.round(60000 + 200000 * x); c.startup.customer ||= 'launch'; out.push(B('公司有了第一笔像样的收入', 'The company has its first real revenue')); }
   if (c && c.track === 'consulting' && A.declared) { standing(L, 8, 'launch-declared'); out.push(B('合伙人听说了，找你谈升职', 'The partner heard; there is talk of a promotion')); }
   // the bad, by exposure
-  if (x >= 0.3) { A.events.knockoff = 'pending'; out.push(B('淘宝上出现了仿品，便宜一半', 'A knock-off on Taobao, at half the price')); }
+  if (x >= 0.3) { A.events.knockoff = 'pending'; out.push(B('万集上出现了仿品，便宜一半', 'A knock-off on Wanji, at half the price')); }
   if (c && ['consulting', 'switched'].includes(c.track)) {
     if (A.declared) out.push(B('有同事向 HR 举报你兼职。你早就报备过，没事。', 'A colleague reported you to HR for moonlighting. You had declared it; nothing came of it.'));
     else { standing(L, -12, 'moonlighting'); thread(L, 'hr', { title: '迈芬 HR', members: ['me', 'hr'], kind: 'service' }); post(L, 'hr', { from: 'hr', kind: 'text', text: t('有同事反映你在外面有自己的生意，但没有报备。周一上午十点来一下。', "A colleague has told us you have a business of your own you didn't declare. Ten o'clock Monday, please.") }); out.push(B('有同事向 HR 举报你兼职，你没报备过', "A colleague reported you to HR for moonlighting. You hadn't declared it")); }

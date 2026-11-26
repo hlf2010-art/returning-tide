@@ -1,4 +1,4 @@
-// Driving the Huracán: pure (no three.js, no DOM), node-tested (tests/drive.test.mjs).
+// Driving the Strale: pure (no three.js, no DOM), node-tested (tests/drive.test.mjs).
 // A kinematic bicycle model with the car's own numbers, tuned to feel right rather than simulated:
 //   - LP 610-4: 449 kW, 0-100 km/h in about 3.2 s, all-wheel drive; seven-speed dual clutch
 //   - steering lock eases off with speed (no 180-degree spins at 100 km/h); the handbrake lets the

@@ -9,13 +9,11 @@ Each shot is a fixed camera at a fixed hour, at a person's eye height (1.68 m ab
 | id | Place | Hour | Camera (x, y, z) | Looking at | What is in frame |
 |---|---|---|---|---|---|
 | `nanjing` | Nanjing Road East near Henan Road (`NJ` in `src/world/layout.js`) | 18:00 | -478, 1.83, -198.5 | -380, 6.5, -201.5 | The pedestrian street just east of the Henan Road crossing and metro Exit 7, looking east along the shopfronts and neon |
-| `customs` | The promenade at the Customs House | 17:45 | 21, 4.68, 2 | -36, 13, 34 | The promenade deck in the foreground; across the road, the Customs House with its clock tower and the HSBC dome, floodlit |
+| `customs` | The promenade at the Customs House | 17:45 | 21, 4.68, 2 | -36, 13, 34 | The promenade deck in the foreground; across the road, the Customs House with its clock tower and the HSBC dome (floodlit from 18:00) |
 | `hankou` | The Hankou Road crossing | 18:15 | 0.4, 1.83, 3.5 | -40, 3, -0.5 | From the foot of the promenade stair, across the zebra on Zhongshan East 1st Road and into Hankou Road |
 | `morning` | The Bund at 8 am | 08:00 | 21, 4.68, -38 | -24, 12, -160 | North along the promenade in morning light: joggers, the tai chi group (until 8:15), the northern Bund's façades |
 
 The crowd and traffic are the game's normal ones (no `?q`), and the preset is forced to **Mac M4** (`gfx=mac`: 90% resolution, medium detail, SMAA, one lamp shadow, no AO or wet reflections). At medium detail that is about 390 people across the whole map and 22 vehicles on Zhongshan East 1st Road, plus Henan Road's traffic.
-
-The screenshots carry the liveliness overlay as measured on 26 November, after the change to how full people are chosen (below). The frame times in them are software rendering's.
 
 ![Nanjing Road East near Henan Road at 18:00](hero-nanjing.jpg)
 ![The promenade at the Customs House at 17:45](hero-customs.jpg)
@@ -67,7 +65,79 @@ node tools/shot.mjs http://localhost:4174/ <outDir> hero
 
 This writes `<id>.png`, `<id>-live.png` (with the overlay) and `hero.json`, against a build served by `npx vite preview --port 4174`. `window.__bund.heroShot(id)` holds one shot, `endShot()` lets go, and `runShots({ settle, measure })` runs the benchmark from the console.
 
-## Baseline (24 November 2026)
+## Today (26 November 2026)
+
+Rerun on master after the night-city, e-bike, crowd and lobby work, with the same tool and settings as the first baseline below (headless Chromium, SwiftShader, Mac M4 preset, 1280×720, five samples after the shot settled). Raw numbers: `hero.json` from `node tools/shot.mjs <url> <dir> hero`.
+
+| | Nanjing Rd 18:00 | Customs House 17:45 | Hankou Rd 18:15 | Bund 08:00 |
+|---|---|---|---|---|
+| People in view (near / mid / impostor) | **206** (3 / 21 / 181); **1,857** with the throng (below) | **142** (12 / 68 / 62) | **93** (8 / 68 / 17) | **239** (12 / 25 / 202) |
+| Vehicles in view | 0 (pedestrian street) | 18 (taxi 5, car 8, NEV 2, bus 3) | 2–4 (taxi, NEV, bus; the signal cycle) | 20 (taxi 5, car 11, NEV 2, bus 1, boat 1) |
+| Distinct activities (within 120 m) | 3–4 (walking, together, on a tour, on the phone) | 5.6 (+ waiting to cross, a tour group, standing) | 5.4 | **9** (tai chi, jogging, photographing, selfies, looking at the view, a tour...) |
+| Audible kinds | **5** (chatter, music ×2, traffic, wind, Henan Rd's vehicles) | **6** (chatter, water, wind, traffic, boat, vehicles) | 6 | 6 |
+| Draw calls | **1,146** (was 2,478) | 843 (was 1,678) | 873 (was 1,794) | 842 (was 2,178) |
+| Triangles | 3.5 M (was 3.0 M) | 3.1 M (was 1.9 M) | 3.0 M (was 1.9 M) | 2.5 M (was 1.9 M) |
+
+What changed since the 24th:
+
+- **People more than doubled** in three of the four shots, and the mid tier (cards under 40 m) carries most of the extra on the Bund. Every shot is still under the provisional range, Nanjing Road most of all (206 against 600–1,500).
+- **Draw calls halved** everywhere (instancing, the interiors drawn only near their block). Triangles went up with the people and the cars; Nanjing Road sits right at the 3.5 M bound, so it has no room for more full-detail people without a cheaper mid tier.
+- **The Customs House at 17:45 is now dark:** the Bund's floodlights switch on at 18:00 (`engine/timeOfDay.js`), so the façades are silhouettes against the dusk. That is what the real Bund does; the reference footage for this shot should be checked for its minute.
+- **The sound count was fixed** (`engine/live.js` `bedSources`). Since the recorded beds took over on the 25th, the meter still counted the synthesised wind, river and murmur that had been faded out, plus the placed talkers that had been silenced, and did not count the beds themselves. It now counts what is actually playing. The tool also waits for shop music within earshot to start before it measures (software rendering takes about 12 s to load a track).
+- Nanjing Road still has few distinct activities in view: nearly everyone is walking. Window-shopping, shop doors and the payment speakers happen nearer than the camera's crowd.
+
+![Before and after, 24 and 26 November](hero-before-after.jpg)
+
+## Nanjing Road's throng (26 November 2026)
+
+The simulated crowd (`engine/crowd.js`) is a few thousand people for the whole map, and Nanjing Road's 1.5 km got a couple of hundred of them: 206 in the hero view at 18:00. The street is far busier than that, so it now has a **throng** beyond the simulated crowd (`engine/throng.js`, drawn by `world/throngView.js`, tested by `tests/throng.test.mjs`):
+
+- **What they are:** impostor cards from the far crowd's atlas, walking straight tracks along the street east or west at 0.85-1.35 m/s with a slight weave. More than a third walk in twos and threes, and about 7% stand at the shop windows or photograph the street. Everything they do is worked out in the vertex shader from the time and a few numbers each, so the throng costs **one draw call and no per-frame work on the main thread**.
+- **Where:** two stretches cut at Henan Road, so nobody walks through its traffic. Nobody walks in the trams' lanes west of Henan Road, in the metro wells, or inside a building. People fade out at the end of a stretch and come back in at the other end. Within about 15 m of the camera they fade away, because that is where the simulated crowd's full people are. They also fade out past 420-470 m.
+- **How many:** at the busiest, 4,000 / 12,000 / 15,000 / 20,000 people (low / medium / high / ultra, `engine/gfx.js` `throng`), scaled by the same share of the evening as the simulated crowd. A weekday at 18:00 is about 0.69 of that, or about 0.26 people per m² on the medium preset. Rain halves it. `?throng=0` turns it off and `?throng=<n>` sets the number.
+- **Result:** the hero view at 18:00 holds **1,857 people** (it held 206). Draw calls 1,110 and triangles 3.6 M, just over the 3.5 M bound, which the throng's own cards (24 k triangles) do not explain; the rest is the full crowd varying between runs.
+
+![Nanjing Road's hero view before and after the throng](hero-nanjing.jpg)
+
+## Full people chosen by view (26 November 2026)
+
+**Why Nanjing Road had so few full people.** The full people (16 at medium detail) went to the nearest people within 44 m in every direction, whichever way the camera faced.
+
+- The Nanjing Road camera stands just east of metro Exit 7 and the Henan Road crossing, where people arrive. Most of the simulated crowd near it is behind or beside it.
+- In one sample, 65 people were within 44 m but only 10 were in view, and the 16 nearest were all behind the camera, 4–8 m off.
+- It was not a shortage of avatar bodies (at most 25 of the 32 allowed had been made) and nobody was stuck.
+
+**The change** (`nearRank` in `src/engine/crowd.js`, tested in `tests/crowd.test.mjs`; used by `src/world/crowdView.js`):
+
+- Anyone within 3 m stays a full person whichever way you face, because those are the people you bump into and talk to.
+- Beyond that, someone outside a cone about 29° wider each side than the view counts as three times as far.
+- The ranking runs every quarter second, and at once when the view turns more than about 25°.
+- The middle tier picks from the same ranked list, so it prefers people in view too.
+
+**Full people in view** (same tool and settings, five samples per shot):
+
+| | Nanjing Rd 18:00 | Customs House 17:45 | Hankou Rd 18:15 | Bund 08:00 |
+|---|---|---|---|---|
+| Before (*Today*, above) | 3 | 12 | 8 | 12 |
+| After, measured on master with the change | **5.8** | **13.6** | **9.6** | **15.8** |
+| People in view, after | 1,887 | 171 | 131 | 220 |
+| Draw calls / triangles, after | 1,157 / 3.6 M | 829 / 3.2 M | 866 / 3.1 M | 852 / 2.6 M |
+
+- The crowd is random from run to run; the ranking does not change where anyone walks.
+- "Near" can exceed 16 because the crossing's four walkers and Old Lin and Ms. Su are full people too.
+- Draw calls and triangles are in line with *Today*: the same number of full people is drawn, now mostly in view.
+- Before master's other work was merged in (no throng, no middle tier), the same change took the four shots from 2 / 15 / 7 / 8 full people in view to 7.4 / 20 / 11.6 / 13.
+
+**Turning round at the Nanjing Road spot** (play mode, two runs, measured before the merge):
+
+| | Full people in view | People in view within 44 m | Cards in view within 20 m | Cards in view within 10 m |
+|---|---|---|---|---|
+| Facing east (down the street) | 9–11 | 12–18 | 0 | 0 |
+| Facing west (Henan Road and the exits) | 4–9 | 20–31 | 3–7 | 0 |
+
+Facing west, more people are in view than there are full-people slots. People behind you within about 5 m still outrank people in view beyond about 15 m: that is the 3× weighting (`NEAR_RANK.behind`), and it can be raised. The swap from card to full person on turning has not been looked at on a real screen.
+
+## First baseline (24 November 2026)
 
 Measured in headless Chromium with software rendering (SwiftShader), Mac M4 preset, 1280×720. The numbers below are means of five samples taken after the shot settled.
 
@@ -87,45 +157,10 @@ Hankou Road's vehicle and sound counts swing with the signal cycle: a red phase 
 
 What stands out:
 
-- **Too few people.** The whole map holds about 390 people at medium detail. Nanjing Road at six in the evening shows under a hundred, nearly all of them as distant cards. Only one or two were full people there, against 15 on the promenade. This was fixed on 26 November (below).
+- **Too few people.** The whole map holds about 390 people at medium detail. Nanjing Road at six in the evening shows under a hundred, nearly all of them as distant cards. Only one or two were full people there, against 15 on the promenade (see *Full people chosen by view*).
 - **Too few vehicles at the crossing.** Zhongshan East 1st Road shows 1–7 vehicles where a busy four-lane road at a signal would show a queue.
 - **Narrow activity.** Four or five different things at once, mostly kinds of walking.
 - **Nanjing Road is the heaviest view:** 2,500 draw calls and 3 M triangles before any more people are added.
-
-### 26 November: full people chosen by view
-
-**Why so few full people on Nanjing Road.** The 16 full people (medium detail) went to the nearest 16 people within 44 m in every direction, whichever way the camera faced.
-
-- The Nanjing Road camera stands just east of metro Exit 7 and the Henan Road crossing, where people arrive. Most of the people near it are behind or beside it.
-- In one sample, 65 people were within 44 m but only 10 were in view, and the 16 nearest were all behind the camera, 4–8 m off.
-- It was not a shortage of avatar bodies (at most 25 of the 32 allowed had been made) and nobody was stuck.
-
-**The change** (`nearRank` in `src/engine/crowd.js`, used by `src/world/crowdView.js`):
-
-- Anyone within 3 m stays a full person whichever way you face, because those are the people you bump into and talk to.
-- Beyond that, someone outside a cone about 29° wider each side than the view counts as three times as far.
-- The ranking runs every quarter second, and at once when the view turns more than about 25°.
-
-The same four shots, measured the same way after the change:
-
-| | Nanjing Rd 18:00 | Customs House 17:45 | Hankou Rd 18:15 | Bund 08:00 |
-|---|---|---|---|---|
-| People in view (near / mid / impostor) | 70 (**7.4** / 4 / 59) | 52 (**20** / 14 / 18) | 35 (**11.6** / 16 / 7) | 40 (**13** / 0 / 27) |
-| Full people in view before the change | 2 | 15 | 7 | 8 |
-| Draw calls / triangles | 2,528 / 2.9 M | 1,676 / 1.9 M | 1,696 / 1.9 M | 2,045 / 1.8 M |
-
-- Totals differ from the first table because the crowd is random from run to run; the ranking does not change where anyone walks.
-- "Near" can exceed 16 because the crossing's four walkers and Old Lin and Ms. Su are full people too.
-- Draw calls are unchanged: the same 16 full people are drawn as before, now in view. They were drawn even behind the camera, because skinned people are never frustum-culled.
-
-**Turning round at the same spot** (play mode, two runs):
-
-| | Full people in view | People in view within 44 m | Cards in view within 20 m | Cards in view within 10 m |
-|---|---|---|---|---|
-| Facing east (down the street) | 9–11 | 12–18 | 0 | 0 |
-| Facing west (Henan Road and the exits) | 4–9 | 20–31 | 3–7 | 0 |
-
-Facing west, more people are in view than there are full-people slots. The people behind you within about 5 m still outrank people in view beyond about 15 m: that is the 3× weighting (`NEAR_RANK.behind`), and it can be raised. The swap on turning has not been looked at on a real screen.
 
 ## Provisional targets
 
@@ -179,6 +214,6 @@ How they were reached:
 
 ## Not verified
 
-- **No GPU frame time has been measured.** The Mac run (`?bench`) supplies it.
+- **No GPU frame time has been measured.** The Mac run (`?bench`) supplies it. On 26 November the run was still waiting for the Mac.
 - **The targets have not been checked against footage.** Counting the reference footage per shot is the next step.
 - Occlusion is 2-D, against building footprints. People hidden behind other people, trees or the bus shelters still count as "in view".

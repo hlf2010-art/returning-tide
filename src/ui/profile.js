@@ -274,8 +274,8 @@ export function createProfile({ getLife, defs = [], getPeople = () => null, onCl
     const rows = M.recent.map((e) => `<div class="row"><span>${esc(e.to)}${e.memo ? ` · ${esc(e.memo)}` : ''}</span><b class="${e.in ? 'in' : ''}">${e.in ? '+' : '−'}${num(Math.abs(e.amount))}</b></div>`).join('');
     return `<div class="rise money"><div class="slips">
         <div class="slip total"><i style="background:var(--rt-gold-hi)"></i><span>${T('身家', 'Worth')}</span><b>¥${num(M.net)}</b></div>
-        <div class="slip"><i style="background:#2aae67"></i><span>${T('微信', 'WeChat')}</span><b>${num(M.wechat)}</b></div>
-        <div class="slip"><i style="background:#1677ff"></i><span>${T('支付宝', 'Alipay')}</span><b>${num(M.alipay)}</b></div>
+        <div class="slip"><i style="background:#13a39c"></i><span>${T('信语', 'Xinyu')}</span><b>${num(M.wechat)}</b></div>
+        <div class="slip"><i style="background:#1677ff"></i><span>${T('易付', 'YiPay')}</span><b>${num(M.alipay)}</b></div>
         <div class="slip"><i style="background:#c8a35a"></i><span>${T('银行卡', 'Bank')}</span><b>${num(M.bank)}</b></div>
         <div class="slip"><i style="background:#b3352a"></i><span>${T('信用卡欠', 'Card owed')}</span><b>${num(M.cardUsed)}</b></div>
         ${M.company != null ? `<div class="slip"><i style="background:#4f8f7b"></i><span>${T('公司账上', 'In the company')}</span><b>${num(M.company)}</b></div>` : ''}
@@ -290,7 +290,7 @@ export function createProfile({ getLife, defs = [], getPeople = () => null, onCl
     const P = V.property, n = Math.max(12, Math.ceil(V.items.length / 6) * 6);
     return `<div class="rise"><div class="estate">
         <div class="blueprint">${P.home.rent || /hotel|饭店/i.test(P.home.name) ? PLAN[/Peace Hotel|和平饭店/.test(P.home.name) ? 'hotel' : 'flat'] : PLAN.flat}<div class="cap">${esc(P.home.name)}<small>${P.home.size ? `${P.home.size} m² · ` : ''}${P.home.rent ? T(`月租 ¥${num(P.home.rent)}`, `¥${num(P.home.rent)} a month`) : T('公司付', 'paid by the firm')}</small></div></div>
-        <div class="blueprint">${P.car ? `<div style="--c:${esc(P.car.hex)}">${CAR}</div><div class="cap">${esc(P.car.name)}</div><span class="plate">${esc(P.car.plate)}</span>` : `<div style="--c:rgba(185,214,226,.08);opacity:.6">${CAR}</div><div class="cap">${T('还没有车', 'No car yet')}<small>${T('地铁、轮渡、滴滴', 'The metro, the ferry, DiDi')}</small></div>`}</div>
+        <div class="blueprint">${P.car ? `<div style="--c:${esc(P.car.hex)}">${CAR}</div><div class="cap">${esc(P.car.name)}</div><span class="plate">${esc(P.car.plate)}</span>` : `<div style="--c:rgba(185,214,226,.08);opacity:.6">${CAR}</div><div class="cap">${T('还没有车', 'No car yet')}<small>${T('地铁、轮渡、快马', 'The metro, the ferry, Kuaima')}</small></div>`}</div>
         ${P.company ? `<div class="blueprint"><div class="cap" style="font-size:22px">${esc(P.company.name)}<small>${P.company.funded ? T('已融资', 'Funded') : T('还没融资', 'Not funded yet')} · ¥${num(P.company.cash)}</small></div></div>` : ''}</div>
       <div class="rule"></div><div class="eyebrow">${T('随身', 'Carried')} · ${V.items.length}</div>
       <div class="slots">${V.items.map((i) => `<div class="slot ${i.kind === 'made' ? 'made' : ''}" title="${esc(i.name)}${i.from ? ` · ${esc(i.from)}` : ''}">${svgIcon(iconOf(i), 34)}<small>${esc(i.name)}</small></div>`).join('')}${Array.from({ length: n - V.items.length }, () => '<div class="slot empty"></div>').join('')}</div></div>`;

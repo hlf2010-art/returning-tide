@@ -7,7 +7,8 @@ const T = (zh, en) => (getLang() === 'zh' ? zh : en);
 const KEY = 'bund-tips', ON = 'bund-tips-on';
 export const TIPS = {
   move: ['WASD 走 · Shift 快走 · 鼠标看 · E 和看着的人或东西互动', 'WASD to walk · Shift to hurry · the mouse to look · E to use whatever you\'re looking at'],
-  phone: ['P 拿出手机：微信、支付宝、滴滴、淘宝、地图', 'P for your phone: WeChat, Alipay, DiDi, shopping, maps'],
+  controls: ['所有按键都在“操作说明”里：按 Esc，再选“操作”。', 'Every key is on the Controls page: press Esc, then choose Controls.'],
+  phone: ['P 拿出手机：信语、易付、快马、万集、地图', 'P for your phone: Xinyu, YiPay, Kuaima, shopping, maps'],
   journal: ['J 打开日志：任务的每一步，身边的人对你的感觉', 'J opens your journal: each step of your quests, and how the people in your life feel about you'],
   map: ['M 打开地图（按住 Tab 看小地图）。在地图上点一个地方设路标。', 'M opens the map (hold Tab for the minimap). Click a place on the map to set a waypoint.'],
   talk: ['T 和身边的人聊天（打字或说话）', 'T to talk with someone near you (type, or speak)'],

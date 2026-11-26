@@ -355,5 +355,78 @@
  "bump:visitorF": {
   "zh": "zf_022",
   "en": "af_sky"
+ },
+ "aia:zhou": {
+  "zh": "zf_019",
+  "en": "bf_isabella",
+  "speed": 0.98
+ },
+ "aia:wife": {
+  "zh": "zf_087",
+  "en": "af_nicole"
+ },
+ "aia:husband": {
+  "zh": "zm_068",
+  "en": "am_adam"
+ },
+ "aia:shen": {
+  "zh": "zf_021",
+  "en": "af_sarah"
+ },
+ "aia:lin": {
+  "zh": "zf_046",
+  "en": "bf_emma"
+ },
+ "aia:wang": {
+  "zh": "zf_083",
+  "en": "af_bella"
+ },
+ "aia:chen": {
+  "zh": "zm_065",
+  "en": "am_liam",
+  "speed": 1.05
+ },
+ "aia:angry": {
+  "zh": "zm_054",
+  "en": "am_eric",
+  "speed": 1.08
+ },
+ "aia:guard": {
+  "zh": "zm_015",
+  "en": "bm_daniel"
+ },
+ "aia:desk": {
+  "zh": "zf_073",
+  "en": "af_sky"
+ },
+ "aia:tourist": {
+  "zh": "zf_076",
+  "en": "af_nova"
+ },
+ "aia:rider": {
+  "zh": "zm_061",
+  "en": "am_puck",
+  "speed": 1.1
+ },
+ "aia:recruit": {
+  "zh": "zm_020",
+  "en": "am_liam"
+ },
+ "hotelguard": {
+  "zh": "zm_009",
+  "en": "am_echo"
+ },
+ "hoteldesk": {
+  "zh": "zf_002",
+  "en": "bf_isabella"
+ },
+ "hotelconcierge": {
+  "zh": "zm_037",
+  "en": "bm_daniel",
+  "speed": 0.97
+ },
+ "roomservice": {
+  "zh": "zm_029",
+  "en": "am_adam"
  }
 }

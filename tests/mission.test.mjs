@@ -99,6 +99,19 @@ function rig() {
   ok(threw, 'unknown event names are rejected');
 }
 
+// 5b. a reloaded game: restore() puts the mission back without firing 'start' or 'complete' again
+{
+  const m = createWrongHandoff(); const seen = [];
+  for (const e of ['start', 'complete', 'change']) m.on(e, () => seen.push(e));
+  ok(m.restore({ step: 'complete', outcome: 'opened' }) && m.step === 'complete' && m.outcome === 'opened' && !m.sealed, 'restore: handed over with the seal broken');
+  ok(!seen.includes('start') && !seen.includes('complete') && seen.includes('change'), 'restore fires only change');
+  ok(m.start('lin') === false, 'a restored, completed mission cannot be offered again');
+  const c = createWrongHandoff();
+  ok(c.restore({ step: 'carry', sealed: true, string: 'rewound', witnessed: true }) && c.carrying && c.string === 'rewound' && c.witnessed, 'restore: carrying, string rewound, the man seen');
+  ok(c.handOver() === 'sealed', 'and it can still be handed over');
+  ok(createWrongHandoff().restore({ step: 'idle' }) === false, 'nothing to restore from idle');
+}
+
 // 6. text, placement, and the greeting hook
 {
   const lines = Object.values(T.mission.lines);

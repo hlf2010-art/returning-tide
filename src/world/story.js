@@ -39,7 +39,7 @@ export const PLACE = {
   rail: { x: 23.5, z: -2, label: B('江边栏杆', 'The river railing') },
   hotel: { x: -48, z: -209.5, label: B('和平饭店', 'Peace Hotel') },
   jazz: { x: -44, z: -211.5, label: B('爵士吧', 'Jazz Bar') },
-  didi: { x: -3.2, z: -18.5, label: B('打车点', 'DiDi pickup') },
+  didi: { x: -3.2, z: -18.5, label: B('打车点', 'Kuaima pickup') },
   deckNorth: { x: 18, z: -200, label: B('江边', 'By the river') },
 };
 
@@ -78,8 +78,8 @@ const BASE_QUESTS = [
     start: (L) => !!inv(L, 'momo-gig'),
     fail: (L) => { const i = inv(L, 'momo-gig'); return !!i && (i.status === 'declined' || i.status === 'missed' || lapsed(L, 'momo-gig', i.at + 120)); },
     steps: [
-      { id: 'yes', invite: 'momo-gig', text: B('在微信上答应他', 'Say yes on WeChat'), done: (L) => (inv(L, 'momo-gig') || {}).status === 'accepted' },
-      { id: 'there', text: (L) => B('九点半前到爵士吧', 'Be at the Jazz Bar by 9:30 pm'), target: PLACE.jazz, wait: (L) => (inv(L, 'momo-gig') || { at: 0 }).at - 20, done: (L) => kept(L, 'momo-gig') },
+      { id: 'yes', invite: 'momo-gig', text: B('在信语上答应他', 'Say yes on Xinyu'), done: (L) => (inv(L, 'momo-gig') || {}).status === 'accepted' },
+      { id: 'there', text: (L) => (inv(L, 'momo-gig') || {}).at % 1440 === 21 * 60 + 30 ? B('九点半前到爵士吧', 'Be at the Jazz Bar by 9:30 pm') : B('八点前到爵士吧（睡觉会错过）', 'Be at the Jazz Bar by 8 pm (going to bed misses it)'), target: PLACE.jazz, wait: (L) => (inv(L, 'momo-gig') || { at: 0 }).at - 20, done: (L) => kept(L, 'momo-gig') },
     ] },
   // (the robot arm and Dad's offer: the first week's two pulls, still open when the year moves on)
   { id: 'robot-arm', act: 1, main: true, giver: 'xuan',
@@ -87,8 +87,8 @@ const BASE_QUESTS = [
     summary: (L) => (L.flags.demoDone ? B('演示成功了。王总想投。', 'The demo went well. Mr Wang wants in.') : L.flags.armFix ? armNow(L) : B('明轩学长的团队做协作机械臂，原型卡住了，产品经理也跑了。', 'Mingxuan\'s friend Zhou runs a robot-arm start-up. The prototype is stuck and their product lead has quit.')),
     start: (L) => !!inv(L, 'xuan-arm'),
     steps: [
-      { id: 'yes', optional: true, invite: 'xuan-arm', text: B('在微信上回复明轩：答应去看原型', 'Reply to Mingxuan on WeChat: say you\'ll look at the prototype'), done: (L) => (inv(L, 'xuan-arm') || {}).status === 'accepted' || kept(L, 'xuan-arm'), fail: (L) => ['declined', 'missed'].includes((inv(L, 'xuan-arm') || {}).status) },
-      { id: 'review', optional: true, text: (L) => B(`${dayName(L, 2).zh}下午三点，陆家嘴 IFC 32 楼（滴滴或地铁 2 号线）`, `${cap(dayName(L, 2).en)}, 3 pm: IFC 32F in Lujiazui (DiDi, or Line 2 from East Nanjing Road)`), target: PLACE.didi, wait: (L) => (inv(L, 'xuan-arm') || { at: D(2, 15) }).at - 30, done: (L) => kept(L, 'xuan-arm'), fail: (L) => lapsed(L, 'xuan-arm', ((inv(L, 'xuan-arm') || {}).at || D(2, 15)) + 150) },
+      { id: 'yes', optional: true, invite: 'xuan-arm', text: B('在信语上回复明轩：答应去看原型', 'Reply to Mingxuan on Xinyu: say you\'ll look at the prototype'), done: (L) => (inv(L, 'xuan-arm') || {}).status === 'accepted' || kept(L, 'xuan-arm'), fail: (L) => ['declined', 'missed'].includes((inv(L, 'xuan-arm') || {}).status) },
+      { id: 'review', optional: true, text: (L) => B(`${dayName(L, 2).zh}下午三点，陆家嘴 IFC 32 楼（快马或地铁 2 号线）`, `${cap(dayName(L, 2).en)}, 3 pm: IFC 32F in Lujiazui (Kuaima, or Line 2 from East Nanjing Road)`), target: PLACE.didi, wait: (L) => (inv(L, 'xuan-arm') || { at: D(2, 15) }).at - 30, done: (L) => kept(L, 'xuan-arm'), fail: (L) => lapsed(L, 'xuan-arm', ((inv(L, 'xuan-arm') || {}).at || D(2, 15)) + 150) },
       { id: 'build', optional: true, text: B('去杨浦创客空间，把你的手艺练起来（做一件设备）', 'At the Yangpu makerspace, get your hands back in: build a gadget'), target: PLACE.didi, done: (L) => !!(L.flags.maker && L.flags.maker.gadgets && Object.keys(L.flags.maker.gadgets).length), fail: (L) => stamp(L) > D(5, 15) },
       { id: 'demo', optional: true, text: (L) => B(`${dayName(L, 5).zh}下午三点，投资人演示（IFC 32 楼）${L.flags.armFix ? '：跑的是你写的模型' : ''}`, `${cap(dayName(L, 5).en)}, 3 pm: the investor demo (IFC 32F)${L.flags.armFix ? ', running the model you wrote' : ''}`), target: PLACE.didi, wait: () => D(5, 14, 30), done: (L) => kept(L, 'xuan-demo'), fail: (L) => lapsed(L, 'xuan-demo', D(5, 17, 30)) },
     ],
@@ -99,7 +99,7 @@ const BASE_QUESTS = [
     start: (L) => stamp(L) >= D(2, 19) || tookCall(L, 'dad-plans'),
     steps: [
       { id: 'call', optional: true, text: B('接爸爸的电话', 'Take Dad\'s call'), done: (L) => tookCall(L, 'dad-plans'), fail: (L) => stamp(L) > D(4, 12) && !tookCall(L, 'dad-plans') },
-      { id: 'yuan', optional: true, text: B('和予安聊聊这件事（当面，或在微信上）', 'Talk it over with Yu\'an (in person, or on WeChat)'),
+      { id: 'yuan', optional: true, text: B('和予安聊聊这件事（当面，或在信语上）', 'Talk it over with Yu\'an (in person, or on Xinyu)'),
         done: (L, st) => spokeSince(L, 'yuan', st.started) >= 2, fail: (L) => stamp(L) > D(5, 19) },
       { id: 'coming', text: B('爸爸要来上海', 'Dad is coming to Shanghai'), done: (L) => !!inv(L, 'dad-dinner') },
     ],
@@ -226,8 +226,8 @@ export function ending(L) {
   return dad >= 55 ? 'stay' : 'alone';
 }
 export const ENDINGS = {
-  together: { title: B('两岸', 'Both banks'), text: B('第二年春天，纪家的厂做出了第一批五十台机械臂。你一周在南京，一周在杨浦。爸爸学会了用微信发语音，第一条是：“图纸收到了。”',
-    'The next spring your father\'s works turned out the first fifty arms. You spend a week in Nanjing, a week in Yangpu. Your father learns to send WeChat voice notes. The first one says: "Got the drawings."') },
+  together: { title: B('两岸', 'Both banks'), text: B('第二年春天，纪家的厂做出了第一批五十台机械臂。你一周在南京，一周在杨浦。爸爸学会了用信语发语音，第一条是：“图纸收到了。”',
+    'The next spring your father\'s works turned out the first fifty arms. You spend a week in Nanjing, a week in Yangpu. Your father learns to send Xinyu voice notes. The first one says: "Got the drawings."') },
   stay: { title: B('留下', 'Staying'), text: B('灯暗下来的时候，爸爸发来三个字：“注意身体。”你在杨浦租下了阿凯隔壁的那间厂房。上海的冬天比你记得的冷。',
     'As the lights dim, your father sends four words: "Look after your health." You rent the empty unit next to Kai\'s in Yangpu. Shanghai\'s winter is colder than you remember.') },
   alone: { title: B('一个人', 'On your own'), text: B('爸爸一个月没有打电话。予安说他会想通的。你在杨浦的厂房里装好了第一张工作台，那天晚上外滩的灯照常在十点暗下来。',

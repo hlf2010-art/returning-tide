@@ -91,6 +91,7 @@ export const EN = {
   '白白落地了没？？': 'Has Baibai landed??', '下午就到了，我让他先去外滩吹吹风，倒倒时差': 'Got in this afternoon. I told him to go stand on the Bund and shake off the jet lag',
   '吹啥风，晚上来和平饭店听我们弹琴😎': 'Forget the wind, come hear us play at the Peace Hotel tonight 😎',
   '今晚九点半，和平饭店爵士吧，给你留位置': '9:30 tonight, Peace Hotel Jazz Bar. I\'ll save you a seat',
+  '今晚八点，和平饭店爵士吧，给你留位置': '8 tonight, Peace Hotel Jazz Bar. I\'ll save you a seat',
   '和平饭店爵士吧 · Momo trio': 'Peace Hotel Jazz Bar · Momo trio', '和平饭店 · 爵士吧': 'Peace Hotel · Jazz Bar',
   '来，给我留个靠前的位置': 'I\'m in. Save me one near the front', '今晚倒时差，下次一定': 'Jet-lagged tonight. Next time, promise',
   '到了吗？外滩风大，你那件薄外套不够的。': 'Here yet? It\'s windy on the Bund. That thin jacket of yours won\'t cut it.',
@@ -101,10 +102,11 @@ export const EN = {
   '周末可以，车的事再说。': 'Weekend works. We\'ll see about the car.', '再说就是想。我认识保时捷浦东的一个顾问，人靠谱，回头推给你。': '"We\'ll see" means yes. I know a consultant at Porsche in Pudong, she\'s solid. I\'ll send you her contact.',
   'Model 3 挺好的。': 'The Model 3 is fine.', '……行，你开心就好。': '...Sure. Whatever makes you happy.',
   '说正事。有个做机械臂的团队，创始人是我学长，产品经理跑了，原型卡住了。': 'Business. There\'s a robotic-arm team, the founder was a year above me at LSE. Their product lead quit and the prototype\'s stuck.',
-  '明天下午三点陆家嘴，你过来帮我看看？': 'Tomorrow 3 pm in Lujiazui. Come take a look for me?', '机械臂团队 · 原型评审': 'Robotic arm team · prototype review', '陆家嘴 IFC 二期 32F': 'Lujiazui, IFC Tower 2, 32F',
+  '明天下午三点陆家嘴，你过来帮我看看？': 'Tomorrow 3 pm in Lujiazui. Come take a look for me?', '今天下午三点陆家嘴，你过来帮我看看？': 'Today, 3 pm, in Lujiazui. Come take a look for me?', '机械臂团队 · 原型评审': 'Robotic arm team · prototype review', '陆家嘴 IFC 二期 32F': 'Lujiazui, IFC Tower 2, 32F',
   '可以，把资料先发我': 'OK. Send me the materials first', '明天不行，有别的事': 'Can\'t tomorrow, something on',
   '回国了也不说一声。': 'You\'re back and you didn\'t even tell me.', '北外滩 · 看房': 'North Bund · viewing a flat', '北外滩': 'North Bund',
   '后天下午我在上海，家里让我看北外滩一套顶层，你学设计的，陪我去？': 'I\'m in Shanghai the day after tomorrow. My family wants me to look at a penthouse on the North Bund. You studied design. Come with me?',
+  '明天下午我在上海，家里让我看北外滩一套顶层，你学设计的，陪我去？': 'I\'m in Shanghai tomorrow afternoon. My family wants me to look at a penthouse on the North Bund. You studied design. Come with me?',
   '好，地址发我': 'Sure, send me the address', '后天可能不行': 'Might not work that day',
   // chatter
   '[视频] 今天排练的，这段solo我自己都想哭': '[Video] From rehearsal today. This solo makes even me want to cry', '开会开到现在，饭都没吃': 'Meetings until now. Haven\'t even eaten',
@@ -118,13 +120,13 @@ export const EN = {
   '昨晚说好的呢？？位置给你留到十点': 'What happened last night?? I held your seat till ten', '资料晚点发你，NDA 先签一下哈': 'I\'ll send the deck later. Sign the NDA first',
   '好吧，那我先自己去': 'OK, I\'ll go on my own then', '昨天下午人呢？学长还问起你': 'Where were you yesterday afternoon? He asked about you',
   '嗯。我把地址和时间发你。': 'Mm. I\'ll send you the address and time.', '好。': 'OK.', '我自己去看了。': 'I went to see it myself.',
-  '你是不是在汉口路那家Manner？我们工地的人天天去，燕麦拿铁不错。': 'Are you at the Manner on Hankou Road? The guys from our site go every day. The oat latte\'s good.',
+  '你是不是在汉口路那家Linger？我们工地的人天天去，燕麦拿铁不错。': 'Are you at the Linger on Hankou Road? The guys from our site go every day. The oat latte\'s good.',
   '怎么不接电话？': 'Why aren\'t you picking up?', '在忙？': 'Busy?',
   // default answers to invitations
-  // the Huracán: Zhixia's card, Vivian
+  // the Strale: Zhixia's card, Vivian
   '推给你，Vivian，人很实在，不会硬推销。你就说是我朋友。': "Here's Vivian. She's straight with people, no hard sell. Just say you're my friend.",
   '[名片] Vivian 陈': '[Contact card] Vivian Chen',
-  '你好，我是知夏的朋友纪白，想了解一下 Huracán。': "Hi, I'm Ji Bai, a friend of Zhixia's. I'd like to know about the Huracán.",
+  '你好，我是知夏的朋友纪白，想了解一下 Strale。': "Hi, I'm Ji Bai, a friend of Zhixia's. I'd like to know about the Strale.",
   '纪先生您好！知夏跟我说过您～ 我们这边可以把试驾车开到您那边，外滩可以吗？': "Hello Mr Ji! Zhixia told me about you. We can bring the demo car to you. Would the Bund work?",
   '定金收到啦，合同我发您邮箱。配额已经帮您锁好，大概两周到店。': "Deposit received! I'll email you the contract. Your allocation is locked in; it should reach us in about two weeks.",
   '上牌的话，车在哪儿买不影响，跟着户口走。您是南京户口，我们这边可以帮您代办苏A，车先挂临牌。': "For the plate, it doesn't matter where you buy the car: registration follows your hukou. Yours is Nanjing, so we can register it on a 苏A plate for you. The car runs on temporary plates meanwhile.",
@@ -161,7 +163,7 @@ import { DRIVER_NAME_EN } from './driversEn.js';
 const ITEM_EN = Object.fromEntries(CATALOGUE.map((c) => [c.name, c.en]));
 const SHOP_EN = {
   您的订单已打包: 'Your order is packed', 您的订单已发货: 'Your order has shipped', '快递员正在派送，预计45分钟内送达': 'Out for delivery, arriving within 45 minutes',
-  '快递员已到汉口路路口（Manner门口），请下楼取件': 'Your courier is at the Hankou Road corner, outside Manner. Please come and collect',
+  '快递员已到汉口路路口（Linger门口），请下楼取件': 'Your courier is at the Hankou Road corner, outside Linger. Please come and collect',
   已由前台代收: 'Signed for at the front desk', 已签收: 'Received', '联系不上您，快递已放和平饭店前台': 'Couldn\'t reach you, so it\'s at the Peace Hotel front desk',
 };
 // Manner's ready message is built per order

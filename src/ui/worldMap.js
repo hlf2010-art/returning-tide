@@ -16,7 +16,7 @@ const STOPS = STATIONS.map((S) => { const [x, z] = S.F.toW(PLAT.ac, 0); return {
 export const metroStops = () => STOPS;
 
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
-const B = { X0: -570, X1: 1340, Z0: -310, Z1: 500 }, P = 2;     // painted bounds (metres), pixels per metre
+const B = { X0: -1610, X1: 1340, Z0: -310, Z1: 500 }, P = 1.6;     // painted bounds (metres), pixels per metre
 const LABELS = [
   { x: 14, z: -80, zh: '外滩 · 滨江步道', en: 'The Bund promenade', rot: -Math.PI / 2, size: 13 },
   { x: -16, z: 60, zh: '中山东一路', en: 'Zhongshan Rd E-1', rot: -Math.PI / 2, size: 11 },

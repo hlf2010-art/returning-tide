@@ -13,6 +13,7 @@ import { DRIVER_EN } from '../../src/world/driversEn.js';
 import { BARKS } from '../../src/world/barks.js';
 import { CALLS } from '../../src/world/agenda.js';
 import { enText } from '../../src/world/agendaEn.js';
+import { AIA_TALK, AIA_EVENTS } from '../../src/world/aiaTalk.js';
 
 const out = new Map();   // zh text -> { who, zh, en }
 const cjk = /[一-鿿]/;
@@ -32,6 +33,8 @@ for (const [kind, set] of Object.entries(BARKS)) for (const list of Object.value
   if (b.lang === 'en') add(`bump:${kind}`, b.zh, b.t); else add(`bump:${kind}`, b.t, b.en);
 }
 for (const c of Object.values(CALLS)) for (const l of c.lines) if (l.text && l.who !== 'me') add(l.who, l.text, l.en);
+// the AIA lobby's agents and clients (Shanghainese is subtitles only)
+for (const exs of [...Object.values(AIA_TALK), ...Object.values(AIA_EVENTS)]) for (const ex of exs) for (const [who, zh, en, lang] of ex) if (lang !== 'wuu') add(`aia:${who}`, zh, en);
 
 // ---- inline lines in the source ----
 const FILE_SPEAKER = { 'carSale.js': 'vivian' }, LINE_FNS = new Set(['T', 'B']);
@@ -64,13 +67,15 @@ for (const f of files('src')) {
       const [a, b, c] = n.elements.map(lit);
       if (a && /^[a-z]+$/.test(a) && b && cjk.test(b) && c && !cjk.test(c)) add(a, b, c);
     }
-    if (n.type === 'ObjectExpression') {                               // a WeChat voice note: { from, kind: 'voice', text }
+    if (n.type === 'ObjectExpression') {                               // a Xinyu voice note: { from, kind: 'voice', text }
       const g = (k) => { const q = n.properties.find((x) => x.key && x.key.name === k); return q && lit(q.value); };
       if (g('kind') === 'voice' && g('from')) { add(g('from'), g('text'), g('en')); const tq = n.properties.find((x) => x.key && x.key.name === 'text'); if (tq && tq.value.type === 'ConditionalExpression') { add(g('from'), lit(tq.value.consequent)); add(g('from'), lit(tq.value.alternate)); } }
     }
     if (n.type === 'Property' && n.key && n.key.name === 'text' && FILE_SPEAKER[base]) { const t = tCall(n.value); if (t) add(FILE_SPEAKER[base], t[0], t[1]); }
   });
 }
+// Shanghainese lines (the AIA lobby's) are subtitles only, however the source parse found them
+for (const exs of [...Object.values(AIA_TALK), ...Object.values(AIA_EVENTS)]) for (const ex of exs) for (const [, zh, , lang] of ex) if (lang === 'wuu') out.delete(zh.trim());
 const list = [...out.values()].map((l) => ({ ...l, en: l.en || (enText(l.zh) !== l.zh ? enText(l.zh) : '') }));
 process.stdout.write(JSON.stringify(list, null, 1));
 const by = {}; for (const l of list) by[l.who] = (by[l.who] || 0) + 1;

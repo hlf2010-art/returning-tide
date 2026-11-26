@@ -272,7 +272,7 @@ const FEEL = {
 // round), 'trending' (only Kexin says something different: it's her world)
 const CAR = {
   zhiwei: { heard: B('听说你的车在外滩被拖走了，还有人受了伤？……你先把这事处理干净。', "I hear your car was towed off the Bund, and someone was hurt? ...Deal with it properly first."),
-    seen: B('视频我看了。斑马线，兰博基尼，外滩。你知道这三个词放一起客户会怎么想吗？人没事就好。别再那样开车。', "I watched the video. A zebra crossing, a Lamborghini, the Bund. Do you know what a client makes of those three together? I'm glad they're all right. Don't drive like that again.") },
+    seen: B('视频我看了。斑马线，科尔维纳，外滩。你知道这三个词放一起客户会怎么想吗？人没事就好。别再那样开车。', "I watched the video. A zebra crossing, a Corvina, the Bund. Do you know what a client makes of those three together? I'm glad they're all right. Don't drive like that again.") },
   nanxing: { heard: B('听说你开车撞了人。我以前跑社会新闻，这种事见多了，从没想过会是你。', "I hear you hit someone with the car. I used to cover local news; I've seen plenty of these. I never thought it would be you."),
     seen: B('那条视频我看了三遍。拍的人手很稳，你不太稳。被你撞的那个人还好吗？', "I watched that video three times. Whoever shot it had a steady hand. You didn't. Is the person you hit all right?") },
   gunian: { heard: B('明轩说你开车撞了人。人没事吧？我想听你自己说。', "Mingxuan says you hit someone with the car. Are they all right? I'd like to hear it from you."),
@@ -280,8 +280,8 @@ const CAR = {
   yuan: { heard: B('听说你车出事了？撞到人了？你给我打个电话。', 'I hear something happened with the car? You hit someone? Call me.'),
     seen: B('纪白。视频都传到我们所的群里了。你没事吧？那个行人呢？你在湾区连黄灯都不抢的。', "Ji Bai. The video's reached our office chat. Are you all right? And the pedestrian? In the Bay Area you wouldn't even run an amber light.") },
   kexin: { heard: B('听说你在外滩撞了人？还好没人拍，不然你就火了。', "I hear you hit someone on the Bund? Lucky nobody filmed it, or you'd be famous."),
-    seen: B('有人在小红书发了你的车和斑马线，还没火。我认识几个号，能压就压。但你得保证没有第二次。', "Someone posted your car and the zebra crossing on Xiaohongshu. It hasn't taken off yet. I know a few accounts; I'll keep it down if I can. But promise me there won't be a second time."),
-    trending: B('你上热搜了，不是好的那种。“外滩兰博基尼撞人”。别发声明，别删评论。先去看看那个人，带点东西。拍不拍随你。', "You're trending, and not the good way. 'Lamborghini hits pedestrian on the Bund'. No statement, don't delete comments. Go and see the person first, take something. Whether you film it is up to you.") },
+    seen: B('有人在红叶发了你的车和斑马线，还没火。我认识几个号，能压就压。但你得保证没有第二次。', "Someone posted your car and the zebra crossing on Hongye. It hasn't taken off yet. I know a few accounts; I'll keep it down if I can. But promise me there won't be a second time."),
+    trending: B('你上热搜了，不是好的那种。“外滩科尔维纳撞人”。别发声明，别删评论。先去看看那个人，带点东西。拍不拍随你。', "You're trending, and not the good way. 'Corvina hits pedestrian on the Bund'. No statement, don't delete comments. Go and see the person first, take something. Whether you film it is up to you.") },
 };
 for (const who of Object.keys(CAR)) for (const l of Object.values(CAR[who])) t(l.zh, l.en);
 export function romanceEvent(L, id, type, data = {}) {

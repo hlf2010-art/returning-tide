@@ -17,7 +17,7 @@ const SSR_LAYER = 3;                                   // ground meshes, for the
 // ao: ground-truth ambient occlusion (contact darkening where things meet: kerbs, walls, under cars,
 // people's feet), top two steps only; smaa: edge anti-aliasing wherever MSAA is off
 const LADDER = [
-  { msaa: 4, scale: 1, ssr: true, shadows: 2, ao: true }, { msaa: 2, scale: 1, ssr: true, shadows: 2, ao: true }, { msaa: 0, scale: 1, shadows: 1 },
+  { msaa: 4, scale: 1, ssr: true, shadows: 2, ao: true, refl: true }, { msaa: 2, scale: 1, ssr: true, shadows: 2, ao: true, refl: true }, { msaa: 0, scale: 1, shadows: 1, refl: true },
   { msaa: 0, scale: 0.8, shadows: 1 }, { msaa: 0, scale: 0.65, shadows: 0 }, { msaa: 0, scale: 0.5, shadows: 0 },
 ];
 
@@ -25,9 +25,10 @@ const LADDER = [
 // (and 'auto' is on) the renderer steps down from there: MSAA first, then AO and SSR, then resolution.
 // `?q=<n>` (tools) still pins one LADDER step exactly.
 function effective(g, drop) {
-  const q = { msaa: g.msaa, scale: g.scale, ssr: g.ssr, shadows: g.shadows, ao: g.ao, bloom: g.bloom };
+  const q = { msaa: g.msaa, scale: g.scale, ssr: g.ssr, shadows: g.shadows, ao: g.ao, bloom: g.bloom, refl: g.refl };
   if (drop >= 1) q.msaa = 0;
   if (drop >= 2) { q.ao = false; q.ssr = false; }
+  if (drop >= 3) q.refl = false;
   if (drop >= 3) { q.scale = Math.max(0.5, g.scale * 0.85 ** (drop - 2)); q.shadows = Math.min(q.shadows, drop >= 5 ? 0 : 1); }
   return q;
 }
@@ -67,7 +68,15 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null, gfx =
   gtao.updateGtaoMaterial({ radius: 0.55, distanceExponent: 1.4, thickness: 1.2, scale: 1, samples: 12 });
   gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 });
   const gtaoRender = gtao.render.bind(gtao);
-  gtao.render = (...a) => { aoCam.copy(camera, false); aoCam.layers.mask = camera.layers.mask & ~(1 << 2); gtaoRender(...a); };
+  // (the sky is a 1 m sphere round the eye drawn behind everything; the AO pass's own depth/normal render
+  // ignores its depthWrite:false, so it is hidden for that render or it smears the sky with dark streaks)
+  let sky = null;
+  gtao.render = (...a) => {
+    aoCam.copy(camera, false); aoCam.layers.mask = camera.layers.mask & ~(1 << 2);
+    if (!sky || !sky.parent) sky = scene.getObjectByName('sky');
+    const was = sky ? sky.visible : false; if (sky) sky.visible = false;
+    try { gtaoRender(...a); } finally { if (sky) sky.visible = was; }
+  };
   composer.addPass(gtao);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
@@ -122,6 +131,7 @@ export function createRenderer(canvas, scene, camera, { fixedLevel = null, gfx =
     frame(t) { grade.uniforms.time.value = t; },
     get ssr() { return ssr; },
     get reflections() { return composer.passes[0] === ssr; },
+    get peopleReflections() { return !!Q().refl; },     // (world/peopleReflect.js: drawn by main before the frame)
     setReflections(on) { ssrEnabled = !!on; usePasses(); },
     // Wet-ground reflections: `selects` are the ground meshes; each may carry userData.ssrMask, a
     // material that writes the per-pixel reflection strength (puddles strong, damp stone faint).

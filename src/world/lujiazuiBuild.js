@@ -3,9 +3,8 @@
 // geometry, merged per material (world/geo.js Batch and the Tris helper below). Where things are comes
 // from world/lujiazuiLayout.js; nothing here decides a position you can stand on.
 import * as THREE from 'three';
-import { siApple } from 'simple-icons';
 import { Batch } from './geo.js';
-import { makeCanvas, tex, rng, FONT, glowTexture } from './canvas.js';
+import { makeCanvas, tex, rng, FONT, glowTexture, fitText } from './canvas.js';
 import { asLight, TOD } from './dayNight.js';
 import { markCanvas } from '../ui/brands.js';
 import { LINE_COLOR } from './nanjingRoad.js';
@@ -68,7 +67,7 @@ const noise = (seed, base, spread, size = 256, blotch = 0) => {
   return tex(c, { aniso: 8 });
 };
 // every string drawn into a texture here (so the fonts can be asked for their glyphs before building)
-export const LJZ_TEXT = '轮渡 东昌路码头 外滩 Ferry Dongchang pier the Bund 陆家嘴站 Lujiazui 号口 Exit 进站 Entrance 号线 Line 东方明珠 正大广场 国金中心 世纪大道 环路 西路 丰和路 银城中路 中心绿地 商场 上海 北侧 网约车上下客点 广播电视塔 办公楼大堂 地铁 步行 请勿翻越护栏 注意安全 中银大厦 SUPER BRAND MALL ifc mall Shanghai Century Avenue Central Green Oriental Pearl Tower Metro Ride-hailing pick-up Ring Rd Fenghe Yincheng 人行天桥 明珠环 东 西 南 北 E W S N ↑ ← → 2 14 1 6 8 米 m';
+export { LJZ_TEXT } from './lujiazuiLayout.js';   // (kept in the layout so the district's signs can ask for their glyphs before this module loads)
 
 // ================= materials =================
 export function ljzMaterials(M) {
@@ -158,7 +157,7 @@ export function buildBridge(g, m, lights) {
 // ================= Apple Pudong =================
 function appleLogo() {
   const [c, x] = makeCanvas(512, 512); x.clearRect(0, 0, 512, 512);
-  const s = 512 * 0.8 / 24; x.translate(512 * 0.1, 512 * 0.1); x.scale(s, s); x.fillStyle = '#fff'; x.fill(new Path2D(siApple.path));
+  const s = 512 * 0.8 / 24; x.translate(512 * 0.1, 512 * 0.1); x.scale(s, s); x.fillStyle = '#fff'; x.beginPath(); x.arc(12, 12, 9, 0, Math.PI * 2); x.arc(12, 12, 5.2, 0, Math.PI * 2, true); x.fill('evenodd');   // Lumen's ring (an invented store)
   return tex(c, { repeat: false, aniso: 8 });
 }
 export function buildApple(g, m, lights, trees = []) {
@@ -218,10 +217,10 @@ export function buildApple(g, m, lights, trees = []) {
   for (const p of A.planters) { const [x, z] = applePt(p.ang, p.r); stone.cyl(x, yP, z, p.rr, p.rr, 0.42, 24); wood.cyl(x, yP + 0.42, z, p.rr + 0.06, p.rr + 0.06, 0.06, 24); trees.push({ x, z, y: yP + 0.48, h: 6 + (p.r % 2), r: 2.3, solid: false }); }
   // the shops' names over their fronts: an HSBC branch on the right (as you look in from the steps), a Starbucks
   // (letters and mark on the walkway's white fascia above each, as in the photographs)
-  const brand = (slug, color, text, ang, w) => { const [c, x] = makeCanvas(1024, 128); x.clearRect(0, 0, 1024, 128); x.drawImage(markCanvas(slug, { color, size: 120, pad: 0.04 }), 10, 4, 120, 120); x.fillStyle = slug === 'hsbc' ? '#222' : color; x.font = `800 92px ${FONT.sans}`; x.textBaseline = 'middle'; x.fillText(text, 150, 68);
+  const brand = (slug, color, text, ang, w) => { const [c, x] = makeCanvas(1024, 128); x.clearRect(0, 0, 1024, 128); x.drawImage(markCanvas(slug, { color, size: 120, pad: 0.04 }), 10, 4, 120, 120); x.fillStyle = slug === 'hsbc' ? '#222' : color; x.font = `800 92px ${FONT.sans}`; x.textBaseline = 'middle'; fitText(x, text, 150, 68, 1024 - 160);
     const mat = new THREE.MeshBasicMaterial({ map: tex(c, { repeat: false, aniso: 8 }), transparent: true, side: THREE.DoubleSide, depthWrite: false }); mat.userData.todSkip = true;
     const y = rampY(Math.abs(ang)) - 0.5, [px, pz] = applePt(ang, A.rampIn - 0.34), p = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 8), mat); p.position.set(px, y, pz); p.rotation.y = Math.atan2(...dirOf(B(ang) + 180)); p.renderOrder = 2; g.add(p); };
-  brand('hsbc', '#db0011', 'HSBC 汇丰', 112, 6.4); brand('starbucks', '#00704a', 'STARBUCKS', -128, 6.4);
+  brand('hsbc', '#1F4E79', '申江银行 SHENJIANG BANK', 112, 6.4); brand('starbucks', '#1E5C4F', 'HARBOUR COFFEE', -128, 6.4);
   // the cylinder's door: a flat glass canopy on a slim stainless frame
   { const c = P3(0, A.rCyl + 1.1, yP + 3.2), [dx, dz] = dirOf(E), [tx, tz] = dirOf(E + 90); obox(st, c[0], c[1], c[2], tx, tz, 5.0, 0.1, 2.2); const cg = new Tris(); cg.quad([c[0] - tx * 2.4 - dx * 1.0, c[1] + 0.11, c[2] - tz * 2.4 - dz * 1.0], [c[0] + tx * 2.4 - dx * 1.0, c[1] + 0.11, c[2] + tz * 2.4 - dz * 1.0], [c[0] + tx * 2.4 + dx * 1.0, c[1] + 0.11, c[2] + tz * 2.4 + dz * 1.0], [c[0] - tx * 2.4 + dx * 1.0, c[1] + 0.11, c[2] - tz * 2.4 + dz * 1.0]); gl.p.push(...cg.p); gl.n.push(...cg.n); gl.u.push(...cg.u);
     for (const s2 of [-2.3, 2.3]) { const hx = c[0] + tx * s2 + dx * 1.9, hz = c[2] + tz * s2 + dz * 1.9, ex = c[0] + tx * s2 * 0.9, ez = c[2] + tz * s2 * 0.9, dv = new THREE.Vector3(ex - hx, 2.2, ez - hz), L = dv.length(), geo = new THREE.BoxGeometry(0.02, 0.02, L); geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dv.normalize())); geo.translate((hx + ex) / 2, c[1] + 1.1, (hz + ez) / 2); st.push(geo); } }   // (hung on two rods from the glass)
@@ -308,9 +307,10 @@ export function buildApple(g, m, lights, trees = []) {
 }
 // the Forum's video wall: a soft gradient with a few tiles of light (no imagery, no brand beyond the store's own)
 function forumTex() {
-  const [c, x] = makeCanvas(1024, 256), gd = x.createLinearGradient(0, 0, 1024, 256);
-  gd.addColorStop(0, '#1d2b4a'); gd.addColorStop(0.5, '#5a3f7a'); gd.addColorStop(1, '#d8805a'); x.fillStyle = gd; x.fillRect(0, 0, 1024, 256);
-  x.fillStyle = 'rgba(255,255,255,0.85)'; x.font = `600 44px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('Today at Apple', 512, 128);
+  // (1024 x 390: the wall's own proportions, 28 degrees of the drum by 3 m, so the lettering isn't stretched)
+  const [c, x] = makeCanvas(1024, 390), gd = x.createLinearGradient(0, 0, 1024, 390);
+  gd.addColorStop(0, '#1d2b4a'); gd.addColorStop(0.5, '#5a3f7a'); gd.addColorStop(1, '#d8805a'); x.fillStyle = gd; x.fillRect(0, 0, 1024, 390);
+  x.fillStyle = 'rgba(255,255,255,0.85)'; x.font = `600 44px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('Today at Lumen', 512, 195);
   return tex(c, { repeat: false, aniso: 8 });
 }
 // lit shop windows without any brand: warm rooms, plinths, a figure or two (the mall's fronts)
@@ -330,17 +330,33 @@ function shopfronts() {
 // ================= towers =================
 // a glass curtain wall in metres: 24 m across, 100.8 m up (24 storeys of 4.2 m), lit rooms in runs
 function curtainAtlas(seed, { glass = '#0f1f2e', warm = 0.4, fin = 'rgba(190,210,225,0.5)', occ = 0.22 } = {}) {
-  const [c, x] = makeCanvas(256, 1024), r = rng(seed); x.fillStyle = glass; x.fillRect(0, 0, 256, 1024);
-  const fh = 1024 / 24;
-  for (let f = 0; f < 24; f++) {
-    let run = 0, col = '#000';
-    for (let b = 0; b < 16; b++) {
-      if (run <= 0 && r() < occ * 0.6) { run = 1 + Math.floor(r() * 4); const t = r(), k = 0.3 + r() * 0.5; const cc = t < warm ? [255, 214, 160] : [205, 228, 255]; col = `rgb(${cc.map((v) => (v * k) | 0).join(',')})`; }
-      if (run > 0) { run--; x.fillStyle = col; x.fillRect(b * 16 + 1, f * fh + 6, 14, fh - 14); }
-    }
-    x.fillStyle = 'rgba(8,12,18,0.85)'; x.fillRect(0, f * fh, 256, 5);
+  // 24 floors x 16 bays. Offices at night go floor by floor: some floors fully lit, some with a long
+  // run of desks still on, most dark with the odd late worker; lit bays are fluorescent white with the
+  // ceiling panels brightest and desks and partitions dark along the sill. Unlit bays differ a little
+  // (blinds half down, a far light), so dark glass isn't one flat colour.
+  const W = 256, H = 1024, floors = 24, bays = 16, fh = H / floors, bw = W / bays;
+  const [c, x] = makeCanvas(W, H), r = rng(seed); x.fillStyle = glass; x.fillRect(0, 0, W, H);
+  const lit = (b, f, rgb, k) => {
+    const X = b * bw + 1, Y = f * fh + 6, w = bw - 2, h = fh - 14;
+    const g = x.createLinearGradient(0, Y, 0, Y + h), cc = (m) => `rgb(${rgb.map((v) => Math.min(255, v * k * m) | 0).join(',')})`;
+    g.addColorStop(0, cc(1.12)); g.addColorStop(0.18, cc(1.0)); g.addColorStop(0.7, cc(0.82)); g.addColorStop(1, cc(0.55));
+    x.fillStyle = g; x.fillRect(X, Y, w, h);
+    x.fillStyle = `rgba(255,255,255,${0.18 * k})`; x.fillRect(X, Y + 2, w, 1.5);                         // a row of ceiling panels
+    x.fillStyle = 'rgba(10,12,16,0.55)';
+    for (let i = 0; i < 3; i++) if (r() < 0.6) { const dw = 2 + r() * 5; x.fillRect(X + r() * (w - dw), Y + h * (0.62 + r() * 0.12), dw, h * 0.4); }   // desks, screens, a person
+    if (r() < 0.25) { x.fillStyle = 'rgba(10,12,16,0.45)'; x.fillRect(X, Y, w, h * (0.2 + r() * 0.4)); }                   // a blind part-way down
+  };
+  for (let f = 0; f < floors; f++) {
+    for (let b = 0; b < bays; b++) { x.fillStyle = `rgba(${r() < 0.5 ? '255,255,255' : '0,0,0'},${(r() * 0.05).toFixed(3)})`; x.fillRect(b * bw + 1, f * fh + 6, bw - 2, fh - 14); }
+    const k = r(), rgb = r() < warm ? [255, 212, 158] : [222, 233, 250], bright = 0.55 + r() * 0.3;
+    if (k < occ * 0.8) {                                          // a whole floor still working
+      for (let b = 0; b < bays; b++) if (r() > 0.08) lit(b, f, rgb, bright * (0.92 + r() * 0.16));
+    } else if (k < occ * 2.1) {                                    // one or two long runs
+      for (let n = r() < 0.4 ? 2 : 1; n > 0; n--) { const s0 = Math.floor(r() * bays), len = 3 + Math.floor(r() * 7); for (let b = s0; b < Math.min(bays, s0 + len); b++) lit(b, f, rgb, bright * (0.92 + r() * 0.16)); }
+    } else if (r() < 0.35) lit(Math.floor(r() * bays), f, r() < 0.5 ? [255, 214, 160] : rgb, 0.4 + r() * 0.3);   // the late one
+    x.fillStyle = 'rgba(8,12,18,0.85)'; x.fillRect(0, f * fh, W, 5);
   }
-  x.fillStyle = fin; for (let b = 0; b < 16; b++) x.fillRect(b * 16, 0, 1.6, 1024);
+  x.fillStyle = fin; for (let b = 0; b < bays; b++) x.fillRect(b * bw, 0, 1.6, H);
   return tex(c, { aniso: 8 });
 }
 // ---- footprints: walls and roofs from OSM outlines (anticlockwise in x, z), UVs in curtain-atlas units
@@ -411,7 +427,7 @@ export function buildIfc(g, m, lights) {
     // a directory totem on the plaza side: the mall, Apple, the hotel in the south tower, the metro
     const tx = ex + F.nx * 6 + F.ex * 7.5, tz = ez + F.nz * 6 + F.ez * 7.5;
     if (!inBuilding(tx, tz, 1)) { obox(stone, tx, CH, tz, F.ex, F.ez, 1.1, 2.6, 0.3); addCircle(tx, tz, 0.6, { y1: 2 });
-      g.add(sign(['国金中心商场 · ifc mall', 'Apple · 浦东丽思卡尔顿酒店 Ritz-Carlton · 地铁2号线 Metro'], { w: 1.0, h: 1.9, x: tx + F.nx * 0.16, y: CH + 1.5, z: tz + F.nz * 0.16, ry, color: '#f2ede2', bg: '#2b2d31', ch: null, gain: 1.1 })); }
+      g.add(sign(['国金中心商场 · ifc mall', 'Lumen · 浦东江景酒店 Riverside Hotel · 地铁2号线 Metro'], { w: 1.0, h: 1.9, x: tx + F.nx * 0.16, y: CH + 1.5, z: tz + F.nz * 0.16, ry, color: '#f2ede2', bg: '#2b2d31', ch: null, gain: 1.1 })); }
     lights.push({ x: ex + F.nx * 3, y: 4.6, z: ez + F.nz * 3, intensity: 22, distance: 16, color: new THREE.Color(1.0, 0.92, 0.8) });
   }
   // the mall's glass toward the Apple court is braced by a giant steel X in each bay (as the photographs show)
@@ -719,7 +735,7 @@ export function buildStreet(g, m, lights) {
     for (const f of [1, -1]) g.add(sign([A.zh, `${A.en}`], { w: 1.5, h: 0.52, x: x + A.px * 0.03 * f, y: 2.75, z: z + A.pz * 0.03 * f, ry: Math.atan2(A.px * f, A.pz * f), bg: '#1d4f9c', color: '#fff' }));
   }
   // pedestrian wayfinding on the ring, at the head of each stair: what lies that way
-  const WAY = { 60: ['地铁2号线 1号口 · 世纪大道北侧 · 中心绿地', 'Metro Line 2 Exit 1 · Century Ave north · Central Green'], 190: ['陆家嘴环路 · 香格里拉', 'Lujiazui Ring Rd · Shangri-La'], 235: ['正大广场 · 陆家嘴西路', 'Super Brand Mall · West Lujiazui Rd'], 290: ['丰和路 · 国际会议中心', 'Fenghe Rd · Intl Convention Center'], 330: ['东方明珠广播电视塔', 'Oriental Pearl Tower'], 150: ['国金中心 · Apple · 地铁6号口', 'IFC · Apple · Metro Exit 6'] };
+  const WAY = { 60: ['地铁2号线 1号口 · 世纪大道北侧 · 中心绿地', 'Metro Line 2 Exit 1 · Century Ave north · Central Green'], 190: ['陆家嘴环路 · 东方饭店', 'Lujiazui Ring Rd · Orient Hotel'], 235: ['正大广场 · 陆家嘴西路', 'Super Brand Mall · West Lujiazui Rd'], 290: ['丰和路 · 国际会议中心', 'Fenghe Rd · Intl Convention Center'], 330: ['东方明珠广播电视塔', 'Oriental Pearl Tower'], 150: ['国金中心 · Lumen · 地铁6号口', 'IFC · Lumen · Metro Exit 6'] };
   for (const R of RAMPS) {
     const sp = R.kind === 'spur', [x, z] = sp ? rpolar(SPUR.b, RING.r1 + 1.2) : rpolar(R.b - 5.4, RING.r1 - 0.6), d = dirOf(R.b);
     const px = x + (sp ? dirOf(R.b + 90)[0] * 6.4 : 0), pz = z + (sp ? dirOf(R.b + 90)[1] * 6.4 : 0);

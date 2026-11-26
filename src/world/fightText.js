@@ -6,11 +6,11 @@
 //   cop / cop2  the officers who come                             op     the 110 operator      me  you
 export const FIGHT_NAMES = {
   drunk: ['醉汉', 'Drunk man'], girl: ['女生', 'Young woman'], film: ['路人', 'Bystander'], guard: ['酒店保安', 'Hotel security'],
-  cop: ['民警', 'Police officer'], cop2: ['辅警', 'Auxiliary officer'], op: ['110 接警员', '110 operator'], me: ['你', 'You'], doorman: ['门童', 'Doorman'],
+  cop: ['民警', 'Police officer'], cop2: ['辅警', 'Auxiliary officer'], op: ['110 接警员', '110 operator'], me: ['你', 'You'], doorman: ['保安', 'Security'],
 };
 // overheard as you come near, before you've done anything
 export const NOTICE = [
-  ['drunk', '加个微信怎么了？我又不是坏人！', "Add me on WeChat, what's the harm? I'm not a bad guy!"],
+  ['drunk', '加个信语怎么了？我又不是坏人！', "Add me on Xinyu, what's the harm? I'm not a bad guy!"],
   ['girl', '我说了不加。你让一下。', 'I said no. Let me past.'],
   ['drunk', '哎哟，还挺有脾气。走什么走，话还没讲完呢！', "Ooh, a temper on her. Where're you going? I'm not done talking!"],
   ['girl', '你别拉我！', "Don't grab me!"],
@@ -198,7 +198,7 @@ export function closing(R) {
     separated: ['有人把你们拉开了。要是没人拉呢？', 'Somebody pulled you apart. And if nobody had?'],
   }[k] || ['', ''];
 }
-// the next day at the hotel door: the doorman has heard (or seen your face)
+// the next day at the hotel door: the security man on the door has heard (or seen your face)
 export function doormanLine(R, level) {
   if (level >= 2) return ['纪先生，您这脸……要紧吗？要不要我叫医生？', 'Mr Ji, your face… is it bad? Shall I call a doctor?'];
   if (R.outcome === 'walked' || R.outcome === 'passed') return ['昨晚门口有个喝醉的闹事，后来警察都来了。您没碰上吧？', "There was a drunk making trouble out front last night. The police came in the end. You didn't run into it, sir?"];

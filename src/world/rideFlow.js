@@ -19,8 +19,8 @@ const REPLY_KEYS = ['engage', 'short', 'change', 'ignore'];
 // what happened at the places still told by the card, for the friends' invitations there
 const CARD = {
   'zhixia-track': (L) => { const q = (L.flags.maker && L.flags.maker.gadgets.telemetry || {}).quality || 0.5, lap = (2 * 60 + 6.4 - q * 3.1).toFixed(1); return {
-    zh: `天马赛车场，阴天，赛道是干的。知夏的车装着你做的记录仪，最快一圈 ${Math.floor(lap / 60)}分${(lap % 60).toFixed(1)}秒，刹车点数据她看了一下午。${L.flags.car ? '你的 Huracán 也上了赛道，她开了三圈，下来说：“还行。”' : ''}`,
-    en: `Tianma, overcast, a dry track. Zhixia's car ran your logger; her best lap was ${Math.floor(lap / 60)}:${(lap % 60).toFixed(1).padStart(4, '0')}, and she spent the afternoon on the braking data.${L.flags.car ? ' Your Huracán went out too: she drove three laps and came back saying, "Not bad."' : ''}` }; },
+    zh: `天马赛车场，阴天，赛道是干的。知夏的车装着你做的记录仪，最快一圈 ${Math.floor(lap / 60)}分${(lap % 60).toFixed(1)}秒，刹车点数据她看了一下午。${L.flags.car ? '你的 Strale 也上了赛道，她开了三圈，下来说：“还行。”' : ''}`,
+    en: `Tianma, overcast, a dry track. Zhixia's car ran your logger; her best lap was ${Math.floor(lap / 60)}:${(lap % 60).toFixed(1).padStart(4, '0')}, and she spent the afternoon on the braking data.${L.flags.car ? ' Your Strale went out too: she drove three laps and came back saying, "Not bad."' : ''}` }; },
   'yinuo-heli': () => ({ zh: '直升机从浦东起飞，沿江往北，外滩的灯一栋一栋地过去。以诺一路没说话，降落前说：“小时候家里的每一件事都有人安排好。今天这个，是我自己要的。”', en: 'The helicopter lifted off from Pudong and followed the river north, the Bund going by building by building in its lights. Yinuo said nothing the whole way. Just before landing: "When I was small, everything in my family was arranged for me. Tonight was the first thing I asked for myself."' }),
 };
 const ANSWER_TIME = 7;                                   // s: no answer by then is an answer
@@ -75,7 +75,7 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arrive
     cancel() {
       if (!R || !['matching', 'coming', 'waiting'].includes(R.phase)) return;
       const L = getLife();
-      if (R.phase === 'waiting') pay(L, { method: R.method, amount: 5, to: '滴滴出行', memo: '取消费', kind: 'ride' });
+      if (R.phase === 'waiting') pay(L, { method: R.method, amount: 5, to: '快马出行', memo: '取消费', kind: 'ride' });
       R.phase = 'cancelled'; L.flags.ride = null; didi.cancel();
       post(L, 'didi', { from: 'didi', kind: 'text', text: '行程已取消' });
     },
@@ -152,7 +152,7 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arrive
       // the evening there passes; a DiDi back to the Bund
       const stay = kept ? 120 : 45, back = fare(d, (L.clock.minute + stay) % 1440);
       skipTo(L, stamp(L) + stay + d.mins);
-      pay(L, { method: R.method, amount: back, to: '滴滴出行', memo: `快车 → 外滩`, kind: 'ride' });
+      pay(L, { method: R.method, amount: back, to: '快马出行', memo: `快车 → 外滩`, kind: 'ride' });
       card = { d, res, kept, back };
       const c = el('ride-card');
       if (c) {
@@ -163,7 +163,7 @@ export function createRideFlow({ getLife, didi, hud, audio, onMode, save, arrive
           ? (zh ? `你准时到了。${inv.title}。待了两个小时。` : `You made it on time: ${enText(inv.title)}. You stayed a couple of hours.`)
           : (zh ? '你在那边待了一会儿。' : 'You spent a while there.');
         c.querySelector('.fare').textContent = zh ? `车费 ¥${res.amount} · 回程 ¥${back}` : `Fare ¥${res.amount} · ride back ¥${back}`;
-        c.querySelector('.back').textContent = zh ? '一辆滴滴把你送回了外滩。' : 'A DiDi brought you back to the Bund.';
+        c.querySelector('.back').textContent = zh ? '一辆快马把你送回了外滩。' : 'A Kuaima brought you back to the Bund.';
         c.querySelector('.go').textContent = t('rideContinue');
         c.classList.add('on');
       }

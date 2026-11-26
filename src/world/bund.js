@@ -6,6 +6,7 @@ import { L, lions } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT } from './canvas.js';
 import { towerAtlas } from './skyline.js';
+import { DOOR_COL, RUSTIC_WIN, DOOR_TOP } from './textures.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // ---- the classical kit, modelled in Blender (tools/blender/bund_kit.py, public/models/bund-kit.glb): an Attic
@@ -33,13 +34,14 @@ export async function loadBundKit(url = './models/bund-kit.glb') {
 }
 
 const FX = L.facadeX;
-const NAMES = ['stone', 'stoneDark', 'flute', 'classic', 'arched', 'rustic', 'deco', 'brick', 'roof', 'copper', 'bronze', 'glassDark'];
+const NAMES = ['stone', 'stoneDark', 'flute', 'classic', 'arched', 'rustic', 'deco', 'brick', 'roof', 'copper', 'bronze', 'glassDark', 'door'];
 
 export function facade(B, style, ax, az, bx, bz, y0, y1, { bay = 4, floors = 1, f0 = 1, f1 = 0.6, seed = 0, holes = null } = {}) {
   const len = Math.hypot(bx - ax, bz - az);
   let uv;
   if (style === 'stone' || style === 'stoneDark') uv = [0, y0 / 2, len / 2, y1 / 2];
   else { const bays = Math.max(1, Math.round(len / bay)), uo = (seed * 3) % 8, vo = (seed * 5) % 4; uv = [uo / 8, vo / 4, (uo + bays) / 8, (vo + floors) / 4]; }
+  if (style === 'rustic' && B.door && y0 < 0.5) rusticDoors(B, ax, az, bx, bz, y0, y1, uv, f0, f1, holes);
   if (!holes || !holes.length) { B[style].wall(ax, az, bx, bz, y0, y1, uv, [f0, f1]); return; }
   // a face with doorways cut out of it ([t0, t1] along it as fractions, open up to height h): the pieces round them
   const P = (t) => [ax + (bx - ax) * t, az + (bz - az) * t], U = (t) => uv[0] + (uv[2] - uv[0]) * t;
@@ -48,6 +50,33 @@ export function facade(B, style, ax, az, bx, bz, y0, y1, { bay = 4, floors = 1, 
   let t = 0;
   for (const [h0, h1, h] of [...holes].sort((a, b) => a[0] - b[0])) { piece(t, h0, y0, y1); piece(h0, h1, Math.min(y1, Math.max(y0, h)), y1); t = h1; }
   piece(t, 1, y0, y1);
+}
+
+// The closed doors of the rusticated ground floors, as real pieces in front of the atlas's painted ones (which
+// are what's seen from afar and where nothing stands in front): the two leaves (surfaceDetail.js bundDoorTexture),
+// stone jambs and a head with a little cornice, a granite threshold step. Where the atlas puts a door (every 4th
+// column, the arch's lower part), so the painted fanlight above lines up; never in a doorway cut through the wall.
+function rusticDoors(B, ax, az, bx, bz, y0, y1, uv, f0, f1, holes) {
+  const len = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / len, dz = (bz - az) / len, nx = -dz, nz = dx;
+  const cells = Math.round((uv[2] - uv[0]) * 8), cellW = len / cells, h = y1 - y0, rot = Math.atan2(-dz, dx);
+  const ground = L.curbH, top = y0 + h * RUSTIC_WIN.h * (1 - DOOR_TOP), Fl = (y) => f0 + (f1 - f0) * (y - y0) / h;
+  for (let k = 0; k < cells; k++) {
+    const col = ((Math.floor(uv[0] * 8 + 1e-6) + k) % 8 + 8) % 8;
+    if (!DOOR_COL(col)) continue;
+    const t0 = (k + RUSTIC_WIN.x) / cells, t1 = (k + RUSTIC_WIN.x + RUSTIC_WIN.w) / cells;
+    if (holes && holes.some(([a, b]) => t1 > a - 0.02 && t0 < b + 0.02)) continue;
+    const w = (t1 - t0) * len, tc = (t0 + t1) / 2, cx = ax + dx * len * tc, cz = az + dz * len * tc;
+    const at = (s, out) => [cx + dx * s + nx * out, cz + dz * s + nz * out];
+    // the leaves, a hand's breadth proud of the wall so the frame round them reads as a reveal
+    B.door.wall(...at(-w / 2, 0.04), ...at(w / 2, 0.04), ground, top, [0, 0, 1, 1], [Fl(ground) * 0.9, Fl(top) * 0.9]);
+    const fl = Fl(ground + 1);
+    // jambs, the head and its cornice
+    for (const s of [-1, 1]) { const [jx, jz] = at(s * (w / 2 + 0.1), 0.08); B.stone.box(jx, y0, jz, 0.2, top - y0 + 0.02, 0.16, { flood: fl, rotY: rot }); }
+    { const [hx, hz] = at(0, 0.09); B.stone.box(hx, top, hz, w + 0.4, 0.3, 0.18, { flood: Fl(top), rotY: rot }); }
+    { const [hx, hz] = at(0, 0.13); B.stone.box(hx, top + 0.3, hz, w + 0.62, 0.09, 0.26, { flood: Fl(top) * 1.1, rotY: rot }); }
+    // the threshold: a worn granite step
+    { const [sx, sz] = at(0, 0.2); B.stoneDark.box(sx, y0, sz, w + 0.5, ground - y0 + 0.07, 0.4, { flood: fl * 0.8, rotY: rot }); }
+  }
 }
 
 // Stack of storeys on a rectangular footprint {x0 (west), x1 (east), z0 (north), z1 (south)}.
@@ -416,7 +445,17 @@ export function createBund(M) {
 
   // roof flags
   const poles = new Batch(), flags = [];
-  const flagMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.95, 0.07, 0.05), side: THREE.DoubleSide });
+  // the national flag (GB 12982): red, 3:2; the large star centred at (5, 5) of a 30 x 20 grid, radius 3; the
+  // four small ones (radius 1) at (10, 2), (12, 4), (12, 7), (10, 9), each with a point toward the large star
+  const flagTex = (() => {
+    const [c, x] = makeCanvas(600, 400), u = 20;
+    x.fillStyle = '#ee1c25'; x.fillRect(0, 0, 600, 400); x.fillStyle = '#ffff00';
+    const star = (cx, cy, r, toward) => { x.beginPath(); for (let i = 0; i < 10; i++) { const a = toward + (i * Math.PI) / 5, rr = i % 2 ? r * 0.382 : r; x.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } x.closePath(); x.fill(); };
+    star(5 * u, 5 * u, 3 * u, -Math.PI / 2);
+    for (const [sx, sy] of [[10, 2], [12, 4], [12, 7], [10, 9]]) star(sx * u, sy * u, u, Math.atan2(5 - sy, 5 - sx));
+    return tex(c, { repeat: false, aniso: 4 });
+  })();
+  const flagMat = new THREE.MeshBasicMaterial({ map: flagTex, color: new THREE.Color(0.95, 0.95, 0.95), side: THREE.DoubleSide });
   const flagGeo = new THREE.PlaneGeometry(3.6, 2.4, 6, 1); flagGeo.translate(1.8, 0, 0);
   for (const f of extra.flags) {
     poles.cyl(f.x, f.y, f.z, 0.07, 0.1, f.h, 6);

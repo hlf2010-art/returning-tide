@@ -154,6 +154,7 @@ export function createRiver() {
         b.g.position.y = L.waterY + Math.sin(t * 0.6 + b.speed) * 0.12;
       }
     },
+    target,
     setTime(st) { mat.uniforms.day.value = st.daylight; },
     // the reflection's resolution (graphics settings): width in pixels, half as tall
     setMirrorSize(w) { target.setSize(w, Math.round(w / 2)); },

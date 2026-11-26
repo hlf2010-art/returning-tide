@@ -192,3 +192,28 @@ export function clockGain(d, x, z) {
   const shield = x < L.facadeX - 6 && !(Math.abs(z) < L.street.halfW + 4) ? (onNanjing(x, z) ? 0.35 : 0.2) : 1;
   return Math.min(1, 60 / Math.max(60, d)) * shield;
 }
+
+// ---- the counter's payment speaker ----
+// "易付到账二十五元": the box strings recorded pieces together (public/ambience/pay/, tools/voice/paybox.py).
+// payTokens(amount, method) -> the piece ids in order. Amounts read the Chinese way: 10 十, 15 十五,
+// 105 一百零五, 110 一百一十, 2008 二千零八, 30.5 三十点五; one decimal at most.
+export const PAYBOX = { range: 22, minGap: 3.2, gap: 0.03, crowdChance: 0.55 };
+export function payTokens(amount, method = 'alipay') {
+  const v = Math.max(0, Math.round(Number(amount) * 10) / 10), n = Math.floor(v) % 10000, f = Math.round((v - Math.floor(v)) * 10);
+  const out = [method === 'wechat' ? 'wechat' : 'alipay'], d = (k) => `d${k}`;
+  const q = Math.floor(n / 1000), b = Math.floor(n / 100) % 10, s = Math.floor(n / 10) % 10, g = n % 10;
+  if (n === 0) out.push('d0');
+  if (q) out.push(d(q), 'qian');
+  if (b) out.push(d(b), 'bai'); else if (q && (s || g)) out.push('d0');
+  if (s) { if (!q && !b && s === 1) out.push('shi'); else out.push(d(s), 'shi'); }
+  else if ((q || b) && g && out[out.length - 1] !== 'd0') out.push('d0');
+  if (g) out.push(d(g));
+  if (f) out.push('dian', d(f));
+  out.push('yuan');
+  return out;
+}
+// what a customer in the crowd paid coming out of a shop (Nanjing Road's flagships; a café; a snack)
+export function crowdPayment(rnd = Math.random) {
+  const r = rnd(), amount = r < 0.45 ? 12 + Math.floor(rnd() * 30) : r < 0.85 ? 39 + Math.floor(rnd() * 260) : 299 + Math.floor(rnd() * 1700);
+  return { amount, method: rnd() < 0.55 ? 'alipay' : 'wechat' };
+}

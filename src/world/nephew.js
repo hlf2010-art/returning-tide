@@ -18,7 +18,9 @@ function carrier() {
   ctx.fillStyle = '#b3202a'; ctx.fillRect(0, 0, 256, 288);
   ctx.fillStyle = '#f4ede0'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = `900 92px ${FONT.serif}`; ctx.fillText(CHAIN.zh, 128, 120);
-  ctx.font = `600 22px ${FONT.serif}`; ctx.fillText('SHENLI · GIFTS OF SHANGHAI', 128, 196);
+  ctx.font = `600 22px ${FONT.serif}`;
+  { const k = Math.min(1, 228 / ctx.measureText('SHENLI · GIFTS OF SHANGHAI').width); ctx.font = `600 ${22 * k}px ${FONT.serif}`; }   // (it ran off both edges of the bag)
+  ctx.fillText('SHENLI · GIFTS OF SHANGHAI', 128, 196);
   ctx.fillRect(40, 226, 176, 3);
   const face = new THREE.MeshStandardMaterial({ map: tex(c, { repeat: false }), roughness: 0.75 });
   const side = new THREE.MeshStandardMaterial({ color: 0x9e1c25, roughness: 0.8 });

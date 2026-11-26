@@ -5,6 +5,7 @@
 // Seated: 1 bite a small hole and sip the soup first (the way to do it), 2 pop one in whole (hot),
 // 3 drink the soup; E stands you up. Open 6:30 am to 9:30 pm; the shutter is down otherwise.
 import * as THREE from 'three';
+import { tileTextures, plasterTextures } from './surfaceDetail.js';
 import { Batch } from './geo.js';
 import { makeCanvas, tex, FONT, glowTexture } from './canvas.js';
 import { DUMPLING as D, L as LAYOUT, addDynamicCollider } from './layout.js';
@@ -51,6 +52,12 @@ function menuTexture() {
     x.fillStyle = '#ffd98a'; x.font = `800 38px ${FONT.sans}`; x.textAlign = 'right'; x.fillText(`¥${m.price}`, 980, y); x.textAlign = 'left';
   });
   return tex(c, { repeat: false });
+}
+// a shared detail set (world/surfaceDetail.js) at this batch's UV scale (Batch.box: metres / 2)
+function tiled(set, rep) {
+  const o = {};
+  for (const k of ['map', 'normalMap', 'roughnessMap']) if (set[k]) { const t = set[k].clone(); t.repeat.set(rep, rep); o[k] = t; }
+  return o;
 }
 function tileTexture() {
   const [c, x] = makeCanvas(256, 256);
@@ -111,7 +118,7 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
     tables.push({ x: tx, z: tz, seats, busy: false });
   }
   const mats = {
-    floor: std({ map: tileTexture(), roughness: 0.35 }), tile: std({ color: 0xf2f1ee, roughness: 0.2 }), wall: std({ color: 0xece2cc, roughness: 0.8 }),
+    floor: std({ map: tileTexture(), roughness: 0.35 }), tile: std({ ...tiled(tileTextures(), 2 / 0.6), roughness: 1 }), wall: std({ ...tiled(plasterTextures(), 1), color: 0xece2cc, roughness: 0.85 }),
     steel: std({ color: 0xb8bcc0, metalness: 0.85, roughness: 0.32 }), wood: std({ color: 0x8a6440, roughness: 0.6 }), iron: std({ color: 0x1b1b1d, metalness: 0.6, roughness: 0.5 }),
     red: std({ color: 0xa61d1d, roughness: 0.5 }), dark: std({ color: 0x2a2624, roughness: 0.5, metalness: 0.3 }),
   };
@@ -127,6 +134,9 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
   // steam off the pans
   const steamMat = new THREE.SpriteMaterial({ map: glowTexture(64, [[0, 0.35], [0.5, 0.12], [1, 0]]), color: 0xffffff, transparent: true, depthWrite: false, opacity: 0.4 });
   const steam = Array.from({ length: 10 }, (_, i) => { const s = new THREE.Sprite(steamMat.clone()); s.userData = { p: pans[i % 2], t: Math.random() * 3 }; group.add(s); return s; });
+  // and what the street sees: steam rolling out over the top of the open door, and the kitchen's
+  // extractor breathing out above the sign (docs/living-city-architecture.md §6.6)
+  const street = Array.from({ length: 8 }, (_, i) => { const s = new THREE.Sprite(steamMat.clone()); s.userData = { vent: i >= 5, t: (i % 5) * 0.88 + Math.random() * 0.3, dx: (Math.random() - 0.5) * 2.4 }; s.renderOrder = 3; group.add(s); return s; });
   // the roller shutter, down when closed
   const shutterTex = (() => { const [c, x] = makeCanvas(64, 256); for (let y = 0; y < 256; y += 8) { x.fillStyle = y % 16 ? '#8d9196' : '#a3a7ab'; x.fillRect(0, y, 64, 8); } return tex(c); })();
   shutterTex.repeat.set(4, 4);
@@ -164,7 +174,7 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
     const rows = MENU.map((m, i) => `<button data-i="${i}"><kbd>${i + 1}</kbd><span class="n">${T(m.zh, m.en)}</span><span class="q">${S.cart[m.id] ? `×${S.cart[m.id]}` : ''}</span><span class="p">¥${m.price}</span></button>`).join('');
     card.innerHTML = `<div class="in"><div class="h">${T('阿潮生煎 · 点单', 'A-Chao Shengjian · Order')}</div>${rows}
       <div class="t"><span>${T('合计', 'Total')}</span><b>¥${total()}</b></div>
-      <div class="a"><button data-a="pay" class="mbtn primary">${T('支付宝付款 (Enter)', 'Pay with Alipay (Enter)')}</button><button data-a="clear" class="mbtn">${T('清空 (0)', 'Clear (0)')}</button><button data-a="close" class="mbtn">${T('算了 (Esc)', 'Never mind (Esc)')}</button></div></div>`;
+      <div class="a"><button data-a="pay" class="mbtn primary">${T('易付付款 (Enter)', 'Pay with YiPay (Enter)')}</button><button data-a="clear" class="mbtn">${T('清空 (0)', 'Clear (0)')}</button><button data-a="close" class="mbtn">${T('算了 (Esc)', 'Never mind (Esc)')}</button></div></div>`;
   }
   card.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.i) add(+b.dataset.i); else if (b.dataset.a === 'pay') checkout(); else if (b.dataset.a === 'clear') { S.cart = {}; renderCard(); } else if (b.dataset.a === 'close') closeCard(); });
   const add = (i) => { const m = MENU[i]; if (!m) return; S.cart[m.id] = Math.min(4, (S.cart[m.id] || 0) + 1); renderCard(); };
@@ -174,7 +184,7 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
     const sum = total(); if (!sum) return;
     const l = L0(), items = MENU.filter((m) => S.cart[m.id]).map((m) => `${m.zh}×${S.cart[m.id]}`).join(' ');
     const r = pay(l, { method: 'alipay', amount: sum, to: '阿潮生煎', memo: items, kind: 'food' });
-    if (!r.ok) { hud.toast(T('支付宝余额不足。', 'Not enough on Alipay.'), 3); return; }
+    if (!r.ok) { hud.toast(T('易付余额不足。', 'Not enough on YiPay.'), 3); return; }
     audio && audio.cue && audio.cue('ping', 0, 0.8);
     const buns = MENU.reduce((s, m) => s + (S.cart[m.id] || 0) * (m.buns || 0), 0), soup = MENU.reduce((s, m) => s + (S.cart[m.id] || 0) * (m.soup || 0), 0), drink = MENU.reduce((s, m) => s + (S.cart[m.id] || 0) * (m.drink || 0), 0);
     S.order = { buns, soup, drink, number: 20 + Math.floor(Math.random() * 60), at: stamp(l) }; S.ready = 12;   // (a batch is already in the pan)
@@ -292,10 +302,16 @@ export function createDumpling({ scene, people, player, hud, audio, voice, getLi
       for (const k of ['cashier', 'cook']) if (ppl[k]) ppl[k].p.root.visible = isOpen;
       if (ppl.diner) ppl.diner.frame.visible = isOpen;
       S.inside = pp.x > x0 && pp.x < x1 && pp.z > z0 && pp.z < z1;
+      for (const s of steam) s.visible = near && isOpen; for (const s of street) s.visible = near;   // (sprites cost a draw each: only near the shop)
       if (!near || dt <= 0) return;
       // the order cooks; the lid comes up; your number's called
       if (S.order && S.ready > 0) { S.ready -= dt; if (S.ready <= 0) { pans[0].lift = 2.5; say('ready'); audio && audio.cue && audio.cue('ping', 0, 0.6); } }
       for (const p of pans) { p.lift = Math.max(0, (p.lift || 0) - dt); const want = p.lift > 0 ? -1.1 : 0; p.pivot.rotation.x += (want - p.pivot.rotation.x) * Math.min(1, dt * 4); }
+      for (const s of street) {
+        const u = s.userData; u.t += dt * (u.vent ? 0.8 : 1); const f = (u.t % 4.4) / 4.4, busy = pans[0].lift > 0 || pans[1].lift > 0 ? 1.6 : 1;
+        if (u.vent) { s.position.set(x1 - 1.4 + Math.sin(u.t * 1.3) * 0.25, Y0 + 4.3 + f * 2.6, z0 - 0.2 - f * 0.5); s.scale.setScalar(0.5 + f * 1.6); s.material.opacity = 0.16 * (1 - f) * (isOpen ? 1 : 0.35); }
+        else { s.position.set(cx + u.dx * 0.6 + Math.sin(u.t * 2.1) * 0.15, Y0 + 2.75 + f * 1.3, z0 - 0.15 - f * 0.9); s.scale.setScalar(0.35 + f * 1.1); s.material.opacity = 0.2 * busy * (1 - f) * Math.min(1, f * 6) * (isOpen ? 1 : 0); }
+      }
       for (const s of steam) { const u = s.userData; u.t += dt * (u.p.lift > 0 ? 2.2 : 1); const f = (u.t % 3) / 3; s.position.set(u.p.x + Math.sin(u.t * 3) * 0.12, Y0 + 1.2 + f * 1.4, u.p.z + Math.cos(u.t * 2) * 0.12); s.scale.setScalar(0.3 + f * 0.9); s.material.opacity = (u.p.lift > 0 ? 0.55 : 0.18) * (1 - f) * (isOpen ? 1 : 0); }
       if (isOpen) {
         for (const k of ['cashier', 'cook']) if (ppl[k]) ppl[k].p.update(dt, k === 'cashier' && S.inside ? [pp.x, pp.z] : null);

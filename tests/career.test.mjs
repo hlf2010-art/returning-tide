@@ -111,7 +111,7 @@ function playYear({ road = 'consulting', picks = {}, absent = [], rent = null, e
   ok(b0 > 0, 'ok');
 }
 
-// ---- 3. a flat, through the agent on WeChat ----
+// ---- 3. a flat, through the agent on Xinyu ----
 {
   const { L } = playYear({ rent: 'rentNorthbund', road: 'consulting' });
   const H = home(L);
@@ -216,6 +216,62 @@ ok([...FIRM_SCENES.map((s) => s.id), ...Object.values(ROADS).flat().map((s) => s
   ok(work(opened.L).watch.result === 'lost' && work(opened.L).watch.unmet && /new sign/.test(q(opened.L).summary), 'never going back to the stall: it simply changes hands');
   const old = createLife(); recordHandoff(old, 'sealed'); updateQuests(old, QUESTS, stamp(old), { player: { x: 0, y: 0, z: 0 } });
   ok(old.flags.handoff.outcome === 'sealed' && journal(old, QUESTS, 'zh').find((x) => x.id === 'watch-repairer') && recordHandoff(old, 'opened').outcome === 'sealed', 'a six-day game remembers the pouch too, and the first outcome stands');
+}
+
+// ---- 8c. the last ferry: Old Fang, Zhou's toolbox, and the book that saves the stall without the date ----
+{
+  const { lastFerryDue, lastFerryScript, takeBox, hasBox, AFTER } = await import('../src/world/lastFerry.js');
+  const { FERRY } = await import('../src/engine/ferry.js');
+  const L = createLife(); setupThreads(L); initYear(L); recordHandoff(L, 'sealed');
+  ok(!lastFerryDue(L, FERRY.last), 'the last ferry holds nothing until the notice has been read');
+  L.flags.clueRead = true;
+  ok(lastFerryDue(L, FERRY.last) && !lastFerryDue(L, FERRY.last - 30), '...then only the 23:00 sailing does');
+  const ask = lastFerryScript(L).find((b) => !Array.isArray(b)).ask;
+  void ask[2].then; ok(!hasBox(L) && lastFerryDue(L, FERRY.last), 'saying nothing ends it for the night; it can be tried again');
+  const rev = ask[1].then; ok(hasBox(L) && rev.some((r) => /Kunshan/.test(r[2])) && rev.some((r) => /小白/.test(r[1])) && !lastFerryDue(L, FERRY.last), 'answering, he hears where Zhou went and is given the toolbox; it happens once');
+  ok(L.flags.zhouBox && !takeBox(L) && AFTER.en && AFTER.zh, 'the box is his, and taking it twice does nothing');
+  const tick = () => { runCareer(L); deliverFollowUps(L); updateQuests(L, QUESTS, stamp(L), { player: { x: 0, y: 0, z: 0 } }); };
+  skipTo(L, D(8, 12, 0)); rollover(L); tick();
+  const a2 = zhouMinScript(L).find((b) => !Array.isArray(b)).ask;
+  ok(a2.length === 3 && /工具箱/.test(a2[0].zh), 'at the stall the toolbox is his first answer, even with the seal whole');
+  void a2[0].then; tick(); skipTo(L, D(13, 19, 30)); rollover(L); tick(); tick();
+  ok(work(L).watch.result === 'saved' && work(L).watch.book && /修理单/.test(L.threads.zhoumin.messages.at(-1).text), 'the book saves the stall: the nephew admits the forgery and the line on the notice');
+  const q = journal(L, QUESTS, 'en').find((x) => x.id === 'watch-repairer'); ok(q && q.status === 'done', `the journal closes the side story (${q && q.summary})`);
+}
+
+// ---- 8b. the first evening is one path: little on the phone until the pouch and the hotel ----
+{
+  const { runRomance } = await import('../src/world/romance.js');
+  const evening = ({ rail = null, room = null, gig = false } = {}) => {
+    const L = createLife(); setupThreads(L); initYear(L);
+    const t0 = L.flags.t0, calls = [], tick = () => { runStoryBeats(L); runAgenda(L, () => 0.5); runCareer(L); runRomance(L); deliverFollowUps(L); updateQuests(L, QUESTS, stamp(L), { player: { x: -80, y: 0.15, z: 0 } }); for (const e of L.outbox.splice(0)) if (e.type === 'call') calls.push({ ...e }); };
+    for (let m = t0; m <= D(1, 23, 50); m += 2) {
+      skipTo(L, m);
+      if (rail != null && m >= t0 + rail) L.flags.sawRiver = true;
+      if (room != null && m >= t0 + room && !L.flags.room612) { L.flags.room612 = true; L.flags.room612At = stamp(L); }
+      if (gig) { const i = L.invites.find((x) => x.id === 'momo-gig'); if (i && i.status === 'pending') answerInvite(L, 'momo-gig', true); if (i && stamp(L) >= i.at + 30) i.kept = true; }
+      tick();
+    }
+    return { L, t0, calls };
+  };
+  const a = evening({ rail: 4, room: 30, gig: true });
+  const dadCall = a.calls.find((c) => c.script === 'dad-arrival');
+  ok(dadCall && dadCall.at <= a.t0 + 6, `Dad rings when he reaches the railing (${dadCall && dadCall.at - a.t0} min in)`);
+  ok(!a.L.threads.zhixia.messages.some((m) => /天马/.test(m.text)) && !a.L.invites.some((i) => i.id === 'yinuo-flat'), "Zhixia's car pitch and Yinuo's flat viewing wait for Tuesday");
+  const gig = a.L.invites.find((i) => i.id === 'momo-gig');
+  ok(gig && gig.at === D(1, 20, 0), "Momo's set is at eight, after check-in");
+  ok(a.L.invites.some((i) => i.id === 'xuan-arm' && i.text.startsWith('明天')), 'with the set behind him, Mingxuan writes about the robot arm that night');
+  const q = questState(a.L).list['act1-work'];
+  ok(q && q.started <= a.t0 + 32, 'the first week at the firm begins in room 612');
+  ok(!a.L.threads.wuhu.messages.some((m) => /排练|生煎|测试台|地砖|开会开到/.test(m.text)), 'no background chatter on the first evening');
+  const b = evening();
+  const late = b.calls.find((c) => c.script === 'dad-arrival');
+  ok(late && late.at === b.t0 + 40, 'never at the railing: Dad still rings, forty game minutes in');
+  ok(!b.L.invites.some((i) => i.id === 'xuan-arm'), 'no set: Mingxuan waits for the morning');
+  const unread = Object.values(a.L.threads).reduce((n, t) => n + t.messages.filter((m) => m.from !== 'me' && m.at > a.t0 && m.at < D(1, 19, 30)).length, 0);
+  ok(unread <= 12, `messages before 19:30 on the first evening: ${unread} (was 18)`);
+  skipTo(b.L, D(2, 13, 0)); runAgenda(b.L, () => 0.5);
+  ok(b.L.invites.some((i) => i.id === 'xuan-arm' && i.text.startsWith('今天')) && b.L.threads.zhixia.messages.some((m) => /天马/.test(m.text)), 'Tuesday: the robot arm (today, three) and Zhixia');
 }
 
 // ---- 9. free conversation is told the facts, and told to keep to them ----

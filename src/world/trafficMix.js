@@ -23,14 +23,19 @@ const CARS = [
   ['taxi', 4.6, 1.78, 1.5, 2.82], ['taxi', 4.6, 1.78, 1.5, 2.82], ['taxi', 4.6, 1.78, 1.5, 2.82],
   ['sedan', 4.6, 1.78, 1.5, 2.82, 0xe8e8e6], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x9aa0a6], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x101216],
   ['sedan', 4.6, 1.78, 1.5, 2.82, 0xf2f2f0], ['sedan', 4.6, 1.78, 1.5, 2.82, 0x2a2e36],
-  ['nio-et5', 4.790, 1.960, 1.499, 2.888], ['li-l9', 5.218, 1.998, 1.800, 3.105], ['aito-m9', 5.230, 1.999, 1.800, 3.110], ['luxeed-r7', 4.956, 1.999, 1.656, 2.950],
+  // ride-hail and private new-energy cars: the big electric saloon (world/fleet.js; badges off, shown as the Jinghe E7) in the usual colours
+  ['byd-han', 4.995, 1.91, 1.495, 2.92, 0xf1f1ef], ['byd-han', 4.995, 1.91, 1.495, 2.92, 0x16181c], ['byd-han', 4.995, 1.91, 1.495, 2.92, 0xb9bdc2],
+  ['byd-han', 4.995, 1.91, 1.495, 2.92, 0x22324a], ['byd-han', 4.995, 1.91, 1.495, 2.92, 0xf1f1ef],
 ];
 export const BUS = { model: 'bus', len: 12.0, width: 2.55, height: 3.15, wheelbase: 6.1 };
 
-// lod.traffic: 0.6 (low) .. 1.7 (ultra); about 22 vehicles at 1.0, buses included
+// lod.traffic: 0.6 (low) .. 1.7 (ultra); about 56 vehicles at 1.0, buses included: about 17 a lane-km
+// at the evening peak, the hour's share below that (engine/traffic.js setDensity). The cars are
+// instanced (world/fleet.js) and drawn as their lamps beyond 150 m, so numbers cost little to draw
+// (docs/living-city-architecture.md D6; it was 22)
 export function trafficSpecs(factor = 1, rnd = Math.random) {
   const out = crossing.vehicles.map((v) => ({ ...v }));
-  const total = Math.max(out.length, Math.round(22 * factor));
+  const total = Math.max(out.length, Math.round(56 * factor));
   const nBus = factor < 0.8 ? 2 : factor < 1.5 ? 4 : 6;
   const lanes = crossing.lanes.map((l) => l.id);
   // spread the extras evenly over the 830 m loop in each lane, clear of what's there
@@ -48,7 +53,7 @@ export function trafficSpecs(factor = 1, rnd = Math.random) {
   };
   for (let b = 0; b < nBus; b++) place({ ...BUS, id: `bus${b}`, bus: true, route: ['55', '33', '65'][b % 3], v0: 9.5 }, b % 2 ? ['nb2'] : ['sb2']);
   let i = 0;
-  while (out.length < total && i < 200) {
+  while (out.length < total && i < 400) {
     const [model, len, width, height, wheelbase, paint] = CARS[i % CARS.length];
     place({ id: `x${i}`, model, len, width, height, wheelbase, paint }, lanes);
     i++;

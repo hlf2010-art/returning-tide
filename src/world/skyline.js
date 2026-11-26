@@ -125,18 +125,96 @@ function floodlit(mat, { spheres, deckLights }) {
   return mat;
 }
 
-function stripeTexture(colors, rows, dark = '#070b14') {
-  // horizontal floor-light bands for the supertalls
-  const [c, ctx] = makeCanvas(64, 1024), r = rng(colors.length * 7 + rows);
-  ctx.fillStyle = dark; ctx.fillRect(0, 0, 64, 1024);
-  const rh = 1024 / rows;
-  for (let i = 0; i < rows; i++) {
-    const col = colors[Math.floor(r() * colors.length)], a = 0.25 + r() * 0.6;
-    ctx.fillStyle = col; ctx.globalAlpha = a;
-    for (let x = 0; x < 64; x += 4) if (r() < 0.8) ctx.fillRect(x, i * rh + rh * 0.3, 3, rh * 0.45);
+// ---- the landmarks' own façades. Each map is what the tower shows after dark; by day skylineGlass
+// reads it as the curtain wall's pattern under its own tint and the sky it reflects. Every map is laid
+// out in floors (v) and bays (u) so the shader's mullions and slabs (its `grid`) fall on them: a lit
+// window fills the upper ~80 % of its floor, the spandrel the bottom. ----
+// paint one floor's run of bays, ceiling lights brighter than the desks below
+function litBay(ctx, x, y, w, h, rgb, k) {
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  const c = (m) => `rgb(${rgb.map((v) => Math.min(255, v * k * m) | 0).join(',')})`;
+  g.addColorStop(0, c(1.08)); g.addColorStop(0.55, c(0.9)); g.addColorStop(1, c(0.62));
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+}
+// floor-by-floor occupancy: whole floors lit, long runs, dark floors; not a scatter of single windows
+function officeFloors(ctx, r, { W, H, floors, bays, y0 = 0, y1 = floors, occ = 0.35, warm = 0.2, gain = 1, cool = [214, 230, 255], hot = [255, 212, 150] }) {
+  const fh = H / floors, bw = W / bays;
+  for (let f = y0; f < y1; f++) {
+    const top = H - (f + 1) * fh, k = r();
+    if (k > occ) continue;                                    // a dark floor
+    const full = k < occ * 0.35, rgb = r() < warm ? hot : cool;
+    let b = 0;
+    while (b < bays) {
+      const run = full ? bays : 2 + Math.floor(r() * bays * 0.45);
+      const gap = full ? 0 : Math.floor(r() * bays * 0.4);
+      b += gap;
+      const n = Math.min(run, bays - b); if (n <= 0) break;
+      litBay(ctx, b * bw, top + fh * 0.04, n * bw, fh * 0.78, rgb, (0.5 + r() * 0.35) * gain);
+      b += n + 1;
+    }
   }
-  ctx.globalAlpha = 1;
-  return tex(c, { aniso: 4 });
+}
+// Shanghai Tower: a double skin of pale glass in nine zones; at each zone's top the sky lobby, its ring
+// of white light round the outer wall; offices mostly dark late, the hotel near the top warm
+function shanghaiTowerTexture() {
+  const W = 128, H = 2048, floors = 128, [c, ctx] = makeCanvas(W, H), r = rng(632);
+  const bg = ctx.createLinearGradient(0, H, 0, 0); bg.addColorStop(0, '#0d1824'); bg.addColorStop(1, '#101f2e');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  const zones = [0, 16, 30, 44, 58, 72, 86, 100, 113, 124];
+  for (let z = 0; z < zones.length - 1; z++) {
+    officeFloors(ctx, r, { W, H, floors, bays: 16, y0: zones[z] + 2, y1: zones[z + 1], occ: z >= 7 ? 0.4 : 0.2, warm: z >= 7 ? 0.8 : 0.3, gain: 0.6 });
+  }
+  const fh = H / floors;
+  for (const f of zones.slice(1)) {                      // sky lobby: lit floors and the ring of LED on the outer skin
+    litBay(ctx, 0, H - (f + 2) * fh + 4, W, fh * 1.2, [200, 225, 255], 0.38);
+    ctx.fillStyle = 'rgba(235,245,255,0.9)'; ctx.fillRect(0, H - f * fh - 1.6, W, 1.6);
+    ctx.fillStyle = 'rgba(160,200,255,0.25)'; ctx.fillRect(0, H - f * fh - 7, W, 4.8);
+  }
+  return tex(c, { aniso: 8 });
+}
+// World Financial Center: blue-grey glass, a fine square grid, mostly dark late with lit office runs;
+// the hotel and the observatory at the top lit warmer
+function swfcTexture() {
+  const W = 128, H = 1024, floors = 100, [c, ctx] = makeCanvas(W, H), r = rng(492);
+  const bg = ctx.createLinearGradient(0, H, 0, 0); bg.addColorStop(0, '#0a1422'); bg.addColorStop(1, '#0e1b2e');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  officeFloors(ctx, r, { W, H, floors, bays: 32, y0: 3, y1: 78, occ: 0.32, warm: 0.1, gain: 0.9 });
+  officeFloors(ctx, r, { W, H, floors, bays: 32, y0: 79, y1: 94, occ: 0.6, warm: 0.75, gain: 0.85 });
+  officeFloors(ctx, r, { W, H, floors, bays: 32, y0: 94, y1: 100, occ: 0.9, warm: 0.2, gain: 1.05 });
+  return tex(c, { aniso: 8 });
+}
+// Jin Mao: the pagoda's silver fins, floodlit gold from every setback so each tier glows brightest at
+// its foot and fades upward; warm windows between
+const JINMAO_TIERS = [64, 56, 48, 40, 34, 28, 24, 20, 16, 14, 12, 10, 8], JINMAO_H = 421;
+function jinMaoTexture() {
+  const W = 256, H = 1024, floors = 88, bays = 40, [c, ctx] = makeCanvas(W, H), r = rng(421);
+  ctx.fillStyle = '#120d07'; ctx.fillRect(0, 0, W, H);
+  officeFloors(ctx, r, { W, H, floors, bays, y0: 2, y1: 52, occ: 0.28, warm: 0.6, gain: 0.55 });
+  officeFloors(ctx, r, { W, H, floors, bays, y0: 53, y1: 87, occ: 0.6, warm: 0.95, gain: 0.6 });  // the hotel
+  const bw = W / bays;
+  let y = 0;
+  for (const h of JINMAO_TIERS) {
+    const top = H * (1 - (y + h) / JINMAO_H), bot = H * (1 - y / JINMAO_H);
+    const g = ctx.createLinearGradient(0, bot, 0, top);
+    g.addColorStop(0, 'rgba(255,206,120,0.95)'); g.addColorStop(0.45, 'rgba(255,190,100,0.55)'); g.addColorStop(1, 'rgba(255,180,90,0.22)');
+    ctx.fillStyle = g;
+    for (let b = 0; b < bays; b++) ctx.fillRect(b * bw + bw * 0.42, top, bw * 0.22, bot - top);        // a fin per bay
+    const glow = ctx.createLinearGradient(0, bot, 0, bot - (bot - top) * 0.35);
+    glow.addColorStop(0, 'rgba(255,190,110,0.32)'); glow.addColorStop(1, 'rgba(255,190,110,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, bot - (bot - top) * 0.35, W, (bot - top) * 0.35);        // the setback's floods
+    y += h;
+  }
+  return tex(c, { aniso: 8 });
+}
+// world-space UVs for a merged box mesh: u along whichever face (metres / U), v = height / V
+function worldUV(geo, U, V) {
+  const p = geo.attributes.position, n = geo.attributes.normal, uv = geo.attributes.uv;
+  for (let i = 0; i < p.count; i++) {
+    const nx = n.getX(i), nz = n.getZ(i);
+    const u = Math.abs(nx) > 0.5 ? p.getZ(i) * -Math.sign(nx) : Math.abs(nz) > 0.5 ? p.getX(i) * Math.sign(nz) : 0;
+    uv.setXY(i, u / U, p.getY(i) / V);
+  }
+  uv.needsUpdate = true;
 }
 
 function buildPearl(group) {
@@ -200,9 +278,10 @@ function buildShanghaiTower(group, x, z) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-  g.setIndex(idx);
-  const mat = basic(stripeTexture(['#bcd6ff', '#e6f0ff', '#9fc4ff'], 128, '#0c1526'), 1.1);
-  group.add(new THREE.Mesh(g, mat));
+  g.setIndex(idx); g.computeVertexNormals();
+  const mat = basic(shanghaiTowerTexture(), 1.05);
+  mat.userData.glass = { day: [0.46, 0.58, 0.67], f0: 0.24, grid: [16, 128] };
+  group.add(Object.assign(new THREE.Mesh(g, mat), { name: 'shanghai-tower' }));
   // the lit crown
   const crown = new Batch();
   crown.cyl(x, 596, z, 15, 22, 34, 18, { open: true });
@@ -229,7 +308,8 @@ function buildShanghaiTower(group, x, z) {
 function buildSWFC(group, x, z) {
   // 492 m "bottle opener": square base resolving to a single diagonal blade with a trapezoid opening
   const H = 492, b = 29, yCut = 432;
-  const mat = basic(stripeTexture(['#cfe0ff', '#a9c8ff'], 100, '#101d38'), 1.15);
+  const mat = basic(swfcTexture(), 1.05);
+  mat.userData.glass = { day: [0.28, 0.4, 0.55], f0: 0.22, grid: [32, 100] };
   const ring = (y) => {
     const t = y / H, s = 1 - t;                         // two corners close in, two stay out
     const q = b * 1.41 * (0.1 + 0.9 * s), p = b * 1.41 * (1 - 0.1 * t);
@@ -250,14 +330,14 @@ function buildSWFC(group, x, z) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-  g.setIndex(idx);
-  const body = new THREE.Mesh(g, mat); body.material.side = THREE.DoubleSide;
+  g.setIndex(idx); g.computeVertexNormals();
+  const body = new THREE.Mesh(g, mat); body.name = 'swfc'; body.material.side = THREE.DoubleSide;
   group.add(body);
   // the opening: two prongs and the top bar
   const top = new Batch(), r = ring(yCut), ang = Math.atan2(r[2][1] - r[0][1], r[2][0] - r[0][0]);
   const half = Math.hypot(r[2][0] - r[0][0], r[2][1] - r[0][1]) / 2;
-  for (const s of [-1, 1]) top.box(x + Math.cos(ang) * s * (half - 4), yCut, z + Math.sin(ang) * s * (half - 4), 8, H - yCut, 9, { rotY: -ang });
-  top.box(x, H - 12, z, half * 2, 12, 9, { rotY: -ang });
+  for (const s of [-1, 1]) top.box(x + Math.cos(ang) * s * (half - 4), yCut, z + Math.sin(ang) * s * (half - 4), 8, H - yCut, 9, { rotY: -ang, tile: 300 });
+  top.box(x, H - 12, z, half * 2, 12, 9, { rotY: -ang, tile: 300 });
   group.add(top.mesh(mat, 'swfc-top'));
   const edge = new Batch();
   for (const ci of [0, 2]) for (let j = 0; j < levels.length - 1; j++) {
@@ -272,9 +352,10 @@ function buildSWFC(group, x, z) {
 
 function buildJinMao(group, x, z) {
   // 421 m tiered pagoda: thirteen shrinking segments, warm white
-  const mat = basic(stripeTexture(['#ffe2b0', '#ffd08a', '#fff0d0'], 96, '#1a140c'), 1.35);
+  const mat = basic(jinMaoTexture(), 1.25);
+  mat.userData.glass = { day: [0.36, 0.38, 0.42], f0: 0.2, grid: [40, 88] };
   const b = new Batch(), trim = new Batch();
-  const heights = [64, 56, 48, 40, 34, 28, 24, 20, 16, 14, 12, 10, 8];
+  const heights = JINMAO_TIERS;
   let y = 0, w = 54;
   heights.forEach((h, i) => {
     b.box(x, y, z, w, h, w, { tile: 300 });
@@ -285,19 +366,35 @@ function buildJinMao(group, x, z) {
   });
   trim.cyl(x, y, z, 0.6, 5, 47, 8);
   trim.box(x, y, z, 12, 12, 12);
-  group.add(b.mesh(mat, 'jinmao'), trim.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.0, 1.55, 0.95) }), 'jinmao-trim'));
+  const body = b.mesh(mat, 'jinmao'); worldUV(body.geometry, 60, JINMAO_H);
+  group.add(body, trim.mesh(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.0, 1.55, 0.95) }), 'jinmao-trim'));
 }
 
 function ledTexture() {
-  const [c, ctx] = makeCanvas(512, 256);
-  const g = ctx.createLinearGradient(0, 0, 512, 256);
+  // a building-sized LED screen, 56 m x 72 m: the image drawn small in the screen's own proportions,
+  // then shown as a grid of round pixels with dark gaps between, a slight brightness falloff at the
+  // edges, so it reads as a screen in the façade (and the letters aren't stretched)
+  const SW = 112, SH = 144;
+  const [src, sx] = makeCanvas(SW, SH);
+  const g = sx.createLinearGradient(0, 0, SW, SH);
   g.addColorStop(0, '#16307a'); g.addColorStop(1, '#3a1466');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 256);
-  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.font = `700 150px ${FONT.sans}`;
-  ctx.fillText('I', 110, 132); ctx.fillText('SH', 395, 132);
-  ctx.fillStyle = '#ff3355'; ctx.font = '150px sans-serif'; ctx.fillText('♥', 215, 138);
-  return tex(c, { repeat: false, aniso: 4 });
+  sx.fillStyle = g; sx.fillRect(0, 0, SW, SH);
+  sx.fillStyle = '#fff'; sx.textAlign = 'center'; sx.textBaseline = 'middle';
+  sx.font = `700 54px ${FONT.sans}`;
+  sx.fillText('I', 34, 44); sx.fillText('SH', 56, 106);
+  sx.fillStyle = '#ff3355'; sx.font = '50px sans-serif'; sx.fillText('♥', 74, 46);
+  const px = sx.getImageData(0, 0, SW, SH).data;
+  const [c, ctx] = makeCanvas(SW * 4, SH * 4);
+  ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, SW * 4, SH * 4);
+  for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
+    const i = (y * SW + x) * 4, e = 0.82 + 0.18 * Math.min(1, Math.min(x, SW - 1 - x, y, SH - 1 - y) / 10);
+    ctx.fillStyle = `rgb(${(px[i] * e) | 0},${(px[i + 1] * e) | 0},${(px[i + 2] * e) | 0})`;
+    ctx.beginPath(); ctx.arc(x * 4 + 2, y * 4 + 2, 1.45, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  for (let y = 0; y < SH * 4; y += 64) ctx.fillRect(0, y, SW * 4, 1);          // the cabinet joints
+  for (let x = 0; x < SW * 4; x += 64) ctx.fillRect(x, 0, 1, SH * 4);
+  return tex(c, { repeat: false, aniso: 8 });
 }
 
 
@@ -404,12 +501,15 @@ function signTexture(lines, colour, w = 1024, h = 256) {
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = colour;
   ctx.shadowColor = colour; ctx.shadowBlur = 14;
-  if (lines.length === 1) { ctx.font = `900 ${h * 0.72}px ${FONT.sans}`; ctx.fillText(lines[0], w / 2, h * 0.54); }
-  else { ctx.font = `900 ${h * 0.5}px ${FONT.sans}`; ctx.fillText(lines[0], w / 2, h * 0.33); ctx.font = `800 ${h * 0.3}px ${FONT.sans}`; ctx.fillText(lines[1], w / 2, h * 0.78); }
+  // (each line shrinks to fit the width rather than spilling off or being squeezed)
+  const line = (t, wt, px, y) => { ctx.font = `${wt} ${px}px ${FONT.sans}`; const k = Math.min(1, (w * 0.9) / ctx.measureText(t).width); ctx.font = `${wt} ${px * k}px ${FONT.sans}`; ctx.fillText(t, w / 2, y); };
+  if (lines.length === 1) line(lines[0], 900, h * 0.72, h * 0.54);
+  else { line(lines[0], 900, h * 0.5, h * 0.33); line(lines[1], 800, h * 0.3, h * 0.78); }
   return tex(c, { repeat: false, aniso: 8 });
 }
+// (the canvas takes the board's own shape, so the letters keep theirs)
 function sign(group, lines, colour, x, y, z, w, h, gain = 1.6) {
-  const m = new THREE.MeshBasicMaterial({ map: signTexture(lines, colour), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const m = new THREE.MeshBasicMaterial({ map: signTexture(lines, colour, 1024, Math.round(1024 * h / w)), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
   m.color.setScalar(gain);
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
   mesh.position.set(x, y, z); mesh.rotation.y = -Math.PI / 2;                          // faces west, across the river
@@ -421,8 +521,11 @@ function tickerTexture(text) {
   const [c, ctx] = makeCanvas(2048, 128);
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 2048, 128);
   ctx.font = `800 92px ${FONT.sans}`; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
-  const wd = ctx.measureText(text).width; let x = 0;
-  while (x < 2048) { ctx.fillText(text, x, 68); x += wd + 120; }
+  // the message repeats a whole number of times across the canvas, so the scroll has no seam where a
+  // copy is cut short (the font shrinks a touch to make it divide exactly)
+  const w0 = ctx.measureText(text).width, n = Math.ceil(2048 / (w0 + 120)), k = (2048 / n - 120) / w0;
+  ctx.font = `800 ${(92 * k).toFixed(2)}px ${FONT.sans}`;
+  for (let i = 0; i < n; i++) ctx.fillText(text, i * 2048 / n, 68);
   // LED pixels
   const img = ctx.getImageData(0, 0, 2048, 128);
   for (let y = 0; y < 128; y++) for (let xx = 0; xx < 2048; xx++) if ((xx % 6) > 3 || (y % 6) > 3) { const i = (y * 2048 + xx) * 4; img.data[i] *= 0.15; img.data[i + 1] *= 0.15; img.data[i + 2] *= 0.15; }
@@ -450,7 +553,7 @@ export function createSkyline() {
     // x, z, w, d, h
     [520, -330, 60, 40, 150], [560, -250, 46, 46, 110], [515, -170, 70, 36, 46],
     [545, 70, 50, 44, 185], [520, 150, 44, 44, 110], [600, 120, 40, 40, 150],
-    [690, 60, 44, 44, 205], [740, -70, 50, 50, 230], [760, -170, 46, 46, 200],
+    [690, 12, 44, 44, 205], [740, -70, 50, 50, 230], [760, -170, 46, 46, 200],
     [700, 300, 46, 42, 165], [640, 250, 40, 40, 130], [560, 300, 60, 40, 95],
     [720, 420, 50, 50, 240], [600, 470, 54, 46, 190], [530, 430, 60, 36, 90],
     [840, -40, 56, 56, 260], [900, -180, 50, 50, 280], [820, -300, 54, 54, 220],
@@ -486,7 +589,7 @@ export function createSkyline() {
   // the banks' names on their towers, as the photos show them (facing the Bund)
   const roof = (i) => { const [x, z, w, , h] = anchors[i]; return { x: x - w / 2 - 0.6, y: h, z }; };
   { const a = roof(8); sign(group, ['中国银行'], '#ffe2a8', a.x, a.y - 9, a.z, 40, 10); }
-  { const a = roof(6); sign(group, ['震旦'], '#ff2a22', a.x, a.y - 10, a.z, 30, 14, 2.2); }
+  { const a = roof(6); sign(group, ['震旦'], '#ff2a22', a.x, a.y - 13, a.z, 44, 20, 2.4); }
   { const a = roof(1); sign(group, ['DBS', '星展银行'], '#ffffff', a.x, a.y - 9, a.z, 36, 13); }
   { const a = roof(3); sign(group, ['citi', '花旗银行'], '#cfe6ff', a.x, a.y - 9, a.z, 34, 13); }
   for (let i = 0; i < 46; i++) {
@@ -544,13 +647,18 @@ export function createSkyline() {
   // by day: the window atlases become hazy glass (each tower its own tint), the lit trims and names
   // dull fixtures, the far bank's lamps and the aircraft lights off; the LED walls are their own
   // (a sunny day: blue-green and bronze glass, steel-grey Jin Mao, white stone, not one pale grey)
-  const DAY_GLASS = { 'towers-a': [0.24, 0.38, 0.52], 'towers-b': [0.42, 0.36, 0.3], 'towers-gold': [0.5, 0.42, 0.28], 'towers-white': [0.56, 0.6, 0.64],
-    'towers-violet': [0.3, 0.34, 0.5], 'towers-green': [0.24, 0.42, 0.38], jinmao: [0.34, 0.36, 0.4], 'swfc-top': [0.36, 0.48, 0.6], globes: [0.62, 0.66, 0.72], shore: [0.26, 0.3, 0.24] };
+  // (by day Lujiazui is mostly blue-grey and silver curtain wall; the night palettes' tints only a hint)
+  const DAY_GLASS = { 'towers-a': [0.16, 0.28, 0.42], 'towers-b': [0.24, 0.3, 0.37], 'towers-gold': [0.34, 0.32, 0.28], 'towers-white': [0.32, 0.4, 0.5],
+    'towers-violet': [0.2, 0.26, 0.4], 'towers-green': [0.16, 0.3, 0.33], jinmao: [0.34, 0.36, 0.4], 'swfc-top': [0.28, 0.4, 0.55], globes: [0.62, 0.66, 0.72], shore: [0.26, 0.3, 0.24] };
+  // the curtain wall's bays and floors in each atlas's own units (tower(): 3 m x 4 m cells, 64 to the
+  // atlas; metreTower(): 16 bays across, 256 storeys up)
+  const GRID = { 'towers-a': [64, 64], 'towers-b': [64, 64], 'towers-gold': [16, 256], 'towers-white': [16, 256], 'towers-violet': [16, 256], 'towers-green': [16, 256] };
   asLight(led.material, 'screens', 0.12);   // a big screen: on all day (7 am - 11 pm), not with the LED façades' evening show
   group.traverse((o) => {
     if (!o.material || o.material.userData.tod) return;
     const m = o.material;
-    if (m.isMeshBasicMaterial && !m.transparent && m.blending !== THREE.AdditiveBlending && (m.map || DAY_GLASS[o.name])) skylineGlass(m, DAY_GLASS[o.name] || [0.46, 0.53, 0.6]);
+    const gl = m.userData.glass || {};
+    if (m.isMeshBasicMaterial && !m.transparent && m.blending !== THREE.AdditiveBlending && (m.map || DAY_GLASS[o.name])) skylineGlass(m, gl.day || DAY_GLASS[o.name] || [0.3, 0.4, 0.52], gl.f0 ?? 0.2, { grid: gl.grid || GRID[o.name] });
     else if (m.isMeshBasicMaterial || m.isPointsMaterial) asLight(m, 'outline', 0.3);
   });
 

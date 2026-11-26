@@ -8,8 +8,8 @@ export const STAMINA = {
   runTime: 45,          // s of continuous running from full
   regenWalk: 1 / 18,    // per second while walking (empty to full in 18 s)
   regenIdle: 1 / 7,     // per second while standing
-  windedFor: 2.0,       // s of forced stop when it runs out
-  runAgainAt: 0.45,     // after running out, no running until this much is back (a few seconds of walking)
+  windedFor: 3.0,       // s of forced stop when it runs out (hands on knees, panting)
+  runAgainAt: 0.6,      // after running out, no running until this much is back (a few seconds of walking it off)
   tireBelow: 0.2,       // below this the run fades toward a jog
 };
 
@@ -37,7 +37,9 @@ export function updateStamina(s, dt, { running = false, moving = false } = {}) {
   // breathing effort: rises with running and with how spent you are; eases off slowly
   // (fresh, a run is light breathing; it gets heavy only as you tire)
   const spent = 1 - s.level;
-  const target = s.winded > 0 ? 1 : spending ? 0.1 + 0.85 * spent ** 1.5 : spent * (moving ? 0.7 : 0.55);
+  // run out, he keeps panting while he gets it back: heavy until about half is back, then easing
+  const target = s.winded > 0 ? 1 : spending ? 0.1 + 0.85 * spent ** 1.5
+    : s.exhausted ? 0.45 + 0.5 * (1 - s.level / STAMINA.runAgainAt) : spent * (moving ? 0.7 : 0.55);
   const rate = target > s.breath ? 1.4 : 0.22;
   s.breath += (target - s.breath) * (1 - Math.exp(-rate * dt));
   return s;

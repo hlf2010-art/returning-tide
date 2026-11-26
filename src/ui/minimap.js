@@ -6,7 +6,7 @@ import { S, tr, onLang } from './i18n.js';
 import { L, colliders, crossing, planterIslands, streetTrees, stall, npcs as npcLayout, NJ, METRO, PIER, DUMPLING } from '../world/layout.js';
 
 const PPM = 2.4;                                   // pixels per metre in the offscreen map
-const X0 = -560, X1 = 60, Z0 = -290, Z1 = 110;     // world bounds painted (out to Henan Road)
+const X0 = -1600, X1 = 60, Z0 = -290, Z1 = 110;    // world bounds painted (out to Xizang Road)
 const SIZE = 168, R = SIZE / 2, VIEW = 0.62;       // display px; metres shown ~ R / (PPM * VIEW)
 // Bund Deco, like the floor plans on the character page: river-ink ground, teal water, the buildings in
 // dark teal with gold edges, jade trees (ui/fonts.js: --rt-river, --rt-gold, --rt-jade)

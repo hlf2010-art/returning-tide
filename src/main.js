@@ -11,7 +11,7 @@ import '@fontsource/inter/600.css';
 import '@fontsource/inter/800.css';
 import * as THREE from 'three';
 import { createRenderer } from './engine/renderer.js';
-import { loadGfx, saveGfx, tweak as gfxTweak, detail as gfxDetail, shouldDraw, treeStep, resolve as gfxResolve } from './engine/gfx.js';
+import { loadGfx, saveGfx, tweak as gfxTweak, detail as gfxDetail, shouldDraw, treeStep, resolve as gfxResolve, loadCrowd, saveCrowd, crowdCounts, lightingOf, setLighting } from './engine/gfx.js';
 import { createPlayer } from './engine/player.js';
 import { createAudio } from './engine/audio.js';
 import { L, NJ, npcs as npcLayout } from './world/layout.js';
@@ -34,6 +34,7 @@ import { createHud } from './ui/hud.js';
 import { createTitleScreen } from './ui/titleScreen.js';
 import { createWorldMusic } from './world/music.js';
 import { TRACKS as MUSIC_TRACKS, LICENCE as MUSIC_LICENCE } from './engine/speakers.js';
+import { creditsHtml } from './ui/credits.js';
 import { createVoice } from './engine/voice.js';
 import { createLLM } from './engine/llm.js';
 import { createTalk } from './ui/talk.js';
@@ -58,19 +59,26 @@ import { createWorldMap } from './ui/worldMap.js';
 import { createGamepad } from './engine/gamepad.js';
 import { createSaves, currentSlot, slotKey } from './ui/saves.js';
 import { createTips } from './ui/tips.js';
+import { createControlsHelp } from './ui/controlsHelp.js';   // the Controls page (title screen and pause menu)
 import { BENCH_SECONDS, BENCH_WARMUP, BENCH_HOUR, benchAt, benchStats, HERO_SHOTS, SHOT_SETTLE, SHOT_MEASURE, frameSummary, sampleSummary, shotsReport } from './engine/bench.js';
 import { createCruise } from './world/cruise.js';
 import { createDumpling } from './world/dumpling.js';
 import { createEntrances, entranceList } from './world/entrances.js';
 import { underCover } from './world/layout.js';
-import { colliders } from './world/layout.js';
+import { colliders, groundHeight } from './world/layout.js';
+import { createPeopleReflection } from './world/peopleReflect.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
 import { createTraffic } from './engine/traffic.js';
 import { startFlinch } from './engine/flinch.js';
 import { createVehicles } from './world/vehicles.js';
+import { createVehicleLamps } from './world/vehicleLamps.js';
+import { createDressing } from './world/dressing.js';
+import { createPulse } from './world/pulse.js';
+import { createEbikes } from './engine/ebikes.js';
+import { createEbikeView } from './world/ebikeView.js';
 import { createSignals } from './world/signals.js';
 import { createPedestrians } from './world/pedestrians.js';
-import { loadPeople } from './world/people.js';
+import { loadPeople, cullPeople } from './world/people.js';
 import { createRealNpcs } from './world/npcsReal.js';
 import { createRealPedestrians } from './world/pedestriansReal.js';
 import { createPlayerBody } from './world/playerBody.js';
@@ -83,9 +91,13 @@ import { createBelongings } from './world/belongings.js';
 import { createHuracan, HURACAN_SPOT } from './world/huracan.js';
 import { createCarSale } from './world/carSale.js';
 import { createInteriors, PEACE, AIA } from './world/interiors.js';
+import { createAiaLife } from './world/aiaLife.js';
 import { createHotelUpper } from './world/hotelUpper.js';
 import { createJazzBar } from './world/jazzBar.js';
 import { createHailers } from './world/hailers.js';
+import { createShoppers } from './world/shoppers.js';
+import { createTrams } from './world/tram.js';
+import { createStreetLife } from './world/streetLife.js';
 import { createDestinations } from './world/destinations.js';
 import { createDriving } from './world/driving.js';
 import { createRoadReactions } from './world/roadReactions.js';
@@ -97,7 +109,7 @@ import { createVeil } from './ui/veil.js';
 import { createWalkers } from './world/walkers.js';
 import { createNephew } from './world/nephew.js';
 import { createWitness, WITNESS } from './engine/witness.js';
-import { createCrowd } from './engine/crowd.js';
+import { createCrowd, buildNet, keepShopsWithDoors } from './engine/crowd.js';
 import { trafficSpecs, BUS_STOPS } from './world/trafficMix.js';
 import { createBuses } from './world/buses.js';
 import { GUIDE_LINES, BUS_LINES, LATE_LINES } from './world/crowdLines.js';
@@ -115,7 +127,7 @@ import { createWorkbook, workSummaryHtml } from './ui/workbook.js';
 import { createSeasonPlan } from './ui/season.js';
 import { createProfile } from './ui/profile.js';
 import { timeVariant, timeAfterword } from './world/allotEvents.js';
-import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText } from './engine/year.js';
+import { initYear, finalDay, isYear, settle as yearSettle, dateText, actOf, gapAfter, gapText, isWorkday, dateOf } from './engine/year.js';
 import { runRomance, romanceCallChoice, guardTalk, ROMANCE_CALLS } from './world/romance.js';   // the five he might come to love (engine/hearts.js)
 import { createRomanceScenes } from './world/romanceScenes.js';
 const QUESTS = [...STORY_QUESTS, ...MOMENT_QUESTS, ...WORK_QUESTS];   // the story's, the street moments' (world/moments.js), and the gimbal's week (world/work.js)
@@ -128,13 +140,16 @@ import { careerEvent } from './world/career.js';   // a row outside the Peace Ho
 import { createDinner } from './world/dinner.js';
 import { createJournal } from './ui/journal.js';
 import { createCrowdView } from './world/crowdView.js';
+import { createThrongView } from './world/throngView.js';
+import { throngPeople } from './engine/throng.js';
 import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
 import { usePhotoSurfaces } from './world/photoTextures.js';
 import { createDidi, PICKUP } from './world/didi.js';
 import { createRideFlow } from './world/rideFlow.js';
 import { createShop } from './engine/errands.js';
-import { manner as mannerSpec, stall as stallSpot } from './world/layout.js';
+import { manner as mannerSpec, stall as stallSpot, DUMPLING } from './world/layout.js';
 import { createMinimap } from './ui/minimap.js';
+import { TIME_RATE } from './engine/life.js';
 import { createLife, advance as lifeAdvance, lapse as lifeLapse, drain as lifeDrain, save as lifeSave, clockText as lifeClock, load as lifeLoad, post as lifePost, stamp as lifeStamp, thread as lifeThread, nudge as lifeNudge, skipTo as lifeSkipTo } from './engine/life.js';
 import { setupThreads, addVoicemail, runAgenda, deliverFollowUps, react as lifeReact, CALLS } from './world/agenda.js';
 import { createPhone } from './ui/phone/phone.js';
@@ -178,6 +193,8 @@ let gfx = loadGfx(gpuName);
 if (params.has('gfx')) gfx = gfxResolve({ preset: params.get('gfx') });
 if (params.has('lod')) gfx = { ...gfx, lod: gfxResolve({ ...gfx, preset: 'custom', lod: params.get('lod') }).lod };
 if (BENCH_URL && !params.has('gfx')) gfx = gfxResolve({ preset: 'mac' });   // a known preset (not saved)
+let crowdLevel = params.has('q') || BENCH_URL ? 'medium' : loadCrowd();   // Crowds (Settings > Graphics); tools and the benchmark measure the default
+const bootCrowd = crowdLevel;
 const bootLod = gfx.lod;                                         // crowd and traffic sizes are set when the world is built
 const R = createRenderer(canvas, scene, camera, { fixedLevel: params.has('q') ? Number(params.get('q')) : null, gfx });
 const player = createPlayer(camera, canvas);
@@ -187,6 +204,8 @@ const hud = createHud();
 const titleScreen = createTitleScreen();   // the painted Bund behind the title; its gold line is the loading bar
 // people's voices: recorded clips per character (engine/voice.js); barks speak through the HUD
 const voice = createVoice({ audio, getLang, camera });
+// the counters with a payment speaker, by who the money goes to (the shengjian shop's order counter; Manner's, at its wall)
+const PAY_COUNTERS = { '阿潮生煎': { x: DUMPLING.x0 + 1.6, z: DUMPLING.z0 + 3.4 }, Manner: { x: mannerSpec.x, z: mannerSpec.zWall - 0.4 } }, payWatch = { led: null, n: 0 };
 const ambience = createAmbience(audio, { clipUrl: (lang, text) => voice.clipUrl(lang, text) });   // the city's sound by place: river, Nanjing Road, the road, the arcades, the clock (engine/ambience.js)
 const liveOverlay = createLiveOverlay({ getLang });   // the liveliness numbers (L, or ?live; world/liveliness.js)
 let liveliness = null;
@@ -212,7 +231,7 @@ camera.layers.enable(HELD_LAYER); camera.layers.enable(RAIN_LAYER);
 const weather = createWeather();
 if (params.get('weather') === 'drizzle') weather.set('drizzle', { instant: true });
 const _metroFog = new THREE.Color(0.32, 0.33, 0.34), HAZE_FOG = new THREE.Color(0.072, 0.108, 0.2), FOG_DENSITY = scene.fog.density, HAZE_DENSITY = 0.00028;
-let weatherTime = 0, suUmbrella = 0, treeLevel = -1;
+let weatherTime = 0, suUmbrella = 0, treeLevel = -1, midDrop = 0;
 // Wind in the trees: a river breeze that rises with the drizzle. Developer control F6 cycles
 // auto / calm / breeze / windy / gale; ?wind=<level> pins it.
 const wind = createWind();
@@ -233,7 +252,7 @@ async function boot() {
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
   // real people (Microsoft Rocketbox, MIT) when their files load; the hand-built figures otherwise
   let people = null;
-  try { people = await loadPeople('./people/'); } catch (err) { console.warn('people assets unavailable, using simple figures', err); }
+  try { people = await loadPeople('./people/', { lean: ['low', 'medium'].includes(bootLod) && params.get('lean') !== '0' }); } catch (err) { console.warn('people assets unavailable, using simple figures', err); }
   const npcs = people ? createRealNpcs(people) : createNpcs(M);
   // the player's own body, seen when looking down (?body=0 to leave it out)
   const playerBody = people && people.avatars.player && params.get('body') !== '0' ? createPlayerBody(people, { walk: WALK_SPEED, run: RUN_SPEED }) : null;
@@ -246,7 +265,7 @@ async function boot() {
   traffic = createTraffic({ geom: crossing, vehicles: vehSpecs, peds: crossing.peds, shop: createShop({ queue: mannerSpec.queue, pickup: mannerSpec.pickup }) });
   const vehicles = createVehicles(vehSpecs), signals = createSignals();
   // Nanjing Road East to Henan Road, the metro's Exits 7 and 2 (world/nanjingRoad.js), Henan Road's traffic
-  const nanjing = createNanjingRoad(M); scene.add(nanjing.group);
+  const nanjing = createNanjingRoad(M, { roomSize: gfxDetail({ ...gfx, lod: bootLod }).rooms || 384 }); scene.add(nanjing.group);
   const henan = createHenanTraffic({ scene, factor: params.has('q') && !params.has('traffic') ? 0.35 : gfxDetail({ ...gfx, lod: bootLod }).traffic, addCollider: addDynamicCollider });
   // the city buses and their stops (world/buses.js); they let the crowd's commuters on and off
   // the bus's kerbside announcement as the doors open / as it pulls away, if you're near enough to hear
@@ -274,12 +293,13 @@ async function boot() {
   const trees = createTrees([
     ...streetTrees.map((t, i) => ({ x: t.x, y: L.curbH, z: t.z, h: 8.4 + (i % 2) * 0.7, species: 'plane', seed: 31 + i, bare: 0.12, away: [0, -Math.sign(t.z)] })),
     ...planterIslands.map((p, i) => ({ x: (p.x0 + p.x1) / 2, y: L.deckY + 0.5, z: (p.z0 + p.z1) / 2 + (i % 2 ? 1.5 : -1.5), h: 4.2 + (i % 3) * 0.3, species: 'camphor', seed: 1 + i })),
+    ...nanjing.trees,                                                     // Century Square's planes, People's Park
   ], { wetBoost: weatherUniforms.wetBoost });
   scene.add(trees.group);
   // Manner Coffee's takeaway front on Hankou Road (world/shops.js), lit from inside
   const manner = createManner(L.curbH); scene.add(manner.group);
   const baristas = createBaristas({ scene, people, work: manner.work });   // and the two making the coffee in it (world/baristas.js)
-  // a Lamborghini parked on Hankou Road (loads in the background; world/huracan.js)
+  // a Corvina Strale parked on Hankou Road (loads in the background; world/huracan.js)
   const huracan = createHuracan(scene);
   huracan.ready.then((r) => {
     if (!r) return;
@@ -287,9 +307,10 @@ async function boot() {
     traffic.setObstacles([-1.5, 0, 1.5].map((dx) => ({ x: HURACAN_SPOT.x + dx, z: HURACAN_SPOT.z, r: 1.15 })));   // and walk round it
   });
   // the Peace Hotel's ground floor and the AIA lobby (world/interiors.js); their lamps join the light pool
-  const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp() });
+  const interiors = createInteriors({ scene, renderer: R.renderer, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp() });
+  const aiaLife = createAiaLife({ scene, people, hud, getLife: () => life });   // agents and their clients in the AIA lobby (world/aiaLife.js)
   // up the lifts: the sixth floor and room 612 (world/hotelUpper.js)
-  const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });
+  const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, renderer: R.renderer, getWorld: () => world });
   // the Jazz Bar off the hall: the trio, Momo's night (world/jazzBar.js)
   // places a DiDi takes you that you can walk into (the North Bund flat, IFC 32F)
   const dests = createDestinations({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, voice });
@@ -299,7 +320,7 @@ async function boot() {
   // places (phase 4.4): a shengjian shop on Nanjing Road (world/dumpling.js) and the river cruise from a
   // pier on the promenade (world/cruise.js)
   const dumpling = createDumpling({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), onMode: shopMode });
-  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); }, ferryTo: (info) => world.dest.arrive('lujiazui', info),
+  const cruise = createCruise({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), travel, skipTo: (abs) => { lifeSkipTo(life, abs); saveLife(); }, talk: () => world.sceneTalk, ferryTo: (info) => world.dest.arrive('lujiazui', info),
     roles: people ? Object.keys(people.manifest.cast).filter((r) => !people.manifest.cast[r].named && !['lin', 'su', 'player', 'dad'].includes(r)) : [],
     clock: () => (PIN_HOUR ? 17 * 60 + 42 : life.clock.minute + life.clock.sec / 60) });   // (measurement tools: alongside, as at 5:42 pm)
   // where you can go in: a pool of light at each open door, a label over it when it's in view
@@ -336,25 +357,51 @@ async function boot() {
   // people getting out of its way, and what happens if someone can't (world/roadReactions.js)
   const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd, onHit: (L, info) => carFallout(L, info) });
   const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads });
-  world = { people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }) };
+  const dressing = params.get('dress') === '0' ? null : createDressing({ scene, addCollider: addDynamicCollider });   // bikes, bins, bollards... (world/dressing.js)
+  const lamps = params.get('lamps') === '0' ? null : createVehicleLamps({ scene });   // night traffic as lamps (world/vehicleLamps.js)
+  lampSources = [{ list: traffic.vehicles, z: 0 }, { list: henan.traffic.vehicles, z: NJ.zc }];
+  const pulse = params.get('pulse') === '0' ? null : createPulse({ scene, getCrowd: () => world && world.crowd, getTraffic: () => lampSources,
+    cameras: dressing ? dressing.spots.camera : [], police: dressing ? dressing.spots.police : [] });   // flashes, strobes, barges, leaves (world/pulse.js)
+  if (pulse && audio.onHorn) audio.onHorn((x, z) => pulse.horn(x, z, camera.position));   // a ship's horn turns heads toward the river
+  // e-bikes and couriers on Henan Road, Hankou Road and Jiujiang Road (engine/ebikes.js, world/ebikeView.js)
+  let ebikes = null, ebikeView = null;
+  if (params.get('ebikes') !== '0' && people) {
+    const hc = henan.traffic.controller, _fw = new THREE.Vector3();
+    ebikes = createEbikes({
+      count: gfxDetail({ ...gfx, lod: bootLod }).ebikes || 60,
+      signal: (id) => (id === 'henan' ? { go: hc.vehAspect === 'green' || hc.vehAspect === 'green-flash', yellow: hc.vehAspect === 'yellow', early: hc.phase === 'AR2' && !hc.extending, toGreen: henan.traffic.config.allRedPed - hc.time } : { go: true }),
+      // (the side streets' ends: only where you aren't looking, or far enough off)
+      canVanish: (x, z) => { const dx = x - camera.position.x, dz = z - camera.position.z, d = Math.hypot(dx, dz); if (d > 75) return true; camera.getWorldDirection(_fw); return (dx * _fw.x + dz * _fw.z) / (d || 1) < 0.35; },
+      blocked: (x, z) => Math.abs(player.body.x - x) < 4 && Math.abs(player.body.z - z) < 3.5,
+    });
+    ebikeView = createEbikeView({ scene, people, roles: ['c5', 'c1'].filter((r) => people.manifest.cast[r]) });
+  }
+  world = { peopleMirror: createPeopleReflection(), ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }), aiaLife };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
     const roles = Object.keys(people.manifest.cast).filter((r) => !people.manifest.cast[r].named && !['lin', 'su', 'player', 'dad'].includes(r));
     const det = gfxDetail({ ...gfx, lod: bootLod });
     const density = params.has('crowd') ? Number(params.get('crowd')) : params.has('q') ? 0 : det.crowd;   // tools: none unless asked
-    world.crowd = createCrowd({ density, roles });
-    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, camera });
+    // the preset's population at its busiest (engine/gfx.js LOD people); ?crowd=<density> (tools) as before
+    const cc = crowdCounts(bootLod, bootCrowd);                                          // (the Crowds setting's share of it)
+    world.crowd = createCrowd({ net: keepShopsWithDoors(buildNet(), nanjing.doors), density, count: params.has('crowd') || params.has('q') ? null : cc.people, roles });
+    world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : cc.nearPeople, midCount: params.get('t1') === '0' ? 0 : cc.mid, camera, lod: params.get('midlod') !== '0' });
+    // Nanjing Road's throng beyond the simulated crowd (engine/throng.js, world/throngView.js): GPU-moved
+    // cards, one draw call; ?throng=0 turns it off, ?throng=<n> sets how many at the busiest
+    // (built for the most the Crowds setting allows, then drawn as many as it asks: it changes at once)
+    const nThrong = params.has('throng') ? Number(params.get('throng')) : params.has('q') ? 0 : crowdCounts(bootLod, 'high').throng;
+    if (nThrong > 0) { world.throng = createThrongView({ group: world.crowdView.group, atlas: world.crowdView.atlas, roles, count: nThrong }); if (!params.has('throng')) world.throng.setCount(cc.throng); }
     traffic.setExtraPeople(() => world.crowd.onCarriageway());
     henan.traffic.setExtraPeople(() => world.crowd.onHenan());
-    crowdBoxes = Array.from({ length: (params.has('q') ? 5 : det.nearPeople) + 2 }, () => addDynamicCollider('npc'));
+    crowdBoxes = Array.from({ length: (params.has('q') ? 5 : cc.nearPeople) + 2 }, () => addDynamicCollider('npc'));
   }
   // the friends in person after the first days (world/friendScenes.js): Yu'an at the AIA, Momo in 612, LiDAR scans
   world.friends = createFriendScenes({ scene, people, hud, audio, voice, getLife: () => life, save: () => saveLife(), player, interiors });
   // Line 2: down an exit's stairs, through the gates, a real train under the river to Lujiazui and back (world/metro.js)
   world.metro = createMetro({ scene, camera, renderer: R.renderer, hud, audio, voice, player, people, travel, getLife: () => life, save: () => saveLife(), open: () => hourState.metro, onPudongSoon: () => world.ljz.buildAsync() });
   // the story: a sat-down conversation, and dinner with Dad (world/story.js, world/dinner.js)
-  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], ...MOMENT_NAMES } });
+  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], fang: ['老方', 'Old Fang'], ...MOMENT_NAMES } });
   world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
   // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
   world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
@@ -368,6 +415,10 @@ async function boot() {
     freeze: (on) => { player.enabled = !on && mode === 'play'; if (on) { player.clearInput(); hud.prompt(false); } }, onWork: () => openWork('desk'), onSeason: (days, gap) => openSeason(days, gap) });
   places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk];
   places.push(world.year);
+  // the sightseeing trains: E at a stopped one to ride (seat mode; world/tram.js has the seat)
+  places.push({ candidates: () => world.trams.candidates(player.body), owns: (id) => id === 'tram',
+    prompt: () => ({ target: getLang() === 'zh' ? '观光车' : 'Sightseeing tram', action: getLang() === 'zh' ? '上车' : 'Get on' }),
+    interact: () => { if (world.trams.board(player.body)) seatMode('seat'); } });
   // the five he might come to love, where their own days put them (world/romanceScenes.js): off for measurement tools unless ?hearts
   world.hearts = createRomanceScenes({ scene, people, player, hud, audio, sceneTalk: world.sceneTalk, travel, jazz, dinner: world.dinner, getLife: () => life, save: () => saveLife(),
     isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active && !world.moments.active && !world.fieldTest.busy, enabled: !!people && HEARTS_ON });
@@ -425,7 +476,12 @@ async function boot() {
   world.nephew = createNephew({ scene, people });
   nephewSeen = createWitness();
   mission1.mission.on('reset', () => { world.nephew.reset(); nephewSeen.reset(); });
-  mission1.mission.on('complete', ({ outcome, witnessed, string }) => { world.year.handoff(outcome, { saw: !!witnessed, string }); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
+  mission1.mission.on('complete', ({ outcome, witnessed, string }) => { world.year.handoff(outcome, { saw: !!witnessed, string }); });
+  // a reloaded game picks Mission One up where it was: handed over (flags.handoff), or under way (flags.m1)
+  { const h = life.flags.handoff, m = life.flags.m1;
+    if (h) mission1.restore({ step: 'complete', outcome: h.outcome, string: h.string, witnessed: !!h.saw });
+    else if (m && (m.step === 'collect' || m.step === 'carry')) mission1.restore(m); }
+  mission1.mission.on('change', (s) => { if (s.step === 'collect' || s.step === 'carry') life.flags.m1 = { step: s.step, sealed: s.sealed, string: s.string, witnessed: s.witnessed }; else delete life.flags.m1; saveLife(); });   // the pouch's outcome is kept in the save (world/career.js): the year comes back to it
   document.getElementById('inspect-paper').appendChild(clue.canvas);
   player.update(0);
   R.renderer.compile(scene, camera);
@@ -482,11 +538,11 @@ function sceneText(extra = '') {
     : inR(PEACE_R) ? 'the Peace Hotel\'s great hall on the Bund (1929): marble, brass, the stained-glass rotunda overhead'
     : inR(AIA_R) ? 'the granite lobby of the AIA Building on the Bund, by the face-recognition gates'
     : b.x > L.wallX ? 'the Bund promenade by the Huangpu river, Pudong\'s towers and the Oriental Pearl lit up across the water, people taking photos'
-    : Math.abs(b.z) < 6 && b.x < L.westCurbX ? 'Hankou Road just off the Bund, by the Manner Coffee window and the old Customs House'
+    : Math.abs(b.z) < 6 && b.x < L.westCurbX ? 'Hankou Road just off the Bund, by the Linger Coffee window and the old Customs House'
     : b.z < -190 && b.z > -215 && b.x < L.westCurbX ? 'Nanjing Road East at the Bund, outside the Peace Hotel, crowds and shopping bags'
     : 'Zhongshan East 1st Road on the Bund, the old banks floodlit gold, traffic going by';
   const wx = weather.rain > 0.3 ? 'a light drizzle' : 'a cool clear November evening, a breeze off the river';
-  const has = [cupFor > 0 ? 'he is holding a Manner coffee' : '', world.belongings && world.belongings.umbrellaUp ? 'he has an umbrella up' : '', l.flags.car ? 'he owns a new yellow Lamborghini Huracán (parked nearby)' : ''].filter(Boolean).join('; ');
+  const has = [cupFor > 0 ? 'he is holding a Linger coffee' : '', world.belongings && world.belongings.umbrellaUp ? 'he has an umbrella up' : '', l.flags.car ? 'he owns a new yellow Corvina Strale (parked nearby)' : ''].filter(Boolean).join('; ');
   return `${clockOf(m)}, ${wx}. ${where}.${has ? ` (${has}.)` : ''}${extra ? ` ${extra}` : ''}`;
 }
 // talking: whoever it is stops and turns to you; the conversation has the keyboard
@@ -496,7 +552,7 @@ function startTalk(t, { inRide = false, opener = null } = {}) {
   talkHold = t; t.hold && t.hold(true, player.body);
   if (!inRide) { mode = 'talk'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null; }
   world.rideFlow.quiet = inRide;
-  talk.start({ id: t.persona, opener, greet: !opener, scene: () => `${sceneText(inRide ? `You are driving him in your DiDi${world.rideFlow.ride ? ` to ${world.rideFlow.ride.to}` : ''}.` : '')} ${storyContext(life, t.persona)}`.trim(), at: () => [t.x, t.y, t.z], onClose: () => {
+  talk.start({ id: t.persona, opener, greet: !opener, scene: () => `${sceneText(inRide ? `You are driving him in your Kuaima${world.rideFlow.ride ? ` to ${world.rideFlow.ride.to}` : ''}.` : '')} ${storyContext(life, t.persona)}`.trim(), at: () => [t.x, t.y, t.z], onClose: () => {
     if (talkHold && talkHold.hold) talkHold.hold(false, player.body); talkHold = null; world.rideFlow.quiet = false;
     if (mode === 'talk') { mode = 'play'; player.enabled = true; player.clearInput(); }
   } });
@@ -573,7 +629,7 @@ function begin() {
 function workReminder() {
   const s = workSummary(life), st = workState(life), left = finalDay(life) - life.clock.day, zhUI = getLang() === 'zh';
   const waiting = Object.entries(st.people).filter(([, p]) => p.promised != null).map(([id]) => (zhUI ? WORK_REG[id].name.zh : WORK_REG[id].name.en));
-  const dinner = life.flags.dinnerChoice || left < 0 ? '' : zhUI ? (left === 0 ? ' · 今晚和爸爸吃饭' : ` · 离和爸爸吃饭还有 ${left} 个晚上`) : (left === 0 ? ' · dinner with Dad tonight' : ` · ${left} ${left === 1 ? 'evening' : 'evenings'} until the dinner with Dad`);
+  const dinner = life.flags.dinnerChoice || left < 0 ? '' : isYear(life) && left > 1 ? (zhUI ? ` · 和爸爸吃饭：${yearDate(life, 'zh', finalDay(life))}` : ` · dinner with Dad: ${yearDate(life, 'en', finalDay(life))}`) : zhUI ? (left === 0 ? ' · 今晚和爸爸吃饭' : ` · 离和爸爸吃饭还有 ${left} 个晚上`) : (left === 0 ? ' · dinner with Dad tonight' : ` · ${left} ${left === 1 ? 'evening' : 'evenings'} until the dinner with Dad`);
   return zhUI ? `夜行云台 · 第 ${s.rev} 版${dinner}${waiting.length ? ` · ${waiting.join('、')}等着试改过的` : ''} · N 翻开本子` : `Night gimbal · version ${s.rev}${dinner}${waiting.length ? ` · ${waiting.join(' and ')} ${waiting.length === 1 ? 'is' : 'are'} waiting to try the changed one` : ''} · N for your notebook`;
 }
 function pause() {
@@ -617,7 +673,7 @@ function closeInspect() {
   hud.show('inspect', false);
   exitInteraction();
   if (!clueRead) {
-    clueRead = true;
+    clueRead = true; life.flags.clueRead = true; saveLife();
     hud.thought('末班轮渡。金陵东路渡口，沿江往南。', 'The last ferry. Jinling East Road pier, south along the water.');   // (one shown, by language)
   }
 }
@@ -659,6 +715,7 @@ document.getElementById('begin').addEventListener('click', begin);
 document.getElementById('resume').addEventListener('click', () => { lock(); if (noLock) play(); });
 // ---- settings: language, subtitles, sound (title screen and pause menu) ----
 // first-play tips (ui/tips.js): once each, when you're free; off for measurement tools unless ?tips
+const controlsHelp = createControlsHelp();
 const tips = createTips({ isFree: () => mode === 'play' && !(phone && phone.isOpen) && !talk.open && !(world && world.sceneTalk.active) });
 if ((params.has('q') || BENCH_URL) && !params.has('tips')) tips.setOn(false, false);
 function syncSettings() {
@@ -666,12 +723,14 @@ function syncSettings() {
     const c = llm.conf();
     const k = seg.dataset.setting;
     const cur = k.startsWith('g.') ? String(typeof gfx[k.slice(2)] === 'boolean' ? +gfx[k.slice(2)] : gfx[k.slice(2)])
-      : { music: worldMusic.on ? 'on' : 'off', lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.newLines === 'server' ? 'server' : voice.newLines, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
+      : { crowd: crowdLevel, lighting: lightingOf(gfx), music: worldMusic.on ? 'on' : 'off', lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.newLines === 'server' ? 'server' : voice.newLines, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
     for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
   }
   syncGfx();
   // the music's credits (CC BY: title, artist, a link to the work, the licence), every track the game ships with
   { const ul = document.querySelector('#music-credits ul'); if (ul && !ul.childElementCount) ul.innerHTML = Object.values(MUSIC_TRACKS).map((t) => `<li>“${t.title}” · ${t.artist} · <a href="${t.page}" target="_blank" rel="noopener">OpenGameArt</a> · <a href="${MUSIC_LICENCE.url}" target="_blank" rel="noopener">${MUSIC_LICENCE.name}</a></li>`).join(''); }
+  // everyone else's credits, as their licences ask (ui/credits.js), in the current language
+  { const ul = document.querySelector('#credits ul'); if (ul && ul.dataset.lang !== getLang()) { ul.innerHTML = creditsHtml(getLang()); ul.dataset.lang = getLang(); } }
   const c = llm.conf(), sv = document.getElementById('ai-server'), md = document.getElementById('ai-model');
   if (sv && document.activeElement !== sv) sv.value = c.server; if (md && document.activeElement !== md) md.value = c.model;
   const st = document.getElementById('ai-status'), vs = voice.stats;
@@ -685,12 +744,29 @@ function syncGfx() {
   if (!sl) return;
   if (document.activeElement !== sl) sl.value = Math.round(gfx.scale * 100);
   const [w, h] = R.pixels; out.textContent = `${Math.round(gfx.scale * 100)}% · ${w}×${h}`;
-  document.querySelector('#settings .g-reload').hidden = gfx.lod === bootLod;
+  document.querySelector('#settings .g-reload').hidden = gfx.lod === bootLod && crowdCounts(bootLod, crowdLevel).people <= crowdCounts(bootLod, bootCrowd).people;
   const st = document.getElementById('g-status');
   if (st) st.textContent = tx('gStatus', (gpuName.replace(/^ANGLE \(|\)$/g, '').replace(/\s*\(0x[0-9a-f]+\)|Direct3D.*|ANGLE Metal Renderer: |, Unspecified Version/gi, '').split(',').slice(-1)[0] || '?').trim().slice(0, 40), Math.round(1000 / R.frameMs), R.frameMs.toFixed(1), w, h, R.drop);
 }
-function setGfx(key, value) {
-  gfx = gfxTweak(gfx, key, value);
+// Crowds: lowering it takes effect at once (fewer of the people already made are out, fewer near and middle
+// ones drawn, the throng thinned); raising it past what was built at load needs a reload
+function crowdThin() { const a = crowdCounts(bootLod, crowdLevel).people, b = crowdCounts(bootLod, bootCrowd).people; return Math.min(1, a / Math.max(1, b)); }
+function crowdMidShare() { const a = crowdCounts(bootLod, crowdLevel).mid, b = crowdCounts(bootLod, bootCrowd).mid; return b ? Math.min(1, a / b) : 1; }
+function setCrowdLevel(v) {
+  if (!saveCrowd(v)) return;
+  crowdLevel = v;
+  if (world) {
+    const now = crowdCounts(bootLod, v), boot = crowdCounts(bootLod, bootCrowd);
+    if (world.throng) world.throng.setCount(now.throng);
+    if (world.crowdView) world.crowdView.setNearCount(Math.min(now.nearPeople, boot.nearPeople));
+    midDrop = -1;                                                                       // (the middle tier's share, next frame)
+    if (world.crowd && world.crowdShare != null) world.crowd.setActive(world.crowdShare * crowdThin());
+  }
+  syncSettings();
+}
+function setGfx(key, value) { setGfxAll(gfxTweak(gfx, key, value)); }
+function setGfxAll(next) {
+  gfx = next;
   saveGfx(gfx);
   if (!params.has('q')) R.apply(gfx);
   if (world) world.river.setMirrorSize(gfx.mirror);
@@ -711,7 +787,9 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('.seg[data-setting] button');
   if (b) {
     const k = b.parentElement.dataset.setting, v = b.dataset.v;
-    if (k.startsWith('g.')) { if (!b.disabled) setGfx(k.slice(2), ['ao', 'ssr', 'bloom', 'auto'].includes(k.slice(2)) ? v === '1' : ['preset', 'lod'].includes(k.slice(2)) ? v : Number(v)); return; }
+    if (k.startsWith('g.')) { if (!b.disabled) setGfx(k.slice(2), ['ao', 'ssr', 'refl', 'bloom', 'auto'].includes(k.slice(2)) ? v === '1' : ['preset', 'lod'].includes(k.slice(2)) ? v : Number(v)); return; }
+    if (k === 'crowd') { setCrowdLevel(v); return; }
+    if (k === 'lighting') { setGfxAll(setLighting(gfx, v)); return; }
     if (k === 'lang') setLang(v);
     if (k === 'subs') subtitlesOn = v === 'on';
     if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
@@ -723,6 +801,7 @@ document.addEventListener('click', (e) => {
     syncSettings(); return;
   }
   if (e.target.closest('[data-open-settings]')) { document.getElementById('settings').classList.remove('hidden'); syncSettings(); return; }
+  if (e.target.closest('[data-open-controls]')) { controlsHelp.open(); return; }
   if (e.target.closest('[data-open-saves]')) { saveLife(); saves.open(); return; }
   if (e.target.closest('[data-close-settings]') || e.target.id === 'settings') document.getElementById('settings').classList.add('hidden');
 });
@@ -759,6 +838,7 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if ((k === 'F8' || k === 'F9') && devControls) { e.preventDefault(); devMission(k === 'F8'); return; }
+  if (k === 'F4' && devControls && mode === 'play' && waypoint) { e.preventDefault(); player.teleport(waypoint.x, waypoint.z, player.yaw, 0); hud.toast(getLang() === 'zh' ? '（开发）已跳到路标' : '(dev) jumped to the waypoint', 1.6); return; }
   if (k === 'F6' && devControls) {
     e.preventDefault();
     const w = wind.cycle();
@@ -770,6 +850,7 @@ window.addEventListener('keydown', (e) => {
     hud.toast(weather.toggle() === 'drizzle' ? tx('devDrizzle') : tx('devClear'), 2.4);
     return;
   }
+  if (controlsHelp.isOpen) { if (k === 'Escape') { e.preventDefault(); controlsHelp.close(); } return; }   // the Controls page takes the keys while it's open
   if (mode === 'entry') { if (k === 'Enter') begin(); return; }
   if (mode === 'pause') { if (k === 'Escape' && noLock) play(); return; }
   if (mode === 'inspect') { if (k === 'KeyE' || (k === 'Escape' && noLock)) closeInspect(); return; }
@@ -793,6 +874,12 @@ window.addEventListener('keydown', (e) => {
   if (mode === 'seat') {
     if (world.dumpling.seated) { if (world.dumpling.key(k)) e.preventDefault(); else if (k === 'Escape' && noLock) pause(); return; }
     if (world.sceneTalk.key(k)) { e.preventDefault(); return; }
+    if (world.trams.riding) {
+      if (k === 'KeyE' && world.trams.canGetOff) { const o = world.trams.getOff(); player.teleport(o.x, o.z, player.yaw, player.pitch); seatMode('play'); }
+      else if (k === 'KeyF') { e.preventDefault(); travel(async () => { const secs = world.trams.rideToNextStop(); lifeSkipTo(life, lifeStamp(life) + Math.round((secs * TIME_RATE) / 60)); saveLife(); }, { line: getLang() === 'zh' ? '观光车到站' : 'The tram pulls in', to: 'seat' }); }
+      else if (k === 'Escape' && noLock) pause();
+      return;
+    }
     if (k === 'KeyE') { if (world.dinner.seated) { if (!world.dinner.canStand()) return; world.dinner.stood(); } world.jazz.stand(); }
     else if (k === 'Escape' && noLock) pause();
     return;
@@ -866,6 +953,7 @@ for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => {
 
 // ---- frame ----
 let target = null, boundaryCooldown = 0, talkTarget = null;   // target: { id, dist, cos } or null
+let groundDamp = -1;                                           // see the weather in the frame loop
 const debug = { noReflect: false, freezeTraffic: false };   // freezeTraffic: screenshot tool only
 debug.music = worldMusic;                                     // music in the world: what plays where (tools)
 const _v = new THREE.Vector3(), _d = new THREE.Vector3();
@@ -887,9 +975,9 @@ const PROMPTS = {
   pouch: () => ({ target: tx('pPouch'), action: tx('pLook') }),
   manner: () => {
     const mo = life.flags.mannerOrder;
-    if (mo && !mo.done && mo.notified) return { target: 'Manner Coffee', action: tx('pCollect', mo.num) };
-    if (mo && !mo.done) return { target: 'Manner Coffee', action: tx('pBeingMade') };
-    return { target: 'Manner Coffee', action: tx('pOrder') };
+    if (mo && !mo.done && mo.notified) return { target: 'Linger Coffee', action: tx('pCollect', mo.num) };
+    if (mo && !mo.done) return { target: 'Linger Coffee', action: tx('pBeingMade') };
+    return { target: 'Linger Coffee', action: tx('pOrder') };
   },
 };
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
@@ -899,6 +987,7 @@ const LIFE_KEY = slotKey(currentSlot());   // the slot you're playing (ui/saves.
 let life = null;
 try { life = params.has('fresh') ? null : lifeLoad(localStorage.getItem(LIFE_KEY)); } catch { life = null; }
 if (!life) { life = createLife(); setupThreads(life); initYear(life); } else addVoicemail(life, { atEnd: true });   // a new game is a year long (engine/year.js); older saves keep their six days (and get Old Zhou's voicemail)
+clueRead = !!life.flags.clueRead;   // the missing-person notice, read in an earlier session
 if (params.has('legacy') && params.has('fresh')) delete life.flags.year;   // tools: a new six-day game, as before the year existed
 if (params.has('hour')) { const [h, m] = params.get('hour').split(':').map(Number); if (h >= 0 && h < 24) { life.clock.minute = h * 60 + (m || 0); life.clock.sec = 0; } }
 let saves = null;
@@ -978,10 +1067,11 @@ function updateTips(dt) {
   if (mode === 'play') playTime += dt;
   const b = player.body;
   if (playTime > 2) tips.show('move');
+  if (playTime > 20) tips.show('controls');
   if (playTime > 15 && life.quests && Object.keys(life.quests.list).length) tips.show('journal');
   if (playTime > 40) tips.show('phone');
   if (playTime > 75) tips.show('map');
-  if (playTime > 120) tips.show('talk');
+  if (playTime > 120 && (life.flags.handoff || life.clock.day >= 2)) tips.show('talk');   // (free conversation waits until the pouch is delivered: one thing at a time on the first evening)
   if (hourJumped) tips.show('hour');
   if (world.moments.active) tips.show('moment');
   if (Math.hypot(b.x - 24, b.z - 65) < 12) tips.show('cruise');
@@ -1047,6 +1137,7 @@ function liveSources() {
     for (const a of world.crowd.agents) if (!a.gone && !a.out && !a.inside) people.push({ x: a.x, y: a.y, z: a.z, near: near.has(a.id), state: a.state, act: a.act, kind: a.kind, v: a.v, phone: a.phone, kid: a.kid, leader: a.leader, partner: a.partner, window: a.atRail && a.x < L.facadeX });
   }
   if (traffic) for (const p of traffic.peds) people.push({ x: p.x, y: p.y ?? L.curbH, z: p.z, near: true, activity: p.errand ? 'getting a coffee' : p.crossing ? 'crossing the road' : p.phoneWalk ? 'walking on the phone' : 'walking' });
+  if (world.throng && world.throng.mesh.visible) for (const p of throngPeople(world.throng.data, world.throng.time, world.throng.active, camera.position.x, camera.position.z, world.throng.count)) people.push({ x: p.x, y: 0.15, z: p.z, near: false, activity: p.activity });
   for (const n of LIN_SU) people.push({ ...n, near: true, activity: 'chatting' });
   for (const o of world.dawn.others()) people.push({ x: o.x, y: L.deckY, z: o.z, near: true, activity: 'tai chi' });
   if (traffic) for (const v of traffic.vehicles) if (v.active) vehicles.push({ x: v.x, z: v.z, model: v.model });
@@ -1230,7 +1321,7 @@ function updateLife(dt) {
   const mo = life.flags.mannerOrder;
   if (mo && !mo.notified && lifeStamp(life) >= mo.ready) {
     mo.notified = true;
-    lifeThread(life, 'manner', { title: 'Manner Coffee', members: ['me', 'manner'], kind: 'service' });
+    lifeThread(life, 'manner', { title: 'Linger Coffee', members: ['me', 'manner'], kind: 'service' });
     lifePost(life, 'manner', { from: 'manner', kind: 'text', text: `您的${mo.item.name}已做好，取餐号 ${mo.num}，请到窗口取餐` });
   }
   if (world && world.year) world.year.tick(dt);                               // a new day: salary, rent, absences, the date; the year's messages
@@ -1242,7 +1333,7 @@ function updateLife(dt) {
   phone.update(dt);
   if ((lifeSaveIn -= dt) <= 0) { lifeSaveIn = 5; saveLife(); }
 }
-// the Huracán: Zhixia's lead (after you said you'd think about a car), the appointment, the
+// the Strale: Zhixia's lead (after you said you'd think about a car), the appointment, the
 // purchase's own clock, delivery, and what your friends make of it
 function updateCarSale(events) {
   const f = life.flags, now = lifeStamp(life);
@@ -1277,7 +1368,7 @@ function mapObjective() {
   return null;
 }
 // your own waypoint (set on the map) comes first, until you get there
-let waypoint = null;
+let waypoint = null, seasonT = 0;
 function mapTarget() { return waypoint ? { ...waypoint, label: waypoint.label ? QT(waypoint.label) : tx('waypoint') } : storyTarget(); }
 function storyTarget() {
   const r = world && world.rideFlow && world.rideFlow.ride;
@@ -1289,9 +1380,9 @@ function storyTarget() {
 // and (with the gimbal) the photo subjects you haven't got yet
 function mapBlips() {
   const tod = life.clock.minute, out = [
-    { x: mannerSpec.queue[0].x, z: mannerSpec.zWall, glyph: 'M', bg: '#111', fg: '#fff', name: { zh: 'Manner 咖啡', en: 'Manner Coffee' } },
+    { x: mannerSpec.queue[0].x, z: mannerSpec.zWall, glyph: 'M', bg: '#111', fg: '#fff', name: { zh: 'Linger 咖啡', en: 'Linger Coffee' } },
     { x: (PEACE_R.x0 + PEACE_R.x1) / 2, z: -211, glyph: '和', bg: '#2b2416', fg: '#e7b96a', name: { zh: '和平饭店（你住这里）', en: 'Peace Hotel (where you\'re staying)' } },
-    { x: PICKUP.x, z: PICKUP.z, glyph: 'D', bg: '#ff7a00', fg: '#fff', name: { zh: '滴滴上车点', en: 'DiDi pick-up' } },
+    { x: PICKUP.x, z: PICKUP.z, glyph: 'D', bg: '#ff7a00', fg: '#fff', name: { zh: '快马上车点', en: 'Kuaima pick-up' } },
     { x: L.facadeX + 1.5, z: (AIA_R.door[0] + AIA_R.door[1]) / 2, glyph: '友', bg: '#24303f', fg: '#cfe0f5', name: { zh: '友邦大厦（大堂）', en: 'The AIA Building (lobby)' } },
     ...METRO_EXITS.map((m) => ({ x: m.top + Math.sign(m.top - m.bottom) * 1.5, z: (m.z0 + m.z1) / 2, glyph: String(m.exit), bg: '#c8161e', fg: '#fff', name: { zh: `南京东路站 ${m.exit} 号口`, en: `East Nanjing Rd station, Exit ${m.exit}` } })),
   ];
@@ -1368,10 +1459,12 @@ function updateTraffic(dt) {
     const canSpawnAt = (n) => { const dx = n.x - eye.x, dz = n.z - eye.z, d = Math.hypot(dx, dz); return d > 45 || (d > 14 && (dx * _d.x + dz * _d.z) / d < -0.2); };
     const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others(), ...world.moments.others(), ...world.fieldTest.others()];
     others.push(...world.hearts.others());
+    others.push(...world.shoppers.others(), ...world.trams.others(), ...world.streetLife.others());
     others.push(...world.confront.others());                                        // (the crowd walks round a row, too)
-    cr.setCars(traffic.obstacles);                                                   // the Huracán, parked or driven: walked round, not through
-    cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others });
+    cr.setCars(traffic.obstacles);                                                   // the Strale, parked or driven: walked round, not through
+    cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others, focus: eye });
     world.crowdView.update(dt, eye, { rain: weather.rain });
+    if (world.throng) world.throng.update(dt, world.crowdShare ?? 1, weather.rain);
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
     crowdHear -= dt;
     // (everyone counts: the crowd, the crossing's walkers, Old Lin and Ms. Su, the tai chi group... engine/soundscape.js)
@@ -1395,6 +1488,9 @@ function updateTraffic(dt) {
   world.buses.update(dt);
   world.henan.update(dt, { player: world.driving && world.driving.driving ? null : b, eye: camera.position, rain: weather.rain });
   world.vehicles.update(traffic.vehicles, camera.position);
+  if (world.ebikes) { world.ebikes.setDensity(Math.max(0.15, Math.min(1, hourState.traffic ?? 1))); world.ebikes.update(mode === 'pause' ? 0 : dt); world.ebikeView.update(world.ebikes.riders, camera.position); }
+  if (world.lamps) world.lamps.update(world.ebikes ? [...lampSources, { list: world.ebikes.riders, z: 0 }] : lampSources, camera.position, hourState.lamps);
+  if (world.pulse) world.pulse.update(dt, camera.position, hourState);
   world.pedestrians.update(traffic.peds, dt, camera.position);
   world.signals.update(traffic.controller);
   traffic.peds.forEach((p, i) => { const bx = pedBoxes[i]; if (bx) { bx.minX = p.x - 0.22; bx.maxX = p.x + 0.22; bx.minZ = p.z - 0.22; bx.maxZ = p.z + 0.22; } });
@@ -1415,6 +1511,7 @@ function nanjingDin(b) {
   const ends = Math.min(1, (L.facadeX + 30 - b.x) / 30);
   return ends * (0.55 + 0.45 * (hourState.crowd ?? 1));
 }
+let lampSources = [];
 let crowdHear = 0, envCaptures = 0, world0 = null, hourState = todState(17 * 60 + 42), hourAt = -1, hourTick = 0, envAt = null, envWait = 0, lastHourMin = null;
 const _hazeFog = new THREE.Color(), DAY_HAZE_FOG = new THREE.Color(0.64, 0.66, 0.68);
 // tools: ?hour=HH:MM sets today's clock at load (the screenshots of the day); debug.setHour too
@@ -1438,9 +1535,13 @@ function applyHour(dt, { force = false } = {}) {
   R.renderer.toneMappingExposure = THREE.MathUtils.lerp(s.exposure * (1 + 0.25 * inside * s.daylight), 0.92, under);
   R.bloom.strength = s.bloom;
   if (world) {
-    if (world.crowd) world.crowd.setActive(s.crowd, { dawn: s.dawn, instant: jump || force });
+    // the hour's share of everyone; a weekday has about three quarters of a weekend's visitors
+    world.crowdShare = s.crowd * (life && !isWorkday(life) ? 1 : 0.75);
+    if (world.crowd) world.crowd.setActive(world.crowdShare * crowdThin(), { dawn: s.dawn, instant: jump || force });
     traffic.setDensity(s.traffic); world.henan.traffic.setDensity(s.traffic);
     if (prev != null && !jump && passedLateNight(prev, minute)) lateNight();
+    // the floods coming on (~17:10): phones go up along the promenade
+    if (prev != null && !jump && world.crowd && todState(prev).floods < 0.5 && s.floods >= 0.5) world.crowd.floodsOn();
   }
   // the captured environment (what wet stone and glass reflect) follows the light, now and then
   envWait -= Math.max(dt, 0.25);
@@ -1458,6 +1559,8 @@ function lateNight() {
   const out = !(world.upper.here || world.dest.here || world.makerspace.here || inR(PEACE) || inR(AIA));
   if (!out) return;
   life.flags.lightsOutSeen = true; saveLife();
+  if (world.crowd) world.crowd.lightsOut();   // the railing lowers its phones and drifts off over five minutes
+  ambience.lightsOut();                        // "awww": the railing's sigh
   hud.toast(tx('lateNightLights'), 5);
   if (world.crowd && world.crowdView) {
     const near = world.crowdView.nearAgents().filter((a) => Math.hypot(a.x - b.x, a.z - b.z) < 18).slice(0, 2);
@@ -1503,6 +1606,16 @@ function frame(now) {
   if (riding && world.didi.car) { player.body.x = world.didi.car.x; player.body.z = world.didi.car.z; }   // you (and your ears) are in the car
   world.carSale.update(mode === 'pause' ? 0 : dt, player.body);
   world.hailers.update(mode === 'pause' ? 0 : dt, player.body);                      // other people getting DiDis
+  world.shoppers.update(mode === 'pause' ? 0 : dt, player.body);                     // shoppers coming and going by DiDi
+  world.streetLife.update(mode === 'pause' ? 0 : dt, camera.position, life.clock.minute);                // the patrol, the delivery riders
+  if (life && (seasonT = (seasonT || 0) - dt) <= 0) { seasonT = 5; world.nanjing.season(dateOf(life)); }
+  world.trams.update(mode === 'pause' ? 0 : dt, player.body, world.crowd ? world.crowd.agents : null, camera.position, life ? life.clock.minute : 720);   // Nanjing Road's sightseeing trains
+  if (mode !== 'pause' && Math.abs(player.body.z + 201) < 60 && player.body.x < -20) {         // Nanjing Road's automatic doors: who's at them
+    const b = player.body, near = [b];
+    if (world.crowd) for (const a of world.crowd.agents) if (!a.inside && !a.gone && !a.out && a.x < -34 && Math.abs(a.z + 201) < 14 && Math.abs(a.x - b.x) < 90) near.push(a);
+    near.push(...world.shoppers.others());
+    world.nanjing.doorsUpdate(dt, near, b);
+  }
   world.dest.update(mode === 'pause' ? 0 : dt, player.body);
   world.sceneTalk.update(mode === 'pause' ? 0 : dt);
   world.dinner.update(mode === 'pause' ? 0 : dt, player.body);
@@ -1514,8 +1627,15 @@ function frame(now) {
   if (life.flags.pendingAchievement) { const a = life.flags.pendingAchievement; delete life.flags.pendingAchievement; hud.achievement(getLang() === 'zh' ? a.zh : a.en); }
   world.photo.update(mode === 'pause' ? 0 : dt);
   if (mode !== 'pause') world.ambient.update(dt, player.body, { talking: talk.open });
-  if (player.body.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, player.body); world.upper.update(mode === 'pause' ? 0 : dt, player.body); world.jazz.update(mode === 'pause' ? 0 : dt, player.body, camera); }
-  else if (world.jazz.music.playing) world.jazz.update(0, player.body, camera);   // walked away: the band fades out
+  // the Peace Hotel and AIA interiors are drawn only from where they could be seen: their own block of
+  // the Bund (through the doors) or inside; away from it nothing in them is drawn (docs/living-city-architecture.md §6.1)
+  { const b = player.body, nearBlocks = b.z < -110 && b.z > -290 && b.x > -110;
+    world.interiors.group.visible = nearBlocks;
+    if (b.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, b); world.aiaLife.update(mode === 'pause' ? 0 : dt, b, life.clock.minute); world.upper.update(mode === 'pause' ? 0 : dt, b); world.jazz.update(mode === 'pause' ? 0 : dt, b, camera); }
+    else {
+      world.upper.group.visible = false; world.jazz.group.visible = false;
+      if (world.jazz.music.playing) world.jazz.update(0, b, camera);   // walked away: the band fades out
+    } }
   { const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
     const ins = world.year.here || world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : world.dumpling.inside ? 0.3 : 0;
     audio.setInside(world.year.here ? 1 : world.upper.here || world.dest.here ? 1 : world.makerspace.here ? 0.75 : inR(PEACE) || inR(AIA) ? 0.4 : world.dumpling.inside ? 0.3 : 0);
@@ -1532,7 +1652,7 @@ function frame(now) {
   world.entrances.update(dt, { eye: camera.position, prompting: !!target, active: mode === 'play' || mode === 'ride' });
   const driving = mode === 'drive' || (mode === 'pause' && pausedFrom === 'drive');
   if (driving) world.driving.update(dt, mode === 'pause');
-  else if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) (world.dumpling.seated ? world.dumpling : world.jazz).seatCamera(camera);
+  else if (mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat')) { if (world.trams.riding) world.trams.seatCamera(camera, player); else (world.dumpling.seated ? world.dumpling : world.jazz).seatCamera(camera); }
   else if (!riding && mode !== 'sale-seat' && mode !== 'bench') player.update(mode === 'pause' ? 0 : dt);
   const seated = mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat') || driving;
   { const st = player.stamina, show = mode === 'play' && (player.running || st.level < 0.995 || st.winded > 0); hud.stamina(st.level, show, st.exhausted || st.winded > 0); }
@@ -1550,6 +1670,11 @@ function frame(now) {
   if (mode !== 'pause') wind.update(dt, weather.rain);
   world.trees.update(weatherTime, wind.level, weather.rain, wind.dir);
   weatherUniforms.wetBoost.value = weather.wet;
+  // the ground's own memory of rain: wet within half a minute of real drizzle, dry again over about twenty
+  // minutes (eighty on the city's clock) once it stops; puddles only while it's damp
+  if (groundDamp < 0) groundDamp = weather.wet;
+  if (mode !== 'pause') groundDamp = weather.rain > 0.25 ? Math.min(1, groundDamp + dt / 30) : Math.max(weather.wet, groundDamp - dt / 1200);
+  weatherUniforms.groundDamp.value = groundDamp;
   weatherUniforms.rainRipples.value = weather.rain; weatherUniforms.rippleTime.value = weatherTime;
   applyHour(dt);
   scene.fog.density = FOG_DENSITY * hourState.fog + HAZE_DENSITY * weather.haze;
@@ -1563,12 +1688,15 @@ function frame(now) {
   world.metro.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });         // Line 2 (only near a station or aboard)
   world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);
   { const tl = params.has('q') ? R.level : treeStep(gfx, R.drop); if (tl !== treeLevel) { treeLevel = tl; world.trees.setQuality(tl); } }
+  // when frames run long the crowd's middle tier is the first thing thinned (half at the first step,
+  // a quarter from the fourth), before resolution and shadows go (docs/living-city-architecture.md §6.8)
+  if (world.crowdView && world.crowdView.setMidCount && R.drop !== midDrop) { midDrop = R.drop; world.crowdView.setMidCount(Math.round(world.crowdView.midMax * crowdMidShare() * (midDrop >= 4 ? 0.25 : midDrop >= 1 ? 0.5 : 1))); }
   if (world.playerBody) world.playerBody.shadow.visible = world.lighting.shadowCount > 0;   // the shadow copy only matters with shadows
   world.lighting.update(camera.position, dt);
   // environment yields to NPC speech: fully while in conversation, by audibility otherwise
   let speech = 0;
   if (conversation && conversation.isSpeaking) speech = mode === 'dialogue' ? 1 : computeDistanceGain(_pairPos.distanceTo(camera.position), npcLayout.audibility.refDistance, npcLayout.audibility.maxDistance);
-  audio.setBreath(player.stamina.breath);
+  audio.setBreath(player.stamina.breath); player.breathEnv = audio.breathEnvelope();   // the camera rises on the breaths you hear
   {
     let near = 0; for (const t of TREE_SPOTS) near = Math.max(near, 1 - Math.hypot(t.x - player.body.x, t.z - player.body.z) / 14);
     audio.setWind(wind.level, near);
@@ -1577,6 +1705,16 @@ function frame(now) {
   audio.update(mode === 'pause' ? 0 : dt, player.body.x, { z: player.body.z, vehicles: heard, speech });
   ambience.update(mode === 'pause' ? 0 : dt, player.body, { vehicles: heard || [], boats: world.river.boats.map((bt) => bt.g.position), people: world.crowd ? world.crowd.agents.concat(LIN_SU) : LIN_SU,
     minute: life ? life.clock.minute + life.clock.sec / 60 : null, metroOpen: hourState.metro !== false, paused: mode === 'pause' || mode === 'entry' });
+  // your own payments at a counter: its speaker says what it got ("支付宝到账三十八元"), as for anyone else
+  { const led = life && life.wallet && life.wallet.ledger;
+    if (led) {
+      if (led !== payWatch.led) { payWatch.led = led; payWatch.n = led.length; }   // a new or loaded game: only what's paid from now on
+      for (; payWatch.n < led.length; payWatch.n++) {
+        const e = led[payWatch.n], at = PAY_COUNTERS[e.to];
+        if (!at || e.amount >= 0 || (e.method !== 'alipay' && e.method !== 'wechat')) continue;
+        if (Math.hypot(at.x - player.body.x, at.z - player.body.z) < 15) ambience.payment(at.x, at.z, { amount: -e.amount, method: e.method }, { own: true });
+      }
+    } }
   voice.update();                                                                  // where the listener is, for positional voices
   if (dialogueAudio) dialogueAudio.updateListener();
   if (conversation) conversation.update(mode === 'pause' ? 0 : dt);
@@ -1626,7 +1764,7 @@ function frame(now) {
   } else talkTarget = null;
   const place = target && places.find((p) => p.owns(target.id));
   const talkName = talkTarget && PERSONAS[talkTarget.persona] ? (getLang() === 'zh' ? PERSONAS[talkTarget.persona].zh : PERSONAS[talkTarget.persona].en) : null;
-  if (mode === 'seat') { if (world.sceneTalk.active) hud.prompt(false); else hud.prompt(true, (world.dumpling.seated ? world.dumpling : world.jazz).seatPrompt()); if ((questIn -= dt) <= 0) { questIn = 0.5; updateStory(); } }
+  if (mode === 'seat') { if (world.sceneTalk.active) hud.prompt(false); else hud.prompt(true, world.trams.riding ? world.trams.seatPrompt(getLang()) : (world.dumpling.seated ? world.dumpling : world.jazz).seatPrompt()); if ((questIn -= dt) <= 0) { questIn = 0.5; updateStory(); } }
   else if (!target && talkName && mode === 'play') hud.prompt(true, { target: talkName, action: getLang() === 'zh' ? '聊天' : 'Talk', key: 'T' });
   else if (place) hud.prompt(true, { ...place.prompt(target.id), talk: talkName });
   else if (target && target.id === 'vivian') hud.prompt(true, world.carSale.prompt());
@@ -1666,7 +1804,11 @@ function frame(now) {
     hud.toast(tx(player.body.x < L.facadeX - 20 ? 'hoarding' : 'barriers'), 3);
   }
 
+  cullPeople(camera.position);   // people far away aren't drawn; only those near cast shadows (world/people.js)
   if (!debug.noReflect) world.river.renderReflection(R.renderer, scene, camera);
+  // people mirrored in the paving under the eye (world/peopleReflect.js; Lighting: Medium and High)
+  world.peopleMirror.set(R.peopleReflections && !debug.noReflect, gfx.scale >= 1 ? 0.5 : 0.42);
+  world.peopleMirror.render(R.renderer, scene, camera, groundHeight(camera.position.x, camera.position.z, camera.position.y - 1.6));
   R.renderer.info.reset();
   R.renderer.shadowMap.needsUpdate = true;
   R.frame(t);
@@ -1686,7 +1828,7 @@ debug.setLang = setLang; debug.getLang = getLang; debug.voice = voice; debug.llm
 window.__bund = debug;
 Object.defineProperties(debug, Object.getOwnPropertyDescriptors({
   player, camera, scene, R, audio, wind,
-  get mode() { return mode; }, get target() { return target; }, get talkTarget() { return talkTarget; }, talkables: () => talkables(),
+  get mode() { return mode; }, get lastCpu() { return lastCpu; }, get target() { return target; }, get talkTarget() { return talkTarget; }, talkables: () => talkables(),
   talkProbe: () => talkables().map((q) => { const c = camera.position, v = { x: q.x - c.x, y: q.y - c.y, z: q.z - c.z }, d = Math.hypot(v.x, v.y, v.z); camera.getWorldDirection(_d); return { key: q.key, d: +d.toFixed(2), vy: +v.y.toFixed(2), cos: +((v.x * _d.x + v.y * _d.y + v.z * _d.z) / d).toFixed(3), block: colliders.filter((b) => BLOCKING_TAGS.has(b.tag) && segmentHitsBox(c.x, c.z, q.x, q.z, b)).map((b) => b.tag) }; }).filter((r) => r.d < 6),
   get nearClue() { return !!target && target.id === 'notice'; }, get nearNpc() { return !!target && target.id === 'lin'; },
   get clueRead() { return clueRead; }, get subtitlesOn() { return subtitlesOn; },

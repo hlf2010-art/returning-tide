@@ -19,6 +19,7 @@ Positional ambience by zone, with distance falloff, on top of the existing bed (
 | The road | A traffic bed made from the vehicles actually near you, placed where they are. Every vehicle within 160 m adds to it by speed, by distance and twice over for a bus; an idling car adds a little. The existing per-vehicle tyre and engine voices go on top. Now and then a horn: a short tap, most likely from someone held up. A bus's air brakes sighing as it comes to rest. | The bed's level and position follow the traffic. Horns, sighs and individual vehicles have inverse-distance falloff. | Filtered noise, square-wave reeds, a noise burst |
 | The arcades | Reverb on your footsteps, and lightly on the street, in four kinds of place: under the Customs House portico (stone, open on one side), in the Peace Hotel's marble arcades, in the AIA lobby, and down the metro stairwells (more the lower you go). | It fades in over the last 1–2.5 m into each place. | One convolver with a generated stone-hall impulse (2.4 s), its brightness set per place |
 | People | The murmur follows how many people are near you. It now counts everyone (the crowd, the crossing's walkers, Old Lin and Ms. Su, the tai chi group), each counting 1 at your shoulder and 0 at 24 m. On top of that, up to three voices are placed on the people standing or in company nearest you, 2–14 m off. | The murmur's level comes from the count. The placed voices fall off with distance (HRTF). | Grains of the crowd's murmur through a voice band |
+| Counters | The payment speaker on the counter saying what it just got, the way every shop's box does: "支付宝到账二十五元" ("Alipay received 25 yuan") or "微信收款十八元". When you pay at the shengjian shop's counter, or for a Manner order while you're at the shop, it says your amount. A customer in the crowd leaving a shop has paid about half the time (¥12 to ¥2,000). | Carries about 22 m; a small plastic speaker's band. | Recorded pieces strung together, as real boxes do (`engine/soundscape.js` payTokens, `public/ambience/pay/`) |
 | The Customs House clock | "The East Is Red" on the quarters, building up to the whole tune on the hour, then the hour struck. From 22:00 to 07:00 the hours are struck without the tune. | Clear on the promenade, fainter across the road behind the buildings, faint at Henan Road. | Synthesised bells: chime partials for the tune, a big bell's partials for the strokes, an echo off the façades across the road |
 
 ### Horns are rare, on purpose
@@ -56,6 +57,35 @@ What is not certain:
 - **No new spoken shop announcements.** The game has no recorded line for one, and the Kokoro voice model was not run in this container, so no new lines were recorded. The street's announcements here are the metro's, rising out of the exits.
 - Whether Nanjing Road's shops are allowed to use outdoor loudspeakers was not checked.
 
+### The beds replaced the synthesised layers
+
+Since 25 November the river, the wind, the city's wash, the traffic bed and the crowd are prepared beds (above). Once the crowd bed is playing, the synthesised wind, river and city layers and the murmur loop fade out, and the placed "talker" voices (grains of one murmur loop, heard as repeats) stop. If the beds can't load, the synthesised layers stay. The leaves, rain, footsteps, door chimes, payment speakers, the clock and the horns are unchanged.
+
+### No ElevenLabs audio is left (25 November 2026)
+
+The free-plan ElevenLabs output (non-commercial) has all been replaced with sound the game owns or may ship
+commercially: the 34 character lines and the payment speaker are Kokoro-82M (Apache-2.0) like every other voice;
+the background beds and Ji Bai's breathing are synthesised from noise and oscillators by `tools/voice/ambience.py`
+and `tools/voice/breath.py` (the crowd bed layers the Kokoro murmur); the 22:00 sigh is two dozen Kokoro voices
+layered by `tools/voice/sigh.py`. `tests/credits.test.mjs` fails if anything non-commercial is credited again.
+
+## Licence check (26 November 2026)
+
+Every sound file the game ships was listed and matched to where it came from:
+
+| Folder | Files | Where from | Licence | Credited in Settings |
+|---|---|---|---|---|
+| `public/voice/` | 2,175 | Kokoro-82M, generated for this game (all 24 kHz mono, Kokoro's own output) | Apache-2.0 (the model); the clips are the game's | Kokoro |
+| `public/ambience/murmur.mp3`, `lights-out.mp3`, `pay/` | 19 | Kokoro-82M voices, layered or strung together by `tools/voice/` | Apache-2.0 (the model) | Kokoro |
+| `public/ambience/beds/`, `breath/` | 13 | synthesised by `tools/voice/ambience.py` and `breath.py` (the crowd bed layers the Kokoro murmur) | the game's own | Made for this game |
+| `public/music/` | 14 | OpenGameArt | CC0 1.0 | Music in shops and cars (`engine/speakers.js` TRACKS) |
+| Everything else you hear | – | Web Audio synthesis at run time | the game's own | – |
+
+- No file carries an ElevenLabs tag, and no file is at the 44.1 kHz ElevenLabs puts out except the music, the beds and the 22:00 sigh, whose sources are above.
+- The leftover compiled ElevenLabs client (`tools/voice/__pycache__/eleven.*.pyc`) was removed from the repository; Python caches are now ignored.
+- "The East Is Red" (东方红): the melody is the Shaanbei folk song it was set to; the words, by Li Youyuan (d. 1955), are out of copyright in China and are not sung in the game anyway.
+- `tests/credits.test.mjs` now walks all of `public/` and fails if any sound file (mp3, ogg, wav, m4a, aac, flac, opus, webm) is not covered by a credit or a credited shop track.
+
 ## Sources and licences
 
 | Sound | Made by | Where | File | Licence |
@@ -66,6 +96,10 @@ What is not certain:
 | Reverb (a generated impulse) | this game's code | the portico, the Peace Hotel arcade, the AIA lobby, the metro stairs | none | made for this project |
 | The Customs House chimes and strokes | this game's code; the tune "The East Is Red" is a Shaanbei folk melody in the public domain | the Customs House tower | none | made for this project; the melody is public domain |
 | Shop music (14 tracks) | see `docs/music.md` | eight Nanjing Road doors, Manner, the DiDi radio | `public/music/*.mp3` | CC0 1.0 |
+| The payment speaker's pieces (易付到账, 信语收款, 零-九, 十, 百, 千, 点, 元) | made for this project with Kokoro-82M (Apache-2.0, voice zf_017), each piece on its own, by `tools/voice/paybox.py` | every counter | `public/ambience/pay/*.mp3` (17 files, about 40 KB) | made for this project |
+| Ji Bai catching his breath (two loops: heavy, easing) | synthesised (shaped noise: an open exhale, a thinner inhale) with their breathing envelopes by `tools/voice/breath.py` | you, after running out of stamina | `public/ambience/breath/{heavy,ease}.mp3` + `.json` (about 140 KB) | made for this project |
+| The railing's sigh at 22:00 ("哇——", "Oh…", then the talk coming back) | made for this project from 24 Kokoro-82M voices (Apache-2.0) and the murmur, layered by `tools/voice/sigh.py` | the promenade, at the late-night switch | `public/ambience/lights-out.mp3` (47 KB) | made for this project |
+| The background beds: crowds (3 takes), traffic (2), the river at the wall (2), boats on the river (2), wind (2) | synthesised by `tools/voice/ambience.py` (the crowd: the Kokoro murmur laid over itself, with footsteps), folded into loops and levelled; played by `engine/beds.js`, one take at a time from a random point at a slightly different speed, crossfaded over 4 s to another take | everywhere: the crowd by how many people are near you, the traffic placed where the cars are, the river from the railing nearest you, the boats from the nearest boat, the wind by how open it is | `public/ambience/beds/*.mp3` (11 files, 2.5 MB) | made for this project |
 | The crowd's murmur | made for this project with Kokoro-82M (Apache-2.0), `tools/voice/walla.py` | everywhere people are; the placed voices | `public/ambience/murmur.mp3` (already shipped) | made for this project |
 | Metro announcements (3 lines) | made for this project with Kokoro-82M (Apache-2.0), `tools/voice/generate.py` | Exits 7 and 2 at Henan Road | `public/voice/*.mp3` (already shipped) | made for this project |
 
@@ -74,7 +108,7 @@ Credits:
 - Synthesised sounds (water, wind, horns, traffic, chimes, bells, reverb): made for this project in Web Audio; no recordings.
 - "The East Is Red" (东方红): traditional Shaanbei folk melody, public domain; played here as synthesised chimes.
 - The shop music: the fourteen CC0 tracks credited in `docs/music.md`.
-- Voices (the murmur, the metro announcements): generated for this project with **Kokoro-82M** by hexgrad (Apache-2.0), https://huggingface.co/hexgrad/Kokoro-82M.
+- Voices (every line, the payment speakers, the murmur, the 22:00 sigh, the metro announcements): generated for this project with **Kokoro-82M** by hexgrad (Apache-2.0), https://huggingface.co/hexgrad/Kokoro-82M.
 
 ## Checking it
 
@@ -90,4 +124,5 @@ Credits:
 | Metro announcement | Played at the top of Exit 7 at level 0.10 (since raised to about 0.17) |
 | Door chime | Fired |
 
+- The benchmark's "audible sources" count (`docs/living-city.md`) counts the recorded beds once they play (crowd as chatter, traffic, river as water, boats, wind) and no longer counts the synthesised layers and placed talkers they replace (26 November).
 - What was not judged: whether any of it *sounds* right. That needs ears, ideally against the reference footage's soundtrack.

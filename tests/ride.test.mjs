@@ -1,4 +1,4 @@
-// Your DiDi ride (src/engine/ride.js). npm test.
+// Your Kuaima ride (src/engine/ride.js). npm test.
 import { createLife, advance, balance, drain, stamp } from '../src/engine/life.js';
 import { requestRide, stepRide, arrive, reply, lineText, onRoad, fare, dest, DESTINATIONS, RIDE_RULES } from '../src/engine/ride.js';
 import { DRIVERS, OUTBURSTS } from '../src/world/drivers.js';
@@ -11,7 +11,7 @@ const tick = (L, R, secs, world) => { for (let i = 0; i < secs * 10; i++) { adva
 
 {
   const f = fare(dest('lujiazui'), 18 * 60), fn = fare(dest('lujiazui'), 23 * 60 + 30);
-  ok(f > 14 && f < 40, `Bund to Lujiazui by DiDi Express: ¥${f}`);
+  ok(f > 14 && f < 40, `Bund to Lujiazui by Kuaima Express: ¥${f}`);
   ok(fn > f, `more at night (¥${fn})`);
   ok(fare(dest('tianma'), 18 * 60) > 100, `out to Tianma: ¥${fare(dest('tianma'), 18 * 60)}`);
   ok(DESTINATIONS.every((d) => d.zh && d.en && d.km > 0 && d.mins > 0), 'destinations named in both languages, with distance and time');

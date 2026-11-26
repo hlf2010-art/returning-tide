@@ -7,6 +7,7 @@ import { groundHeight } from './layout.js';
 import { createPerson } from './people.js';
 import { addGlasses } from './glasses.js';
 import { createFace } from './face.js';
+import { canopyGeometry } from './umbrella.js';
 import { flinchPose } from '../engine/flinch.js';
 const _hand = new THREE.Vector3();
 // a phone flash: a hot white blink (bloom does the rest)
@@ -71,7 +72,7 @@ const std = (o) => new THREE.MeshStandardMaterial(o);
 const UMB_COLORS = { p1: 0x1d2a44, p2: 0x3a1420, p3: 0x202024, p4: 0x141416, p5: 0x4a3a6a };
 // a bump reaction's gesture (engine/social.js kinds -> clips)
 const GESTURE = { sorry: 'wave', fine: 'shrug', scold: 'angry', tut: 'look', look: 'look' };
-const canopyGeo = new THREE.ConeGeometry(0.55, 0.3, 14, 1, true), shaftGeo = new THREE.CylinderGeometry(0.009, 0.009, 0.72, 6);
+const canopyGeo = canopyGeometry({ r: 0.55, h: 0.24 }), shaftGeo = new THREE.CylinderGeometry(0.009, 0.009, 0.92, 6);
 const phoneGeo = new THREE.BoxGeometry(0.07, 0.145, 0.009), screenGeo = new THREE.PlaneGeometry(0.062, 0.128);
 const phoneMat = std({ color: 0x101012, roughness: 0.3, metalness: 0.4 });
 const screenMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 1.5, 1.8) });
@@ -111,8 +112,8 @@ export function createRealPedestrians(simPeds, people) {
     const person = createPerson(people, p.id);
     person.root.name = `person-${p.id}`;
     const umb = new THREE.Group(); umb.name = `umbrella-${p.id}`; umb.visible = false;
-    const shaft = new THREE.Mesh(shaftGeo, std({ color: 0x1a1a1a, roughness: 0.5 })); shaft.position.y = 0.36;
-    const canopy = new THREE.Mesh(canopyGeo, std({ color: UMB_COLORS[p.id] || 0x202024, roughness: 0.45, side: THREE.DoubleSide })); canopy.position.y = 0.7;
+    const shaft = new THREE.Mesh(shaftGeo, std({ color: 0x1a1a1a, roughness: 0.5 })); shaft.position.y = 0.46;
+    const canopy = new THREE.Mesh(canopyGeo, std({ color: UMB_COLORS[p.id] || 0x202024, roughness: 0.45, side: THREE.DoubleSide })); canopy.position.y = 0.95;
     umb.add(shaft, canopy);
     const phone = new THREE.Group(); phone.name = `phone-${p.id}`; phone.visible = false;
     const scr = phoneScreen();

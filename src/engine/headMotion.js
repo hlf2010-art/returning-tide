@@ -57,8 +57,10 @@ export function updateHead(h, dt, s) {
   // breathing: slow and shallow at rest, fast and deep when spent
   const rate = 0.24 + 0.75 * s.breath;                                  // breaths per second
   h.breathPhase += rate * dt * twoPi;
-  const breathAmp = 0.0025 + 0.011 * s.breath;
-  const breathe = Math.sin(h.breathPhase);
+  const breathAmp = 0.003 + 0.026 * s.breath * s.breath;               // up to ~3 cm when spent: you see it
+  // with the recording playing (engine/audio.js breathEnvelope), rise on each breath you hear
+  if (s.breathEnv != null) h.env = ease(h.env ?? 0, s.breathEnv, 14, dt);
+  const breathe = s.breathEnv != null ? (h.env ?? 0) * 2 - 1 : Math.sin(h.breathPhase);
 
   // winded: bend over, hands toward knees; eases in quicker than it eases out
   h.bend = ease(h.bend, s.winded ? 1 : 0, s.winded ? 2.6 : 1.3, dt);
@@ -70,7 +72,7 @@ export function updateHead(h, dt, s) {
   h.x = swayX + idle * 0.005;
   h.y = bobY + h.dip + breathe * breathAmp - bend * HEAD.bendDrop;
   h.z = bend * HEAD.bendFwd;
-  h.pitch = h.nod + breathe * breathAmp * 0.5 - bend * HEAD.bendPitch;
+  h.pitch = h.nod + breathe * breathAmp * 0.9 - bend * HEAD.bendPitch;
   h.rollOut = h.roll + swayX * HEAD.stepRoll + idle * 0.002;
   return h;
 }

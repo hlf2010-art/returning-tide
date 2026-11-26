@@ -73,7 +73,7 @@ export function createPlayer(camera, dom) {
     prevYaw = p.yaw; prevFwd = p.forward;
     const h = updateHead(p.head, dt, {
       stride: p.stride, speed, walk: WALK_SPEED, run: RUN_SPEED, lateral: p.lateral, forwardAccel: accel,
-      yawRate, impact: body.impact, breath: st.breath, winded: st.winded > 0, air: body.air,
+      yawRate, impact: body.impact, breath: st.breath, breathEnv: p.breathEnv ?? null, winded: st.winded > 0, air: body.air,
     });
     // offsets are in the view's frame (yaw only): x right, z forward
     const ox = cy * h.x - sy * h.z, oz = -sy * h.x - cy * h.z;

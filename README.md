@@ -7,18 +7,19 @@ one short street (Hankou Road), ~155 m of the Bund promenade with two conversing
 
 ## In this build
 
-- **Time is the resource:** between the acts, weeks pass in a night, and you plan how the evenings went: making things, one person, friends and family, business, rest. A preview says what that will come to before you commit; energy and burnout; the gimbal's road to a launch (production-ready, a small batch, launched) and what a launch brings both ways (an offer, a promotion, followers; a Taobao knock-off, an HR complaint, a friend wanting equity, a big company's call). Two ending variants: "built it, but alone" and "wanted everything". See `docs/time.md`.
+- **Time is the resource:** between the acts, weeks pass in a night, and you plan how the evenings went: making things, one person, friends and family, business, rest. A preview says what that will come to before you commit; energy and burnout; the gimbal's road to a launch (production-ready, a small batch, launched) and what a launch brings both ways (an offer, a promotion, followers; a Wanji knock-off, an HR complaint, a friend wanting equity, a big company's call). Two ending variants: "built it, but alone" and "wanted everything". See `docs/time.md`.
 - **The character page (I):** who Ji Bai is today, his three skills and what he's made, quests in progress, money, reputation, his things, home, car and company, and everyone he knows on a relationship map.
 - **Ji Bai's AI side in the story:** the robot-arm review and the investor demo follow what he proposed (log the data, a slip sensor and a model on the controller, a vision model, new pads); at the consultancy he builds a real reconciliation agent or mocks one up, decides where the bank's model runs, and fixes the redaction model.
-- **The day starts at 4:20 pm:** the low sun on the Bund, the sunset at about 4:55, the floodlights from 5:10; time enough to cross to Lujiazui by Line 2 or the ferry first.
+- **The day starts at 3:30 pm:** the low sun on the Bund, the sunset at about 4:55, the floodlights from 5:10.
+- **The first evening is one path:** Hankou Road to the railing (Dad rings as you look across), Old Lin's pouch, north along the Bund to the Peace Hotel and room 612 (the firm's welcome arrives there), Momo's set in the Jazz Bar at 8. Until then the phone carries only Momo's gig and Yu'an's hello; Mingxuan's robot arm, Zhixia, Yinuo and the group chat's chatter wait for Tuesday (Mingxuan writes after the set if you went). A reloaded game keeps Mission One where it was, and the notice read.
 
-- **Metro Line 2 (East Nanjing Road ⇄ Lujiazui), walked and ridden:** down Exit 7 or 2 (Henan Road) or Lujiazui's Exits 6 and 4 into a real concourse; with a bag, security stops you until it's been through the X-ray (E at the belt); E at a gate taps Alipay's transit code (¥3, charged on the way out); escalators (they carry you) or the stair down to an island platform behind screen doors; a real 8-car train every minute each way (5:30–23:00), the alert tone and announcements in Mandarin and English, doors that open on the left; ride it under the river (about 90 s): over every door a screen and a lit strip map of the whole line (this station red, the next green), printed line maps above the windows; individual stainless seats with the orange priority seats (爱心专座) at the car ends. Crowds follow the hour (a full car in the rush) (the morning and evening rush, a quiet midday); the stations shut their shutters after the last train (about 23:15 to 5:15). Commuters, riders and staff; procedural station and train sound. See `docs/metro.md`.
-- **Getting around:** the Bund–Lujiazui ferry from the cruise pier (E at the green ferry board; every 15 min, 06:00–23:00, ¥2) and back from the ferry sign on West Lujiazui Road; DiDi as before.
+- **Metro Line 2 (East Nanjing Road ⇄ Lujiazui), walked and ridden:** down Exit 7 or 2 (Henan Road) or Lujiazui's Exits 6 and 4 into a real concourse; with a bag, security stops you until it's been through the X-ray (E at the belt); E at a gate taps YiPay's transit code (¥3, charged on the way out); escalators (they carry you) or the stair down to an island platform behind screen doors; a real 8-car train every minute each way (5:30–23:00), the alert tone and announcements in Mandarin and English, doors that open on the left; ride it under the river (about 90 s): over every door a screen and a lit strip map of the whole line (this station red, the next green), printed line maps above the windows; individual stainless seats with the orange priority seats (爱心专座) at the car ends. Crowds follow the hour (a full car in the rush) (the morning and evening rush, a quiet midday); the stations shut their shutters after the last train (about 23:15 to 5:15). Commuters, riders and staff; procedural station and train sound. See `docs/metro.md`.
+- **Getting around:** the Bund–Lujiazui ferry from the cruise pier (E at the green ferry board; every 15 min, 06:00–23:00, ¥2) and back from the ferry sign on West Lujiazui Road; Kuaima as before.
 - **The notebook:** E at the desk in 612 (or N) opens Ji Bai's notebook: handwriting and pen sketches (the first week, the night gimbal before it exists, the robot arm, Dad); ← → turn the pages.
-- **The Huracán:** E at the parked car starts the purchase (Zhixia sends the dealer's card); Vivian offers a test drive ("Can I take it for a drive?"); a bought car is delivered on day 7 and drives from either side.
-- **Voices:** every scripted line is recorded in Mandarin and English (1,491 clips, Kokoro-82M via `tools/voice/generate.py`); only lines made up at runtime (free conversation, lines with live numbers) fall back to subtitles. The browser's synthetic speech is never used.
+- **The Strale:** E at the parked car starts the purchase (Zhixia sends the dealer's card); Vivian offers a test drive ("Can I take it for a drive?"); a bought car is delivered on day 7 and drives from either side.
+- **Voices:** every scripted line is recorded in Mandarin and English (1,989 clips, Kokoro-82M via `tools/voice/generate.py`); only lines made up at runtime (free conversation, lines with live numbers) fall back to subtitles. The browser's synthetic speech is never used.
 - **Phone:** voice notes play with a progress bar (↑/↓ and Enter, or click), videos play in the chat, calls play their recorded lines.
-- **Streets:** pedestrians look ahead and pass each other, use kerbs and crossings without sticking, and flinch when they do brush; Manner has two baristas at work; the buses are painted metal with glass and an interior.
+- **Streets:** pedestrians look ahead and pass each other, use kerbs and crossings without sticking, and flinch when they do brush; Linger has two baristas at work; the buses are painted metal with glass and an interior.
 - **UI:** Bund Deco (`src/ui/deco.css`, on the shared tokens in `src/ui/fonts.js`; icons in `src/ui/icons.js`), in the manner of the title screen, the character page and the season screen: river-night panels with a gold double rule, chamfered gold plaques for the main action, Cormorant / Noto Serif lettering spaced wide, Poiret One for small labels. It replaced the earlier liquid-glass layer; the phone keeps its own glass, as a 2026 phone would. Icons stand in where a word isn't needed.
 
 ## Run
@@ -45,11 +46,11 @@ Needs a desktop browser with WebGL2, a keyboard and a mouse.
 | P | your phone (Esc: back) |
 | U | open / close your umbrella (once you've bought one and have it with you) |
 | H | noise cancelling on / off (once you have the headphones with you) |
-| 1–4 | in a DiDi: answer the driver (engage / short answer / change the subject / say nothing); at a friend's place, answer them the same way |
+| 1–4 | in a Kuaima: answer the driver (engage / short answer / change the subject / say nothing); at a friend's place, answer them the same way |
 | E (sat at a table) | stand up again (the Jazz Bar) |
-| W / S, A / D, Space | at the wheel of your Huracán: throttle / brake (hold S once stopped to reverse), steer, handbrake |
+| W / S, A / D, Space | at the wheel of your Strale: throttle / brake (hold S once stopped to reverse), steer, handbrake |
 | V · H · E | at the wheel: chase camera or the driver's seat · horn · get out (once stopped; it stays parked there) |
-| T | talk to whoever you're looking at, in your own words (see *Talking to people*); in a DiDi, to the driver |
+| T | talk to whoever you're looking at, in your own words (see *Talking to people*); in a Kuaima, to the driver |
 | Enter · Tab · Esc | in a conversation: send what you typed · speak instead (Mandarin or English; the 中/EN button picks) · leave |
 | G | photo mode, once you've built the night gimbal (wheel or [ ] zoom, Space or click to shoot, G or Esc to lower) |
 | E (at the bottom of the metro stairs) | at the entrance: Line 2 one stop to Lujiazui (¥3); at the exit sign: through the concourse and out of the other exit |
@@ -226,7 +227,7 @@ Full profiles, and how their lives move without you, are in `docs/characters.md`
 Face-ID unlock), not a copy of any real phone's interface. Apps carry the real service names as
 text with original icons. While it's up the mouse works the screen and you can still walk slowly;
 Esc goes back.
-- **微信 (chats)**: your friends one by one, the group chat 「金陵五虎+1」 and services.
+- **信语 (chats)**: your friends one by one, the group chat 「金陵五虎+1」 and services.
   - Text and **voice notes**: tap to hear them (the browser's voice, phrase by phrase), or
     transcribe them.
   - **Invitation cards**: accept or decline.
@@ -234,10 +235,10 @@ Esc goes back.
 - **Calls**: they ring in your pocket (a banner and a ringtone; P to answer). The caller's lines
   play with subtitles and you choose what to say. Leave a call unanswered and it's missed, and the
   caller notices.
-- **钱包 (wallet)**: WeChat Pay and Alipay balances, a bank account, a card and a ledger of every
+- **钱包 (wallet)**: Xinyu Pay and YiPay balances, a bank account, a card and a ledger of every
   movement. **All money is fictional**; nothing here touches a real payment service.
 - **日历 (calendar)**: what you've agreed to, and what's still waiting for an answer.
-- **电话 (recents)** and **Manner**: the Hankou Road shop's ordering screen.
+- **电话 (recents)** and **Linger**: the Hankou Road shop's ordering screen.
 
 **Friends live without you** (`world/agenda.js`, node-tested).
 - On your first evening:
@@ -250,23 +251,23 @@ Esc goes back.
 - Then the group chat keeps its own life.
 - **Invitations have consequences:** accepting warms a friend and goes in your calendar,
   declining cools them a little, and letting one lapse unanswered costs more and they say so.
-- **Friends react to the world:** buy a coffee at Manner on Hankou Road and Yu'an, who works on the
+- **Friends react to the world:** buy a coffee at Linger on Hankou Road and Yu'an, who works on the
   street, guesses where you are.
 - **Saving:** the life state (clock, money, chats, relationships, calendar, inventory) saves to
   this browser's local storage and survives a reload; `?fresh` starts over.
 - **Time:** the phone's clock runs (a real minute is four game minutes), but the sky stays at blue
   hour: there's no day/night cycle yet.
 
-**Ordering a coffee**: walk up to Manner's hatch.
+**Ordering a coffee**: walk up to Linger's hatch.
 1. E opens the ordering screen; choose a drink.
-2. Pay with WeChat Pay, Alipay or the card (Face-ID sheet, balance checked, ledger entry).
+2. Pay with Xinyu Pay, YiPay or the card (Face-ID sheet, balance checked, ledger entry).
 3. You get an order number; a couple of game minutes later the shop messages you that it's ready.
 4. Collect at the hatch (the barista calls your number), and the cup is in your own right hand,
    visible as you walk. With the phone up, your hand holds the phone too.
 
 Still to come in this brief:
-- Online shopping (京东 / 淘宝) with a rider bringing the parcel to you in the world.
-- DiDi rides, with the talkative drivers already written.
+- Online shopping (鲸送 / 万集) with a rider bringing the parcel to you in the world.
+- Kuaima rides, with the talkative drivers already written.
 - The car purchase journey (a consultant, a showroom visit, specification, test drive, negotiation,
   delivery).
 - The penthouse and helicopter journeys, then owned spaces you can furnish and host in.
@@ -285,9 +286,9 @@ redraws whatever is already on screen, including an open phone, in place.
 - **Messages** are written and stored in Chinese, the way these people would write them, and read
   in English through `world/agendaEn.js`. Names use given names in English (Mingxuan, Yu'an, Momo).
 - **What stays as-is:**
-  - The world itself: shop signs, the bilingual Manner menu board, the lamp-post notice and the label
+  - The world itself: shop signs, the bilingual Linger menu board, the lamp-post notice and the label
     on the pouch.
-  - Brand names (Manner, Model 3) inside Chinese sentences, where people really say them that way.
+  - Brand names (Linger, Model 3) inside Chinese sentences, where people really say them that way.
   - The language names in the switch (中文 / English).
 - **Shanghainese** remarks show in Chinese with a Mandarin gloss, or in English with a small "in
   Shanghainese" tag.
@@ -324,17 +325,17 @@ drawn from the same layout data the colliders use.
 - **Gets out of the way:** it hides while talking, reading or paused, and after ~5 s standing still.
   Short stops mid-walk don't make it flicker (node-tested).
 
-## Shopping: JD and Taobao, and the courier at the kerb (`src/engine/shopping.js`, `src/ui/phone/shopApp.js`, `src/world/courier.js`, `src/world/belongings.js`)
+## Shopping: Jingsong and Wanji, and the courier at the kerb (`src/engine/shopping.js`, `src/ui/phone/shopApp.js`, `src/world/courier.js`, `src/world/belongings.js`)
 
 Two shop apps on the phone, as plain coloured tiles with the shops' names as text (no logos, no
 copied interface). Each product page quotes a real delivery time from the shop's rhythm:
-- **JD** has same-day delivery before 19:00 and next morning after that. Small stock items go by
+- **Jingsong** has same-day delivery before 19:00 and next morning after that. Small stock items go by
   express (秒送) within the hour, until 22:00.
-- **Taobao** takes two or three days.
+- **Wanji** takes two or three days.
 
 You choose where it goes:
 - **Hankou Road, hand it to me.** This works the way it does in Shanghai. When the order is out for
-  delivery, the courier parks his e-bike on the Hankou Road pavement by Manner (a generic scooter
+  delivery, the courier parks his e-bike on the Hankou Road pavement by Linger (a generic scooter
   with a delivery box and the quilted handlebar cover they all use in November). He messages you
   to come down and collect, and he shows on the minimap. He waits on his phone, glances up the
   street, and looks at you and waves when you come close. **E** takes the parcel from him; it's in
@@ -362,10 +363,10 @@ Node-tested (`tests/shopping.test.mjs`):
 - bulky things never go to the kerb
 - every shop message reads in English too
 
-## DiDi rides (`src/engine/ride.js`, `src/world/didi.js`, `src/world/cabin.js`, `src/world/driverPose.js`, `src/world/rideFlow.js`)
+## Kuaima rides (`src/engine/ride.js`, `src/world/didi.js`, `src/world/cabin.js`, `src/world/driverPose.js`, `src/world/rideFlow.js`)
 
-**Calling a car.** Open DiDi on the phone and pick a destination: North Bund, Lujiazui IFC,
-Jing'an Kerry Centre, Xintiandi or Tianma Circuit. Each shows the distance and a DiDi Express fare
+**Calling a car.** Open Kuaima on the phone and pick a destination: North Bund, Lujiazui IFC,
+Jing'an Kerry Centre, Xintiandi or Tianma Circuit. Each shows the distance and a Kuaima Express fare
 (Shanghai pricing, with the night rate after 23:00).
 - A driver accepts. The app shows their name, rating, car and plate, and you can send quick
   messages ("I'm at the corner").
@@ -386,7 +387,7 @@ looks around.
   - a sculpted dashboard with a slim driver display and a big centre screen showing the route
   - a three-spoke wheel, rear-view mirror and sun visors
   - door cards with armrests, handles, speakers and a warm ambient strip
-  - a centre console with a Manner cup in the holder
+  - a centre console with a Linger cup in the holder
 - The streetlamps sweep a little warm light through the cabin as you pass each one.
 - **The driver is properly seated.** The avatars only have standing animations, so the sitting is
   posed every frame with two-bone IK: pelvis on the cushion, a slight recline, feet on the pedals,
@@ -405,11 +406,11 @@ silent. Their lines come up as subtitles in your language.
 **Arriving.** Past the north end of the Bund the drive continues as passing light. Then:
 - **If a friend asked you there, about now** (within two hours of the time), you walk in: Xuan's
   robot-arm review on IFC's 32nd floor, or Yinuo's viewing of a top-floor flat on the North Bund
-  (see *Places a DiDi takes you* below).
-- **Otherwise** a card shows where you are and what it cost; the evening there passes, and a DiDi
+  (see *Places a Kuaima takes you* below).
+- **Otherwise** a card shows where you are and what it cost; the evening there passes, and a Kuaima
   brings you back to the Bund.
 
-**Other people get DiDis too** (`src/world/hailers.js`, `src/engine/rideHail.js`). At two kerbs, the
+**Other people get Kuaimas too** (`src/world/hailers.js`, `src/engine/rideHail.js`). At two kerbs, the
 west one by the AIA Building and the river side north of Hankou Road, someone comes out and waits
 with their phone. A real car from the traffic is sent to them (the same pull-in yours uses). As it
 comes up they look for it, check the plate and wave; it stops with its hazards on; they walk to the
@@ -449,7 +450,7 @@ Peace Hotel (`L.zNorth` −262).
 **People and places:**
 - **The front desk.** They know you, because you told your father you're staying here. Your key card
   is 612, a river view.
-- **The concierge** hands over whatever couriers left at the desk (the JD/Taobao orders sent to the
+- **The concierge** hands over whatever couriers left at the desk (the Jingsong/Wanji orders sent to the
   hotel).
 - **The Jasmine Lounge** runs along the Bund windows (round marble tables, a grand piano).
 - **The Jazz Bar** is through a brass-framed door in the hall's south-east corner (see below).
@@ -526,7 +527,7 @@ little marble tables with red lamps and guests at them.
 - **Face scan.** Without a registration it fails.
 - **The lifts** need a staff badge.
 
-(Zhao the DiDi driver's rumour, that the guards were being replaced by face recognition, turns out
+(Zhao the Kuaima driver's rumour, that the guards were being replaced by face recognition, turns out
 half true: the gates are new, the guard is still there.)
 
 **Honest note:** both interiors follow published descriptions, not floor plans. The AIA lobby isn't
@@ -549,7 +550,7 @@ and a new one starts out of sight whenever one finishes.
 
 ## People's voices (`src/engine/voice.js`, `tools/voice/`)
 
-Every scripted line in the game has a real recorded voice. That's 202 lines, each in Mandarin and English: Old Lin and Ms Su, the DiDi drivers, passers-by, hotel staff, Vivian, your friends, Kai, your parents on the phone.
+Every scripted line in the game has a real recorded voice. That's 202 lines, each in Mandarin and English: Old Lin and Ms Su, the Kuaima drivers, passers-by, hotel staff, Vivian, your friends, Kai, your parents on the phone.
 - **The voices are made offline** with [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), an open neural speech model (Apache-2.0). The v1.1-zh model voices Mandarin and the v1.0 model voices English.
 - **Each character has their own voice.** Since nobody here could listen to 150 candidates, the casting was done by measuring each voice's pitch and pace on a test sentence (`tools/voice/probe.json`). Lower, slower voices went to the older men. The cast is in `tools/voice/cast.json`.
 - **They're checked by another model.** An independent speech recogniser (Whisper small) transcribed a random sample of the clips back:
@@ -571,12 +572,12 @@ Every scripted line in the game has a real recorded voice. That's 202 lines, eac
 
 ## Talking to people in your own words (`src/engine/llm.js`, `src/world/personas.js`, `src/ui/talk.js`)
 
-**Who you can talk to.** Look at someone and press **T**: passers-by, the hotel staff, the bartender, the AIA's reception and guard, your DiDi driver (from the back seat), Kai at the makerspace, and your friends once their scene is over.
+**Who you can talk to.** Look at someone and press **T**: passers-by, the hotel staff, the bartender, the AIA's reception and guard, your Kuaima driver (from the back seat), Kai at the makerspace, and your friends once their scene is over.
 - They stop and turn to you.
 - **Type** (Enter) or **speak** (Tab) in Mandarin or English. They answer in character, in the language you used, out loud in their own voice, sentence by sentence as the reply arrives.
 - They remember the last few things you said to them.
 
-**WeChat.** You can also write to your friends (and Vivian, your dad, the group chat) in your own words, and they text back in character.
+**Xinyu.** You can also write to your friends (and Vivian, your dad, the group chat) in your own words, and they text back in character.
 
 **Who talks among themselves.**
 - Old Lin and Ms Su get new exchanges added to their rotation.
@@ -607,20 +608,26 @@ Every scripted line in the game has a real recorded voice. That's 202 lines, eac
 
 **Voice input** is the browser's speech recognition (Chrome, Edge, Safari). It couldn't be tested here (no microphone), and without it you type.
 
-## Real brands (`src/ui/brands.js`)
+## Brands: all invented (`src/ui/brands.js`)
 
-Real brand marks appear where the thing really is that brand:
-- **On the phone:** WeChat, Alipay and Taobao app icons; the WeChat Pay, Alipay and Visa marks on the pay sheet and wallet.
-- **On the cars:** the maker's name across the tail of the lookalike NIO, Li Auto, AITO and Luxeed. The bodies are still approximations.
-- **Where they already were:** Lamborghini's own badges on the Huracán model you supplied, and the Starbucks and Manner cups you made.
-
-The vector marks come from [Simple Icons](https://simpleicons.org) (CC0 data; the trademarks belong to their owners). DiDi, JD, Manner, UnionPay and China Merchants Bank aren't in that set, so they appear as their own name in their own colours rather than an invented symbol. This is fine for a private build; publishing the game would need the brand owners' permission.
+Every brand in the game is invented, in the manner of what it stands in for, so nothing needs a brand owner's
+permission:
+- **On the phone:** Xinyu 信语 (chat and Xinyu Pay), YiPay 易付, Wanji 万集 and Jingsong 鲸送 (shopping), Kuaima 快马
+  (ride-hailing), Linger (the coffee on Hankou Road); Shenjiang Bank 申江银行 and the YinTong 银通 card network.
+  Their glyphs are simple shapes drawn for the game.
+- **Cars:** the Corvina Strale (the supercar, `src/world/supercarModel.js`); traffic under invented makers (Aurae,
+  Kunlun, Qingyun, Tianheng, the Jinghe E7); the taxi reads 出租.
+- **Cups:** Linger's ring-and-name cup and Harbour Coffee's ring-and-waves sleeve.
+- **Nanjing Road:** the modern chains, banks and hotels have invented names and no logos; the old-established Chinese
+  shops (老字号) keep their names in plain lettering (`src/world/njShops.js`, research in `docs/nanjing-road-shops.md`).
+  At Lujiazui the glass cylinder is Lumen Pudong. Landmarks keep their real names (the Bund's buildings, the Peace
+  Hotel, IFC, the Oriental Pearl Tower, Metro Line 2), and the metro signs carry a plain circled M.
 
 ## Building things: the Yangpu makerspace (`src/engine/maker.js`, `src/world/makerspace.js`)
 
-Jibai designs and builds. He rents a bench in a converted factory on the Yangpu riverside: take a DiDi to *Yangpu riverside makerspace*, which you can always walk into.
+Jibai designs and builds. He rents a bench in a converted factory on the Yangpu riverside: take a Kuaima to *Yangpu riverside makerspace*, which you can always walk into.
 - **The space:** brick and steel, hanging lamps, benches, two 3D printers (the print heads move), a CNC, a laser cutter, a pegboard of tools, a whiteboard of sketches, and Kai, who runs the place (T to talk).
-- **The parts shelf** sells ESP32 boards, IMUs, gimbal motors, batteries, GPS and CAN modules, a multi-zone ToF sensor and servos, paid with WeChat Pay. Zhixia sends her own parts for the telemetry logger.
+- **The parts shelf** sells ESP32 boards, IMUs, gimbal motors, batteries, GPS and CAN modules, a multi-zone ToF sensor and servos, paid with Xinyu Pay. Zhixia sends her own parts for the telemetry logger.
 - **The bench** shows the blueprints, what each needs and the Maker level it takes. Building one goes:
   1. 3D-print the housing (forty minutes pass)
   2. solder six joints: press Space as a marker crosses a window, faster each joint
@@ -635,7 +642,7 @@ Jibai designs and builds. He rents a bench in a converted factory on the Yangpu 
 
 **Photo mode (G, with the gimbal).**
 - **The viewfinder** has a thirds grid, the focal length (24–135 mm equivalent) and a stabiliser light that turns red if you swing too fast.
-- **The challenge, the Bund after dark:** the Oriental Pearl, Shanghai Tower, the Customs House clock, the Peace Hotel's green roof, Old Lin and Ms Su, the Jazz Bar trio, a cruise boat, and your Huracán.
+- **The challenge, the Bund after dark:** the Oriental Pearl, Shanghai Tower, the Customs House clock, the Peace Hotel's green roof, Old Lin and Ms Su, the Jazz Bar trio, a cruise boat, and your Strale.
 - **Scoring:** each shot is scored for the subject, how centred and how big it is, and how steady you were, up to three stars. A better shot of a subject earns XP.
 - **Shots** go to the phone's **Photos** app as thumbnails. Share one to Moments for followers, and a friend will comment.
 
@@ -643,7 +650,7 @@ Jibai designs and builds. He rents a bench in a converted factory on the Yangpu 
 
 **Your phone keeps track:**
 - **Sketchbook:** what's coming up (your invitations), your Maker level and XP, followers, what you've built, how close you are to each friend, and achievements.
-- **The minimap** marks Manner, the hotel, the DiDi pickup, the Jazz Bar (when it's open), your parked car, and the photo subjects you still need.
+- **The minimap** marks Linger, the hotel, the Kuaima pickup, the Jazz Bar (when it's open), your parked car, and the photo subjects you still need.
 
 ## The friends, after the first days (`src/world/agenda.js`, `src/world/friendScenes.js`)
 
@@ -651,18 +658,18 @@ Their lives keep moving on the phone, on the calendar, and in person. Every mess
 - **Yu'an** surveys the Peace Hotel's roof, then asks you to the AIA Building at 19:00 on day 4. She's at the gates with her site badge: go through with her and the guard nods you past, and she shows you the coffered ceiling she's restoring.
   - Scan it with the Pocket LiDAR and you've saved her team two weeks of measuring. She'll want to borrow it.
   - Without the LiDAR, she wishes someone had one.
-- **Zhixia** wants a race-telemetry logger for her car (CAN bus, GPS, g-forces). Say yes and her parts arrive at the makerspace. Build it and she invites you to a track day at Tianma, told by the card: her lap time depends on how well you built it. If you own the Huracán, she drives it too.
+- **Zhixia** wants a race-telemetry logger for her car (CAN bus, GPS, g-forces). Say yes and her parts arrive at the makerspace. Build it and she invites you to a track day at Tianma, told by the card: her lap time depends on how well you built it. If you own the Strale, she drives it too.
 - **Momo** gets locked out on night two. Let him crash and he's asleep in your armchair in 612 when you get back (E to wake him, T to talk). He borrows your charger. Later he posts your car to his followers, and so do yours, by thousands.
 - **Xuan:** if you said you'd advise his senior's team, it's the arm's demo day at IFC. A second scene there: the arm doesn't drop a thing, an investor wants to know who you are, and dinner with him is set up for later.
 - **Yinuo** tells you what she decided about the flat, which depends on what you said. Then she asks you to fly over the Bund with her by helicopter at night (the card, and what she said on the way down).
 - **Home:** Mum's voice note (she's seen the car; your father doesn't know), and Dad's call about the empty R&D floor he's keeping for you.
 
-## Places a DiDi takes you (`src/world/destinations.js`)
+## Places a Kuaima takes you (`src/world/destinations.js`)
 
 When a friend has asked you somewhere and you get there at about the right time, the ride ends with
 you walking in. Each place is at its real height, with its own scene: lines as subtitles and, when
 you're asked something, four answers (1–4, or say nothing). What you say changes how they feel about
-you and is remembered. Leave by the lift and a DiDi brings you back to the Bund: time passes, and
+you and is remembered. Leave by the lift and a Kuaima brings you back to the Bund: time passes, and
 the fare comes out of your wallet.
 
 - **IFC, 32nd floor, Lujiazui** (Xuan's invitation). About 134 m up, in the tower south-east of the
@@ -690,18 +697,18 @@ nearer the Pearl Tower than it really is.
 
 ## Cars on the street
 
-A **Lamborghini Huracán** is parked on Hankou Road by the south kerb, right where people walk, nose toward the Bund, with a
+A **Corvina Strale** is parked on Hankou Road by the south kerb, right where people walk, nose toward the Bund, with a
 soft contact shadow. It is solid: you walk round it. It's the car the purchase journey will make
 yours. The model is real scale (4.46 m, about 134k triangles, 11 MB, loaded in the background).
 
-## Buying the Huracán (`src/engine/carPurchase.js`, `src/world/carSale.js`)
+## Buying the Strale (`src/engine/carPurchase.js`, `src/world/carSale.js`)
 
 A journey, not a checkout, and the way it really works at this end of the Shanghai market.
 
 1. **A friend's lead.** Tell Zhixia "we'll see about the car" and, a little later, she sends you a
-   WeChat contact card for Vivian, a Lamborghini sales consultant ("just say you're my friend").
+   Xinyu contact card for Vivian, a Corvina sales consultant ("just say you're my friend").
 2. **The demo car comes to you.** Add Vivian and she offers to bring the demo car to the Bund (a
-   door-to-door test drive, normal for buyers like this). Twenty minutes later the yellow Huracán on
+   door-to-door test drive, normal for buyers like this). Twenty minutes later the yellow Strale on
    Hankou Road is her demo car, and she's waiting on the pavement beside it.
 3. **At the car.** E to talk; answer with 1–4:
    - sit inside (the passenger seat; mouse to look round)
@@ -710,7 +717,7 @@ A journey, not a checkout, and the way it really works at this end of the Shangh
      (black Alcantara or terracotta leather)
    - hear the price (about ¥2.68M on the road) and the finance terms
    - pay the ¥200,000 deposit by bank transfer
-4. **On WeChat.** Vivian follows up with two decisions:
+4. **On Xinyu.** Vivian follows up with two decisions:
    - **The plate.** Registration follows the owner's hukou, not where the car was bought.
      - **苏A (Nanjing).** With a Nanjing hukou the realistic route is a 苏A plate: the dealer's agent
        registers it in Nanjing while the car runs on temporary plates. Blue out-of-town plates are
@@ -756,7 +763,7 @@ The speed and gear show at the bottom right.
 
 ## People notice a nice car (`src/engine/sights.js`)
 
-Pass the Huracán and you'll see what really happens on the Bund:
+Pass the Strale and you'll see what really happens on the Bund:
 - **Most people look.** They slow a little and their heads follow it as they go by.
 - **Some stop for a photo.** They stand a few metres off, turn to face it, and raise the phone to eye
   level, sideways (the arm is posed with IK). It takes a couple of seconds, sometimes with a flash,
@@ -770,25 +777,25 @@ Node-tested (`tests/sights.test.mjs`).
 
 ## Coffee cups
 
-The Manner cup and the Starbucks cup are props made for this game (see `docs/props/`). Each is
+The Linger cup and the Harbour Coffee cup are props made for this game (see `docs/props/`). Each is
 built once and shared as clones, so a street full of coffee costs two label textures.
-- **Manner:** in your hand after you collect an order, in the hands of people coming back from a
-  coffee run, and on Manner's pass.
-- **Starbucks:** one office worker starts the evening with one from the store up Hankou Road.
+- **Linger:** in your hand after you collect an order, in the hands of people coming back from a
+  coffee run, and on Linger's pass.
+- **Harbour Coffee:** one office worker starts the evening with one from the store up Hankou Road.
 
-## Manner Coffee, Hankou Road (`src/world/shops.js`)
+## Linger, Hankou Road (`src/world/shops.js`)
 
 Why here:
-- Manner's official store list includes a Hankou Road shop ("汉口路126店"). The listing doesn't make
+- Linger's official store list includes a Hankou Road shop ("汉口路126店"). The listing doesn't make
   clear whether 126 is the street number, so its exact spot on the road is approximate.
-- The other chains named in the brief: Starbucks' Hankou Road shop (申大厦店, 汉口路266号, in
+- The other chains named in the brief: Harbour Coffee' Hankou Road shop (申大厦店, 汉口路266号, in
   2018-era listings) is several blocks west of this stretch and outside the map. No 7-Eleven or
   Subway could be confirmed on these blocks, so none are placed.
 
-The front is built like Manner's small takeaway shops:
+The front is built like Linger's small takeaway shops:
 - a narrow glazed front in black steel
 - a bright white-tiled interior with the espresso machine and grinder on show, cups on the pass
-- a menu on the wall at typical Manner prices (not a live menu) and an order hatch with a ledge
+- a menu on the wall at typical Linger prices (not a live menu) and an order hatch with a ledge
 - an A-frame with the seasonal osmanthus latte
 
 The name is set in type; no logo artwork is reproduced. The shop is a light source like the lamps.
@@ -988,7 +995,7 @@ Everything is synthesised in Web Audio (`src/engine/audio.js`); no recordings ar
 - **The Jazz Bar's trio**, written and played live (see *The Jazz Bar*): the only music, and it's in
   the world. You hear it from the stage when you're in the room, muffled through the door in the
   hall.
-- **The Huracán's V10** while you drive it (see *Driving it*).
+- **The Strale's V10** while you drive it (see *Driving it*).
 - **By place** (`src/engine/soundscape.js` rules, `src/engine/ambience.js` playback; details and licences in
   `docs/sound.md`): the river is loudest at the railing and fades inland (water slapping at the wall, wind
   strongest on the promenade, a cruise boat's horn now and then: rare, as horns are for emergencies on this
@@ -1059,7 +1066,7 @@ signed for Tianjin Road and the Bund) and **Exit 2** (west side), placed from Sh
 descriptions of the exits: stairwells under glass canopies with the Shanghai Metro mark, the station
 name in Chinese and English, the Line 2 and Line 10 colours (Wikipedia's palette) and the exit number.
 Walk down the stairs to the lit landing: **E** at the entrance takes Line 2 one stop under the river to
-Lujiazui (¥3 on Alipay; out to the IFC), **E** at the exit sign goes through the concourse and up the
+Lujiazui (¥3 on YiPay; out to the IFC), **E** at the exit sign goes through the concourse and up the
 other exit. The station's insides and the trains aren't built: both go by the fade.
 
 **Night look, from the reference photos.** Lujiazui is lit as it is at night: towers lit as
@@ -1084,8 +1091,8 @@ SSR and AO are off on Mac M4; auto resolution steps down if frames run long. If 
 
 A data-driven quest engine (tested in `tests/quests.test.mjs`): each quest is a list of steps with a
 `done` test on the life state, optional steps, a time to wait for, a place on the map and a way to
-fail. The main arc runs in three acts over six days: the first night back, Kai's robot arm (the
-makerspace), Dad's offer, and dinner with Dad at the Peace Hotel Jazz Bar on day 6 (his own avatar,
+fail. The main arc of a six-day game (one begun before the year) runs in three acts: the first night back,
+Kai's robot arm (the makerspace; in the year the arm belongs to Zhou's start-up on IFC 32F), Dad's offer, and dinner with Dad at the Peace Hotel Jazz Bar on day 6 (his own avatar,
 a sat-down conversation in recorded voices, 1-4 to answer). What you chose, what you built and how he
 feels about you lead to one of six endings, shown on a card after the late-night lighting at ten.
 **J** opens the journal: quests with their steps, track one (its next step is on screen and on the
@@ -1206,7 +1213,7 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
     click): both of them in, not too far, the Pearl behind; they tell you if you cut their heads off,
     and you see the shot they got.
   - *A dropped phone*: someone hurrying past drops theirs. Pick it up, find them (the marker), give it
-    back; they may send you the price of a coffee on WeChat (in-game money).
+    back; they may send you the price of a coffee on Xinyu (in-game money).
   Each speaks in recorded voices. Off for measurement tools (`?q=`) unless `?moments`.
   `node tools/streetwalk.mjs` walks through all of it.
 
@@ -1215,7 +1222,7 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
 - **阿潮生煎 A-Chao Shengjian** (`src/world/dumpling.js`), on Nanjing Road East's south side, 66 m in
   from the Bund: a walk-in ground floor in the street's frontage (white tile, steel counters, the menu
   over the kitchen, two big iron pans of buns under wooden lids, red stools). The name is invented; the
-  kind of place is everywhere in Shanghai. Order at the counter (1-5 add, Enter pays by Alipay, Esc
+  kind of place is everywhere in Shanghai. Order at the counter (1-5 add, Enter pays by YiPay, Esc
   cancels): 4 or 8 shengjian, beef vermicelli or curry beef soup, soy milk, at typical prices
   (¥4-22). The cook lifts the lid and calls it; take the tray, sit at a free table. Seated: 1 bite a
   small hole and sip the soup first (the way to do it), 2 pop one in whole (it's hot), 3 the soup; E
@@ -1240,7 +1247,7 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
 
 - **The map (M)** (`src/ui/worldMap.js`): the whole walkable city north-up on one screen, painted from
   the same layout data as the minimap and the colliders: the Bund and its promenade, Nanjing Road to
-  Henan Road, the river, the Pudong bank. Every place with its name (coffee, your hotel, DiDi, the
+  Henan Road, the river, the Pudong bank. Every place with its name (coffee, your hotel, Kuaima, the
   metro's exits, the shengjian shop, the cruise pier, the Jazz Bar when it's open, your car), your
   quest's next step, you. Wheel or +/- zooms, drag or arrows pan, C centres on you. Click a place (or
   anywhere) to set a waypoint: it shows on the minimap with the distance until you get there.
@@ -1282,7 +1289,7 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
 
 - Walk from Hankou Road out onto Zhongshan East 1st Road, up the stair, along the promenade.
 - Barriers at both ends of the waterfront and a hoarding at the west end of Hankou Road mark the edges.
-- Missing-person notice taped to a lamp post by the river hinting at Mission One.
+- Missing-person notice taped to a lamp post by the river hinting at Mission One. The line scrawled across it and the ferry token on its corner lead to the 23:00 ferry and Old Fang (`src/world/lastFerry.js`, docs/year.md).
 - Two waterfront NPCs (`老林` / Old Lin and `苏女士` / Ms. Su) standing near the river railing beneath a promenade lamp, already conversing in Mandarin across three everyday-Shanghai exchanges with idle/listening/speaking gestures, non-repeating cadence, and a brief greeting interaction (`E`).
 - Audio & speech note: recorded Mandarin/Shanghainese voice clips are not yet shipped, so `src/engine/dialogueAudio.js` implements WebAudio `PannerNode` positional attenuation ready for recorded clips and falls back to browser Mandarin speech synthesis (`window.speechSynthesis`, `zh-CN`), clearly labeled in the subtitle bar. Browser `speechSynthesis` playback requires an OS/browser `zh-CN` TTS voice and uses utterance-start scalar distance volume rather than true binaural panning.
 
@@ -1306,9 +1313,9 @@ src/world/playerBody.js, src/engine/headMotion.js, src/engine/stamina.js   first
 src/world/trees.js, src/world/wind.js     procedural plane / camphor trees and their wind
 src/world/hotelUpper.js, jazzBar.js   the Peace Hotel's sixth floor and room 612; the Jazz Bar
 src/engine/jazzScore.js, jazzPlayer.js   the trio's tunes (pure, tested) and their Web Audio playback
-src/world/hailers.js   other people getting DiDis at two kerbs (engine/rideHail.js runs the wait)
+src/world/hailers.js   other people getting Kuaimas at two kerbs (engine/rideHail.js runs the wait)
 src/world/destinations.js   IFC 32F and the North Bund flat: the scenes, the views, the ride back
-src/engine/drive.js, carAudio.js, src/world/driving.js   driving the Huracán: the car (tested), its V10, the controls
+src/engine/drive.js, carAudio.js, src/world/driving.js   driving the Strale: the car (tested), its V10, the controls
 src/ui/veil.js         the fade for going somewhere (a lift, sleep, a ride back)
 src/engine/voice.js, tools/voice/   recorded voices per character (Kokoro-82M, offline), the live voice server
 src/engine/llm.js, src/world/personas.js, src/ui/talk.js, src/world/ambient.js   free conversation with local models
@@ -1335,8 +1342,8 @@ tools/                 headless screenshot / playtest / render-cost scripts (nee
                        tools/langtest.mjs checks the language setting;
                        walkthroughs, each against a running build (URL=, OUT= for screenshots):
                        inwalk (the hotel and the AIA), upwalk (6F and room 612), jazzwalk (the bar,
-                       Momo's night), hailwalk (other people's DiDis), destwalk (by DiDi to IFC 32F and
-                       back; the North Bund flat), drivewalk (the Huracán), didiwalk, carwalk,
+                       Momo's night), hailwalk (other people's Kuaimas), destwalk (by Kuaima to IFC 32F and
+                       back; the North Bund flat), drivewalk (the Strale), didiwalk, carwalk,
                        talkwalk (talking to people, against a running model server), makerwalk (build the
                        gimbal, photograph the Pearl), friendwalk (the days after: Yu'an, the LiDAR, Momo),
                        storywalk (the story to an ending), streetwalk (murmur, families, umbrellas, the three
@@ -1356,16 +1363,15 @@ click-drag look instead of pointer lock, `?subs=0` starts with subtitles off.
 
 ## Credits
 
+The game shows these in Settings, under "Credits and licences" (`src/ui/credits.js`; `tests/credits.test.mjs` fails if a licensed model or recorded sound ships without an entry there). The music has its own list.
+
 - People: Microsoft Rocketbox avatars (MIT), 16 of them: Old Lin, Ms. Su, you, and 13 passers-by and visitors (8 added for the evening crowd: Female_Adult_04, 07, 11, 14, Business_Female_04, Male_Adult_02, 04, 12).
 - Photographed surfaces: Poly Haven (CC0), https://polyhaven.com
-- **"Lamborghini Huracan LP-6104 2014"** by MdMahib, CC-BY-4.0:
-  https://sketchfab.com/3d-models/lamborghini-huracan-lp-6104-2014-4b7b162bcb4f48849f30b1c25b3102a3
-  (supplied for this project and used unmodified). Its material names (`CSR2_…`) suggest it was
-  extracted from a commercial mobile game, so the uploader's right to license it is uncertain.
-  Treat it as fine for a private build only.
-- Manner and Starbucks cup props: made for this project (`docs/props/`).
-- Voices: **Kokoro-82M** by hexgrad (Apache-2.0), v1.1-zh for Mandarin and v1.0 for English: https://huggingface.co/hexgrad/Kokoro-82M. The clips in `public/voice/` were generated with it.
-- Brand marks: **Simple Icons** (CC0 data), https://simpleicons.org, including the Shanghai Metro mark on the station signs. The trademarks belong to their owners.
+- The Corvina Strale (the supercar): an invented marque and car, modelled in code for this project (`src/world/supercarModel.js`).
+- Linger and Harbour Coffee cup props: made for this project (`src/world/props/`).
+- Voices: **Kokoro-82M** by hexgrad (Apache-2.0), v1.1-zh for Mandarin and v1.0 for English: https://huggingface.co/hexgrad/Kokoro-82M. Every clip in `public/voice/` was generated with it.
+- Background beds and breathing: synthesised for this game (`tools/voice/ambience.py`, `tools/voice/breath.py`); the payment speakers and the 22:00 sigh are Kokoro voices (`tools/voice/paybox.py`, `tools/voice/sigh.py`). No ElevenLabs audio remains.
+- **"Byd Han"** by MattDoesBlender, CC BY 4.0: https://sketchfab.com/3d-models/f7ee6b12224543c38f17f9122b4f1eaf (scaled, interior removed, simplified; `public/models/cars/CREDITS.md`).
 - Shanghai Metro line colours (Line 2 #82BF25, Line 10 lilac): Wikipedia's Shanghai Metro palette, not an official specification. Exit positions from Shanghai Metro's own descriptions of East Nanjing Road station's exits (as quoted by Chinese Wikipedia and Baidu Baike).
 - In-browser model (optional): **WebLLM** (Apache-2.0) running Qwen2.5-1.5B-Instruct (Apache-2.0), downloaded by your browser when you turn it on. No model is bundled.
 - Checked with, not shipped: llama.cpp / llama-cpp-python running Qwen2.5 1.5B and 3B (conversation tests), and faster-whisper running Whisper small (voice intelligibility).

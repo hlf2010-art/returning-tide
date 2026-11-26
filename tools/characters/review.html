@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hero face review</title>
+<style>
+  :root { --bg: #15171c; --panel: #1f232b; --ink: #e8e6e1; --dim: #9aa0a8; --accent: #d9b37c; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, sans-serif; }
+  #view { position: fixed; inset: 0; }
+  #ui { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; overflow: auto; background: var(--panel);
+        padding: 12px 14px; box-sizing: border-box; }
+  h1 { font-size: 15px; margin: 0 0 4px; } p { color: var(--dim); margin: 0 0 10px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 12px; }
+  button { background: #2b313b; color: var(--ink); border: 1px solid #3a414d; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
+  button.on { border-color: var(--accent); color: var(--accent); }
+  label { display: grid; grid-template-columns: 1fr 90px; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); }
+  @media (max-width: 700px) { #ui { top: auto; width: 100%; height: 40%; } }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="ui">
+  <h1>Hero face review</h1>
+  <p id="info">loading…</p>
+  <div>Camera</div>
+  <div class="row" id="cams"></div>
+  <div>Light</div>
+  <div class="row" id="lights"></div>
+  <div>Expression</div>
+  <div class="row" id="exprs"></div>
+  <div class="row"><button id="blink">blinks + eye darts: on</button><button id="spin">turntable: off</button></div>
+  <div>Face shapes</div>
+  <div id="shapes"></div>
+</div>
+<script type="module">
+// Dev-only page (npm run dev, then /tools/characters/review.html?glb=/people/jibai/head.glb). Shows a hero head
+// GLB from tools/characters/build_hero.py in the game's renderer: dialogue framing, game-like light, face shapes.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+
+const qs = new URLSearchParams(location.search);
+const url = qs.get('glb') || '/people/jibai/head.glb';
+const view = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.AgXToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+view.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x2a2d33);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(22, 1, 0.01, 50);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+const key = new THREE.DirectionalLight(0xfff1e0, 2.2);
+const fill = new THREE.DirectionalLight(0xdde6ff, 0.5);
+const rim = new THREE.DirectionalLight(0xe8f0ff, 1.6);
+scene.add(key, fill, rim);
+const LIGHTS = {
+  studio: () => { key.position.set(0.9, 0.6, 1.2); fill.position.set(-1.1, 0.1, 0.9); rim.position.set(-0.5, 0.6, -1.2);
+                  key.intensity = 2.2; fill.intensity = 0.5; rim.intensity = 1.6; scene.environmentIntensity = 1; },
+  bund_dusk: () => { key.color.set(0xffb27a); key.position.set(1.4, 0.2, 0.6); key.intensity = 1.8;
+                     fill.color.set(0x8aa4ff); fill.intensity = 0.6; rim.color.set(0xff9a6a); rim.intensity = 1.2;
+                     scene.environmentIntensity = 0.5; },
+  office: () => { key.color.set(0xf4f6ff); key.position.set(0.2, 1.4, 0.8); key.intensity = 1.6;
+                  fill.color.set(0xffffff); fill.intensity = 0.8; rim.intensity = 0.6; scene.environmentIntensity = 1.2; },
+  night_neon: () => { key.color.set(0xff5aa8); key.position.set(-1.2, 0.3, 0.6); key.intensity = 1.4;
+                      fill.color.set(0x4ad0ff); fill.position.set(1.2, 0.0, 0.6); fill.intensity = 1.0;
+                      rim.color.set(0xffffff); rim.intensity = 0.8; scene.environmentIntensity = 0.25; },
+};
+
+let head = null, faceTarget = new THREE.Vector3(), meshes = [];
+const EXPRESSIONS = {
+  neutral: {}, smile: { mouthSmile: 0.7, eyeSquintLeft: 0.25, eyeSquintRight: 0.25 },
+  laugh: { mouthSmile: 1, jawOpen: 0.35, eyeSquintLeft: 0.55, eyeSquintRight: 0.55, mouthUpperUp: 0.3 },
+  serious: { browDownLeft: 0.35, browDownRight: 0.35, mouthPress: 0.3 },
+  surprised: { eyeWideLeft: 0.8, eyeWideRight: 0.8, browUpLeft: 0.8, browUpRight: 0.8, jawOpen: 0.3 },
+  concerned: { browInnerUpLeft: 0.75, browInnerUpRight: 0.75, mouthFrown: 0.3, mouthPress: 0.2 },
+  sad: { browInnerUpLeft: 0.6, browInnerUpRight: 0.6, mouthFrown: 0.55, eyeBlinkLeft: 0.25, eyeBlinkRight: 0.25 },
+  thinking: { browDownLeft: 0.35, browOuterUpRight: 0.4, mouthPress: 0.25, mouthLeftRight: 0.3, eyeSquintLeft: 0.2 },
+};
+const target = {}; const current = {};
+const sliders = {};
+
+function setShape(name, v) {
+  for (const m of meshes) {
+    const i = m.morphTargetDictionary?.[name];
+    if (i !== undefined) m.morphTargetInfluences[i] = v;
+  }
+}
+
+function button(parent, text, fn) {
+  const b = document.createElement('button'); b.textContent = text;
+  b.onclick = () => { [...parent.children].forEach(c => c.classList.remove('on')); b.classList.add('on'); fn(); };
+  parent.appendChild(b); return b;
+}
+
+new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(url, (gltf) => {
+  head = gltf.scene; scene.add(head);
+  let tris = 0; const names = new Set();
+  head.traverse((o) => {
+    if (!o.isMesh) return;
+    tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3;
+    if (o.morphTargetDictionary) { meshes.push(o); Object.keys(o.morphTargetDictionary).forEach(n => names.add(n)); }
+    const mat = o.material;
+    if (/hair|brow|lash/.test(o.name + mat.name)) {   // cards: hashed alpha so they sort without a depth pre-pass
+      mat.alphaHash = true; mat.transparent = false; mat.depthWrite = true; mat.side = THREE.DoubleSide;
+    }
+    if (/cornea/.test(o.name + mat.name)) {
+      o.material = new THREE.MeshPhysicalMaterial({ transmission: 1, roughness: 0, ior: 1.376, thickness: 0.001,
+                                                     transparent: true, opacity: 0.15, specularIntensity: 1 });
+    }
+  });
+  const eyeL = head.getObjectByName('eye-l'), eyeR = head.getObjectByName('eye-r');
+  if (eyeL && eyeR) {
+    const a = new THREE.Vector3(), b = new THREE.Vector3();
+    eyeL.getWorldPosition(a); eyeR.getWorldPosition(b); faceTarget.copy(a).add(b).multiplyScalar(0.5);
+  }
+  document.getElementById('info').textContent = `${url.split('/').pop()}: ${Math.round(tris).toLocaleString()} triangles, ${names.size} face shapes`;
+  const box = document.getElementById('shapes');
+  [...names].sort().forEach((n) => {
+    const l = document.createElement('label'); l.textContent = n;
+    const s = document.createElement('input'); s.type = 'range'; s.min = 0; s.max = 1; s.step = 0.01; s.value = 0;
+    s.oninput = () => { target[n] = +s.value; }; l.appendChild(s); box.appendChild(l); sliders[n] = s;
+    target[n] = current[n] = 0;
+  });
+  const cams = document.getElementById('cams');
+  const CAMS = {
+    dialogue: [0.12, 0.0, 0.62, -0.02], 'close-up': [0.05, 0.01, 0.42, -0.01], profile: [0.62, 0.0, 0.0, -0.02],
+    'three-quarter': [0.36, 0.02, 0.5, -0.02], low: [0.15, -0.18, 0.55, -0.02],
+  };
+  for (const [n, [x, y, z, ty]] of Object.entries(CAMS)) button(cams, n, () => {
+    camera.position.set(faceTarget.x + x, faceTarget.y + y, faceTarget.z + z);
+    controls.target.set(faceTarget.x, faceTarget.y + ty, faceTarget.z); controls.update();
+  });
+  cams.children[0].click();
+  const ls = document.getElementById('lights');
+  for (const [n, f] of Object.entries(LIGHTS)) button(ls, n.replace('_', ' '), f);
+  ls.children[0].click();
+  const ex = document.getElementById('exprs');
+  for (const [n, w] of Object.entries(EXPRESSIONS)) button(ex, n, () => {
+    for (const k of Object.keys(target)) { target[k] = w[k] || 0; sliders[k].value = target[k]; }
+  });
+  ex.children[0].click();
+  window.__ready = true;
+}, undefined, (e) => { document.getElementById('info').textContent = 'could not load ' + url + ': ' + e.message; });
+
+let blinking = true, spinning = false, nextBlink = 1.5, blinkT = -1, dart = new THREE.Vector2(), nextDart = 1;
+document.getElementById('blink').onclick = (e) => { blinking = !blinking; e.target.textContent = `blinks + eye darts: ${blinking ? 'on' : 'off'}`; };
+document.getElementById('spin').onclick = (e) => { spinning = !spinning; e.target.textContent = `turntable: ${spinning ? 'on' : 'off'}`; };
+
+const clock = new THREE.Clock();
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  const w = view.clientWidth, h = view.clientHeight;
+  if (renderer.domElement.width !== Math.floor(w * renderer.getPixelRatio())) {
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  for (const k of Object.keys(target)) { current[k] += (target[k] - current[k]) * Math.min(1, dt * 10); setShape(k, current[k]); }
+  if (head && blinking) {
+    nextBlink -= dt;
+    if (nextBlink < 0) { blinkT = 0; nextBlink = 2 + Math.random() * 4; }
+    if (blinkT >= 0) {
+      blinkT += dt; const b = Math.sin(Math.min(1, blinkT / 0.16) * Math.PI);
+      setShape('eyeBlinkLeft', Math.max(current.eyeBlinkLeft || 0, b)); setShape('eyeBlinkRight', Math.max(current.eyeBlinkRight || 0, b));
+      if (blinkT > 0.16) blinkT = -1;
+    }
+    nextDart -= dt;
+    if (nextDart < 0) { dart.set((Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.06); nextDart = 0.6 + Math.random() * 2; }
+    for (const n of ['eye-l', 'eye-r']) {
+      const e = head.getObjectByName(n), c = head.getObjectByName(n + '-cornea');
+      for (const o of [e, c]) if (o) { o.userData.q0 ??= o.quaternion.clone();
+        o.quaternion.copy(o.userData.q0).premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(dart.y, dart.x, 0))); }
+    }
+    head.position.y = Math.sin(t * 1.3) * 0.0015;   // breathing
+  }
+  if (head && spinning) head.rotation.y += dt * 0.4;
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+frame();
+</script>
+</body>
+</html>

@@ -100,4 +100,24 @@ ok(crossing.vehicles.every((v) => mix.find((m) => m.id === v.id)), "the crossing
   const byDist = top((p) => Math.hypot(p.dx, p.dz)), byView = top((p) => nearRank(p.dx, p.dz, 1, 0, cos));
   ok(byDist <= 1 && byView === 8, `a crowd mostly behind you: in view among the 16 full people, ${byDist} by distance alone, ${byView} by view`);
 }
+// the Bund's two moments: the floods coming on (phones go up on the deck), and 22:00 (the railing empties)
+{
+  let s3 = 11; const r3 = () => ((s3 = (s3 * 16807) % 2147483647) / 2147483647);
+  const k = createCrowd({ density: 1.5, rnd: r3, roles: ['p1', 'p2', 'p3', 'p4', 'p5'] });
+  k.setActive(1, { instant: true });
+  for (let i = 0; i < 1800; i++) k.update(1 / 30, { player: { x: -300, z: 0 }, signal: 'walk' });
+  const deckWalkers = k.agents.filter((a) => !a.gone && a.state === 'walk' && a.x > 9 && a.x < 26).length;
+  const stopped = k.floodsOn({ share: 0.5, r: r3 });
+  ok(deckWalkers > 5 && stopped > 0 && stopped <= deckWalkers, `floods on: ${stopped} of ${deckWalkers} walkers on the deck stop to photograph the lights`);
+  for (let i = 0; i < 60; i++) k.update(1 / 30, { player: { x: -300, z: 0 }, signal: 'walk' });
+  const shooting = k.agents.filter((a) => !a.gone && a.state === 'act' && (a.act === 'photo' || a.act === 'selfie') && a.x > 9).length;
+  ok(shooting > 0, `and they're photographing (${shooting} with a phone up)`);
+  for (let i = 0; i < 900; i++) k.update(1 / 30, { player: { x: -300, z: 0 }, signal: 'walk' });
+  const atRail = k.agents.filter((a) => !a.gone && a.atRail && a.state === 'act');
+  const n = k.lightsOut(r3);
+  ok(n === atRail.length && atRail.every((a) => a.wait <= 303 && a.act !== 'photo' && a.act !== 'selfie'), `22:00: all ${n} at the railing lower their phones and leave within five minutes`);
+  const left = new Set();
+  for (let i = 0; i < 30 * 310; i += 3) { k.update(0.1, { player: { x: -300, z: 0 }, signal: 'walk' }); for (const a of atRail) if (a.gone || !a.atRail) left.add(a); }
+  ok(atRail.every((a) => left.has(a)), `within five minutes every one of them has left the railing (${left.size} of ${atRail.length}; some may come back later as new visitors)`);
+}
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);

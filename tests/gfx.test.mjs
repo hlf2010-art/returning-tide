@@ -1,5 +1,5 @@
 // Graphics settings (src/engine/gfx.js): presets, GPU detection, custom tweaks, the frame cap. npm test.
-import { PRESETS, LOD, presetForGpu, resolve, tweak, shouldDraw, treeStep, loadGfx, saveGfx } from '../src/engine/gfx.js';
+import { PRESETS, LOD, presetForGpu, resolve, tweak, shouldDraw, treeStep, loadGfx, saveGfx, CROWD_LEVELS, loadCrowd, saveCrowd, crowdCounts, LIGHTING, lightingOf, setLighting } from '../src/engine/gfx.js';
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
 ok(presetForGpu('ANGLE (NVIDIA, NVIDIA GeForce RTX 4080 SUPER (0x00002702) Direct3D11 vs_5_0 ps_5_0, D3D11)') === 'ultra', 'RTX 4080 SUPER -> ultra');
@@ -31,4 +31,24 @@ const mem = new Map(), store = { getItem: (k) => mem.get(k) ?? null, setItem: (k
 ok(loadGfx('Apple GPU', store).preset === 'mac' && loadGfx('Apple GPU', store).detected, 'first run: picked for the GPU');
 saveGfx(t, store);
 ok(loadGfx('RTX 4090', store).scale === 1.1 && loadGfx('RTX 4090', store).preset === 'custom', 'after that: what you chose, whatever the GPU says');
+// Crowds: its own setting, saved on its own
+const cs = new Map(), cstore = { getItem: (k) => cs.get(k) ?? null, setItem: (k, v) => cs.set(k, v) };
+ok(loadCrowd(cstore) === 'medium', 'Crowds: medium until chosen');
+ok(saveCrowd('low', cstore) && loadCrowd(cstore) === 'low' && !saveCrowd('huge', cstore) && loadCrowd(cstore) === 'low', 'Crowds: a choice is kept between sessions; nonsense is refused');
+saveGfx(resolve({ preset: 'mac' }), cstore);
+ok(loadGfx('Apple GPU', cstore).preset === 'mac' && loadCrowd(cstore) === 'low', 'Crowds: choosing it leaves the graphics preset as it was');
+const lo = crowdCounts('medium', 'low'), me = crowdCounts('medium', 'medium'), hi = crowdCounts('medium', 'high');
+ok(me.people === LOD.medium.people && me.throng === LOD.medium.throng && me.nearPeople === LOD.medium.nearPeople && me.mid === LOD.medium.mid, 'Crowds medium: the level of detail\'s own numbers');
+ok(['people', 'throng', 'nearPeople', 'mid'].every((k) => lo[k] < me[k] && me[k] < hi[k]), 'Crowds low < medium < high for the throng, the crowd, the full people and the middle tier');
+ok(lo.throng <= me.throng * 0.35 && lo.nearPeople >= 3 && Object.keys(CROWD_LEVELS).join() === 'low,medium,high', 'low is a real step down (about a third of the throng), never fewer than 3 full people');
+// Lighting: three levels over shadows, AO, SSR and people's reflections
+ok(lightingOf(resolve({ preset: 'low' })) === 'low' && lightingOf(resolve({ preset: 'mac' })) === 'medium' && lightingOf(resolve({ preset: 'high' })) === 'high' && lightingOf(resolve({ preset: 'ultra' })) === 'high', 'Lighting: each preset sits on a level (Mac: medium)');
+ok(resolve({ preset: 'mac' }).refl === true && resolve({ preset: 'low' }).refl === false, "people's reflections: on from the Mac preset up, off on low");
+const lmac = setLighting(resolve({ preset: 'mac' }), 'low');
+ok(lmac.preset === 'custom' && lmac.shadows === 0 && !lmac.ssr && !lmac.ao && !lmac.refl && lmac.lod === 'medium' && lmac.scale === PRESETS.mac.scale, 'Lighting low on the Mac preset: all of it off, nothing else touched');
+ok(setLighting(lmac, 'medium').preset === 'mac', 'and back to medium: the Mac preset again');
+const lhi = setLighting(resolve({ preset: 'mac' }), 'high');
+ok(lhi.shadows === 2 && lhi.ssr && lhi.ao && lhi.refl && lightingOf(lhi) === 'high', 'Lighting high: two lamps\' shadows, SSR, AO, reflections');
+ok(lightingOf(tweak(resolve({ preset: 'mac' }), 'shadows', 2)) === null && setLighting(resolve({ preset: 'mac' }), 'huge').preset === 'mac' && Object.keys(LIGHTING).join() === 'low,medium,high', 'a hand-set mix is no level; nonsense is ignored');
+ok(resolve({ preset: 'custom', ao: 1, ssr: 0 }).ao === true && resolve({ preset: 'custom', ao: 1, ssr: 0 }).ssr === false, 'switches come back as true/false');
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);

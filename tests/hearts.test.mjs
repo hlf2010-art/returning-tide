@@ -108,7 +108,7 @@ const fresh = () => { const L = createLife(); setupThreads(L); initYear(L); retu
   ok(good, 'each of the five: a name, a role, an ambition, an arc over five acts, her lines, in Chinese and English; in the phone\'s cast and the persona cards');
   ok(avatars.size === 5, `five different faces (${[...avatars].join(', ')}), all from the Rocketbox adults that exist`);
   ok(ROMANCE.every((id) => ROMANCE_NAMES[id][0] === CAST[id].name.zh) && ROMANCE_NAMES.nar[0] === '' && ROMANCE_CALLS['yuan-call'].from === 'yuan', 'their names for the scene box; their calls for the phone');
-  ok(/WeChat/.test(systemPrompt('gunian', 'x', { texting: true })) && !/stranger/.test(systemPrompt('gunian', 'x')) && /^纪白/.test(addressOf('zhiwei', 'zh')), 'the persona prompt does not call him a stranger');
+  ok(/Xinyu/.test(systemPrompt('gunian', 'x', { texting: true })) && !/stranger/.test(systemPrompt('gunian', 'x')) && /^纪白/.test(addressOf('zhiwei', 'zh')), 'the persona prompt does not call him a stranger');
 }
 
 // ================= playing it =================
@@ -160,7 +160,7 @@ const only = (who, scenes = {}) => ({ reply: (w) => (w === who ? 0 : null), invi
   // ---- nobody he hasn't met writes to him, except the two who would ----
   const L = run(fresh(), D(3, 12), never);
   ok(heart(L, 'zhiwei').stage === 'known' && heart(L, 'yuan').stage === 'known' && ['nanxing', 'gunian', 'kexin'].every((id) => heart(L, id).stage === 'stranger' && !L.threads[id]), 'day 3: his engagement lead has written, and Yu\'an, his oldest friend, has said what she never said; the other three are strangers until he meets them');
-  ok(L.threads.zhiwei.messages[0].at >= D(1, 18, 10) && L.threads.zhiwei.messages[0].at < D(1, 18, 20) && (() => { const m = L.threads.yuan.messages.find((x) => /所以你真的回来了/.test(x.text)); return m && m.at >= D(2, 23, 10) && m.at < D(2, 23, 20); })() && L.threads.yuan.messages[0].from === 'yuan' && L.threads.yuan.messages[0].at < D(2, 0, 0), 'Zhiwei at ten past six on his first evening; Lin Yu\'an is in his chats from the first day as a friend, and late on the second night writes as more than that (one person, one chat)');
+  ok(L.threads.zhiwei.messages[0].at >= D(1, 19, 40) && L.threads.zhiwei.messages[0].at < D(1, 19, 50) && (() => { const m = L.threads.yuan.messages.find((x) => /所以你真的回来了/.test(x.text)); return m && m.at >= D(2, 23, 10) && m.at < D(2, 23, 20); })() && L.threads.yuan.messages[0].from === 'yuan' && L.threads.yuan.messages[0].at < D(2, 0, 0), 'Zhiwei at twenty to eight on his first evening (or once he is up in 612); Lin Yu\'an is in his chats from the first day as a friend, and late on the second night writes as more than that (one person, one chat)');
   ok(heart(L, 'yuan').memories.some((m) => m.key === 'sf-years') && heart(L, 'yuan').attraction > heart(L, 'zhiwei').attraction, 'Yu\'an arrives with a history');
 }
 {
@@ -177,7 +177,7 @@ const kept = {};
 {
   // Zhiwei: the lobby, the report, the drink, the river, the ratings
   const L = fresh();
-  run(L, D(1, 20, 40), only('zhiwei'));
+  run(L, D(1, 20, 55), only('zhiwei'));
   ok(presence(L, 'zhiwei') && presence(L, 'zhiwei').scene === 'z-lobby' && presence(L, 'zhiwei').spot === 'peaceLobby', 'Zhiwei: she says she\'ll bring his pass to the lobby, and she is there');
   run(L, D(5, 23), only('zhiwei', { 'z-lobby': [1, 0], 'z-drink': [0, 0, 0] }));
   const h = heart(L, 'zhiwei');
@@ -222,7 +222,7 @@ const kept = {};
   const L = fresh();
   run(L, D(2, 19, 0), never); play(L, 'g-aia', [0, 0]);
   run(L, D(3, 13, 5), only('gunian'));
-  ok(L.threads.xuan.messages.some((m) => /顾念/.test(m.text) && !cjk(enText(m.text))) && presence(L, 'gunian').scene === 'g-manner', 'Gu Nian: she has asked Mingxuan who he is, and Mingxuan has something to say about it; at one she is at Manner on Hankou Road');
+  ok(L.threads.xuan.messages.some((m) => /顾念/.test(m.text) && !cjk(enText(m.text))) && presence(L, 'gunian').scene === 'g-manner', 'Gu Nian: she has asked Mingxuan who he is, and Mingxuan has something to say about it; at one she is at Linger on Hankou Road');
   play(L, 'g-manner', [1, 0]);
   ok(heart(L, 'gunian').stage === 'close', 'the tape and the coffee: close');
   run(L, D(4, 16, 0), only('gunian'));

@@ -61,11 +61,11 @@ export const S = {
   tabGeneral: { zh: '通用', en: 'General' }, tabGraphics: { zh: '画面', en: 'Graphics' },
   gPreset: { zh: '预设', en: 'Preset' }, gLow: { zh: '低', en: 'Low' }, gMac: { zh: 'Mac M4', en: 'Mac M4' }, gHigh: { zh: '高', en: 'High' }, gUltra: { zh: '极致', en: 'Ultra' }, gCustom: { zh: '自定义', en: 'Custom' },
   gScale: { zh: '渲染分辨率', en: 'Render resolution' }, gFps: { zh: '帧率上限', en: 'Frame-rate cap' }, gNoCap: { zh: '不限', en: 'None' },
-  gLod: { zh: '细节与密度', en: 'Detail & density' }, gMedium: { zh: '中', en: 'Medium' },
+  gLod: { zh: '细节与密度', en: 'Detail & density' }, gCrowd: { zh: '人群', en: 'Crowds' }, gMedium: { zh: '中', en: 'Medium' },
   gAA: { zh: '抗锯齿', en: 'Anti-aliasing' }, gShadows: { zh: '灯光阴影', en: 'Lamp shadows' }, gAO: { zh: '环境光遮蔽', en: 'Ambient occlusion' },
-  gSSR: { zh: '湿地面反射', en: 'Wet-ground reflections' }, gBloom: { zh: '光晕', en: 'Bloom' }, gMirror: { zh: '江面倒影', en: 'River reflection' },
+  gSSR: { zh: '湿地面反射', en: 'Wet-ground reflections' }, gRefl: { zh: '人物倒影', en: "People's reflections" }, gLighting: { zh: '光影效果', en: 'Lighting' }, gBloom: { zh: '光晕', en: 'Bloom' }, gMirror: { zh: '江面倒影', en: 'River reflection' },
   gAuto: { zh: '自动降分辨率', en: 'Auto resolution' },
-  gReload: { zh: '人流与车流在重新载入后改变', en: 'Crowds and traffic change after a reload' }, gReloadNow: { zh: '重新载入', en: 'Reload' },
+  gReload: { zh: '更多的人流与车流在重新载入后出现', en: 'More crowds and traffic need a reload' }, gReloadNow: { zh: '重新载入', en: 'Reload' },
   gHint: { zh: '首次运行按显卡自动选择；Mac mini M4 建议 “Mac M4”，RTX 4080 级别建议 “极致”。', en: 'Chosen for your GPU on first run. Mac mini M4: “Mac M4”. RTX 4080 class: “Ultra”.' },
   gStatus: { zh: (gpu, fps, ms, w, h, d) => `显卡：${gpu} · ${fps} fps（${ms} ms）· 画面 ${w}×${h}${d ? ` · 已自动降低 ${d} 级` : ''}`, en: (gpu, fps, ms, w, h, d) => `GPU: ${gpu} · ${fps} fps (${ms} ms) · drawing ${w}×${h}${d ? ` · auto stepped down ${d}` : ''}` },
   questNew: { zh: (t) => `新任务 · ${t}`, en: (t) => `New quest · ${t}` }, questDone: { zh: (t) => `完成 · ${t}`, en: (t) => `Done · ${t}` },
@@ -77,6 +77,7 @@ export const S = {
   tipsSetting: { zh: '新手提示', en: 'Tips' },
   musicSetting: { zh: '店里和车里的音乐', en: 'Music in shops and cars' },
   musicCredits: { zh: '音乐署名', en: 'Music credits' },
+  credits: { zh: '其他署名与许可', en: 'Credits and licences' },
   benchmark: { zh: '性能测试', en: 'Benchmark' }, benchRun: { zh: '运行（约 30 秒）', en: 'Run (about 30 s)' },
   waypoint: { zh: '路标', en: 'Waypoint' }, waypointHere: { zh: '到了。', en: 'You\'re there.' },
   day: { zh: (n) => `第 ${n} 天`, en: (n) => `Day ${n}` },
@@ -127,7 +128,7 @@ export const S = {
   ancOn: { zh: '降噪已开', en: 'Noise cancelling on' }, ancOff: { zh: '降噪已关', en: 'Noise cancelling off' },
   // DiDi
   rideArrived: { zh: '已到达', en: 'Arrived' }, rideContinue: { zh: '继续', en: 'Continue' },
-  pDidi: { zh: (p) => `滴滴 ${p}`, en: (p) => `DiDi ${p}` }, pGetIn: { zh: '上车', en: 'Get in' }, mapDidi: { zh: '你的车', en: 'Your ride' },
+  pDidi: { zh: (p) => `快马 ${p}`, en: (p) => `Kuaima ${p}` }, pGetIn: { zh: '上车', en: 'Get in' }, mapDidi: { zh: '你的车', en: 'Your ride' },
   rideHint: { zh: '1–4 回话 · 鼠标环顾', en: '1–4 to answer · mouse to look around' },
   // map areas
   areas: { hankou: { zh: '汉口路', en: 'Hankou Road' }, zhongshan: { zh: '中山东一路', en: 'Zhongshan Road (E-1)' }, promenade: { zh: '外滩观景平台', en: 'The Promenade' }, customs: { zh: '海关大楼', en: 'Customs House' }, nanjing: { zh: '南京东路步行街', en: 'Nanjing Road East' }, henan: { zh: '河南中路', en: 'Henan Road (M)' }, metro: { zh: '南京东路站', en: 'East Nanjing Rd Station' } },
@@ -135,7 +136,7 @@ export const S = {
 
 // Lujiazui's areas (world/lujiazuiLayout.js ljzZone)
 Object.assign(S.areas, { ring: { zh: '明珠环 · 人行天桥', en: 'The Mingzhu Ring' }, roundabout: { zh: '陆家嘴环岛', en: 'Lujiazui Roundabout' }, century: { zh: '世纪大道', en: 'Century Avenue' }, ifc: { zh: '国金中心', en: 'Shanghai IFC' },
-  apple: { zh: 'Apple 浦东', en: 'Apple Pudong' }, green: { zh: '陆家嘴中心绿地', en: 'Lujiazui Central Green' }, ljzMetro: { zh: '陆家嘴站', en: 'Lujiazui Station' } });
+  apple: { zh: 'Lumen 浦东', en: 'Lumen Pudong' }, green: { zh: '陆家嘴中心绿地', en: 'Lujiazui Central Green' }, ljzMetro: { zh: '陆家嘴站', en: 'Lujiazui Station' } });
 // Line 2's stations, under the street (world/metro.js areaKey)
 Object.assign(S.areas, { enrConc: { zh: '南京东路站 · 站厅', en: 'East Nanjing Rd · concourse' }, enrPlat: { zh: '南京东路站 · 2号线站台', en: 'East Nanjing Rd · Line 2' }, ljzConc: { zh: '陆家嘴站 · 站厅', en: 'Lujiazui · concourse' }, ljzPlat: { zh: '陆家嘴站 · 2号线站台', en: 'Lujiazui · Line 2' }, metroTrain: { zh: '地铁2号线 · 车厢', en: 'Line 2 · aboard' } });
 

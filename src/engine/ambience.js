@@ -15,17 +15,22 @@
 //   the clock    the Customs House: "The East Is Red" on the quarters, the hour struck
 // Everything is synthesised here except the murmur (tools/voice/walla.py) and the PA clips (Kokoro).
 import { riverExposure, windExposure, trafficBed, hornRate, HORN, BUS_SIGH, BOAT_HORN, reverbAt, pickTalkers,
-  DOOR_CHIME, METRO_PA, paGain, CLOCK, clockChime, clockGain, EAST_IS_RED, degreeHz } from './soundscape.js';
+  DOOR_CHIME, METRO_PA, paGain, CLOCK, clockChime, clockGain, EAST_IS_RED, degreeHz, PAYBOX, payTokens, crowdPayment } from './soundscape.js';
+import { peopleNear } from './soundscape.js';
+import { L } from '../world/layout.js';
+import { createBeds } from './beds.js';
+import { bedSources } from './live.js';
 
 export function createAmbience(audio, { clipUrl = null } = {}) {
-  let ctx = null, env = null, sfx = null, out = null;
+  let ctx = null, env = null, sfx = null, out = null, beds = null, bedsOn = false;
   let brown = null, white = null, rev = null, bed = null;
-  const S = { horns: 0, sighs: 0, slaps: 0, boatHorns: 0, chimes: 0, pa: 0, clock: 0, strikes: 0, talkerGrains: 0 };
+  const S = { lightsOut: 0, pays: 0, horns: 0, sighs: 0, slaps: 0, boatHorns: 0, chimes: 0, pa: 0, clock: 0, strikes: 0, talkerGrains: 0 };
   const shots = [];                        // one-shots sounding now: { id, kind, x, y, z, until, level, ref }
   let lastHorn = -1e9, lastBoat = -1e9, slapIn = 2, paIn = 20, lastMinute = null, tNow = 0;
   const busV = new Map(), shopPhase = new Map(), lastChime = new Map();
   const talkers = [];
-  const paBufs = new Map();
+  const paBufs = new Map(), payBufs = new Map(), lastPay = new Map();
+  let lastL = { x: 0, z: 0 };
 
   function makeNoise(seconds, brownish) {
     const n = Math.floor(ctx.sampleRate * seconds), b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
@@ -72,6 +77,10 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
     const sfxSend = gain(0), envSend = gain(0), tone = filt('lowpass', 3000, 0.5), ret = gain(0.9);
     sfx.connect(sfxSend); env.connect(envSend); sfxSend.connect(conv); envSend.connect(conv); conv.connect(tone).connect(ret).connect(out);
     rev = { sfxSend, envSend, tone, wet: 0, id: null };
+    // the recorded beds (engine/beds.js): crowds, traffic, river, boats, wind; the placed ones give a
+    // direction only (their loudness is ours, below)
+    beds = createBeds(ctx, { dest: env, placeNode: () => { const pn = ctx.createPanner(); pn.panningModel = 'equalpower'; pn.distanceModel = 'linear'; pn.rolloffFactor = 0; pn.maxDistance = 1e4; return pn; } });
+    beds.load();
     // the traffic bed: a low wash and a band of tyre hiss, placed where the traffic is (loudness: ours)
     const p = panAt(0, 0.6, 0, { linear: true }); p.connect(env);
     const low = filt('lowpass', 260, 0.6), hiss = filt('bandpass', 1100, 0.5), g = gain(0), hg = gain(0);
@@ -153,6 +162,42 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
       shot({ id: `metro-pa:${at.id}`, kind: 'announcement', x: at.x, y: at.y + 3, z: at.z, at: (x, z) => paGain(Math.hypot(at.x - x, at.z - z)) }, buf.duration);
     } catch { /* no clip: nothing */ }
   }
+  // the counter's payment speaker: "易付到账二十五元", the recorded pieces back to back through a small
+  // plastic box on the counter (public/ambience/pay/, tools/voice/paybox.py)
+  const payBuf = (id) => { const url = `./ambience/pay/${id}.mp3`; if (!payBufs.has(url)) payBufs.set(url, fetch(url).then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b))); return payBufs.get(url); };
+  async function payment(x, z, { amount, method }, { own = false } = {}) {
+    if (!ctx) return;
+    const k = `${Math.round(x)}:${Math.round(z)}`;
+    if (Math.hypot(x - lastL.x, z - lastL.z) > PAYBOX.range || (!own && tNow - (lastPay.get(k) ?? -1e9) < PAYBOX.minGap)) return;
+    lastPay.set(k, tNow);
+    try {
+      const bufs = await Promise.all(payTokens(amount, method).map(payBuf));
+      S.pays++;
+      const t0 = ctx.currentTime + 0.05; let t = t0;
+      const hp = filt('highpass', 520, 0.8), lp = filt('lowpass', 3800, 0.8), pk = filt('peaking', 2300, 1.2); pk.gain.value = 6;
+      const g = gain(own ? 0.6 : 0.42), p = panAt(x, 1.1, z, { ref: 2.5, rolloff: 1.4 });
+      hp.connect(lp).connect(pk).connect(g).connect(p).connect(env);
+      for (const b of bufs) { const s = ctx.createBufferSource(); s.buffer = b; s.connect(hp); s.start(t); t += b.duration + PAYBOX.gap; }
+      shot({ id: `pay:${k}`, kind: 'shop', x, y: 1.1, z, level: 0.42, ref: 2.5, rolloff: 1.4 }, t - t0);
+      setTimeout(() => { try { p.disconnect(); } catch { /* gone */ } }, (t - t0 + 2) * 1000);
+    } catch { /* no clips: nothing */ }
+  }
+  // 22:00: the crowd at the railing sighs as the lights go over to the late-night wash ("awww", then a
+  // laugh), from the railing nearest you; as loud as you're open to the river (public/ambience/lights-out.mp3)
+  let sighBuf = null;
+  async function lightsOut() {
+    if (!ctx) return;
+    const lvl = 0.7 * riverExposure(lastL.x, lastL.z, lastL.y || 0);
+    if (lvl < 0.03) return;
+    try {
+      if (!sighBuf) sighBuf = fetch('./ambience/lights-out.mp3').then((r) => r.arrayBuffer()).then((b) => ctx.decodeAudioData(b));
+      const buf = await sighBuf, s = ctx.createBufferSource(); s.buffer = buf;
+      const x = L.deckEdgeX, z = Math.max(-250, Math.min(88, lastL.z)), g = gain(lvl), p = panAt(x, 1.6, z, { ref: 14, rolloff: 0.6 });
+      s.connect(g).connect(p).connect(env); s.start();
+      S.lightsOut++;
+      shot({ id: 'lights-out', kind: 'crowd', x, y: 1.6, z, level: lvl, ref: 14, rolloff: 0.6 }, buf.duration);
+    } catch { /* no clip: nothing */ }
+  }
   // a bell: a struck note with a bell's partials (hum, prime, tierce, quint, nominal), each dying away
   function bell(t, hz, level, dest, big = false) {
     const parts = big ? [[0.5, 1, 9], [1, 0.8, 6], [1.2, 0.45, 4], [1.5, 0.3, 3.5], [2, 0.5, 3], [2.5, 0.2, 2], [3, 0.12, 1.4]]
@@ -196,6 +241,10 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
 
   return {
     stats: S,
+    // someone paid at a counter at (x, z): { amount, method: 'alipay' | 'wechat' }; own: it was you
+    payment,
+    // 22:00 (main.js lateNight): the railing's collective sigh
+    lightsOut,
     // per frame. listener: { x, y (feet), z }; vehicles: the road's (as engine/audio.js gets them);
     // boats: [{ x, z }]; people: the crowd's agents and others near; minute: minute of the day (float);
     // metroOpen; shops: crowd agents in shops are read off people (state 'shop')
@@ -205,6 +254,7 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
       tNow += dt;
       for (let i = shots.length - 1; i >= 0; i--) if (shots[i].until < tNow) shots.splice(i, 1);
       const { x: lx, z: lz } = listener, ly = listener.y || 0, t = ctx.currentTime;
+      lastL = { x: lx, z: lz, y: ly };
       // where you stand: the river's and the wind's share (engine/audio.js plays those)
       audio.setExposure && audio.setExposure(riverExposure(lx, lz, ly), windExposure(lx, lz, ly));
       // reverb
@@ -217,7 +267,7 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
       // the traffic bed
       const tb = trafficBed(vehicles, lx, lz);
       bed.level = tb.level; bed.count = tb.count; bed.x = tb.x; bed.z = tb.z;
-      bed.g.gain.setTargetAtTime(0.42 * tb.level, t, 0.5); bed.hg.gain.setTargetAtTime(0.035 * tb.level, t, 0.5);
+      bed.g.gain.setTargetAtTime(bedsOn ? 0 : 0.42 * tb.level, t, 0.5); bed.hg.gain.setTargetAtTime(bedsOn ? 0 : 0.035 * tb.level, t, 0.5);
       place(bed.p, tb.x, 0.6, tb.z, 0.6);
       // horns (rare) and buses sighing to a stop
       for (const v of vehicles) {
@@ -246,6 +296,7 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
         if (was && was !== ph && (ph === 'inside' || ph === 'outward')) {
           const door = a.shop.door, d = Math.hypot(door.x - lx, door.z - lz), k = `${Math.round(door.x)}:${Math.round(door.z)}`;
           if (d < DOOR_CHIME.range && tNow - (lastChime.get(k) ?? -1e9) > DOOR_CHIME.minGap) { lastChime.set(k, tNow); chime(door.x, door.z); }
+          if (ph === 'outward' && Math.random() < PAYBOX.crowdChance) payment(door.x, door.z, crowdPayment());   // they paid on the way out
         }
       }
       for (const id of shopPhase.keys()) if (!seen.has(id)) shopPhase.delete(id);
@@ -256,7 +307,8 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
         if (at && at[0] < METRO_PA.range) announce(at[1], lx, lz);
       }
       // talkers
-      const buf = audio.murmurBuffer;
+      const buf = bedsOn ? null : audio.murmurBuffer;
+      for (const s of (bedsOn ? talkers : [])) s.g.gain.setTargetAtTime(0, t, 0.5);
       if (buf) {
         while (talkers.length < 3) talkers.push(talkerSlot());
         const want = pickTalkers(people, lx, lz, { n: 3 });
@@ -266,6 +318,25 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
           const who = want.find((w) => !talkers.some((o) => o !== s && o.who === w && tNow < o.until));
           if (who) grain(s, buf, who); else { s.who = null; s.rest = 1; }
         }
+      }
+      // the recorded beds: how loud each is where you stand, and where the placed ones come from
+      if (beds) {
+        const rx = riverExposure(lx, lz, ly), wx = windExposure(lx, lz, ly), pn = peopleNear(people, lx, lz, ly, 30);
+        let nb = null, nd = 1e9; for (const b of boats) { const d = Math.hypot(b.x - lx, b.z - lz); if (d < nd) { nd = d; nb = b; } }
+        const crowd = Math.min(1, pn.level * 0.9);
+        beds.set('crowd', 0.06 + 0.62 * Math.pow(crowd, 0.8), { tau: 1.2 });                 // a city is never silent: a little far-off murmur always
+        beds.set('traffic', Math.min(0.75, 0.05 + 0.85 * tb.level), { placed: true, tau: 0.8 });
+        beds.set('river', 0.55 * rx * rx, { placed: true, tau: 1 });
+        beds.set('boats', rx * (0.1 + 0.55 / (1 + (nd / 70) ** 2)), { placed: true, tau: 1.5 });
+        beds.set('wind', 0.12 + 0.3 * wx, { tau: 2 });
+        beds.place('traffic', tb.count ? tb.x : lx - 20, 0.6, tb.count ? tb.z : lz);
+        beds.place('river', L.deckEdgeX + 2, -0.5, Math.max(-255, Math.min(92, lz)));
+        if (nb) beds.place('boats', nb.x, 1, nb.z); else beds.place('boats', L.deckEdgeX + 120, 1, lz);
+        beds.update(dt);
+        // once the crowd bed plays, the old synthesised layers and the murmur loop stand down
+        const on = beds.playing('crowd');
+        if (on !== bedsOn) { bedsOn = on; audio.useBeds && audio.useBeds(on); }
+        S.beds = Object.fromEntries(beds.names().map((n) => [n, +beds.level(n).toFixed(2)]));
       }
       // the clock
       if (minute != null) {
@@ -277,9 +348,12 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
     audible(lx, lz, ly = 1.7) {
       const out = [];
       if (!ctx) return out;
-      if (bed && bed.level > 0.01) out.push({ id: 'traffic-bed', kind: 'traffic', level: 0.42 * bed.level });
+      // once the recorded beds play, the synthesised traffic bed and the placed talkers are silenced (update):
+      // the beds are counted instead
+      if (bedsOn && beds) out.push(...bedSources(Object.fromEntries(beds.names().filter((n) => beds.playing(n)).map((n) => [n, beds.level(n)]))));
+      else if (bed && bed.level > 0.01) out.push({ id: 'traffic-bed', kind: 'traffic', level: 0.42 * bed.level });
       for (const s of shots) { const d = Math.hypot(s.x - lx, s.z - lz, s.y - ly); out.push({ id: s.id, kind: s.kind, level: s.at ? s.at(lx, lz) : s.level * att(d, s.ref, s.rolloff) }); }
-      for (const s of talkers) if (s.who && tNow < s.until) out.push({ id: `talker:${s.who.id ?? '?'}`, kind: 'chatter', level: 0.32 * att(Math.hypot(s.who.x - lx, s.who.z - lz), 2, 1.3) });
+      if (!bedsOn) for (const s of talkers) if (s.who && tNow < s.until) out.push({ id: `talker:${s.who.id ?? '?'}`, kind: 'chatter', level: 0.32 * att(Math.hypot(s.who.x - lx, s.who.z - lz), 2, 1.3) });
       return out;
     },
     get reverb() { return rev ? { wet: +rev.wet.toFixed(3), id: rev.id } : null; },

@@ -72,7 +72,7 @@ export const MOMENT_NAMES = { tourist: ['游客', 'Visitor'], couple: ['路人',
 const ROLES = { tourist: ['c5', 'c6', 'c7', 'p4'], couple: [['c1', 'p1'], ['c3', 'c6'], ['p2', 'p3']], owner: ['p1', 'p3', 'c6', 'c7'] };
 const turnTo = (h, want, k) => { let d = want - h; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return h + d * Math.min(1, k); };
 const onDeck = (b) => b.y > 2 && b.x > 3 && b.x < 25.5;
-const onNanjing = (b) => b.x < -60 && b.x > -560 && Math.abs(b.z - NJ.zc) < 9;
+const onNanjing = (b) => b.x < -60 && b.x > NJ.xWest && Math.abs(b.z - NJ.zc) < 9;
 
 export function createMoments({ scene, people, player, camera, canvas, hud, audio, voice, sceneTalk, getLife, save, getHour, isFree, enabled = true }) {
   const S = { cool: 150, check: 3, cur: null, framing: null, flash: 0 };

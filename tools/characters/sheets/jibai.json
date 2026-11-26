@@ -1,0 +1,150 @@
+{
+  "id": "jibai",
+  "name": "\u7eaa\u767d Ji Bai",
+  "status": "PROTOTYPE v5: v4 plus clean lower lip corners, fine soft brows, lashes on the lid margin and a shaded sclera (round 10).",
+  "reference": [
+    "docs/jibai-reference.webp",
+    "public/people/jibai/face-neutral.jpg"
+  ],
+  "height_m": 1.8,
+  "macro": {
+    "gender": 1.0,
+    "age": 0.515,
+    "muscle": 0.62,
+    "weight": 0.38,
+    "proportions": 0.75,
+    "race": {
+      "asian": 0.9,
+      "caucasian": 0.1,
+      "african": 0.0
+    }
+  },
+  "targets": {
+    "head/head-oval": 0.5,
+    "head/head-rectangular": 0.15,
+    "head/head-scale-horiz-decr": 0.35,
+    "head/head-fat-decr": 0.55,
+    "head/head-age-decr": 0.2,
+    "forehead/forehead-scale-vert-decr": 0.15,
+    "chin/chin-prominent-incr": 0.45,
+    "chin/chin-height-incr": 0.25,
+    "chin/chin-width-decr": 0.35,
+    "chin/chin-bones-incr": 0.5,
+    "cheek/l-cheek-volume-decr": 0.5,
+    "cheek/r-cheek-volume-decr": 0.5,
+    "cheek/l-cheek-bones-incr": 0.4,
+    "cheek/r-cheek-bones-incr": 0.4,
+    "cheek/l-cheek-inner-decr": 0.4,
+    "cheek/r-cheek-inner-decr": 0.4,
+    "nose/nose-scale-vert-incr": 0.4,
+    "nose/nose-width1-decr": 0.35,
+    "nose/nose-width2-decr": 0.25,
+    "nose/nose-point-width-decr": 0.3,
+    "nose/nose-scale-depth-incr": 0.45,
+    "nose/nose-hump-decr": 0.2,
+    "nose/nose-flaring-decr": 0.2,
+    "nose/nose-nostrils-width-decr": 0.2,
+    "eyes/l-eye-eyefold-up": 0.2,
+    "eyes/r-eye-eyefold-up": 0.2,
+    "eyes/l-eye-epicanthus-out": 0.3,
+    "eyes/r-eye-epicanthus-out": 0.3,
+    "eyes/l-eye-height2-incr": 0.2,
+    "eyes/r-eye-height2-incr": 0.2,
+    "eyes/l-eye-corner1-up": 0.15,
+    "eyes/r-eye-corner1-up": 0.15,
+    "eyes/l-eye-bag-decr": 0.4,
+    "eyes/r-eye-bag-decr": 0.4,
+    "eyebrows/eyebrows-trans-down": 0.45,
+    "eyebrows/eyebrows-angle-up": 0.15,
+    "mouth/mouth-cupidsbow-incr": 0.3,
+    "mouth/mouth-scale-horiz-decr": 0.05,
+    "ears/l-ear-flap-decr": 0.3,
+    "ears/r-ear-flap-decr": 0.3,
+    "mouth/mouth-scale-depth-decr": 0.75,
+    "head/head-invertedtriangular": 0.45,
+    "mouth/mouth-upperlip-volume-decr": 0.55,
+    "mouth/mouth-trans-backward": 0.2,
+    "eyes/l-eye-scale-incr": 0.3,
+    "eyes/r-eye-scale-incr": 0.3,
+    "mouth/mouth-upperlip-height-decr": 0.45,
+    "eyes/l-eye-corner2-up": 0.25,
+    "eyes/r-eye-corner2-up": 0.25,
+    "neck/neck-scale-horiz-decr": 0.2,
+    "eyes/l-eye-trans-up": 0.25,
+    "eyes/r-eye-trans-up": 0.25,
+    "eyes/l-eye-height1-incr": 0.15,
+    "eyes/r-eye-height1-incr": 0.15,
+    "nose/nose-width3-decr": 0.3,
+    "mouth/mouth-scale-vert-decr": 0.3,
+    "mouth/mouth-lowerlip-height-decr": 0.3,
+    "mouth/mouth-lowerlip-volume-decr": 0.45,
+    "mouth/mouth-laugh-lines-in": 0.3
+  },
+  "skin": {
+    "base": [
+      0.37,
+      0.225,
+      0.155
+    ],
+    "lips": [
+      0.27,
+      0.11,
+      0.1
+    ],
+    "subsurface_radius": [
+      1.0,
+      0.42,
+      0.25
+    ],
+    "roughness": 0.46,
+    "stubble": 0.12,
+    "blush": 0.35,
+    "lips_upper": [
+      0.24,
+      0.115,
+      0.105
+    ]
+  },
+  "eyes": {
+    "iris": [
+      0.1,
+      0.06,
+      0.035
+    ],
+    "iris_outer": [
+      0.035,
+      0.022,
+      0.015
+    ],
+    "radius_m": 0.012
+  },
+  "brows": {
+    "color": [
+      0.032,
+      0.024,
+      0.019
+    ],
+    "density": 1.0,
+    "thickness": 0.75
+  },
+  "hair": {
+    "color": [
+      0.012,
+      0.01,
+      0.009
+    ],
+    "length_cm": 8.0,
+    "fringe_cm": 5.5,
+    "wave": 0.55,
+    "volume": 1.6,
+    "note": "black, full, slightly wavy, tousled, falling over the forehead (LOCKED look)",
+    "part_x": 0.012,
+    "curtain": 0.6
+  },
+  "rest_face": {
+    "mouthPress": 0.25,
+    "mouthShrugLower": -0.4
+  },
+  "teeth_width": 0.8,
+  "teeth_back": 0.0015
+}

@@ -96,6 +96,11 @@
  },
  {
   "who": "lin",
+  "zh": "绳子松过，又绕回去了。……封条还在就好。辛苦你了。",
+  "en": "The string's been undone and wound back. ...The seal's still whole, and that's what matters. Thank you."
+ },
+ {
+  "who": "lin",
   "zh": "封条破了。……你看过了。那上面的日子，别跟别人提。",
   "en": "The seal's broken. ...You've read it. The date on that page, don't mention it to anyone."
  },
@@ -196,8 +201,8 @@
  },
  {
   "who": "driver:xiao-zhao",
-  "zh": "现在做生意，你得有个“故事”。投资人听故事的。我的故事就是，我还在开滴滴。哈哈。",
-  "en": "Business now, you need a 'story'. Investors buy stories. My story is I'm still driving for DiDi. Ha."
+  "zh": "现在做生意，你得有个“故事”。投资人听故事的。我的故事就是，我还在开快马。哈哈。",
+  "en": "Business now, you need a 'story'. Investors buy stories. My story is I'm still driving for Kuaima. Ha."
  },
  {
   "who": "driver:xiao-zhao",
@@ -595,8 +600,403 @@
   "en": "Fine. I'm hanging up."
  },
  {
+  "who": "aia:wife",
+  "zh": "我们主要想给我先生配一份重疾，孩子刚出生，最怕的就是家里有人生病。",
+  "en": "We mainly want critical illness cover for my husband. The baby has just arrived; what we fear most is one of us falling ill."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "理解。重疾险是确诊就一次性赔付，治疗费、收入损失都能顶上。李先生每年体检有什么异常吗？",
+  "en": "I understand. Critical illness pays a lump sum on diagnosis, so it covers treatment and lost income. Mr Li, anything unusual in your yearly check-ups?"
+ },
+ {
+  "who": "aia:husband",
+  "zh": "有个甲状腺结节，医生说三级，定期复查就行。",
+  "en": "A thyroid nodule. The doctor says grade three, just have it checked regularly."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "那一定要如实告知。核保可能会加一条除外，但其他保障不受影响。千万别瞒，理赔的时候会出问题的。",
+  "en": "Then you must disclose it. Underwriting may add an exclusion, but the rest of the cover stands. Never hide it: it causes trouble when you claim."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "公司有补充医疗，还需要另外买医疗险吗？",
+  "en": "My company has supplementary medical. Do I still need my own medical insurance?"
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "公司的团险跟着工作走，换了工作就没了。可以先配一份百万医疗兜底大病，预算够的话再看中高端医疗，私立医院和特需都能用。",
+  "en": "Group cover goes with the job: change jobs and it's gone. Start with a million-yuan plan for the big illnesses; if the budget allows, a mid-to-high-end plan lets you use private hospitals and VIP clinics."
+ },
+ {
+  "who": "aia:wife",
+  "zh": "特需就是不用排那么久队的吧？带孩子看病真的排怕了。",
+  "en": "VIP clinics are the ones without the long queues? We're worn out queueing with the baby."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "对，儿童医院的特需门诊也可以直付，不用自己先垫钱。",
+  "en": "That's right. The children's hospital's VIP clinic too, with direct billing, so you don't pay first and claim later."
+ },
+ {
+  "who": "aia:wife",
+  "zh": "一年大概要交多少保费？我们算过，家庭收入的一成左右能接受。",
+  "en": "Roughly how much premium a year? We worked out that about a tenth of household income is all right."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "这个思路很对，保费占收入百分之十左右比较稳妥。我按这个预算做两份计划书，下周带过来再对一下。",
+  "en": "That's the right way to think: about ten percent of income is sensible. I'll draw up two proposals on that budget and bring them next week to go through."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "好，不着急，我们回去再商量商量。",
+  "en": "Fine, no hurry. We'll talk it over at home."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "应该的，买保险就是要想清楚。有什么问题随时发消息给我。",
+  "en": "Of course. Insurance needs thinking through. Message me with any questions."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "叔叔，装过心脏支架的话，普通医疗险核保会比较难。今年有专门给次标准体的产品了，可以先如实做健康告知试试；沪惠保不限既往症，先兜个底。",
+  "en": "Uncle, with heart stents, ordinary medical cover is hard to get through underwriting. This year there are products made for people with conditions like yours, so let's try, with a full health declaration; and the city's 沪惠保 doesn't exclude past illnesses, so that's your floor."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "小额理赔在手机上拍照上传就可以，材料齐全的话一般几天就到账。",
+  "en": "For small claims you just photograph the papers and upload them on your phone; with everything complete it's usually paid within a few days."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "是的阿姨，那是大楼九八年启用的时候特别定做的，一百个篆书的寿字，寓意福寿绵长。",
+  "en": "That's right, Auntie. It was made specially when the building opened in '98: a hundred 寿 in seal script, for a long and blessed life."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "我也听说过。现在这里是全国重点文物保护单位，动一块石头都要报批的。",
+  "en": "I've heard that too. Now it's a nationally protected heritage site; you need permission to move a single stone."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "王总您好，这边请，会议室在三楼。麻烦先在前台登记一下访客。",
+  "en": "Ms Wang, hello, this way please. The meeting room is on the third floor. Could you register at the desk first?"
+ },
+ {
+  "who": "aia:wang",
+  "zh": "好。我们今年想把员工福利重新做一下，团险方案能不能把家属也加进来？",
+  "en": "Sure. We want to redo our staff benefits this year. Can the group plan cover families too?"
+ },
+ {
+  "who": "aia:lin",
+  "zh": "可以的，配偶和子女都能加。也可以做弹性福利，员工在额度里自己选保障。",
+  "en": "Yes, spouses and children both. We can also do flexible benefits, where staff choose their own cover within an allowance."
+ },
+ {
+  "who": "aia:wang",
+  "zh": "我们有几个外籍员工，境外看病也能报销吗？",
+  "en": "We have a few foreign staff. Can they claim for treatment abroad?"
+ },
+ {
+  "who": "aia:lin",
+  "zh": "可以，有全球医疗的方案。等下让做员工福利的同事一起跟您过一下细节。",
+  "en": "Yes, there's a global medical plan. In a moment I'll have our employee-benefits colleague go through the details with you."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "张姐，体检报告我收到了，核保那边还要再补一份复查报告。",
+  "en": "Zhang jie, I've got your check-up report. Underwriting needs one more follow-up report."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "对，医院的线上服务里就能下载，不用再跑一趟。",
+  "en": "Yes, you can download it from the hospital's online service; no need to go in again."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "合同我们线上签，还要做个双录，就是录音录像，十分钟左右。您下午方便吗？",
+  "en": "We sign the contract online, and there's the recorded-sale step, audio and video, about ten minutes. Are you free this afternoon?"
+ },
+ {
+  "who": "aia:chen",
+  "zh": "好嘞，那我三点给您打视频。",
+  "en": "Great, I'll video-call you at three."
+ },
+ {
+  "who": "aia:angry",
+  "zh": "你们理赔部的人呢？叫他出来！我交了五年保费，现在说我没如实告知，一分钱不赔！",
+  "en": "Where are your claims people? Get them out here! Five years of premiums, and now you say I didn't disclose something and won't pay a cent!"
+ },
+ {
+  "who": "aia:desk",
+  "zh": "先生您先别激动，我帮您联系客服经理。",
+  "en": "Sir, please calm down. I'll call the customer service manager for you."
+ },
+ {
+  "who": "aia:angry",
+  "zh": "别跟我打官腔！当初卖给我的时候怎么说的？什么都能赔！",
+  "en": "Don't give me the official line! What did they say when they sold it to me? That it covered everything!"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "先生，有话好好说，这里是办公区域，声音小一点。",
+  "en": "Sir, let's talk this through calmly. This is an office; keep your voice down, please."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "王总不好意思，稍等我一下。",
+  "en": "Excuse me a moment, Ms Wang."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "先生您好，我是这里的经理。您的情况我们到里面会议室详细说，好吗？",
+  "en": "Hello, sir, I'm a manager here. Let's go through your case properly in a meeting room inside, shall we?"
+ },
+ {
+  "who": "aia:angry",
+  "zh": "今天不给我个说法，我就不走了。",
+  "en": "I'm not leaving until I get an answer today."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "一定给您说法。保单号带了吗？我们一项一项对。",
+  "en": "You'll get one. Have you brought your policy number? We'll go through it point by point."
+ },
+ {
+  "who": "aia:angry",
+  "zh": "我要退保！退出来只有一半的钱，这算什么道理？当初说随时能取的！",
+  "en": "I want to cancel! I only get half my money back. How is that fair? They said I could take it out any time!"
+ },
+ {
+  "who": "aia:desk",
+  "zh": "先生您先坐一下，我请经理马上过来。",
+  "en": "Sir, please take a seat. I'll ask a manager to come straight away."
+ },
+ {
+  "who": "aia:angry",
+  "zh": "坐什么坐！我妈七十多岁了，你们的人跟她说这是存款！",
+  "en": "Sit? My mother is over seventy, and your people told her it was a savings deposit!"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "先生，冷静一点，有问题我们会帮您处理的。",
+  "en": "Sir, calm down, please. We'll deal with it for you."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "王总抱歉，我先处理一下，马上回来。",
+  "en": "Sorry, Ms Wang. Let me deal with this; I'll be right back."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "先生，我是这里的经理。现金价值和退保损失，我们到里面一笔一笔给您算清楚。",
+  "en": "Sir, I'm a manager here. Let's go inside and work out the cash value and the surrender loss figure by figure."
+ },
+ {
+  "who": "aia:angry",
+  "zh": "算清楚有什么用，钱又不会多出来！",
+  "en": "What good is working it out? It won't make the money any more!"
+ },
+ {
+  "who": "aia:lin",
+  "zh": "如果当初销售有误导，我们按流程调查，查实了一定给您处理。您跟我来。",
+  "en": "If you were misled when it was sold, we'll investigate by the book, and if it's confirmed we'll put it right. Come with me."
+ },
+ {
+  "who": "aia:wife",
+  "zh": "周姐，我们回去商量过了，就按上周那份计划书来。",
+  "en": "Zhou jie, we talked it over at home. We'll go with last week's proposal."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "好的！那请李太太在平板上签个名，电子保单马上发到您手机上。",
+  "en": "Wonderful! Then Mrs Li, if you'll sign on the tablet, the e-policy goes straight to your phone."
+ },
+ {
+  "who": "aia:wife",
+  "zh": "签好了。这下心里踏实了。",
+  "en": "Signed. That's a weight off my mind."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "恭喜恭喜！以后有任何理赔的事，第一时间打我电话。",
+  "en": "Congratulations! Any claim, ever, call me first."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "周姐，辛苦你跑了好几趟。",
+  "en": "Thanks for all the trips you made, Zhou jie."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "周姐，又签了一单？今年的MDRT稳了吧！",
+  "en": "Another one signed, Zhou jie? MDRT is in the bag this year!"
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "嘘，小点声！晚上请你喝奶茶。",
+  "en": "Shh, not so loud! Milk tea's on me tonight."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "周姐，我朋友说在别家买，代理人会返几个点的佣金，你们这边返多少？",
+  "en": "Zhou jie, a friend says if you buy elsewhere the agent gives back a few percent of the commission. How much do you give back?"
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "哎，李先生，我们出去透透气，我跟您说。",
+  "en": "Ah, Mr Li, let's step outside for some air and I'll explain."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "这个千万不能说，返佣是违规的，被查到我的执业证都要被吊销的。",
+  "en": "Never say that in here. Rebates are against the rules; if they find out, I lose my licence."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "啊？这么严重？我还以为大家都这样。",
+  "en": "What? That serious? I thought everyone did it."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "我们能给您的，就是把方案做到最合适，服务做到最好。别的真不行。",
+  "en": "What I can give you is the best-fitting plan and the best service. Nothing else, honestly."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "懂了懂了，那就当我没问。",
+  "en": "Got it, got it. Forget I asked."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "叔叔阿姨，现在开始双录，就是录音录像。我念一段，您回答就好。请问您是否已阅读并理解保险条款，以及犹豫期的相关规定？",
+  "en": "Uncle, Auntie, we're starting the recorded sale now, audio and video. I read, you answer. Have you read and understood the policy terms and the rules of the cooling-off period?"
+ },
+ {
+  "who": "aia:shen",
+  "zh": "叔叔，要用普通话完整地回答一遍：我已阅读并理解。",
+  "en": "Uncle, you need to answer in full, in Mandarin: I have read and understood."
+ },
+ {
+  "who": "aia:uncle",
+  "zh": "我……已阅读并理解。",
+  "en": "I... have read and understood."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "没关系，很标准！我们再确认一下投保人签名，就好了。",
+  "en": "That's fine, very proper! We just confirm the policyholder's signature and we're done."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "哇，这个穹顶也太好看了吧，全是金的！",
+  "en": "Wow, look at this dome, it's all gold!"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "不好意思，大堂可以参观，但是不能拍照哦。",
+  "en": "Sorry, you're welcome to look round the lobby, but no photos, please."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "就拍一张，我发个动态。",
+  "en": "Just one, for my feed."
+ },
+ {
+  "who": "aia:guard",
+  "zh": "真的不行。门口外面可以拍，外立面更好看。",
+  "en": "Really, no. You can take pictures outside the door; the façade is even better."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "好吧好吧，谢谢啊。",
+  "en": "All right, all right. Thanks."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "请问这里以前是字林西报大楼吗？我在书上看到过。",
+  "en": "Excuse me, was this the North China Daily News building? I read about it in a book."
+ },
+ {
+  "who": "aia:guard",
+  "zh": "是的，现在是友邦大厦。营业时间一楼可以进来看看，就是不能拍照。",
+  "en": "Yes, it's the AIA Building now. In office hours you can come into the ground floor and look, just no photos."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "那我在门口外面拍一张可以吗？",
+  "en": "Can I take one from outside the door, then?"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "门口可以，里面就不要拍了，谢谢配合。",
+  "en": "At the door is fine, just not inside. Thanks for understanding."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "好的好的，不打扰了。",
+  "en": "Of course. Sorry to bother you."
+ },
+ {
+  "who": "aia:rider",
+  "zh": "你好，外卖，三楼的，麻烦让我上去一下，要超时了！",
+  "en": "Hi, delivery for the third floor. Let me up, please, I'm about to be late!"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "外卖不能上楼，放门口的取餐柜，我帮你通知他们下来拿。",
+  "en": "Deliveries can't go up. Put it in the pickup locker by the door; I'll tell them to come down for it."
+ },
+ {
+  "who": "aia:rider",
+  "zh": "好嘞好嘞，谢谢大哥！",
+  "en": "Right, right. Thanks, mate!"
+ },
+ {
+  "who": "aia:rider",
+  "zh": "大哥，五楼点的奶茶，二十杯，我一个人拎不上去啊。",
+  "en": "Mate, twenty milk teas for the fifth floor. I can't carry them up on my own."
+ },
+ {
+  "who": "aia:guard",
+  "zh": "放这儿吧，我打个电话让他们派人下来拿。",
+  "en": "Leave them here. I'll phone up and have someone come down."
+ },
+ {
+  "who": "aia:rider",
+  "zh": "那太感谢了，记得给个好评啊！",
+  "en": "Thanks a lot. Tell them to leave a good review!"
+ },
+ {
+  "who": "aia:chen",
+  "zh": "帅哥，等人啊？我是友邦的代理人，看你挺精神的，有没有兴趣了解一下这个职业？",
+  "en": "Waiting for someone? I'm an agent here at AIA. You look sharp; ever thought about this line of work?"
+ },
+ {
+  "who": "aia:recruit",
+  "zh": "保险啊？我刚毕业，在找工作呢。",
+  "en": "Insurance? I've just graduated, I'm looking for a job."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "那正好，我们有新人培训，时间自由，收入跟着能力走。周六有个职业说明会，你来听听？",
+  "en": "Perfect timing. There's training for newcomers, your hours are your own, and you earn what you're worth. There's a careers session on Saturday; come and listen?"
+ },
+ {
+  "who": "aia:recruit",
+  "zh": "我考虑考虑吧。",
+  "en": "I'll think about it."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "行，加个联系方式，资料我发给你。",
+  "en": "Sure. Let's swap contacts; I'll send you the details."
+ },
+ {
   "who": "carPurchase.js",
-  "zh": "你好，我是知夏的朋友纪白，想了解一下 Huracán。",
+  "zh": "你好，我是知夏的朋友纪白，想了解一下 Strale。",
   "en": "me"
  },
  {
@@ -796,8 +1196,8 @@
  },
  {
   "who": "onlooker",
-  "zh": "兰博基尼撞人了……",
-  "en": "A Lamborghini hit someone..."
+  "zh": "科尔维纳撞人了……",
+  "en": "A Corvina hit someone..."
  },
  {
   "who": "cop",
@@ -931,8 +1331,8 @@
  },
  {
   "who": "vivian",
-  "zh": "纪先生？我是Vivian。这台是我们的试驾车，Huracán LP610-4，5.2升V10自然吸气，您随便看。",
-  "en": "Mr Ji? I'm Vivian. This is our demo car, the Huracán LP610-4: 5.2-litre naturally aspirated V10. Have a good look."
+  "zh": "纪先生？我是Vivian。这台是我们的试驾车，科尔维纳 Strale，5.2升V10自然吸气，您随便看。",
+  "en": "Mr Ji? I'm Vivian. This is our demo car, the Corvina Strale: 5.2-litre naturally aspirated V10. Have a good look."
  },
  {
   "who": "vivian",
@@ -956,8 +1356,8 @@
  },
  {
   "who": "vivian",
-  "zh": "好的！定金收到了。上牌和尾款的事我微信上跟您确认～",
-  "en": "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on WeChat."
+  "zh": "好的！定金收到了。上牌和尾款的事我信语上跟您确认～",
+  "en": "Wonderful, the deposit's in. I'll confirm the plate and the balance with you on Xinyu."
  },
  {
   "who": "vivian",
@@ -966,8 +1366,28 @@
  },
  {
   "who": "vivian",
-  "zh": "好的，有问题随时微信我。",
+  "zh": "好的，有问题随时信语我。",
   "en": "Of course. Message me any time."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "申礼……我堂哥就在申礼，管开新店。上个月他还问我爸，这个摊位卖不卖。",
+  "en": "Shenli... My cousin works for Shenli, opening their new shops. Only last month he was asking my father whether he'd sell this pitch."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "……这是他的字。他写“不签”，就是不签。",
+  "en": "...That's his writing. When he writes \"won't\", he won't."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "昆山……他是去了我姑妈那儿。可我姑妈说他没到。",
+  "en": "Kunshan... So he was going to my aunt's. But she says he never got there."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "这本子我拿去派出所。你愿意写个情况说明，签个名字吗？",
+  "en": "I'm taking this book to the police. Would you write down how you came by it, and sign it?"
  },
  {
   "who": "zhoumin",
@@ -988,6 +1408,16 @@
   "who": "zhoumin",
   "zh": "……好。谢谢。要是想起什么，这是我的电话。",
   "en": "...All right. Thank you. If anything comes back to you, here's my number."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "“家属托付”……他也算家属。我爸不会托他的。",
+  "en": "\"From the family\"... He is family, I suppose. My father would never have asked him."
+ },
+ {
+  "who": "zhoumin",
+  "zh": "你愿意把看见的写下来，签个名字吗？我拿去派出所。",
+  "en": "Would you write down what you saw and sign it? I'll take it to the police station."
  },
  {
   "who": "zhoumin",
@@ -2996,8 +3426,8 @@
  },
  {
   "who": "drunk",
-  "zh": "加个微信怎么了？我又不是坏人！",
-  "en": "Add me on WeChat, what's the harm? I'm not a bad guy!"
+  "zh": "加个信语怎么了？我又不是坏人！",
+  "en": "Add me on Xinyu, what's the harm? I'm not a bad guy!"
  },
  {
   "who": "girl",
@@ -3410,29 +3840,144 @@
   "en": "You came. On time, for once."
  },
  {
+  "who": "hotelconcierge",
+  "zh": "礼宾部，早上好。纪先生，有什么可以帮您？",
+  "en": "Concierge, good morning. Mr Ji, how can I help?"
+ },
+ {
+  "who": "hotelconcierge",
+  "zh": "礼宾部，中午好。纪先生，有什么可以帮您？",
+  "en": "Concierge, good afternoon. Mr Ji, how can I help?"
+ },
+ {
+  "who": "hotelconcierge",
+  "zh": "礼宾部，下午好。纪先生，有什么可以帮您？",
+  "en": "Concierge, good afternoon. Mr Ji, how can I help?"
+ },
+ {
+  "who": "hotelconcierge",
+  "zh": "礼宾部，晚上好。纪先生，有什么可以帮您？",
+  "en": "Concierge, good evening. Mr Ji, how can I help?"
+ },
+ {
+  "who": "hotelconcierge",
+  "zh": "好的，有需要随时打给我们。",
+  "en": "Of course. Call us any time."
+ },
+ {
+  "who": "hotelconcierge",
+  "zh": "您已经约了一辆车，还在路上。",
+  "en": "You've a car booked already, sir; it's on its way."
+ },
+ {
+  "who": "hotelconcierge",
+  "zh": "好的。您想去哪里？",
+  "en": "Of course. Where to?"
+ },
+ {
+  "who": "hotelconcierge",
+  "zh": "好的，需要的时候再打给我们。",
+  "en": "Of course. Call us when you need one."
+ },
+ {
+  "who": "hotelconcierge",
+  "zh": "好的，我用快马帮您叫了一辆。司机接单后，您手机上会收到消息。上车点在中山东一路汉口路口。",
+  "en": "Done: I've booked you a Kuaima. You'll get a message when the driver accepts. The pick-up is on Zhongshan Road at Hankou Road."
+ },
+ {
+  "who": "roomservice",
+  "zh": "客房送餐，您好。想吃点什么？",
+  "en": "In-room dining, good evening. What would you like?"
+ },
+ {
+  "who": "roomservice",
+  "zh": "好的，随时为您服务。",
+  "en": "Of course. We're here any time."
+ },
+ {
+  "who": "roomservice",
+  "zh": "抱歉，纪先生，房账这边暂时挂不上，麻烦您到前台确认一下。",
+  "en": "I'm sorry, Mr Ji, we can't put it on the room just now. Could you check with the front desk?"
+ },
+ {
+  "who": "roomservice",
+  "zh": "好的，大约二十五分钟送到，费用挂在您的房账上。",
+  "en": "Very good: about twenty-five minutes, and it goes on your room bill."
+ },
+ {
   "who": "门里",
   "zh": "……谁啊？我们没叫客房服务。",
   "en": "...Who is it? We didn't order room service."
  },
  {
-  "who": "保安",
-  "zh": "先生，先生！请刷卡，没有预约不能进去。",
-  "en": "Sir! Sir, you need to badge in. No entry without an appointment."
+  "who": "roomservice",
+  "zh": "您好，客房送餐。给您放在书桌上了，请慢用。",
+  "en": "Good evening, in-room dining. I've set it on the desk for you. Enjoy your meal."
  },
  {
-  "who": "门童",
+  "who": "hotelguard",
+  "zh": "早上好，纪先生。",
+  "en": "Good morning, Mr Ji."
+ },
+ {
+  "who": "hotelguard",
+  "zh": "中午好，纪先生。",
+  "en": "Good afternoon, Mr Ji."
+ },
+ {
+  "who": "hotelguard",
+  "zh": "下午好，纪先生。",
+  "en": "Good afternoon, Mr Ji."
+ },
+ {
+  "who": "hotelguard",
   "zh": "晚上好，纪先生。",
   "en": "Good evening, Mr Ji."
  },
  {
-  "who": "前台",
+  "who": "hoteldesk",
+  "zh": "纪先生，早上好，欢迎回来。这是您的房卡，612，江景房。",
+  "en": "Good morning, Mr Ji, welcome back. Here's your key card: 612, a river-view room."
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "纪先生，中午好，欢迎回来。这是您的房卡，612，江景房。",
+  "en": "Good afternoon, Mr Ji, welcome back. Here's your key card: 612, a river-view room."
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "纪先生，下午好，欢迎回来。这是您的房卡，612，江景房。",
+  "en": "Good afternoon, Mr Ji, welcome back. Here's your key card: 612, a river-view room."
+ },
+ {
+  "who": "hoteldesk",
   "zh": "纪先生，晚上好，欢迎回来。这是您的房卡，612，江景房。",
   "en": "Good evening, Mr Ji, welcome back. Here's your key card: 612, a river-view room."
  },
  {
-  "who": "前台",
-  "zh": "爵士吧九点半开始，今晚是老年爵士乐队，要帮您留位吗？",
-  "en": "The Jazz Bar starts at half past nine. The Old Jazz Band tonight. Shall I hold a table for you?"
+  "who": "hoteldesk",
+  "zh": "爵士吧晚上七点开门，八点开始现场演出，是老年爵士乐队。要帮您留位吗？",
+  "en": "The Jazz Bar opens at seven tonight, and the Old Jazz Band plays from eight. Shall I hold a table for you?"
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "爵士吧已经开门了，八点开始演出，是老年爵士乐队。要帮您留位吗？",
+  "en": "The Jazz Bar's open now; the Old Jazz Band starts at eight. Shall I hold a table for you?"
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "爵士吧正在演出，老年爵士乐队，现在过去正好。要帮您留位吗？",
+  "en": "The Old Jazz Band is playing in the Jazz Bar right now; it's a good time to go. Shall I hold a table?"
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "今晚的演出已经结束了，明晚八点还有，到时候帮您留位？",
+  "en": "Tonight's set has finished; there's another tomorrow at eight. Shall I hold you a table then?"
+ },
+ {
+  "who": "保安",
+  "zh": "先生，先生！请刷卡，没有预约不能进去。",
+  "en": "Sir! Sir, you need to badge in. No entry without an appointment."
  },
  {
   "who": "礼宾部",
@@ -3456,8 +4001,8 @@
  },
  {
   "who": "前台",
-  "zh": "您好，请问您找哪家公司？没有预约的话需要先在小程序上登记，被访人确认后人脸就能过闸机。上个月刚换的新闸机。",
-  "en": "Hello, which company are you visiting? Without an appointment you register on the mini-program first; once your host confirms, your face opens the gates. They put the new gates in last month."
+  "zh": "您好，请问您找哪位？没有预约的话需要先在小程序上登记，被访同事确认后，人脸就能过闸机了。",
+  "en": "Hello, who are you here to see? Without an appointment you register on the mini-program first; once your colleague confirms, your face opens the gates."
  },
  {
   "who": "Momo",
@@ -3471,8 +4016,8 @@
  },
  {
   "who": "调酒师",
-  "zh": "先生，微信好像没付成功。",
-  "en": "Sir, the WeChat payment didn't go through."
+  "zh": "先生，信语好像没付成功。",
+  "en": "Sir, the Xinyu payment didn't go through."
  },
  {
   "who": "调酒师",
@@ -3488,6 +4033,51 @@
   "who": "门口服务员",
   "zh": "晚上好，一位吗？这边请。",
   "en": "Good evening. Just one? This way, please."
+ },
+ {
+  "who": "fang",
+  "zh": "小白？……老周天天讲的那个小白？长这么高了。",
+  "en": "Little Bai? ...The Little Bai Zhou never stopped talking about? Look how tall you are."
+ },
+ {
+  "who": "fang",
+  "zh": "老周坐我这条船，坐了三十年。每天收了摊，末班，回浦东。",
+  "en": "Zhou rode this boat for thirty years. Every night, stall packed up, the last sailing home to Pudong."
+ },
+ {
+  "who": "fang",
+  "zh": "二十九号他没坐末班。六点钟就来了，拎着他那只工具箱，说去昆山他阿姐那儿住几天。",
+  "en": "On the twenty-ninth he didn't take the last one. He came at six with that toolbox of his and said he was off to his sister's in Kunshan for a few days."
+ },
+ {
+  "who": "fang",
+  "zh": "箱子他不带，叫我替他收着。他讲：“阿侄要是来问，就讲没看见我。”",
+  "en": "He wouldn't take the box. Asked me to keep it. He said: \"If my nephew comes asking, you haven't seen me.\""
+ },
+ {
+  "who": "fang",
+  "zh": "后来是有个年轻人来问过两回，拎只红纸袋。我讲没看见。",
+  "en": "And a young fellow did come asking, twice, with a red paper bag. I said I hadn't seen him."
+ },
+ {
+  "who": "fang",
+  "zh": "启事上那行字我也看见了。“乘末班轮渡”……写字的人，是想叫人以为他跳了江。他没有。",
+  "en": "I saw that line on the notice too. \"Take the last ferry\"... Whoever wrote it wants people to think he went into the river. He didn't."
+ },
+ {
+  "who": "fang",
+  "zh": "箱子你拿去，给他屋里人。我一个摇船的，派出所去不来。",
+  "en": "You take the box. Give it to his family. I'm a boatman; I can't be going to police stations."
+ },
+ {
+  "who": "fang",
+  "zh": "金陵东路的老筹码。这种早不用了。哪里来的？",
+  "en": "An old Jinling Road token. Nobody's used those for years. Where'd you get it?"
+ },
+ {
+  "who": "fang",
+  "zh": "……那就算了。夜里风大，早点回去。",
+  "en": "...Suit yourself. Windy out here at night. Get yourself home."
  },
  {
   "who": "maker",
@@ -3681,8 +4271,8 @@
  },
  {
   "who": "gunian",
-  "zh": "昨天谢谢你替我坐下。汉口路那家 Manner，我每天一点在。今天也在。",
-  "en": "Thank you for sitting down for me yesterday. I'm at the Manner on Hankou Road at one every day. Today as well."
+  "zh": "昨天谢谢你替我坐下。汉口路那家 Linger，我每天一点在。今天也在。",
+  "en": "Thank you for sitting down for me yesterday. I'm at the Linger on Hankou Road at one every day. Today as well."
  },
  {
   "who": "gunian",

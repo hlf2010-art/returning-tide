@@ -32,35 +32,40 @@ export function addVoicemail(L, { atEnd = false } = {}) {
   return m;
 }
 
-// beats: { id, at (minutes after t0) or when(L), run(L) }
+// beats: { id, at (minutes after t0) or when (an absolute minute, or (L) => one), run(L) }
+// The first evening is kept to one path (the river, Old Lin's pouch, the Peace Hotel, Momo's set): on day one
+// only Momo's gig, Yu'an's hello and Dad's call (at the railing) reach the phone; the rest waits for Tuesday.
+const gigKept = (L) => !!(L.invites.find((i) => i.id === 'momo-gig') || {}).kept;
 const BEATS = [
   { id: 'g1', at: 1.5, run: (L) => post(L, 'wuhu', { from: 'momo', kind: 'text', text: '白白落地了没？？' }) },
   { id: 'g2', at: 2.4, run: (L) => post(L, 'wuhu', { from: 'xuan', kind: 'text', text: '下午就到了，我让他先去外滩吹吹风，倒倒时差' }) },
   { id: 'g3', at: 3.2, run: (L) => {
     post(L, 'wuhu', { from: 'momo', kind: 'text', text: '吹啥风，晚上来和平饭店听我们弹琴😎' });
-    invite(L, { id: 'momo-gig', from: 'momo', thread: 'wuhu', title: '和平饭店爵士吧 · Momo trio', place: '和平饭店 · 爵士吧', at: D(1, 21, 30), deadline: D(1, 21, 0),
-      text: '今晚九点半，和平饭店爵士吧，给你留位置', onAccept: 6, onDecline: -2, onMiss: -6,
+    invite(L, { id: 'momo-gig', from: 'momo', thread: 'wuhu', title: '和平饭店爵士吧 · Momo trio', place: '和平饭店 · 爵士吧', at: D(1, 20, 0), deadline: D(1, 19, 40),
+      text: '今晚八点，和平饭店爵士吧，给你留位置', onAccept: 6, onDecline: -2, onMiss: -6,
       yesText: '来，给我留个靠前的位置', noText: '今晚倒时差，下次一定' });
   } },
   { id: 'r1', at: 5, run: (L) => post(L, 'yuan', { from: 'yuan', kind: 'text', text: '到了吗？外滩风大，你那件薄外套不够的。', replies: [
     { text: '到了，确实冷。在海关大楼这边。', delta: 2, follow: '海关大楼？那正好，钟楼刚修完，你抬头看看。' },
     { text: '还行，不冷。', delta: 0, follow: '嘴硬。' },
   ] }) },
-  { id: 'z1', at: 7, run: (L) => post(L, 'zhixia', { from: 'zhixia', kind: 'voice', text: '喂，纪白，听说你硅谷那家公司的股票套现了？……别装，予安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？', replies: [
+  { id: 'z1', when: D(2, 12, 30), run: (L) => post(L, 'zhixia', { from: 'zhixia', kind: 'voice', text: '喂，纪白，听说你硅谷那家公司的股票套现了？……别装，予安都跟我说了。周末来不来天马，带你跑两圈。还有——真的，你该换台车了，那台二手 Model 3 你还开着呢？', replies: [
     { text: '周末可以，车的事再说。', delta: 3, follow: '再说就是想。我认识保时捷浦东的一个顾问，人靠谱，回头推给你。', flag: 'carCurious' },
     { text: 'Model 3 挺好的。', delta: -1, follow: '……行，你开心就好。' },
   ] }) },
-  { id: 'x1', at: 10, run: (L) => {
+  // Mingxuan writes once Momo's set is over (he was in the group chat watching), or first thing on Tuesday
+  { id: 'x1', when: (L) => (gigKept(L) ? stamp(L) : D(2, 8, 0)), run: (L) => {
     post(L, 'xuan', { from: 'xuan', kind: 'text', text: '说正事。有个做机械臂的团队，创始人是我学长，产品经理跑了，原型卡住了。' });
     invite(L, { id: 'xuan-arm', from: 'xuan', thread: 'xuan', title: '机械臂团队 · 原型评审', place: '陆家嘴 IFC 二期 32F', at: D(2, 15, 0), deadline: D(2, 12, 0),
-      text: '明天下午三点陆家嘴，你过来帮我看看？', onAccept: 6, onDecline: -3, onMiss: -5,
+      text: L.clock.day >= 2 ? '今天下午三点陆家嘴，你过来帮我看看？' : '明天下午三点陆家嘴，你过来帮我看看？', onAccept: 6, onDecline: -3, onMiss: -5,
       yesText: '可以，把资料先发我', noText: '明天不行，有别的事' });
   } },
-  { id: 'd1', at: 13, run: (L) => emit(L, { type: 'call', from: 'dad', script: 'dad-arrival' }) },
-  { id: 'y1', at: 17, run: (L) => {
+  // Dad rings when he's at the railing looking across (or ten minutes in, if he never goes)
+  { id: 'd1', when: (L) => (L.flags.sawRiver ? stamp(L) : (L.flags.t0 ?? 0) + 40), run: (L) => emit(L, { type: 'call', from: 'dad', script: 'dad-arrival' }) },
+  { id: 'y1', when: D(2, 19, 0), run: (L) => {
     post(L, 'yinuo', { from: 'yinuo', kind: 'text', text: '回国了也不说一声。' });
     invite(L, { id: 'yinuo-flat', from: 'yinuo', thread: 'yinuo', title: '北外滩 · 看房', place: '北外滩', at: D(3, 14, 0), deadline: D(2, 22, 0),
-      text: '后天下午我在上海，家里让我看北外滩一套顶层，你学设计的，陪我去？', onAccept: 5, onDecline: -2, onMiss: -4,
+      text: '明天下午我在上海，家里让我看北外滩一套顶层，你学设计的，陪我去？', onAccept: 5, onDecline: -2, onMiss: -4,
       yesText: '好，地址发我', noText: '后天可能不行' });
   } },
 ];
@@ -140,11 +145,12 @@ export function runAgenda(L, rnd = Math.random) {
   const t0 = L.flags.t0 ?? stamp(L), since = stamp(L) - t0;
   for (const b of BEATS) {
     if (L.fired[b.id]) continue;
-    const due = b.when != null ? stamp(L) >= b.when && (!b.until || stamp(L) <= b.until) : since >= b.at;
+    const w = typeof b.when === 'function' ? b.when(L) : b.when;
+    const due = w != null ? stamp(L) >= w && (!b.until || stamp(L) <= b.until) : since >= b.at;
     if (due && (!b.if || b.if(L))) { L.fired[b.id] = stamp(L); b.run(L); }
   }
-  // chatter: one line every ~25-45 game minutes once the beats have started
-  if (since > 20) {
+  // chatter: one line every ~25-45 game minutes, from Tuesday (the first evening has enough on it)
+  if (since > 20 && L.clock.day >= 2) {
     L.flags.nextChat ??= stamp(L) + 25 + Math.floor(rnd() * 20);
     if (stamp(L) >= L.flags.nextChat) {
       const used = new Set(L.flags.chatUsed || []);
@@ -177,9 +183,9 @@ export function react(L, ev) {
     }[ev.id];
     if (lines && lines[ev.status]) (L.flags.pendingFollow ||= []).push({ at: stamp(L) + (ev.status === 'missed' ? 0 : 1), thread: ev.thread || ev.from, from: ev.from, text: lines[ev.status] });
   }
-  if (ev.type === 'paid' && ev.to === 'Manner' && !L.flags.firstManner) {
+  if (ev.type === 'paid' && ev.to === 'Linger' && !L.flags.firstManner) {
     L.flags.firstManner = true;
-    (L.flags.pendingFollow ||= []).push({ at: stamp(L) + 3, thread: 'yuan', from: 'yuan', text: '你是不是在汉口路那家Manner？我们工地的人天天去，燕麦拿铁不错。' });
+    (L.flags.pendingFollow ||= []).push({ at: stamp(L) + 3, thread: 'yuan', from: 'yuan', text: '你是不是在汉口路那家Linger？我们工地的人天天去，燕麦拿铁不错。' });
   }
   if (ev.type === 'call-declined') (L.flags.pendingFollow ||= []).push({ at: stamp(L) + 2, thread: ev.from, from: ev.from, text: ev.from === 'dad' ? '怎么不接电话？' : '在忙？' });
 }

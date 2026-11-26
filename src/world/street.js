@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees, crossing, sideStreets } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
-import { makeCanvas, tex, rng, FONT, glowTexture } from './canvas.js';
+import { makeCanvas, tex, rng, FONT, glowTexture, fitText } from './canvas.js';
 import { T } from './text.js';
 
 const FAR = 430, S = L.street, CH = L.curbH;
@@ -228,7 +228,7 @@ export function createStreet(M) {
     c.fillStyle = '#f2c81a'; c.fillRect(0, 0, w, h); c.strokeStyle = '#111'; c.lineWidth = 10; c.strokeRect(8, 8, w - 16, h - 16);
     c.fillStyle = '#111'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.font = `700 ${h * 0.2}px ${FONT.sans}`; T.hoardingSub.split('　').forEach((s, i) => c.fillText(s, w / 2, h * (0.3 + i * 0.26)));
-    c.font = `700 ${h * 0.085}px ${FONT.sans}`; c.fillText(T.hoardingEn, w / 2, h * 0.82);
+    c.font = `700 ${h * 0.085}px ${FONT.sans}`; fitText(c, T.hoardingEn, w / 2, h * 0.82, w * 0.92);
   }, { emissive: 0.3 }), hx + 0.6, 1.3, -5.0, Math.PI / 2);
   B.steel.box(hx + 0.58, 0, -5.0, 0.04, 0.8, 1.0);
   // amber beacons on the hoarding (they blink)
@@ -262,23 +262,58 @@ export function createStreet(M) {
 
   // ---- Hankou Road, north side: the sundries shop, shuttered fronts, and Old Zhou's stall ----
   const wz = -S.halfW + 0.02;
+  // the shop's front at ~300 px/m (it's seen from a step away): the window full of goods on the left, the
+  // aluminium-framed glass door on the right standing ajar onto the dim shop, the 营业中 card hung inside it
   const shopGlass = sign(4.6, 2.5, (c, w, h) => {
-    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#fff1c8'); g.addColorStop(1, '#e2b877');
+    const u = h / 256, r = rng(5);
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#fff3d0'); g.addColorStop(1, '#dcb070');
     c.fillStyle = g; c.fillRect(0, 0, w, h);
-    const r = rng(5);
-    for (let row = 0; row < 4; row++) {                                          // shelves of bottles, cartons, instant noodles
+    // shelves of cigarettes (cartons), liquor, drinks and instant noodles, each pack with a label band and a lit top
+    for (let row = 0; row < 4; row++) {
       const y = h * (0.2 + row * 0.19);
-      c.fillStyle = '#4a3320'; c.fillRect(w * 0.03, y, w * 0.6, 6);
-      for (let x = w * 0.04; x < w * 0.62; x += 10 + r() * 10) {
-        const bh = 14 + r() * 26; c.fillStyle = `hsl(${Math.floor(r() * 360)},${40 + r() * 40}%,${30 + r() * 30}%)`;
-        c.fillRect(x, y - bh, 8 + r() * 7, bh);
+      c.fillStyle = '#4a3320'; c.fillRect(w * 0.03, y, w * 0.6, 6 * u); c.fillStyle = 'rgba(255,240,200,0.5)'; c.fillRect(w * 0.03, y, w * 0.6, 1.2 * u);
+      for (let x = w * 0.04; x < w * 0.62;) {
+        const bw = (7 + r() * 8) * u, bh = (14 + r() * 26) * u, hue = Math.floor(r() * 360), bottle = row === 1 && r() < 0.6;
+        if (bottle) {
+          c.fillStyle = `hsl(${hue},45%,${22 + r() * 20}%)`; c.fillRect(x + bw * 0.15, y - bh * 0.7, bw * 0.7, bh * 0.7); c.fillRect(x + bw * 0.38, y - bh, bw * 0.24, bh * 0.32);
+          c.fillStyle = 'rgba(255,250,235,0.85)'; c.fillRect(x + bw * 0.2, y - bh * 0.5, bw * 0.6, bh * 0.2);
+        } else {
+          c.fillStyle = `hsl(${hue},${40 + r() * 40}%,${30 + r() * 30}%)`; c.fillRect(x, y - bh, bw, bh);
+          c.fillStyle = r() < 0.5 ? 'rgba(255,255,255,0.75)' : 'rgba(255,220,60,0.8)'; c.fillRect(x + 1 * u, y - bh * 0.62, bw - 2 * u, bh * 0.18);
+          c.fillStyle = 'rgba(255,255,255,0.25)'; c.fillRect(x, y - bh, bw, 1.5 * u); c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(x + bw - 1.2 * u, y - bh, 1.2 * u, bh);
+        }
+        x += bw + (1 + r() * 2) * u;
       }
     }
-    c.fillStyle = '#3a2a1c'; c.fillRect(0, h * 0.8, w * 0.64, h * 0.2);          // counter
-    c.fillStyle = '#20150e'; c.fillRect(w * 0.64, 0, 10, h); c.fillRect(0, 0, w, 8); c.fillRect(w * 0.31, 0, 6, h * 0.8);
-    c.fillStyle = 'rgba(40,24,10,0.55)'; c.fillRect(w * 0.66, h * 0.08, w * 0.32, h * 0.92);   // door, ajar and dim
-    c.fillStyle = '#d33'; c.font = `700 ${h * 0.07}px ${FONT.sans}`; c.fillText(T.shopOpen, w * 0.72, h * 0.3);
-  }, { emissive: 0.9 });
+    // the counter: a glass cigarette case on a dark base, packs laid out flat inside
+    c.fillStyle = '#3a2a1c'; c.fillRect(0, h * 0.8, w * 0.64, h * 0.2);
+    c.fillStyle = 'rgba(200,225,235,0.35)'; c.fillRect(w * 0.04, h * 0.81, w * 0.56, h * 0.08);
+    for (let x = w * 0.05; x < w * 0.58; x += 9 * u) { c.fillStyle = `hsl(${Math.floor(r() * 360)},55%,45%)`; c.fillRect(x, h * 0.835, 6 * u, h * 0.04); }
+    // window frame: dark anodised aluminium, a transom and a mullion
+    c.fillStyle = '#26221d'; c.fillRect(w * 0.64, 0, 8 * u, h); c.fillRect(0, 0, w, 7 * u); c.fillRect(w * 0.31, 0, 5 * u, h * 0.8); c.fillRect(0, h - 5 * u, w, 5 * u);
+    c.fillStyle = 'rgba(255,255,255,0.18)'; c.fillRect(w * 0.64 + 1, 0, 1.5 * u, h);
+    // the door: a frame round a glass leaf, opened inward, the shop dim behind it
+    const dx = w * 0.66, dw = w * 0.32, dy = h * 0.06;
+    const ig = c.createLinearGradient(0, dy, 0, h); ig.addColorStop(0, '#6a4a2a'); ig.addColorStop(1, '#2a1a0e'); c.fillStyle = ig; c.fillRect(dx, dy, dw, h - dy);
+    c.fillStyle = 'rgba(255,220,150,0.25)'; c.fillRect(dx + dw * 0.1, dy + h * 0.1, dw * 0.25, h * 0.55);           // a lit fridge deep inside
+    c.fillStyle = 'rgba(30,22,14,0.8)'; c.fillRect(dx + dw * 0.55, dy + h * 0.45, dw * 0.4, h * 0.4);                 // stacked boxes
+    c.fillStyle = '#9ea3a8'; c.fillRect(dx, dy, dw, 5 * u); c.fillRect(dx, dy, 5 * u, h - dy); c.fillRect(dx + dw - 5 * u, dy, 5 * u, h - dy);
+    // the leaf swung in: seen edge-on-ish, its frame and glass narrower, the push plate and the pull
+    const lx = dx + dw * 0.08, lw = dw * 0.36;
+    c.fillStyle = 'rgba(190,215,225,0.28)'; c.fillRect(lx, dy + 6 * u, lw, h - dy - 12 * u);
+    c.fillStyle = '#b4b9be'; c.fillRect(lx, dy + 6 * u, 4 * u, h - dy - 12 * u); c.fillRect(lx + lw - 4 * u, dy + 6 * u, 4 * u, h - dy - 12 * u); c.fillRect(lx, dy + 6 * u, lw, 4 * u); c.fillRect(lx, h - 18 * u, lw, 12 * u);
+    c.fillStyle = '#e1e4e7'; c.fillRect(lx + lw - 10 * u, h * 0.5, 3 * u, h * 0.16);
+    // the 营业中 card hung inside the glass on a string
+    const cx0 = dx + dw * 0.52, cy0 = h * 0.24;
+    c.strokeStyle = '#ccc'; c.lineWidth = 1 * u; c.beginPath(); c.moveTo(cx0 + dw * 0.08, dy + 6 * u); c.lineTo(cx0 + dw * 0.02, cy0); c.moveTo(cx0 + dw * 0.08, dy + 6 * u); c.lineTo(cx0 + dw * 0.36, cy0); c.stroke();
+    c.fillStyle = '#fbf6ea'; c.fillRect(cx0, cy0, dw * 0.38, h * 0.1); c.strokeStyle = '#c22'; c.lineWidth = 2 * u; c.strokeRect(cx0 + 2 * u, cy0 + 2 * u, dw * 0.38 - 4 * u, h * 0.1 - 4 * u);
+    c.fillStyle = '#d22'; c.font = `700 ${h * 0.06}px ${FONT.sans}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(T.shopOpen, cx0 + dw * 0.19, cy0 + h * 0.052);
+    // a few stickers by the door: Alipay / WeChat Pay style payment marks without their logos, a no-smoking sign
+    c.fillStyle = '#1677ff'; c.fillRect(w * 0.6, h * 0.5, 14 * u, 14 * u); c.fillStyle = '#07c160'; c.fillRect(w * 0.6, h * 0.5 + 17 * u, 14 * u, 14 * u);
+    c.fillStyle = '#fff'; c.fillRect(w * 0.6 + 3 * u, h * 0.5 + 3 * u, 8 * u, 8 * u); c.fillRect(w * 0.6 + 3 * u, h * 0.5 + 20 * u, 8 * u, 8 * u);
+    // reflections across the glass: the street opposite, a sky streak
+    c.fillStyle = 'rgba(255,255,255,0.08)'; c.beginPath(); c.moveTo(0, h * 0.7); c.lineTo(w * 0.45, 0); c.lineTo(w * 0.55, 0); c.lineTo(w * 0.05, h * 0.8); c.closePath(); c.fill();
+  }, { emissive: 0.9, px: 768 });
   place(group, shopGlass, -69.2, CH + 1.35, wz + 0.02, 0);
   place(group, sign(4.8, 0.8, (c, w, h) => {
     c.fillStyle = '#5a1512'; c.fillRect(0, 0, w, h); c.fillStyle = '#ffe9b0'; c.textBaseline = 'middle';
@@ -308,7 +343,7 @@ export function createStreet(M) {
   }, { emissive: 0.5 }), sx, CH + 2.25, wz + 0.03, 0);
   place(group, sign(0.3, 0.21, (c, w, h) => {
     c.fillStyle = '#f4f1e8'; c.fillRect(0, 0, w, h); c.fillStyle = '#1c1c1c'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = `${h * 0.42}px ${FONT.hand}`; c.fillText(T.stallClosed, w / 2, h * 0.52);
+    c.font = `${h * 0.42}px ${FONT.hand}`; fitText(c, T.stallClosed, w / 2, h * 0.52, w * 0.9);
   }, { emissive: 0.45, px: 128 }), sx - 0.2, CH + 0.52, sz + 0.322, 0);
 
   // his wall clock, stopped

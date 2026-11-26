@@ -64,6 +64,7 @@
       <button id="resume" class="mbtn primary" data-ico="play" data-t="resume"></button>
       <button class="mbtn" data-ico="gear" data-open-settings data-t="settings"></button>
       <button class="mbtn" data-ico="folder" data-open-saves data-t="saves"></button>
+      <button class="mbtn" data-ico="keyboard" data-open-controls data-t="controls"></button>
     </div>
   </div>
 
@@ -76,11 +77,14 @@
         <div class="row"><span data-t="gScale"></span><div class="slide"><input type="range" id="g-scale" min="50" max="150" step="5"><output id="g-scale-v"></output></div></div>
         <div class="row"><span data-t="gFps"></span><div class="seg" data-setting="g.fps"><button data-v="30">30</button><button data-v="60">60</button><button data-v="120">120</button><button data-v="0" data-t="gNoCap"></button></div></div>
         <div class="row"><span data-t="gLod"></span><div class="seg" data-setting="g.lod"><button data-v="low" data-t="gLow"></button><button data-v="medium" data-t="gMedium"></button><button data-v="high" data-t="gHigh"></button><button data-v="ultra" data-t="gUltra"></button></div></div>
+        <div class="row"><span data-t="gCrowd"></span><div class="seg" data-setting="crowd"><button data-v="low" data-t="gLow"></button><button data-v="medium" data-t="gMedium"></button><button data-v="high" data-t="gHigh"></button></div></div>
+        <div class="row"><span data-t="gLighting"></span><div class="seg" data-setting="lighting"><button data-v="low" data-t="gLow"></button><button data-v="medium" data-t="gMedium"></button><button data-v="high" data-t="gHigh"></button></div></div>
         <div class="row g-reload" hidden><span data-t="gReload"></span><button class="mbtn small" id="g-reload" data-t="gReloadNow"></button></div>
         <div class="row"><span data-t="gAA"></span><div class="seg" data-setting="g.msaa"><button data-v="0">SMAA</button><button data-v="2">MSAA 2×</button><button data-v="4">MSAA 4×</button></div></div>
         <div class="row"><span data-t="gShadows"></span><div class="seg" data-setting="g.shadows"><button data-v="0" data-t="off"></button><button data-v="1">1</button><button data-v="2">2</button></div></div>
         <div class="row"><span data-t="gAO"></span><div class="seg" data-setting="g.ao"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
         <div class="row"><span data-t="gSSR"></span><div class="seg" data-setting="g.ssr"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
+        <div class="row"><span data-t="gRefl"></span><div class="seg" data-setting="g.refl"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
         <div class="row"><span data-t="gBloom"></span><div class="seg" data-setting="g.bloom"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
         <div class="row"><span data-t="gMirror"></span><div class="seg" data-setting="g.mirror"><button data-v="512">512</button><button data-v="768">768</button><button data-v="1024">1K</button><button data-v="2048">2K</button></div></div>
         <div class="row"><span data-t="gAuto"></span><div class="seg" data-setting="g.auto"><button data-v="1" data-t="on"></button><button data-v="0" data-t="off"></button></div></div>
@@ -96,6 +100,7 @@
       <div class="row"><span data-t="tipsSetting"></span><div class="seg" data-setting="tips"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
       <div class="row"><span data-t="musicSetting"></span><div class="seg" data-setting="music"><button data-v="on" data-t="on"></button><button data-v="off" data-t="off"></button></div></div>
       <details class="credits" id="music-credits"><summary data-t="musicCredits"></summary><ul></ul></details>
+      <details class="credits" id="credits"><summary data-t="credits"></summary><ul></ul></details>
       <div class="row"><span data-t="voices"></span><div class="seg" data-setting="voices"><button data-v="original" data-t="voicesOriginal"></button><button data-v="dubbed" data-t="voicesDubbed"></button></div></div>
       <div class="row"><span data-t="ai"></span><div class="seg" data-setting="ai"><button data-v="auto" data-t="aiAuto"></button><button data-v="browser" data-t="aiBrowser"></button><button data-v="off" data-t="off"></button></div></div>
       <div class="row"><span data-t="voiceServer"></span><div class="seg" data-setting="voiceServer"><button data-v="off" data-t="voiceServerOff"></button><button data-v="server" data-t="voiceServerLocal"></button></div></div>
@@ -139,6 +144,7 @@
           <button id="begin" class="mbtn primary" disabled data-t="loading"></button>
           <button id="new-game" class="mbtn" style="display:none"></button>
           <button class="mbtn" data-open-settings data-t="settings"></button>
+          <button class="mbtn" data-open-controls data-t="controls"></button>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 // Procedural surface textures: stone, facade window atlases, paving, asphalt.
 import { makeCanvas, tex, rng, grain, tileNoise, normalFromHeight } from './canvas.js';
+import { bundDoorTexture } from './surfaceDetail.js';
 
 const STONE = '#a89f8f';
 
@@ -11,15 +12,27 @@ function stoneCourses(ctx, w, h, { course = 64, block = 128, deep = false, seed 
       const v = 150 + Math.floor(r() * 26);
       ctx.fillStyle = `rgb(${v + 12},${v + 4},${v - 10})`;
       ctx.fillRect(ox, y, block, course);
+      if (deep) {
+        // each rusticated block is dressed: a faint sheen toward its top, weathering pooling at its foot
+        const g = ctx.createLinearGradient(0, y, 0, y + course);
+        g.addColorStop(0, 'rgba(255,248,230,0.07)'); g.addColorStop(0.6, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(40,32,24,0.12)');
+        ctx.fillStyle = g; ctx.fillRect(ox, y, block, course);
+      }
     }
-    ctx.fillStyle = deep ? 'rgba(20,16,12,0.75)' : 'rgba(40,34,28,0.4)';
-    ctx.fillRect(0, y, w, deep ? 4 : 2);
-    ctx.fillStyle = 'rgba(255,250,235,0.16)';
-    ctx.fillRect(0, y + (deep ? 4 : 2), w, 2);
+    if (deep) {
+      // a V-channelled joint as the sun or the floods see it: the upper lip in shadow, the lower chamfer catching light
+      ctx.fillStyle = 'rgba(40,32,24,0.45)'; ctx.fillRect(0, y, w, 2);
+      ctx.fillStyle = 'rgba(28,22,16,0.25)'; ctx.fillRect(0, y + 2, w, 1);
+      ctx.fillStyle = 'rgba(255,248,232,0.2)'; ctx.fillRect(0, y + 3, w, 1);
+    } else {
+      ctx.fillStyle = 'rgba(40,34,28,0.4)'; ctx.fillRect(0, y, w, 2);
+      ctx.fillStyle = 'rgba(255,250,235,0.16)'; ctx.fillRect(0, y + 2, w, 2);
+    }
     for (let x = -block; x < w + block; x += block) {
       const ox = x + (row % 2 ? block / 2 : 0);
-      ctx.fillStyle = deep ? 'rgba(20,16,12,0.7)' : 'rgba(40,34,28,0.32)';
-      ctx.fillRect(ox, y, deep ? 3 : 2, course);
+      ctx.fillStyle = deep ? 'rgba(40,32,24,0.38)' : 'rgba(40,34,28,0.32)';
+      ctx.fillRect(ox, y, 2, course);
+      if (deep) { ctx.fillStyle = 'rgba(255,248,232,0.12)'; ctx.fillRect(ox + 2, y, 1, course); }
     }
   }
 }
@@ -47,11 +60,17 @@ export function fluteTexture() {
 
 // ---- facade atlases: 8 bays x 4 floors, one window per cell ----
 const COLS = 8, ROWS = 4, CELL = 256;
+// rustic doors: in every 4th column (col % 4 === 1), the leaves fill the arch below this fraction of the opening
+export const DOOR_COL = (col) => col % 4 === 1;
+export const RUSTIC_WIN = { x: 0.24, w: 0.52, top: 0.14, h: 0.86 };
+export const DOOR_TOP = 0.42;
 
 const STYLES = {
   classic: { lit: 0.14, win: { x: 0.29, w: 0.42, top: 0.14, h: 0.66 }, seed: 21 },
   arched: { lit: 0.12, win: { x: 0.27, w: 0.46, top: 0.1, h: 0.72, arch: true }, seed: 22 },
-  rustic: { lit: 0.1, win: { x: 0.24, w: 0.52, top: 0.14, h: 0.86, arch: true, door: true }, deep: true, seed: 23 },
+  // the rusticated ground floors you walk past: twice the texels up the wall (a cell is a whole 6-9 m storey), so the
+  // courses and the grilles stay sharp; the doors themselves are real geometry (world/bund.js bundDoors)
+  rustic: { lit: 0.1, win: { x: 0.24, w: 0.52, top: 0.14, h: 0.86, arch: true, door: true }, deep: true, tall: true, seed: 23 },
   deco: { lit: 0.12, win: { x: 0.22, w: 0.56, top: 0, h: 0.7, strip: true }, seed: 24 },
   brick: { lit: 0.3, win: { x: 0.3, w: 0.4, top: 0.2, h: 0.56 }, brick: true, seed: 25 },
 };
@@ -80,7 +99,7 @@ function windowPath(ctx, x, y, w, h, arch) {
 }
 
 export function facadeAtlas(styleName) {
-  const st = STYLES[styleName], W = COLS * CELL, H = ROWS * CELL;
+  const st = STYLES[styleName], CH = st.tall ? CELL * 2 : CELL, W = COLS * CELL, H = ROWS * CH;
   const [c, ctx] = makeCanvas(W, H);
   const [ec, ectx] = makeCanvas(W / 4, H / 4);
   ectx.fillStyle = '#000'; ectx.fillRect(0, 0, W / 4, H / 4);
@@ -89,21 +108,30 @@ export function facadeAtlas(styleName) {
   if (st.brick) brickFill(ctx, W, H, st.seed);
   else {
     ctx.fillStyle = STONE; ctx.fillRect(0, 0, W, H);
-    stoneCourses(ctx, W, H, st.deep ? { course: 32, block: 64, deep: true } : { course: 32, block: 96 });
+    stoneCourses(ctx, W, H, st.deep ? { course: 36, block: 72, deep: true } : { course: 32, block: 96 });
   }
 
   for (let row = 0; row < ROWS; row++) for (let col = 0; col < COLS; col++) {
-    const cx = col * CELL, cy = row * CELL, wn = st.win;
-    const x = cx + wn.x * CELL, w = wn.w * CELL, y = cy + wn.top * CELL, h = wn.h * CELL;
+    const cx = col * CELL, cy = row * CH, wn = st.win;
+    const x = cx + wn.x * CELL, w = wn.w * CELL, y = cy + wn.top * CH, h = wn.h * CH;
     const lit = r() < st.lit;
 
     if (st.win.strip) {
       // art-deco pier grooves either side of a continuous window strip
       ctx.fillStyle = 'rgba(30,26,22,0.35)';
-      for (const gx of [0.06, 0.12, 0.84, 0.9]) ctx.fillRect(cx + gx * CELL, cy, 5, CELL);
-      ctx.fillStyle = '#3a2f24'; ctx.fillRect(x, cy + wn.h * CELL, w, CELL - wn.h * CELL); // bronze spandrel
-      ctx.fillStyle = 'rgba(160,140,90,0.35)';
-      for (let k = 1; k < 5; k++) ctx.fillRect(x + (w * k) / 5 - 2, cy + wn.h * CELL + 10, 4, CELL - wn.h * CELL - 20);
+      for (const gx of [0.06, 0.12, 0.84, 0.9]) { ctx.fillStyle = 'rgba(30,26,22,0.24)'; ctx.fillRect(cx + gx * CELL, cy, 4, CH); ctx.fillStyle = 'rgba(255,246,226,0.14)'; ctx.fillRect(cx + gx * CELL + 4, cy, 1, CH); }
+      // the bronze spandrel: a cast panel, reeded, a stepped fan in its middle (Art Deco, as on Sassoon House)
+      const sy = cy + wn.h * CH, sh = CH - wn.h * CH;
+      const bg = ctx.createLinearGradient(0, sy, 0, sy + sh); bg.addColorStop(0, '#4a3826'); bg.addColorStop(0.5, '#3a2c1d'); bg.addColorStop(1, '#2c2116');
+      ctx.fillStyle = bg; ctx.fillRect(x, sy, w, sh);
+      ctx.strokeStyle = 'rgba(200,165,100,0.45)'; ctx.lineWidth = 1.5; ctx.strokeRect(x + 4, sy + 4, w - 8, sh - 8);
+      for (let rx = x + 8; rx < x + w - 8; rx += 4) { ctx.fillStyle = 'rgba(210,175,110,0.16)'; ctx.fillRect(rx, sy + 8, 1, sh - 16); ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(rx + 2, sy + 8, 1, sh - 16); }
+      ctx.save(); ctx.beginPath(); ctx.rect(x + 8, sy + 8, w - 16, sh - 16); ctx.clip();
+      const fx = x + w / 2, fy = sy + sh - 8;
+      for (let k = 3; k >= 1; k--) { ctx.fillStyle = k % 2 ? '#5a4529' : '#3e2f1e'; ctx.beginPath(); ctx.arc(fx, fy, (sh - 16) * k / 3.2, Math.PI, 0); ctx.fill(); }
+      ctx.strokeStyle = 'rgba(220,185,120,0.5)'; ctx.lineWidth = 1;
+      for (let k = 0; k <= 8; k++) { const a = Math.PI + (k / 8) * Math.PI; ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + Math.cos(a) * sh, fy + Math.sin(a) * sh); ctx.stroke(); }
+      ctx.restore();
     } else if (!st.win.door) {
       // stone surround + sill
       ctx.fillStyle = st.brick ? '#b7ad9c' : 'rgba(215,206,188,0.9)';
@@ -119,8 +147,20 @@ export function facadeAtlas(styleName) {
     // glass: a little of the blue-hour sky at the top, deep interior below
     const g = ctx.createLinearGradient(0, y, 0, y + h);
     if (lit) { g.addColorStop(0, '#6b5a3c'); g.addColorStop(1, '#4a3c28'); }
-    else { g.addColorStop(0, '#34486a'); g.addColorStop(0.4, '#1a2434'); g.addColorStop(1, '#0d1219'); }
+    else { g.addColorStop(0, '#6f86a3'); g.addColorStop(0.35, '#3c4c60'); g.addColorStop(1, '#232b35'); }
     ctx.fillStyle = g; windowPath(ctx, x, y, w, h, wn.arch); ctx.fill();
+    if (!lit) {
+      // not a black hole by day: the sky and the street opposite in the glass, a room just showing behind it
+      // (a blind part-drawn, curtains at the sides, sometimes the glow of a ceiling), different window to window
+      ctx.save(); windowPath(ctx, x, y, w, h, wn.arch); ctx.clip();
+      const kind = r();
+      if (kind < 0.45) { ctx.fillStyle = 'rgba(214,200,172,0.55)'; ctx.fillRect(x, y, w, h * (0.15 + r() * 0.3)); ctx.fillStyle = 'rgba(0,0,0,0.25)'; for (let yy = y; yy < y + h * 0.45; yy += 5) ctx.fillRect(x, yy, w, 1); }
+      else if (kind < 0.8) { ctx.fillStyle = 'rgba(150,120,96,0.5)'; ctx.fillRect(x, y, w * 0.2, h); ctx.fillRect(x + w * 0.8, y, w * 0.2, h); }
+      ctx.fillStyle = 'rgba(205,220,236,0.16)';
+      ctx.beginPath(); ctx.moveTo(x, y + h * 0.55); ctx.lineTo(x + w * 0.55, y); ctx.lineTo(x + w * 0.8, y); ctx.lineTo(x, y + h * 0.9); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(30,26,22,0.35)'; ctx.fillRect(x, y + h * 0.72, w, h * 0.28);       // the dark of the street mirrored low down
+      ctx.restore();
+    }
 
     ctx.save(); windowPath(ctx, x, y, w, h, wn.arch); ctx.clip();
     // recess shadow
@@ -130,13 +170,17 @@ export function facadeAtlas(styleName) {
     if (wn.door) {
       const isDoor = col % 4 === 1;
       if (isDoor) {
-        ctx.fillStyle = '#2a2018'; ctx.fillRect(x, y + h * 0.42, w, h);
-        ctx.fillStyle = '#6a5433'; ctx.fillRect(x + w / 2 - 3, y + h * 0.42, 6, h);
-        ctx.strokeStyle = '#7a6238'; ctx.lineWidth = 4;
-        ctx.strokeRect(x + 12, y + h * 0.5, w / 2 - 22, h * 0.4); ctx.strokeRect(x + w / 2 + 10, y + h * 0.5, w / 2 - 22, h * 0.4);
+        // the doors, drawn down from the close-up texture (on the Bund real geometry stands in front: world/bund.js),
+        // the dark of the reveal round them, and a bronze grille in the fanlight over the transom
+        ctx.fillStyle = '#17120d'; ctx.fillRect(x, y + h * DOOR_TOP, w, h);
+        ctx.drawImage(bundDoorTexture().image, x + 3, y + h * DOOR_TOP + 3, w - 6, h * (1 - DOOR_TOP) - 3);
+        ctx.strokeStyle = '#6e5530'; ctx.lineWidth = 3;
+        for (let k = 1; k < 6; k++) { ctx.beginPath(); ctx.moveTo(x + (w * k) / 6, y + h * DOOR_TOP); ctx.lineTo(x + (w * k) / 6, y); ctx.stroke(); }
+        ctx.beginPath(); ctx.moveTo(x, y + h * DOOR_TOP * 0.55); ctx.lineTo(x + w, y + h * DOOR_TOP * 0.55); ctx.stroke();
       } else {
         ctx.fillStyle = '#1a1714';
-        for (let k = 1; k < 7; k++) ctx.fillRect(x + (w * k) / 7 - 2, y, 4, h);       // iron grille
+        for (let k = 1; k < 7; k++) { ctx.fillStyle = '#1a1714'; ctx.fillRect(x + (w * k) / 7 - 2, y, 4, h); ctx.fillStyle = 'rgba(190,170,130,0.22)'; ctx.fillRect(x + (w * k) / 7 - 2, y, 1, h); }   // iron grille, a lit edge on each bar
+        ctx.fillStyle = '#1a1714';
         for (let k = 1; k < 5; k++) ctx.fillRect(x, y + (h * k) / 5, w, 4);
         ctx.fillStyle = STONE; ctx.fillRect(x - 4, y + h * 0.78, w + 8, h);            // dado under the window
       }
