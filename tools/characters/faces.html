@@ -47,7 +47,7 @@ for (const role of roles) {
   scene.add(root);
   if (qs.get('game') !== '0') {   // what loadPeople does (game=0: the raw files)
     fixHair(root, c.hairTint || null);
-    if (c.head && qs.get('swap') !== '0') swapHead(root, (await loader.loadAsync('/people/' + c.head)).scene, { tint: c.headTint || null, keepHair: qs.has('keephair') ? qs.get('keephair') === '1' : !!c.keepHair, tone: qs.get('tone') ? qs.get('tone').split(',').map(Number) : (c.skinTone || null), ...(qs.has('drop') ? { drop: qs.get('drop').split(',').filter(Boolean) } : {}) });
+    if (c.head && qs.get('swap') !== '0') swapHead(root, (await loader.loadAsync('/people/' + c.head)).scene, { tint: c.headTint || null, keepHair: qs.has('keephair') ? qs.get('keephair') === '1' : !!c.keepHair, tone: qs.get('tone') ? qs.get('tone').split(',').map(Number) : (c.skinTone || null), hairLum: +(qs.get('hairlum') || c.hairLum || 0.42), conform: qs.has('conform') ? qs.get('conform') === '1' : c.conformNeck !== false, ...(qs.has('drop') ? { drop: qs.get('drop').split(',').filter(Boolean) } : {}) });
   }
   if (qs.get('game') !== '0' && (qs.has('specks') ? qs.get('specks') === '1' : c.cleanSpecks)) console.log('specks cleaned', role, cleanSpecks(root));
   if (qs.get('ids')) root.traverse((o) => {
