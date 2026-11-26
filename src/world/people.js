@@ -223,6 +223,80 @@ function strandPatch(sh, U, maskGLSL, shell) {
       #endif`);
 }
 
+// Short hair with depth where the kept hair shell does not reach (behind the ears, the nape, under the fringe):
+// shell fur. The scalp triangles of the new head (dark in its colour map) are copied in `layers` thin layers,
+// each lifted off the skin and combed down along the hair's fall; a fragment survives on a layer only inside a
+// strand that is long enough to reach it, and strands taper towards their tips. Painted, this hair read as a
+// flat black stain on the skin.
+function furShells(geo, srcMat, U, onScalp, layers = 12) {
+  const texel = texelReader(srcMat), uv = geo.attributes.uv, pos = geo.attributes.position, nrm = geo.attributes.normal;
+  if (!texel || !uv || !nrm || !geo.index) return null;
+  const cm = U.uPerCm.value;                         // mesh units per centimetre
+  const hair = new Float32Array(pos.count);
+  for (let v = 0; v < pos.count; v++) {
+    const [r, g, b] = texel(uv.getX(v), uv.getY(v)), l = 0.3 * r + 0.55 * g + 0.15 * b;   // sRGB, as painted
+    hair[v] = onScalp(pos.getX(v), pos.getY(v), pos.getZ(v)) ? 1 - THREE.MathUtils.smoothstep(l, 0.27, 0.34) : 0;
+  }
+  const ix = geo.index.array, tris = [];
+  for (let t = 0; t < ix.length; t += 3) if (hair[ix[t]] + hair[ix[t + 1]] + hair[ix[t + 2]] > 0.05) tris.push(ix[t], ix[t + 1], ix[t + 2]);
+  if (!tris.length) return null;
+  const used = [...new Set(tris)], at = new Map(used.map((v, i) => [v, i])), n = used.length;
+  const P = new Float32Array(n * layers * 3), N = new Float32Array(n * layers * 3), L = new Float32Array(n * layers * 2), UV = new Float32Array(n * layers * 2);
+  const SI = new Uint16Array(n * layers * 4), SW = new Float32Array(n * layers * 4), I = [];
+  const p = new THREE.Vector3(), q = new THREE.Vector3(), t = new THREE.Vector3(), down = U.uDown.value, crown = U.uCrown.value;
+  const lift = 0.32 * cm, comb = 0.75 * cm;          // a short cut: 3 mm thick, lying flat, combed about 7 mm
+  for (let k = 0; k < layers; k++) {
+    const f = (k + 1) / layers;
+    used.forEach((v, i) => {
+      p.fromBufferAttribute(pos, v); q.fromBufferAttribute(nrm, v).normalize();
+      // the fall: away from the crown and down, along the skin
+      t.copy(p).sub(crown).addScaledVector(down, 0.6 * p.distanceTo(crown)); t.addScaledVector(q, -t.dot(q)).normalize();
+      p.addScaledVector(q, lift * f * (1.15 - 0.4 * f)).addScaledVector(t, comb * f * f);
+      const o = (k * n + i);
+      P.set([p.x, p.y, p.z], o * 3); N.set([q.x, q.y, q.z], o * 3); L.set([f, hair[v] > 0 ? 1 : 0], o * 2); UV.set([uv.getX(v), uv.getY(v)], o * 2);
+      for (let c = 0; c < 4; c++) { SI[o * 4 + c] = geo.attributes.skinIndex.getComponent(v, c); SW[o * 4 + c] = geo.attributes.skinWeight.getComponent(v, c); }
+    });
+    for (const v of tris) I.push(k * n + at.get(v));
+  }
+  const fg = new THREE.BufferGeometry();
+  fg.setAttribute('position', new THREE.BufferAttribute(P, 3));
+  fg.setAttribute('normal', new THREE.BufferAttribute(N, 3));
+  fg.setAttribute('fur', new THREE.BufferAttribute(L, 2));
+  fg.setAttribute('uv', new THREE.BufferAttribute(UV, 2));
+  fg.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(SI, 4));
+  fg.setAttribute('skinWeight', new THREE.Float32BufferAttribute(SW, 4));
+  fg.setIndex(I);
+  const m = new THREE.MeshPhysicalMaterial({ name: 'scalp-fur', map: srcMat.map, color: new THREE.Color(0.055, 0.04, 0.034), roughness: 0.7,
+    metalness: 0, specularIntensity: 0.2, envMapIntensity: 0.25, side: THREE.DoubleSide });
+  m.onBeforeCompile = (sh) => {
+    strandPatch(sh, U, '', false);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec2 fur; varying vec2 vFur;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFur = fur;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vFur;')
+      .replace('float hMask = 1.0;', `float hMask = 1.0;
+        {
+          // where hair grows, per pixel from the head's painted scalp (per vertex, the hairline followed the
+          // triangles in steps); then the hair's own colour, not the map's
+          float fm = vFur.y * (1.0 - smoothstep(0.06, 0.09, dot(sampledDiffuseColor.rgb, vec3(0.3, 0.55, 0.15))));
+          diffuseColor.rgb = diffuse;
+          // fine clumps: about 1 per mm round the head; each its own length (shorter towards the hairline)
+          vec2 fUV = vec2(atan(dot(vHairD, cross(uDown, uFront)), dot(vHairD, uFront)) / 6.2831853 + 0.5, length(vHairD));
+          float fx = fUV.x * 900.0 + 2.0 * sin(fUV.y * 1.3), cell = floor(fx), fw = fwidth(fx);
+          float len = (0.35 + 0.65 * hHash(mod(cell, 900.0) * 1.37 + 3.1)) * fm;
+          if (vFur.x > len) discard;
+          // a tapering strand (once strands are finer than a pixel, the layers' lengths alone thin it out)
+          float w = mix(0.95, 0.3, vFur.x / max(len, 1e-3));
+          w = mix(w, 1.0, smoothstep(0.5, 1.0, fw));
+          if (abs(fract(fx) - 0.5) > 0.5 * w) discard;
+          diffuseColor.rgb *= mix(0.35, 1.25, vFur.x) * (0.75 + 0.5 * hHash(mod(cell, 900.0) * 7.7));   // dark at the roots
+        }`);
+  };
+  m.customProgramCacheKey = () => 'scalp-fur';
+  return new THREE.SkinnedMesh(fg, m);
+}
+
 function strandHair(src, nose, bodyWorld) {
   const m = new THREE.MeshPhysicalMaterial({
     name: 'kept-hair', map: src.map, normalMap: src.normalMap || null, roughness: 0.72, metalness: 0,
@@ -634,6 +708,19 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
     sm.position.copy(body.position); sm.quaternion.copy(body.quaternion); sm.scale.copy(body.scale);
     sm.bind(body.skeleton, body.bindMatrix);
     made.push(sm);
+    if (keepHair && isSkin && mat.map) {
+      // the scalp only: the face's own dark texels (lids, lip line, nostrils) are not hair
+      const w = new THREE.Vector3();
+      const onScalp = (x, y, z) => { w.set(x, y, z).applyMatrix4(body.matrixWorld); return w.y > nose.y + 5 || w.z < nose.z - 7; };
+      const fur = furShells(geo, o.material, hairFrame(nose, body.matrixWorld), onScalp);
+      if (fur) {
+        fur.name = 'hero-scalp-fur'; fur.frustumCulled = false; fur.castShadow = false;
+        body.parent.add(fur);
+        fur.position.copy(body.position); fur.quaternion.copy(body.quaternion); fur.scale.copy(body.scale);
+        fur.bind(body.skeleton, body.bindMatrix);
+        made.push(fur);
+      }
+    }
     if (/teeth/i.test(o.name)) {
       // MakeHuman's head has no inside to the mouth: through the lips' corners (and an open mouth) you saw
       // straight out of the back of the head. A dark shell behind the teeth (only its far side is drawn) closes it.
