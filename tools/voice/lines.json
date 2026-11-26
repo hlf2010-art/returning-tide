@@ -4500,6 +4500,151 @@
   "en": "Sort your rubbish, mind: wet and dry in separate bins."
  },
  {
+  "who": "rider",
+  "zh": "喂，您好，外卖到了，您方便下来拿一下吗？",
+  "en": "Hello, your delivery's here. Could you come down for it?"
+ },
+ {
+  "who": "rider",
+  "zh": "您好，我是骑手，您的餐已经取到了，十分钟左右到。",
+  "en": "Hi, I'm your rider. I've got your food, about ten minutes."
+ },
+ {
+  "who": "rider",
+  "zh": "喂？对对对，汉口路这边，马上到，马上到。",
+  "en": "Hello? Yes, yes, on Hankou Road, nearly there, nearly there."
+ },
+ {
+  "who": "rider",
+  "zh": "门口保安不让进，我给您放外卖柜里可以吗？",
+  "en": "The guard won't let me in. Can I leave it in the delivery locker?"
+ },
+ {
+  "who": "rider",
+  "zh": "不好意思啊，店里出餐慢了，我尽快给您送过去。",
+  "en": "Sorry, the shop was slow with it. I'll get it to you as fast as I can."
+ },
+ {
+  "who": "rider",
+  "zh": "您好，您这个地址写的是几号楼啊？",
+  "en": "Hello, which building number is it on your address?"
+ },
+ {
+  "who": "rider",
+  "zh": "好的好的，放门口是吧？行，我拍个照给您。",
+  "en": "OK, OK, leave it at the door? Sure, I'll send you a photo."
+ },
+ {
+  "who": "rider",
+  "zh": "喂，老婆，我今天晚点回来，单子多。",
+  "en": "Hey love, I'll be late tonight. Lots of orders."
+ },
+ {
+  "who": "rider",
+  "zh": "妈，我在送单呢，晚上再给你打过去啊。",
+  "en": "Mum, I'm on a delivery. I'll call you back tonight."
+ },
+ {
+  "who": "rider",
+  "zh": "喂，站长，这单要超时了，能不能帮我报备一下？",
+  "en": "Hello, boss, this one's going to be late. Can you log it for me?"
+ },
+ {
+  "who": "rider",
+  "zh": "您好，您点的奶茶少冰是吧？好的，没问题。",
+  "en": "Hello, your milk tea was less ice, right? OK, no problem."
+ },
+ {
+  "who": "rider",
+  "zh": "我到楼下了，您电话一直占线，我在门口等您。",
+  "en": "I'm downstairs. Your line's been busy, I'll wait at the door."
+ },
+ {
+  "who": "riderapp",
+  "zh": "您有新的订单，请及时处理。",
+  "en": "You have a new order. Please deal with it promptly."
+ },
+ {
+  "who": "riderapp",
+  "zh": "您有一个订单即将超时，请尽快送达。",
+  "en": "An order is about to run late. Please deliver it as soon as you can."
+ },
+ {
+  "who": "riderapp",
+  "zh": "已到达取餐点，请尽快取餐。",
+  "en": "You've reached the pickup. Please collect the order."
+ },
+ {
+  "who": "rider",
+  "zh": "你好，取外卖，尾号三八二一。",
+  "en": "Hi, picking up a delivery, ending three-eight-two-one."
+ },
+ {
+  "who": "rider",
+  "zh": "你好，外卖，尾号零六五七，好了吗？",
+  "en": "Hi, delivery, ending zero-six-five-seven. Is it ready?"
+ },
+ {
+  "who": "rider",
+  "zh": "麻烦看一下，尾号九九一四，两杯拿铁。",
+  "en": "Could you check, ending nine-nine-one-four, two lattes."
+ },
+ {
+  "who": "rider",
+  "zh": "还要多久啊？我这单快超时了。",
+  "en": "How much longer? This order's about to run late."
+ },
+ {
+  "who": "rider",
+  "zh": "麻烦快一点啊，谢谢谢谢。",
+  "en": "A bit quicker if you can, thanks, thanks."
+ },
+ {
+  "who": "barista",
+  "zh": "您的外卖，拿好，慢走。",
+  "en": "Here's your order. Take care."
+ },
+ {
+  "who": "barista",
+  "zh": "久等了，这是您的，拿好。",
+  "en": "Sorry for the wait, here you are."
+ },
+ {
+  "who": "rider",
+  "zh": "好嘞，谢谢！",
+  "en": "Great, thanks!"
+ },
+ {
+  "who": "rider",
+  "zh": "谢谢啊！",
+  "en": "Thanks!"
+ },
+ {
+  "who": "rider",
+  "zh": "喂，您好，餐我拿到了，现在给您送过去。",
+  "en": "Hello, I've got your order, bringing it over now."
+ },
+ {
+  "who": "rider",
+  "zh": "喂？哎，取到了取到了，十五分钟。",
+  "en": "Hello? Yes, got it, got it. Fifteen minutes."
+ },
+ {
+  "who": "rider",
+  "zh": "借过借过！",
+  "en": "Coming through!"
+ },
+ {
+  "who": "rider",
+  "zh": "让一下，让一下！",
+  "en": "Mind out, mind out!"
+ },
+ {
+  "who": "rider",
+  "zh": "小心啊！",
+  "en": "Careful!"
+ },
+ {
   "who": "gunian",
   "zh": "昨天谢谢你替我坐下。汉口路那家 Linger，我每天一点在。今天也在。",
   "en": "Thank you for sitting down for me yesterday. I'm at the Linger on Hankou Road at one every day. Today as well."

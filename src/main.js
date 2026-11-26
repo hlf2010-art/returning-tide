@@ -377,8 +377,16 @@ async function boot() {
       // (the side streets' ends: only where you aren't looking, or far enough off)
       canVanish: (x, z) => { const dx = x - camera.position.x, dz = z - camera.position.z, d = Math.hypot(dx, dz); if (d > 75) return true; camera.getWorldDirection(_fw); return (dx * _fw.x + dz * _fw.z) / (d || 1) < 0.35; },
       blocked: (x, z) => Math.abs(player.body.x - x) < 4 && Math.abs(player.body.z - z) < 3.5,
+      // couriers' pickups: Nanjing Road's shop doors by the Henan Road corners; who's open (Linger on Hankou
+      // Road 7:30 to 20:00, the shops by the shops' own hours)
+      doors: nanjing.doors,
+      open: (h) => { const m = life ? life.clock.minute : 720; return h === 'cafe' ? m >= 450 && m < 1200 : m >= 600 && m < 1320; },
     });
-    ebikeView = createEbikeView({ scene, people, roles: ['c5', 'c1'].filter((r) => people.manifest.cast[r]) });
+    ebikeView = createEbikeView({ scene, people, roles: ['c5', 'c1'].filter((r) => people.manifest.cast[r]),
+      // couriers off their bikes as full people near you: how many at once, by the Crowds setting; the
+      // phone poses go with the lowest
+      footMax: () => ({ low: 1, medium: 2, high: 3 }[crowdLevel] ?? 2), poses: () => crowdLevel !== 'low',
+      talk: (e) => riderTalk(e) });
   }
   world = { peopleMirror: createPeopleReflection(), ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, snow, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }), aiaLife };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
@@ -501,6 +509,16 @@ async function boot() {
 }
 
 // ---- mode changes ----
+// a delivery rider says something near you (world/ebikeView.js, world/riderLines.js): heard where they are;
+// the words on screen when you're close, and only while you're out walking about
+function riderTalk(e) {
+  if (mode !== 'play') return;
+  const zh = getLang() === 'zh';
+  const who = e.speakerKind === 'app' ? (zh ? '骑手的手机' : "Rider's phone") : e.speakerKind === 'barista' ? (zh ? 'Linger 店员' : 'Linger barista') : (zh ? '外卖骑手' : 'Delivery rider');
+  if (e.lang !== 'wuu') voice.say({ zh: e.zh, en: e.en, who: e.who, at: e.at, gain: e.urgent ? 1 : 0.85, lang: 'zh', sex: e.who === 'barista' || e.who === 'riderapp' ? 'f' : 'm', phone: !!e.phone });
+  if (e.d < 9) hud.bark({ speaker: who, text: zh ? e.zh : e.en, gloss: e.gloss || null, lang: e.lang || 'zh', voice: false, seconds: Math.min(5, 2.2 + e.zh.length * 0.12) });
+}
+
 function lock() {
   if (noLock) return;
   try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch { /* handled by pointerlockerror */ }
@@ -1468,7 +1486,7 @@ function updateTraffic(dt) {
     const canSpawnAt = (n) => { const dx = n.x - eye.x, dz = n.z - eye.z, d = Math.hypot(dx, dz); return d > 45 || (d > 14 && (dx * _d.x + dz * _d.z) / d < -0.2); };
     const others = [...traffic.peds, ...npcLayout.list, ...world.dawn.others(), ...world.moments.others(), ...world.fieldTest.others()];
     others.push(...world.hearts.others());
-    others.push(...world.shoppers.others(), ...world.trams.others(), ...world.streetLife.others());
+    others.push(...world.shoppers.others(), ...world.trams.others(), ...world.streetLife.others(), ...(world.ebikeView ? world.ebikeView.others() : []));
     others.push(...world.confront.others());                                        // (the crowd walks round a row, too)
     cr.setCars(traffic.obstacles);                                                   // the Strale, parked or driven: walked round, not through
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others, focus: eye });
@@ -1497,7 +1515,7 @@ function updateTraffic(dt) {
   world.buses.update(dt);
   world.henan.update(dt, { player: world.driving && world.driving.driving ? null : b, eye: camera.position, rain: weather.rain });
   world.vehicles.update(traffic.vehicles, camera.position);
-  if (world.ebikes) { world.ebikes.setDensity(Math.max(0.15, Math.min(1, hourState.traffic ?? 1))); world.ebikes.update(mode === 'pause' ? 0 : dt); world.ebikeView.update(world.ebikes.riders, camera.position); }
+  if (world.ebikes) { world.ebikes.setDensity(Math.max(0.15, Math.min(1, hourState.traffic ?? 1))); world.ebikes.update(mode === 'pause' ? 0 : dt); world.ebikeView.update(world.ebikes.riders, camera.position, mode === 'pause' ? 0 : dt); }
   if (world.lamps) world.lamps.update(world.ebikes ? [...lampSources, { list: world.ebikes.riders, z: 0 }] : lampSources, camera.position, hourState.lamps);
   if (world.pulse) world.pulse.update(dt, camera.position, hourState);
   world.pedestrians.update(traffic.peds, dt, camera.position);
@@ -1650,6 +1668,7 @@ function frame(now) {
     const b = player.body, near = [b];
     if (world.crowd) for (const a of world.crowd.agents) if (!a.inside && !a.gone && !a.out && a.x < -34 && Math.abs(a.z + 201) < 14 && Math.abs(a.x - b.x) < 90) near.push(a);
     near.push(...world.shoppers.others());
+    if (world.ebikeView) near.push(...world.ebikeView.others());                   // (couriers going in for an order)
     world.nanjing.doorsUpdate(dt, near, b);
   }
   world.dest.update(mode === 'pause' ? 0 : dt, player.body);
