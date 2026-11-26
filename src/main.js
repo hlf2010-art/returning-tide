@@ -139,6 +139,8 @@ import { careerEvent } from './world/career.js';   // a row outside the Peace Ho
 import { createDinner } from './world/dinner.js';
 import { createJournal } from './ui/journal.js';
 import { createCrowdView } from './world/crowdView.js';
+import { createThrongView } from './world/throngView.js';
+import { throngPeople } from './engine/throng.js';
 import { lead as carLead, contact as carContact, choosePlate, payBalance, stepPurchase } from './engine/carPurchase.js';
 import { usePhotoSurfaces } from './world/photoTextures.js';
 import { createDidi, PICKUP } from './world/didi.js';
@@ -381,6 +383,10 @@ async function boot() {
     // the preset's population at its busiest (engine/gfx.js LOD people); ?crowd=<density> (tools) as before
     world.crowd = createCrowd({ net: keepShopsWithDoors(buildNet(), nanjing.doors), density, count: params.has('crowd') || params.has('q') ? null : det.people, roles });
     world.crowdView = createCrowdView({ scene, renderer: R.renderer, people, crowd: world.crowd, roles, nearCount: params.has('q') ? 5 : det.nearPeople, midCount: params.get('t1') === '0' ? 0 : det.mid || 0, camera, lod: params.get('midlod') !== '0' });
+    // Nanjing Road's throng beyond the simulated crowd (engine/throng.js, world/throngView.js): GPU-moved
+    // cards, one draw call; ?throng=0 turns it off, ?throng=<n> sets how many at the busiest
+    const nThrong = params.has('throng') ? Number(params.get('throng')) : params.has('q') ? 0 : det.throng || 0;
+    if (nThrong > 0) world.throng = createThrongView({ group: world.crowdView.group, atlas: world.crowdView.atlas, roles, count: nThrong });
     traffic.setExtraPeople(() => world.crowd.onCarriageway());
     henan.traffic.setExtraPeople(() => world.crowd.onHenan());
     crowdBoxes = Array.from({ length: (params.has('q') ? 5 : det.nearPeople) + 2 }, () => addDynamicCollider('npc'));
@@ -1107,6 +1113,7 @@ function liveSources() {
     for (const a of world.crowd.agents) if (!a.gone && !a.out && !a.inside) people.push({ x: a.x, y: a.y, z: a.z, near: near.has(a.id), state: a.state, act: a.act, kind: a.kind, v: a.v, phone: a.phone, kid: a.kid, leader: a.leader, partner: a.partner, window: a.atRail && a.x < L.facadeX });
   }
   if (traffic) for (const p of traffic.peds) people.push({ x: p.x, y: p.y ?? L.curbH, z: p.z, near: true, activity: p.errand ? 'getting a coffee' : p.crossing ? 'crossing the road' : p.phoneWalk ? 'walking on the phone' : 'walking' });
+  if (world.throng && world.throng.mesh.visible) for (const p of throngPeople(world.throng.data, world.throng.time, world.throng.active, camera.position.x, camera.position.z)) people.push({ x: p.x, y: 0.15, z: p.z, near: false, activity: p.activity });
   for (const n of LIN_SU) people.push({ ...n, near: true, activity: 'chatting' });
   for (const o of world.dawn.others()) people.push({ x: o.x, y: L.deckY, z: o.z, near: true, activity: 'tai chi' });
   if (traffic) for (const v of traffic.vehicles) if (v.active) vehicles.push({ x: v.x, z: v.z, model: v.model });
@@ -1433,6 +1440,7 @@ function updateTraffic(dt) {
     cr.setCars(traffic.obstacles);                                                   // the Strale, parked or driven: walked round, not through
     cr.update(dt, { player: b.y > 1.5 && b.x < L.wallX ? null : (world.driving && world.driving.driving ? null : b), canSpawnAt, others, focus: eye });
     world.crowdView.update(dt, eye, { rain: weather.rain });
+    if (world.throng) world.throng.update(dt, world.crowdShare ?? 1, weather.rain);
     // the murmur of the people round you (engine/audio.js): how many, how near (twice a second)
     crowdHear -= dt;
     // (everyone counts: the crowd, the crossing's walkers, Old Lin and Ms. Su, the tai chi group... engine/soundscape.js)
@@ -1504,7 +1512,8 @@ function applyHour(dt, { force = false } = {}) {
   R.bloom.strength = s.bloom;
   if (world) {
     // the hour's share of everyone; a weekday has about three quarters of a weekend's visitors
-    if (world.crowd) world.crowd.setActive(s.crowd * (life && !isWorkday(life) ? 1 : 0.75), { dawn: s.dawn, instant: jump || force });
+    world.crowdShare = s.crowd * (life && !isWorkday(life) ? 1 : 0.75);
+    if (world.crowd) world.crowd.setActive(world.crowdShare, { dawn: s.dawn, instant: jump || force });
     traffic.setDensity(s.traffic); world.henan.traffic.setDensity(s.traffic);
     if (prev != null && !jump && passedLateNight(prev, minute)) lateNight();
     // the floods coming on (~17:10): phones go up along the promenade

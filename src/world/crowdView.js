@@ -20,8 +20,8 @@ import { canopyGeometry } from './umbrella.js';
 // a reaction to being bumped (engine/social.js kinds, set by main.js on a crowd person) -> clip
 const GESTURE = { sorry: 'wave', fine: 'shrug', scold: 'angry', tut: 'look', look: 'look' };
 
-const COLS = 10, ROWS = 8, CW = 48, CH = 96, GRID = 4;     // per avatar: 8 walk steps + standing + phone, 8 sides
-const FRAME_W = 1.1, FRAME_H = 2.2;                        // the card in metres (people are ~1.6-1.9 m)
+export const COLS = 10, ROWS = 8, CW = 48, CH = 96, GRID = 4;     // per avatar: 8 walk steps + standing + phone, 8 sides
+export const FRAME_W = 1.1, FRAME_H = 2.2;                        // the card in metres (people are ~1.6-1.9 m)
 
 // ---- the impostor atlas: rendered once at load ----
 export function bakeImpostors(renderer, people, roles) {
@@ -142,6 +142,7 @@ const WHITE = new THREE.Color(1, 1, 1);
 
 // the hour's part in it (setCrowdLight, from engine/timeOfDay.js)
 const LT = { day: 0, floods: 1, lamps: 1, shops: 1, night: 0 };
+export const crowdDaylight = () => LT.day;
 export function setCrowdLight(s) { LT.day = s.daylight; LT.floods = s.floods; LT.lamps = s.lamps; LT.shops = s.shops; LT.night = s.night; }
 // the light a figure stands in (rgb multiplier on the neutrally lit atlas): at night the sky, the
 // floodlit façades, the lamps; by day the hazy daylight

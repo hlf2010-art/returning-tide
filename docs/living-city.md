@@ -71,7 +71,7 @@ Rerun on master after the night-city, e-bike, crowd and lobby work, with the sam
 
 | | Nanjing Rd 18:00 | Customs House 17:45 | Hankou Rd 18:15 | Bund 08:00 |
 |---|---|---|---|---|
-| People in view (near / mid / impostor) | **206** (3 / 21 / 181) | **142** (12 / 68 / 62) | **93** (8 / 68 / 17) | **239** (12 / 25 / 202) |
+| People in view (near / mid / impostor) | **206** (3 / 21 / 181); **1,857** with the throng (below) | **142** (12 / 68 / 62) | **93** (8 / 68 / 17) | **239** (12 / 25 / 202) |
 | Vehicles in view | 0 (pedestrian street) | 18 (taxi 5, car 8, NEV 2, bus 3) | 2–4 (taxi, NEV, bus; the signal cycle) | 20 (taxi 5, car 11, NEV 2, bus 1, boat 1) |
 | Distinct activities (within 120 m) | 3–4 (walking, together, on a tour, on the phone) | 5.6 (+ waiting to cross, a tour group, standing) | 5.4 | **9** (tai chi, jogging, photographing, selfies, looking at the view, a tour...) |
 | Audible kinds | **5** (chatter, music ×2, traffic, wind, Henan Rd's vehicles) | **6** (chatter, water, wind, traffic, boat, vehicles) | 6 | 6 |
@@ -87,6 +87,17 @@ What changed since the 24th:
 - Nanjing Road still has few distinct activities in view: nearly everyone is walking. Window-shopping, shop doors and the payment speakers happen nearer than the camera's crowd.
 
 ![Before and after, 24 and 26 November](hero-before-after.jpg)
+
+## Nanjing Road's throng (26 November 2026)
+
+The simulated crowd (`engine/crowd.js`) is a few thousand people for the whole map, and Nanjing Road's 1.5 km got a couple of hundred of them: 206 in the hero view at 18:00. The street is far busier than that, so it now has a **throng** beyond the simulated crowd (`engine/throng.js`, drawn by `world/throngView.js`, tested by `tests/throng.test.mjs`):
+
+- **What they are:** impostor cards from the far crowd's atlas, walking straight tracks along the street east or west at 0.85-1.35 m/s with a slight weave. More than a third walk in twos and threes, and about 7% stand at the shop windows or photograph the street. Everything they do is worked out in the vertex shader from the time and a few numbers each, so the throng costs **one draw call and no per-frame work on the main thread**.
+- **Where:** two stretches cut at Henan Road, so nobody walks through its traffic. Nobody walks in the trams' lanes west of Henan Road, in the metro wells, or inside a building. People fade out at the end of a stretch and come back in at the other end. Within about 15 m of the camera they fade away, because that is where the simulated crowd's full people are. They also fade out past 420-470 m.
+- **How many:** at the busiest, 4,000 / 12,000 / 15,000 / 20,000 people (low / medium / high / ultra, `engine/gfx.js` `throng`), scaled by the same share of the evening as the simulated crowd. A weekday at 18:00 is about 0.69 of that, or about 0.26 people per m² on the medium preset. Rain halves it. `?throng=0` turns it off and `?throng=<n>` sets the number.
+- **Result:** the hero view at 18:00 holds **1,857 people** (it held 206). Draw calls 1,110 and triangles 3.6 M, just over the 3.5 M bound, which the throng's own cards (24 k triangles) do not explain; the rest is the full crowd varying between runs.
+
+![Nanjing Road's hero view before and after the throng](hero-nanjing.jpg)
 
 ## First baseline (24 November 2026)
 
