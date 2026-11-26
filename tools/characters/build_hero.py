@@ -506,6 +506,8 @@ def skin_material():
     L.new(st3.outputs[0], stc.inputs["Factor"]); L.new(lip.outputs["Result"], stc.inputs["A"])
     scalpc = N.new("ShaderNodeMix"); scalpc.data_type = "RGBA"
     scalpc.inputs["B"].default_value = (0.018, 0.013, 0.010, 1)   # the hair's own near-black (roots, not a tan)
+    if SHEET["hair"].get("style") == "shell":   # (a generated cut in a lighter colour: its own roots, darker)
+        scalpc.inputs["B"].default_value = (*[c * 0.55 for c in SHEET["hair"]["color"]], 1)
     # the hairline as hair: fine noise stretched along the hair's fall breaks the soft edge into wisps and roots
     hn = N.new("ShaderNodeTexNoise"); hn.inputs["Scale"].default_value = 1.0; hn.inputs["Detail"].default_value = 4.0
     hmap = N.new("ShaderNodeMapping"); hmap.inputs["Scale"].default_value = (900.0, 900.0, 140.0)
@@ -959,9 +961,172 @@ def hair_cards():
     return make_mesh("hair", verts, faces, uvs, hair_material("hair", hs["color"], img))
 
 
+def hair_shell():
+    """A sculpted hair volume (sheet hair style "shell"): the scalp pushed out by the hair's thickness, then for
+    a bob a skirt that falls past the ears to the cut and tucks under, open over the face. Shaded as strands in
+    the game (people.js), its lower edge broken into tips there; better than flat cards for a short cut."""
+    hs = SHEET["hair"]
+    c0 = Vector((0.0, HEAD_J.y + 0.005, EYE_L.z + 0.035))
+    top = max(co[i].z for i in group_verts_orig["scalp"])
+    NL, rows = 144, 44
+    vol = hs.get("volume", 1.0)
+    part = hs.get("part_x", 0.012)
+    grid, keep = [], []
+    for r in range(rows + 1):
+        lat = math.radians(88 - (88 + 14) * r / rows)
+        row, krow = [], []
+        for k in range(NL):
+            lon = 2 * math.pi * k / NL
+            d = Vector((math.sin(lon) * math.cos(lat), -math.cos(lon) * math.cos(lat), math.sin(lat)))
+            hit = bvh_head.ray_cast(c0 + d * 0.35, -d)
+            p = hit[0] if hit[0] is not None else c0 + d * 0.09
+            row.append([p, d, lon, lat])
+            krow.append(hairline(p))
+        grid.append(row); keep.append(krow)
+    face_half = math.radians(hs.get("face_open_deg", 50))
+    fr_ = hs.get("fringe_sweep")   # a swept fringe over the forehead: from low on the parting's far side, rising to it
+    def in_fringe(p):
+        if not fr_ or p.y > c0.y or math.atan2(abs(p.x - c0.x), c0.y - p.y) > face_half:
+            return False
+        u = max(-1.0, min(1.0, (p.x - part) / 0.06 * (1 if fr_ > 0 else -1)))
+        return p.z > EYE_L.z + 0.010 + 0.048 * ((u + 1) / 2) ** 1.3
+    scalp = [[g[0].copy() for g in row] for row in grid]   # (the scalp points, before the hair's thickness)
+    # the radius round each row, smoothed round the head (the ears stick out of the skull)
+    for r in range(rows + 1):
+        rad = [(grid[r][k][0] - c0).length for k in range(NL)]
+        for _ in range(4):
+            rad = [max(rad[k], 0.5 * rad[k] + 0.25 * (rad[k - 1] + rad[(k + 1) % NL])) if False else
+                   (0.5 * rad[k] + 0.25 * (rad[k - 1] + rad[(k + 1) % NL])) for k in range(NL)]
+        for k in range(NL):
+            p, d, lon, lat = grid[r][k]
+            th_full = vol * (0.008 + 0.012 * max(0.0, math.sin(lat)))
+            th = th_full * min(1.0, keep[r][k] * 1.25) ** 1.5   # thinning to the hairline
+            if in_fringe(p):   # (but the fringe is one layer with the hair above it, with no crease at the hairline)
+                th = max(th, 0.75 * th_full)
+            if lat > 0.5 and d.y < 0:   # a soft groove along the parting
+                th *= 1 - 0.45 * math.exp(-((p.x - part) / 0.01) ** 2)
+            grid[r][k][0] = c0 + d * (max(rad[k], (p - c0).length) + th)
+    # below the head's widest ring the hair hangs down rather than following the skull inward, and the rows are
+    # evened out top to bottom (a ridge between two rows reads as a crease across the strands)
+    r0 = min(range(rows + 1), key=lambda r: abs(grid[r][0][3]))
+    for r in range(r0 + 1, rows + 1):
+        for k in range(NL):
+            q, w = grid[r][k][0], grid[r0][k][0]
+            hq, hw = Vector((q.x - c0.x, q.y - c0.y, 0)), Vector((w.x - c0.x, w.y - c0.y, 0))
+            if hq.length < hw.length and hq.length > 1e-6:
+                hq *= hw.length / hq.length
+                grid[r][k][0] = Vector((c0.x + hq.x, c0.y + hq.y, q.z))
+    for _ in range(3):
+        dist = [[(grid[r][k][0] - c0).length for k in range(NL)] for r in range(rows + 1)]
+        for r in range(1, rows):
+            for k in range(NL):
+                want = 0.5 * dist[r][k] + 0.25 * (dist[r - 1][k] + dist[r + 1][k])
+                grid[r][k][0] = c0 + (grid[r][k][0] - c0) * (want / max(1e-6, dist[r][k]))
+    for r in range(rows + 1):   # (and never into the head: the ears stick out through a smoothed shell)
+        for k in range(NL):
+            v = grid[r][k][0] - c0
+            v.length = max(v.length, (scalp[r][k] - c0).length + 0.005)
+            grid[r][k][0] = c0 + v
+    # the skirt: from the last ring straight down to the cut, a little belly, tucked under at the ends
+    length = hs["length_cm"] / 100.0
+    S = 10
+    ring = [grid[rows][k][0] for k in range(NL)]
+    skirt = []
+    for j in range(1, S + 1):
+        t = j / S
+        srow = []
+        for k in range(NL):
+            q = ring[k]; lon = grid[rows][k][2]
+            zb = top - length * (1.0 + 0.10 * math.cos(lon)) - 0.025 * max(0.0, -math.cos(lon))   # (over the nape at the back)
+            rel = Vector((q.x - c0.x, q.y - c0.y, 0.0))
+            sc = (1 + 0.08 * math.sin(math.pi * min(1.0, t * 1.1)) ** 2) * (1 - 0.07 * max(0.0, (t - 0.75) / 0.25) ** 2)   # (no kink where it leaves the ring)
+            pt = Vector((c0.x + rel.x * sc, c0.y + rel.y * sc, q.z + (zb - q.z) * t))
+            # (outside the head: an ear lobe poked through the skirt)
+            hd = Vector((pt.x - c0.x, pt.y - c0.y, 0.0))
+            if hd.length > 1e-6:
+                hd.normalize()
+                ax = Vector((c0.x, c0.y, pt.z))
+                hit = bvh_head.ray_cast(ax + hd * 0.35, -hd)
+                if hit[0] is not None:
+                    need = (hit[0] - ax).length + 0.006
+                    if (pt - ax).length < need:
+                        pt = ax + hd * need
+            srow.append(pt)
+        skirt.append(srow)
+    allrows = [[g[0] for g in row] for row in grid] + skirt
+    force = set()
+    def kept(r, k):
+        lon = grid[0][k][2]; fr = min(lon, 2 * math.pi - lon)   # angle from the front
+        if (r, k) in force:
+            return True
+        if r <= rows:
+            return keep[r][k] > 0.35 or in_fringe(allrows[r][k]) or (r > rows * 0.45 and fr > face_half)
+        return fr > face_half
+    # the edge round the face and the fringe's lower edge follow the hairline and the fringe's line, not the
+    # grid's steps: in each column the first row left out moves up to where the hair ends, and stays
+    for k in range(NL):
+        for r in range(1, rows + 1):
+            if kept(r, k):
+                continue
+            if not kept(r - 1, k):
+                break
+            a, b = scalp[r - 1][k], scalp[r][k]
+            lo, hi = 0.0, 1.0
+            for _ in range(12):
+                m = (lo + hi) / 2
+                q = a.lerp(b, m)
+                if hairline(q) > 0.35 or in_fringe(q):
+                    lo = m
+                else:
+                    hi = m
+            if lo > 0.05:
+                allrows[r][k] = allrows[r - 1][k].lerp(allrows[r][k], lo); force.add((r, k))
+            break
+    verts, faces, uvs = [], [], []
+    idx = {}
+    R = len(allrows)
+    for r in range(R):
+        for k in range(NL):
+            idx[(r, k)] = len(verts); verts.append(allrows[r][k]); uvs.append((k / NL, r / (R - 1)))
+    for r in range(R - 1):
+        for k in range(NL):
+            k2 = (k + 1) % NL
+            if all(kept(rr, kk) for rr, kk in ((r, k), (r, k2), (r + 1, k), (r + 1, k2))):
+                faces.append((idx[(r, k)], idx[(r, k2)], idx[(r + 1, k2)], idx[(r + 1, k)]))
+    # where the fringe's edge climbs steeply, two neighbouring columns end rows apart: the step between them is
+    # filled with a fan to the shorter column's end, so the edge is a slope, not a staircase
+    def run(k):
+        r = 0
+        while r + 1 <= rows and kept(r + 1, k):
+            r += 1
+        return r if kept(0, k) else -1
+    front = [min(grid[0][k][2], 2 * math.pi - grid[0][k][2]) < face_half for k in range(NL)]
+    ends = [run(k) for k in range(NL)]
+    for k in range(NL):
+        k2 = (k + 1) % NL
+        if not (front[k] and front[k2]) or min(ends[k], ends[k2]) < 0 or ends[k] >= rows or ends[k2] >= rows:
+            continue
+        lo, hi, kl, kh = (ends[k2], ends[k], k2, k) if ends[k] > ends[k2] else (ends[k], ends[k2], k, k2)
+        for r in range(lo, hi):
+            t = (idx[(r, kh)], idx[(r + 1, kh)], idx[(lo, kl)])
+            faces.append(t if kh == k else (t[1], t[0], t[2]))
+    # the crown's little hole at the pole, closed
+    pole = len(verts)
+    verts.append(sum((allrows[0][k] for k in range(NL)), Vector()) / NL + Vector((0, 0, 0.001))); uvs.append((0.0, 0.0))
+    for k in range(NL):
+        faces.append((pole, idx[(0, (k + 1) % NL)], idx[(0, k)]))
+    # u: 1 on the open edges (round the face, the hairline), 0 inside: the game breaks those edges into strands
+    use = [0] * len(verts)
+    for f in faces:
+        for v in f:
+            use[v] += 1
+    uvs = [(1.0 if 0 < use[i] < 4 and uvs[i][1] < 0.97 else 0.0, uvs[i][1]) for i in range(len(verts))]
+    return make_mesh("hair-shell", verts, faces, uvs, hair_material("hair-shell", hs["color"]))
+
+
 brow_ob = brows()
 lash_ob = lashes()
-hair_ob = hair_cards()
+hair_ob = hair_shell() if SHEET["hair"].get("style") == "shell" else hair_cards()
 parts = [hero, teeth, tongue, *eyes, brow_ob, lash_ob, hair_ob]
 
 

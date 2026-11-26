@@ -249,3 +249,12 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
 - **people.json per character:** `hairLum` (her brown hair's lit locks are lighter than Ji Bai's black: kept as hair, with the old painted skin inside those triangles cut away per pixel) and `conformNeck: false` (her open collar: the stretched neck folded into shards over a ragged old neck, so the new neck keeps its shape over the old neck left under its end, and its last centimetres take the old neck's colour).
 - **retintBodySkin** skips near-white warm cloth (her cream blouse and jacket had turned pink).
 - Still to improve: her kept hair's front edge is cut straight across the forehead (the Hunyuan shell), and the neck join is faintly visible up close.
+
+## Round 15 (26 November): Xu Zhiwei gets her own head and a bob
+
+![before and after](hero-faces/round15-zhiwei.jpg)
+
+- **Her own role** (`zhiwei` in people.json) on the Business_Female_04 body, which she used to share with street NPCs. Its old face and ponytail are gone: a Rocketbox body is split into nine primitives, and each one loses the triangles skinned to the head bones and every bone under them.
+- **A generated hair shell** for a cut the old body never had (sheet hair `style: "shell"`, `hair_shell()` in build_hero.py): the scalp pushed out by the hair's thickness, hanging straight below the head's widest ring, a skirt to the cut with a soft belly and tuck, kept clear of the ears, open over the face (`face_open_deg`). The swept fringe (`fringe_sweep`) runs from low over one brow up to the parting. Its edge follows that line instead of the grid's steps: the boundary vertices are moved onto it, and steep parts are filled with fans. In the game it gets the same strand shading as kept hair, darker roots, and its lower and open edges break into uneven tips (`hairShellMaterial`).
+- **Neck:** with `conformNeck: false` on a Rocketbox body, the new neck below the chin is dropped and her old neck meets the new jaw. The rest of the new neck takes the old neck's colour, measured on whichever primitive holds it. The whole body is retinted to her face's tone.
+- Still to improve: her lips read a little full and pouty, the neck join under the ear is visible from the side, the bob is sleek where her reference is layered and tousled, and there's a tiny light speck where the ear sits under the hair.

@@ -85,6 +85,16 @@
    "file": "c3.glb",
    "bytes": 3069260
   },
+  "zhiwei": {
+   "avatar": "Xu Zhiwei (close-up head from her character sheet on Business_Female_04)",
+   "sex": "f",
+   "named": true,
+   "file": "c4.glb",
+   "head": "zhiwei/head.glb",
+   "skinTone": [138, 96, 80],
+   "conformNeck": false,
+   "bytes": 2243732
+  },
   "c4": {
    "avatar": "Business_Female_04",
    "sex": "f",
