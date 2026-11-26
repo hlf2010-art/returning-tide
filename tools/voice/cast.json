@@ -428,5 +428,9 @@
  "roomservice": {
   "zh": "zm_029",
   "en": "am_adam"
+ },
+ "hotellift": {
+  "zh": "zm_025",
+  "en": "bm_george"
  }
 }

@@ -3980,19 +3980,94 @@
   "en": "Sir! Sir, you need to badge in. No entry without an appointment."
  },
  {
+  "who": "hotellift",
+  "zh": "早上好，纪先生。上楼吗？我帮您叫电梯。",
+  "en": "Good morning, Mr Ji. Going up? Let me call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "中午好，纪先生。上楼吗？我帮您叫电梯。",
+  "en": "Good afternoon, Mr Ji. Going up? Let me call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "下午好，纪先生。上楼吗？我帮您叫电梯。",
+  "en": "Good afternoon, Mr Ji. Going up? Let me call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "晚上好，纪先生。上楼吗？我帮您叫电梯。",
+  "en": "Good evening, Mr Ji. Going up? Let me call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "早上好，先生，我帮您叫电梯。",
+  "en": "Good morning, sir. Let me call the lift."
+ },
+ {
+  "who": "hotellift",
+  "zh": "中午好，先生，我帮您叫电梯。",
+  "en": "Good afternoon, sir. Let me call the lift."
+ },
+ {
+  "who": "hotellift",
+  "zh": "下午好，先生，我帮您叫电梯。",
+  "en": "Good afternoon, sir. Let me call the lift."
+ },
+ {
+  "who": "hotellift",
+  "zh": "晚上好，先生，我帮您叫电梯。",
+  "en": "Good evening, sir. Let me call the lift."
+ },
+ {
+  "who": "hotellift",
+  "zh": "您好，先生。请问您是住店客人吗？电梯需要刷房卡。",
+  "en": "Good day, sir. Are you staying with us? The lifts take a room card."
+ },
+ {
+  "who": "hotellift",
+  "zh": "纪先生，这么晚还出去？外面凉，您慢走。",
+  "en": "Going out this late, Mr Ji? It's cool out there. Take care."
+ },
+ {
+  "who": "hotellift",
+  "zh": "纪先生，您慢走。",
+  "en": "Have a good day, Mr Ji."
+ },
+ {
+  "who": "hotellift",
+  "zh": "您慢走。",
+  "en": "Have a good evening, sir."
+ },
+ {
+  "who": "hotellift",
+  "zh": "电梯到了，纪先生，您请。",
+  "en": "Here's the lift, Mr Ji. After you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "电梯到了，您请。",
+  "en": "Here it is, sir. After you."
+ },
+ {
   "who": "礼宾部",
   "zh": "目前没有您的快递哦。需要叫车的话我帮您约。",
   "en": "Nothing waiting for you at the moment. If you need a car, I can book one."
  },
  {
-  "who": "保安",
+  "who": "hotellift",
   "zh": "先生，电梯需要刷房卡，住客才能上去。",
   "en": "Sorry, sir, the lifts need a room card. Guests only."
  },
  {
-  "who": "保安",
+  "who": "hotellift",
   "zh": "纪先生，六楼南边在装修，您那间不受影响。",
   "en": "Mr Ji. The south end of six is being refitted, sir; your room's not affected."
+ },
+ {
+  "who": "hotellift",
+  "zh": "好的，纪先生，我来。",
+  "en": "Allow me, Mr Ji."
  },
  {
   "who": "前台",

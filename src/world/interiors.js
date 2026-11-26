@@ -1259,12 +1259,13 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   // ---------- the lift lobby: the attendant, the call, the lift coming down, its doors ----------
   const LIFT = { x: LIFT_X, btn: new THREE.Vector3(-50.85, Y0 + 1.21, P.z0 + 0.052), stand: { x: -50.25, z: P.z0 + 0.78, yaw: 0.45 } };
   const LIFT_HELLO = {
-    morning: ['早上好，纪先生。上楼吗？我帮您叫电梯。', 'Good morning, Mr Ji. Going up? Let me call the lift for you.'],
-    noon: ['中午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
-    afternoon: ['下午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
-    evening: ['晚上好，纪先生。上楼吗？我帮您叫电梯。', 'Good evening, Mr Ji. Going up? Let me call the lift for you.'],
+    morning: ['hotellift', '早上好，纪先生。上楼吗？我帮您叫电梯。', 'Good morning, Mr Ji. Going up? Let me call the lift for you.'],
+    noon: ['hotellift', '中午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
+    afternoon: ['hotellift', '下午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
+    evening: ['hotellift', '晚上好，纪先生。上楼吗？我帮您叫电梯。', 'Good evening, Mr Ji. Going up? Let me call the lift for you.'],
   };
-  const GUEST_HELLO = { morning: ['早上好，先生，我帮您叫电梯。', 'Good morning, sir. Let me call the lift.'], noon: ['中午好，先生，我帮您叫电梯。', 'Good afternoon, sir. Let me call the lift.'], afternoon: ['下午好，先生，我帮您叫电梯。', 'Good afternoon, sir. Let me call the lift.'], evening: ['晚上好，先生，我帮您叫电梯。', 'Good evening, sir. Let me call the lift.'] };
+  const GUEST_HELLO = { morning: ['hotellift', '早上好，先生，我帮您叫电梯。', 'Good morning, sir. Let me call the lift.'], noon: ['hotellift', '中午好，先生，我帮您叫电梯。', 'Good afternoon, sir. Let me call the lift.'], afternoon: ['hotellift', '下午好，先生，我帮您叫电梯。', 'Good afternoon, sir. Let me call the lift.'], evening: ['hotellift', '晚上好，先生，我帮您叫电梯。', 'Good evening, sir. Let me call the lift.'] };
+  // (voiced: tools/voice/extract.mjs reads liftSay's lines and the greetings above as 'hotellift')
   const liftSay = (zh, en, secs = 3) => { const a = ppl.liftMan; hud.bark({ speaker: { zh: '和平大使', en: 'Peace Ambassador' }, text: { zh, en }, seconds: secs, at: a ? [a.root.position.x, a.root.position.y + 1.6, a.root.position.z] : null, sex: 'm' }); };
   const _reach = new THREE.Vector3(), _pole = new THREE.Vector3(), _gest = new THREE.Vector3();
   const turnTo = (p, yaw, dt, rate = 5) => { const d = wrapA(yaw - p.root.rotation.y); p.root.rotation.y += d * Math.min(1, dt * rate); return Math.abs(d) < 0.06; };
@@ -1329,9 +1330,9 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
         if (q) {
           L1.greeted[q.id] = true; L1.bowT = 0;
           if (q.id === 'player') {
-            if (hasKey) { const [zh, en] = LIFT_HELLO[part()]; liftSay(zh, en, 3); L1.client = 'player'; L1.phase = 'greet'; L1.t = 1.5; }
+            if (hasKey) { const [, zh, en] = LIFT_HELLO[part()]; liftSay(zh, en, 3); L1.client = 'player'; L1.phase = 'greet'; L1.t = 1.5; }
             else { liftSay('您好，先生。请问您是住店客人吗？电梯需要刷房卡。', 'Good day, sir. Are you staying with us? The lifts take a room card.', 3.4); }
-          } else { const [zh, en] = GUEST_HELLO[part()]; if (nearPlayer(a, 10)) liftSay(zh, en, 2.4); L1.client = q.id; L1.phase = 'greet'; L1.t = 1.5; }
+          } else { const [, zh, en] = GUEST_HELLO[part()]; if (nearPlayer(a, 10)) liftSay(zh, en, 2.4); L1.client = q.id; L1.phase = 'greet'; L1.t = 1.5; }
         }
         // someone stepping out of the lift: a nod and a word
         if (L1.byeFor && L1.doors > 0.5) { const who = L1.byeFor; L1.byeFor = null; L1.bowT = 0;
@@ -1451,7 +1452,7 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
       return Object.entries(P2).filter(([k]) => ppl[k] && ppl[k].root.visible).map(([k, persona]) => { const r = ppl[k].root.position; return { key: k, persona, x: r.x, y: r.y + 1.62, z: r.z, hold() {} }; });
     },
     update(dt, pp) {
-      captureLobbies(renderer, scene, pp); updateLobbyGlass(dt, pp);
+      captureLobbies(renderer, scene, pp, false, dt); updateLobbyGlass(dt, pp);
       const nearPeace = pp.z < -200 && pp.z > -262, nearAia = pp.z < -125 && pp.z > -165;
       if (nearPeace) updatePeace(dt, pp);
       if (nearAia) updateAia(dt, pp);

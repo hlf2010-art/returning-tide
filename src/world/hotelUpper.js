@@ -21,7 +21,6 @@ import { isYear, dateOf } from '../engine/year.js';
 import { rng } from './canvas.js';
 import { passLine, hasFlat } from './career.js';
 import { ROOM, room612Colliders, buildRoom612 } from './room612.js';
-import { TOD } from './dayNight.js';
 
 export const SIX = {
   y: 23.5, h: 3.3,
@@ -103,7 +102,7 @@ function skyIcon(x, cx, cy, r, icon) {
   if (icon !== 'sun') { x.fillStyle = '#c9d1d8'; for (const [dx, dy, rr] of [[-0.3, 0.15, 0.4], [0.1, 0.0, 0.5], [0.45, 0.2, 0.35]]) { x.beginPath(); x.arc(cx + dx * r, cy + dy * r, rr * r, 0, 6.283); x.fill(); } x.fillRect(cx - 0.6 * r, cy + 0.15 * r, 1.2 * r, 0.35 * r); }
 }
 
-export function createHotelUpper({ scene, hud, audio, getLife, save, player, travel, renderer, getWorld = () => null }) {
+export function createHotelUpper({ scene, hud, audio, getLife, save, player, travel, getWorld = () => null }) {
   const group = new THREE.Group(); group.name = 'peace-6f'; scene.add(group);
   const lights = [];
   const walnut = new THREE.MeshStandardMaterial({ color: 0x3b2416, roughness: 0.38, metalness: 0.05, emissive: 0x080402 });
@@ -413,13 +412,6 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
       group.visible = pp.y > F - 6;                                          // only drawn when you're up here
       if (!group.visible) return;
       updateRoom(dt, pp);
-      // the room's glass and mirrors: their probes, taken half a second after you're first inside (world/glass.js)
-      if (renderer) for (const pr of room.probes) {
-        const b = pr.box, inside = pp.x > b.min[0] && pp.x < b.max[0] && pp.z > b.min[2] && pp.z < b.max[2] && pp.y > b.min[1] && pp.y < b.max[1];
-        if (!inside) { pr.wait = 0.5; continue; }
-        if (pr.p.taken && pr.p.day === Math.round(TOD.day.value)) continue;
-        if ((pr.wait -= dt) <= 0) pr.p.take(renderer, scene);
-      }
       // 612's door: swings in, closes itself once you're through
       S.doorT = Math.max(0, S.doorT - dt);
       const inDoorway = Math.abs(pp.x - (R.x0 - 0.15)) < 0.7 && pp.z > R.door[0] - 0.4 && pp.z < R.door[1] + 0.4;

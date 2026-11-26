@@ -18,7 +18,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { makeCanvas, tex, rng, tileNoise, normalFromHeight } from './canvas.js';
 import { plasterTextures } from './surfaceDetail.js';
-import { sidedGlass, createRoomProbe } from './glass.js';
+import { lobbyRoom, lobbyGlass } from './lobbyGlass.js';
 
 // the plan (x: west to east, the Bund to the east; z: north to south)
 export const ROOM = {
@@ -324,9 +324,10 @@ export function buildRoom612({ group, F, H, lights }) {
 
   // ---- the windows: deep reveals, steel casements in bronze with a transom, the glass (world/glass.js), a black
   // marble sill; heavy blue-grey drapes tied back with bands and tassels, sheers, a pelmet ----
-  const roomBox = { min: [R.x0, F - 0.5, R.z0], max: [R.x1, F + H + 0.5, R.z1] };
-  const winGlass = sidedGlass({ name: 'room612-glass', box: roomBox, room: { floor: [0.24, 0.18, 0.11], ceil: [0.42, 0.33, 0.22] } });
-  const roomMirror = sidedGlass({ name: 'room612-mirror', box: roomBox, room: { floor: [0.24, 0.18, 0.11], ceil: [0.42, 0.33, 0.22] }, mirror: true, tint: [0.93, 0.92, 0.88] });
+  // the glass and mirrors (world/lobbyGlass.js): the room, captured from the middle of the bedroom, is what the windows
+  // give back from inside and what the mirrors hold
+  const room = lobbyRoom('room612', { x0: R.x0, x1: R.x1, z0: R.z0, z1: R.z1, y0: F, y1: F + H, probe: [-37.6, F + 1.55, -229.0] });
+  const winGlass = lobbyGlass(room), roomMirror = lobbyGlass(room, { mirror: true, tint: 0xd8d4ca });
   const drapes = [];   // { m, s, closedW, band, tassel }: drawn back or across (setCurtains)
   const drape = new THREE.MeshPhysicalMaterial({ color: 0x55636e, roughness: 0.9, sheen: 0.7, sheenColor: new THREE.Color(0x98a6b2), side: THREE.DoubleSide });
   for (const [a, b] of R.win) {
@@ -494,10 +495,8 @@ export function buildRoom612({ group, F, H, lights }) {
   // ---- the bathroom: white marble walls, black marble floor; the double vanity with its mirror, the free-standing
   // tub on four legs in the middle with its filler, the glass rain shower, the WC in its own room, the television in
   // the marble, robes and towels; its door stands open ----
-  const bathBox = { min: [B.x0, F - 0.5, B.z0], max: [B.x1, F + H + 0.5, B.z1] };
-  const bathRoom = { floor: [0.3, 0.29, 0.28], ceil: [0.6, 0.58, 0.55] };
-  const mirrorMat = sidedGlass({ name: 'bath-mirror', box: bathBox, room: bathRoom, mirror: true, tint: [0.95, 0.96, 0.97] });
-  const showerGlass = sidedGlass({ name: 'shower-glass', box: bathBox, room: bathRoom, between: true, f0: 0.09 });
+  const bath = lobbyRoom('room612-bath', { x0: B.x0, x1: B.x1, z0: B.z0, z1: B.z1, y0: F, y1: F + H, probe: [R.tub.x, F + 1.6, R.tub.z - 0.6] });
+  const mirrorMat = lobbyGlass(bath, { mirror: true, tint: 0xe2e4e6 }), showerGlass = lobbyGlass(bath, { interior: true });
   {
     for (const [ax, az, bx2, bz2] of [[B.x0, B.z0, B.x1, B.z0], [B.x1, B.z0, B.x1, B.z1], [B.x0, B.z1, B.x0, B.z0]]) wall(ax, az, bx2, bz2, 0, H, M.marbleW, bcx, bcz);
     // its south wall (the door) from inside
@@ -563,12 +562,6 @@ export function buildRoom612({ group, F, H, lights }) {
     for (const dz of [-0.08, 0.08]) rbox(0.1, 0.03, 0.27, 0.02, M.linen, B.x1 - 0.3, F, B.z1 - 0.62 + dz);
   }
 
-  // the glass and its probes: the room from the middle of the bedroom (for the windows), the bathroom from over the
-  // tub (for the mirror and the shower's glass)
-  const probes = [
-    { box: roomBox, p: createRoomProbe([winGlass, roomMirror], [-37.6, F + 1.55, -229.0]), wait: 0.5 },
-    { box: roomBox, p: createRoomProbe([mirrorMat, showerGlass], [R.tub.x, F + 1.6, R.tub.z - 0.6]), wait: 0.8 },   // (taken from anywhere in the room: the mirror shows through the door)
-  ];
 
   // ---- the turndown (the evening service): the duvet's corner turned back, a bottle of water and a glass by the bed,
   // a bath mat for the slippers, tomorrow's weather on a card on the pillow, the hotel's booklet of its history ----
@@ -645,7 +638,7 @@ export function buildRoom612({ group, F, H, lights }) {
     tray: [R.x1 - 0.32, F + 0.85, R.desk.z + 0.1],
   };
   return {
-    probes, roomBox, bathBox, spots, update,
+    spots, update,
     get lamps() { return RS.lamps; }, setLamps,
     get curtainsDrawn() { return RS.curtainWant > 0.5; }, setCurtains(closed, now = false) { RS.curtainWant = closed ? 1 : 0; if (now) RS.curtain = RS.curtainWant; },
     get tvOn() { return RS.tvWant > 0.5; }, setTv(on) { RS.tvWant = on ? 1 : 0; },
