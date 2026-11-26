@@ -13,7 +13,7 @@ import { DRIVER_EN } from '../../src/world/driversEn.js';
 import { BARKS } from '../../src/world/barks.js';
 import { CALLS } from '../../src/world/agenda.js';
 import { enText } from '../../src/world/agendaEn.js';
-import { AIA_TALK } from '../../src/world/aiaTalk.js';
+import { AIA_TALK, AIA_EVENTS } from '../../src/world/aiaTalk.js';
 
 const out = new Map();   // zh text -> { who, zh, en }
 const cjk = /[一-鿿]/;
@@ -34,7 +34,7 @@ for (const [kind, set] of Object.entries(BARKS)) for (const list of Object.value
 }
 for (const c of Object.values(CALLS)) for (const l of c.lines) if (l.text && l.who !== 'me') add(l.who, l.text, l.en);
 // the AIA lobby's agents and clients (Shanghainese is subtitles only)
-for (const exs of Object.values(AIA_TALK)) for (const ex of exs) for (const [who, zh, en, lang] of ex) if (lang !== 'wuu') add(`aia:${who}`, zh, en);
+for (const exs of [...Object.values(AIA_TALK), ...Object.values(AIA_EVENTS)]) for (const ex of exs) for (const [who, zh, en, lang] of ex) if (lang !== 'wuu') add(`aia:${who}`, zh, en);
 
 // ---- inline lines in the source ----
 const FILE_SPEAKER = { 'carSale.js': 'vivian' }, LINE_FNS = new Set(['T', 'B']);
@@ -75,7 +75,7 @@ for (const f of files('src')) {
   });
 }
 // Shanghainese lines (the AIA lobby's) are subtitles only, however the source parse found them
-for (const exs of Object.values(AIA_TALK)) for (const ex of exs) for (const [, zh, , lang] of ex) if (lang === 'wuu') out.delete(zh.trim());
+for (const exs of [...Object.values(AIA_TALK), ...Object.values(AIA_EVENTS)]) for (const ex of exs) for (const [, zh, , lang] of ex) if (lang === 'wuu') out.delete(zh.trim());
 const list = [...out.values()].map((l) => ({ ...l, en: l.en || (enText(l.zh) !== l.zh ? enText(l.zh) : '') }));
 process.stdout.write(JSON.stringify(list, null, 1));
 const by = {}; for (const l of list) by[l.who] = (by[l.who] || 0) + 1;

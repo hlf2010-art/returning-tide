@@ -715,6 +715,276 @@
   "en": "Great, I'll video-call you at three."
  },
  {
+  "who": "aia:angry",
+  "zh": "你们理赔部的人呢？叫他出来！我交了五年保费，现在说我没如实告知，一分钱不赔！",
+  "en": "Where are your claims people? Get them out here! Five years of premiums, and now you say I didn't disclose something and won't pay a cent!"
+ },
+ {
+  "who": "aia:desk",
+  "zh": "先生您先别激动，我帮您联系客服经理。",
+  "en": "Sir, please calm down. I'll call the customer service manager for you."
+ },
+ {
+  "who": "aia:angry",
+  "zh": "别跟我打官腔！当初卖给我的时候怎么说的？什么都能赔！",
+  "en": "Don't give me the official line! What did they say when they sold it to me? That it covered everything!"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "先生，有话好好说，这里是办公区域，声音小一点。",
+  "en": "Sir, let's talk this through calmly. This is an office; keep your voice down, please."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "王总不好意思，稍等我一下。",
+  "en": "Excuse me a moment, Ms Wang."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "先生您好，我是这里的经理。您的情况我们到里面会议室详细说，好吗？",
+  "en": "Hello, sir, I'm a manager here. Let's go through your case properly in a meeting room inside, shall we?"
+ },
+ {
+  "who": "aia:angry",
+  "zh": "今天不给我个说法，我就不走了。",
+  "en": "I'm not leaving until I get an answer today."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "一定给您说法。保单号带了吗？我们一项一项对。",
+  "en": "You'll get one. Have you brought your policy number? We'll go through it point by point."
+ },
+ {
+  "who": "aia:angry",
+  "zh": "我要退保！退出来只有一半的钱，这算什么道理？当初说随时能取的！",
+  "en": "I want to cancel! I only get half my money back. How is that fair? They said I could take it out any time!"
+ },
+ {
+  "who": "aia:desk",
+  "zh": "先生您先坐一下，我请经理马上过来。",
+  "en": "Sir, please take a seat. I'll ask a manager to come straight away."
+ },
+ {
+  "who": "aia:angry",
+  "zh": "坐什么坐！我妈七十多岁了，你们的人跟她说这是存款！",
+  "en": "Sit? My mother is over seventy, and your people told her it was a savings deposit!"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "先生，冷静一点，有问题我们会帮您处理的。",
+  "en": "Sir, calm down, please. We'll deal with it for you."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "王总抱歉，我先处理一下，马上回来。",
+  "en": "Sorry, Ms Wang. Let me deal with this; I'll be right back."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "先生，我是这里的经理。现金价值和退保损失，我们到里面一笔一笔给您算清楚。",
+  "en": "Sir, I'm a manager here. Let's go inside and work out the cash value and the surrender loss figure by figure."
+ },
+ {
+  "who": "aia:angry",
+  "zh": "算清楚有什么用，钱又不会多出来！",
+  "en": "What good is working it out? It won't make the money any more!"
+ },
+ {
+  "who": "aia:lin",
+  "zh": "如果当初销售有误导，我们按流程调查，查实了一定给您处理。您跟我来。",
+  "en": "If you were misled when it was sold, we'll investigate by the book, and if it's confirmed we'll put it right. Come with me."
+ },
+ {
+  "who": "aia:wife",
+  "zh": "周姐，我们回去商量过了，就按上周那份计划书来。",
+  "en": "Zhou jie, we talked it over at home. We'll go with last week's proposal."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "好的！那请李太太在平板上签个名，电子保单马上发到您手机上。",
+  "en": "Wonderful! Then Mrs Li, if you'll sign on the tablet, the e-policy goes straight to your phone."
+ },
+ {
+  "who": "aia:wife",
+  "zh": "签好了。这下心里踏实了。",
+  "en": "Signed. That's a weight off my mind."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "恭喜恭喜！以后有任何理赔的事，第一时间打我电话。",
+  "en": "Congratulations! Any claim, ever, call me first."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "周姐，辛苦你跑了好几趟。",
+  "en": "Thanks for all the trips you made, Zhou jie."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "周姐，又签了一单？今年的MDRT稳了吧！",
+  "en": "Another one signed, Zhou jie? MDRT is in the bag this year!"
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "嘘，小点声！晚上请你喝奶茶。",
+  "en": "Shh, not so loud! Milk tea's on me tonight."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "周姐，我朋友说在别家买，代理人会返几个点的佣金，你们这边返多少？",
+  "en": "Zhou jie, a friend says if you buy elsewhere the agent gives back a few percent of the commission. How much do you give back?"
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "哎，李先生，我们出去透透气，我跟您说。",
+  "en": "Ah, Mr Li, let's step outside for some air and I'll explain."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "这个千万不能说，返佣是违规的，被查到我的执业证都要被吊销的。",
+  "en": "Never say that in here. Rebates are against the rules; if they find out, I lose my licence."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "啊？这么严重？我还以为大家都这样。",
+  "en": "What? That serious? I thought everyone did it."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "我们能给您的，就是把方案做到最合适，服务做到最好。别的真不行。",
+  "en": "What I can give you is the best-fitting plan and the best service. Nothing else, honestly."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "懂了懂了，那就当我没问。",
+  "en": "Got it, got it. Forget I asked."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "叔叔阿姨，现在开始双录，就是录音录像。我念一段，您回答就好。请问您是否已阅读并理解保险条款，以及犹豫期的相关规定？",
+  "en": "Uncle, Auntie, we're starting the recorded sale now, audio and video. I read, you answer. Have you read and understood the policy terms and the rules of the cooling-off period?"
+ },
+ {
+  "who": "aia:shen",
+  "zh": "叔叔，要用普通话完整地回答一遍：我已阅读并理解。",
+  "en": "Uncle, you need to answer in full, in Mandarin: I have read and understood."
+ },
+ {
+  "who": "aia:uncle",
+  "zh": "我……已阅读并理解。",
+  "en": "I... have read and understood."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "没关系，很标准！我们再确认一下投保人签名，就好了。",
+  "en": "That's fine, very proper! We just confirm the policyholder's signature and we're done."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "哇，这个穹顶也太好看了吧，全是金的！",
+  "en": "Wow, look at this dome, it's all gold!"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "不好意思，这里是办公区域，不能拍照哦。",
+  "en": "Sorry, this is an office; no photos, please."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "就拍一张，我发个动态。",
+  "en": "Just one, for my feed."
+ },
+ {
+  "who": "aia:guard",
+  "zh": "真的不行。门口外面可以拍，外立面更好看。",
+  "en": "Really, no. You can take pictures outside the door; the façade is even better."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "好吧好吧，谢谢啊。",
+  "en": "All right, all right. Thanks."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "请问这里以前是字林西报大楼吗？我在书上看到过。",
+  "en": "Excuse me, was this the North China Daily News building? I read about it in a book."
+ },
+ {
+  "who": "aia:guard",
+  "zh": "是的，现在是友邦的办公楼，里面不对外开放。",
+  "en": "Yes. It's AIA's offices now; the inside isn't open to the public."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "那我在门口拍一张可以吗？",
+  "en": "Can I take a picture at the door then?"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "门口可以，里面就不要拍了，谢谢配合。",
+  "en": "At the door is fine, just not inside. Thanks for understanding."
+ },
+ {
+  "who": "aia:tourist",
+  "zh": "好的好的，不打扰了。",
+  "en": "Of course. Sorry to bother you."
+ },
+ {
+  "who": "aia:rider",
+  "zh": "你好，外卖，三楼的，麻烦让我上去一下，要超时了！",
+  "en": "Hi, delivery for the third floor. Let me up, please, I'm about to be late!"
+ },
+ {
+  "who": "aia:guard",
+  "zh": "外卖不能上楼，放门口的取餐柜，我帮你通知他们下来拿。",
+  "en": "Deliveries can't go up. Put it in the pickup locker by the door; I'll tell them to come down for it."
+ },
+ {
+  "who": "aia:rider",
+  "zh": "好嘞好嘞，谢谢大哥！",
+  "en": "Right, right. Thanks, mate!"
+ },
+ {
+  "who": "aia:rider",
+  "zh": "大哥，五楼点的奶茶，二十杯，我一个人拎不上去啊。",
+  "en": "Mate, twenty milk teas for the fifth floor. I can't carry them up on my own."
+ },
+ {
+  "who": "aia:guard",
+  "zh": "放这儿吧，我打个电话让他们派人下来拿。",
+  "en": "Leave them here. I'll phone up and have someone come down."
+ },
+ {
+  "who": "aia:rider",
+  "zh": "那太感谢了，记得给个好评啊！",
+  "en": "Thanks a lot. Tell them to leave a good review!"
+ },
+ {
+  "who": "aia:chen",
+  "zh": "帅哥，等人啊？我是友邦的代理人，看你挺精神的，有没有兴趣了解一下这个职业？",
+  "en": "Waiting for someone? I'm an agent here at AIA. You look sharp; ever thought about this line of work?"
+ },
+ {
+  "who": "aia:recruit",
+  "zh": "保险啊？我刚毕业，在找工作呢。",
+  "en": "Insurance? I've just graduated, I'm looking for a job."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "那正好，我们有新人培训，时间自由，收入跟着能力走。周六有个职业说明会，你来听听？",
+  "en": "Perfect timing. There's training for newcomers, your hours are your own, and you earn what you're worth. There's a careers session on Saturday; come and listen?"
+ },
+ {
+  "who": "aia:recruit",
+  "zh": "我考虑考虑吧。",
+  "en": "I'll think about it."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "行，加个联系方式，资料我发给你。",
+  "en": "Sure. Let's swap contacts; I'll send you the details."
+ },
+ {
   "who": "carPurchase.js",
   "zh": "你好，我是知夏的朋友纪白，想了解一下 Strale。",
   "en": "me"

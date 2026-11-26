@@ -34,6 +34,7 @@ import { dressHotelSecurity } from './outfits.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
+import { contactShadow } from './contactShadow.js';
 import { woodTextures, plasterTextures, brushedTextures, liftDoorTexture, staffDoorTexture, steelDoorTexture } from './surfaceDetail.js';
 
 export const PEACE = { x0: -60, x1: -35.4, z0: -244, z1: -212.6, h: 5.6, door: [-50, -46], oct: { x: -48, z: -229, r: 6.2, top: 10.5 } };
@@ -304,6 +305,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   function armchair(x, z, ry) {
     const g = new THREE.Group(); g.position.set(x, Y0, z); g.rotation.y = ry; group.add(g);
     const part = (w, h, d, px, py, pz) => { const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.35), chairMat); m.position.set(px, py + h / 2, pz); g.add(m); };
+    contactShadow(group, x, Y0, z, 0.95, 0.95, 0.45, ry);
     part(0.62, 0.42, 0.62, 0, 0, 0.04); part(0.62, 0.42, 0.18, 0, 0.36, -0.26); part(0.14, 0.26, 0.6, -0.3, 0.38, 0.02); part(0.14, 0.26, 0.6, 0.3, 0.38, 0.02);
   }
 
@@ -410,6 +412,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8, x = P.oct.x + Math.cos(a) * P.oct.r, z = P.oct.z + Math.sin(a) * P.oct.r;
     const shaft = add(new THREE.CylinderGeometry(0.4, 0.4, P.h - 1.45, 8), marbleCream, x, Y0 + 0.55 + (P.h - 1.45) / 2, z); shaft.rotation.y = Math.PI / 8;
     const pl0 = add(new THREE.CylinderGeometry(0.52, 0.56, 0.5, 8), marquina, x, Y0 + 0.25, z); pl0.rotation.y = Math.PI / 8;
+    contactShadow(group, x, Y0, z, 1.7, 1.7, 0.45);
     const pl1 = add(new THREE.CylinderGeometry(0.46, 0.5, 0.06, 8), brass, x, Y0 + 0.53, z); pl1.rotation.y = Math.PI / 8;
     [[0.44, 0.08, P.h - 0.9, brass], [0.47, 0.22, P.h - 0.75, frosted], [0.5, 0.08, P.h - 0.5, brass], [0.56, 0.12, P.h - 0.4, bronzeDark], [0.64, 0.14, P.h - 0.26, brass]]
       .forEach(([r, h, y, m]) => { const c = add(new THREE.CylinderGeometry(r, r, h, 8), m, x, Y0 + y + h / 2, z); c.rotation.y = Math.PI / 8; });
@@ -418,6 +421,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   // the hotel by the glass artist Shi Senbin (施森彬) for its ninetieth year
   {
     const plinth = add(new THREE.CylinderGeometry(0.5, 0.55, 0.95, 8), marquina, P.oct.x, Y0 + 0.475, P.oct.z); plinth.rotation.y = Math.PI / 8;
+    contactShadow(group, P.oct.x, Y0, P.oct.z, 1.7, 1.7, 0.45);
     const lip = add(new THREE.CylinderGeometry(0.56, 0.56, 0.05, 8), brass, P.oct.x, Y0 + 0.97, P.oct.z); lip.rotation.y = Math.PI / 8;
     const block = add(new THREE.BoxGeometry(0.34, 0.1, 0.34), new THREE.MeshStandardMaterial({ color: 0xdfeaf0, roughness: 0.05, transparent: true, opacity: 0.55, envMapIntensity: 2 }), P.oct.x, Y0 + 1.05, P.oct.z); block.rotation.y = 0.4;   // a clear glass base
     const dove = new THREE.Group(); dove.position.set(P.oct.x, Y0 + 1.3, P.oct.z); dove.rotation.y = 0.4; dove.scale.setScalar(1.7); group.add(dove);   // (facing the door, a little turned)
@@ -500,6 +504,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   for (const x of [P.x0, P.x1]) box(0.3, 0.22, P.z1 - P.z0, walnut, x + (x < -50 ? 0.15 : -0.15), Y0 + P.h - 0.26, pcz);
   box(0.06, 0.05, P.z1 - P.z0, brass, P.x0 + 0.33, Y0 + P.h - 0.3, pcz); box(0.06, 0.05, P.z1 - P.z0, brass, P.x1 - 0.33, Y0 + P.h - 0.3, pcz);
   // the front desk and concierge: walnut, marble tops, brass rails, a backlit panel with the name
+  contactShadow(group, P.x0 + 2.4, Y0, -228.9, 3.0, 9.0, 0.45); contactShadow(group, P.x0 + 2.2, Y0, -237.5, 2.6, 4.8, 0.45);
   rbox(2.2, 1.1, 8.2, 0.04, walnut, P.x0 + 2.4, Y0, -228.9); box(2.3, 0.06, 8.4, marbleDark, P.x0 + 2.4, Y0 + 1.1, -228.9);
   box(0.05, 0.05, 8.2, brass, P.x0 + 3.53, Y0 + 0.95, -228.9);
   add(new THREE.PlaneGeometry(6, 1.1), new THREE.MeshBasicMaterial({ map: signTex([['费尔蒙和平饭店', 58], ['FAIRMONT PEACE HOTEL · 1929', 24]], { w: 768, h: 160 }), color: new THREE.Color(1.3, 1.3, 1.3) }), P.x0 + 0.06, Y0 + 3.4, -228.9, Math.PI / 2);
@@ -524,6 +529,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const sh = new THREE.Shape(); sh.moveTo(-0.75, 0); sh.lineTo(0.75, 0); sh.lineTo(0.75, 1.2); sh.bezierCurveTo(0.75, 1.9, 0.2, 2.2, -0.1, 2.1); sh.bezierCurveTo(-0.5, 1.95, -0.75, 1.6, -0.75, 1.2); sh.closePath();
     const caseGeo = new THREE.ExtrudeGeometry(sh, { depth: 0.32, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 2 }); caseGeo.rotateX(Math.PI / 2);
     add(caseGeo, lacquer, -40.4, Y0 + 1.0, -242.6);
+    contactShadow(group, -40.4, Y0, -241.6, 2.0, 2.8, 0.4);
     const lid = add(new THREE.ShapeGeometry(sh), lacquer, -40.4, Y0 + 1.02, -242.6); lid.rotation.set(-Math.PI / 2 + 0.55, 0, 0); lid.material = lacquer;
     for (const [lx, lz] of [[-0.6, 0.2], [0.6, 0.2], [0, 1.9]]) add(new THREE.CylinderGeometry(0.05, 0.04, 0.68, 8), lacquer, -40.4 + lx, Y0 + 0.34, -242.6 + lz);
     box(1.4, 0.06, 0.22, new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.4 }), -40.4, Y0 + 0.72, -242.55);   // the keys
@@ -630,6 +636,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       add(new THREE.CylinderGeometry(0.27, 0.31, A.h - 1.4, 20), whiteMarble, cx, Y0 + 0.3 + (A.h - 1.4) / 2, z);
       for (let f = 0; f < 20; f++) { const a = (f / 20) * Math.PI * 2; const fl = add(new THREE.BoxGeometry(0.012, A.h - 1.5, 0.03), new THREE.MeshStandardMaterial({ color: 0xcfcac0, roughness: 0.5 }), cx + Math.cos(a) * 0.285, Y0 + 0.35 + (A.h - 1.5) / 2, z + Math.sin(a) * 0.285); fl.rotation.y = -a; }   // the flutes' shadow lines
       box(0.78, 0.3, 0.78, blackMarble, cx, Y0, z);                                                          // the plinth
+      contactShadow(group, cx, Y0, z, 1.5, 1.5, 0.4);
       add(new THREE.CylinderGeometry(0.4, 0.29, 0.22, 20), whiteMarble, cx, Y0 + A.h - 1.1 + 0.11, z);       // the echinus
       box(0.86, 0.16, 0.86, whiteMarble, cx, Y0 + A.h - 0.88, z);                                            // the abacus
     }
@@ -668,6 +675,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     lights.push({ x: A.x1 - 1.5, y: Y0 + 4.2, z: zc, intensity: 10, distance: 10, color: new THREE.Color(1.0, 0.86, 0.66) });   // the lobby's light, falling out of the door
   }
   // reception: a long granite desk on the south side; a tenant directory; a visitor QR stand
+  contactShadow(group, -38.5, Y0, -139.95, 5.0, 2.2, 0.45);
   rbox(4.2, 1.1, 1.4, 0.05, blackMarble, -38.5, Y0, -139.9);                                             // reception, south side of the public lobby: black marble
   box(4.3, 0.05, 1.5, whiteMarble, -38.5, Y0 + 1.1, -139.9); box(4.22, 0.04, 0.02, brass, -38.5, Y0 + 0.9, -140.61);
   add(new THREE.PlaneGeometry(2.6, 1.6), new THREE.MeshBasicMaterial({ map: signTex([['外滩17号 · 楼层指引', 34], ['8F  恒岳资本 Hengyue Capital', 26], ['7F  澄观设计 Chengguan Design', 26], ['6F  远航律师事务所 Yuanhang Law', 26], ['1–5F  友邦人寿 AIA Life', 26]], { bg: '#121417', fg: '#e8e2d6', w: 768, h: 480 }) }), -38, Y0 + 2.4, A.z0 + 0.06, 0);

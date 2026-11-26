@@ -9,6 +9,8 @@ export const WHO = {
   zhou: { zh: '周顾问', en: 'Ms Zhou (agent)' }, wife: { zh: '李太太', en: 'Mrs Li' }, husband: { zh: '李先生', en: 'Mr Li' },
   shen: { zh: '沈顾问', en: 'Ms Shen (agent)' }, auntie: { zh: '阿姨', en: 'Auntie' }, uncle: { zh: '老伯伯', en: 'Old gentleman' },
   lin: { zh: '林经理', en: 'Ms Lin (benefits)' }, wang: { zh: '王总', en: 'Ms Wang (HR director)' }, chen: { zh: '小陈', en: 'Xiao Chen (agent)' },
+  angry: { zh: '客户', en: 'Customer' }, guard: { zh: '保安', en: 'Security' }, desk: { zh: '前台', en: 'Reception' },
+  tourist: { zh: '游客', en: 'Visitor' }, rider: { zh: '外卖员', en: 'Delivery rider' }, recruit: { zh: '年轻人', en: 'Young man' },
 };
 // [who, zh, en] or [who, zh (Shanghainese), en, 'wuu', Mandarin gloss]
 export const AIA_TALK = {
@@ -52,5 +54,88 @@ export const AIA_TALK = {
       ['chen', '对，医院的线上服务里就能下载，不用再跑一趟。', 'Yes, you can download it from the hospital\'s online service; no need to go in again.'],
       ['chen', '合同我们线上签，还要做个双录，就是录音录像，十分钟左右。您下午方便吗？', 'We sign the contract online, and there\'s the recorded-sale step, audio and video, about ten minutes. Are you free this afternoon?'],
       ['chen', '好嘞，那我三点给您打视频。', 'Great, I\'ll video-call you at three.']],
+  ],
+};
+
+// Things that happen now and then (world/aiaLife.js runs them, one at a time, each at most once a day, in a shuffled
+// order, the variants taking turns): each event's variants have the same speakers in the same order, so one
+// script serves them all. A sixth element 'w' marks a line said under the breath.
+export const AIA_EVENTS = {
+  // a customer storms in: a claim turned down for non-disclosure / a surrender that paid back half
+  complaint: [
+    [['angry', '你们理赔部的人呢？叫他出来！我交了五年保费，现在说我没如实告知，一分钱不赔！', 'Where are your claims people? Get them out here! Five years of premiums, and now you say I didn\'t disclose something and won\'t pay a cent!'],
+      ['desk', '先生您先别激动，我帮您联系客服经理。', 'Sir, please calm down. I\'ll call the customer service manager for you.'],
+      ['angry', '别跟我打官腔！当初卖给我的时候怎么说的？什么都能赔！', 'Don\'t give me the official line! What did they say when they sold it to me? That it covered everything!'],
+      ['guard', '先生，有话好好说，这里是办公区域，声音小一点。', 'Sir, let\'s talk this through calmly. This is an office; keep your voice down, please.'],
+      ['lin', '王总不好意思，稍等我一下。', 'Excuse me a moment, Ms Wang.'],
+      ['lin', '先生您好，我是这里的经理。您的情况我们到里面会议室详细说，好吗？', 'Hello, sir, I\'m a manager here. Let\'s go through your case properly in a meeting room inside, shall we?'],
+      ['angry', '今天不给我个说法，我就不走了。', 'I\'m not leaving until I get an answer today.'],
+      ['lin', '一定给您说法。保单号带了吗？我们一项一项对。', 'You\'ll get one. Have you brought your policy number? We\'ll go through it point by point.']],
+    [['angry', '我要退保！退出来只有一半的钱，这算什么道理？当初说随时能取的！', 'I want to cancel! I only get half my money back. How is that fair? They said I could take it out any time!'],
+      ['desk', '先生您先坐一下，我请经理马上过来。', 'Sir, please take a seat. I\'ll ask a manager to come straight away.'],
+      ['angry', '坐什么坐！我妈七十多岁了，你们的人跟她说这是存款！', 'Sit? My mother is over seventy, and your people told her it was a savings deposit!'],
+      ['guard', '先生，冷静一点，有问题我们会帮您处理的。', 'Sir, calm down, please. We\'ll deal with it for you.'],
+      ['lin', '王总抱歉，我先处理一下，马上回来。', 'Sorry, Ms Wang. Let me deal with this; I\'ll be right back.'],
+      ['lin', '先生，我是这里的经理。现金价值和退保损失，我们到里面一笔一笔给您算清楚。', 'Sir, I\'m a manager here. Let\'s go inside and work out the cash value and the surrender loss figure by figure.'],
+      ['angry', '算清楚有什么用，钱又不会多出来！', 'What good is working it out? It won\'t make the money any more!'],
+      ['lin', '如果当初销售有误导，我们按流程调查，查实了一定给您处理。您跟我来。', 'If you were misled when it was sold, we\'ll investigate by the book, and if it\'s confirmed we\'ll put it right. Come with me.']],
+  ],
+  // the young couple sign, and the agent can hardly keep still
+  celebrate: [
+    [['wife', '周姐，我们回去商量过了，就按上周那份计划书来。', 'Zhou jie, we talked it over at home. We\'ll go with last week\'s proposal.'],
+      ['zhou', '好的！那请李太太在平板上签个名，电子保单马上发到您手机上。', 'Wonderful! Then Mrs Li, if you\'ll sign on the tablet, the e-policy goes straight to your phone.'],
+      ['wife', '签好了。这下心里踏实了。', 'Signed. That\'s a weight off my mind.'],
+      ['zhou', '恭喜恭喜！以后有任何理赔的事，第一时间打我电话。', 'Congratulations! Any claim, ever, call me first.'],
+      ['husband', '周姐，辛苦你跑了好几趟。', 'Thanks for all the trips you made, Zhou jie.'],
+      ['chen', '周姐，又签了一单？今年的MDRT稳了吧！', 'Another one signed, Zhou jie? MDRT is in the bag this year!'],
+      ['zhou', '嘘，小点声！晚上请你喝奶茶。', 'Shh, not so loud! Milk tea\'s on me tonight.', 'zh', null, 'w']],
+  ],
+  // a client asks about a kickback; the agent takes him outside, fast
+  rebate: [
+    [['husband', '周姐，我朋友说在别家买，代理人会返几个点的佣金，你们这边返多少？', 'Zhou jie, a friend says if you buy elsewhere the agent gives back a few percent of the commission. How much do you give back?'],
+      ['zhou', '哎，李先生，我们出去透透气，我跟您说。', 'Ah, Mr Li, let\'s step outside for some air and I\'ll explain.'],
+      ['zhou', '这个千万不能说，返佣是违规的，被查到我的执业证都要被吊销的。', 'Never say that in here. Rebates are against the rules; if they find out, I lose my licence.', 'zh', null, 'w'],
+      ['husband', '啊？这么严重？我还以为大家都这样。', 'What? That serious? I thought everyone did it.', 'zh', null, 'w'],
+      ['zhou', '我们能给您的，就是把方案做到最合适，服务做到最好。别的真不行。', 'What I can give you is the best-fitting plan and the best service. Nothing else, honestly.', 'zh', null, 'w'],
+      ['husband', '懂了懂了，那就当我没问。', 'Got it, got it. Forget I asked.', 'zh', null, 'w']],
+  ],
+  // the recorded sale (双录) with the retired couple: the script must be answered in full, in Mandarin
+  recording: [
+    [['shen', '叔叔阿姨，现在开始双录，就是录音录像。我念一段，您回答就好。请问您是否已阅读并理解保险条款，以及犹豫期的相关规定？', 'Uncle, Auntie, we\'re starting the recorded sale now, audio and video. I read, you answer. Have you read and understood the policy terms and the rules of the cooling-off period?'],
+      ['uncle', '晓得额，晓得额。', 'Yes, yes, I know.', 'wuu', '知道的，知道的。'],
+      ['shen', '叔叔，要用普通话完整地回答一遍：我已阅读并理解。', 'Uncle, you need to answer in full, in Mandarin: I have read and understood.'],
+      ['uncle', '我……已阅读并理解。', 'I... have read and understood.'],
+      ['auntie', '侬讲普通话像辣念课文。', 'Your Mandarin sounds like reading out a textbook.', 'wuu', '你说普通话像在念课文。'],
+      ['shen', '没关系，很标准！我们再确认一下投保人签名，就好了。', 'That\'s fine, very proper! We just confirm the policyholder\'s signature and we\'re done.']],
+  ],
+  // someone wanders in to photograph the dome
+  tourist: [
+    [['tourist', '哇，这个穹顶也太好看了吧，全是金的！', 'Wow, look at this dome, it\'s all gold!'],
+      ['guard', '不好意思，这里是办公区域，不能拍照哦。', 'Sorry, this is an office; no photos, please.'],
+      ['tourist', '就拍一张，我发个动态。', 'Just one, for my feed.'],
+      ['guard', '真的不行。门口外面可以拍，外立面更好看。', 'Really, no. You can take pictures outside the door; the façade is even better.'],
+      ['tourist', '好吧好吧，谢谢啊。', 'All right, all right. Thanks.']],
+    [['tourist', '请问这里以前是字林西报大楼吗？我在书上看到过。', 'Excuse me, was this the North China Daily News building? I read about it in a book.'],
+      ['guard', '是的，现在是友邦的办公楼，里面不对外开放。', 'Yes. It\'s AIA\'s offices now; the inside isn\'t open to the public.'],
+      ['tourist', '那我在门口拍一张可以吗？', 'Can I take a picture at the door then?'],
+      ['guard', '门口可以，里面就不要拍了，谢谢配合。', 'At the door is fine, just not inside. Thanks for understanding.'],
+      ['tourist', '好的好的，不打扰了。', 'Of course. Sorry to bother you.']],
+  ],
+  // a delivery for upstairs: riders can't go past the gates
+  delivery: [
+    [['rider', '你好，外卖，三楼的，麻烦让我上去一下，要超时了！', 'Hi, delivery for the third floor. Let me up, please, I\'m about to be late!'],
+      ['guard', '外卖不能上楼，放门口的取餐柜，我帮你通知他们下来拿。', 'Deliveries can\'t go up. Put it in the pickup locker by the door; I\'ll tell them to come down for it.'],
+      ['rider', '好嘞好嘞，谢谢大哥！', 'Right, right. Thanks, mate!']],
+    [['rider', '大哥，五楼点的奶茶，二十杯，我一个人拎不上去啊。', 'Mate, twenty milk teas for the fifth floor. I can\'t carry them up on my own.'],
+      ['guard', '放这儿吧，我打个电话让他们派人下来拿。', 'Leave them here. I\'ll phone up and have someone come down.'],
+      ['rider', '那太感谢了，记得给个好评啊！', 'Thanks a lot. Tell them to leave a good review!']],
+  ],
+  // an agent sounds out a young man waiting by the door about joining (增员)
+  recruit: [
+    [['chen', '帅哥，等人啊？我是友邦的代理人，看你挺精神的，有没有兴趣了解一下这个职业？', 'Waiting for someone? I\'m an agent here at AIA. You look sharp; ever thought about this line of work?'],
+      ['recruit', '保险啊？我刚毕业，在找工作呢。', 'Insurance? I\'ve just graduated, I\'m looking for a job.'],
+      ['chen', '那正好，我们有新人培训，时间自由，收入跟着能力走。周六有个职业说明会，你来听听？', 'Perfect timing. There\'s training for newcomers, your hours are your own, and you earn what you\'re worth. There\'s a careers session on Saturday; come and listen?'],
+      ['recruit', '我考虑考虑吧。', 'I\'ll think about it.'],
+      ['chen', '行，加个联系方式，资料我发给你。', 'Sure. Let\'s swap contacts; I\'ll send you the details.']],
   ],
 };

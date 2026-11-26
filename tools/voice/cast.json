@@ -385,5 +385,31 @@
   "zh": "zm_065",
   "en": "am_liam",
   "speed": 1.05
+ },
+ "aia:angry": {
+  "zh": "zm_054",
+  "en": "am_eric",
+  "speed": 1.08
+ },
+ "aia:guard": {
+  "zh": "zm_015",
+  "en": "bm_daniel"
+ },
+ "aia:desk": {
+  "zh": "zf_073",
+  "en": "af_sky"
+ },
+ "aia:tourist": {
+  "zh": "zf_076",
+  "en": "af_nova"
+ },
+ "aia:rider": {
+  "zh": "zm_061",
+  "en": "am_puck",
+  "speed": 1.1
+ },
+ "aia:recruit": {
+  "zh": "zm_020",
+  "en": "am_liam"
  }
 }
