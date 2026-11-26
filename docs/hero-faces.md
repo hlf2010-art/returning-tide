@@ -233,3 +233,9 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
 
 - **Why it looked hollow, and why a band showed under the fringe:** his kept Hunyuan hair is a sculpted shell that floats a little off the head and was drawn one-sided. Under its edges you saw the MPFB scalp (a flat, matte grey-brown under the lights), bare skin behind the ear, and through its open edges into nothing.
 - **Fixes:** the scalp texels of the hero skin get the same crown-radial strand shading as the shell (`strandPatch` in people.js, darker, as hair lying flat under other hair would be), so the gap reads as short hair down to the painted hairline. The shell is drawn double-sided with a dark inside. In build_hero.py the hairline no longer paints hair on the ears (it made a black cap on the ear top) and runs behind the ear from mid-ear curving down to the nape, with a soft uneven edge.
+
+## Round 13 (26 November): short hair with depth instead of paint
+
+![before and after](hero-faces/round13-short-hair.jpg)
+
+- **Painted hair read as a black stain on the skin** (behind the ear, the nape, the band under the fringe). It is now shell fur (`furShells` in people.js): the head's scalp triangles copied in 12 layers lifted about 3 mm off the skin and combed about 7 mm down along the hair's fall. A pixel survives on a layer only inside a strand (about 1 per mm) long enough to reach it, and strands taper. Where hair grows is read per pixel from the painted scalp, so the hairline does not step along the triangles. The face's own dark texels (lids, lip line) are excluded by position.
