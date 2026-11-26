@@ -196,16 +196,23 @@ const letterTex = () => once('letter', () => {
 
 // a drape: a cloth in folds, `s` the side it's drawn back to (+1: toward +z). Full width up top, gathered to a quarter at
 // the band (0.95 m), flaring a little below; anchored at its outer edge, so it gathers toward the side
+// drawn (0..1): 0 tied back as above, 1 let down and drawn across to closedW
 function curtain(W, Hh, s) {
-  const nu = 28, nv = 24, g = new THREE.PlaneGeometry(1, 1, nu, nv), p = g.attributes.position;
+  const g = new THREE.PlaneGeometry(1, 1, 28, 24);
+  g.userData.uv0 = Float32Array.from(g.attributes.position.array);
+  shapeCurtain(g, W, Hh, s, 0, W);
+  return g;
+}
+function shapeCurtain(g, W, Hh, s, drawn, closedW) {
+  const p = g.attributes.position, src = g.userData.uv0;
   for (let i = 0; i < p.count; i++) {
-    const u = p.getX(i) + 0.5, y = (p.getY(i) + 0.5) * Hh;                                        // u 0 (outer edge) .. 1
+    const u = src[i * 3] + 0.5, y = (src[i * 3 + 1] + 0.5) * Hh;                                    // u 0 (outer edge) .. 1
     const band = 0.95, k = y > band ? 0.28 + 0.72 * Math.min(1, (y - band) / 0.9) : 0.28 + 0.3 * Math.min(1, (band - y) / 0.9);
-    const width = W * k, depth = Math.sin(u * Math.PI * 9) * 0.045 * (0.6 + 0.6 * (1 - k)) + 0.02 * (1 - k);
+    const kk = k + (1 - k) * drawn, width = W * kk + (closedW - W) * drawn;
+    const depth = Math.sin(u * Math.PI * 9) * 0.045 * (0.6 + 0.6 * (1 - kk)) * (1 - 0.35 * drawn) + 0.02 * (1 - kk);
     p.setXYZ(i, depth, y, -s * u * width);
   }
-  g.computeVertexNormals();
-  return g;
+  p.needsUpdate = true; g.computeVertexNormals();
 }
 
 // a sheer: fine, even folds, hanging straight (its top at y = height, its first edge at z = 0, running toward +z)
@@ -219,6 +226,7 @@ function sheer(W, Hh) {
 // ---------------- the build ----------------
 // ctx: { group, F, H, lights }. Returns the panes and probes for the glass, and a few things the room's update needs
 export function buildRoom612({ group, F, H, lights }) {
+  const RS = { lamps: true, dim: false, curtain: 0, curtainWant: 0, tv: 0, tvWant: 0 };   // dim: only the bedside lamps (after turndown)
   const std = (o) => new THREE.MeshStandardMaterial(o);
   const pl = plasterTextures();
   const M = {
@@ -245,6 +253,8 @@ export function buildRoom612({ group, F, H, lights }) {
     basin: new THREE.MeshPhysicalMaterial({ color: 0xe9e8e3, roughness: 0.1, clearcoat: 1 }),
     black: std({ color: 0x0b0b0c, roughness: 0.25, metalness: 0.3 }),
     glow: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 1.08, 0.78) }),
+    glowRoom: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 1.08, 0.78) }),   // (the room's own lamps: they switch)
+    glowBed: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 1.08, 0.78) }),    // (the bedside lamps: on after the turndown when the rest are off)
     sheer: std({ color: 0xf6f1e4, transparent: true, opacity: 0.4, roughness: 1, side: THREE.DoubleSide, depthWrite: false, emissive: 0x2a2620 }),
   };
   const metric = (geo, tile) => { const uv = geo.attributes.uv, p = geo.parameters || {}; if (geo.type === 'PlaneGeometry') for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * p.width / tile, uv.getY(i) * p.height / tile);
@@ -295,10 +305,10 @@ export function buildRoom612({ group, F, H, lights }) {
     // the light: a stepped dish of frosted glass in a nickel ring
     const lx = (k0 + k1) / 2, lz = (q0 + q1) / 2;
     add(new THREE.CylinderGeometry(0.34, 0.34, 0.03, 32), M.nickel, lx, F + H - 0.03, lz);
-    add(new THREE.CylinderGeometry(0.3, 0.22, 0.08, 32), M.glow, lx, F + H - 0.085, lz);
-    add(new THREE.CylinderGeometry(0.16, 0.1, 0.06, 32), M.glow, lx, F + H - 0.15, lz);
+    add(new THREE.CylinderGeometry(0.3, 0.22, 0.08, 32), M.glowRoom, lx, F + H - 0.085, lz);
+    add(new THREE.CylinderGeometry(0.16, 0.1, 0.06, 32), M.glowRoom, lx, F + H - 0.15, lz);
     add(new THREE.SphereGeometry(0.03, 12, 8), M.nickel, lx, F + H - 0.19, lz);
-    lights.push({ x: lx, y: F + H - 0.4, z: lz, intensity: 5.5, distance: 8, color: new THREE.Color(1.0, 0.82, 0.58) });
+    lights.push({ x: lx, y: F + H - 0.4, z: lz, intensity: 5.5, distance: 8, color: new THREE.Color(1.0, 0.82, 0.58), on: () => RS.lamps && !RS.dim });
   }
 
   // ---- the walls ----
@@ -317,6 +327,7 @@ export function buildRoom612({ group, F, H, lights }) {
   const roomBox = { min: [R.x0, F - 0.5, R.z0], max: [R.x1, F + H + 0.5, R.z1] };
   const winGlass = sidedGlass({ name: 'room612-glass', box: roomBox, room: { floor: [0.24, 0.18, 0.11], ceil: [0.42, 0.33, 0.22] } });
   const roomMirror = sidedGlass({ name: 'room612-mirror', box: roomBox, room: { floor: [0.24, 0.18, 0.11], ceil: [0.42, 0.33, 0.22] }, mirror: true, tint: [0.93, 0.92, 0.88] });
+  const drapes = [];   // { m, s, closedW, band, tassel }: drawn back or across (setCurtains)
   const drape = new THREE.MeshPhysicalMaterial({ color: 0x55636e, roughness: 0.9, sheen: 0.7, sheenColor: new THREE.Color(0x98a6b2), side: THREE.DoubleSide });
   for (const [a, b] of R.win) {
     const zc = (a + b) / 2, w = b - a, gx = R.gx, d = R.x1 - gx;
@@ -331,8 +342,9 @@ export function buildRoom612({ group, F, H, lights }) {
     // drapes: hanging in folds from the pelmet, gathered by a band a metre up and falling loose below; a tassel
     for (const s of [-1, 1]) {
       const outer = zc + s * (w / 2 + 0.42), m = add(curtain(0.62, H - 0.3, s), drape, R.x1 - 0.16, F, outer); m.castShadow = true;
-      box(0.07, 0.05, 0.16, M.gilt, R.x1 - 0.14, F + 0.95, outer - s * 0.12);
-      add(new THREE.ConeGeometry(0.035, 0.16, 10), M.gilt, R.x1 - 0.08, F + 0.82, outer - s * 0.12);
+      const band = box(0.07, 0.05, 0.16, M.gilt, R.x1 - 0.14, F + 0.95, outer - s * 0.12);
+      const tassel = add(new THREE.ConeGeometry(0.035, 0.16, 10), M.gilt, R.x1 - 0.08, F + 0.82, outer - s * 0.12);
+      drapes.push({ m, s, closedW: w / 2 + 0.42 + 0.04, band, tassel });
     }
     { const sh = add(sheer(w * 0.5, R.head - R.sill - 0.05), M.sheer, R.x1 - 0.05, F + R.sill + 0.02, a + 0.04); sh.castShadow = false; }   // the sheer, drawn half across, inside the reveal
     box(0.2, 0.32, w + 0.95, M.blueGrey, R.x1 - 0.12, F + H - 0.6, zc); box(0.205, 0.025, w + 0.96, M.gilt, R.x1 - 0.12, F + H - 0.62, zc);   // the pelmet, a gilt edge
@@ -367,8 +379,8 @@ export function buildRoom612({ group, F, H, lights }) {
       add(new THREE.CylinderGeometry(0.085, 0.09, 0.02, 24), M.nickel, nx, F + 0.64, bz + 0.26);
       add(base, M.pinkGlass, nx, F + 0.65, bz + 0.26);
       add(new THREE.CylinderGeometry(0.13, 0.19, 0.24, 28, 1, true), M.shade, nx, F + 1.23, bz + 0.26);
-      add(new THREE.SphereGeometry(0.06, 12, 8), M.glow, nx, F + 1.16, bz + 0.26);
-      lights.push({ x: nx, y: F + 1.2, z: bz + 0.45, intensity: 2.6, distance: 4.5, color: new THREE.Color(1.0, 0.78, 0.5) });
+      add(new THREE.SphereGeometry(0.06, 12, 8), M.glowBed, nx, F + 1.16, bz + 0.26);
+      lights.push({ x: nx, y: F + 1.2, z: bz + 0.45, intensity: 2.6, distance: 4.5, color: new THREE.Color(1.0, 0.78, 0.5), on: () => RS.lamps });
       if (side > 0) { add(new THREE.CylinderGeometry(0.04, 0.05, 0.2, 16), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, roughness: 0.05 }), nx - 0.18, F + 0.74, bz + 0.38);
         add(new THREE.CylinderGeometry(0.03, 0.028, 0.09, 14), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, roughness: 0.05 }), nx - 0.08, F + 0.68, bz + 0.42); }
       else { box(0.15, 0.03, 0.22, std({ color: 0x2c3a52, roughness: 0.7 }), nx + 0.12, F + 0.64, bz + 0.36); }                   // a book
@@ -389,6 +401,10 @@ export function buildRoom612({ group, F, H, lights }) {
     add(new THREE.CylinderGeometry(0.07, 0.08, 0.02, 20), M.nickel, dx + 0.1, F + 0.77, dz + 0.45);
     add(new THREE.CylinderGeometry(0.008, 0.008, 0.38, 8), M.nickel, dx + 0.1, F + 0.97, dz + 0.45);
     add(new THREE.CylinderGeometry(0.09, 0.14, 0.17, 24, 1, true), M.shade, dx + 0.1, F + 1.22, dz + 0.45);
+    // the telephone: an ivory desk set, its handset in the cradle (the concierge, in-room dining)
+    rbox(0.2, 0.07, 0.22, 0.025, std({ color: 0xe8e0cc, roughness: 0.35 }), dx + 0.06, F + 0.76, dz - 0.4);
+    rbox(0.22, 0.045, 0.06, 0.02, std({ color: 0xe8e0cc, roughness: 0.35 }), dx + 0.06, F + 0.83, dz - 0.4, Math.PI / 2);
+    for (let i = 0; i < 12; i++) box(0.018, 0.004, 0.018, M.nickel, dx + 0.01 + (i % 3) * 0.03, F + 0.83, dz - 0.46 + Math.floor(i / 3) * 0.03);
     // the chair, facing the desk (east)
     const ch = new THREE.Group(); ch.position.set(dx - 0.62, F, dz); ch.rotation.y = Math.PI / 2; group.add(ch);
     rbox(0.48, 0.07, 0.46, 0.02, M.velvet, 0, 0.44, 0, 0, ch);
@@ -401,6 +417,9 @@ export function buildRoom612({ group, F, H, lights }) {
     add(new THREE.PlaneGeometry(0.66, 0.86), roomMirror, R.x1 - 0.042, F + 1.825, dz, -Math.PI / 2).renderOrder = 2;
   }
 
+  // the television: a canvas the room's update draws on (the news, tomorrow's weather)
+  const tvTex = (() => { const [c, ctx] = makeCanvas(512, 290); const t = tex(c, { repeat: false }); return { c, ctx, tex: t }; })();
+  let tvSet = null, tvScreen = null;
   // ---- the sitting corner: the brown corduroy sofa against the south wall, a coffee table with fruit and the letter,
   // the television's cabinet beside the sofa (its doors closed: the set pulls out), a floor lamp ----
   {
@@ -428,14 +447,20 @@ export function buildRoom612({ group, F, H, lights }) {
     box(0.004, 0.76, 0.004, M.walnut, tx, F + 0.08, R.z1 - 0.56);
     for (const dx of [-0.05, 0.05]) box(0.012, 0.2, 0.012, M.nickel, tx + dx, F + 0.42, R.z1 - 0.565);
     const vase = new THREE.LatheGeometry([[0, 0], [0.07, 0], [0.09, 0.04], [0.14, 0.14], [0.15, 0.22], [0.12, 0.32], [0.06, 0.4], [0.05, 0.46], [0.07, 0.5], [0.065, 0.5], [0.045, 0.46], [0, 0.46]].map(([r2, y]) => new THREE.Vector2(r2, y)), 32);
-    add(vase, M.porcelain, tx + 0.25, F + 0.92, R.z1 - 0.3);
-    add(new THREE.BoxGeometry(0.16, 0.012, 0.05), M.black, tx - 0.3, F + 0.926, R.z1 - 0.3);                               // the remote
+    add(vase, M.porcelain, tx + 0.43, F + 0.92, R.z1 - 0.3);
+    add(new THREE.BoxGeometry(0.05, 0.012, 0.16), M.black, sx + 0.3, F + 0.444, tz - 0.12);                               // the remote, on the coffee table
+    // the set itself, on its lift inside the cabinet: it rises through a slot in the top, facing the bed
+    box(0.8, 0.006, 0.07, M.black, tx - 0.1, F + 0.92, R.z1 - 0.3);                                                       // the slot
+    tvSet = new THREE.Group(); tvSet.position.set(tx - 0.1, F, R.z1 - 0.3); group.add(tvSet);
+    box(0.78, 0.48, 0.035, M.black, 0, 0, 0, 0, tvSet);
+    tvScreen = add(new THREE.PlaneGeometry(0.74, 0.42), new THREE.MeshBasicMaterial({ map: tvTex.tex, color: new THREE.Color(1.1, 1.1, 1.1) }), 0, 0.24, -0.019, Math.PI, 0, tvSet);
+    tvScreen.visible = false; tvSet.visible = false;
     // the floor lamp at the sofa's end
     add(new THREE.CylinderGeometry(0.16, 0.18, 0.02, 24), M.nickel, sx - 1.28, F + 0.01, R.z1 - 0.35);
     add(new THREE.CylinderGeometry(0.012, 0.012, 1.45, 8), M.nickel, sx - 1.28, F + 0.74, R.z1 - 0.35);
     add(new THREE.CylinderGeometry(0.2, 0.24, 0.3, 28, 1, true), M.shade, sx - 1.28, F + 1.52, R.z1 - 0.35);
-    add(new THREE.SphereGeometry(0.06, 10, 8), M.glow, sx - 1.28, F + 1.45, R.z1 - 0.35);
-    lights.push({ x: sx - 1.28, y: F + 1.45, z: R.z1 - 0.5, intensity: 2.4, distance: 4.5, color: new THREE.Color(1.0, 0.78, 0.5) });
+    add(new THREE.SphereGeometry(0.06, 10, 8), M.glowRoom, sx - 1.28, F + 1.45, R.z1 - 0.35);
+    lights.push({ x: sx - 1.28, y: F + 1.45, z: R.z1 - 0.5, intensity: 2.4, distance: 4.5, color: new THREE.Color(1.0, 0.78, 0.5), on: () => RS.lamps && !RS.dim });
     // an oil painting over the sofa: the Bund from the river
     box(1.24, 0.94, 0.05, M.gilt, sx, F + 1.25, R.z1 - 0.03);
     add(new THREE.PlaneGeometry(1.1, 0.8), std({ map: painting('bund'), roughness: 0.75, emissive: 0x100c08 }), sx, F + 1.72, R.z1 - 0.058, Math.PI);
@@ -544,5 +569,91 @@ export function buildRoom612({ group, F, H, lights }) {
     { box: roomBox, p: createRoomProbe([winGlass, roomMirror], [-37.6, F + 1.55, -229.0]), wait: 0.5 },
     { box: roomBox, p: createRoomProbe([mirrorMat, showerGlass], [R.tub.x, F + 1.6, R.tub.z - 0.6]), wait: 0.8 },   // (taken from anywhere in the room: the mirror shows through the door)
   ];
-  return { probes, roomBox, bathBox };
+
+  // ---- the turndown (the evening service): the duvet's corner turned back, a bottle of water and a glass by the bed,
+  // a bath mat for the slippers, tomorrow's weather on a card on the pillow, the hotel's booklet of its history ----
+  const turn = new THREE.Group(); turn.visible = false; group.add(turn);
+  let cardTex = null;
+  { const bx = R.bed.x, bz = R.z0;
+    // the corner: where the duvet was, the sheet shows (cream); the flap lies turned back over it, its fold a soft roll
+    const tri = (a) => new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(-a, 0), new THREE.Vector2(0, -a)]));
+    const sheet = new THREE.Mesh(tri(0.6), std({ color: 0xd6ccb6, roughness: 0.9 })); sheet.rotation.x = -Math.PI / 2; sheet.position.set(bx + 1.02, F + 0.703, bz + 0.7); turn.add(sheet);
+    const flap = new THREE.Mesh(tri(0.6), M.linen); flap.rotation.set(-Math.PI / 2, 0, Math.PI); flap.position.set(bx + 0.42, F + 0.716, bz + 1.3); turn.add(flap);
+    add(new THREE.CylinderGeometry(0.018, 0.018, 0.85, 10), M.linen, bx + 0.72, F + 0.712, bz + 1.0, 0, 0, turn).rotation.set(0, -Math.PI / 4, Math.PI / 2);
+    add(new THREE.CylinderGeometry(0.035, 0.035, 0.22, 16), new THREE.MeshPhysicalMaterial({ color: 0xdfeff2, transparent: true, opacity: 0.45, roughness: 0.05 }), -39.2, F + 0.75, bz + 0.38, 0, 0, turn);
+    add(new THREE.CylinderGeometry(0.016, 0.016, 0.03, 12), std({ color: 0x2a4a8a, roughness: 0.4 }), -39.2, F + 0.875, bz + 0.38, 0, 0, turn);
+    add(new THREE.CylinderGeometry(0.035, 0.03, 0.1, 14), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, roughness: 0.05 }), -38.98, F + 0.69, bz + 0.42, 0, 0, turn);
+    box(0.6, 0.01, 0.4, M.linen, bx + 1.25, F, bz + 1.6, 0, turn);                                                           // the mat
+    cardTex = (() => { const [c, ctx] = makeCanvas(384, 256); const t = tex(c, { repeat: false }); return { c, ctx, tex: t }; })();
+    add(new THREE.PlaneGeometry(0.18, 0.12), std({ map: cardTex.tex, roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2 }), bx + 0.2, F + 0.705, bz + 0.98, 0.25, -Math.PI / 2, turn);   // on the turned-down bed
+    box(0.15, 0.012, 0.21, std({ color: 0x2b3f36, roughness: 0.7 }), bx - 0.3, F + 0.72, bz + 1.05, 0.15, turn);              // the booklet
+  }
+  // ---- in-room dining, set out on the desk: a tray, and what was ordered under or beside a nickel cloche ----
+  const tray = new THREE.Group(); tray.visible = false; group.add(tray);
+  const dishes = {};
+  { const tx2 = R.x1 - 0.32, tz2 = R.desk.z + 0.1, y = F + 0.76;
+    rbox(0.42, 0.02, 0.56, 0.01, M.walnut, tx2, y, tz2, 0, tray);
+    add(new THREE.PlaneGeometry(0.36, 0.5), M.linen, tx2, y + 0.021, tz2, 0, -Math.PI / 2, tray);
+    const plate = (x, z, r2 = 0.12) => add(new THREE.CylinderGeometry(r2, r2 * 0.8, 0.02, 24), M.ceramic, tx2 + x, y + 0.03, tz2 + z, 0, 0, tray);
+    const cutlery = () => { for (const dz of [-0.2, 0.2]) box(0.012, 0.004, 0.18, M.nickel, tx2 + dz * 0.4 - 0.12, y + 0.022, tz2 + 0.0, 0, tray); };
+    cutlery();
+    const mk = (id, fn) => { const g = new THREE.Group(); g.visible = false; tray.add(g); dishes[id] = g; fn(g); };
+    const food = (c, r2 = 0.5) => std({ color: c, roughness: r2 });
+    mk('sandwich', (g) => { plate(0.0, -0.08, 0.13);
+      for (const [dx2, dz2, ry] of [[-0.04, -0.1, 0.3], [0.05, -0.06, -0.5]]) { const sw = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 3), food(0xd9b77a, 0.8)); sw.position.set(tx2 + dx2, y + 0.07, tz2 + dz2); sw.rotation.y = ry; g.add(sw); }
+      for (let i = 0; i < 10; i++) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.07), food(0xe0a848, 0.6)); f.position.set(tx2 + 0.07 + (i % 3) * 0.012, y + 0.05 + Math.floor(i / 3) * 0.01, tz2 - 0.14 + (i % 5) * 0.012); f.rotation.y = i; g.add(f); }
+      const pot = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), M.ceramic); pot.position.set(tx2 - 0.06, y + 0.08, tz2 + 0.15); g.add(pot);
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.028, 0.05, 14), M.ceramic); cup.position.set(tx2 + 0.08, y + 0.05, tz2 + 0.16); g.add(cup); });
+    mk('wonton', (g) => { const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.09, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), new THREE.MeshPhysicalMaterial({ color: 0xf4f2ec, roughness: 0.12, clearcoat: 1, side: THREE.DoubleSide })); bowl.position.set(tx2 - 0.03, y + 0.11, tz2 - 0.08); g.add(bowl);
+      const broth = new THREE.Mesh(new THREE.CircleGeometry(0.082, 20), food(0xc9a46a, 0.2)); broth.rotation.x = -Math.PI / 2; broth.position.set(tx2 - 0.03, y + 0.085, tz2 - 0.08); g.add(broth);
+      for (let i = 0; i < 6; i++) { const w2 = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), food(0xf0e6d2, 0.6)); w2.position.set(tx2 - 0.03 + Math.cos(i) * 0.04, y + 0.09, tz2 - 0.08 + Math.sin(i) * 0.04); g.add(w2); }
+      plate(0.02, 0.13, 0.1);
+      for (let i = 0; i < 4; i++) { const b2 = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), food(0xead2a4, 0.55)); b2.scale.set(1, 0.7, 1); b2.position.set(tx2 + Math.cos(i * 1.57) * 0.04, y + 0.055, tz2 + 0.13 + Math.sin(i * 1.57) * 0.04); g.add(b2); } });
+    mk('borscht', (g) => { const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.09, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), new THREE.MeshPhysicalMaterial({ color: 0xf4f2ec, roughness: 0.12, clearcoat: 1, side: THREE.DoubleSide })); bowl.position.set(tx2 - 0.04, y + 0.11, tz2 - 0.1); g.add(bowl);
+      const soup = new THREE.Mesh(new THREE.CircleGeometry(0.082, 20), food(0xb5452a, 0.25)); soup.rotation.x = -Math.PI / 2; soup.position.set(tx2 - 0.04, y + 0.085, tz2 - 0.1); g.add(soup);
+      plate(0.02, 0.12, 0.13);
+      const cut = new THREE.Mesh(new RoundedBoxGeometry(0.16, 0.02, 0.1, 2, 0.008), food(0xb9772e, 0.7)); cut.position.set(tx2 + 0.02, y + 0.05, tz2 + 0.12); cut.rotation.y = 0.4; g.add(cut);
+      const sauce = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.02, 0.03, 12), food(0x5a2a14, 0.3)); sauce.position.set(tx2 - 0.08, y + 0.05, tz2 + 0.15); g.add(sauce); });
+  }
+
+  // ---- what the room's update does: the drapes drawn or let back, the set rising or sinking, lamps on or off ----
+  const lampLit = new THREE.Color(1.3, 1.08, 0.78), lampOff = new THREE.Color(0.22, 0.2, 0.17);
+  const coveLit = new THREE.Color(0.75, 0.58, 0.36), coveOff = new THREE.Color(0.08, 0.07, 0.06);
+  let coveMat = null; group.traverse((o) => { if (o.isMesh && o.material && o.material.isMeshBasicMaterial && o.material.color && Math.abs(o.material.color.r - 0.75) < 1e-3 && Math.abs(o.material.color.g - 0.58) < 1e-3) coveMat = o.material; });
+  function setLamps(on, dim = false) {
+    RS.lamps = on; RS.dim = dim;
+    M.shade.emissiveIntensity = on ? 0.9 : 0; M.pinkGlass.emissive.setHex(on ? 0x5a2226 : 0x000000);
+    M.glowRoom.color.copy(on && !dim ? lampLit : lampOff); M.glowBed.color.copy(on ? lampLit : lampOff);
+    if (coveMat) coveMat.color.copy(on && !dim ? coveLit : coveOff);
+  }
+  const ease = (t) => t * t * (3 - 2 * t);
+  let shownCurtain = -1;
+  function update(dt) {
+    RS.curtain += Math.sign(RS.curtainWant - RS.curtain) * Math.min(Math.abs(RS.curtainWant - RS.curtain), dt * 0.5);
+    if (RS.curtain !== shownCurtain) {
+      shownCurtain = RS.curtain; const e = ease(RS.curtain);
+      for (const d of drapes) { shapeCurtain(d.m.geometry, 0.62, H - 0.3, d.s, e, d.closedW); d.band.visible = d.tassel.visible = e < 0.15; }
+    }
+    if (tvSet) {
+      RS.tv += Math.sign(RS.tvWant - RS.tv) * Math.min(Math.abs(RS.tvWant - RS.tv), dt * 0.4);
+      tvSet.visible = RS.tv > 0.001; tvSet.position.y = F + 0.3 + ease(RS.tv) * 0.68; tvScreen.visible = RS.tv > 0.98;
+    }
+  }
+  const spots = {
+    tub: [R.tub.x, F + 0.7, R.tub.z], tv: [-36.4, F + 1.0, R.z1 - 0.3], phone: [R.x1 - 0.26, F + 0.85, R.desk.z - 0.4],
+    lamp: [-39.07, F + 1.05, R.z0 + 0.26], curtain: [R.x1 - 0.16, F + 1.5, R.win[0][0] - 0.4], card: [R.bed.x + 0.2, F + 0.75, R.z0 + 0.98],
+    tray: [R.x1 - 0.32, F + 0.85, R.desk.z + 0.1],
+  };
+  return {
+    probes, roomBox, bathBox, spots, update,
+    get lamps() { return RS.lamps; }, setLamps,
+    get curtainsDrawn() { return RS.curtainWant > 0.5; }, setCurtains(closed, now = false) { RS.curtainWant = closed ? 1 : 0; if (now) RS.curtain = RS.curtainWant; },
+    get tvOn() { return RS.tvWant > 0.5; }, setTv(on) { RS.tvWant = on ? 1 : 0; },
+    // the screen: draw(ctx, w, h) each time the channel moves on
+    drawTv(draw) { draw(tvTex.ctx, tvTex.c.width, tvTex.c.height); tvTex.tex.needsUpdate = true; },
+    setTurndown(on, draw) { turn.visible = on; if (on && draw && cardTex) { draw(cardTex.ctx, cardTex.c.width, cardTex.c.height); cardTex.tex.needsUpdate = true; } },
+    get turndown() { return turn.visible; },
+    setTray(kind) { tray.visible = !!kind; for (const [k, g] of Object.entries(dishes)) g.visible = k === kind; },
+    get tray() { return tray.visible; },
+  };
 }

@@ -420,8 +420,13 @@
   "zh": "zf_002",
   "en": "bf_isabella"
  },
- "hotellift": {
-  "zh": "zf_018",
-  "en": "bf_lily"
+ "hotelconcierge": {
+  "zh": "zm_037",
+  "en": "bm_daniel",
+  "speed": 0.97
+ },
+ "roomservice": {
+  "zh": "zm_029",
+  "en": "am_adam"
  }
 }
