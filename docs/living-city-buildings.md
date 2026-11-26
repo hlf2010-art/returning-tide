@@ -122,6 +122,11 @@ about 35 m (`layout.js:32, 39-43`). The promenade runs from x 2 to x 26.
   - *a delivery rider for upstairs is stopped at the gates;*
   - *an agent sounds out a young man by the door about joining (增员).*
   - *Not repeating: one at a time, each at most once per game day, drawn from a shuffled deck that is only reshuffled once every event has been seen; never the same event twice running; an event's variants take turns. All of this is kept in the save. The first event comes 35–70 s after you walk in, then one every 100–190 s. Walk out and the event is dropped: everyone goes back, and the visitors vanish.*
+- *Speed gates (26 Nov) rebuilt as a modern head office has them:*
+  - *a D-ended brushed-steel cabinet between each pair of lanes (before, the cabinets overlapped), with a black glass lid and a card pad;*
+  - *tall curved glass wings that swing aside when a lane opens;*
+  - *a face-recognition screen on a post at each entry (请刷脸通行 / 验证通过), red-cross and green-arrow lamps on the cabinet ends, and a light line along each lane;*
+  - *glass balustrades with a steel handrail from the outer cabinets to the walls, where there had been nothing.*
 - *Chairs and shadows (26 Nov):*
   - *The consultation chairs are proper club armchairs: rounded plinth, loose cushion, a reclined back with a stitched panel line, rolled arms, tapered walnut legs with brass cups, navy leather with grain and sheen.*
   - *By day the sun casts the shadows and the lamps' shadow slots are off, but indoors only the two nearest lamps cast at all, and at low quality nothing does. So furniture, columns, desks and people now sit on soft contact shadows (world/contactShadow.js), in both lobbies, at every quality.*

@@ -748,15 +748,73 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   add(new THREE.PlaneGeometry(1.1, 0.68), new THREE.MeshBasicMaterial({ map: signTex([['外滩17号 · 楼层指引', 34], ['8F  恒岳资本 Hengyue Capital', 26], ['7F  澄观设计 Chengguan Design', 26], ['6F  远航律师事务所 Yuanhang Law', 26], ['1–5F  友邦人寿 AIA Life', 26]], { bg: '#121417', fg: '#e8e2d6', w: 768, h: 480 }) }), -35.3, Y0 + 1.75, A.z0 + 0.06, 0);   // (a plaque by the 百寿图)
   box(0.4, 1.2, 0.3, dark, -35.6, Y0, -140.3);
   add(new THREE.PlaneGeometry(0.34, 0.5), new THREE.MeshBasicMaterial({ map: signTex([['访客预约', 40], ['扫码登记', 30], ['Visitor sign-in', 26]], { bg: '#f4f4f4', fg: '#222', w: 300, h: 420 }) }), -35.6, Y0 + 1.3, -140.46, Math.PI);
-  // the speed gates: glass flaps between steel cabinets
-  const flaps = [];
-  for (const z of A.gates) {
-    for (const s of [-1, 1]) box(1.2, 1.0, 0.18, new THREE.MeshStandardMaterial({ color: 0xb8bcc2, metalness: 1, roughness: 0.25 }), A.gateX, Y0, z + s * 0.64);
-    const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.7), glass); const piv = new THREE.Group(); piv.position.set(A.gateX, Y0 + 0.55, z); piv.add(fl); fl.position.z = 0; fl.scale.set(1, 1, 1);
-    const pane = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.7, 1.0), glass); piv.add(pane); group.add(piv);
-    const light = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.04), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 1.6, 0.4) })); light.position.set(A.gateX - 0.61, Y0 + 1.02, z + 0.64); light.rotation.x = -Math.PI / 2; group.add(light);
-    const col = addDynamicCollider('gate'); Object.assign(col, { y0: 0, y1: 8, minX: A.gateX - 0.1, maxX: A.gateX + 0.1, minZ: z - 0.5, maxZ: z + 0.5 });
-    flaps.push({ z, piv, pane, light, col, open: 0, until: 0 });
+  // the speed gates, as in a modern head-office lobby: a brushed-steel cabinet between each pair of lanes, D-ended,
+  // under a black glass lid with a card pad at the entry end; a pair of tall curved glass wings to each lane that swing
+  // aside to let you through; a face-recognition screen on a short post at the entry; red-cross / green-arrow lamps on
+  // the cabinet ends; a light line along each lane; glass balustrades from the outer cabinets to the walls
+  const flaps = []; let GATE_M = null; const gateMats = () => GATE_M;
+  {
+    const GL = 1.5, GH = 0.98, GW = 0.2, gx = A.gateX;
+    const steel = new THREE.MeshStandardMaterial({ color: 0xd6d9dd, metalness: 0.9, roughness: 0.42, roughnessMap: br.roughnessMap, normalMap: br.normalMap, normalScale: new THREE.Vector2(0.25, 0.25), envMapIntensity: 1.3 });
+    const lid = new THREE.MeshStandardMaterial({ color: 0x08090b, metalness: 0.2, roughness: 0.06, envMapIntensity: 1.6 });
+    const wingGlass = new THREE.MeshStandardMaterial({ color: 0xd9eef2, roughness: 0.04, metalness: 0.1, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 1.8 });
+    const tex2 = (w, h, f) => canvasTex(w, h, (x) => f(x, w, h));
+    const arrowTex = tex2(64, 64, (x, w) => { x.fillStyle = '#050805'; x.fillRect(0, 0, w, w); x.fillStyle = '#3dff7a'; x.beginPath(); x.moveTo(14, 26); x.lineTo(34, 26); x.lineTo(34, 14); x.lineTo(54, 32); x.lineTo(34, 50); x.lineTo(34, 38); x.lineTo(14, 38); x.closePath(); x.fill(); });
+    const crossTex = tex2(64, 64, (x, w) => { x.fillStyle = '#080505'; x.fillRect(0, 0, w, w); x.strokeStyle = '#ff3b30'; x.lineWidth = 9; x.lineCap = 'round'; x.beginPath(); x.moveTo(18, 18); x.lineTo(46, 46); x.moveTo(46, 18); x.lineTo(18, 46); x.stroke(); });
+    const padTex = tex2(128, 96, (x, w, h) => { x.fillStyle = '#0a0d12'; x.fillRect(0, 0, w, h); x.strokeStyle = '#5ab4ff'; x.lineWidth = 3; x.strokeRect(10, 10, w - 20, h - 20);
+      x.lineWidth = 4; for (const r of [10, 20, 30]) { x.beginPath(); x.arc(w / 2 - 14, h / 2, r, -0.7, 0.7); x.stroke(); } x.fillStyle = '#5ab4ff'; x.fillRect(w / 2 + 14, h / 2 - 16, 20, 32); });
+    const faceTex = (ok) => tex2(128, 200, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, ok ? '#0b3b1c' : '#0b1626'); g.addColorStop(1, '#05080d'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+      x.strokeStyle = ok ? '#3dff7a' : '#5ab4ff'; x.lineWidth = 3; x.beginPath(); x.ellipse(w / 2, 82, 34, 44, 0, 0, Math.PI * 2); x.stroke();
+      for (const [cx, cy, dx, dy] of [[24, 30, 1, 1], [104, 30, -1, 1], [24, 134, 1, -1], [104, 134, -1, -1]]) { x.beginPath(); x.moveTo(cx, cy + dy * 14); x.lineTo(cx, cy); x.lineTo(cx + dx * 14, cy); x.stroke(); }
+      x.fillStyle = ok ? '#3dff7a' : '#cfe6ff'; x.textAlign = 'center'; x.font = '600 16px "Noto Sans SC", sans-serif'; x.fillText(ok ? '验证通过' : '请刷脸通行', w / 2, 168); x.font = '11px sans-serif'; x.fillText(ok ? 'Verified' : 'Face to pass', w / 2, 186); });
+    const M = { arrow: new THREE.MeshBasicMaterial({ map: arrowTex }), cross: new THREE.MeshBasicMaterial({ map: crossTex }), pad: new THREE.MeshBasicMaterial({ map: padTex, color: new THREE.Color(1.2, 1.2, 1.2) }),
+      faceOff: new THREE.MeshBasicMaterial({ map: faceTex(false) }), faceOk: new THREE.MeshBasicMaterial({ map: faceTex(true) }),
+      stripOff: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.5, 0.8, 1.4) }), stripOk: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.3, 1.5, 0.6) }) };
+    GATE_M = M;
+    // the cabinets: at the outer edges and between lanes
+    const L0 = A.gates[0] - 0.6, cabZ = [L0, ...A.gates.map((z) => z + 0.6)];
+    const bodyGeo = new RoundedBoxGeometry(GL - GW, GH, GW, 3, 0.02), endGeo = new THREE.CylinderGeometry(GW / 2, GW / 2, GH, 20), lidGeo = new RoundedBoxGeometry(GL, 0.025, GW + 0.01, 2, 0.01);
+    for (const z of cabZ) {
+      add(bodyGeo, steel, gx, Y0 + GH / 2, z).castShadow = true;
+      for (const ex of [-1, 1]) add(endGeo, steel, gx + ex * (GL - GW) / 2, Y0 + GH / 2, z);
+      add(lidGeo, lid, gx, Y0 + GH + 0.012, z);
+      contactShadow(group, gx, Y0, z, GL + 0.3, 0.6, 0.45);
+    }
+    // each lane: the wings, the lamps, the face screen and card pad (on the cabinet to your right as you go in, the
+    // north one), the light lines
+    for (const z of A.gates) {
+      const wings = [];
+      for (const side of [-1, 1]) {                                  // -1: from the north cabinet, +1: from the south
+        const pivot = new THREE.Group(); pivot.position.set(gx + 0.1, Y0, z + side * (0.6 - GW / 2)); group.add(pivot);
+        const sh = new THREE.Shape(), w = 0.48, hh = 1.42; sh.moveTo(0, 0.22); sh.lineTo(w, 0.22); sh.lineTo(w, hh - 0.18); sh.quadraticCurveTo(w, hh, w - 0.2, hh); sh.lineTo(0, hh); sh.closePath();
+        const g = new THREE.ShapeGeometry(sh, 8); g.rotateY(side < 0 ? -Math.PI / 2 : Math.PI / 2);   // extends toward the lane's middle
+        const wing = new THREE.Mesh(g, wingGlass); wing.renderOrder = 3; pivot.add(wing);
+        const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.2, 0.04), steel); clamp.position.set(0, 0.82, 0); pivot.add(clamp);
+        wings.push({ pivot, side });
+      }
+      const ends = [];
+      for (const ex of [-1, 1]) for (const cz of [z - 0.6, z + 0.6]) {         // the lamps on the cabinet ends, facing each way
+        const lamp = new THREE.Mesh(new THREE.PlaneGeometry(0.07, 0.07), M.cross); lamp.position.set(gx + ex * (GL / 2 + 0.002), Y0 + GH - 0.12, cz + (cz < z ? 0.06 : -0.06)); lamp.rotation.y = ex > 0 ? Math.PI / 2 : -Math.PI / 2; group.add(lamp); ends.push(lamp);
+      }
+      const strips = [];
+      for (const cz of [z - 0.6 + GW / 2 + 0.002, z + 0.6 - GW / 2 - 0.002]) { const st = new THREE.Mesh(new THREE.PlaneGeometry(GL - GW - 0.1, 0.012), M.stripOff); st.position.set(gx, Y0 + GH - 0.05, cz); st.rotation.y = cz < z ? 0 : Math.PI; group.add(st); strips.push(st); }
+      // the face screen on a post at the entry end (the public side, east), angled toward who comes up; the card pad
+      const sx = gx + GL / 2 - 0.12, sz = z - 0.6;
+      add(new THREE.CylinderGeometry(0.018, 0.022, 0.3, 10), steel, sx, Y0 + GH + 0.15, sz);
+      const term = new THREE.Group(); term.position.set(sx, Y0 + GH + 0.4, sz); term.rotation.set(0, Math.PI / 2 - 0.35, 0); group.add(term);
+      const bezel = new THREE.Mesh(new RoundedBoxGeometry(0.15, 0.24, 0.025, 2, 0.008), lid); term.add(bezel);
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.128, 0.2), M.faceOff); screen.position.z = 0.014; term.add(screen);
+      const pad = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.13), M.pad); pad.rotation.x = -Math.PI / 2; pad.position.set(gx + GL / 2 - 0.42, Y0 + GH + 0.026, sz); group.add(pad);
+      const col = addDynamicCollider('gate'); Object.assign(col, { y0: 0, y1: 8, minX: gx - 0.1, maxX: gx + 0.1, minZ: z - 0.5, maxZ: z + 0.5 });
+      flaps.push({ z, wings, ends, strips, screen, col, open: 0, until: 0, lit: null });
+    }
+    // glass balustrades from the outer cabinets to the walls: clear glass in steel posts, a steel handrail
+    for (const [za, zb] of [[A.z0, L0 - GW / 2], [cabZ[cabZ.length - 1] + GW / 2, A.z1]]) {
+      const len = zb - za, zc2 = (za + zb) / 2;
+      const pane = add(new THREE.PlaneGeometry(len, 1.0), wingGlass, gx, Y0 + 0.12 + 0.5, zc2, Math.PI / 2); pane.renderOrder = 3;
+      add(new THREE.CylinderGeometry(0.022, 0.022, len, 10).rotateX(Math.PI / 2), steel, gx, Y0 + 1.14, zc2);
+      for (let zz = za + 0.05; zz <= zb + 0.01; zz += Math.max(0.9, len / Math.ceil(len / 1.4))) add(new THREE.CylinderGeometry(0.025, 0.03, 1.14, 12), steel, gx, Y0 + 0.57, Math.min(zz, zb - 0.05));
+    }
   }
   const steelDoor = new THREE.MeshStandardMaterial({ map: steelDoorTexture(), color: 0xffffff, metalness: 1, roughness: 0.32 });
   for (const z of [-148.5, -145.5, -142.5]) {
@@ -810,8 +868,11 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     // the gates: flaps fold away while open
     for (const f of flaps) {
       f.until = Math.max(0, f.until - dt); const want = f.until > 0 ? 1 : 0;
-      f.open += (want - f.open) * Math.min(1, dt * 8); f.pane.scale.z = 1 - 0.92 * f.open; f.pane.position.z = 0;
-      f.light.material.color.setRGB(f.until > 0 ? 0.2 : 1.6, f.until > 0 ? 1.6 : 0.25, 0.3);
+      f.open += (want - f.open) * Math.min(1, dt * 6);
+      // the wings swing aside, each toward the way through (parallel to the lane, against its cabinet)
+      for (const w of f.wings) w.pivot.rotation.y = w.side * (Math.PI / 2) * f.open;
+      const ok = f.until > 0;
+      if (f.lit !== ok) { f.lit = ok; const G = gateMats(); for (const e of f.ends) e.material = ok ? G.arrow : G.cross; for (const st of f.strips) st.material = ok ? G.stripOk : G.stripOff; f.screen.material = ok ? G.faceOk : G.faceOff; }
       if (f.open > 0.6) Object.assign(f.col, { minX: 1e6, maxX: 1e6 }); else Object.assign(f.col, { minX: A.gateX - 0.1, maxX: A.gateX + 0.1, minZ: f.z - 0.5, maxZ: f.z + 0.5 });
     }
     // the guard: watches the gates, but every so often he's on his phone
