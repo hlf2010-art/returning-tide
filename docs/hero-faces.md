@@ -239,3 +239,13 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
 ![before and after](hero-faces/round13-short-hair.jpg)
 
 - **Painted hair read as a black stain on the skin** (behind the ear, the nape, the band under the fringe). It is now shell fur (`furShells` in people.js): the head's scalp triangles copied in 12 layers lifted about 3 mm off the skin and combed about 7 mm down along the hair's fall. A pixel survives on a layer only inside a strand (about 1 per mm) long enough to reach it, and strands taper. Where hair grows is read per pixel from the painted scalp, so the hairline does not step along the triangles. The face's own dark texels (lids, lip line) are excluded by position.
+
+## Round 14 (26 November): Gu Nian gets the close-up head
+
+![before and after](hero-faces/round14-gunian.jpg)
+
+- **Her head is now built by build_hero.py** (sheet v2) and swapped onto her Hunyuan body with her own hair kept, as Ji Bai's is: clean lips with her rose colour, fine arched brows, fuller lashes on the lid margin, warm skin from her portrait.
+- **New sheet controls** for women and other hair: `hairline` (`lift_m`, `recede`, `temple_rise`: a high, rounded hairline without a man's receding temples), `brows` (`arch_m`, `tail_drop_m`, `raise_m`), `lashes` (`count`, `length`, `width`).
+- **people.json per character:** `hairLum` (her brown hair's lit locks are lighter than Ji Bai's black: kept as hair, with the old painted skin inside those triangles cut away per pixel) and `conformNeck: false` (her open collar: the stretched neck folded into shards over a ragged old neck, so the new neck keeps its shape over the old neck left under its end, and its last centimetres take the old neck's colour).
+- **retintBodySkin** skips near-white warm cloth (her cream blouse and jacket had turned pink).
+- Still to improve: her kept hair's front edge is cut straight across the forehead (the Hunyuan shell), and the neck join is faintly visible up close.
