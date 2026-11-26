@@ -90,6 +90,7 @@ import { createBelongings } from './world/belongings.js';
 import { createHuracan, HURACAN_SPOT } from './world/huracan.js';
 import { createCarSale } from './world/carSale.js';
 import { createInteriors, PEACE, AIA } from './world/interiors.js';
+import { createAiaLife } from './world/aiaLife.js';
 import { createHotelUpper } from './world/hotelUpper.js';
 import { createJazzBar } from './world/jazzBar.js';
 import { createHailers } from './world/hailers.js';
@@ -302,6 +303,7 @@ async function boot() {
   });
   // the Peace Hotel's ground floor and the AIA lobby (world/interiors.js); their lamps join the light pool
   const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp() });
+  const aiaLife = createAiaLife({ scene, people, hud });   // agents and their clients in the AIA lobby (world/aiaLife.js)
   // up the lifts: the sixth floor and room 612 (world/hotelUpper.js)
   const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });
   // the Jazz Bar off the hall: the trio, Momo's night (world/jazzBar.js)
@@ -369,7 +371,7 @@ async function boot() {
     });
     ebikeView = createEbikeView({ scene, people, roles: ['c5', 'c1'].filter((r) => people.manifest.cast[r]) });
   }
-  world = { ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }) };
+  world = { ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }), aiaLife };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -1596,7 +1598,7 @@ function frame(now) {
   // the Bund (through the doors) or inside; away from it nothing in them is drawn (docs/living-city-architecture.md §6.1)
   { const b = player.body, nearBlocks = b.z < -110 && b.z > -290 && b.x > -110;
     world.interiors.group.visible = nearBlocks;
-    if (b.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, b); world.upper.update(mode === 'pause' ? 0 : dt, b); world.jazz.update(mode === 'pause' ? 0 : dt, b, camera); }
+    if (b.z < -120) { world.interiors.update(mode === 'pause' ? 0 : dt, b); world.aiaLife.update(mode === 'pause' ? 0 : dt, b, life.clock.minute); world.upper.update(mode === 'pause' ? 0 : dt, b); world.jazz.update(mode === 'pause' ? 0 : dt, b, camera); }
     else {
       world.upper.group.visible = false; world.jazz.group.visible = false;
       if (world.jazz.music.playing) world.jazz.update(0, b, camera);   // walked away: the band fades out

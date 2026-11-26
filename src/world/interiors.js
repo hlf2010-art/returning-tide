@@ -62,6 +62,8 @@ function carve() {
     [A.x1, L.facadeX, A.z0, A.door[0], 'aia-front'], [A.x1, L.facadeX, A.door[1], A.z1, 'aia-front'],
     [-40.7, -36.3, -140.7, A.z1, 'desk'],                           // reception, on the public side by the south wall
   ]);
+  // the Doric columns either side of the door, inside (their plinths)
+  for (const z of [A.door[0] - 0.75, A.door[1] + 0.75]) colliders.push({ minX: A.x1 - 1.22, maxX: A.x1 - 0.38, minZ: z - 0.42, maxZ: z + 0.42, tag: 'pillar' });
   // the gate line: solid but for the gate lanes (each lane has its own flap collider, opened by a badge)
   const lanes = A.gates, w = 0.55;
   const solid = [[A.z0, lanes[0] - w]];
@@ -203,6 +205,48 @@ const floorInlay = () => canvasTex(1024, 1024, (x, w) => {
   x.strokeStyle = '#c8a050'; x.lineWidth = 6; for (const r of [0.99, 0.9, 0.84, 0.66]) { oct(c * r); x.stroke(); }
   x.lineWidth = 3; x.beginPath(); x.arc(c, c, c * 0.06, 0, Math.PI * 2); x.stroke();
 });
+// No.17's walls: black marble inlaid with gold mosaic (as the building's interiors are described), here 2.2 m a bay:
+// a polished black dado to 1.1 m, black panels framed in bands of gold tesserae above, a gold mosaic frieze at the
+// top; a second canvas marks the gold for the metalness map
+const nero = (() => { let cache = null; return () => cache || (cache = (() => {
+  const W = 352, H = 992, px = H / 6.2, mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return [c, c.getContext('2d')]; };
+  const [c, x] = mk(), [mc, m] = mk();
+  x.fillStyle = '#121214'; x.fillRect(0, 0, W, H); m.fillStyle = '#000'; m.fillRect(0, 0, W, H);
+  let s2 = 17; const r = () => ((s2 = (s2 * 16807) % 2147483647) / 2147483647);
+  for (let k2 = 0; k2 < 26; k2++) { x.strokeStyle = `rgba(200,200,205,${0.04 + r() * 0.09})`; x.lineWidth = 0.5 + r() * 1.1; x.beginPath(); let a = r() * W, b = r() * H; x.moveTo(a, b); for (let q = 0; q < 7; q++) { a += (r() - 0.45) * 70; b += (r() - 0.3) * 90; x.lineTo(a, b); } x.stroke(); }   // white veins
+  const y = (metres) => H - metres * px;
+  const gold = (x0, y0, w, h) => {                                                                          // a band of gold tesserae
+    const t = 5; for (let yy = y0; yy < y0 + h; yy += t) for (let xx = x0; xx < x0 + w; xx += t) { const g = 160 + r() * 80; x.fillStyle = `rgb(${g},${g * 0.78 | 0},${g * 0.36 | 0})`; x.fillRect(xx, yy, t - 1, t - 1); }
+    m.fillStyle = '#fff'; m.fillRect(x0, y0, w, h);
+  };
+  x.fillStyle = 'rgba(255,255,255,0.05)'; x.fillRect(0, y(1.1), W, 1.1 * px);                             // the dado, a shade glossier
+  gold(0, y(1.15), W, 0.05 * px);                                                                         // its gold line
+  gold(0.18 * px, y(5.1), 0.06 * px, 3.7 * px); gold(W - 0.24 * px, y(5.1), 0.06 * px, 3.7 * px);       // the panel's frame
+  gold(0.18 * px, y(5.1), W - 0.36 * px, 0.06 * px); gold(0.18 * px, y(1.46), W - 0.36 * px, 0.06 * px);
+  gold(0.42 * px, y(4.86), W - 0.84 * px, 0.025 * px); gold(0.42 * px, y(1.66), W - 0.84 * px, 0.025 * px); // an inner fillet
+  gold(0, y(5.85), W, 0.42 * px);                                                                         // the frieze
+  x.fillStyle = '#121214'; for (let k2 = 0; k2 < 8; k2++) { const cx = (k2 + 0.5) * W / 8, cy = y(5.64); x.beginPath(); x.moveTo(cx, cy - 18); x.lineTo(cx + 12, cy); x.lineTo(cx, cy + 18); x.lineTo(cx - 12, cy); x.fill(); }   // black lozenges in it
+  const map = new THREE.CanvasTexture(c), metal = new THREE.CanvasTexture(mc);
+  map.colorSpace = THREE.SRGBColorSpace; for (const t of [map, metal]) { t.wrapS = THREE.RepeatWrapping; t.anisotropy = 8; }
+  return { map, metal };
+})()); })();
+// the vestibule's dome: gold mosaic, a rosette of darker gold at the crown, rings and rays of tesserae
+const goldMosaic = () => canvasTex(1024, 1024, (x, w) => {
+  const c = w / 2; let s2 = 23; const r = () => ((s2 = (s2 * 16807) % 2147483647) / 2147483647);
+  for (let yy = 0; yy < w; yy += 6) for (let xx = 0; xx < w; xx += 6) { const d = Math.hypot(xx - c, yy - c) / c, g = 150 + r() * 90 - (d < 0.18 ? 50 : 0) - ((Math.floor(d * 12) % 3 === 0) ? 25 : 0); x.fillStyle = `rgb(${g | 0},${g * 0.78 | 0},${g * 0.34 | 0})`; x.fillRect(xx, yy, 5, 5); }
+  x.strokeStyle = 'rgba(70,40,10,0.7)'; x.lineWidth = 6; for (const rr of [0.18, 0.5, 0.75, 0.97]) { x.beginPath(); x.arc(c, c, c * rr, 0, Math.PI * 2); x.stroke(); }
+  x.lineWidth = 3; for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2; x.beginPath(); x.moveTo(c + Math.cos(a) * c * 0.18, c + Math.sin(a) * c * 0.18); x.lineTo(c + Math.cos(a) * c * 0.5, c + Math.sin(a) * c * 0.5); x.stroke(); }
+  for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; x.fillStyle = 'rgba(40,60,90,0.55)'; x.beginPath(); x.arc(c + Math.cos(a) * c * 0.625, c + Math.sin(a) * c * 0.625, c * 0.05, 0, Math.PI * 2); x.fill(); }   // lapis roundels
+});
+// the plaster ceiling's relief (石膏拓花): a grid of coffers with rosettes, cream, shaded as if lit from the room
+const plasterRelief = () => { const t = canvasTex(512, 512, (x, w) => {
+  x.fillStyle = '#e9e1cf'; x.fillRect(0, 0, w, w);
+  const sh = (x0, y0, ww, hh, d) => { x.fillStyle = 'rgba(255,255,255,0.55)'; x.fillRect(x0, y0, ww, d); x.fillRect(x0, y0, d, hh); x.fillStyle = 'rgba(90,75,50,0.35)'; x.fillRect(x0, y0 + hh - d, ww, d); x.fillRect(x0 + ww - d, y0, d, hh); };
+  sh(20, 20, w - 40, w - 40, 10); sh(52, 52, w - 104, w - 104, 6);
+  const c = w / 2; for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; x.fillStyle = i % 2 ? 'rgba(90,75,50,0.25)' : 'rgba(255,255,255,0.5)'; x.beginPath(); x.ellipse(c + Math.cos(a) * 44, c + Math.sin(a) * 44, 30, 12, a, 0, Math.PI * 2); x.fill(); }
+  x.fillStyle = 'rgba(90,75,50,0.3)'; x.beginPath(); x.arc(c, c, 16, 0, Math.PI * 2); x.fill();
+  for (const [a, b] of [[36, 36], [w - 36, 36], [36, w - 36], [w - 36, w - 36]]) { x.fillStyle = 'rgba(255,255,255,0.5)'; x.beginPath(); x.arc(a, b, 9, 0, Math.PI * 2); x.fill(); }
+}); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
 const signTex = (lines, { bg = '#1a1510', fg = '#d9b46a', w = 512, h = 128 } = {}) => canvasTex(w, h, (x) => {
   x.fillStyle = bg; x.fillRect(0, 0, w, h); x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
   lines.forEach(([t, size], i) => { x.font = `600 ${size}px "Noto Serif SC", serif`; x.fillText(t, w / 2, h * (i + 1) / (lines.length + 1)); });
@@ -527,15 +571,76 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   for (const [x, z] of [[-48, -229], [-56, -218], [-40, -218], [-56, -240], [-40, -238], [-48, -240.5], [-57, -229]]) lights.push({ x, y: Y0 + P.h - 0.4, z, intensity: 14, distance: 11, color: new THREE.Color(1.0, 0.82, 0.58) });
 
   // ================= THE AIA BUILDING =================
-  const A = AIA, acx = (A.x0 + A.x1) / 2, acz = (A.z0 + A.z1) / 2;
-  add(new THREE.PlaneGeometry(A.x1 - A.x0, A.z1 - A.z0), marble, acx, Y0 + 0.004, acz, 0, -Math.PI / 2).material = marble.clone();
-  walls(A.x0, A.z0, A.x1, A.z0, A.h, acx, acz, [], 3, granite, granite);
-  walls(A.x1, A.z1, A.x0, A.z1, A.h, acx, acz, [], 3, granite, granite);
-  walls(A.x0, A.z1, A.x0, A.z0, A.h, acx, acz, [], 3, granite, granite);
-  walls(A.x1, A.z0, A.x1, A.z1, A.h, acx, acz, [[A.door[0] - A.z0, A.door[1] - A.z0]], 4.6, granite, granite);
-  add(new THREE.PlaneGeometry(A.x1 - A.x0, A.z1 - A.z0), new THREE.MeshStandardMaterial({ color: 0xd8d2c6, roughness: 0.8, emissive: 0x1a1814, side: THREE.DoubleSide }), acx, Y0 + A.h, acz, 0, Math.PI / 2);
-  const slot = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.85, 0.85, 0.82) });
-  for (let x = A.x0 + 2; x < A.x1 - 1; x += 3) add(new THREE.PlaneGeometry(0.12, A.z1 - A.z0 - 2), slot, x, Y0 + A.h - 0.02, acz, 0, Math.PI / 2);   // linear light slots
+  // after the building's own interiors (1924; restored 1996 by Jan Hird Pokorny Associates): white marble floors,
+  // walls of black marble inlaid with gold mosaic, plaster ceilings in relief, the entrance hall's dome in gold
+  // mosaic, Doric columns and a marble lintel at the door. Sources: docs/living-city-buildings.md (No.17)
+  const A = AIA, acx = (A.x0 + A.x1) / 2, acz = (A.z0 + A.z1) / 2, DOME = { x: -38.1, z: (A.door[0] + A.door[1]) / 2, r: 2.9 };
+  const whiteMarble = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, roughnessMap: marble.roughnessMap, color: 0xf6f3ec, roughness: 0.28, envMapIntensity: 1.3 });
+  const blackMarble = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, color: 0x1b1b1e, roughness: 0.18, envMapIntensity: 1.5 });
+  add(new THREE.PlaneGeometry(A.x1 - A.x0, A.z1 - A.z0), whiteMarble, acx, Y0 + 0.004, acz, 0, -Math.PI / 2);
+  { // a black marble border round the room, and a roundel under the dome: black ring, brass, a star
+    for (const [w, d, x, z] of [[A.x1 - A.x0 - 0.6, 0.3, acx, A.z0 + 0.45], [A.x1 - A.x0 - 0.6, 0.3, acx, A.z1 - 0.45], [0.3, A.z1 - A.z0 - 0.6, A.x0 + 0.45, acz], [0.3, A.z1 - A.z0 - 0.6, A.x1 - 0.45, acz]]) add(new THREE.PlaneGeometry(w, d), blackMarble, x, Y0 + 0.007, z, 0, -Math.PI / 2);
+    const rt = canvasTex(512, 512, (x, w) => { const c = w / 2; x.clearRect(0, 0, w, w); x.fillStyle = '#18181b'; x.beginPath(); x.arc(c, c, c * 0.98, 0, Math.PI * 2); x.fill(); x.fillStyle = '#f2eee6'; x.beginPath(); x.arc(c, c, c * 0.84, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#18181b'; x.beginPath(); for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? c * 0.3 : c * 0.78; x.lineTo(c + Math.cos(a) * rr, c + Math.sin(a) * rr); } x.closePath(); x.fill();
+      x.strokeStyle = '#c8a050'; x.lineWidth = 5; for (const rr of [0.98, 0.84]) { x.beginPath(); x.arc(c, c, c * rr, 0, Math.PI * 2); x.stroke(); } });
+    add(new THREE.CircleGeometry(1.6, 48), new THREE.MeshStandardMaterial({ map: rt, transparent: true, roughness: 0.25, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), DOME.x, Y0 + 0.009, DOME.z, 0, -Math.PI / 2);
+  }
+  // the walls: black marble and gold mosaic (UVs: 2.2 m a bay along, the room's height up)
+  const NERO = nero(), neroMat = new THREE.MeshStandardMaterial({ map: NERO.map, metalnessMap: NERO.metal, metalness: 1, roughness: 0.22, color: 0xffffff, envMapIntensity: 1.5, emissive: 0x0a0806 });
+  const aiaWall = (ax, az, bx, bz, cx, cz, gaps = []) => {
+    const len = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / len, uz = (bz - az) / len; let t0 = 0;
+    for (const [g0, g1, gh] of [...gaps, [len, len, 0]]) {
+      const piece = (ta, tb, y0, y1) => { if (tb - ta < 0.01) return; const m = wall(ax + ux * ta, az + uz * ta, ax + ux * tb, az + uz * tb, y0, y1, neroMat, cx, cz); const uv = m.geometry.attributes.uv;
+        for (let i = 0; i < uv.count; i++) uv.setXY(i, (ta + uv.getX(i) * (tb - ta)) / 2.2, (y0 - Y0 + uv.getY(i) * (y1 - y0)) / A.h); };
+      piece(t0, g0, Y0, Y0 + A.h); if (g1 > g0 && g1 < len) piece(g0, g1, Y0 + gh, Y0 + A.h); t0 = g1;
+    }
+  };
+  aiaWall(A.x0, A.z0, A.x1, A.z0, acx, acz); aiaWall(A.x1, A.z1, A.x0, A.z1, acx, acz); aiaWall(A.x0, A.z1, A.x0, A.z0, acx, acz);
+  aiaWall(A.x1, A.z0, A.x1, A.z1, acx, acz, [[A.door[0] - A.z0, A.door[1] - A.z0, 4.6]]);
+  // the ceiling: plaster in relief, with the dome over the entrance hall cut into it
+  {
+    const sh = new THREE.Shape(); sh.moveTo(A.x0, A.z0); sh.lineTo(A.x1, A.z0); sh.lineTo(A.x1, A.z1); sh.lineTo(A.x0, A.z1); sh.closePath();
+    const hole = new THREE.Path(); hole.absarc(DOME.x, DOME.z, DOME.r, 0, Math.PI * 2, true); sh.holes.push(hole);
+    const cg = new THREE.ShapeGeometry(sh, 32), uv = cg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 2.2, uv.getY(i) / 2.2);
+    add(cg, new THREE.MeshStandardMaterial({ map: plasterRelief(), roughness: 0.85, color: 0xf4eee2, emissive: 0x1c1810, side: THREE.DoubleSide }), 0, Y0 + A.h, 0, 0, Math.PI / 2);
+    // a moulded cornice round the room, gilt-edged
+    const corn = new THREE.MeshStandardMaterial({ color: 0xece4d2, roughness: 0.7 });
+    for (const [w, d, x, z] of [[A.x1 - A.x0, 0.32, acx, A.z0 + 0.16], [A.x1 - A.x0, 0.32, acx, A.z1 - 0.16], [0.32, A.z1 - A.z0, A.x0 + 0.16, acz], [0.32, A.z1 - A.z0, A.x1 - 0.16, acz]]) { box(w, 0.3, d, corn, x, Y0 + A.h - 0.3, z); box(w > d ? w : 0.04, 0.03, w > d ? 0.04 : d, brass, x + (w > d ? 0 : (x < acx ? 0.16 : -0.16)), Y0 + A.h - 0.33, z + (w > d ? (z < acz ? 0.16 : -0.16) : 0)); }
+    // the dome: gold mosaic on a shallow cap, a moulded ring at its foot, lit from a cove round the ring
+    const dg = new THREE.SphereGeometry(DOME.r, 48, 12, 0, Math.PI * 2, 0, Math.PI / 2), pos = dg.attributes.position, duv = dg.attributes.uv;
+    for (let i = 0; i < pos.count; i++) duv.setXY(i, 0.5 + pos.getX(i) / (2 * DOME.r), 0.5 + pos.getZ(i) / (2 * DOME.r));
+    const gm = goldMosaic(), dome = add(dg, new THREE.MeshStandardMaterial({ map: gm, metalness: 0.85, roughness: 0.32, color: 0xffffff, emissive: 0x3a2a10, emissiveMap: gm, side: THREE.BackSide, envMapIntensity: 1.6 }), DOME.x, Y0 + A.h, DOME.z);
+    dome.scale.y = 0.5;
+    const ring = add(new THREE.TorusGeometry(DOME.r, 0.09, 8, 64), corn, DOME.x, Y0 + A.h - 0.04, DOME.z, 0, Math.PI / 2); ring.castShadow = false;
+    add(new THREE.TorusGeometry(DOME.r - 0.1, 0.025, 6, 64), brass, DOME.x, Y0 + A.h - 0.1, DOME.z, 0, Math.PI / 2);
+    // a bronze lantern from the crown
+    const lan = new THREE.Group(); lan.position.set(DOME.x, Y0 + A.h - 0.9, DOME.z); group.add(lan);
+    const bronze2 = new THREE.MeshStandardMaterial({ color: 0x5a3e22, roughness: 0.4, metalness: 0.9 });
+    const glowA = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.25, 0.9) });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.26, 0.6, 8, 1), glowA); lan.add(body);
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, post = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.64, 0.03), bronze2); post.position.set(Math.cos(a) * 0.31, 0, Math.sin(a) * 0.31); post.rotation.z = Math.cos(a) * 0.13; post.rotation.x = -Math.sin(a) * 0.13; lan.add(post); }
+    for (const [y, r] of [[0.32, 0.38], [-0.32, 0.28]]) { const c2 = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.05, 8), bronze2); c2.position.y = y; lan.add(c2); }
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.9 + DOME.r * 0.5, 6), bronze2); rod.position.y = 0.32 + (0.9 + DOME.r * 0.5) / 2; lan.add(rod);
+    lights.push({ x: DOME.x, y: Y0 + A.h - 1.0, z: DOME.z, intensity: 12, distance: 9, color: new THREE.Color(1.0, 0.85, 0.62) });
+  }
+  // the entrance: a pair of Doric columns of white marble either side of the door, inside, under a marble lintel
+  {
+    const cx = A.x1 - 0.8;
+    for (const z of [A.door[0] - 0.75, A.door[1] + 0.75]) {
+      add(new THREE.CylinderGeometry(0.27, 0.31, A.h - 1.4, 20), whiteMarble, cx, Y0 + 0.3 + (A.h - 1.4) / 2, z);
+      for (let f = 0; f < 20; f++) { const a = (f / 20) * Math.PI * 2; const fl = add(new THREE.BoxGeometry(0.012, A.h - 1.5, 0.03), new THREE.MeshStandardMaterial({ color: 0xcfcac0, roughness: 0.5 }), cx + Math.cos(a) * 0.285, Y0 + 0.35 + (A.h - 1.5) / 2, z + Math.sin(a) * 0.285); fl.rotation.y = -a; }   // the flutes' shadow lines
+      box(0.78, 0.3, 0.78, blackMarble, cx, Y0, z);                                                          // the plinth
+      add(new THREE.CylinderGeometry(0.4, 0.29, 0.22, 20), whiteMarble, cx, Y0 + A.h - 1.1 + 0.11, z);       // the echinus
+      box(0.86, 0.16, 0.86, whiteMarble, cx, Y0 + A.h - 0.88, z);                                            // the abacus
+    }
+    box(0.9, 0.5, A.door[1] - A.door[0] + 2.4, whiteMarble, cx, Y0 + A.h - 0.72, (A.door[0] + A.door[1]) / 2);   // the marble lintel across them
+    box(0.94, 0.04, A.door[1] - A.door[0] + 2.44, brass, cx, Y0 + A.h - 0.74, (A.door[0] + A.door[1]) / 2);
+    // (the two goddesses by Italian sculptors who flanked the marble entrance were smashed in the Cultural Revolution;
+    // their places are left empty, a niche either side)
+    for (const z of [A.door[0] - 1.65, A.door[1] + 1.65]) { box(0.06, 2.1, 0.9, blackMarble, A.x1 - 0.03, Y0 + 1.0, z); add(new THREE.CircleGeometry(0.45, 24, 0, Math.PI), new THREE.MeshStandardMaterial({ map: NERO.map, color: 0x9a8a60, metalness: 1, roughness: 0.3 }), A.x1 - 0.07, Y0 + 3.1, z, -Math.PI / 2); box(0.3, 0.08, 0.9, whiteMarble, A.x1 - 0.15, Y0 + 1.0, z); }
+  }
+  // the hundred years, on the wall over reception: gilt letters on black marble
+  add(new THREE.PlaneGeometry(4.2, 1.5), new THREE.MeshStandardMaterial({ map: signTex([['源于上海 · 1919', 46], ['1919  史带在上海创业，由此而始', 24], ['1992  改革开放后首家获准设立的外资保险公司在上海开业', 24], ['1998  重返外滩17号字林大楼', 24], ['2010  友邦保险在香港联交所上市', 24], ['2020  友邦人寿成为内地首家外资独资人身保险公司', 24]], { bg: '#101012', fg: '#d8b46a', w: 1024, h: 384 }), roughness: 0.3, metalness: 0.3, emissive: 0x161210 }), -38.5, Y0 + 3.3, A.z1 - 0.05, Math.PI);
   // the doorway through the façade (world/bund.js cuts it): granite reveals and soffit; the bronze-and-glass
   // double doors stand open into the lobby; a bronze fanlight; a lantern either side outside
   { const zc = (A.door[0] + A.door[1]) / 2, xd = (A.x1 + L.facadeX) / 2, dep = L.facadeX - A.x1 + 0.02;
@@ -563,11 +668,11 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     lights.push({ x: A.x1 - 1.5, y: Y0 + 4.2, z: zc, intensity: 10, distance: 10, color: new THREE.Color(1.0, 0.86, 0.66) });   // the lobby's light, falling out of the door
   }
   // reception: a long granite desk on the south side; a tenant directory; a visitor QR stand
-  rbox(4.2, 1.1, 1.4, 0.05, granite, -38.5, Y0, -139.9);                                                 // reception, south side of the public lobby
-  box(4.3, 0.05, 1.5, marbleDark, -38.5, Y0 + 1.1, -139.9);
-  add(new THREE.PlaneGeometry(2.6, 1.6), new THREE.MeshBasicMaterial({ map: signTex([['友邦大厦 · 楼层指引', 34], ['10F  恒岳资本 Hengyue Capital', 26], ['8F  澄观设计 Chengguan Design', 26], ['5F  远航律师事务所 Yuanhang Law', 26], ['1–3F  友邦保险 AIA', 26]], { bg: '#121417', fg: '#e8e2d6', w: 768, h: 480 }) }), -38, Y0 + 2.4, A.z0 + 0.06, 0);
-  box(0.4, 1.2, 0.3, dark, -36, Y0, -150.6);
-  add(new THREE.PlaneGeometry(0.34, 0.5), new THREE.MeshBasicMaterial({ map: signTex([['访客预约', 40], ['扫码登记', 30], ['Visitor sign-in', 26]], { bg: '#f4f4f4', fg: '#222', w: 300, h: 420 }) }), -36, Y0 + 1.3, -150.44);
+  rbox(4.2, 1.1, 1.4, 0.05, blackMarble, -38.5, Y0, -139.9);                                             // reception, south side of the public lobby: black marble
+  box(4.3, 0.05, 1.5, whiteMarble, -38.5, Y0 + 1.1, -139.9); box(4.22, 0.04, 0.02, brass, -38.5, Y0 + 0.9, -140.61);
+  add(new THREE.PlaneGeometry(2.6, 1.6), new THREE.MeshBasicMaterial({ map: signTex([['外滩17号 · 楼层指引', 34], ['8F  恒岳资本 Hengyue Capital', 26], ['7F  澄观设计 Chengguan Design', 26], ['6F  远航律师事务所 Yuanhang Law', 26], ['1–5F  友邦人寿 AIA Life', 26]], { bg: '#121417', fg: '#e8e2d6', w: 768, h: 480 }) }), -38, Y0 + 2.4, A.z0 + 0.06, 0);
+  box(0.4, 1.2, 0.3, dark, -35.6, Y0, -140.3);
+  add(new THREE.PlaneGeometry(0.34, 0.5), new THREE.MeshBasicMaterial({ map: signTex([['访客预约', 40], ['扫码登记', 30], ['Visitor sign-in', 26]], { bg: '#f4f4f4', fg: '#222', w: 300, h: 420 }) }), -35.6, Y0 + 1.3, -140.46, Math.PI);
   // the doors stand open: two bronze leaves folded back into the arched reveal
   for (const s of [-1, 1]) box(0.08, 4.4, 1.6, brass, L.facadeX + 0.3, Y0, (A.door[0] + A.door[1]) / 2 + s * 2.4);
   // the speed gates: glass flaps between steel cabinets
@@ -586,7 +691,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     add(new THREE.PlaneGeometry(1.36, 2.66), steelDoor, A.x0 + 0.105, Y0 + 1.33, z, Math.PI / 2);
     box(1.6, 0.12, 0.05, new THREE.MeshStandardMaterial({ color: 0x5c6166, metalness: 1, roughness: 0.4 }), A.x0 + 0.08, Y0 + 2.7, z, Math.PI / 2);   // the head
   }
-  for (const [x, z] of [[-41, -145.5], [-44.5, -149], [-37.5, -149]]) lights.push({ x, y: Y0 + A.h - 0.4, z, intensity: 12, distance: 10, color: new THREE.Color(0.95, 0.93, 0.88) });
+  for (const [x, z] of [[-44.5, -145.5], [-38, -150.2], [-38, -140.8]]) lights.push({ x, y: Y0 + A.h - 0.4, z, intensity: 11, distance: 9, color: new THREE.Color(1.0, 0.88, 0.7) });
 
   group.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
 

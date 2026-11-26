@@ -600,6 +600,121 @@
   "en": "Fine. I'm hanging up."
  },
  {
+  "who": "aia:wife",
+  "zh": "我们主要想给我先生配一份重疾，孩子刚出生，最怕的就是家里有人生病。",
+  "en": "We mainly want critical illness cover for my husband. The baby has just arrived; what we fear most is one of us falling ill."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "理解。重疾险是确诊就一次性赔付，治疗费、收入损失都能顶上。李先生每年体检有什么异常吗？",
+  "en": "I understand. Critical illness pays a lump sum on diagnosis, so it covers treatment and lost income. Mr Li, anything unusual in your yearly check-ups?"
+ },
+ {
+  "who": "aia:husband",
+  "zh": "有个甲状腺结节，医生说三级，定期复查就行。",
+  "en": "A thyroid nodule. The doctor says grade three, just have it checked regularly."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "那一定要如实告知。核保可能会加一条除外，但其他保障不受影响。千万别瞒，理赔的时候会出问题的。",
+  "en": "Then you must disclose it. Underwriting may add an exclusion, but the rest of the cover stands. Never hide it: it causes trouble when you claim."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "公司有补充医疗，还需要另外买医疗险吗？",
+  "en": "My company has supplementary medical. Do I still need my own medical insurance?"
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "公司的团险跟着工作走，换了工作就没了。可以先配一份百万医疗兜底大病，预算够的话再看中高端医疗，私立医院和特需都能用。",
+  "en": "Group cover goes with the job: change jobs and it's gone. Start with a million-yuan plan for the big illnesses; if the budget allows, a mid-to-high-end plan lets you use private hospitals and VIP clinics."
+ },
+ {
+  "who": "aia:wife",
+  "zh": "特需就是不用排那么久队的吧？带孩子看病真的排怕了。",
+  "en": "VIP clinics are the ones without the long queues? We're worn out queueing with the baby."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "对，儿童医院的特需门诊也可以直付，不用自己先垫钱。",
+  "en": "That's right. The children's hospital's VIP clinic too, with direct billing, so you don't pay first and claim later."
+ },
+ {
+  "who": "aia:wife",
+  "zh": "一年大概要交多少保费？我们算过，家庭收入的一成左右能接受。",
+  "en": "Roughly how much premium a year? We worked out that about a tenth of household income is all right."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "这个思路很对，保费占收入百分之十左右比较稳妥。我按这个预算做两份计划书，下周带过来再对一下。",
+  "en": "That's the right way to think: about ten percent of income is sensible. I'll draw up two proposals on that budget and bring them next week to go through."
+ },
+ {
+  "who": "aia:husband",
+  "zh": "好，不着急，我们回去再商量商量。",
+  "en": "Fine, no hurry. We'll talk it over at home."
+ },
+ {
+  "who": "aia:zhou",
+  "zh": "应该的，买保险就是要想清楚。有什么问题随时发消息给我。",
+  "en": "Of course. Insurance needs thinking through. Message me with any questions."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "叔叔，装过心脏支架的话，普通医疗险核保会比较难。可以先靠沪惠保这种不限既往症的兜底，再配一份防癌医疗。",
+  "en": "Uncle, with heart stents, ordinary medical cover is hard to get through underwriting. Lean first on the city's 沪惠保, which doesn't exclude past illnesses, then add a cancer-only medical plan."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "小额理赔在手机上拍照上传就可以，材料齐全的话一般几天就到账。",
+  "en": "For small claims you just photograph the papers and upload them on your phone; with everything complete it's usually paid within a few days."
+ },
+ {
+  "who": "aia:lin",
+  "zh": "王总您好，这边请，会议室在三楼。麻烦先在前台登记一下访客。",
+  "en": "Mr Wang, hello, this way please. The meeting room is on the third floor. Could you register at the desk first?"
+ },
+ {
+  "who": "aia:wang",
+  "zh": "好。我们今年想把员工福利重新做一下，团险方案能不能把家属也加进来？",
+  "en": "Sure. We want to redo our staff benefits this year. Can the group plan cover families too?"
+ },
+ {
+  "who": "aia:lin",
+  "zh": "可以的，配偶和子女都能加。也可以做弹性福利，员工在额度里自己选保障。",
+  "en": "Yes, spouses and children both. We can also do flexible benefits, where staff choose their own cover within an allowance."
+ },
+ {
+  "who": "aia:wang",
+  "zh": "我们有几个外籍员工，境外看病也能报销吗？",
+  "en": "We have a few foreign staff. Can they claim for treatment abroad?"
+ },
+ {
+  "who": "aia:lin",
+  "zh": "可以，有全球医疗的方案。等下让做员工福利的同事一起跟您过一下细节。",
+  "en": "Yes, there's a global medical plan. In a moment I'll have our employee-benefits colleague go through the details with you."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "张姐，体检报告我收到了，核保那边还要再补一份复查报告。",
+  "en": "Zhang jie, I've got your check-up report. Underwriting needs one more follow-up report."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "对，医院的线上服务里就能下载，不用再跑一趟。",
+  "en": "Yes, you can download it from the hospital's online service; no need to go in again."
+ },
+ {
+  "who": "aia:chen",
+  "zh": "合同我们线上签，还要做个双录，就是录音录像，十分钟左右。您下午方便吗？",
+  "en": "We sign the contract online, and there's the recorded-sale step, audio and video, about ten minutes. Are you free this afternoon?"
+ },
+ {
+  "who": "aia:chen",
+  "zh": "好嘞，那我三点给您打视频。",
+  "en": "Great, I'll video-call you at three."
+ },
+ {
   "who": "carPurchase.js",
   "zh": "你好，我是知夏的朋友纪白，想了解一下 Strale。",
   "en": "me"

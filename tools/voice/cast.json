@@ -355,5 +355,35 @@
  "bump:visitorF": {
   "zh": "zf_022",
   "en": "af_sky"
+ },
+ "aia:zhou": {
+  "zh": "zf_019",
+  "en": "bf_isabella",
+  "speed": 0.98
+ },
+ "aia:wife": {
+  "zh": "zf_087",
+  "en": "af_nicole"
+ },
+ "aia:husband": {
+  "zh": "zm_068",
+  "en": "am_adam"
+ },
+ "aia:shen": {
+  "zh": "zf_021",
+  "en": "af_sarah"
+ },
+ "aia:lin": {
+  "zh": "zf_046",
+  "en": "bf_emma"
+ },
+ "aia:wang": {
+  "zh": "zf_083",
+  "en": "af_bella"
+ },
+ "aia:chen": {
+  "zh": "zm_065",
+  "en": "am_liam",
+  "speed": 1.05
  }
 }

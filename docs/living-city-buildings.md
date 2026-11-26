@@ -93,7 +93,22 @@ about 35 m (`layout.js:32, 39-43`). The promenade runs from x 2 to x 26.
 - *Flags on the Bund carry the five stars; Lujiazui's day glass is blue-grey rather than pastel.*
 
 *Still open from that review:*
-- *The AIA lobby is still plain; the Peace Hotel's is done (below).*
+- *The Peace Hotel's lobby and the AIA lobby are done (below).*
+
+*26 Nov 2026, the AIA lobby (No.17, the North China Daily News Building, 1924; restored 1996 by Jan Hird Pokorny Associates; AIA's Shanghai home since May 1998) rebuilt, and given its working day:*
+- *From descriptions of the building: white marble floors; interior walls mostly black marble inlaid with gold mosaic; plaster ceilings in relief (石膏拓花); the entrance hall's dome in gold mosaic; Doric columns and a marble lintel at the entrance (Chinese Wikipedia and Baidu on 字林大楼). The two goddesses by Italian sculptors that flanked the marble entrance were smashed in the Cultural Revolution (Wikipedia): their places are left as empty niches.*
+- *The game's own: the panels' layout, the floor roundel, the dome's pattern, the bronze lantern, the consultation corner's furniture.*
+- *A wall over reception gives the firm's Shanghai history: 1919 (C. V. Starr's agency), 1992 (the first foreign insurer licensed after reform), 1998 (back at No.17), 2010 (Hong Kong listing, after leaving AIG), 2020 (AIA Life, the first wholly foreign-owned life insurer on the mainland).*
+- *People (world/aiaLife.js, lines in world/aiaTalk.js), 9:00–19:00:*
+  - *two consultations: a senior agent with a young couple, on critical illness (disclosing a thyroid nodule), medical cover beyond the company plan, and a budget of a tenth of income; and a Shanghai agent with a retired couple in Shanghainese, on increasing whole life for a grandson, cash values in the contract, cover after heart stents and the city's 沪惠保, and claims;*
+  - *an employee-benefits manager meeting an HR director: group cover with families, flexible benefits, global medical;*
+  - *an agent on the phone: an underwriting follow-up, online signing and the recorded sale (双录).*
+- *Dress and voices: most of the agents are women, as most of the agency force is; they wear suits and a red lanyard with a staff card. Clients are in everyday clothes; the retired couple have grey hair. Mandarin lines are voiced with Kokoro and Shanghainese is subtitled, as elsewhere.*
+- *No real policy is named. The company name is used because the building carries it: clear it before a commercial release, with the other brands.*
+- *Why AIA: agents bring in about 85% of its new business value here, and protection is its core (AIA reporting via Chinese press).*
+
+Sources: [字林大楼 (Wikipedia, Chinese)](https://zh.wikipedia.org/zh-cn/%E5%AD%97%E6%9E%97%E5%A4%A7%E6%A5%BC), [North China Daily News Building (Wikipedia)](https://en.wikipedia.org/wiki/North_China_Daily_News_Building), [Jan Hird Pokorny Associates](https://www.jhpokorny.com/projects/guilin), [Baidu Baike 字林大楼](https://baike.baidu.com/item/%E5%AD%97%E6%9E%97%E5%A4%A7%E6%A5%BC/2127046), [Yicai on AIA's 1992 licence](https://www.yicai.com/news/100007468.html), [NBD on AIA Life's 2020 conversion](https://www.nbd.com.cn/articles/2021-04-23/1713218.html), [Sina on AIA's history](https://finance.sina.cn/chanjing/gsxw/2019-05-10/detail-ihvhiews1085488.d.html).
+
 
 *26 Nov 2026, the Peace Hotel lobby rebuilt from published descriptions of the 2007-10 restoration:*
 - *An octagonal stained-glass laylight in warm yellows, geometric, on steel ribs (HBA: "octagonal stained glass ceiling with geometric patterns and warm yellow tones"; Arcplus: a double-layer steel octagonal skylight). It had been hidden above a plaster cap; it is now visible from the hall.*

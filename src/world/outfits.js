@@ -151,3 +151,43 @@ export function dressRider(person, brand = 'yellow') {
   person.outfit = `rider-${brand}`;
   return person;
 }
+
+// ---- insurance agents (the AIA lobby, world/aiaLife.js): their own business clothes, and the company lanyard:
+// a red ribbon round the neck down to a white staff card on the chest (red header band, a photo, a name) ----
+const lanyardMat = new THREE.MeshStandardMaterial({ color: 0xc8102e, roughness: 0.6 });
+let badgeMat = null;
+function badgeMaterial() {
+  if (badgeMat) return badgeMat;
+  if (typeof document === 'undefined') return (badgeMat = new THREE.MeshStandardMaterial({ color: 0xf4f4f4 }));
+  const c = document.createElement('canvas'); c.width = 64; c.height = 96; const x = c.getContext('2d');
+  x.fillStyle = '#f7f7f5'; x.fillRect(0, 0, 64, 96); x.fillStyle = '#c8102e'; x.fillRect(0, 0, 64, 20);
+  x.fillStyle = '#b9c2cc'; x.fillRect(18, 28, 28, 32); x.fillStyle = '#333'; x.fillRect(12, 68, 40, 5); x.fillRect(16, 78, 32, 4);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return (badgeMat = new THREE.MeshStandardMaterial({ map: t, roughness: 0.4 }));
+}
+export function dressAgent(person) {
+  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
+  if (!head.length || !body.length) return person;
+  const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), neck = top - 0.25;
+  // the front of the chest at a height: the forward-most point of the body near the middle
+  const frontAt = (y, x0 = -0.04, x1 = 0.04) => { const pts = body.filter((p) => Math.abs(p.y - y) < 0.02 && p.x > x0 && p.x < x1); return pts.length ? pts.reduce((m, p) => (p.z > m.z ? p : m), pts[0]) : null; };
+  const card = frontAt(neck - 0.3), collar = frontAt(neck - 0.02, -0.1, 0.1);
+  if (!card || !collar) return person;
+  const g = new THREE.Group(), cz = card.z + 0.012;
+  // the ribbon: from either side of the collar down to the clip over the card
+  for (const s of [-1, 1]) {
+    const a = new THREE.Vector3(s * 0.07, collar.y, collar.z - 0.03), b = new THREE.Vector3(0, card.y + 0.05, cz), mid = a.clone().lerp(b, 0.5); mid.z += 0.03;
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(a, mid, b), 10, 0.006, 4, false), lanyardMat); tube.scale.set(1, 1, 1); g.add(tube);
+  }
+  const badge = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.085, 0.003), badgeMaterial()); badge.position.set(0, card.y, cz); g.add(badge);
+  attach(person, 'Bip01_Spine2', g, new THREE.Vector3(0, 0, 0));
+  person.outfit = 'agent';
+  return person;
+}
+// grey hair for an older client: the hair texture taken toward silver, the darks lifted
+export function greyHair(person) {
+  person.root.traverse((o) => {
+    if (o.isMesh && /opacity/i.test(o.material.name)) o.material = recolor(o.material, 'hair-grey', (r, g, b) => { const l = lum(r, g, b), k = 110 + l * 0.55; return [k, k, k * 1.02]; });
+  });
+  return person;
+}
