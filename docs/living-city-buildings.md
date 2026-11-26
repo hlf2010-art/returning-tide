@@ -160,7 +160,7 @@ Sources: [Xinhua, 6 Aug 2025](http://www.news.cn/money/20250806/dd7961bc46974e17
 - *The staff door's opening was cut at the wrong end of the west wall: a 2.4 m hole onto the street behind the guests, while the door itself stood on solid wall. It is now behind the door.*
 - *The desks' walnut was one grain stretched across 8 m (rounded boxes had no metric UVs); now metric.*
 - *A Lalique-manner panel overlapped the staff door's architrave and a sconce overlapped the other: both moved.*
-- *The concierge wore a red track jacket: now a dark suit with the golden crossed keys of Les Clefs d'Or on his lapels. The front desk wears the hotel's dark suit with a gold name badge.*
+- *The concierge wore a red track jacket: now a dark suit with the golden crossed keys of Les Clefs d'Or on his lapels. The front desk wears near-black with a gold name badge.*
 - *The concierge's parcels hung in the air: a walnut shelf unit holds them.*
 - *The lounge's armchairs were four rounded blocks: now proper club chairs in oxblood leather.*
 - *The grand piano looked like a chaise longue (a solid slab, the lid raised at the tail). Rebuilt: the case with its straight and curved sides, open, with soundboard, gilt frame and strings; the lid hinged on the straight side on its stick; the keyboard with black keys, cheeks and fallboard; the music desk; legs on brass castors; the pedal lyre; a bench.*
@@ -183,6 +183,20 @@ Sources: [HBA](https://hba.com/projects/fairmont-peace-hotel/), [Arcplus via The
   - *The eye is adapted to the side it stands on, which one exposure can't show, so that is applied by the hour. By day from the street the doors mirror the Bund and the hall is dim behind them; from the hall the windows are clear. At night the lit hall shows through from outside, and from inside the windows give back the room over Pudong's lights.*
 
 Sources: [PointsWise](https://pointswise.ca/fairmont-peace-hotel-shanghai-suite-review/), [Renae's World](https://renaesworld.com.au/fairmont-peace-hotel-shanghai-review-inside-the-legendary-luxury-hotel-on-the-bund/), [Ctrip reviews](https://wap.ctrip.com/html5/hotel/hoteldetail/dianping/375539.html), [Tripadvisor](https://www.tripadvisor.com/ShowUserReviews-g308272-d303020-r119284941-Fairmont_Peace_Hotel-Shanghai.html), [China Daily, 2011](https://covid-19.chinadaily.com.cn/life/2011-05/18/content_12533348.htm), [China Daily, 2015](https://www.chinadaily.com.cn/travel/2015-01/17/content_19337819_4.htm), [FLYERT](https://flyert.com.cn/forum.php?mobile=2&mod=viewthread&tid=4654926), [Shanghai Daily, 2015](https://archive.shine.cn/feature/mice/Stories-behind-upscale-hotel-uniforms/shdaily.shtml).
+
+*26 Nov 2026, room 612 rebuilt (world/room612.js) from what guests and the restoration's designers describe of the hotel's rooms since 2010:*
+- *The entry: vintage herringbone parquet (复古斜纹地板, Flyert 2024), with the minibar there (Flyert 2024). It holds a capsule coffee machine and tea (Flyert 2024–25), and there is a wardrobe.*
+- *The room: a dark-gold carpet (暗金色底色的地毯; "地毯的图案" stays with guests, Flyert 2024/2025), here with an Art Deco lattice and fans. Walls in the hotel's soft "buff and blue-grey" scheme over a walnut-burl dado (HBA, 2009: "walnut burl grain wood paneling", "antique bronze and polished nickel"), with a cornice and a coffered ceiling ("original intricate cornices and coffers").*
+- *A 2 m bed with a leather headboard (皮质的床头, Flyert 2024). Two pink glass table lamps (两只粉红琉璃台灯, Flyert 2025) with pale-yellow shades (浅黄色灯罩, Flyert 2024).*
+- *A solid-wood desk (实木书桌) whose chair has a dark-red velvet back (暗红色天鹅绒靠背), and a brown corduroy sofa (咖啡色灯芯绒) (Flyert 2024). The television is hidden in a cabinet beside the sofa (Flyert 2024, 2025). Porcelain and oil paintings (Flyert 2025). A welcome letter by the fruit (PointsWise).*
+- *Double-glazed windows that don't open (双层玻璃, 无法打开), and old-fashioned drapes tied back with bands (古朴, 绑带) (Flyert 2025). Here they are blue-grey with sheers, under a pelmet.*
+- *The bathroom: a black marble floor and counter, white marble walls (黑色系 / 白色系, Flyert 2024). A free-standing tub on decorative legs in the middle (欧式带装饰腿, Jiemian 2017; PointsWise). A separate rain shower, two basins, the WC in its own room, and a small television in the marble by the tub (PointsWise). Robes and slippers.*
+- *The panes and mirrors give back the room (world/glass.js probes, taken without people in them). The corridors are now green, as described (green walls, dark wooden doors, openwork sconces, Jiemian 2017).*
+- *New things to do: make a coffee (4 minutes), read the welcome letter, and wash your face at the basin.*
+- *Not from a source: the headboard's form and colour, the carpet's pattern, the paintings' subjects, the drapes' colour, the layout within the room.*
+- *Honest note: the real hotel's standard rooms (Deluxe 45 m², Fairmont 49 m²) look onto the courtyard or the city (Nanjing Road). River views come with the suites: the Signature Riverview and Nine Nations suites (178 m², the Nine Nations on 5F–7F) and the Sassoon Suite (Accor; Sohu 2021). The game keeps 612 on the Bund for its story. To be exact it would be a river-view suite (the desk's line says "江景房").*
+
+Sources: [Flyert, 2024](https://flyert.com.cn/forum.php?mod=viewthread&tid=4559150), [Flyert, 2025](https://flyert.com.cn/forum.php?mod=viewthread&tid=4700515), [HBA press release, 2009](https://journaldespalaces.com/en/pressrelease-22701), [Hospitality Net, 2010](https://www.hospitalitynet.org/news/4047629), [Jiemian, 2017](https://www.jiemian.com/article/1063379.html), [PointsWise](https://pointswise.ca/fairmont-peace-hotel-shanghai-suite-review/), [Accor: Fairmont Peace Hotel](https://all.accor.com/hotel/A5G7/index.en.shtml), [Sohu, 2021](https://www.sohu.com/a/470520348_99990028).
 
 - *The crowd reads as cloned (too few outfits; people walk in files along the parapet).*
 - *Tram riders' arms pass through the window pillar.*

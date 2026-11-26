@@ -305,7 +305,7 @@ async function boot() {
   const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp(), renderer: R.renderer });
   const aiaLife = createAiaLife({ scene, people, hud, getLife: () => life });   // agents and their clients in the AIA lobby (world/aiaLife.js)
   // up the lifts: the sixth floor and room 612 (world/hotelUpper.js)
-  const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });
+  const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, renderer: R.renderer });
   // the Jazz Bar off the hall: the trio, Momo's night (world/jazzBar.js)
   // places a DiDi takes you that you can walk into (the North Bund flat, IFC 32F)
   const dests = createDestinations({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, travel, voice });

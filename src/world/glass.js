@@ -25,7 +25,8 @@ const v3 = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 // box: { min: [x, y, z], max: [x, y, z] }, the room the pane belongs to (where "inside" is); proj: the room's
 // surfaces for the projection (its real ceiling height), default box
 // room: { floor: [r, g, b], ceil: [r, g, b] }, linear radiance of the room's lower and upper halves
-export function sidedGlass({ box, proj = box, room, f0 = 0.08, through = 0.9, tint = [0.92, 0.97, 0.96], between = false, name = 'glass' }) {
+// mirror: a silvered glass (a bathroom mirror): all reflection, nothing through, always the room's
+export function sidedGlass({ box, proj = box, room, f0 = 0.08, through = 0.9, tint = [0.92, 0.97, 0.96], between = false, mirror = false, name = 'glass' }) {
   const m = new THREE.MeshStandardMaterial({ name, color: 0x000000, roughness: 0.03, metalness: 0, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false });   // (no fog: it would be added on top of the fogged scene behind)
   m.blending = THREE.CustomBlending; m.blendEquation = THREE.AddEquation;
   m.blendSrc = THREE.OneFactor; m.blendDst = THREE.OneMinusSrcAlphaFactor;
@@ -33,7 +34,7 @@ export function sidedGlass({ box, proj = box, room, f0 = 0.08, through = 0.9, ti
   const U = {
     gBoxMin: { value: v3(box.min) }, gBoxMax: { value: v3(box.max) },
     gFloor: { value: v3(room.floor) }, gCeil: { value: v3(room.ceil) },
-    gTint: { value: v3(tint) }, gF0: { value: f0 }, gThrough: { value: through }, gBetween: { value: between ? 1 : 0 }, gDay: TOD.day,
+    gTint: { value: v3(tint) }, gF0: { value: f0 }, gThrough: { value: through }, gBetween: { value: between ? 1 : 0 }, gMirror: { value: mirror ? 1 : 0 }, gDay: TOD.day,
     gRoom: { value: null }, gHasRoom: { value: 0 }, gProbe: { value: new THREE.Vector3() }, gProjMin: { value: v3(proj.min) }, gProjMax: { value: v3(proj.max) },
   };
   m.userData.glass = U;
@@ -43,13 +44,13 @@ export function sidedGlass({ box, proj = box, room, f0 = 0.08, through = 0.9, ti
       .replace('#include <common>', '#include <common>\nvarying vec3 vGWorld;')
       .replace('#include <project_vertex>', '#include <project_vertex>\nvGWorld = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 gBoxMin, gBoxMax, gFloor, gCeil, gTint, gProbe, gProjMin, gProjMax; uniform float gF0, gThrough, gBetween, gDay, gHasRoom; uniform samplerCube gRoom; varying vec3 vGWorld;')
+      .replace('#include <common>', '#include <common>\nuniform vec3 gBoxMin, gBoxMax, gFloor, gCeil, gTint, gProbe, gProjMin, gProjMax; uniform float gF0, gThrough, gBetween, gMirror, gDay, gHasRoom; uniform samplerCube gRoom; varying vec3 vGWorld;')
       .replace('#include <opaque_fragment>', `{
         vec3 gV = normalize( vViewPosition ), gN = normalize( normal );          // (normal faces the eye: two-sided)
         float cosT = clamp( dot( gN, gV ), 0.0, 1.0 );
-        float F = gF0 + ( 1.0 - gF0 ) * pow( 1.0 - cosT, 5.0 );
+        float F = mix( gF0 + ( 1.0 - gF0 ) * pow( 1.0 - cosT, 5.0 ), 1.0, gMirror );
         vec3 Rw = transformDirectionByInverseViewMatrix( reflect( - gV, gN ), viewMatrix );
-        bool inside = all( greaterThan( cameraPosition, gBoxMin ) ) && all( lessThan( cameraPosition, gBoxMax ) );
+        bool inside = gMirror > 0.5 || ( all( greaterThan( cameraPosition, gBoxMin ) ) && all( lessThan( cameraPosition, gBoxMax ) ) );
         vec3 env = mix( gFloor, gCeil, smoothstep( -0.45, 0.45, Rw.y ) );
         if ( inside && gHasRoom > 0.5 ) {
           vec3 Rs = Rw + vec3( equal( Rw, vec3( 0.0 ) ) ) * 1e-4;
@@ -62,9 +63,9 @@ export function sidedGlass({ box, proj = box, room, f0 = 0.08, through = 0.9, ti
         #endif
         // adaptation: inside by night (and outside by day) the far side dims and the reflection tells more
         float kT = inside ? mix( 0.45, 1.0, gDay ) : mix( 1.0, 0.5, gDay ), kR = inside ? mix( 3.0, 1.0, gDay ) : mix( 1.0, 2.2, gDay );
-        kT = mix( kT, 1.0, gBetween ); kR = mix( kR, 1.0, gBetween );
+        kT = mix( kT, 1.0, max( gBetween, gMirror ) ); kR = mix( kR, 1.0, max( gBetween, gMirror ) );
         vec3 refl = env * min( 1.0, F * kR ) * gTint + reflectedLight.directSpecular;
-        gl_FragColor = vec4( refl, 1.0 - ( 1.0 - F ) * gThrough * kT );
+        gl_FragColor = vec4( refl, mix( 1.0 - ( 1.0 - F ) * gThrough * kT, 1.0, gMirror ) );
       }`);
   };
   m.customProgramCacheKey = () => 'sided-glass';
@@ -80,8 +81,11 @@ export function createRoomProbe(mats, at, size = 256) {
   return {
     taken: false, day: -1,
     take(renderer, scene) {
+      // (without the panes themselves, and without people: whoever stood there would stay in the glass, frozen,
+      // after they'd gone, and you'd see your own headless first-person body)
       const hidden = [];
       scene.traverse((o) => { if (o.isMesh && o.visible && mats.includes(o.material)) { o.visible = false; hidden.push(o); } });
+      for (const c of scene.children) { if (!c.visible) continue; let person = false; c.traverse((o) => { if (o.isSkinnedMesh) person = true; }); if (person) { c.visible = false; hidden.push(c); } }
       cam.update(renderer, scene);
       for (const o of hidden) o.visible = true;
       for (const m of mats) m.userData.glass.gHasRoom.value = 1;
