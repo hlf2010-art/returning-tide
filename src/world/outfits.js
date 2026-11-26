@@ -21,7 +21,12 @@ function recolor(mat, style, fn) {
   const d = ctx.getImageData(0, 0, c.width, c.height), px = d.data;
   for (let i = 0; i < px.length; i += 4) { const o = fn(px[i], px[i + 1], px[i + 2], px[i + 3]); if (o) { px[i] = o[0]; px[i + 1] = o[1]; px[i + 2] = o[2]; } }
   ctx.putImageData(d, 0, 0);
-  const m = mat.clone(), t = mat.map.clone(); t.image = c; t.needsUpdate = true; m.map = t; m.name = `${mat.name}:${style}`;
+  // (a new texture, not mat.map.clone(): a clone shares the original's image source, so setting its image would
+  // repaint everyone wearing the original)
+  const src = mat.map, t = new THREE.CanvasTexture(c);
+  t.flipY = src.flipY; t.colorSpace = src.colorSpace; t.wrapS = src.wrapS; t.wrapT = src.wrapT; t.channel = src.channel; t.anisotropy = src.anisotropy;
+  t.offset.copy(src.offset); t.repeat.copy(src.repeat); t.needsUpdate = true;
+  const m = mat.clone(); m.map = t; m.name = `${mat.name}:${style}`;
   made.set(key, m);
   return m;
 }
