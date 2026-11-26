@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees, crossing, sideStreets } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
-import { makeCanvas, tex, rng, FONT, glowTexture } from './canvas.js';
+import { makeCanvas, tex, rng, FONT, glowTexture, fitText } from './canvas.js';
 import { T } from './text.js';
 
 const FAR = 430, S = L.street, CH = L.curbH;
@@ -228,7 +228,7 @@ export function createStreet(M) {
     c.fillStyle = '#f2c81a'; c.fillRect(0, 0, w, h); c.strokeStyle = '#111'; c.lineWidth = 10; c.strokeRect(8, 8, w - 16, h - 16);
     c.fillStyle = '#111'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.font = `700 ${h * 0.2}px ${FONT.sans}`; T.hoardingSub.split('　').forEach((s, i) => c.fillText(s, w / 2, h * (0.3 + i * 0.26)));
-    c.font = `700 ${h * 0.085}px ${FONT.sans}`; c.fillText(T.hoardingEn, w / 2, h * 0.82);
+    c.font = `700 ${h * 0.085}px ${FONT.sans}`; fitText(c, T.hoardingEn, w / 2, h * 0.82, w * 0.92);
   }, { emissive: 0.3 }), hx + 0.6, 1.3, -5.0, Math.PI / 2);
   B.steel.box(hx + 0.58, 0, -5.0, 0.04, 0.8, 1.0);
   // amber beacons on the hoarding (they blink)
@@ -343,7 +343,7 @@ export function createStreet(M) {
   }, { emissive: 0.5 }), sx, CH + 2.25, wz + 0.03, 0);
   place(group, sign(0.3, 0.21, (c, w, h) => {
     c.fillStyle = '#f4f1e8'; c.fillRect(0, 0, w, h); c.fillStyle = '#1c1c1c'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = `${h * 0.42}px ${FONT.hand}`; c.fillText(T.stallClosed, w / 2, h * 0.52);
+    c.font = `${h * 0.42}px ${FONT.hand}`; fitText(c, T.stallClosed, w / 2, h * 0.52, w * 0.9);
   }, { emissive: 0.45, px: 128 }), sx - 0.2, CH + 0.52, sz + 0.322, 0);
 
   // his wall clock, stopped

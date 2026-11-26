@@ -33,13 +33,13 @@ function boardTexture(st) {
   return tex(c, { repeat: false });
 }
 function adTexture(k) {
-  const [c, x] = makeCanvas(256, 512);
+  const [c, x] = makeCanvas(332, 512);              // the panel's face: 1.2 m x 1.85 m
   const g = x.createLinearGradient(0, 0, 0, 512);
   const pal = [['#16213a', '#b8325a'], ['#0d2a2a', '#e0a83a'], ['#1d1238', '#4f8cff']][k % 3];
-  g.addColorStop(0, pal[0]); g.addColorStop(1, pal[1]); x.fillStyle = g; x.fillRect(0, 0, 256, 512);
+  g.addColorStop(0, pal[0]); g.addColorStop(1, pal[1]); x.fillStyle = g; x.fillRect(0, 0, 332, 512);
   x.fillStyle = 'rgba(255,255,255,0.92)'; x.textAlign = 'center';
-  x.font = `900 46px ${FONT.sans}`; x.fillText(['上海', '外滩', '夜'][k % 3], 128, 200);
-  x.font = `600 22px ${FONT.sans}`; x.fillText(['城市因你而美', 'THE BUND · 1843', '浦江游览'][k % 3], 128, 250);
+  x.font = `900 46px ${FONT.sans}`; x.fillText(['上海', '外滩', '夜'][k % 3], 166, 200);
+  x.font = `600 22px ${FONT.sans}`; x.fillText(['城市因你而美', 'THE BUND · 1843', '浦江游览'][k % 3], 166, 250);
   return tex(c, { repeat: false });
 }
 
@@ -65,8 +65,9 @@ export function createBuses({ scene, traffic, vehicles, crowd = null, audio = nu
     board.material.color.setScalar(1.25); board.position.set(-back * 0.9, 1.45, -len / 2 - 0.15); board.rotation.y = st.dir > 0 ? Math.PI : 0;
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.9, 8), steel); pole.position.set(-back * 0.9, 1.45, -len / 2 - 0.2); g.add(pole, board);
     // the stop's name along the roof edge facing the road
-    const [nc, nx] = makeCanvas(1024, 96);
-    nx.fillStyle = '#0d3b7a'; nx.fillRect(0, 0, 1024, 96); nx.fillStyle = '#fff'; nx.font = `800 52px ${FONT.sans}`; nx.textAlign = 'center'; nx.fillText(st.name, 512, 66);
+    // (the canvas has the strip's own proportions, 7.2 m x 0.42 m, so the characters aren't stretched)
+    const NW = Math.round(96 * len / 0.42), [nc, nx] = makeCanvas(NW, 96);
+    nx.fillStyle = '#0d3b7a'; nx.fillRect(0, 0, NW, 96); nx.fillStyle = '#fff'; nx.font = `800 52px ${FONT.sans}`; nx.textAlign = 'center'; nx.fillText(st.name, NW / 2, 66);
     const name = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.42), new THREE.MeshBasicMaterial({ map: tex(nc, { repeat: false }) }));
     name.material.color.setScalar(1.3); name.position.set(-back * 0.96, 2.4, 0); name.rotation.y = -back * Math.PI / 2; g.add(name);
     group.add(g);

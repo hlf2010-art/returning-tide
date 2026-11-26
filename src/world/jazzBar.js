@@ -147,7 +147,7 @@ export function createJazzBar({ scene, people, hud, audio, getLife, save, player
     add(new THREE.CylinderGeometry(0.05, 0.08, 0.1, 12, 1, true), lampMat, x + 0.08, Y0 + 0.84, z - 0.06); add(new THREE.CylinderGeometry(0.012, 0.03, 0.06, 8), brass, x + 0.08, Y0 + 0.76, z - 0.06);
     // chairs face the table, placed on its west and east sides (the reserved one: west, toward the stage)
     chair(x - 0.72, z, Math.PI / 2); chair(x + 0.72, z, -Math.PI / 2);
-    if (i === RESERVED) add(new THREE.PlaneGeometry(0.12, 0.08), new THREE.MeshBasicMaterial({ map: signTex([['预留 · Reserved', 40]], { bg: '#f1ece1', fg: '#3a2e20', w: 512, h: 160 }) }), x - 0.08, Y0 + 0.78, z + 0.1, -Math.PI / 2 + 0.3, 0);
+    if (i === RESERVED) add(new THREE.PlaneGeometry(0.12, 0.08), new THREE.MeshBasicMaterial({ map: signTex([['预留 · Reserved', 52]], { bg: '#f1ece1', fg: '#3a2e20', w: 512, h: 341 }) }), x - 0.08, Y0 + 0.78, z + 0.1, -Math.PI / 2 + 0.3, 0);
   });
   lights.push({ x: -42.4, y: Y0 + 3.0, z: -218.0, intensity: 4, distance: 7, color: new THREE.Color(1.0, 0.62, 0.36) });
 

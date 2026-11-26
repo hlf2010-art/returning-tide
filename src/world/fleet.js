@@ -6,6 +6,7 @@
 // The wheels are part of the body here and don't turn (a later step).
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { fitText } from './canvas.js';
 
 const NEAR = 38, MAX = 64;            // m to the lighter version; cars of one model at most
 const TAIL_RUN = new THREE.Color(0.55, 0.02, 0.015), TAIL_BRAKE = new THREE.Color(4.2, 0.12, 0.06);
@@ -20,7 +21,7 @@ function plateTexture() {
   PLATES.forEach((t, i) => {
     const y = i * 80, g = x.createLinearGradient(0, y, 0, y + 80); g.addColorStop(0, '#f4f7f2'); g.addColorStop(0.45, '#9fd9a8'); g.addColorStop(1, '#2f9e55');
     x.fillStyle = g; x.fillRect(0, y, W, 80); x.strokeStyle = '#1a1a1a'; x.lineWidth = 4; x.strokeRect(3, y + 3, W - 6, 74);
-    x.fillStyle = '#111'; x.font = '700 46px "Noto Sans SC", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(t, W / 2, y + 42);
+    x.fillStyle = '#111'; x.font = '700 46px "Noto Sans SC", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; fitText(x, t, W / 2, y + 42, W - 22);
   });
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; return tex;
 }
