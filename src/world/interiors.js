@@ -30,7 +30,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { L, colliders, addDynamicCollider } from './layout.js';
 import { createPerson } from './people.js';
-import { dressHotelSecurity } from './outfits.js';
+import { dressHotelSecurity, dressReceptionist } from './outfits.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
@@ -62,7 +62,8 @@ function carve() {
   replace('aia-block', [
     [-140, L.facadeX, -190, A.z0], [-140, L.facadeX, A.z1, -131], [-140, A.x0, A.z0, A.z1],
     [A.x1, L.facadeX, A.z0, A.door[0], 'aia-front'], [A.x1, L.facadeX, A.door[1], A.z1, 'aia-front'],
-    [-40.7, -36.3, -140.7, A.z1, 'desk'],                           // reception, on the public side by the south wall
+    [-40.7, -36.3, -141.35, A.z1, 'desk'],                          // reception, on the public side by the south wall (the receptionist behind it)
+    [-35.85, -35.35, -140.55, -140.05, 'desk'],                     // the visitor QR stand
   ]);
   // the Doric columns either side of the door, outside on the pavement (their plinths)
   for (const z of [A.door[0] - 0.6, A.door[1] + 0.6]) colliders.push({ minX: L.facadeX + 0.05, maxX: L.facadeX + 0.85, minZ: z - 0.4, maxZ: z + 0.4, tag: 'pillar' });
@@ -711,13 +712,13 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     for (let k = -3; k <= 3; k++) box(0.03, 0.5, 0.025, bronze, A.x1 + 0.03, Y0 + 4.24, zc + k * 0.45);
     box(0.03, 0.025, 3.36, bronze, A.x1 + 0.03, Y0 + 4.5, zc);
     for (const s of [-1, 1]) {
-      // a leaf (1.7 m wide), hinged at the door's edge, swung open flat into the lobby
-      const z = zc + s * 1.66, leaf = new THREE.Group(); leaf.position.set(A.x1, Y0, z); group.add(leaf);
+      // a leaf (1.7 m wide), hinged at the door's edge, folded right back against the wall inside (held open)
+      const z = zc + s * 1.66, leaf = new THREE.Group(); leaf.position.set(A.x1 - 0.06, Y0, z); leaf.rotation.y = s * Math.PI / 2; group.add(leaf);
       const W = 1.68, Hh = 4.15, fr = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.07), bronze); m.position.set(x, y, 0); leaf.add(m); };
       fr(W, 0.16, -W / 2, 0.08); fr(W, 0.12, -W / 2, Hh - 0.06); fr(0.12, Hh, -0.06, Hh / 2); fr(0.12, Hh, -W + 0.06, Hh / 2); fr(W, 0.08, -W / 2, 1.05); fr(W, 0.06, -W / 2, 2.7);
       fr(0.05, Hh - 0.3, -W / 2, Hh / 2);
       const pane = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.2, Hh - 0.3), glass); pane.position.set(-W / 2, Hh / 2, 0); pane.renderOrder = 3; leaf.add(pane);
-      const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8), brass); pull.position.set(-W + 0.22, 1.15, s * 0.06); leaf.add(pull);
+      const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8), brass); pull.position.set(-W + 0.22, 1.15, -s * 0.06); leaf.add(pull);   // (on the room side)
       // the lantern on the jamb outside
       const lz = zc + s * 3.25;
       box(0.06, 0.06, 0.06, bronze, L.facadeX + 0.6, Y0 + 3.4, lz); box(0.36, 0.55, 0.36, new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.2, 0.75) }), L.facadeX + 0.75, Y0 + 2.75, lz);
@@ -742,10 +743,11 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     box(0.74, 0.06, 3.94, whiteM, L.facadeX + 0.3, Y0 + 5.4, zc);
   }
   // reception: a long granite desk on the south side; a tenant directory; a visitor QR stand
-  contactShadow(group, -38.5, Y0, -139.95, 5.0, 2.2, 0.45);
-  rbox(4.2, 1.1, 1.4, 0.05, blackMarble, -38.5, Y0, -139.9);                                             // reception, south side of the public lobby: black marble
-  box(4.3, 0.05, 1.5, whiteMarble, -38.5, Y0 + 1.1, -139.9); box(4.22, 0.04, 0.02, brass, -38.5, Y0 + 0.9, -140.61);
-  add(new THREE.PlaneGeometry(1.1, 0.68), new THREE.MeshBasicMaterial({ map: signTex([['外滩17号 · 楼层指引', 34], ['8F  恒岳资本 Hengyue Capital', 26], ['7F  澄观设计 Chengguan Design', 26], ['6F  远航律师事务所 Yuanhang Law', 26], ['1–5F  友邦人寿 AIA Life', 26]], { bg: '#121417', fg: '#e8e2d6', w: 768, h: 480 }) }), -35.3, Y0 + 1.75, A.z0 + 0.06, 0);   // (a plaque by the 百寿图)
+  contactShadow(group, -38.5, Y0, -140.6, 5.0, 2.2, 0.45);
+  rbox(4.2, 1.1, 1.0, 0.05, blackMarble, -38.5, Y0, -140.8);                                             // reception, south side of the public lobby: black marble
+  box(4.3, 0.05, 1.1, whiteMarble, -38.5, Y0 + 1.1, -140.8); box(4.22, 0.04, 0.02, brass, -38.5, Y0 + 0.9, -141.31);
+  for (const x of [-39.6, -37.4]) { box(0.36, 0.26, 0.02, dark, x, Y0 + 1.15, -140.55); box(0.06, 0.1, 0.06, dark, x, Y0 + 1.1, -140.5); }   // two monitors on the desk, their backs to the room
+  add(new THREE.PlaneGeometry(1.1, 0.68), new THREE.MeshBasicMaterial({ map: signTex([['友邦大厦 · 楼层指引', 34], ['8F  天台花园 Roof garden', 24], ['4–7F  友邦人寿 办公 Offices', 24], ['2–3F  会议中心 Meeting rooms', 24], ['1F  大堂 · 访客接待 Lobby', 24]], { bg: '#121417', fg: '#e8e2d6', w: 768, h: 480 }) }), -35.3, Y0 + 1.75, A.z0 + 0.06, 0);   // (a plaque by the 百寿图; AIA takes the whole building, its roof garden on top)
   box(0.4, 1.2, 0.3, dark, -35.6, Y0, -140.3);
   add(new THREE.PlaneGeometry(0.34, 0.5), new THREE.MeshBasicMaterial({ map: signTex([['访客预约', 40], ['扫码登记', 30], ['Visitor sign-in', 26]], { bg: '#f4f4f4', fg: '#222', w: 300, h: 420 }) }), -35.6, Y0 + 1.3, -140.46, Math.PI);
   // the speed gates, as in a modern head-office lobby: a brushed-steel cabinet between each pair of lanes, D-ended,
@@ -823,6 +825,23 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     add(new THREE.PlaneGeometry(1.36, 2.66), steelDoor, A.x0 + 0.105, Y0 + 1.33, z, Math.PI / 2);
     box(1.6, 0.12, 0.05, new THREE.MeshStandardMaterial({ color: 0x5c6166, metalness: 1, roughness: 0.4 }), A.x0 + 0.08, Y0 + 2.7, z, Math.PI / 2);   // the head
   }
+  // the lifts' fittings: a steel architrave round each door, a floor display over it (amber digits on black glass),
+  // call buttons between the doors
+  {
+    const frameM = new THREE.MeshStandardMaterial({ color: 0xb9bdc2, metalness: 1, roughness: 0.3 });
+    const disp = (txt) => new THREE.MeshBasicMaterial({ map: canvasTex(160, 64, (x, w, h) => { x.fillStyle = '#050506'; x.fillRect(0, 0, w, h); x.fillStyle = '#ffb02e'; x.font = '700 40px "Noto Sans SC", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(txt, w / 2, h / 2 + 2); }), color: new THREE.Color(1.3, 1.3, 1.3) });
+    [['5 ▲', -148.5], ['1', -145.5], ['3 ▼', -142.5]].forEach(([txt, z]) => {
+      for (const dz of [-0.76, 0.76]) box(0.1, 2.82, 0.08, frameM, A.x0 + 0.07, Y0, z + dz);
+      box(0.1, 0.1, 1.62, frameM, A.x0 + 0.07, Y0 + 2.76, z);
+      box(0.04, 0.16, 0.4, dark, A.x0 + 0.04, Y0 + 3.0, z);
+      add(new THREE.PlaneGeometry(0.36, 0.13), disp(txt), A.x0 + 0.065, Y0 + 3.08, z, Math.PI / 2);
+    });
+    const ring = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.4, 1.4, 1.5) });
+    for (const z of [-147.0, -144.0]) {
+      box(0.02, 0.26, 0.1, frameM, A.x0 + 0.02, Y0 + 1.02, z);                                                                 // the plate
+      for (const dy of [0.065, -0.065]) { const b = add(new THREE.CylinderGeometry(0.018, 0.018, 0.012, 16), ring, A.x0 + 0.035, Y0 + 1.15 + dy, z); b.rotation.z = Math.PI / 2; }
+    }
+  }
   for (const [x, z] of [[-44.5, -145.5], [-38, -150.2], [-38, -140.8]]) lights.push({ x, y: Y0 + A.h - 0.4, z, intensity: 11, distance: 9, color: new THREE.Color(1.0, 0.88, 0.7) });
 
   group.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
@@ -843,7 +862,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   guard('doorman', doorX + 2.6, -210.4, -0.35);                       // beside the revolving door, facing the street
   placePerson('guestA', 'vivian', -54.6, -221.0, -2.4, 'talk1');
   placePerson('guestB', 'p5', -55.8, -222.1, 0.8, 'talk2');
-  placePerson('aiaDesk', 'p2', -38.5, -139.35, Math.PI);
+  { const r = placePerson('aiaDesk', 'p2', -38.5, -139.75, Math.PI); if (r) dressReceptionist(r); }   // (in the front desk's uniform: an agent in the lobby wears the same body)
   placePerson('aiaGuard', 'p4', A.gateX + 0.9, -141.9, Math.PI + 0.9);
   const worker = placePerson('aiaWorker', 'p3', A.x1 + 3, -145.5, -Math.PI / 2, 'walk');
   if (worker) worker.root.visible = false;
@@ -980,6 +999,8 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       if (nearPeace) updatePeace(dt, pp);
       if (nearAia) updateAia(dt, pp);
       for (const p of Object.values(ppl)) if (p !== worker) p.root.visible = p.home.z < -200 ? pp.z < -170 : Math.abs(pp.z - -145) < 60;   // only when you could see them
+      // No.17's receptionist keeps office hours (8:30-18:30); the guard is there round the clock
+      { const L = getLife && getLife(), m = L ? L.clock.minute : 720; if (ppl.aiaDesk && (m < 510 || m >= 1110)) ppl.aiaDesk.root.visible = false; }
     },
   };
 }

@@ -127,6 +127,17 @@ about 35 m (`layout.js:32, 39-43`). The promenade runs from x 2 to x 26.
   - *tall curved glass wings that swing aside when a lane opens;*
   - *a face-recognition screen on a post at each entry (请刷脸通行 / 验证通过), red-cross and green-arrow lamps on the cabinet ends, and a light line along each lane;*
   - *glass balustrades with a steel handrail from the outer cabinets to the walls, where there had been nothing.*
+- *Full check of the AIA lobby (26 Nov), every wall, corner, fitting and person, by day and by night, and every event run end to end. Fixed:*
+  - *the receptionist stood inside the desk, which had 0.2 m to the wall: the desk moved forward;*
+  - *she and the benefits manager were the same body side by side: she now wears a front-desk uniform (dark suit, red scarf);*
+  - *she now keeps office hours (8:30–18:30);*
+  - *the inner door leaves stood out into the room like loose glass panes: they now fold back against the wall;*
+  - *the lifts had no buttons: steel architraves, amber floor displays and call buttons added;*
+  - *the QR stand had no collider;*
+  - *the consultation tables and chairs vanished after 19:00 with the people: furniture now stays, and only the cups, tablet and papers go;*
+  - *seated clients reached out stiff-armed and their legs splayed out of the chairs: feet now rest under the knees, clients' hands in their laps, agents' on the table, and the clients sit nearer;*
+  - *the directory listed outside tenants in a building AIA leases whole: it now lists AIA's own floors and the roof garden;*
+  - *an English subtitle still had "Mr Wang" after she became a woman.*
 - *Chairs and shadows (26 Nov):*
   - *The consultation chairs are proper club armchairs: rounded plinth, loose cushion, a reclined back with a stitched panel line, rolled arms, tapered walnut legs with brass cups, navy leather with grain and sheen.*
   - *By day the sun casts the shadows and the lamps' shadow slots are off, but indoors only the two nearest lamps cast at all, and at low quality nothing does. So furniture, columns, desks and people now sit on soft contact shadows (world/contactShadow.js), in both lobbies, at every quality.*

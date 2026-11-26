@@ -196,3 +196,28 @@ export function greyHair(person) {
   });
   return person;
 }
+
+// ---- a front-desk receptionist's uniform: the coat taken to a dark suit (shirt and hands as they were) and a red silk
+// scarf knotted at the throat, as corporate front desks in China often dress their staff; sets her apart from an
+// agent in her own clothes on the same body ----
+const scarfMat = new THREE.MeshStandardMaterial({ color: 0xb3122a, roughness: 0.45, sheen: 0.5 });
+export function dressReceptionist(person) {
+  person.root.traverse((o) => { if (o.isMesh && /_body$/.test(o.material.name)) o.material = recolor(o.material, 'suit', SUIT.body); });
+  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
+  if (head.length && body.length) {
+    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), neckY = top - 0.24;
+    const ring = body.filter((p) => Math.abs(p.y - neckY) < 0.015);
+    if (ring.length > 6) {
+      const cx = ring.reduce((a, p) => a + p.x, 0) / ring.length, cz = ring.reduce((a, p) => a + p.z, 0) / ring.length;
+      const r = ring.reduce((a, p) => a + Math.hypot(p.x - cx, p.z - cz), 0) / ring.length + 0.012;
+      const g = new THREE.Group();
+      const band = new THREE.Mesh(new THREE.TorusGeometry(r, 0.014, 6, 24), scarfMat); band.rotation.x = Math.PI / 2; band.scale.set(1, 1.15, 1); band.position.set(cx, neckY, cz); g.add(band);
+      const front = ring.reduce((m, p) => (p.z > m.z ? p : m), ring[0]);
+      const knot = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), scarfMat); knot.position.set(front.x + 0.02, neckY - 0.015, front.z + 0.015); g.add(knot);
+      for (const s of [-1, 1]) { const tail = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.09, 0.006), scarfMat); tail.position.set(front.x + 0.02 + s * 0.02, neckY - 0.07, front.z + 0.012); tail.rotation.z = s * 0.35; g.add(tail); }
+      attach(person, 'Bip01_Neck', g, new THREE.Vector3(0, 0, 0));
+    }
+  }
+  person.outfit = 'receptionist';
+  return person;
+}

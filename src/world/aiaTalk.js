@@ -1,9 +1,10 @@
 // What the people in the AIA lobby say (world/aiaLife.js places them and runs the talk). Data only, so the voice
 // tools can read it (tools/voice/extract.mjs). Mandarin lines are voiced; Shanghainese ('wuu') is subtitled, with a
 // Mandarin gloss for Chinese readers. The insurance in it is the ordinary business of a life insurer here, with no
-// real policy named: critical illness and disclosure, medical cover past the company plan, budgets, increasing
-// whole life and cash values, cover after heart stents and the city's 沪惠保, claims by phone, group benefits,
-// underwriting follow-ups and the recorded sale (双录).
+// real policy named: critical illness and disclosure, medical cover past the company plan, budgets, participating
+// whole life after the 2025 rate cut (dividends not promised, the guaranteed cash value in the contract), cover after
+// heart stents (2026's products for people with conditions, the city's 沪惠保), claims by phone, the 百寿图, group
+// benefits, underwriting follow-ups and the recorded sale (双录).
 // who's who: speaker labels { zh, en }, and the voice cast key (tools/voice/cast.json)
 export const WHO = {
   zhou: { zh: '周顾问', en: 'Ms Zhou (agent)' }, wife: { zh: '李太太', en: 'Mrs Li' }, husband: { zh: '李先生', en: 'Mr Li' },
@@ -47,7 +48,7 @@ export const AIA_TALK = {
       ['shen', '我也听说过。现在这里是全国重点文物保护单位，动一块石头都要报批的。', 'I\'ve heard that too. Now it\'s a nationally protected heritage site; you need permission to move a single stone.']],
   ],
   rec: [
-    [['lin', '王总您好，这边请，会议室在三楼。麻烦先在前台登记一下访客。', 'Mr Wang, hello, this way please. The meeting room is on the third floor. Could you register at the desk first?'],
+    [['lin', '王总您好，这边请，会议室在三楼。麻烦先在前台登记一下访客。', 'Ms Wang, hello, this way please. The meeting room is on the third floor. Could you register at the desk first?'],
       ['wang', '好。我们今年想把员工福利重新做一下，团险方案能不能把家属也加进来？', 'Sure. We want to redo our staff benefits this year. Can the group plan cover families too?'],
       ['lin', '可以的，配偶和子女都能加。也可以做弹性福利，员工在额度里自己选保障。', 'Yes, spouses and children both. We can also do flexible benefits, where staff choose their own cover within an allowance.'],
       ['wang', '我们有几个外籍员工，境外看病也能报销吗？', 'We have a few foreign staff. Can they claim for treatment abroad?'],

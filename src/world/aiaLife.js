@@ -7,8 +7,8 @@
 // So, in office hours (9:00-19:00):
 //   - in the consultation corner, two tables: a senior agent with a young couple (critical illness for the husband,
 //     who must disclose a thyroid nodule; medical cover past the company plan; a budget of a tenth of income), and
-//     a Shanghai agent with a retired couple, in Shanghainese (increasing whole life for the grandson, the cash
-//     value written in the contract; medical after heart stents and the city's 沪惠保; the firm's long history)
+//     a Shanghai agent with a retired couple, in Shanghainese (participating whole life for the grandson after the
+//     2025 rate cut, dividends not promised; cover after heart stents and the city's 沪惠保; claims; the 百寿图)
 //   - at reception, an employee-benefits manager meeting a company's HR director (group cover with families,
 //     flexible benefits, global medical for foreign staff)
 //   - beyond the gates, a young agent on the phone to a client (underwriting wants one more report; signing online
@@ -45,7 +45,10 @@ export function createAiaLife({ scene, people, hud, getLife = null }) {
   const walnut = new THREE.MeshStandardMaterial({ color: 0x3b2618, roughness: 0.45 }), top = new THREE.MeshStandardMaterial({ color: 0xf1ede5, roughness: 0.25 });
   const leather = new THREE.MeshStandardMaterial({ color: 0x3a4652, roughness: 0.5 }), brass = new THREE.MeshStandardMaterial({ color: 0xc89b4a, roughness: 0.4, metalness: 1 });
   const porcelain = new THREE.MeshStandardMaterial({ color: 0xf6f4ef, roughness: 0.25 }), tea = new THREE.MeshStandardMaterial({ color: 0x8a5a22, roughness: 0.1 });
-  const add = (geo, mat, x, y, z, ry = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; group.add(m); return m; };
+  // (the furniture stays when the people go home: its own group, always shown; cups, tablet and papers go with the people)
+  const furn = new THREE.Group(); furn.name = 'aia-furniture'; scene.add(furn);
+  const add = (geo, mat, x, y, z, ry = 0, into = group) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; into.add(m); return m; };
+  const addF = (geo, mat, x, y, z, ry = 0) => add(geo, mat, x, y, z, ry, furn);
   // a club armchair, made properly: a plinth body with rounded edges, a loose seat cushion, a back that leans
   // a little and is stitched in two panels, rolled arms, short tapered walnut legs with brass cups; deep navy
   // leather with a fine grain and a soft sheen (geometry shared by every chair)
@@ -65,7 +68,7 @@ export function createAiaLife({ scene, people, hud, getLife = null }) {
     };
   })();
   const chair = (x, z, ry) => {
-    const g = new THREE.Group(); g.position.set(x, Y0, z); g.rotation.y = ry; group.add(g);
+    const g = new THREE.Group(); g.position.set(x, Y0, z); g.rotation.y = ry; furn.add(g);
     const put = (geo, mat, px, py, pz, rx = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(px, py, pz); m.rotation.x = rx; m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
     put(CH.body, hide, 0, 0.09 + 0.15, 0.0);                                         // the plinth body, on its legs
     put(CH.cushion, hide, 0, 0.39 + 0.065, 0.06);                                     // the seat cushion: top at 0.52
@@ -73,14 +76,14 @@ export function createAiaLife({ scene, people, hud, getLife = null }) {
     put(CH.seam, seam, 0, 0.66, -0.2, -0.12);                                         // its stitched panel line
     for (const sx of [-1, 1]) { put(CH.arm, hide, sx * 0.315, 0.39 + 0.1, 0.0); put(CH.roll, hide, sx * 0.315, 0.39 + 0.24, 0.0); }   // rolled arms
     for (const sx of [-0.31, 0.31]) for (const sz of [-0.3, 0.3]) { put(CH.leg, walnut, sx, 0.045, sz); put(CH.cup, brass, sx, 0.008, sz); }
-    contactShadow(group, x, Y0, z, 1.0, 1.0, 0.5, ry);
+    contactShadow(furn, x, Y0, z, 1.0, 1.0, 0.5, ry);
   };
   // seats: the agent on the wall side facing the room; two clients across the table
-  const seats = (t) => [{ x: t.x, z: t.z - 0.78, yaw: 0 }, { x: t.x - 0.58, z: t.z + 0.66, yaw: Math.PI - 0.55 }, { x: t.x + 0.58, z: t.z + 0.66, yaw: Math.PI + 0.55 }];
+  const seats = (t) => [{ x: t.x, z: t.z - 0.78, yaw: 0 }, { x: t.x - 0.5, z: t.z + 0.6, yaw: Math.PI - 0.62 }, { x: t.x + 0.5, z: t.z + 0.6, yaw: Math.PI + 0.62 }];
   for (const t of [T1, T2]) {
-    add(new THREE.CylinderGeometry(0.5, 0.49, 0.035, 64), top, t.x, Y0 + 0.722, t.z); add(new THREE.TorusGeometry(0.497, 0.008, 6, 64).rotateX(Math.PI / 2), brass, t.x, Y0 + 0.722, t.z);   // marble top, a brass edge
-    add(new THREE.CylinderGeometry(0.05, 0.07, 0.66, 20), walnut, t.x, Y0 + 0.37, t.z); add(new THREE.CylinderGeometry(0.28, 0.32, 0.05, 40), walnut, t.x, Y0 + 0.025, t.z); add(new THREE.TorusGeometry(0.3, 0.01, 6, 40).rotateX(Math.PI / 2), brass, t.x, Y0 + 0.05, t.z);
-    contactShadow(group, t.x, Y0, t.z, 1.1, 1.1, 0.4);
+    addF(new THREE.CylinderGeometry(0.5, 0.49, 0.035, 64), top, t.x, Y0 + 0.722, t.z); addF(new THREE.TorusGeometry(0.497, 0.008, 6, 64).rotateX(Math.PI / 2), brass, t.x, Y0 + 0.722, t.z);   // marble top, a brass edge
+    addF(new THREE.CylinderGeometry(0.05, 0.07, 0.66, 20), walnut, t.x, Y0 + 0.37, t.z); addF(new THREE.CylinderGeometry(0.28, 0.32, 0.05, 40), walnut, t.x, Y0 + 0.025, t.z); addF(new THREE.TorusGeometry(0.3, 0.01, 6, 40).rotateX(Math.PI / 2), brass, t.x, Y0 + 0.05, t.z);
+    contactShadow(furn, t.x, Y0, t.z, 1.1, 1.1, 0.4);
     for (const s of seats(t)) chair(s.x - Math.sin(s.yaw) * 0.08, s.z - Math.cos(s.yaw) * 0.08, s.yaw);
     for (const [dx, dz] of [[-0.24, 0.18], [0.26, 0.16]]) { add(new THREE.CylinderGeometry(0.04, 0.03, 0.07, 14), porcelain, t.x + dx, Y0 + 0.775, t.z + dz); add(new THREE.CylinderGeometry(0.035, 0.035, 0.005, 14), tea, t.x + dx, Y0 + 0.808, t.z + dz); add(new THREE.CylinderGeometry(0.07, 0.07, 0.01, 18), porcelain, t.x + dx, Y0 + 0.745, t.z + dz); }
   }
@@ -110,8 +113,10 @@ export function createAiaLife({ scene, people, hud, getLife = null }) {
     const s = seats(t)[i], frame = new THREE.Group(); frame.position.set(s.x, Y0, s.z); frame.rotation.y = s.yaw; group.add(frame);
     const p = ready(createPerson(people, role)); frame.add(p.root); p.play('idle', 0); p.update(0); if (dress) dress(p);
     const pose = createSeatedPose(p, { recline: 0.08, elbows: 0.5 });
-    const cabin = { hip: new THREE.Vector3(0, 0.55, -0.02), pedals: [new THREE.Vector3(-0.12, 0.06, 0.42), new THREE.Vector3(0.12, 0.06, 0.4)],
-      rimPoint(a, out) { const w = new THREE.Vector3(-a * 0.17, 0.78, 0.42); frame.localToWorld(w); return out.copy(w); } };   // (a = -1 his left: local +x)
+    // feet flat under the knees; an agent's hands on the table, a client's resting in the lap (a = -1 the left hand: local +x)
+    const hands = i === 0 ? { x: 0.17, y: 0.77, z: 0.34 } : { x: 0.15, y: 0.64, z: 0.26 };
+    const cabin = { hip: new THREE.Vector3(0, 0.55, -0.02), pedals: [new THREE.Vector3(-0.13, 0.05, 0.56), new THREE.Vector3(0.13, 0.05, 0.54)],
+      rimPoint(a, out) { const w = new THREE.Vector3(-a * hands.x, hands.y, hands.z); frame.localToWorld(w); return out.copy(w); } };
     const blob = contactShadow(group, s.x, Y0, s.z, 0.75, 0.75, 0.5); blob.visible = false;
     P[id] = { p, frame, pose, cabin, seat: s, mode: 'seated', x: s.x, z: s.z, yaw: s.yaw, at: [s.x, Y0 + 1.25, s.z], acc: Math.random() * 0.2, blob };
     return P[id];
@@ -126,7 +131,7 @@ export function createAiaLife({ scene, people, hud, getLife = null }) {
   // director in a leather jacket
   seated('zhou', 'c4', T1, 0, dressAgent); seated('wife', 'c1', T1, 1); seated('husband', 'p1', T1, 2);
   seated('shen', 'p5', T2, 0, dressAgent); seated('auntie', 'c3', T2, 1, greyHair); seated('uncle', 'c5', T2, 2, greyHair);
-  standing('lin', 'p2', -37.4, -141.9, -Math.PI / 2 - 0.25, dressAgent); standing('wang', 'c8', -38.55, -141.75, Math.PI / 2 + 0.2);
+  standing('lin', 'p2', -37.4, -142.35, -Math.PI / 2 - 0.25, dressAgent); standing('wang', 'c8', -38.55, -142.2, Math.PI / 2 + 0.2);
   standing('chen', 'c7', -44.2, -147.5, 0, dressAgent);
   const phoneMat = new THREE.MeshStandardMaterial({ color: 0x15151a, roughness: 0.3, metalness: 0.5 }), phone = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.15, 0.009), phoneMat); group.add(phone);
   const phone2 = phone.clone(); phone2.visible = false; group.add(phone2);                                   // a visitor's
@@ -136,13 +141,13 @@ export function createAiaLife({ scene, people, hud, getLife = null }) {
     const rec = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(2, 0.2, 0.2) })); rec.position.set(0.028, 0.27, 0.006); rig.add(rec); }
   const bagMat = new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 0.8 });
   // who speaks from where when they aren't one of the actors: the guard at the gates, the receptionist
-  const SPOT = { guard: [-40.6, Y0 + 1.6, -141.9], desk: [-38.5, Y0 + 1.5, -139.35] };
+  const SPOT = { guard: [-40.6, Y0 + 1.6, -141.9], desk: [-38.5, Y0 + 1.5, -139.75] };
   const DOOR = { x: AIA.x1 + 0.6, z: (AIA.door[0] + AIA.door[1]) / 2 };
 
   // ---- the regular talk: each group runs through its exchanges in turn while you're near it ----
   const GROUPS = {
     t1: { ids: ['zhou', 'wife', 'husband'], at: [T1.x, T1.z], i: 0 }, t2: { ids: ['shen', 'auntie', 'uncle'], at: [T2.x, T2.z], i: 0 },
-    rec: { ids: ['lin', 'wang'], at: [-38, -141.8], i: 0 }, phone: { ids: ['chen'], at: [-44.2, -146.5], i: 0 },
+    rec: { ids: ['lin', 'wang'], at: [-38, -142.3], i: 0 }, phone: { ids: ['chen'], at: [-44.2, -146.5], i: 0 },
   };
   const S = { active: false, playing: null, gap: 2, speaker: null, paceT: 0, clock: 0, evGap: 40 + Math.random() * 30, run: null, wasNear: false };
   const label = (l) => (l[5] === 'w' ? { zh: `${WHO[l[0]].zh}（小声）`, en: `${WHO[l[0]].en} (under the breath)` } : WHO[l[0]]);
@@ -202,11 +207,11 @@ export function createAiaLife({ scene, people, hud, getLife = null }) {
   const SCRIPTS = {
     async complaint(V) {
       spawn('angry', 'c6', DOOR.x, DOOR.z, -Math.PI / 2);
-      await walk('angry', -39.7, -141.6, 1.55); faceAt('angry', 'desk'); clip('angry', 'angry');
+      await walk('angry', -39.8, -141.95, 1.55); faceAt('angry', 'desk'); clip('angry', 'angry');
       await say(V[0]); await say(V[1]); await say(V[2]);
       faceAt('angry', 'guard'); await say(V[3]);
       take('lin'); faceAt('lin', 'wang'); await say(V[4]);
-      await walk('lin', -39.0, -142.5, 1.1); faceAt('lin', 'angry'); faceAt('angry', 'lin');
+      await walk('lin', -39.0, -142.8, 1.1); faceAt('lin', 'angry'); faceAt('angry', 'lin');
       await say(V[5]); await say(V[6]); clip('angry', null); await say(V[7]);
       // through the gates to a meeting room; she sees him in, and comes back
       await walk('angry', -40.6, -146.1, 1.0); walk('angry', -42.6, -146.1, 1.0); await walk('lin', -40.9, -145.6, 1.0);   // (he goes through a gate lane; she stops at the gates)
@@ -249,10 +254,10 @@ export function createAiaLife({ scene, people, hud, getLife = null }) {
       await walk('rider', DOOR.x + 1.5, DOOR.z + 0.4, 2.2);
     },
     async recruit(V) {
-      const q = spawn('recruit', 'p3', -36.3, -141.6, Math.PI / 2 + 0.6);
+      const q = spawn('recruit', 'p3', -35.9, -141.95, Math.PI / 2 + 0.6);
       if (q) { q.phoneUp = true; phone2.visible = true; } clip('recruit', 'phone');
       await wait(3); take('chen');
-      await walk('chen', -42.0, -144.9, 1.1); await walk('chen', -37.2, -142.3, 1.1); faceAt('chen', 'recruit');
+      await walk('chen', -42.0, -144.9, 1.1); await walk('chen', -36.9, -142.7, 1.1); faceAt('chen', 'recruit');
       if (q) q.phoneUp = false; phone2.visible = false; clip('recruit', null); faceAt('recruit', 'chen');
       await say(V[0]); await say(V[1]); await say(V[2]); await say(V[3]); await say(V[4]);
       walk('recruit', DOOR.x + 1.5, DOOR.z - 0.3, 1.1); await walk('chen', -42.0, -144.9, 1.1); await walk('chen', -44.2, -147.5, 1.1);
