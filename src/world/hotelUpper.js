@@ -291,7 +291,7 @@ export function createHotelUpper({ scene, hud, audio, getLife, save, player, tra
   function interact(id) {
     const l = L0();
     if (id === 'uLift') {
-      travel(async () => { player.teleport(-48, -241.6, Math.PI, 0.02); setDoor(false); S.door = 0; }, { line: T('一楼 · 大堂', 'Ground floor · the lobby') });
+      travel(async () => { player.teleport(-48, -241.6, Math.PI, 0.02); setDoor(false); S.door = 0; }, { line: T('G 层 · 大堂', 'G · the lobby') });
       audio && audio.cue && audio.cue('ping', 1.3, 0.5);
     } else if (id === 'uDoorOut') {
       if (S.door > 0.5) setDoor(false);

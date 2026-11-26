@@ -19,7 +19,8 @@ function recolor(mat, style, fn) {
   const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
   const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
   const d = ctx.getImageData(0, 0, c.width, c.height), px = d.data;
-  for (let i = 0; i < px.length; i += 4) { const o = fn(px[i], px[i + 1], px[i + 2], px[i + 3]); if (o) { px[i] = o[0]; px[i + 1] = o[1]; px[i + 2] = o[2]; } }
+  const W = c.width, H = c.height;   // (fn also gets the pixel's place, u and v in 0..1 from the top left, for a map whose parts are known)
+  for (let i = 0; i < px.length; i += 4) { const k = i >> 2, o = fn(px[i], px[i + 1], px[i + 2], px[i + 3], (k % W) / W, Math.floor(k / W) / H); if (o) { px[i] = o[0]; px[i + 1] = o[1]; px[i + 2] = o[2]; } }
   ctx.putImageData(d, 0, 0);
   // (a new texture, not mat.map.clone(): a clone shares the original's image source, so setting its image would
   // repaint everyone wearing the original)
@@ -27,6 +28,7 @@ function recolor(mat, style, fn) {
   t.flipY = src.flipY; t.colorSpace = src.colorSpace; t.wrapS = src.wrapS; t.wrapT = src.wrapT; t.channel = src.channel; t.anisotropy = src.anisotropy;
   t.offset.copy(src.offset); t.repeat.copy(src.repeat); t.needsUpdate = true;
   const m = mat.clone(); m.map = t; m.name = `${mat.name}:${style}`;
+  if (mat.onBeforeCompile) { m.onBeforeCompile = mat.onBeforeCompile; m.customProgramCacheKey = mat.customProgramCacheKey; }   // (a clone drops them: the hair's lit-outward fix)
   made.set(key, m);
   return m;
 }
@@ -223,6 +225,67 @@ export function dressReceptionist(person, { scarf = true, badge = false } = {}) 
     }
   }
   person.outfit = 'receptionist';
+  return person;
+}
+
+// ---- the Peace Hotel's front desk: on the body in the brown knitted dress and boots ('c2', her hair already up in a
+// bun), the dress taken to near-black and the boots to black, her legs as they are (in that map the legs are the two
+// pieces either side of the dress's strip, below its hem), a gold name badge. Behind the desk only the top shows ----
+export function dressFrontDesk(person) {
+  person.root.traverse((o) => {
+    if (!o.isMesh || !/_body$/.test(o.material.name)) return;
+    o.material = recolor(o.material, 'attendant', (r, g, b, a, u, v) => {
+      if (v > 0.12 && v < 0.39 && (u < 0.33 || u > 0.675)) return null;                 // the legs
+      if (v > 0.72 && (u < 0.2 || u > 0.8)) return null;                                 // the hands
+      const l = lum(r, g, b);
+      if (u > 0.42 && u < 0.58 && v > 0.34 && v < 0.52 && r > 120 && r > b * 1.2 && g > b * 1.02) return null;        // the skin at the neckline
+      if (r > 170 && g > 140 && b < 90) return null;                                    // the belt's brass buckle
+      const k = Math.min(255, 14 + l * 0.42); return [k * 0.95, k * 0.97, k * 1.05];
+    });
+  });
+  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
+  if (head.length && body.length) {
+    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), neckY = top - 0.24;
+    const fr = body.filter((p) => Math.abs(p.y - (neckY - 0.2)) < 0.02 && p.x > 0.05 && p.x < 0.12), pin = fr.length ? fr.reduce((m, p) => (p.z > m.z ? p : m), fr[0]) : null;
+    if (pin) attach(person, 'Bip01_Spine2', new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.018, 0.003), goldMat), new THREE.Vector3(pin.x, pin.y, pin.z + 0.003));
+  }
+  person.outfit = 'frontDesk';
+  return person;
+}
+
+// ---- a "Peace Ambassador": the front-of-house team the Peace Hotel put in bespoke black tuxedos for its Art Deco
+// lobby (Shanghai Daily, 2015), the ones who greet guests and press the lift for them. On the body in the tweed
+// jacket, white shirt and dark trousers ('p2'): jacket, trousers and shoes to black, the shirt as it is, a black satin
+// bow tie at the collar, a gold name bar on the left breast ----
+const satin = new THREE.MeshStandardMaterial({ color: 0x060606, roughness: 0.28, metalness: 0.1 });
+export function dressPeaceAmbassador(person) {
+  // (in this map the hands are the bottom corners and the skin at the neck the opening at the centre; the shirt is the
+  // light strip at the top. The tweed jacket's lighter threads pass for skin by colour, so it goes by place.)
+  person.root.traverse((o) => {
+    if (!o.isMesh || !/_body$/.test(o.material.name)) return;
+    o.material = recolor(o.material, 'tuxedo', (r, g, b, a, u, v) => {
+      const l = lum(r, g, b), mx = Math.max(r, g, b), sat = mx ? (mx - Math.min(r, g, b)) / mx : 0;
+      if (v > 0.72 && (u < 0.22 || u > 0.78)) return null;                                   // the hands
+      if (u > 0.42 && u < 0.58 && v > 0.4 && v < 0.56 && r > 110 && r > b * 1.2) return null;   // the skin at the neck
+      if (l > 120 && sat < 0.2) return null;                                                  // the white shirt, its cuffs
+      const k = Math.min(255, 8 + l * 0.22); return [k * 0.95, k * 0.97, k * 1.04];            // jacket, trousers, shoes: black
+    });
+  });
+  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
+  if (head.length && body.length) {
+    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), neckY = top - 0.24;
+    const ring = body.filter((p) => Math.abs(p.y - neckY) < 0.015);
+    if (ring.length > 4) {
+      const front = ring.reduce((m, p) => (p.z > m.z ? p : m), ring[0]);
+      const bow = new THREE.Group();
+      for (const s of [-1, 1]) { const wing = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.04, 4), satin); wing.rotation.z = s * Math.PI / 2; wing.scale.set(1, 1, 0.35); wing.position.x = s * 0.02; bow.add(wing); }
+      bow.add(new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.016, 0.01), satin));
+      attach(person, 'Bip01_Neck', bow, new THREE.Vector3(front.x, neckY - 0.035, front.z + 0.01));
+    }
+    const fr = body.filter((p) => Math.abs(p.y - (neckY - 0.2)) < 0.02 && p.x > 0.05 && p.x < 0.12), pin = fr.length ? fr.reduce((m, p) => (p.z > m.z ? p : m), fr[0]) : null;
+    if (pin) attach(person, 'Bip01_Spine2', new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.016, 0.003), goldMat), new THREE.Vector3(pin.x, pin.y, pin.z + 0.003));
+  }
+  person.outfit = 'peaceAmbassador';
   return person;
 }
 

@@ -419,5 +419,9 @@
  "hoteldesk": {
   "zh": "zf_002",
   "en": "bf_isabella"
+ },
+ "hotellift": {
+  "zh": "zf_018",
+  "en": "bf_lily"
  }
 }

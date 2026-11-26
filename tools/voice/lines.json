@@ -3905,6 +3905,51 @@
   "en": "Tonight's set has finished; there's another tomorrow at eight. Shall I hold you a table then?"
  },
  {
+  "who": "hotellift",
+  "zh": "纪先生，早上好。我帮您按电梯。",
+  "en": "Good morning, Mr Ji. I'll call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "纪先生，中午好。我帮您按电梯。",
+  "en": "Good afternoon, Mr Ji. I'll call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "纪先生，下午好。我帮您按电梯。",
+  "en": "Good afternoon, Mr Ji. I'll call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "纪先生，晚上好。我帮您按电梯。",
+  "en": "Good evening, Mr Ji. I'll call the lift for you."
+ },
+ {
+  "who": "hotellift",
+  "zh": "电梯马上就到，您稍等。",
+  "en": "It's on its way, sir. Just a moment."
+ },
+ {
+  "who": "hotellift",
+  "zh": "您请。进去刷一下房卡，再按楼层就可以了。",
+  "en": "After you, sir. Tap your card inside, then press your floor."
+ },
+ {
+  "who": "hotellift",
+  "zh": "纪先生，六楼南边在装修，您那间不受影响。",
+  "en": "Mr Ji, the south end of six is being refitted; your room's not affected."
+ },
+ {
+  "who": "hotellift",
+  "zh": "先生您好，上楼要刷房卡。您是住店客人吗？前台在那边。",
+  "en": "Hello, sir. The lifts need a room card. Are you staying with us? Reception's over there."
+ },
+ {
+  "who": "hotellift",
+  "zh": "纪先生，您慢走。",
+  "en": "Have a good day, Mr Ji."
+ },
+ {
   "who": "保安",
   "zh": "先生，先生！请刷卡，没有预约不能进去。",
   "en": "Sir! Sir, you need to badge in. No entry without an appointment."
@@ -3913,16 +3958,6 @@
   "who": "礼宾部",
   "zh": "目前没有您的快递哦。需要叫车的话我帮您约。",
   "en": "Nothing waiting for you at the moment. If you need a car, I can book one."
- },
- {
-  "who": "保安",
-  "zh": "先生，电梯需要刷房卡，住客才能上去。",
-  "en": "Sorry, sir, the lifts need a room card. Guests only."
- },
- {
-  "who": "保安",
-  "zh": "纪先生，六楼南边在装修，您那间不受影响。",
-  "en": "Mr Ji. The south end of six is being refitted, sir; your room's not affected."
  },
  {
   "who": "前台",

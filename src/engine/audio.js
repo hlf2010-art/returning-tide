@@ -291,6 +291,17 @@ export function createAudio() {
         e.gain.setValueAtTime(0, t0); e.gain.linearRampToValueAtTime(g * level, t0 + 0.004); e.gain.exponentialRampToValueAtTime(0.0006, t0 + d);
         o.connect(e).connect(sfx); o.start(t0); o.stop(t0 + d + 0.05);
       }
+    } else if (name === 'liftBell') {
+      // a lift arriving: one soft stroke on the hall lantern's gong (a low bell, its partials dying slowly)
+      for (const [k, g, d] of [[1, 0.075, 1.8], [2.01, 0.026, 1.0], [2.93, 0.016, 0.6], [4.16, 0.007, 0.3]]) {
+        const o = ctx.createOscillator(), e = gainNode(0); o.type = 'sine'; o.frequency.value = 698 * k;
+        e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(g * level, t + 0.006); e.gain.exponentialRampToValueAtTime(0.0005, t + d);
+        o.connect(e).connect(sfx); o.start(t); o.stop(t + d + 0.05);
+      }
+    } else if (name === 'click') {
+      // a button pressed: a short dry click
+      burst(t, { type: 'bandpass', f: 3000, q: 1.4, gain: 0.2 * level, attack: 0.001, decay: 0.016 });
+      burst(t + 0.05, { type: 'bandpass', f: 2200, q: 1.2, gain: 0.1 * level, attack: 0.001, decay: 0.012 });
     } else if (name === 'chime') {
       // an achievement: three rising bell notes
       [1047, 1319, 1568].forEach((f, i) => ping(t + i * 0.11, f, 0.06 * level, 0.5));
