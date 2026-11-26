@@ -23,7 +23,7 @@ const day = (L) => L.clock.day;
 const inSF = (L) => { const h = heart(L, W); return day(L) >= 16 && (['distance', 'friend'].includes(h.settled) || (h.stage === 'over' && h.over && h.over.why === 'returned')); };
 
 const P = {
-  id: W, name: B('林予安', "Lin Yu'an"), short: B('予安', "Yu'an"), age: 27, sex: 'f', color: '#7a9a6a', avatar: ['c1', 'c2', 'c8'], height: 1.67, voice: { pitch: 1.08, rate: 1.0 },
+  id: W, name: B('林予安', "Lin Yu'an"), short: B('予安', "Yu'an"), age: 27, sex: 'f', color: '#7a9a6a', avatar: ['yuan', 'c1', 'c2', 'c8'], height: 1.67, voice: { pitch: 1.08, rate: 1.0 },
   aliases: ['许若安', '若安', 'Ruoan'],
   role: B('建筑师、城市空间研究者；他最老的朋友', 'Architect and urban-space researcher; his oldest friend'),
   ambition: B('让一条老弄堂留住住在里面的人，而不只是留一张皮；然后，一个真正属于她的项目', 'To keep an old lane with its people in it, not just its skin; and then a project that is truly hers'),

@@ -989,7 +989,7 @@ def hair_shell():
         if not fr_ or p.y > c0.y or math.atan2(abs(p.x - c0.x), c0.y - p.y) > face_half:
             return False
         u = max(-1.0, min(1.0, (p.x - part) / 0.06 * (1 if fr_ > 0 else -1)))
-        return p.z > EYE_L.z + 0.010 + 0.048 * ((u + 1) / 2) ** 1.3
+        return p.z > EYE_L.z + hs.get("fringe_low_m", 0.010) + hs.get("fringe_rise_m", 0.048) * ((u + 1) / 2) ** 1.3
     scalp = [[g[0].copy() for g in row] for row in grid]   # (the scalp points, before the hair's thickness)
     # the radius round each row, smoothed round the head (the ears stick out of the skull)
     for r in range(rows + 1):
