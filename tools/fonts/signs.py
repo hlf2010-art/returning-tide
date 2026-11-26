@@ -13,6 +13,7 @@ FONTS = {   # file -> (Google Fonts family for the CSS API, output)
 root = os.path.join(os.path.dirname(__file__), '..', '..')
 src = sys.argv[1]; os.makedirs(src, exist_ok=True)
 text = ''.join(open(os.path.join(root, 'src', 'world', f), encoding='utf-8').read() for f in ('njShops.js', 'nanjingRoad.js', 'streetLife.js', 'tram.js'))
+text += '寿'                           # (the AIA lobby's 百寿图, world/interiors.js: a hundred forms of 寿)
 chars = sorted(set(re.findall(r'[　-〿㐀-鿿＀-￯]', text)))
 latin = ''.join(chr(c) for c in range(0x20, 0x7f)) + '·—–’&'
 print(len(chars), 'CJK characters')

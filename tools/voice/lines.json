@@ -661,13 +661,23 @@
  },
  {
   "who": "aia:shen",
-  "zh": "叔叔，装过心脏支架的话，普通医疗险核保会比较难。可以先靠沪惠保这种不限既往症的兜底，再配一份防癌医疗。",
-  "en": "Uncle, with heart stents, ordinary medical cover is hard to get through underwriting. Lean first on the city's 沪惠保, which doesn't exclude past illnesses, then add a cancer-only medical plan."
+  "zh": "叔叔，装过心脏支架的话，普通医疗险核保会比较难。今年有专门给次标准体的产品了，可以先如实做健康告知试试；沪惠保不限既往症，先兜个底。",
+  "en": "Uncle, with heart stents, ordinary medical cover is hard to get through underwriting. This year there are products made for people with conditions like yours, so let's try, with a full health declaration; and the city's 沪惠保 doesn't exclude past illnesses, so that's your floor."
  },
  {
   "who": "aia:shen",
   "zh": "小额理赔在手机上拍照上传就可以，材料齐全的话一般几天就到账。",
   "en": "For small claims you just photograph the papers and upload them on your phone; with everything complete it's usually paid within a few days."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "是的阿姨，那是大楼九八年启用的时候特别定做的，一百个篆书的寿字，寓意福寿绵长。",
+  "en": "That's right, Auntie. It was made specially when the building opened in '98: a hundred 寿 in seal script, for a long and blessed life."
+ },
+ {
+  "who": "aia:shen",
+  "zh": "我也听说过。现在这里是全国重点文物保护单位，动一块石头都要报批的。",
+  "en": "I've heard that too. Now it's a nationally protected heritage site; you need permission to move a single stone."
  },
  {
   "who": "aia:lin",
@@ -886,8 +896,8 @@
  },
  {
   "who": "aia:guard",
-  "zh": "不好意思，这里是办公区域，不能拍照哦。",
-  "en": "Sorry, this is an office; no photos, please."
+  "zh": "不好意思，大堂可以参观，但是不能拍照哦。",
+  "en": "Sorry, you're welcome to look round the lobby, but no photos, please."
  },
  {
   "who": "aia:tourist",
@@ -911,13 +921,13 @@
  },
  {
   "who": "aia:guard",
-  "zh": "是的，现在是友邦的办公楼，里面不对外开放。",
-  "en": "Yes. It's AIA's offices now; the inside isn't open to the public."
+  "zh": "是的，现在是友邦大厦。营业时间一楼可以进来看看，就是不能拍照。",
+  "en": "Yes, it's the AIA Building now. In office hours you can come into the ground floor and look, just no photos."
  },
  {
   "who": "aia:tourist",
-  "zh": "那我在门口拍一张可以吗？",
-  "en": "Can I take a picture at the door then?"
+  "zh": "那我在门口外面拍一张可以吗？",
+  "en": "Can I take one from outside the door, then?"
  },
  {
   "who": "aia:guard",

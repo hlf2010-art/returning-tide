@@ -35,6 +35,7 @@ import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
 import { contactShadow } from './contactShadow.js';
+import { SIGN_FONTS, loadSignFonts } from './shopSigns.js';
 import { woodTextures, plasterTextures, brushedTextures, liftDoorTexture, staffDoorTexture, steelDoorTexture } from './surfaceDetail.js';
 
 export const PEACE = { x0: -60, x1: -35.4, z0: -244, z1: -212.6, h: 5.6, door: [-50, -46], oct: { x: -48, z: -229, r: 6.2, top: 10.5 } };
@@ -63,8 +64,8 @@ function carve() {
     [A.x1, L.facadeX, A.z0, A.door[0], 'aia-front'], [A.x1, L.facadeX, A.door[1], A.z1, 'aia-front'],
     [-40.7, -36.3, -140.7, A.z1, 'desk'],                           // reception, on the public side by the south wall
   ]);
-  // the Doric columns either side of the door, inside (their plinths)
-  for (const z of [A.door[0] - 0.75, A.door[1] + 0.75]) colliders.push({ minX: A.x1 - 1.22, maxX: A.x1 - 0.38, minZ: z - 0.42, maxZ: z + 0.42, tag: 'pillar' });
+  // the Doric columns either side of the door, outside on the pavement (their plinths)
+  for (const z of [A.door[0] - 0.6, A.door[1] + 0.6]) colliders.push({ minX: L.facadeX + 0.05, maxX: L.facadeX + 0.85, minZ: z - 0.4, maxZ: z + 0.4, tag: 'pillar' });
   // the gate line: solid but for the gate lanes (each lane has its own flap collider, opened by a badge)
   const lanes = A.gates, w = 0.55;
   const solid = [[A.z0, lanes[0] - w]];
@@ -248,6 +249,65 @@ const plasterRelief = () => { const t = canvasTex(512, 512, (x, w) => {
   x.fillStyle = 'rgba(90,75,50,0.3)'; x.beginPath(); x.arc(c, c, 16, 0, Math.PI * 2); x.fill();
   for (const [a, b] of [[36, 36], [w - 36, 36], [36, w - 36], [w - 36, w - 36]]) { x.fillStyle = 'rgba(255,255,255,0.5)'; x.beginPath(); x.arc(a, b, 9, 0, Math.PI * 2); x.fill(); }
 }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+// the 百寿图 in No.17's lobby: a relief of a hundred forms of 寿 (longevity), made for the building when AIA opened it
+// in 1998 (Xinhua, 6 Aug 2025: "由100个不同形态的篆书'寿'字组成"). Ten by ten, each in its own cartouche, gilt on a dark
+// bronze ground; the forms vary by face, proportion, weight and frame (the game has no seal-script face, so the
+// hundred are drawn from the four sign faces, squared and stretched toward the seal manner). Returns { map,
+// normalMap, redraw } (redraw once the faces have loaded).
+function longevityRelief() {
+  const N = 1024, mk = () => { const c = document.createElement('canvas'); c.width = c.height = N; return [c, c.getContext('2d')]; };
+  const [c, x] = mk(), [hc, h] = mk(), [nc, n] = mk();
+  const map = new THREE.CanvasTexture(c), normalMap = new THREE.CanvasTexture(nc); map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = normalMap.anisotropy = 8;
+  const faces = [SIGN_FONTS.kai, SIGN_FONTS.song, SIGN_FONTS.wei, SIGN_FONTS.hei];
+  const draw = () => {
+    const g = x.createLinearGradient(0, 0, N, N); g.addColorStop(0, '#3b2a17'); g.addColorStop(1, '#24180c'); x.fillStyle = g; x.fillRect(0, 0, N, N);
+    h.fillStyle = '#000'; h.fillRect(0, 0, N, N);
+    const M = 44, cell = (N - 2 * M) / 10;
+    // a raised border round the field
+    for (const ctx of [x, h]) { ctx.strokeStyle = ctx === x ? '#c9a24a' : '#fff'; ctx.lineWidth = 10; ctx.strokeRect(18, 18, N - 36, N - 36); ctx.lineWidth = 3; ctx.strokeRect(34, 34, N - 68, N - 68); }
+    let s2 = 1998; const r = () => ((s2 = (s2 * 16807) % 2147483647) / 2147483647);
+    for (let j = 0; j < 10; j++) for (let i = 0; i < 10; i++) {
+      const k = j * 10 + i, cx = M + (i + 0.5) * cell, cy = M + (j + 0.5) * cell, R = cell * 0.44;
+      const frame = k % 5, face = faces[(k * 7 + j) % 4], sx = 0.78 + ((k * 13) % 7) * 0.05, sy = 1.0 + ((k * 5) % 4) * 0.06, weight = (k * 3) % 4;
+      const path = (ctx) => { ctx.beginPath();
+        if (frame === 0) ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        else if (frame === 1) ctx.rect(cx - R, cy - R, 2 * R, 2 * R);
+        else if (frame === 2) { for (let q = 0; q <= 8; q++) { const a = (q / 8) * Math.PI * 2 + Math.PI / 8; q ? ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R) : ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); } }
+        else if (frame === 3) { ctx.moveTo(cx, cy - R); ctx.lineTo(cx + R, cy); ctx.lineTo(cx, cy + R); ctx.lineTo(cx - R, cy); ctx.closePath(); }
+        else ctx.ellipse(cx, cy, R * 0.8, R, 0, 0, Math.PI * 2); };
+      // the cartouche: a sunk field with a gilt rim
+      path(x); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fill(); x.strokeStyle = '#b8903e'; x.lineWidth = 2.5; x.stroke();
+      path(h); h.strokeStyle = '#888'; h.lineWidth = 2.5; h.stroke();
+      // the character, gilt, raised
+      for (const [ctx, fill] of [[x, null], [h, '#fff']]) {
+        ctx.save(); ctx.translate(cx, cy); ctx.scale(sx, sy); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = `${weight > 1 ? 900 : 400} ${Math.round(cell * 0.6)}px ${face}`;
+        if (fill) { ctx.fillStyle = fill; ctx.fillText('寿', 0, 2); }
+        else {
+          ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillText('寿', 1.5, 3.5);                                     // its shadow on the ground
+          const gg = ctx.createLinearGradient(0, -cell * 0.3, 0, cell * 0.3); gg.addColorStop(0, '#f6dc8e'); gg.addColorStop(0.5, '#c79a42'); gg.addColorStop(1, '#e8c56c');
+          ctx.fillStyle = gg; ctx.fillText('寿', 0, 2);
+          if (weight === 3) { ctx.strokeStyle = '#8a6528'; ctx.lineWidth = 1.2; ctx.strokeText('寿', 0, 2); }
+        }
+        ctx.restore();
+      }
+      void r;
+    }
+    // the normal map from the height
+    const H = h.getImageData(0, 0, N, N).data, out = n.createImageData(N, N), o = out.data;
+    for (let yy = 0; yy < N; yy++) for (let xx = 0; xx < N; xx++) {
+      const at = (a, b) => H[((Math.min(N - 1, Math.max(0, b))) * N + Math.min(N - 1, Math.max(0, a))) * 4];
+      const dx = (at(xx + 1, yy) - at(xx - 1, yy)) / 255, dy = (at(xx, yy + 1) - at(xx, yy - 1)) / 255, i = (yy * N + xx) * 4;
+      const nx = -dx * 2.2, ny = dy * 2.2, l = Math.hypot(nx, ny, 1);
+      o[i] = (nx / l * 0.5 + 0.5) * 255; o[i + 1] = (ny / l * 0.5 + 0.5) * 255; o[i + 2] = (1 / l * 0.5 + 0.5) * 255; o[i + 3] = 255;
+    }
+    n.putImageData(out, 0, 0);
+    map.needsUpdate = true; normalMap.needsUpdate = true;
+  };
+  draw();
+  loadSignFonts().then(draw);
+  return { map, normalMap };
+}
 const signTex = (lines, { bg = '#1a1510', fg = '#d9b46a', w = 512, h = 128 } = {}) => canvasTex(w, h, (x) => {
   x.fillStyle = bg; x.fillRect(0, 0, w, h); x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
   lines.forEach(([t, size], i) => { x.font = `600 ${size}px "Noto Serif SC", serif`; x.fillText(t, w / 2, h * (i + 1) / (lines.length + 1)); });
@@ -577,9 +637,10 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   for (const [x, z] of [[-48, -229], [-56, -218], [-40, -218], [-56, -240], [-40, -238], [-48, -240.5], [-57, -229]]) lights.push({ x, y: Y0 + P.h - 0.4, z, intensity: 14, distance: 11, color: new THREE.Color(1.0, 0.82, 0.58) });
 
   // ================= THE AIA BUILDING =================
-  // after the building's own interiors (1924; restored 1996 by Jan Hird Pokorny Associates): white marble floors,
-  // walls of black marble inlaid with gold mosaic, plaster ceilings in relief, the entrance hall's dome in gold
-  // mosaic, Doric columns and a marble lintel at the door. Sources: docs/living-city-buildings.md (No.17)
+  // after the building's own interiors (1924; refitted for AIA over eighteen months, opened May 1998): white marble
+  // floors, walls of black marble inlaid with gold mosaic, plaster ceilings in relief, the entrance hall's dome in
+  // gold mosaic (Xinhua 2025: "大理石地坪、墙面与金色马赛克穹庐顶"), the 百寿图 relief; outside, Doric columns and a
+  // marble lintel at the door. Sources: docs/living-city-buildings.md (No.17)
   const A = AIA, acx = (A.x0 + A.x1) / 2, acz = (A.z0 + A.z1) / 2, DOME = { x: -38.1, z: (A.door[0] + A.door[1]) / 2, r: 2.9 };
   const whiteMarble = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, roughnessMap: marble.roughnessMap, color: 0xf6f3ec, roughness: 0.28, envMapIntensity: 1.3 });
   const blackMarble = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, color: 0x1b1b1e, roughness: 0.18, envMapIntensity: 1.5 });
@@ -629,25 +690,16 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.9 + DOME.r * 0.5, 6), bronze2); rod.position.y = 0.32 + (0.9 + DOME.r * 0.5) / 2; lan.add(rod);
     lights.push({ x: DOME.x, y: Y0 + A.h - 1.0, z: DOME.z, intensity: 12, distance: 9, color: new THREE.Color(1.0, 0.85, 0.62) });
   }
-  // the entrance: a pair of Doric columns of white marble either side of the door, inside, under a marble lintel
+  // the 百寿图, on the north wall where you see it as you turn in from the door: a hundred forms of 寿, gilt on bronze,
+  // in a brass frame (Xinhua: "一幅百寿图浮雕，在大堂格外醒目")
   {
-    const cx = A.x1 - 0.8;
-    for (const z of [A.door[0] - 0.75, A.door[1] + 0.75]) {
-      add(new THREE.CylinderGeometry(0.27, 0.31, A.h - 1.4, 20), whiteMarble, cx, Y0 + 0.3 + (A.h - 1.4) / 2, z);
-      for (let f = 0; f < 20; f++) { const a = (f / 20) * Math.PI * 2; const fl = add(new THREE.BoxGeometry(0.012, A.h - 1.5, 0.03), new THREE.MeshStandardMaterial({ color: 0xcfcac0, roughness: 0.5 }), cx + Math.cos(a) * 0.285, Y0 + 0.35 + (A.h - 1.5) / 2, z + Math.sin(a) * 0.285); fl.rotation.y = -a; }   // the flutes' shadow lines
-      box(0.78, 0.3, 0.78, blackMarble, cx, Y0, z);                                                          // the plinth
-      contactShadow(group, cx, Y0, z, 1.5, 1.5, 0.4);
-      add(new THREE.CylinderGeometry(0.4, 0.29, 0.22, 20), whiteMarble, cx, Y0 + A.h - 1.1 + 0.11, z);       // the echinus
-      box(0.86, 0.16, 0.86, whiteMarble, cx, Y0 + A.h - 0.88, z);                                            // the abacus
-    }
-    box(0.9, 0.5, A.door[1] - A.door[0] + 2.4, whiteMarble, cx, Y0 + A.h - 0.72, (A.door[0] + A.door[1]) / 2);   // the marble lintel across them
-    box(0.94, 0.04, A.door[1] - A.door[0] + 2.44, brass, cx, Y0 + A.h - 0.74, (A.door[0] + A.door[1]) / 2);
-    // (the two goddesses by Italian sculptors who flanked the marble entrance were smashed in the Cultural Revolution;
-    // their places are left empty, a niche either side)
-    for (const z of [A.door[0] - 1.65, A.door[1] + 1.65]) { box(0.06, 2.1, 0.9, blackMarble, A.x1 - 0.03, Y0 + 1.0, z); add(new THREE.CircleGeometry(0.45, 24, 0, Math.PI), new THREE.MeshStandardMaterial({ map: NERO.map, color: 0x9a8a60, metalness: 1, roughness: 0.3 }), A.x1 - 0.07, Y0 + 3.1, z, -Math.PI / 2); box(0.3, 0.08, 0.9, whiteMarble, A.x1 - 0.15, Y0 + 1.0, z); }
+    const LR = longevityRelief(), W = 3.3, cx = -38.05, y0 = Y0 + 2.05;
+    add(new THREE.PlaneGeometry(W, W), new THREE.MeshStandardMaterial({ map: LR.map, normalMap: LR.normalMap, normalScale: new THREE.Vector2(1.2, 1.2), metalness: 0.75, roughness: 0.38, envMapIntensity: 1.5, emissive: 0x2a1c0c, emissiveMap: LR.map }), cx, y0 + W / 2, A.z0 + 0.06, 0);
+    for (const [w, hh, x, y] of [[W + 0.2, 0.1, cx, y0 - 0.05], [W + 0.2, 0.1, cx, y0 + W - 0.05], [0.1, W + 0.2, cx - W / 2 - 0.05, y0 - 0.1], [0.1, W + 0.2, cx + W / 2 + 0.05, y0 - 0.1]]) box(w, hh, 0.08, brass, x, y, A.z0 + 0.05);
+    lights.push({ x: cx, y: Y0 + 5.6, z: A.z0 + 1.4, intensity: 6, distance: 6, color: new THREE.Color(1.0, 0.86, 0.62) });   // a wash on it from above
   }
   // the hundred years, on the wall over reception: gilt letters on black marble
-  add(new THREE.PlaneGeometry(4.2, 1.5), new THREE.MeshStandardMaterial({ map: signTex([['源于上海 · 1919', 46], ['1919  史带在上海创业，由此而始', 24], ['1992  改革开放后首家获准设立的外资保险公司在上海开业', 24], ['1998  重返外滩17号字林大楼', 24], ['2010  友邦保险在香港联交所上市', 24], ['2020  友邦人寿成为内地首家外资独资人身保险公司', 24]], { bg: '#101012', fg: '#d8b46a', w: 1024, h: 384 }), roughness: 0.3, metalness: 0.3, emissive: 0x161210 }), -38.5, Y0 + 3.3, A.z1 - 0.05, Math.PI);
+  add(new THREE.PlaneGeometry(4.2, 1.84), new THREE.MeshStandardMaterial({ map: signTex([['源于上海 · 1919', 44], ['1919  史带在上海创业，由此而始', 22], ['1928  友邦租用字林大楼底层大厅', 22], ['1992  改革开放后首家获准设立的外资保险公司在上海开业', 22], ['1996  整楼长期租赁外滩17号，定名友邦大厦；1998年5月启用', 22], ['2010  友邦保险在香港联交所上市', 22], ['2020  友邦人寿成为内地首家外资独资人身保险公司', 22], ['2025  续签友邦大厦整楼租约', 22]], { bg: '#101012', fg: '#d8b46a', w: 1024, h: 448 }), roughness: 0.3, metalness: 0.3, emissive: 0x161210 }), -38.5, Y0 + 3.3, A.z1 - 0.05, Math.PI);
   // the doorway through the façade (world/bund.js cuts it): granite reveals and soffit; the bronze-and-glass
   // double doors stand open into the lobby; a bronze fanlight; a lantern either side outside
   { const zc = (A.door[0] + A.door[1]) / 2, xd = (A.x1 + L.facadeX) / 2, dep = L.facadeX - A.x1 + 0.02;
@@ -667,22 +719,35 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       const pane = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.2, Hh - 0.3), glass); pane.position.set(-W / 2, Hh / 2, 0); pane.renderOrder = 3; leaf.add(pane);
       const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8), brass); pull.position.set(-W + 0.22, 1.15, s * 0.06); leaf.add(pull);
       // the lantern on the jamb outside
-      const lz = zc + s * 2.45;
+      const lz = zc + s * 3.25;
       box(0.06, 0.06, 0.06, bronze, L.facadeX + 0.6, Y0 + 3.4, lz); box(0.36, 0.55, 0.36, new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.2, 0.75) }), L.facadeX + 0.75, Y0 + 2.75, lz);
       box(0.42, 0.06, 0.42, bronze, L.facadeX + 0.75, Y0 + 3.3, lz); box(0.42, 0.05, 0.42, bronze, L.facadeX + 0.75, Y0 + 2.72, lz);
       lights.push({ x: L.facadeX + 1.0, y: Y0 + 2.9, z: lz, intensity: 4, distance: 6, color: new THREE.Color(1.0, 0.76, 0.48) });
     }
     lights.push({ x: A.x1 - 1.5, y: Y0 + 4.2, z: zc, intensity: 10, distance: 10, color: new THREE.Color(1.0, 0.86, 0.66) });   // the lobby's light, falling out of the door
+    // the door's frame on the Bund: a pair of Doric columns rising through the two-storey granite base either side
+    // of the door, and a marble lintel over it (a 2009 visitor: "大门口有多立克柱式和大理石门额"; the columns
+    // "贯穿一、两层")
+    const colStone = new THREE.MeshStandardMaterial({ map: granite.map, color: 0xc9c2b4, roughness: 0.6 }), whiteM = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, color: 0xf2efe8, roughness: 0.32, envMapIntensity: 1.2 });
+    const cxo = L.facadeX + 0.45, H8 = 7.7;
+    for (const s of [-1, 1]) {
+      const z = zc + s * (1.7 + 0.6);
+      box(0.84, 0.5, 0.84, colStone, cxo, Y0, z);                                                                     // plinth
+      add(new THREE.CylinderGeometry(0.31, 0.36, H8 - 1.05, 24), colStone, cxo, Y0 + 0.5 + (H8 - 1.05) / 2, z);      // shaft
+      add(new THREE.CylinderGeometry(0.44, 0.32, 0.25, 24), colStone, cxo, Y0 + H8 - 0.55 + 0.125, z);               // echinus
+      box(0.92, 0.2, 0.92, colStone, cxo, Y0 + H8 - 0.3, z);                                                          // abacus
+      contactShadow(group, cxo, Y0, z, 1.4, 1.4, 0.4);
+    }
+    box(0.7, 0.62, 3.9, whiteM, L.facadeX + 0.3, Y0 + 4.78, zc);                                                       // the marble lintel
+    box(0.74, 0.06, 3.94, whiteM, L.facadeX + 0.3, Y0 + 5.4, zc);
   }
   // reception: a long granite desk on the south side; a tenant directory; a visitor QR stand
   contactShadow(group, -38.5, Y0, -139.95, 5.0, 2.2, 0.45);
   rbox(4.2, 1.1, 1.4, 0.05, blackMarble, -38.5, Y0, -139.9);                                             // reception, south side of the public lobby: black marble
   box(4.3, 0.05, 1.5, whiteMarble, -38.5, Y0 + 1.1, -139.9); box(4.22, 0.04, 0.02, brass, -38.5, Y0 + 0.9, -140.61);
-  add(new THREE.PlaneGeometry(2.6, 1.6), new THREE.MeshBasicMaterial({ map: signTex([['外滩17号 · 楼层指引', 34], ['8F  恒岳资本 Hengyue Capital', 26], ['7F  澄观设计 Chengguan Design', 26], ['6F  远航律师事务所 Yuanhang Law', 26], ['1–5F  友邦人寿 AIA Life', 26]], { bg: '#121417', fg: '#e8e2d6', w: 768, h: 480 }) }), -38, Y0 + 2.4, A.z0 + 0.06, 0);
+  add(new THREE.PlaneGeometry(1.1, 0.68), new THREE.MeshBasicMaterial({ map: signTex([['外滩17号 · 楼层指引', 34], ['8F  恒岳资本 Hengyue Capital', 26], ['7F  澄观设计 Chengguan Design', 26], ['6F  远航律师事务所 Yuanhang Law', 26], ['1–5F  友邦人寿 AIA Life', 26]], { bg: '#121417', fg: '#e8e2d6', w: 768, h: 480 }) }), -35.3, Y0 + 1.75, A.z0 + 0.06, 0);   // (a plaque by the 百寿图)
   box(0.4, 1.2, 0.3, dark, -35.6, Y0, -140.3);
   add(new THREE.PlaneGeometry(0.34, 0.5), new THREE.MeshBasicMaterial({ map: signTex([['访客预约', 40], ['扫码登记', 30], ['Visitor sign-in', 26]], { bg: '#f4f4f4', fg: '#222', w: 300, h: 420 }) }), -35.6, Y0 + 1.3, -140.46, Math.PI);
-  // the doors stand open: two bronze leaves folded back into the arched reveal
-  for (const s of [-1, 1]) box(0.08, 4.4, 1.6, brass, L.facadeX + 0.3, Y0, (A.door[0] + A.door[1]) / 2 + s * 2.4);
   // the speed gates: glass flaps between steel cabinets
   const flaps = [];
   for (const z of A.gates) {
