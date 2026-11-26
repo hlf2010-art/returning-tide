@@ -156,6 +156,20 @@ Sources: [Xinhua, 6 Aug 2025](http://www.news.cn/money/20250806/dd7961bc46974e17
 - *The glass peace dove given by the glass artist 施森彬 for the hotel's ninetieth year.*
 - *Not from a source:* the pillars' form, the laylight's exact pattern, the inlay's stones and the Lalique-manner panels' motifs are the game's own, in the period's manner.
 
+*26 Nov 2026, full check of the Peace Hotel lobby (every wall, corner, fitting and person, day and night). Fixed:*
+- *The staff door's opening was cut at the wrong end of the west wall: a 2.4 m hole onto the street behind the guests, while the door itself stood on solid wall. It is now behind the door.*
+- *The desks' walnut was one grain stretched across 8 m (rounded boxes had no metric UVs); now metric.*
+- *A Lalique-manner panel overlapped the staff door's architrave and a sconce overlapped the other: both moved.*
+- *The concierge wore a red track jacket: now a dark suit with the golden crossed keys of Les Clefs d'Or on his lapels. The front desk wears the hotel's dark suit with a gold name badge.*
+- *The concierge's parcels hung in the air: a walnut shelf unit holds them.*
+- *The lounge's armchairs were four rounded blocks: now proper club chairs in oxblood leather.*
+- *The grand piano looked like a chaise longue (a solid slab, the lid raised at the tail). Rebuilt: the case with its straight and curved sides, open, with soundboard, gilt frame and strings; the lid hinged on the straight side on its stick; the keyboard with black keys, cheeks and fallboard; the music desk; legs on brass castors; the pedal lyre; a bench.*
+- *The windows onto the Bund were bare holes: now bronze frames in three lights with a transom, a marble upstand, drapes tied back and a pelmet.*
+- *The lifts had no call buttons: brass plates added.*
+- *The drum's silver relief of the Bund read as blank blue panels: stronger relief, warmer, less mirror.*
+- *The greetings said "good evening" at any hour: they now follow the time of day. The desk said the Jazz Bar began at 9:30 while the bar opens at 19:00 with the band from 20:00: the desk now says what the bar is doing at that hour.*
+- *No.17's receptionist asked "which company?" in a building AIA has to itself: now "who are you here to see?".*
+
 Sources: [HBA](https://hba.com/projects/fairmont-peace-hotel/), [Arcplus via The Paper](https://m.thepaper.cn/baijiahao_26000920), [Gold Mantis](https://www.goldmantis.com/case/250), [The Paper on the peace dove](https://www.thepaper.cn/newsDetail_forward_26059709), [Hospitality Design](https://hospitalitydesign.com/news/fairmont-peace-hotel-opens-in-shanghai/23575).
 
 - *The crowd reads as cloned (too few outfits; people walk in files along the parapet).*

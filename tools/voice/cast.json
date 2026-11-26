@@ -411,5 +411,13 @@
  "aia:recruit": {
   "zh": "zm_020",
   "en": "am_liam"
+ },
+ "hotelguard": {
+  "zh": "zm_009",
+  "en": "am_echo"
+ },
+ "hoteldesk": {
+  "zh": "zf_002",
+  "en": "bf_isabella"
  }
 }

@@ -201,13 +201,17 @@ export function greyHair(person) {
 // scarf knotted at the throat, as corporate front desks in China often dress their staff; sets her apart from an
 // agent in her own clothes on the same body ----
 const scarfMat = new THREE.MeshStandardMaterial({ color: 0xb3122a, roughness: 0.45, sheen: 0.5 });
-export function dressReceptionist(person) {
+export function dressReceptionist(person, { scarf = true, badge = false } = {}) {
   person.root.traverse((o) => { if (o.isMesh && /_body$/.test(o.material.name)) o.material = recolor(o.material, 'suit', SUIT.body); });
   const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
   if (head.length && body.length) {
     const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), neckY = top - 0.24;
     const ring = body.filter((p) => Math.abs(p.y - neckY) < 0.015);
-    if (ring.length > 6) {
+    if (badge) {                                                       // a gold name badge on the left breast
+      const fr = body.filter((p) => Math.abs(p.y - (neckY - 0.2)) < 0.02 && p.x > 0.05 && p.x < 0.12), pin = fr.length ? fr.reduce((m, p) => (p.z > m.z ? p : m), fr[0]) : null;
+      if (pin) attach(person, 'Bip01_Spine2', new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.018, 0.003), goldMat), new THREE.Vector3(pin.x, pin.y, pin.z + 0.003));
+    }
+    if (scarf && ring.length > 6) {
       const cx = ring.reduce((a, p) => a + p.x, 0) / ring.length, cz = ring.reduce((a, p) => a + p.z, 0) / ring.length;
       const r = ring.reduce((a, p) => a + Math.hypot(p.x - cx, p.z - cz), 0) / ring.length + 0.012;
       const g = new THREE.Group();
@@ -219,5 +223,31 @@ export function dressReceptionist(person) {
     }
   }
   person.outfit = 'receptionist';
+  return person;
+}
+
+// ---- a hotel concierge: the coat (on the red track-jacket body, 'p3') taken to a dark charcoal suit, the white shirt
+// as it was, and on each lapel the crossed golden keys that concierges of Les Clefs d'Or wear ----
+export function dressConcierge(person) {
+  person.root.traverse((o) => {
+    if (!o.isMesh || !/_body$/.test(o.material.name)) return;
+    o.material = recolor(o.material, 'concierge', (r, g, b) => {
+      if (r > g * 1.5 && r > b * 1.4 && r > 60) { const k = Math.min(1, lum(r, g, b) / 120) * 34 + 10; return [k * 0.95, k, k * 1.08]; }   // the red jacket to charcoal
+      if (r > 200 && g > 200 && b > 200) return null;                                                                                       // its white stripes: piping, kept
+      return null;
+    });
+  });
+  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
+  if (head.length && body.length) {
+    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), y = top - 0.25 - 0.13;
+    for (const side of [-1, 1]) {
+      const lap = body.filter((p) => Math.abs(p.y - y) < 0.02 && p.x * side > 0.06 && p.x * side < 0.12), pin = lap.length ? lap.reduce((m, p) => (p.z > m.z ? p : m), lap[0]) : null;
+      if (!pin) continue;
+      const keys = new THREE.Group();
+      for (const a of [0.7, -0.7]) { const k = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.03, 0.002), goldMat); k.rotation.z = a; keys.add(k); const bow = new THREE.Mesh(new THREE.TorusGeometry(0.004, 0.0012, 4, 8), goldMat); bow.position.set(-Math.sin(a) * 0.016, Math.cos(a) * 0.016, 0); keys.add(bow); }
+      attach(person, 'Bip01_Spine2', keys, new THREE.Vector3(pin.x, pin.y, pin.z + 0.004));
+    }
+  }
+  person.outfit = 'concierge';
   return person;
 }

@@ -30,7 +30,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { L, colliders, addDynamicCollider } from './layout.js';
 import { createPerson } from './people.js';
-import { dressHotelSecurity, dressReceptionist } from './outfits.js';
+import { dressHotelSecurity, dressReceptionist, dressConcierge } from './outfits.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
@@ -52,7 +52,7 @@ function carve() {
     [P.x0, P.door[0], P.z1, -212, 'peace-front'], [P.door[1], P.x1, P.z1, -212, 'peace-front'],
     // the front desk and concierge (west), the lift lobby's back wall (north), the lounge piano
     [P.x0 + 1.3, P.x0 + 3.6, -233.2, -224.6, 'desk'], [P.x0 + 1.3, P.x0 + 3.2, -239.6, -235.4, 'desk'],
-    [-41.6, -39.2, -242.6, -240.4, 'piano'],
+    [-41.2, -39.6, -243.0, -240.65, 'piano'], [-40.8, -40.0, -243.5, -243.15, 'piano'],
   ]);
   for (let i = 0; i < 8; i++) {                                     // the eight pillars round the octagon
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8, x = P.oct.x + Math.cos(a) * P.oct.r, z = P.oct.z + Math.sin(a) * P.oct.r;
@@ -149,7 +149,7 @@ const bundRelief = () => {
   const hm = x.getImageData(0, 0, W, H).data, out = x.createImageData(W, H), o = out.data;
   for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) {
     const i = (yy * W + xx) * 4, hgt = hm[i], hl = hm[(yy * W + Math.max(0, xx - 2)) * 4], hu = hm[(Math.max(0, yy - 2) * W + xx) * 4];
-    const slope = (hgt - hl) * 0.9 + (hgt - hu) * 0.9, base = 150 + hgt * 0.22 + slope;
+    const slope = (hgt - hl) * 1.6 + (hgt - hu) * 1.6, base = 92 + hgt * 0.6 + slope;   // (a strong relief: it has to read from the floor, 6-8 m below)
     o[i] = Math.max(40, Math.min(255, base * 0.97)); o[i + 1] = Math.max(40, Math.min(255, base * 0.98)); o[i + 2] = Math.max(40, Math.min(255, base * 1.02)); o[i + 3] = 255;
   }
   x.putImageData(out, 0, 0);
@@ -336,6 +336,14 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       const dims = [[p.depth, p.height], [p.depth, p.height], [p.width, p.depth], [p.width, p.depth], [p.width, p.height], [p.width, p.height]];
       for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) { const i = f * 4 + k; uv.setXY(i, uv.getX(i) * dims[f][0] / tile, uv.getY(i) * dims[f][1] / tile); }
     }
+    else if (geo.type === 'RoundedBoxGeometry') {
+      // projected from the position by the face's main axis (a rounded box has no per-face sizes to go by)
+      const pos = geo.attributes.position, nrm = geo.attributes.normal;
+      for (let i = 0; i < uv.count; i++) {
+        const ax = Math.abs(nrm.getX(i)), ay = Math.abs(nrm.getY(i)), az = Math.abs(nrm.getZ(i));
+        if (ax >= ay && ax >= az) uv.setXY(i, pos.getZ(i) / tile, pos.getY(i) / tile); else if (ay >= az) uv.setXY(i, pos.getX(i) / tile, pos.getZ(i) / tile); else uv.setXY(i, pos.getX(i) / tile, pos.getY(i) / tile);
+      }
+    }
     return geo;
   };
   const TILED = new Set([walnut, plaster, brass]);
@@ -361,13 +369,20 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   }
   const lights = [];   // extra light sources for world/lighting.js's pool
   const clerestory = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.75, 0.62, 0.45) });   // dim glazing round the drum
-  // a club armchair: seat, rolled back, two arms, in burgundy leather
-  const chairMat = new THREE.MeshStandardMaterial({ color: 0x5c1f1c, roughness: 0.5 });
+  // a club armchair in oxblood leather (the Jasmine Lounge's): a rounded plinth, a loose cushion, a back that leans a
+  // little with a stitched panel line, rolled arms, short tapered walnut legs on brass cups; geometry shared
+  const chairMat = new THREE.MeshPhysicalMaterial({ color: 0x5a1a17, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.45, sheen: 0.25, sheenColor: new THREE.Color(0x8a4a40) });
+  const legWood = new THREE.MeshStandardMaterial({ color: 0x3b2618, roughness: 0.45 }), seamMat = new THREE.MeshStandardMaterial({ color: 0x2a0b09, roughness: 0.7 });
+  const CHR = { body: new RoundedBoxGeometry(0.74, 0.3, 0.72, 4, 0.05), cushion: new RoundedBoxGeometry(0.52, 0.12, 0.54, 4, 0.05), back: new RoundedBoxGeometry(0.74, 0.46, 0.17, 4, 0.07),
+    arm: new RoundedBoxGeometry(0.13, 0.24, 0.68, 4, 0.05), roll: new THREE.CylinderGeometry(0.08, 0.08, 0.68, 20, 1).rotateX(Math.PI / 2), seam: new THREE.BoxGeometry(0.5, 0.008, 0.012),
+    leg: new THREE.CylinderGeometry(0.022, 0.014, 0.09, 10), cup: new THREE.CylinderGeometry(0.016, 0.016, 0.02, 10) };
   function armchair(x, z, ry) {
     const g = new THREE.Group(); g.position.set(x, Y0, z); g.rotation.y = ry; group.add(g);
-    const part = (w, h, d, px, py, pz) => { const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(w, h, d) * 0.35), chairMat); m.position.set(px, py + h / 2, pz); g.add(m); };
+    const put = (geo, mat, px, py, pz, rx = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(px, py, pz); m.rotation.x = rx; m.castShadow = m.receiveShadow = true; g.add(m); };
     contactShadow(group, x, Y0, z, 0.95, 0.95, 0.45, ry);
-    part(0.62, 0.42, 0.62, 0, 0, 0.04); part(0.62, 0.42, 0.18, 0, 0.36, -0.26); part(0.14, 0.26, 0.6, -0.3, 0.38, 0.02); part(0.14, 0.26, 0.6, 0.3, 0.38, 0.02);
+    put(CHR.body, chairMat, 0, 0.24, 0); put(CHR.cushion, chairMat, 0, 0.45, 0.06); put(CHR.back, chairMat, 0, 0.62, -0.28, -0.12); put(CHR.seam, seamMat, 0, 0.64, -0.19, -0.12);
+    for (const sx of [-1, 1]) { put(CHR.arm, chairMat, sx * 0.305, 0.48, 0); put(CHR.roll, chairMat, sx * 0.305, 0.61, 0); }
+    for (const sx of [-0.3, 0.3]) for (const sz of [-0.29, 0.29]) { put(CHR.leg, legWood, sx, 0.045, sz); put(CHR.cup, brass, sx, 0.008, sz); }
   }
 
   // ================= THE PEACE HOTEL =================
@@ -378,11 +393,24 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   walls(P.x0, P.z1, P.x1, P.z1, P.h, pcx, pcz, [[P.door[0] - P.x0, P.door[1] - P.x0]]);
   walls(P.x1, P.z1, P.x1, P.z0, P.h, pcx, pcz, [[16, 19], [22, 25], [27.5, 30.5]], 3.6);                 // windows onto the Bund (glazed below)
   walls(P.x1, P.z0, P.x0, P.z0, P.h, pcx, pcz);
-  walls(P.x0, P.z0, P.x0, P.z1, P.h, pcx, pcz, [[20.4, 21.8]], 2.4);                                    // the staff door
-  for (const [a, b] of [[16, 19], [22, 25], [27.5, 30.5]]) {
-    const z0 = P.z1 - a, z1 = P.z1 - b;
-    add(new THREE.PlaneGeometry(Math.abs(z1 - z0), 3.6), glass, P.x1 + 0.05, Y0 + 1.8, (z0 + z1) / 2, Math.PI / 2);
-    box(0.1, 0.12, Math.abs(z1 - z0) + 0.2, brass, P.x1 - 0.05, Y0 + 3.6, (z0 + z1) / 2);
+  walls(P.x0, P.z0, P.x0, P.z1, P.h, pcx, pcz, [[(P.z1 - 21.1) - P.z0 - 0.66, (P.z1 - 21.1) - P.z0 + 0.66]], 2.4);   // the staff door (its opening behind the door leaf)
+  // the lounge's windows onto the Bund: bronze frames in three lights with a transom, a marble upstand, drapes tied back
+  {
+    const bronzeW = new THREE.MeshStandardMaterial({ color: 0x4a3420, roughness: 0.35, metalness: 0.85, envMapIntensity: 1.2 });
+    const drapeTex = canvasTex(256, 64, (x, w, h) => { for (let i = 0; i < w; i++) { const v = 0.78 + 0.22 * Math.sin(i / w * Math.PI * 14) * Math.sin(i / w * Math.PI * 3 + 1); x.fillStyle = `rgb(${Math.round(222 * v)},${Math.round(200 * v)},${Math.round(160 * v)})`; x.fillRect(i, 0, 1, h); } });
+    const drape = new THREE.MeshStandardMaterial({ map: drapeTex, roughness: 0.85, sheen: 0.5 });
+    for (const [a, b] of [[16, 19], [22, 25], [27.5, 30.5]]) {
+      const z0 = P.z1 - a, z1 = P.z1 - b, zc2 = (z0 + z1) / 2, W = Math.abs(z1 - z0), xw = P.x1 - 0.12;
+      add(new THREE.PlaneGeometry(W, 3.45), glass, P.x1 - 0.1, Y0 + 0.15 + 3.45 / 2, zc2, Math.PI / 2);
+      box(0.3, 0.15, W, marbleDark, P.x1 - 0.15, Y0, zc2);                                                   // the upstand
+      for (const dz of [-W / 2, W / 2]) box(0.12, 3.45, 0.09, bronzeW, xw, Y0 + 0.15, zc2 + dz);            // jambs
+      box(0.12, 0.1, W, bronzeW, xw, Y0 + 3.5, zc2); box(0.12, 0.07, W, bronzeW, xw, Y0 + 2.75, zc2);       // head, transom
+      for (const k of [1, 2]) box(0.1, 3.4, 0.05, bronzeW, xw, Y0 + 0.15, z0 - Math.sign(z0 - z1) * 0 + (z1 - z0) * k / 3);   // mullions
+      box(0.1, 0.05, W, bronzeW, xw, Y0 + 0.9, zc2);                                                        // a guard rail across the lower lights
+      // the drapes, tied back either side, and a pelmet over
+      for (const s2 of [-1, 1]) { const d = add(new THREE.BoxGeometry(0.14, 3.9, 0.55), drape, P.x1 - 0.32, Y0 + 1.95, zc2 + s2 * (W / 2 + 0.25)); d.castShadow = true; box(0.18, 0.05, 0.6, brass, P.x1 - 0.32, Y0 + 1.1, zc2 + s2 * (W / 2 + 0.25)); }
+      box(0.24, 0.34, W + 1.3, drape, P.x1 - 0.28, Y0 + 3.85, zc2);
+    }
   }
   // ceiling with the octagon open to the drum and the laylight
   const ringPt = (i, r) => { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; return [P.oct.x + Math.cos(a) * r, P.oct.z + Math.sin(a) * r]; };
@@ -410,7 +438,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     // the drum: eight panels rising from the ceiling to the laylight; on each, a stretch of the silver-leaf relief of
     // the Bund, framed in brass; clerestory glazing above, a moulded ring at the foot
     const relief = bundRelief(), top = Y0 + P.oct.top;
-    const silver = new THREE.MeshStandardMaterial({ map: relief, color: 0xf0f2f5, roughness: 0.38, metalness: 0.55, envMapIntensity: 1.6, emissive: 0x5a5650, emissiveMap: relief });   // (silver leaf under warm lamplight)
+    const silver = new THREE.MeshStandardMaterial({ map: relief, color: 0xebe7df, roughness: 0.45, metalness: 0.35, envMapIntensity: 0.7, emissive: 0x4a4640, emissiveMap: relief });   // (silver leaf under warm lamplight)
     for (let i = 0; i < 8; i++) {
       const [ax, az] = ringPt(i, R0), [bx, bz] = ringPt(i + 1, R0);
       wall(ax, az, bx, bz, ceilY, top - 0.9, plaster, P.oct.x, P.oct.z);
@@ -510,7 +538,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const back = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.7, 0.03), bronzeDark); back.position.z = 0.015; g.add(back);
   };
   for (let x = P.x0 + 4; x < P.x1 - 3; x += 4) { if (Math.abs(x - -50) > 0.8 && Math.abs(x - -46) > 0.8 && [-52, -48, -44].every((lx) => Math.abs(lx - x) > 0.9)) sconce(x, P.z0 + 0.03, 0); }
-  for (let z = P.z1 - 4; z > P.z0 + 3; z -= 4) { if (Math.abs(z - (P.z1 - 21.1)) > 1.2 && Math.abs(z - -228.9) > 3.3) sconce(P.x0 + 0.03, z, Math.PI / 2); }
+  for (let z = P.z1 - 4; z > P.z0 + 3; z -= 4) { if (Math.abs(z - (P.z1 - 21.1)) > 1.2 && Math.abs(z - -228.9) > 4.4) sconce(P.x0 + 0.03, z, Math.PI / 2); }   // (clear of the desk's sign and its glass panels)
   // the Lalique-manner glass: tall frosted relief panels, backlit, between the lift doors and flanking the desk's sign
   {
     const lal = new THREE.MeshBasicMaterial({ map: laliqueGlass(), color: new THREE.Color(1.15, 1.08, 0.98) });
@@ -518,7 +546,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       const p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 1.86), lal); p2.position.z = 0.05; g.add(p2);
       for (const [w, h, px, py] of [[0.74, 0.06, 0, 0.96], [0.74, 0.06, 0, -0.96], [0.06, 1.98, -0.37, 0], [0.06, 1.98, 0.37, 0]]) { const f = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.06), brass); f.position.set(px, py, 0.05); g.add(f); } };
     for (const x of [-50, -46]) panel(x, P.z0 + 0.04, 0);
-    for (const z of [-224.9, -232.9]) panel(P.x0 + 0.04, z, Math.PI / 2);
+    for (const z of [-224.9, -232.45]) panel(P.x0 + 0.04, z, Math.PI / 2);   // (clear of the staff door's architrave at -233)
   }
   // the front desk's lamps: two Deco lamps of frosted glass on stepped brass bases
   for (const z of [-226.2, -231.6]) {
@@ -570,7 +598,14 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   box(0.05, 0.05, 8.2, brass, P.x0 + 3.53, Y0 + 0.95, -228.9);
   add(new THREE.PlaneGeometry(6, 1.1), new THREE.MeshBasicMaterial({ map: signTex([['费尔蒙和平饭店', 58], ['FAIRMONT PEACE HOTEL · 1929', 24]], { w: 872, h: 160 }), color: new THREE.Color(1.3, 1.3, 1.3) }), P.x0 + 0.06, Y0 + 3.4, -228.9, Math.PI / 2);
   rbox(1.8, 1.1, 4, 0.04, walnut, P.x0 + 2.2, Y0, -237.5); box(1.9, 0.06, 4.2, marbleDark, P.x0 + 2.2, Y0 + 1.1, -237.5);
-  for (let i = 0; i < 6; i++) box(0.36, 0.24, 0.3, new THREE.MeshStandardMaterial({ color: 0xa88458, roughness: 0.9 }), P.x0 + 0.35, Y0 + 0.4 + (i % 3) * 0.5, -236 - Math.floor(i / 3) * 0.6);   // parcels on the shelf
+  // the parcels waiting for guests, on a walnut shelf unit against the wall behind the concierge
+  { const sx = P.x0 + 0.24, sz = -236.3;
+    for (const dz of [-0.82, 0.82]) box(0.4, 1.9, 0.04, walnut, sx, Y0, sz + dz);                                     // the sides
+    for (const y of [0.04, 0.62, 1.12, 1.62, 1.86]) box(0.4, 0.04, 1.68, walnut, sx, Y0 + y, sz);                     // the shelves and top
+    box(0.02, 1.9, 1.68, walnut, P.x0 + 0.05, Y0, sz);                                                                // the back
+    const card = new THREE.MeshStandardMaterial({ color: 0xa88458, roughness: 0.9 }), bag = new THREE.MeshStandardMaterial({ color: 0x1d1d22, roughness: 0.7 });
+    [[0.66, -0.45, 0.36, 0.22, card], [0.66, 0.05, 0.3, 0.3, card], [0.66, 0.5, 0.28, 0.18, bag], [1.16, -0.4, 0.34, 0.26, card], [1.16, 0.3, 0.4, 0.2, card], [0.08, -0.3, 0.32, 0.4, bag], [0.08, 0.35, 0.36, 0.3, card]]
+      .forEach(([y, dz, w, h, m]) => box(0.3, h, w, m, sx, Y0 + y, sz + dz)); }
   // the lift lobby: three brass lift doors in the north wall, dials over them
   const liftDoor = new THREE.MeshStandardMaterial({ map: liftDoorTexture(), color: 0xffffff, roughness: 0.38, metalness: 1, envMapIntensity: 1.5 });
   for (const x of [-52, -48, -44]) {
@@ -579,21 +614,68 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     add(new THREE.CircleGeometry(0.28, 24, 0, Math.PI), brass, x, Y0 + 2.95, P.z0 + 0.06);
     box(1.8, 0.12, 0.12, walnut, x, Y0 + 2.62, P.z0 + 0.08);
   }
+  // the call buttons: a brass plate with an up and a down, between the doors and the glass panels
+  { const ringP = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.3, 0.8) });
+    for (const x of [-50.85, -46.85]) { box(0.12, 0.28, 0.02, brass, x, Y0 + 1.0, P.z0 + 0.03); for (const dy of [0.07, -0.07]) { const b2 = add(new THREE.CylinderGeometry(0.02, 0.02, 0.012, 16), ringP, x, Y0 + 1.14 + dy, P.z0 + 0.045); b2.rotation.x = Math.PI / 2; } } }
   // the Jasmine Lounge: round tables, chairs, a grand piano by the windows
   for (const [x, z] of [[-38.2, -230], [-38.4, -234.5], [-38.2, -238], [-41.5, -232], [-41.6, -236.4]]) {
     add(new THREE.CylinderGeometry(0.45, 0.45, 0.04, 24), marbleDark, x, Y0 + 0.74, z); add(new THREE.CylinderGeometry(0.05, 0.12, 0.72, 10), brass, x, Y0 + 0.36, z);
     for (const a of [0, Math.PI]) armchair(x + Math.sin(a) * 0.85, z + Math.cos(a) * 0.85, a + Math.PI);
   }
-  // the grand piano: curved case, raised lid, three legs
+  // the grand piano (a parlour grand, 1.9 m): the case with its straight bass side and curved treble side, open,
+  // showing the soundboard and the gilt iron frame and strings; the lid hinged along the straight side and propped
+  // on its stick; the keyboard out in front with its cheeks and fallboard, the music desk, three tapered legs on brass
+  // castors, the pedal lyre with three brass pedals, and a bench. Keyboard to the north, the pianist's back to the wall.
   {
-    const lacquer = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.12, metalness: 0.2, envMapIntensity: 1.5 });
-    const sh = new THREE.Shape(); sh.moveTo(-0.75, 0); sh.lineTo(0.75, 0); sh.lineTo(0.75, 1.2); sh.bezierCurveTo(0.75, 1.9, 0.2, 2.2, -0.1, 2.1); sh.bezierCurveTo(-0.5, 1.95, -0.75, 1.6, -0.75, 1.2); sh.closePath();
-    const caseGeo = new THREE.ExtrudeGeometry(sh, { depth: 0.32, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 2 }); caseGeo.rotateX(Math.PI / 2);
-    add(caseGeo, lacquer, -40.4, Y0 + 1.0, -242.6);
-    contactShadow(group, -40.4, Y0, -241.6, 2.0, 2.8, 0.4);
-    const lid = add(new THREE.ShapeGeometry(sh), lacquer, -40.4, Y0 + 1.02, -242.6); lid.rotation.set(-Math.PI / 2 + 0.55, 0, 0); lid.material = lacquer;
-    for (const [lx, lz] of [[-0.6, 0.2], [0.6, 0.2], [0, 1.9]]) add(new THREE.CylinderGeometry(0.05, 0.04, 0.68, 8), lacquer, -40.4 + lx, Y0 + 0.34, -242.6 + lz);
-    box(1.4, 0.06, 0.22, new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.4 }), -40.4, Y0 + 0.72, -242.55);   // the keys
+    const PX = -40.4, PZ = -242.6, lacquer = new THREE.MeshPhysicalMaterial({ color: 0x050505, roughness: 0.14, metalness: 0.05, clearcoat: 0.7, clearcoatRoughness: 0.12, envMapIntensity: 0.75 });
+    const pg = new THREE.Group(); pg.position.set(PX, Y0, PZ); group.add(pg);
+    // the outline, in plan (x across, y = distance back from the keyboard)
+    const outline = (k = 1) => { const sh = new THREE.Shape(), c = (x, y) => [x * k, 0.95 + (y - 0.95) * k]; const m = (x, y) => sh.moveTo(...c(x, y)), l = (x, y) => sh.lineTo(...c(x, y)), bz = (a1, b1, a2, b2, a3, b3) => sh.bezierCurveTo(...c(a1, b1), ...c(a2, b2), ...c(a3, b3));
+      m(-0.74, 0); l(0.74, 0); l(0.74, 0.5); bz(0.74, 0.95, 0.12, 1.0, 0.1, 1.45); bz(0.08, 1.8, -0.1, 1.92, -0.35, 1.92); bz(-0.6, 1.92, -0.74, 1.8, -0.74, 1.55); l(-0.74, 0); return sh; };
+    const toPlan = (g) => { g.rotateX(Math.PI / 2); return g; };   // shape y -> z (back), extrusion down
+    const RB = 0.66, RT = 0.98;                                                                        // the rim's bottom and top
+    { const sh = outline(1); sh.holes.push(outline(0.95)); const rim = new THREE.Mesh(toPlan(new THREE.ExtrudeGeometry(sh, { depth: RT - RB, bevelEnabled: true, bevelSize: 0.008, bevelThickness: 0.008, bevelSegments: 2, curveSegments: 24 })), lacquer); rim.position.y = RT; rim.castShadow = true; pg.add(rim); }
+    const bottom = new THREE.Mesh(toPlan(new THREE.ShapeGeometry(outline(1), 24)), lacquer); bottom.position.y = RB; pg.add(bottom);   // (faces down)
+    const board = new THREE.Mesh(toPlan(new THREE.ShapeGeometry(outline(0.95), 24)), new THREE.MeshStandardMaterial({ color: 0xc89a5a, roughness: 0.6, side: THREE.DoubleSide })); board.position.y = RB + 0.12; pg.add(board);   // the spruce soundboard
+    { // the iron frame (gilt) and the strings over it
+      const pt = canvasTex(256, 512, (x, w, h) => { x.clearRect(0, 0, w, h); x.fillStyle = '#b8903e'; x.beginPath(); x.moveTo(20, 20); x.lineTo(w - 20, 20); x.lineTo(w - 30, 200); x.quadraticCurveTo(w * 0.45, 330, w * 0.42, h - 30); x.lineTo(40, h - 30); x.closePath(); x.fill();
+        x.fillStyle = 'rgba(0,0,0,0.35)'; for (const [cx, cy, r] of [[90, 140, 26], [170, 150, 22], [80, 300, 30], [150, 260, 18]]) { x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill(); }
+        x.strokeStyle = 'rgba(235,230,220,0.85)'; x.lineWidth = 1; for (let i = 0; i < 70; i++) { const sx = 30 + i * 2.8; x.beginPath(); x.moveTo(sx, 24); x.lineTo(sx * 0.55 + 30, h - 34 - (i * 3.2)); x.stroke(); } });
+      const plate = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 1.65), new THREE.MeshStandardMaterial({ map: pt, transparent: true, alphaTest: 0.1, metalness: 0.7, roughness: 0.35 }));
+      plate.rotation.x = -Math.PI / 2; plate.position.set(-0.05, RB + 0.16, 0.9); pg.add(plate);
+    }
+    // the lid: the same outline, hinged on the straight (bass) side, propped open about 38 degrees
+    const hinge = new THREE.Group(); hinge.position.set(-0.745, RT + 0.012, 0); pg.add(hinge);
+    const lidG = toPlan(new THREE.ExtrudeGeometry(outline(1.005), { depth: 0.022, bevelEnabled: false, curveSegments: 24 })); lidG.translate(0.745, 0, 0);
+    const lid = new THREE.Mesh(lidG, lacquer); lid.position.y = 0.022; lid.castShadow = true; hinge.add(lid); hinge.rotation.z = 0.66;
+    { const tip = new THREE.Vector3(0.5, RT, 0.95), top = new THREE.Vector3(0.5, 0, 0.95); top.x = -0.745 + Math.cos(0.66) * (0.5 + 0.745); top.y = RT + 0.012 + Math.sin(0.66) * (0.5 + 0.745);
+      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, tip.distanceTo(top), 8), lacquer); stick.position.copy(tip).add(top).multiplyScalar(0.5); stick.lookAt(top); stick.rotateX(Math.PI / 2); pg.add(stick); }
+    // the keyboard: keybed, keys (white with raised black), cheeks, the fallboard, the music desk
+    const keyTex = canvasTex(1024, 64, (x, w, h) => { x.fillStyle = '#f4f1e8'; x.fillRect(0, 0, w, h); x.fillStyle = '#9a968c'; for (let i = 0; i <= 52; i++) x.fillRect(Math.round(i * w / 52), 0, 1, h); });
+    const keybed = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.34), lacquer); keybed.position.set(0, 0.66, -0.15); pg.add(keybed);
+    const keys = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.024, 0.15), [lacquer, lacquer, new THREE.MeshStandardMaterial({ map: keyTex, roughness: 0.35 }), lacquer, lacquer, new THREE.MeshStandardMaterial({ color: 0xf4f1e8, roughness: 0.35 })]);
+    keys.position.set(0, 0.722, -0.2); pg.add(keys);
+    const blackKeys = []; for (let i = 0; i < 52 - 1; i++) { const n = i % 7; if (n === 2 || n === 6) continue; const g = new THREE.BoxGeometry(0.0125, 0.02, 0.095); g.translate(-0.62 + (i + 1) * (1.24 / 52), 0.744, -0.17); blackKeys.push(g); }
+    const bk = new THREE.Mesh(mergeGeometries(blackKeys), new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.25 })); pg.add(bk);
+    for (const sx of [-1, 1]) { const ch = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.12, 0.32), lacquer); ch.position.set(sx * 0.68, 0.76, -0.15); pg.add(ch); }
+    const fall = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.07, 0.06), lacquer); fall.position.set(0, 0.77, -0.085); pg.add(fall);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.28, 0.015), lacquer); desk.position.set(0, RT + 0.15, 0.05); desk.rotation.x = 0.28; pg.add(desk);
+    const ledge = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.015, 0.04), lacquer); ledge.position.set(0, RT + 0.02, 0.01); pg.add(ledge);
+    // legs on brass castors; the pedal lyre
+    for (const [lx, lz] of [[-0.62, 0.1], [0.62, 0.1], [-0.42, 1.62]]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.04, RB - 0.04, 14), lacquer); leg.position.set(lx, 0.04 + (RB - 0.04) / 2, lz); leg.castShadow = true; pg.add(leg);
+      const cs = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), brass); cs.position.set(lx, 0.035, lz); pg.add(cs);
+    }
+    for (const sx of [-0.06, 0.06]) { const r = new THREE.Mesh(new THREE.BoxGeometry(0.025, RB - 0.1, 0.05), lacquer); r.position.set(sx, 0.08 + (RB - 0.1) / 2, 0.22); pg.add(r); }
+    const lyreBox = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.1), lacquer); lyreBox.position.set(0, 0.07, 0.2); pg.add(lyreBox);
+    for (const px of [-0.07, 0, 0.07]) { const pd = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.012, 0.11), brass); pd.position.set(px, 0.09, 0.12); pd.rotation.x = 0.12; pg.add(pd); }
+    // the bench, at the keyboard
+    const bench = new THREE.Group(); bench.position.set(0, 0, -0.72); pg.add(bench);
+    { const seat = new THREE.Mesh(new RoundedBoxGeometry(0.78, 0.07, 0.36, 3, 0.02), lacquer); seat.position.y = 0.5; bench.add(seat);
+      const pad = new THREE.Mesh(new RoundedBoxGeometry(0.72, 0.04, 0.3, 3, 0.015), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 })); pad.position.y = 0.55; bench.add(pad);
+      for (const sx of [-0.34, 0.34]) for (const sz of [-0.14, 0.14]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.018, 0.47, 10), lacquer); l.position.set(sx, 0.235, sz); bench.add(l); } }
+    pg.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+    contactShadow(group, PX, Y0, PZ + 0.9, 1.9, 2.6, 0.4);
   }
   // (the Jazz Bar, in the hall's south-east corner, is world/jazzBar.js)
   // the staff door
@@ -853,8 +935,8 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const p = createPerson(people, people.manifest.cast[role] ? role : 'p1'); p.root.position.set(x, Y0, z); p.root.rotation.y = yaw; p.play(clip, 0);
     p.root.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(p.root); ppl[id] = p; p.home = { x, z, yaw }; return p;
   };
-  placePerson('receptionist', 'p2', P.x0 + 0.7, -227.6, Math.PI / 2);
-  placePerson('concierge', 'p3', P.x0 + 0.7, -237.5, Math.PI / 2);
+  { const r = placePerson('receptionist', 'p2', P.x0 + 0.7, -227.6, Math.PI / 2); if (r) dressReceptionist(r, { scarf: false, badge: true }); }   // the hotel's front-desk dark suit, a gold name badge
+  { const c = placePerson('concierge', 'p3', P.x0 + 0.7, -237.5, Math.PI / 2); if (c) dressConcierge(c); }                                     // the concierge: dark suit, the golden crossed keys on his lapels
   // the hotel's security: middle-aged men in dark suits with earpieces, one on the Nanjing Road door, one
   // at the lifts (world/outfits.js)
   const guard = (id, x, z, yaw, o) => { const g = placePerson(id, 'lin', x, z, yaw); if (g) dressHotelSecurity(g, o); return g; };
@@ -869,6 +951,25 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
 
   const S = { key: false, said: {}, workerT: 20, workerPhase: 'away', guardPhone: 0, guardT: 0, caught: 0, inside: null, drumSpin: 0 };
   const L0 = () => getLife();
+  // what the hotel's staff say depends on the hour: the greeting, and what the Jazz Bar is doing (doors at 19:00,
+  // the band from 20:00 to 00:30)
+  const nowMin = () => { const L = getLife && getLife(); return L ? L.clock.minute : 1200; };
+  const part = () => { const m = nowMin(); return m < 4 * 60 ? 'evening' : m < 11 * 60 ? 'morning' : m < 13 * 60 ? 'noon' : m < 18 * 60 ? 'afternoon' : 'evening'; };
+  const DOOR_HELLO = { morning: ['hotelguard', '早上好，纪先生。', 'Good morning, Mr Ji.'], noon: ['hotelguard', '中午好，纪先生。', 'Good afternoon, Mr Ji.'], afternoon: ['hotelguard', '下午好，纪先生。', 'Good afternoon, Mr Ji.'], evening: ['hotelguard', '晚上好，纪先生。', 'Good evening, Mr Ji.'] };
+  const DESK_KEY = {
+    morning: ['hoteldesk', '纪先生，早上好，欢迎回来。这是您的房卡，612，江景房。', "Good morning, Mr Ji, welcome back. Here's your key card: 612, a river-view room."],
+    noon: ['hoteldesk', '纪先生，中午好，欢迎回来。这是您的房卡，612，江景房。', "Good afternoon, Mr Ji, welcome back. Here's your key card: 612, a river-view room."],
+    afternoon: ['hoteldesk', '纪先生，下午好，欢迎回来。这是您的房卡，612，江景房。', "Good afternoon, Mr Ji, welcome back. Here's your key card: 612, a river-view room."],
+    evening: ['hoteldesk', '纪先生，晚上好，欢迎回来。这是您的房卡，612，江景房。', "Good evening, Mr Ji, welcome back. Here's your key card: 612, a river-view room."],
+  };
+  const DESK_JAZZ = {
+    before: ['hoteldesk', '爵士吧晚上七点开门，八点开始现场演出，是老年爵士乐队。要帮您留位吗？', 'The Jazz Bar opens at seven tonight, and the Old Jazz Band plays from eight. Shall I hold a table for you?'],
+    open: ['hoteldesk', '爵士吧已经开门了，八点开始演出，是老年爵士乐队。要帮您留位吗？', "The Jazz Bar's open now; the Old Jazz Band starts at eight. Shall I hold a table for you?"],
+    playing: ['hoteldesk', '爵士吧正在演出，老年爵士乐队，现在过去正好。要帮您留位吗？', "The Old Jazz Band is playing in the Jazz Bar right now; it's a good time to go. Shall I hold a table?"],
+    over: ['hoteldesk', '今晚的演出已经结束了，明晚八点还有，到时候帮您留位？', "Tonight's set has finished; there's another tomorrow at eight. Shall I hold you a table then?"],
+  };
+  const jazzNow = () => { const m = nowMin(); return m >= 20 * 60 || m < 30 ? 'playing' : m >= 19 * 60 ? 'open' : m < 6 * 60 ? 'over' : 'before'; };
+  const sayLine = ([who, zh, en], secs) => say(who === 'hotelguard' ? T('保安', 'Security') : T('前台', 'Front desk'), zh, en, secs);   // (latin keys: tools/voice reads them; same voices as 保安 / 前台)
   const say = (who, zh, en, secs = 3) => hud.bark({ speaker: who, text: { zh, en }, seconds: secs });
 
   // ---------- AIA: the badge-in loop, the guard's attention, tailgating ----------
@@ -924,7 +1025,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     // the revolving door turns as you go through
     const inDoor = Math.abs(pp.x - doorX) < 1.4 && Math.abs(pp.z - -212.2) < 1.6;
     S.drumSpin += ((inDoor ? 1.6 : 0) - S.drumSpin) * Math.min(1, dt * 2); vanes.rotation.y += S.drumSpin * dt;
-    if (inDoor && !S.doormanSaid && ppl.doorman) { S.doormanSaid = true; say(T('保安', 'Security'), '晚上好，纪先生。', 'Good evening, Mr Ji.', 2.2); }
+    if (inDoor && !S.doormanSaid && ppl.doorman) { S.doormanSaid = true; sayLine(DOOR_HELLO[part()], 2.2); }
     if (!inDoor && pp.z > -209) S.doormanSaid = false;
   }
 
@@ -949,8 +1050,8 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   function interact(id) {
     const l = L0();
     if (id === 'pReception') {
-      if (!S.key) { S.key = true; l.flags.hotelKey = true; say(T('前台', 'Front desk'), '纪先生，晚上好，欢迎回来。这是您的房卡，612，江景房。', "Good evening, Mr Ji, welcome back. Here's your key card: 612, a river-view room.", 3.6); hud.toast(T('拿到房卡 612', 'Key card for room 612'), 3); }
-      else say(T('前台', 'Front desk'), '爵士吧九点半开始，今晚是老年爵士乐队，要帮您留位吗？', 'The Jazz Bar starts at half past nine. The Old Jazz Band tonight. Shall I hold a table for you?', 3.6);
+      if (!S.key) { S.key = true; l.flags.hotelKey = true; sayLine(DESK_KEY[part()], 3.6); hud.toast(T('拿到房卡 612', 'Key card for room 612'), 3); }
+      else sayLine(DESK_JAZZ[jazzNow()], 3.8);
     } else if (id === 'pConcierge') {
       const items = waitingAt(l, 'hotel');
       if (items.length) { for (const it of items) it.where = 'me'; say(T('礼宾部', 'Concierge'), `纪先生，您的快递，一共${items.length}件，都在这儿。`, `Mr Ji, your parcels: ${items.length}, all here.`, 3); hud.toast(T(`取回：${items.map((i) => i.name).join('、')}`, `Collected: ${items.map((i) => i.en).join(', ')}`), 3.6); save && save(); }
@@ -965,7 +1066,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       if (staffSees()) say(T('前台', 'Front desk'), '先生，那边是员工通道哦。', "Sir, that's the staff corridor.", 2.6);
       else hud.toast(T('门锁着。刷卡的。', "Locked. It takes a staff card."), 2.6);
     } else if (id === 'aDesk') {
-      say(T('前台', 'Reception'), '您好，请问您找哪家公司？没有预约的话需要先在小程序上登记，被访人确认后人脸就能过闸机。上个月刚换的新闸机。', 'Hello, which company are you visiting? Without an appointment you register on the mini-program first; once your host confirms, your face opens the gates. They put the new gates in last month.', 5);
+      say(T('前台', 'Reception'), '您好，请问您找哪位？没有预约的话需要先在小程序上登记，被访同事确认后，人脸就能过闸机了。', 'Hello, who are you here to see? Without an appointment you register on the mini-program first; once your colleague confirms, your face opens the gates.', 5);
     } else if (id === 'aQR') {
       hud.toast(T('访客预约：请填写被访人手机号（你没有预约）', 'Visitor sign-in: enter your host\'s phone number (you have no appointment)'), 3.6);
     } else if (id.startsWith('aGate')) {

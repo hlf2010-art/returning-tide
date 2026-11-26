@@ -3845,24 +3845,69 @@
   "en": "...Who is it? We didn't order room service."
  },
  {
-  "who": "保安",
-  "zh": "先生，先生！请刷卡，没有预约不能进去。",
-  "en": "Sir! Sir, you need to badge in. No entry without an appointment."
+  "who": "hotelguard",
+  "zh": "早上好，纪先生。",
+  "en": "Good morning, Mr Ji."
  },
  {
-  "who": "保安",
+  "who": "hotelguard",
+  "zh": "中午好，纪先生。",
+  "en": "Good afternoon, Mr Ji."
+ },
+ {
+  "who": "hotelguard",
+  "zh": "下午好，纪先生。",
+  "en": "Good afternoon, Mr Ji."
+ },
+ {
+  "who": "hotelguard",
   "zh": "晚上好，纪先生。",
   "en": "Good evening, Mr Ji."
  },
  {
-  "who": "前台",
+  "who": "hoteldesk",
+  "zh": "纪先生，早上好，欢迎回来。这是您的房卡，612，江景房。",
+  "en": "Good morning, Mr Ji, welcome back. Here's your key card: 612, a river-view room."
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "纪先生，中午好，欢迎回来。这是您的房卡，612，江景房。",
+  "en": "Good afternoon, Mr Ji, welcome back. Here's your key card: 612, a river-view room."
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "纪先生，下午好，欢迎回来。这是您的房卡，612，江景房。",
+  "en": "Good afternoon, Mr Ji, welcome back. Here's your key card: 612, a river-view room."
+ },
+ {
+  "who": "hoteldesk",
   "zh": "纪先生，晚上好，欢迎回来。这是您的房卡，612，江景房。",
   "en": "Good evening, Mr Ji, welcome back. Here's your key card: 612, a river-view room."
  },
  {
-  "who": "前台",
-  "zh": "爵士吧九点半开始，今晚是老年爵士乐队，要帮您留位吗？",
-  "en": "The Jazz Bar starts at half past nine. The Old Jazz Band tonight. Shall I hold a table for you?"
+  "who": "hoteldesk",
+  "zh": "爵士吧晚上七点开门，八点开始现场演出，是老年爵士乐队。要帮您留位吗？",
+  "en": "The Jazz Bar opens at seven tonight, and the Old Jazz Band plays from eight. Shall I hold a table for you?"
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "爵士吧已经开门了，八点开始演出，是老年爵士乐队。要帮您留位吗？",
+  "en": "The Jazz Bar's open now; the Old Jazz Band starts at eight. Shall I hold a table for you?"
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "爵士吧正在演出，老年爵士乐队，现在过去正好。要帮您留位吗？",
+  "en": "The Old Jazz Band is playing in the Jazz Bar right now; it's a good time to go. Shall I hold a table?"
+ },
+ {
+  "who": "hoteldesk",
+  "zh": "今晚的演出已经结束了，明晚八点还有，到时候帮您留位？",
+  "en": "Tonight's set has finished; there's another tomorrow at eight. Shall I hold you a table then?"
+ },
+ {
+  "who": "保安",
+  "zh": "先生，先生！请刷卡，没有预约不能进去。",
+  "en": "Sir! Sir, you need to badge in. No entry without an appointment."
  },
  {
   "who": "礼宾部",
@@ -3886,8 +3931,8 @@
  },
  {
   "who": "前台",
-  "zh": "您好，请问您找哪家公司？没有预约的话需要先在小程序上登记，被访人确认后人脸就能过闸机。上个月刚换的新闸机。",
-  "en": "Hello, which company are you visiting? Without an appointment you register on the mini-program first; once your host confirms, your face opens the gates. They put the new gates in last month."
+  "zh": "您好，请问您找哪位？没有预约的话需要先在小程序上登记，被访同事确认后，人脸就能过闸机了。",
+  "en": "Hello, who are you here to see? Without an appointment you register on the mini-program first; once your colleague confirms, your face opens the gates."
  },
  {
   "who": "Momo",
