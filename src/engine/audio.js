@@ -291,6 +291,10 @@ export function createAudio() {
         e.gain.setValueAtTime(0, t0); e.gain.linearRampToValueAtTime(g * level, t0 + 0.004); e.gain.exponentialRampToValueAtTime(0.0006, t0 + d);
         o.connect(e).connect(sfx); o.start(t0); o.stop(t0 + d + 0.05);
       }
+    } else if (name === 'thunder') {
+      // thunder: a crack (near) and a long low roll, filtered noise swelling and dying over a few seconds
+      burst(t, { buffer: buf, type: 'lowpass', f: 900, q: 0.6, gain: 0.25 * level, attack: 0.01, decay: 0.25, rate: 0.9 });
+      for (let i = 0; i < 6; i++) burst(t + 0.15 + i * 0.45 + Math.random() * 0.3, { buffer: buf, type: 'lowpass', f: 160 + Math.random() * 120, q: 0.5, gain: (0.32 - i * 0.04) * level, attack: 0.25, decay: 0.9 + Math.random() * 0.6, rate: 0.5 });
     } else if (name === 'liftBell') {
       // a lift arriving: one soft stroke on the hall lantern's gong (a low bell, its partials dying slowly)
       for (const [k, g, d] of [[1, 0.075, 1.8], [2.01, 0.026, 1.0], [2.93, 0.016, 0.6], [4.16, 0.007, 0.3]]) {

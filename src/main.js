@@ -49,6 +49,8 @@ import { createMissionOne } from './missionOne.js';
 import { pickTarget, segmentHitsBox, BLOCKING_TAGS } from './engine/targeting.js';
 import { createWeather } from './engine/weather.js';
 import { createRain, RAIN_LAYER } from './world/rain.js';
+import { createSnow } from './world/snow.js';
+import { plan as climatePlan, at as climateAt } from './engine/climate.js';
 import { weatherUniforms, ssrMask, setArchLight } from './world/materials.js';
 import { todState, passedLateNight } from './engine/timeOfDay.js';
 import { applyDayNight, autoLights } from './world/dayNight.js';
@@ -257,7 +259,7 @@ async function boot() {
   const playerBody = people && people.avatars.player && params.get('body') !== '0' ? createPlayerBody(people, { walk: WALK_SPEED, run: RUN_SPEED }) : null;
   if (playerBody) scene.add(playerBody.root);
   const pouch = createPouch();
-  const rain = createRain();
+  const rain = createRain(), snow = createSnow();
   // the signal-controlled crossing: one controller, through traffic, background pedestrians
   // how much traffic: the level of detail; tools (?q=) keep the crossing's own seven unless ?traffic=<factor>
   const vehSpecs = params.has('traffic') ? trafficSpecs(Number(params.get('traffic'))) : params.has('q') ? crossing.vehicles : trafficSpecs(gfxDetail({ ...gfx, lod: bootLod }).traffic);
@@ -286,7 +288,7 @@ async function boot() {
   pedBoxes = traffic.peds.map((p) => { const b = addDynamicCollider('npc'); b.id = p.id; return b; });
   traffic.vehicles.forEach((v, i) => { v.ice = ['taxi', 'sedan'].includes(vehSpecs[i].model); });   // petrol engines get an engine note
   scene.add(sky.mesh, skyline.group, bridges.group, river.group, bund.group, promenade.group, street.group, clue.mesh, npcs.group, ...pouch.meshes,
-    vehicles.group, signals.group, pedestrians.group, rain.mesh, buses.group);
+    vehicles.group, signals.group, pedestrians.group, rain.mesh, snow.mesh, buses.group);
   // trees: London planes on Hankou Road (November: turning, some twigs already bare), camphor
   // laurels in the promenade planters
   const trees = createTrees([
@@ -375,7 +377,7 @@ async function boot() {
     });
     ebikeView = createEbikeView({ scene, people, roles: ['c5', 'c1'].filter((r) => people.manifest.cast[r]) });
   }
-  world = { ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }), aiaLife };
+  world = { ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, snow, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }), aiaLife };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -844,6 +846,7 @@ window.addEventListener('keydown', (e) => {
   }
   if (k === 'F7' && devControls) {
     e.preventDefault();
+    climateOn = false;   // (the weather set by hand: the day's own stops for this session)
     hud.toast(weather.toggle() === 'drizzle' ? tx('devDrizzle') : tx('devClear'), 2.4);
     return;
   }
@@ -1510,7 +1513,34 @@ function nanjingDin(b) {
 }
 let lampSources = [];
 let crowdHear = 0, envCaptures = 0, world0 = null, hourState = todState(17 * 60 + 42), hourAt = -1, hourTick = 0, envAt = null, envWait = 0, lastHourMin = null;
-const _hazeFog = new THREE.Color(), DAY_HAZE_FOG = new THREE.Color(0.64, 0.66, 0.68);
+const _hazeFog = new THREE.Color(), DAY_HAZE_FOG = new THREE.Color(0.64, 0.66, 0.68), FOG_WX_DENSITY = 0.0065;
+// ---- the day's weather (engine/climate.js): Shanghai's climate for the date the game stands on, the same each time
+// that day is played; it sets what the weather heads for (engine/weather.js), the wind, and a storm's lightning.
+// Off for tools (?q=) unless ?climate=1, and whenever the weather is set by hand (?weather=, the dev key) ----
+let climateOn = params.get('climate') === '1' || (!params.has('q') && !params.has('weather')), climateKey = '', climateDay = null, climateT = 0, climateLast = null, boltT = 8;
+const flashEl = (() => { const d = document.createElement('div'); d.id = 'lightning'; d.style.cssText = 'position:fixed;inset:0;background:#dfe6ff;opacity:0;pointer-events:none;z-index:5;transition:opacity 0.12s ease-out'; document.body.appendChild(d); return d; })();
+function updateClimate(dt) {
+  if (!climateOn || !life) return;
+  climateT -= dt; if (climateT > 0) return; climateT = 1;
+  const t = dateOf(life), key = `${t.y}-${t.m}-${t.d}`, m = life.clock.minute;
+  if (key !== climateKey) { climateKey = key; climateDay = climatePlan(t.y, t.m, t.d); debug.weatherDay = climateDay; }
+  const w = climateAt(climateDay, m), now = lifeStamp(life);
+  const jump = climateLast == null || Math.abs(now - climateLast) > 20;   // (a night's sleep, a ride: the sky is simply as it is now)
+  climateLast = now;
+  weather.setTargets(w, { instant: jump });
+  wind.setDay(w.wind, climateDay.windDir);
+  // a thunderstorm: lightning now and then, the thunder after it (sooner and louder the nearer)
+  if (w.storm > 0.4 && mode === 'play') {
+    boltT -= 1;
+    if (boltT <= 0) {
+      boltT = 6 + Math.random() * 18; const near = Math.random();
+      flashEl.style.opacity = String(0.18 + near * 0.3); setTimeout(() => { flashEl.style.opacity = '0'; }, 90 + Math.random() * 80);
+      if (Math.random() < 0.5) setTimeout(() => { flashEl.style.opacity = String(0.12 + near * 0.2); setTimeout(() => { flashEl.style.opacity = '0'; }, 70); }, 160);
+      audio.cue('thunder', 0.4 + (1 - near) * 3.5, 0.5 + near * 0.6);
+    }
+  }
+}
+debug.climate = { get on() { return climateOn; }, set on(v) { climateOn = !!v; }, plan: climatePlan, at: climateAt };
 // tools: ?hour=HH:MM sets today's clock at load (the screenshots of the day); debug.setHour too
 function applyHour(dt, { force = false } = {}) {
   const w = world || world0; if (!w) return;
@@ -1528,7 +1558,7 @@ function applyHour(dt, { force = false } = {}) {
   const b = player.body, inR = (r) => b.x > r.x0 && b.x < r.x1 && b.z > r.z0 && b.z < r.z1;
   const under = world && world.metro ? world.metro.under : 0;                         // down in the metro: its own light, not the sky's
   const inside = Math.max(under, world && (world.upper.here || world.dest.here || world.makerspace.here) ? 1 : inR(PEACE) || inR(AIA) ? 0.8 : 0);
-  w.lighting.setTime(s, inside, under);
+  w.lighting.setCover(weather.cover); w.lighting.setTime(s, inside, under);
   R.renderer.toneMappingExposure = THREE.MathUtils.lerp(s.exposure * (1 + 0.25 * inside * s.daylight), 0.92, under);
   R.bloom.strength = s.bloom;
   if (world) {
@@ -1542,9 +1572,9 @@ function applyHour(dt, { force = false } = {}) {
   }
   // the captured environment (what wet stone and glass reflect) follows the light, now and then
   envWait -= Math.max(dt, 0.25);
-  const want = { d: s.daylight, n: s.night, f: s.floods, m: s.media };
+  const want = { d: s.daylight, n: s.night, f: s.floods, m: s.media, c: weather.cover };
   if (!envAt) envAt = want;
-  else if (world && envWait <= 0 && (Math.abs(want.d - envAt.d) > 0.12 || Math.abs(want.n - envAt.n) > 0.3 || Math.abs(want.f - envAt.f) > 0.3 || Math.abs(want.m - envAt.m) > 0.5 || (jump && (want.d !== envAt.d || want.f !== envAt.f)))) {
+  else if (world && envWait <= 0 && (Math.abs(want.d - envAt.d) > 0.12 || Math.abs(want.n - envAt.n) > 0.3 || Math.abs(want.f - envAt.f) > 0.3 || Math.abs(want.m - envAt.m) > 0.5 || Math.abs(want.c - (envAt.c || 0)) > 0.3 || (jump && (want.d !== envAt.d || want.f !== envAt.f)))) {
     envAt = want; envWait = 4; envCaptures++;
     const old = scene.environment; scene.updateMatrixWorld(true); captureEnvironment(R.renderer, scene); if (old && old !== scene.environment) old.dispose();
   }
@@ -1658,12 +1688,15 @@ function frame(now) {
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0
   if (mode !== 'pause') {
+    updateClimate(dt);
     weather.update(dt); weatherTime += dt;
     // Ms. Su opens her umbrella once it is properly drizzling, folds it when it has stopped
     const want = weather.rain > 0.3 ? 1 : weather.rain < 0.08 ? 0 : suUmbrella > 0.5 ? 1 : 0;
     suUmbrella = Math.max(0, Math.min(1, suUmbrella + (want ? dt : -dt) / 1.4));
   }
-  world.rain.update(weatherTime, weather.rain, camera);
+  const windDrift = 0.3 + wind.level * 1.6;   // the drops' and flakes' drift on the wind (m/s)
+  world.rain.update(weatherTime, weather.rain, camera, { heavy: weather.heavy, wind: [wind.dir[0] * windDrift, wind.dir[1] * windDrift] });
+  world.snow.update(weatherTime, weather.snow, camera, { wind: [wind.dir[0] * windDrift * 0.8, wind.dir[1] * windDrift * 0.8], viewH: R.renderer.domElement.height });
   if (mode !== 'pause') wind.update(dt, weather.rain);
   world.trees.update(weatherTime, wind.level, weather.rain, wind.dir);
   weatherUniforms.wetBoost.value = weather.wet;
@@ -1674,13 +1707,13 @@ function frame(now) {
   weatherUniforms.groundDamp.value = groundDamp;
   weatherUniforms.rainRipples.value = weather.rain; weatherUniforms.rippleTime.value = weatherTime;
   applyHour(dt);
-  scene.fog.density = FOG_DENSITY * hourState.fog + HAZE_DENSITY * weather.haze;
-  fogColorAt(hourState, scene.fog.color).lerp(_hazeFog.copy(HAZE_FOG).lerp(DAY_HAZE_FOG, hourState.daylight), weather.haze);
+  scene.fog.density = FOG_DENSITY * hourState.fog + HAZE_DENSITY * weather.haze + FOG_WX_DENSITY * weather.fog;   // (a morning fog: thick, grey)
+  fogColorAt(hourState, scene.fog.color).lerp(_hazeFog.copy(HAZE_FOG).lerp(DAY_HAZE_FOG, hourState.daylight), Math.min(1, weather.haze + weather.fog));
   if (world.metro.under > 0) { const u = world.metro.under; scene.fog.density = THREE.MathUtils.lerp(scene.fog.density, 0.0026, u); scene.fog.color.lerp(_metroFog, u); }   // a long platform's own haze
-  audio.setRain(weather.rain, underCover(player.body.x, player.body.z, player.body.y + L.eye) || world.belongings.umbrellaUp);
+  audio.setRain(Math.min(1.5, weather.rain * (1 + 0.5 * weather.heavy)), underCover(player.body.x, player.body.z, player.body.y + L.eye) || world.belongings.umbrellaUp);
   // the light shows (the Pearl's colours, LED façades, boats' strips, screens); debug.freezeShow holds them for tools
   const showT = debug.freezeShow ? 0 : t;
-  world.sky.update(t, weather.haze); world.skyline.update(showT); world.river.update(t, dt, showT); world.bund.update(t); world.street.update(t); world.nanjing.update(showT);
+  world.sky.update(t, weather.haze, weather.cover); world.skyline.update(showT); world.river.update(t, dt, showT); world.bund.update(t); world.street.update(t); world.nanjing.update(showT);
   world.ljz.update(mode === 'pause' ? 0 : dt, player.body, { eye: camera.position, hour: hourState, playing: mode === 'play' });   // Lujiazui (only when you're there)
   world.metro.update(mode === 'pause' ? 0 : dt, { playing: mode === 'play' });         // Line 2 (only near a station or aboard)
   world.lighting.setShadowCount(params.get('shadows') === '0' ? 0 : R.quality.shadows);

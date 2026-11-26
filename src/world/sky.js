@@ -4,7 +4,7 @@
 // cloud), dawn glowing over Pudong, and a clear sunny November day (blue sky, a few white clouds).
 import * as THREE from 'three';
 // the sky's own uniforms, shared with whatever reflects it (world/facade.js): one set, set once per tick
-export const SKY = { day: { value: 0 }, night: { value: 0 }, glow: { value: 1 }, side: { value: -1 }, haze: { value: 0 }, sunDir: { value: new THREE.Vector3(0, -1, 0) } };
+export const SKY = { day: { value: 0 }, night: { value: 0 }, glow: { value: 1 }, side: { value: -1 }, haze: { value: 0 }, cover: { value: 0 }, sunDir: { value: new THREE.Vector3(0, -1, 0) } };
 
 export const FOG_COLOR = new THREE.Color(0.062, 0.105, 0.22);
 const FOG_NIGHT = new THREE.Color(0.04, 0.045, 0.065), FOG_DAY = new THREE.Color(0.5, 0.66, 0.9);   // clear air: a pale blue distance, not grey
@@ -15,7 +15,7 @@ export const REFLECT_LAYER = 1;   // far scenery that the river mirrors
 export function createSky() {
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
-    uniforms: { time: { value: 0 }, haze: SKY.haze, day: SKY.day, glow: SKY.glow, side: SKY.side, night: SKY.night, sunDir: SKY.sunDir },
+    uniforms: { time: { value: 0 }, haze: SKY.haze, cover: SKY.cover, day: SKY.day, glow: SKY.glow, side: SKY.side, night: SKY.night, sunDir: SKY.sunDir },
     vertexShader: /* glsl */ `
       varying vec3 vDir;
       void main() {
@@ -24,7 +24,7 @@ export function createSky() {
         gl_Position = p.xyww;
       }`,
     fragmentShader: /* glsl */ `
-      uniform float time, haze, day, glow, side, night; uniform vec3 sunDir; varying vec3 vDir;
+      uniform float time, haze, cover, day, glow, side, night; uniform vec3 sunDir; varying vec3 vDir;
       float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p) {
         vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -61,6 +61,11 @@ export function createSky() {
         if (d.y < 0.0) col = mix(col, mix(vec3(0.03, 0.05, 0.09), vec3(0.55, 0.62, 0.7), day), smoothstep(0.0, -0.2, d.y));
         // drizzle: a thin grey-blue veil low on the horizon only; the zenith keeps its blue hour
         col = mix(col, mix(vec3(0.075, 0.11, 0.2), vec3(0.6, 0.62, 0.64), day), haze * 0.4 * (1.0 - smoothstep(0.0, 0.3, h)));
+        // overcast (the day's weather: engine/climate.js): a grey deck over everything, the sun lost in it; by night
+        // it holds the city's glow, warm and dull, by day it's a flat pale grey, a shade darker overhead and in rain
+        float deck = fbm(cp * vec2(0.7, 1.1) * 1.6) - 0.5;
+        vec3 grey = mix(vec3(0.05, 0.045, 0.045) + vec3(0.05, 0.03, 0.02) * exp(-h * 2.5), vec3(0.56, 0.58, 0.61) - vec3(0.12) * h, day) * (1.0 + deck * 0.35) * (1.0 - 0.18 * haze);
+        col = mix(col, grey, cover * mix(0.55, 1.0, smoothstep(0.0, 0.12, h + 0.05)));
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -72,7 +77,7 @@ export function createSky() {
   const u = mat.uniforms;
   return {
     mesh,
-    update(t, haze = 0) { u.time.value = t; u.haze.value = haze; },
+    update(t, haze = 0, cover = 0) { u.time.value = t; u.haze.value = haze; u.cover.value = cover; },
     // the hour (engine/timeOfDay.js todState)
     setTime(s) { u.day.value = s.daylight; u.glow.value = s.glow; u.side.value = s.side; u.night.value = s.night; u.sunDir.value.set(s.sun.x, s.sun.y, s.sun.z); },
   };

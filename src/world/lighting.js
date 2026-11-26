@@ -24,9 +24,10 @@ export function createLighting(scene, lanterns, extra = []) {
   Object.assign(sky.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 500 });
   const NIGHT = { sky: new THREE.Color(0x5578c8), ground: new THREE.Color(0x2a221c), hemi: 0.55, dir: new THREE.Color(0x6f8fd8), dirI: 0.35 };
   const DEEP = { sky: new THREE.Color(0x34466e), ground: new THREE.Color(0x2a221c), hemi: 0.42 };
+  const _grey = new THREE.Color(0xc4c8cc);
   const DAY = { sky: new THREE.Color(0xa9c6ea), ground: new THREE.Color(0x857462), hemi: 1.25, sun: new THREE.Color(1.0, 0.95, 0.86), low: new THREE.Color(1.0, 0.7, 0.45), sunI: 2.7 };   // a clear, sunny day
   const T = { day: 0, lamps: 1, sun: { x: 0, y: -1, z: 0 }, inside: 0 };
-  let sunShadow = false;
+  let sunShadow = false, cover = 0;   // cover: the day's cloud (engine/climate.js); overcast, the sun's light spreads into the sky's
 
   const inRange = (z) => z > L.zNorth - 30 && z < L.zSouth + 30;
   const sources = [], halos = [], pools = [];
@@ -155,11 +156,13 @@ export function createLighting(scene, lanterns, extra = []) {
         if (!sunShadow) sky.position.set(st.sun.x, Math.max(0.05, st.sun.y), st.sun.z);
         if (!sunShadow) sky.target.position.set(0, 0, 0);
       } else { sky.color.copy(NIGHT.dir); sky.intensity = NIGHT.dirI * (1 - 0.4 * st.night); sky.position.set(0.6, 1, -0.2); sky.target.position.set(0, 0, 0); }
+      if (cover > 0 && d > 0.001) { sky.intensity *= 1 - 0.82 * cover; hemi.intensity *= 1 + 0.22 * cover; hemi.color.lerp(_grey, cover * 0.6 * d); }   // overcast: hardly a shadow, a flat bright sky
       if (under > 0) { hemi.intensity *= 1 - under; sky.intensity *= 1 - under; }   // underground (the metro): none of the sky's light
       sky.target.updateMatrixWorld();
       hp.material.color.copy(haloColor).multiplyScalar(st.lamps); hp.visible = st.lamps > 0.01;
       poolMat.color.copy(poolColor).multiplyScalar(st.lamps); poolMesh.visible = st.lamps > 0.01;
     },
+    setCover(c) { cover = c; },
     get shadowCount() { return shadowCount; },
     slots,
   };
