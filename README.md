@@ -1030,7 +1030,8 @@ a zebra on the green man (the signal holds while stragglers finish crossing; car
 Tourists stop at the river railing to photograph Pudong or take a selfie; tour groups gather there
 round the guide; on Nanjing Road people stop at the shop windows and photograph the neon. Most people arrive up the metro stairs at Henan Road or from the ends of the
 promenade, and new people only appear where you can't see them appear. The nearest 8–40 (by detail
-level) are full Rocketbox people with motion-captured walks, phones raised for photos, the guide's flag
+level; those in view first, so the full people are the ones you can see: anyone within 3 m counts whichever
+way you face, someone behind you counts as three times as far; `engine/crowd.js` nearRank) are full Rocketbox people with motion-captured walks, phones raised for photos, the guide's flag
 in hand and real shadows; you can bump into them and talk to them (T). Everyone further away is an
 impostor: each avatar is photographed at load from 8 sides in 8 steps of its walk, plus standing and
 phone poses, into one atlas (130 small renders at load: well under a second on a real GPU, about 30 s

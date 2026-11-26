@@ -198,6 +198,23 @@ export function blocked(x, z, r = 0.25) {
   return false;
 }
 // the carriageway: people only ever on it on the zebra
+// Who becomes a full person (world/crowdView.js): the nearest few, but those you can see first. Anyone
+// within NEAR_RANK.always m stays a full person whichever way you face (they are the ones you bump into
+// and talk to); beyond that, someone outside a cone a little wider than the view counts as `behind` times
+// as far. (dx, dz): from the eye to the person; (fx, fz): the view direction on the ground, unit length
+// (0, 0 when looking straight up or down: everyone counts as in view); cosHalf: cos of the cone's half-angle;
+// d: the distance to rank by (default the distance on the ground; the caller may count height too).
+export const NEAR_RANK = { always: 3, behind: 3, margin: 0.5 };   // margin: radians added to the view's half-width
+export function nearRank(dx, dz, fx, fz, cosHalf, d = Math.hypot(dx, dz)) {
+  const g = Math.hypot(dx, dz);
+  if (d <= NEAR_RANK.always || g < 1e-6 || (!fx && !fz)) return d;
+  return (dx * fx + dz * fz) / g >= cosHalf ? d : d * NEAR_RANK.behind;
+}
+// the cone's cos for a camera: vertical field of view (degrees) and aspect -> cos(half the width + margin)
+export function viewCos(fovDeg, aspect) {
+  const half = Math.atan(Math.tan((fovDeg * Math.PI) / 360) * aspect) + NEAR_RANK.margin;
+  return half >= Math.PI ? -1 : Math.cos(half);
+}
 export const onRoad = (x, z) => (x > L.westCurbX + 0.15 && x < L.eastCurbX - 0.15) || (x < L.westCurbX && x > -100 && Math.abs(z) < L.street.roadHalfW - 0.1 && x < -31.5) || inHenan(x, z);
 
 // ---- who they are ----

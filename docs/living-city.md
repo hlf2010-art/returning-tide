@@ -15,6 +15,8 @@ Each shot is a fixed camera at a fixed hour, at a person's eye height (1.68 m ab
 
 The crowd and traffic are the game's normal ones (no `?q`), and the preset is forced to **Mac M4** (`gfx=mac`: 90% resolution, medium detail, SMAA, one lamp shadow, no AO or wet reflections). At medium detail that is about 390 people across the whole map and 22 vehicles on Zhongshan East 1st Road, plus Henan Road's traffic.
 
+The screenshots carry the liveliness overlay as measured on 26 November, after the change to how full people are chosen (below). The frame times in them are software rendering's.
+
 ![Nanjing Road East near Henan Road at 18:00](hero-nanjing.jpg)
 ![The promenade at the Customs House at 17:45](hero-customs.jpg)
 ![The Hankou Road crossing at 18:15](hero-hankou.jpg)
@@ -85,10 +87,45 @@ Hankou Road's vehicle and sound counts swing with the signal cycle: a red phase 
 
 What stands out:
 
-- **Too few people.** The whole map holds about 390 people at medium detail. Nanjing Road at six in the evening shows under a hundred, nearly all of them as distant cards. Only one or two are full people there, against 15 on the promenade.
+- **Too few people.** The whole map holds about 390 people at medium detail. Nanjing Road at six in the evening shows under a hundred, nearly all of them as distant cards. Only one or two were full people there, against 15 on the promenade. This was fixed on 26 November (below).
 - **Too few vehicles at the crossing.** Zhongshan East 1st Road shows 1–7 vehicles where a busy four-lane road at a signal would show a queue.
 - **Narrow activity.** Four or five different things at once, mostly kinds of walking.
 - **Nanjing Road is the heaviest view:** 2,500 draw calls and 3 M triangles before any more people are added.
+
+### 26 November: full people chosen by view
+
+**Why so few full people on Nanjing Road.** The 16 full people (medium detail) went to the nearest 16 people within 44 m in every direction, whichever way the camera faced.
+
+- The Nanjing Road camera stands just east of metro Exit 7 and the Henan Road crossing, where people arrive. Most of the people near it are behind or beside it.
+- In one sample, 65 people were within 44 m but only 10 were in view, and the 16 nearest were all behind the camera, 4–8 m off.
+- It was not a shortage of avatar bodies (at most 25 of the 32 allowed had been made) and nobody was stuck.
+
+**The change** (`nearRank` in `src/engine/crowd.js`, used by `src/world/crowdView.js`):
+
+- Anyone within 3 m stays a full person whichever way you face, because those are the people you bump into and talk to.
+- Beyond that, someone outside a cone about 29° wider each side than the view counts as three times as far.
+- The ranking runs every quarter second, and at once when the view turns more than about 25°.
+
+The same four shots, measured the same way after the change:
+
+| | Nanjing Rd 18:00 | Customs House 17:45 | Hankou Rd 18:15 | Bund 08:00 |
+|---|---|---|---|---|
+| People in view (near / mid / impostor) | 70 (**7.4** / 4 / 59) | 52 (**20** / 14 / 18) | 35 (**11.6** / 16 / 7) | 40 (**13** / 0 / 27) |
+| Full people in view before the change | 2 | 15 | 7 | 8 |
+| Draw calls / triangles | 2,528 / 2.9 M | 1,676 / 1.9 M | 1,696 / 1.9 M | 2,045 / 1.8 M |
+
+- Totals differ from the first table because the crowd is random from run to run; the ranking does not change where anyone walks.
+- "Near" can exceed 16 because the crossing's four walkers and Old Lin and Ms. Su are full people too.
+- Draw calls are unchanged: the same 16 full people are drawn as before, now in view. They were drawn even behind the camera, because skinned people are never frustum-culled.
+
+**Turning round at the same spot** (play mode, two runs):
+
+| | Full people in view | People in view within 44 m | Cards in view within 20 m | Cards in view within 10 m |
+|---|---|---|---|---|
+| Facing east (down the street) | 9–11 | 12–18 | 0 | 0 |
+| Facing west (Henan Road and the exits) | 4–9 | 20–31 | 3–7 | 0 |
+
+Facing west, more people are in view than there are full-people slots. The people behind you within about 5 m still outrank people in view beyond about 15 m: that is the 3× weighting (`NEAR_RANK.behind`), and it can be raised. The swap on turning has not been looked at on a real screen.
 
 ## Provisional targets
 

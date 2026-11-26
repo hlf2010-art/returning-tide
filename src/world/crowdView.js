@@ -13,6 +13,7 @@ import { holdPhone } from './pedestriansReal.js';
 import { twoBone } from './driverPose.js';
 import { L, deckLamps, DECK_LAMP_X } from './layout.js';
 import { flinchPose } from '../engine/flinch.js';
+import { nearRank, viewCos } from '../engine/crowd.js';
 
 // a reaction to being bumped (engine/social.js kinds, set by main.js on a crowd person) -> clip
 const GESTURE = { sorry: 'wave', fine: 'shrug', scold: 'angry', tut: 'look', look: 'look' };
@@ -225,7 +226,8 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     _t.set(_e.x + fx * 0.32 - fz * 0.04, _e.y - 0.05 + up, _e.z + fz * 0.32 + fx * 0.04); _p.set(-fz * 0.8, -1, fx * 0.8).normalize();
     twoBone(bones[0], bones[1], bones[2], _t, _p);
   }
-  let nearSet = new Set(), rankT = 0;
+  let nearSet = new Set(), rankT = 0, rankFx = 0, rankFz = 0;
+  const _fwd = new THREE.Vector3();
   const S = { near: 0, far: 0 };
   const view = {
     group, atlas, stats: S,
@@ -235,12 +237,22 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     bodyOf(a) { return live.get(a.id) || null; },
     update(dt, eye, opts = {}) {
       rain = opts.rain || 0;
-      // every quarter second: the nearest few become full people (with some hysteresis)
+      // every quarter second, or at once when you turn: the nearest few become full people, those in
+      // view first (engine/crowd.js nearRank), with some hysteresis
+      let fx = 0, fz = 0, cosHalf = -1;
+      if (camera) {
+        camera.getWorldDirection(_fwd); const h = Math.hypot(_fwd.x, _fwd.z);
+        if (h > 0.2) { fx = _fwd.x / h; fz = _fwd.z / h; cosHalf = viewCos(camera.fov, camera.aspect); }
+      }
       rankT -= dt;
+      if ((fx || fz) && (rankFx || rankFz) && fx * rankFx + fz * rankFz < 0.9) rankT = 0;   // turned more than ~25 degrees since the last ranking
       if (rankT <= 0) {
-        rankT = 0.25;
+        rankT = 0.25; rankFx = fx; rankFz = fz;
         const cand = [];
-        for (const a of crowd.agents) if (!a.gone && !a.out && !a.inside) { const d = Math.hypot(a.x - eye.x, a.z - eye.z, (a.y - eye.y) * 2); if (d < 44) cand.push([d - (nearSet.has(a.id) ? 4 : 0), a]); }
+        for (const a of crowd.agents) if (!a.gone && !a.out && !a.inside) {
+          const dy = (a.y - eye.y) * 2, d = Math.hypot(a.x - eye.x, a.z - eye.z, dy);
+          if (d < 44) cand.push([nearRank(a.x - eye.x, a.z - eye.z, fx, fz, cosHalf, d) - (nearSet.has(a.id) ? 4 : 0), a]);
+        }
         cand.sort((p, q) => p[0] - q[0]);
         nearSet = new Set(cand.slice(0, nearCount).map(([, a]) => a.id));
         for (const [id, b] of live) if (!nearSet.has(id)) { b.agent = null; b.person.root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); }

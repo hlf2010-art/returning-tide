@@ -1,7 +1,7 @@
 // The evening crowd (src/engine/crowd.js) and the traffic mix (src/world/trafficMix.js): the walk network
 // is all on walkable ground, people keep off the road except on the green man, nobody walks into a wall,
 // tour groups stay together, buses get their stops, commuters get on and off. npm test.
-import { createCrowd, buildNet, route, blocked, onRoad } from '../src/engine/crowd.js';
+import { createCrowd, buildNet, route, blocked, onRoad, nearRank, viewCos, NEAR_RANK } from '../src/engine/crowd.js';
 import { trafficSpecs, BUS_STOPS, stopS } from '../src/world/trafficMix.js';
 import { crossing, metroGround, METRO, METRO_DEPTH, groundHeight, NJ } from '../src/world/layout.js';
 let failed = 0;
@@ -85,5 +85,19 @@ ok(crossing.vehicles.every((v) => mix.find((m) => m.id === v.id)), "the crossing
     }
   }
   ok(together && far / Math.max(1, n) < 0.03, `children keep within 2.5 m of their parent (${(100 * far / Math.max(1, n)).toFixed(1)}% of moments apart) and leave with them`);
+}
+// who becomes a full person: the nearest, but those in view first (world/crowdView.js)
+{
+  const cos = viewCos(68, 16 / 9);
+  const ahead = nearRank(10, 0, 1, 0, cos), behind = nearRank(-10, 0, 1, 0, cos), side = nearRank(0, 10, 1, 0, cos), close = nearRank(-2, 0, 1, 0, cos);
+  ok(ahead === 10 && behind === 10 * NEAR_RANK.behind && close === 2, `in view ranks by distance (${ahead}); behind you counts ${NEAR_RANK.behind}x as far (${behind}); within ${NEAR_RANK.always} m, any direction counts as near (${close})`);
+  const edgeIn = nearRank(10 * Math.cos(1.2), 10 * Math.sin(1.2), 1, 0, cos) === 10, edgeOut = nearRank(10 * Math.cos(1.5), 10 * Math.sin(1.5), 1, 0, cos) > 10;   // 69 degrees off: in; 86: out
+  ok(cos < Math.cos(Math.atan(Math.tan(34 * Math.PI / 180) * 16 / 9)) && edgeIn && edgeOut && side > 10, `the cone is a little wider than the view (half-width ${(Math.acos(cos) * 180 / Math.PI).toFixed(0)} degrees for a 68-degree, 16:9 camera)`);
+  ok(nearRank(-10, 0, 0, 0, cos) === 10 && nearRank(-10, 0, 1, 0, cos, 12) === 12 * NEAR_RANK.behind, 'looking straight up or down: everyone ranks by distance; a given distance (height counted) is the one ranked');
+  // a crowd mostly behind the camera: the nearest 16 by distance alone are all behind; by view, the ones in view come first
+  const ppl = [...Array.from({ length: 30 }, (_, i) => ({ dx: -(4 + i * 0.3), dz: (i % 5) - 2 })), ...Array.from({ length: 8 }, (_, i) => ({ dx: 8 + i, dz: (i % 3) - 1 }))];
+  const top = (score) => ppl.map((p) => [score(p), p]).sort((a, b) => a[0] - b[0]).slice(0, 16).filter(([, p]) => p.dx > 0).length;
+  const byDist = top((p) => Math.hypot(p.dx, p.dz)), byView = top((p) => nearRank(p.dx, p.dz, 1, 0, cos));
+  ok(byDist <= 1 && byView === 8, `a crowd mostly behind you: in view among the 16 full people, ${byDist} by distance alone, ${byView} by view`);
 }
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);
