@@ -9,6 +9,7 @@
 //   - the coat colour (world/crowdView.js coatOf) on the body material only
 // No shadow-map casting: a soft blob underneath, as for the far crowd.
 import * as THREE from 'three';
+import { PEOPLE_LAYER } from './peopleReflect.js';
 
 const VERT_PARS = /* glsl */ `
 attribute vec4 skinIndex;
@@ -74,7 +75,7 @@ export function createCrowdMid({ group, people, bake, roles, max = 150 }) {
       if (body) { mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3).fill(1), 3).setUsage(THREE.DynamicDrawUsage); R.body = mesh; }
       mesh.count = 0; mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = true;
       mesh.renderOrder = s.renderOrder; mesh.name = 'crowd-mid';
-      group.add(mesh); R.meshes.push(mesh);
+      mesh.layers.enable(PEOPLE_LAYER); group.add(mesh); R.meshes.push(mesh);
     }
     byRole[role] = R;
   }
@@ -102,7 +103,7 @@ export function createCrowdMid({ group, people, bake, roles, max = 150 }) {
     mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(R.cap * 3).fill(1), 3).setUsage(THREE.DynamicDrawUsage);
     mesh.count = 0; mesh.visible = false; mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = true; mesh.name = 'crowd-mid';
     for (const old of R.meshes) { group.remove(old); old.material.dispose(); }   // (its geometry is the full person's own: kept)
-    group.add(mesh); R.meshes = [mesh]; R.body = mesh; R.lod = lod;
+    mesh.layers.enable(PEOPLE_LAYER); group.add(mesh); R.meshes = [mesh]; R.body = mesh; R.lod = lod;
     return true;
   }
   return {

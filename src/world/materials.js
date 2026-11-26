@@ -3,7 +3,8 @@
 //    pay for the scene's point lights; their golden wash is baked per vertex (`flood`).
 //  - wet ground / props: MeshStandardMaterial lit by lamps + captured environment.
 import * as THREE from 'three';
-import { covers } from './layout.js';
+import { covers, NJ, L } from './layout.js';
+import { peopleMirror, PEOPLE_MIRROR_GLSL } from './peopleReflect.js';
 import { stoneTexture, fluteTexture, facadeAtlas, pavingTextures, sidewalkTextures, asphaltTextures, wetnessTexture } from './textures.js';
 import { bundDoorTexture } from './surfaceDetail.js';
 
@@ -117,8 +118,32 @@ export const weatherUniforms = {
   coverXZ: { value: covers.map((c) => new THREE.Vector4(c.x0, c.x1, c.z0, c.z1)) },
 };
 
+// People's reflections (world/peopleReflect.js) in a ground material: added over the lit ground, the figure
+// hiding a little of the ground's own light. wet: a GLSL expression (in the fragment's main) for how wet
+// the stone is there, 0..1.
+export function mirrorPeople(material, { wet = '0.0', key = 'plain', sheen = 1 } = {}) {
+  const prev = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    if (prev) prev.call(material, shader, renderer);
+    Object.assign(shader.uniforms, peopleMirror);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vPeopleWorld;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\n  vPeopleWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\n${PEOPLE_MIRROR_GLSL}`)
+      .replace('#include <opaque_fragment>', `{
+        float pNoV = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+        vec4 pm = mirrorPeopleAt(roughnessFactor, pNoV, ${wet}, ${sheen.toFixed(2)});
+        outgoingLight = outgoingLight * (1.0 - 0.85 * pm.a) + pm.rgb;
+      }
+      #include <opaque_fragment>`);
+  };
+  material.customProgramCacheKey = () => `people-mirror:${key}:${sheen}`;
+  return material;
+}
+
 // Standing water lies flat: blend the paving normal away wherever roughness is very low.
-function puddles(material) {
+function puddles(material, sheen = 1, slabs = false) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.wetBoost = weatherUniforms.wetBoost;
     shader.uniforms.groundDamp = weatherUniforms.groundDamp;
@@ -177,8 +202,54 @@ function puddles(material) {
         }
       }
       diffuseColor.rgb *= mix(1.0, 0.55, puddle);`);
+
+    if (slabs) shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+      // Paving that has been walked on for twenty-five years: no two granite slabs quite the same shade, now
+      // and then one replaced (paler, cleaner), blotches of old spills, flattened chewing gum, and the
+      // stone polished smoother along the lines most feet take. The slabs are the photograph's (five to a
+      // tile, 0.48 m), so every one is found from the map's uv; the rest is laid out in metres.
+      float sHash(vec2 p) { return fract(sin(dot(p, vec2(41.31, 289.17))) * 15731.743); }
+      float sNoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(sHash(i), sHash(i + vec2(1.0, 0.0)), f.x), mix(sHash(i + vec2(0.0, 1.0)), sHash(i + vec2(1.0, 1.0)), f.x), f.y); }
+      // how many feet cross here on Nanjing Road (0..1): either side of the golden belt and down the middle of
+      // each half; nothing elsewhere
+      float njFeet(vec2 xz) {
+        if (xz.x > ${(L.facadeX).toFixed(1)} || xz.x < ${(NJ.xWest - 30).toFixed(1)} || xz.y < ${NJ.z0.toFixed(1)} || xz.y > ${NJ.z1.toFixed(1)}) return 0.0;
+        float z = xz.y, w = 0.0;
+        w += exp(-pow((z - ${(NJ.z0 + 6.2).toFixed(2)}) / 1.6, 2.0));
+        w += exp(-pow((z - ${(NJ.zc + 1.6).toFixed(2)}) / 1.4, 2.0)) * 0.8;
+        w += exp(-pow((z - ${(NJ.z1 - 3.4).toFixed(2)}) / 1.7, 2.0));
+        return clamp(w * (0.75 + 0.5 * sNoise(xz * vec2(0.08, 0.6))), 0.0, 1.0);
+      }
+      float slabShade, slabNew, feetHere;`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+      {
+        vec2 sid = floor(vMapUv * 5.0 + 1e-3);
+        float h = sHash(sid), h2 = sHash(sid + 17.7);
+        slabNew = step(0.975, h2);                                          // one in forty relaid
+        slabShade = mix(0.88 + 0.24 * h, 1.16 + 0.05 * h, slabNew);
+        diffuseColor.rgb *= slabShade * vec3(1.0 + 0.03 * (h - 0.5), 1.0, 1.0 - 0.04 * (h - 0.5));
+        // old spills and grime: big soft blotches, darker; less of it on a new slab
+        float blot = sNoise(vWetXZ * 0.55) * 0.6 + sNoise(vWetXZ * 1.9) * 0.4;
+        diffuseColor.rgb *= 1.0 - (1.0 - 0.6 * slabNew) * 0.16 * smoothstep(0.55, 0.85, blot);
+        // gum: little dark discs on a 12 cm grid, a few per square metre, more where people walk
+        feetHere = njFeet(vWetXZ);
+        vec2 gq = vWetXZ / 0.12, gc = floor(gq);
+        float gh = sHash(gc + 3.3);
+        if (gh < 0.02 + 0.05 * feetHere) {
+          vec2 gp = fract(gq) - (0.3 + 0.4 * vec2(sHash(gc + 5.1), sHash(gc + 8.9)));
+          float gr = (0.11 + 0.12 * sHash(gc + 1.9));
+          diffuseColor.rgb *= 1.0 - 0.45 * (1.0 - smoothstep(gr * 0.6, gr, length(gp)));
+        }
+        // the walking lines: feet darken stone a little (grease) as they polish it
+        diffuseColor.rgb *= 1.0 - 0.07 * feetHere;
+      }`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      roughnessFactor *= mix(0.92 + 0.16 * sHash(floor(vMapUv * 5.0 + 1e-3) + 4.4), 0.86, slabNew);
+      roughnessFactor = mix(roughnessFactor, roughnessFactor * 0.62, feetHere);`);
   };
-  return material;
+  return mirrorPeople(material, { wet: 'max(puddle, 0.5 * wetW)', key: `puddles${slabs ? '-slabs' : ''}`, sheen });
 }
 
 // Reflection strength for screen-space reflections, per pixel: standing water (low roughness in the
@@ -223,10 +294,10 @@ export function createMaterials() {
   wetDeck.repeat.set(1 / 2.2, 1 / 2.2); wetRoad.repeat.set(1 / 1.7, 1 / 1.7); // relative to each map's own metre scale: puddles a metre or two across, not whole lanes
   const std = (o) => new THREE.MeshStandardMaterial(o);
   M.deck = puddles(std({ map: pave.map, normalMap: pave.normalMap, roughnessMap: wetDeck, roughness: 1, metalness: 0, envMapIntensity: 1.0 }));
-  M.sidewalk = puddles(std({ map: walk.map, normalMap: walk.normalMap, roughnessMap: wetnessTexture(403, { puddle: 0.32, dry: 0.7, wet: 0.12 }), roughness: 1, metalness: 0 }));
+  M.sidewalk = puddles(std({ map: walk.map, normalMap: walk.normalMap, roughnessMap: wetnessTexture(403, { puddle: 0.32, dry: 0.7, wet: 0.12 }), roughness: 1, metalness: 0 }), 1, true);
   M.sidewalk.roughnessMap.repeat.set(1 / 3, 1 / 3);
-  M.asphalt = puddles(std({ map: asph.map, normalMap: asph.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughnessMap: wetRoad, roughness: 1, metalness: 0 }));
-  M.granite = std({ map: stone, color: 0x8d8a84, roughness: 0.55, metalness: 0 });
+  M.asphalt = puddles(std({ map: asph.map, normalMap: asph.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughnessMap: wetRoad, roughness: 1, metalness: 0 }), 0.35);
+  M.granite = mirrorPeople(std({ map: stone, color: 0x8d8a84, roughness: 0.55, metalness: 0 }));
   M.iron = std({ color: 0x141a17, roughness: 0.42, metalness: 0.7 });
   M.steel = std({ color: 0x9aa0a6, roughness: 0.3, metalness: 0.9 });
   M.paint = std({ color: 0xd8d6cf, roughness: 0.55, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });

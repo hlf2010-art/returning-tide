@@ -7,8 +7,10 @@
 // are typical of the street, not surveyed one by one.
 import { asLight, glassByDay } from './dayNight.js';
 import * as THREE from 'three';
-import { L, NJ, METRO, METRO_DEPTH, DUMPLING, njRuns, njCross } from './layout.js';
+import { L, NJ, METRO, METRO_DEPTH, DUMPLING, njRuns, njCross, njLamps } from './layout.js';
+import { createBronzeCovers } from './njCovers.js';
 import { Batch, batchSet, flush } from './geo.js';
+import { mirrorPeople } from './materials.js';
 import { tiers } from './bund.js';
 import { makeCanvas, tex, rng, FONT } from './canvas.js';
 import { towerAtlas } from './skyline.js';
@@ -418,16 +420,13 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     }
     const m = wash.mesh(glow, 'nj-night-glow'); m.renderOrder = 2; group.add(m); }
   for (const z of [NJ.z0 - h.walkTo - 0.5, NJ.z1 + h.walkTo + 0.5]) { hoard(h.x1, h.x1 + 5, z - 0.06, z + 0.06); hoard(h.x0 - 5, h.x0, z - 0.06, z + 0.06); }
-  // ---- lamp posts down both sides ----
+  // ---- lamp posts: down both sides of the 2020 extension, down the golden belt west of Henan Road (layout.js njLamps) ----
   const lampGlass = new Batch();
-  for (let x = -46; x > NJ.xWest + 4; x -= 24) {
-    if (x < h.x1 + 3 && x > h.x0 - 3) continue;
-    for (const z of [NJ.z0 + 4.2, NJ.z1 - 1.4]) {
-      if (METRO.some((m) => x > m.x0 - 1.5 && x < m.x1 + 1.5 && z < m.z1 + 1.5)) continue;
-      P.steel.cyl(x, CH, z, 0.07, 0.11, 6.2, 8); P.steel.box(x, 6.1, z, 1.8, 0.08, 0.08);
-      for (const dx of [-0.85, 0, 0.85]) lampGlass.add(new THREE.SphereGeometry(0.2, 12, 8), { x: x + dx, y: dx ? 5.85 : 6.55, z });
-      lights.push({ x, y: 6, z, color: new THREE.Color(1.0, 0.88, 0.72), intensity: 9, distance: 18, out: true });
-    }
+  for (const [x, z] of njLamps()) {
+    const belt = x < h.x0;                                   // (one line instead of two: a little brighter each)
+    P.steel.cyl(x, CH + (belt ? 0.008 : 0), z, 0.07, 0.11, 6.2, 8); P.steel.box(x, 6.1, z, 1.8, 0.08, 0.08);
+    for (const dx of [-0.85, 0, 0.85]) lampGlass.add(new THREE.SphereGeometry(0.2, 12, 8), { x: x + dx, y: dx ? 5.85 : 6.55, z });
+    lights.push({ x, y: 6, z, color: new THREE.Color(1.0, 0.88, 0.72), intensity: belt ? 12 : 9, distance: belt ? 21 : 18, out: true });
   }
   const glow = asLight(new THREE.MeshBasicMaterial({ color: new THREE.Color(1.9, 1.7, 1.4) }), 'lamps', 0.45);
   group.add(lampGlass.mesh(glow, 'nj-lamps'));
@@ -490,8 +489,9 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     x.fillStyle = '#6b2a22'; x.fillRect(0, 0, 256, 256);
     for (let i = 0; i < 2600; i++) { const v = r0(); x.fillStyle = v < 0.45 ? 'rgba(40,12,10,0.55)' : v < 0.8 ? 'rgba(170,90,78,0.45)' : 'rgba(225,200,190,0.5)'; x.fillRect(r0() * 256, r0() * 256, 1 + r0() * 2, 1 + r0() * 2); }
     x.fillStyle = 'rgba(20,8,6,0.8)'; x.fillRect(0, 0, 256, 2); x.fillRect(0, 0, 2, 256);
-    const belt = new THREE.MeshStandardMaterial({ map: tex(c), roughness: 0.3, metalness: 0.05 });
-    group.add(P.belt.mesh(belt, 'nj-golden-belt')); }
+    const belt = mirrorPeople(new THREE.MeshStandardMaterial({ map: tex(c), roughness: 0.3, metalness: 0.05 }), { sheen: 1.5 });   // (polished: people show in it)
+    group.add(P.belt.mesh(belt, 'nj-golden-belt'));
+    createBronzeCovers(group, CH + 0.009); }                 // its 37 bronze drain covers (world/njCovers.js)
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
   group.add(P.paint.mesh(paint, 'henan-paint'), P.yellow.mesh(yellow, 'henan-yellow'));

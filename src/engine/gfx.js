@@ -7,14 +7,15 @@
 //   shadows    how many lamps cast shadow maps: 0 - 2
 //   ao         ambient occlusion (contact shadows)      ssr   wet-ground reflections
 //   bloom      glow round lights                        mirror   river reflection resolution (px)
+//   refl       people's reflections in the paving (world/peopleReflect.js)
 //   lod        level of detail and density: low | medium | high | ultra (people, cars, distant detail)
 //   auto       step the resolution down by itself when frames run long
 // On first run the preset is picked from the GPU the browser reports; after that it's yours.
 export const PRESETS = {
-  low:   { scale: 0.7, fps: 30, msaa: 0, shadows: 0, ao: false, ssr: false, bloom: true, mirror: 512, lod: 'low', auto: true },
-  mac:   { scale: 0.9, fps: 60, msaa: 0, shadows: 1, ao: false, ssr: false, bloom: true, mirror: 768, lod: 'medium', auto: true },
-  high:  { scale: 1.0, fps: 60, msaa: 2, shadows: 2, ao: true, ssr: true, bloom: true, mirror: 1024, lod: 'high', auto: true },
-  ultra: { scale: 1.25, fps: 0, msaa: 4, shadows: 2, ao: true, ssr: true, bloom: true, mirror: 2048, lod: 'ultra', auto: false },
+  low:   { scale: 0.7, fps: 30, msaa: 0, shadows: 0, ao: false, ssr: false, refl: false, bloom: true, mirror: 512, lod: 'low', auto: true },
+  mac:   { scale: 0.9, fps: 60, msaa: 0, shadows: 1, ao: false, ssr: false, refl: true, bloom: true, mirror: 768, lod: 'medium', auto: true },
+  high:  { scale: 1.0, fps: 60, msaa: 2, shadows: 2, ao: true, ssr: true, refl: true, bloom: true, mirror: 1024, lod: 'high', auto: true },
+  ultra: { scale: 1.25, fps: 0, msaa: 4, shadows: 2, ao: true, ssr: true, refl: true, bloom: true, mirror: 2048, lod: 'ultra', auto: false },
 };
 // what each level of detail means in the world
 export const LOD = {
@@ -51,6 +52,7 @@ export function resolve(saved = {}) {
   g.msaa = [0, 2, 4].includes(+g.msaa) ? +g.msaa : 0;
   g.shadows = Math.max(0, Math.min(2, Math.round(+g.shadows || 0)));
   g.mirror = [512, 768, 1024, 2048].includes(+g.mirror) ? +g.mirror : 1024;
+  for (const k of ['ao', 'ssr', 'refl', 'bloom', 'auto']) g[k] = !!g[k];
   g.lod = LOD[g.lod] ? g.lod : 'medium';
   return g;
 }
@@ -103,4 +105,26 @@ export function saveCrowd(level, store = globalThis.localStorage) {
 export function crowdCounts(lod, level = 'medium') {
   const d = LOD[lod] || LOD.medium, f = CROWD_LEVELS[level] || CROWD_LEVELS.medium;
   return { people: Math.round(d.people * f.people), throng: Math.round((d.throng || 0) * f.throng), nearPeople: Math.max(3, Math.round(d.nearPeople * f.near)), mid: Math.round((d.mid || 0) * f.mid) };
+}
+
+// Lighting (Settings > Graphics): shadows, reflections and contact darkening in one choice, for a browser
+// that can't keep up. The same switches as the advanced rows below it (so choosing one makes the preset
+// "custom" unless a preset already matches); none is lit when they've been set by hand to something else.
+//   low     no lamp shadows, no reflections, no ambient occlusion: the cheapest
+//   medium  one lamp's shadows, people's reflections in the paving
+//   high    two lamps' shadows, people's reflections, wet-ground reflections (SSR) and ambient occlusion
+export const LIGHTING = {
+  low:    { shadows: 0, ao: false, ssr: false, refl: false },
+  medium: { shadows: 1, ao: false, ssr: false, refl: true },
+  high:   { shadows: 2, ao: true, ssr: true, refl: true },
+};
+export function lightingOf(g) {
+  return Object.keys(LIGHTING).find((k) => Object.entries(LIGHTING[k]).every(([key, v]) => g[key] === v)) || null;
+}
+export function setLighting(g, level) {
+  if (!LIGHTING[level]) return g;
+  const next = { ...g, ...LIGHTING[level] };
+  // (back to the preset itself if that's what it now is)
+  const same = Object.keys(PRESETS).find((p) => Object.entries(PRESETS[p]).every(([k, v]) => next[k] === v));
+  return same ? resolve({ preset: same }) : resolve({ ...next, preset: 'custom' });
 }

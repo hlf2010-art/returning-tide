@@ -122,9 +122,12 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
       Q.room.push(room.s0, room.s1, room.y0, room.y1); Q.box.push(T.x, T.z, room.depth); Q.yaw.push(room.yaw);
     }
   }
-  // the shop's light on the pavement in front of the glass, fading out over `reach` m
-  function pool(F, ua, ub, y, reach = 3.2) {
-    const p = [F.at(ua, y, 0.12), F.at(ub, y, 0.12), F.at(ub, y, reach), F.at(ua, y, reach)], uv = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  // the shop's light on the pavement in front of the glass, fading out over `reach` m; it spills a little
+  // past the ends of the opening (`side` m each way), so neighbouring bays' pools run into each other
+  // and no edge of it is ever a line
+  function pool(F, ua, ub, y, reach = 4.0, side = 0.7) {
+    ua -= side; ub += side;
+    const p = [F.at(ua, y, 0.06), F.at(ub, y, 0.06), F.at(ub, y, reach), F.at(ua, y, reach)], uv = [[0, 0], [1, 0], [1, 1], [0, 1]];
     const up = new THREE.Vector3().subVectors(p[1], p[0]).cross(new THREE.Vector3().subVectors(p[2], p[0])).y > 0;
     for (const k of up ? [0, 1, 2, 0, 2, 3] : [0, 2, 1, 0, 3, 2]) { spill.pos.push(p[k].x, p[k].y, p[k].z); spill.uv.push(...uv[k]); }
   }
@@ -160,7 +163,7 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
         const ba = ra + ((rb - ra) * i) / bays + (i ? 0.18 : 0), bb = ra + ((rb - ra) * (i + 1)) / bays - (i < bays - 1 ? 0.18 : 0), w = bb - ba, cu = (ba + bb) / 2;
         if (i % per === 0) room = roomOver(ra + ((rb - ra) * i) / bays, ra + ((rb - ra) * Math.min(bays, i + per)) / bays);
         fbox(stone, F, f, cu, y0, 0, w + 0.06, 0.32, 0.16);                                   // the stall riser
-        pane(F, room, ba, bb, y0 + 0.32, top, 0.045); pool(F, ba - 0.2, bb + 0.2, y0 + 0.012);
+        pane(F, room, ba, bb, y0 + 0.32, top, 0.045); pool(F, ba, bb, y0 + 0.012);
         fbox(metal, F, f, cu, y0 + 0.32, 0.02, w, 0.06, 0.1);                                  // sill
         fbox(metal, F, f, cu, top - 0.07, 0.02, w, 0.09, 0.1);                                 // head
         fbox(metal, F, f, cu, y0 + 2.9, 0.03, w, 0.07, 0.08);                                  // transom
@@ -174,7 +177,7 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
     for (const u of cuts) {
       const dr = roomOver(u - DOOR.half, u + DOOR.half, depth + 1.5);
       pane(F, dr, u - DOOR.half, u + DOOR.half, y0, y0 + DOOR.h + 0.05, 0.02);
-      pane(F, dr, u - DOOR.half, u + DOOR.half, y0 + DOOR.h + 0.42, top, 0.045); pool(F, u - DOOR.half - 0.2, u + DOOR.half + 0.2, y0 + 0.012, 3.8);
+      pane(F, dr, u - DOOR.half, u + DOOR.half, y0 + DOOR.h + 0.42, top, 0.045); pool(F, u - DOOR.half, u + DOOR.half, y0 + 0.012, 4.6);
       fbox(metal, F, f, u, y0 + DOOR.h + 0.05, 0.0, DOOR.half * 2 + 0.2, 0.37, 0.3);            // the operator box
       for (const e of [u - DOOR.half - 0.04, u + DOOR.half + 0.04]) fbox(metal, F, f, e, y0, 0.0, 0.1, DOOR.h + 0.42, 0.18);
       for (const e of [u - DOOR.leaf, u + DOOR.leaf]) fbox(metal, F, f, e, y0, 0.02, 0.05, DOOR.h + 0.05, 0.05);   // the fixed panels' stiles
@@ -192,7 +195,7 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
   let leafFrames = null, leafGlass = null, leafBands = null;
   // the light pools: warm, brightest at the glass, soft at the ends; added to the paving after dark
   const spillMat = new THREE.MeshBasicMaterial({ map: poolTexture(), color: new THREE.Color(0, 0, 0), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, toneMapped: true });
-  const SPILL = new THREE.Color(1.0, 0.72, 0.42).multiplyScalar(0.16);
+  const SPILL = new THREE.Color(1.0, 0.72, 0.42).multiplyScalar(0.13);
   function build() {
     for (const [id, Q] of Object.entries(quads)) {
       if (!Q.pos.length) continue;
@@ -288,7 +291,6 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
   };
 }
 
-// the light pool: falling off away from the glass (v), and toward the two ends (u)
 // a door sticker, 300 x 420 mm, on clear film
 function stickerTexture(kind) {
   const [c, x] = makeCanvas(256, 360);
@@ -315,17 +317,25 @@ function stickerTexture(kind) {
   }
   return tex(c, { repeat: false });
 }
+// the light pool: brightest at the glass (v = 0) and falling off smoothly away from it, and toward the two
+// ends (u), to nothing at every edge of the quad. Linear values (no sRGB decode, which would steepen the
+// fall into a hard rim); the canvas's top row is v = 1 (flipY), so it is drawn from the far edge down.
 function poolTexture() {
   if (typeof document === 'undefined') return null;
-  const c = document.createElement('canvas'); c.width = 64; c.height = 64;
-  const x = c.getContext('2d'), d = x.createImageData(64, 64);
-  for (let j = 0; j < 64; j++) for (let i = 0; i < 64; i++) {
-    const v = j / 63, u = i / 63, fall = Math.pow(1 - v, 3.2), ends = Math.min(1, Math.min(u, 1 - u) / 0.3);
-    const k = Math.round(255 * fall * (0.15 + 0.85 * ends * ends)), o = (j * 64 + i) * 4;
+  const W = 64, H = 128, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d'), d = x.createImageData(W, H);
+  const sm = (a, b, t) => { const k = Math.min(1, Math.max(0, (t - a) / (b - a))); return k * k * (3 - 2 * k); };
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const v = 1 - j / (H - 1), u = i / (W - 1);
+    // along: a soft exponential from the glass that eases to zero at the far edge
+    const fall = Math.exp(-3.2 * v) * (1 - sm(0.45, 1, v));
+    // across: full over the opening, rolling off over the spill at each end; a little wider further out
+    const e = 0.2 + 0.06 * v, ends = sm(0, e, u) * sm(0, e, 1 - u);
+    const k = Math.round(255 * fall * ends), o = (j * W + i) * 4;
     d.data[o] = d.data[o + 1] = d.data[o + 2] = k; d.data[o + 3] = 255;
   }
   x.putImageData(d, 0, 0);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; return t;
 }
 // (a few BoxGeometries into one; all non-indexed after toNonIndexed)
 function mergeGeos(list) {

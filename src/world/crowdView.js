@@ -8,6 +8,7 @@
 // Far figures are lit by where they stand: the gold wash off the Bund's façades, the promenade
 // lamps, the blue of the night sky.
 import * as THREE from 'three';
+import { PEOPLE_LAYER } from './peopleReflect.js';
 import { createPerson } from './people.js';
 import { holdPhone } from './pedestriansReal.js';
 import { twoBone } from './driverPose.js';
@@ -205,7 +206,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   geo.setAttribute('iPos', iPos); geo.setAttribute('iCell', iCell); geo.setAttribute('iTint', iTint);
   geo.instanceCount = 0;
   const mat = impostorMaterial(atlas.texture, atlas.size); mat.uniforms.atlas.value = atlas.texture;
-  const far = new THREE.Mesh(geo, mat); far.frustumCulled = false; far.name = 'crowd-impostors';
+  const far = new THREE.Mesh(geo, mat); far.frustumCulled = false; far.name = 'crowd-impostors'; far.layers.enable(PEOPLE_LAYER);   // (in the paving's reflection: world/peopleReflect.js)
   group.add(far);
   // soft contact shadows under the far figures
   const blobTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,0.72)'); g.addColorStop(0.45, 'rgba(0,0,0,0.42)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
@@ -220,7 +221,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   const tint = new Float32Array(N * 3), tintAt = new Int32Array(N).fill(-1); let frameNo = 0;   // (each figure's light, kept: see update)
   const canopyGeo = canopyGeometry({ r: 0.5, h: 0.22, perRib: 2, rings: 4 });           // (apex at the origin)
   const canopyMat = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0, side: THREE.DoubleSide });
-  const canopies = new THREE.InstancedMesh(canopyGeo, canopyMat, N); canopies.frustumCulled = false; canopies.count = 0; canopies.name = 'crowd-umbrellas';
+  const canopies = new THREE.InstancedMesh(canopyGeo, canopyMat, N); canopies.frustumCulled = false; canopies.count = 0; canopies.name = 'crowd-umbrellas'; canopies.layers.enable(PEOPLE_LAYER);
   for (let i = 0; i < N; i++) canopies.setColorAt(i, UMB_COLORS[0]);
   group.add(canopies);
   const _um = new THREE.Matrix4(), _uq = new THREE.Quaternion(), _us = new THREE.Vector3(), _up = new THREE.Vector3(), _ue = new THREE.Euler();

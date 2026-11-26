@@ -58,12 +58,17 @@ export const NJ = {
 export const njCross = (dir) => NJ.cross.filter((c) => !c.side || c.side === (dir > 0 ? 'N' : 'S'));
 // the street's frontage on a side, east to west, as [xEast, xWest] runs between the cross streets (and
 // Henan Road's pavements, and Century Square on the south side)
-// Nanjing Road's lamp posts: [x, z], every 24 m down both sides (not on Henan Road, not over a metro well)
+// Nanjing Road's lamp posts: [x, z], every 24 m (not on Henan Road, not over a metro well). From the Bund to
+// Henan Road (the 2020 extension) down both sides; west of Henan Road, the 1999 street, in one line down
+// the golden belt (when the street opened the lamp posts from both pavements were all moved onto the 金带:
+// CCTV, 21 Sept 1999)
+export const NJ_BELT_Z = NJ.zc - 1.3;
 export function njLamps() {
   const out = [];
   for (let x = -46; x > NJ.xWest + 4; x -= 24) {
     if (x < NJ.henan.x1 + 3 && x > NJ.henan.x0 - 3) continue;
-    for (const z of [NJ.z0 + 4.2, NJ.z1 - 1.4]) if (!METRO.some((m) => x > m.x0 - 1.5 && x < m.x1 + 1.5 && z < m.z1 + 1.5)) out.push([x, z]);
+    const zs = x < NJ.henan.x0 ? [NJ_BELT_Z] : [NJ.z0 + 4.2, NJ.z1 - 1.4];
+    for (const z of zs) if (!METRO.some((m) => x > m.x0 - 1.5 && x < m.x1 + 1.5 && z < m.z1 + 1.5)) out.push([x, z]);
   }
   return out;
 }

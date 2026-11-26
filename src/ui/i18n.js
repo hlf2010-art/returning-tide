@@ -63,7 +63,7 @@ export const S = {
   gScale: { zh: '渲染分辨率', en: 'Render resolution' }, gFps: { zh: '帧率上限', en: 'Frame-rate cap' }, gNoCap: { zh: '不限', en: 'None' },
   gLod: { zh: '细节与密度', en: 'Detail & density' }, gCrowd: { zh: '人群', en: 'Crowds' }, gMedium: { zh: '中', en: 'Medium' },
   gAA: { zh: '抗锯齿', en: 'Anti-aliasing' }, gShadows: { zh: '灯光阴影', en: 'Lamp shadows' }, gAO: { zh: '环境光遮蔽', en: 'Ambient occlusion' },
-  gSSR: { zh: '湿地面反射', en: 'Wet-ground reflections' }, gBloom: { zh: '光晕', en: 'Bloom' }, gMirror: { zh: '江面倒影', en: 'River reflection' },
+  gSSR: { zh: '湿地面反射', en: 'Wet-ground reflections' }, gRefl: { zh: '人物倒影', en: "People's reflections" }, gLighting: { zh: '光影效果', en: 'Lighting' }, gBloom: { zh: '光晕', en: 'Bloom' }, gMirror: { zh: '江面倒影', en: 'River reflection' },
   gAuto: { zh: '自动降分辨率', en: 'Auto resolution' },
   gReload: { zh: '更多的人流与车流在重新载入后出现', en: 'More crowds and traffic need a reload' }, gReloadNow: { zh: '重新载入', en: 'Reload' },
   gHint: { zh: '首次运行按显卡自动选择；Mac mini M4 建议 “Mac M4”，RTX 4080 级别建议 “极致”。', en: 'Chosen for your GPU on first run. Mac mini M4: “Mac M4”. RTX 4080 class: “Ultra”.' },
