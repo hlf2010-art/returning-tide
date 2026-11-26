@@ -754,7 +754,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   // the cabinet ends; a light line along each lane; glass balustrades from the outer cabinets to the walls
   const flaps = []; let GATE_M = null; const gateMats = () => GATE_M;
   {
-    const GL = 1.5, GH = 0.98, GW = 0.2, gx = A.gateX;
+    const GL = 1.5, GH = 0.98, GW = 0.2, gx = A.gateX, TOP = GH + 0.025;   // TOP: the lid's top; the wings and the balustrades keep to it
     const steel = new THREE.MeshStandardMaterial({ color: 0xd6d9dd, metalness: 0.9, roughness: 0.42, roughnessMap: br.roughnessMap, normalMap: br.normalMap, normalScale: new THREE.Vector2(0.25, 0.25), envMapIntensity: 1.3 });
     const lid = new THREE.MeshStandardMaterial({ color: 0x08090b, metalness: 0.2, roughness: 0.06, envMapIntensity: 1.6 });
     const wingGlass = new THREE.MeshStandardMaterial({ color: 0xd9eef2, roughness: 0.04, metalness: 0.1, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 1.8 });
@@ -786,10 +786,10 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       const wings = [];
       for (const side of [-1, 1]) {                                  // -1: from the north cabinet, +1: from the south
         const pivot = new THREE.Group(); pivot.position.set(gx + 0.1, Y0, z + side * (0.6 - GW / 2)); group.add(pivot);
-        const sh = new THREE.Shape(), w = 0.48, hh = 1.42; sh.moveTo(0, 0.22); sh.lineTo(w, 0.22); sh.lineTo(w, hh - 0.18); sh.quadraticCurveTo(w, hh, w - 0.2, hh); sh.lineTo(0, hh); sh.closePath();
+        const sh = new THREE.Shape(), w = 0.48, hh = TOP - 0.01; sh.moveTo(0, 0.22); sh.lineTo(w, 0.22); sh.lineTo(w, hh - 0.12); sh.quadraticCurveTo(w, hh, w - 0.12, hh); sh.lineTo(0, hh); sh.closePath();   // (level with the lid)
         const g = new THREE.ShapeGeometry(sh, 8); g.rotateY(side < 0 ? -Math.PI / 2 : Math.PI / 2);   // extends toward the lane's middle
         const wing = new THREE.Mesh(g, wingGlass); wing.renderOrder = 3; pivot.add(wing);
-        const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.2, 0.04), steel); clamp.position.set(0, 0.82, 0); pivot.add(clamp);
+        const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.04, TOP - 0.24, 0.04), steel); clamp.position.set(0, 0.22 + (TOP - 0.24) / 2, 0); pivot.add(clamp);
         wings.push({ pivot, side });
       }
       const ends = [];
@@ -811,9 +811,10 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     // glass balustrades from the outer cabinets to the walls: clear glass in steel posts, a steel handrail
     for (const [za, zb] of [[A.z0, L0 - GW / 2], [cabZ[cabZ.length - 1] + GW / 2, A.z1]]) {
       const len = zb - za, zc2 = (za + zb) / 2;
-      const pane = add(new THREE.PlaneGeometry(len, 1.0), wingGlass, gx, Y0 + 0.12 + 0.5, zc2, Math.PI / 2); pane.renderOrder = 3;
-      add(new THREE.CylinderGeometry(0.022, 0.022, len, 10).rotateX(Math.PI / 2), steel, gx, Y0 + 1.14, zc2);
-      for (let zz = za + 0.05; zz <= zb + 0.01; zz += Math.max(0.9, len / Math.ceil(len / 1.4))) add(new THREE.CylinderGeometry(0.025, 0.03, 1.14, 12), steel, gx, Y0 + 0.57, Math.min(zz, zb - 0.05));
+      // (the same line as the gates: glass up to the lids' height, a flat steel cap level with them)
+      const gh = TOP - 0.12, pane = add(new THREE.PlaneGeometry(len, gh), wingGlass, gx, Y0 + 0.1 + gh / 2, zc2, Math.PI / 2); pane.renderOrder = 3;
+      box(0.05, 0.025, len, steel, gx, Y0 + TOP - 0.025, zc2);
+      for (let zz = za + 0.05; zz <= zb + 0.01; zz += Math.max(0.9, len / Math.ceil(len / 1.4))) add(new THREE.CylinderGeometry(0.022, 0.026, TOP - 0.025, 12), steel, gx, Y0 + (TOP - 0.025) / 2, Math.min(zz, zb - 0.05));
     }
   }
   const steelDoor = new THREE.MeshStandardMaterial({ map: steelDoorTexture(), color: 0xffffff, metalness: 1, roughness: 0.32 });
