@@ -499,12 +499,15 @@ function signTexture(lines, colour, w = 1024, h = 256) {
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = colour;
   ctx.shadowColor = colour; ctx.shadowBlur = 14;
-  if (lines.length === 1) { ctx.font = `900 ${h * 0.72}px ${FONT.sans}`; ctx.fillText(lines[0], w / 2, h * 0.54); }
-  else { ctx.font = `900 ${h * 0.5}px ${FONT.sans}`; ctx.fillText(lines[0], w / 2, h * 0.33); ctx.font = `800 ${h * 0.3}px ${FONT.sans}`; ctx.fillText(lines[1], w / 2, h * 0.78); }
+  // (each line shrinks to fit the width rather than spilling off or being squeezed)
+  const line = (t, wt, px, y) => { ctx.font = `${wt} ${px}px ${FONT.sans}`; const k = Math.min(1, (w * 0.9) / ctx.measureText(t).width); ctx.font = `${wt} ${px * k}px ${FONT.sans}`; ctx.fillText(t, w / 2, y); };
+  if (lines.length === 1) line(lines[0], 900, h * 0.72, h * 0.54);
+  else { line(lines[0], 900, h * 0.5, h * 0.33); line(lines[1], 800, h * 0.3, h * 0.78); }
   return tex(c, { repeat: false, aniso: 8 });
 }
+// (the canvas takes the board's own shape, so the letters keep theirs)
 function sign(group, lines, colour, x, y, z, w, h, gain = 1.6) {
-  const m = new THREE.MeshBasicMaterial({ map: signTexture(lines, colour), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const m = new THREE.MeshBasicMaterial({ map: signTexture(lines, colour, 1024, Math.round(1024 * h / w)), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
   m.color.setScalar(gain);
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
   mesh.position.set(x, y, z); mesh.rotation.y = -Math.PI / 2;                          // faces west, across the river
