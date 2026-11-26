@@ -30,17 +30,22 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { L, colliders, addDynamicCollider } from './layout.js';
 import { createPerson } from './people.js';
-import { dressHotelSecurity, dressReceptionist, dressConcierge } from './outfits.js';
+import { dressHotelSecurity, dressReceptionist, dressConcierge, dressPeaceAmbassador } from './outfits.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
 import { contactShadow } from './contactShadow.js';
+import { lobbyRoom, lobbyGlass, updateLobbyGlass, captureLobbies, lobbyRooms } from './lobbyGlass.js';
 import { SIGN_FONTS, loadSignFonts } from './shopSigns.js';
 import { woodTextures, plasterTextures, brushedTextures, liftDoorTexture, staffDoorTexture, steelDoorTexture } from './surfaceDetail.js';
 
 export const PEACE = { x0: -60, x1: -35.4, z0: -244, z1: -212.6, h: 5.6, door: [-50, -46], oct: { x: -48, z: -229, r: 6.2, top: 10.5 } };
+const LIFT_X = -48;   // the Peace Hotel's lift that answers the call (its doors open onto a car)
 export const AIA = { x0: -47, x1: -34.6, z0: -152, z1: -139, h: 6.2, door: [-147.2, -143.8], gateX: -41.5, gates: [-147.3, -146.1, -144.9, -143.7] };
 const T = (zh, en) => (getLang() === 'zh' ? zh : en);
+// the floors on the lift dials (G and the hotel's guest floors), and where each sits on the half-circle (G at the left)
+const LIFT_FLOORS = ['G', '2', '3', '4', '5', '6', '7', '8', '9'];
+const liftAngle = (k) => Math.PI * (0.92 - 0.84 * k / (LIFT_FLOORS.length - 1));
 const Y0 = L.curbH;
 
 // ---- the ground plan: colliders carved out of the solid blocks, roofs over the rain ----
@@ -314,7 +319,7 @@ const signTex = (lines, { bg = '#1a1510', fg = '#d9b46a', w = 512, h = 128 } = {
   lines.forEach(([t, size], i) => { x.font = `600 ${size}px "Noto Serif SC", serif`; x.fillText(t, w / 2, h * (i + 1) / (lines.length + 1)); });
 });
 
-export function createInteriors({ scene, people, hud, audio, getLife, save, player, onCard, onLift }) {
+export function createInteriors({ scene, renderer, people, hud, audio, getLife, save, player, onCard, onLift }) {
   const group = new THREE.Group(); group.name = 'interiors'; scene.add(group);
   const marble = new THREE.MeshStandardMaterial({ map: tx('marble_01_diff_1k.jpg', 3, true), normalMap: tx('marble_01_nor_gl_1k.jpg', 3, false), roughnessMap: tx('marble_01_rough_1k.jpg', 3, false), roughness: 0.42, color: 0xefe7d8, envMapIntensity: 1.2 });
   const marbleDark = new THREE.MeshStandardMaterial({ map: marble.map, normalMap: marble.normalMap, roughness: 0.25, color: 0x3d4a44, envMapIntensity: 1.3 });
@@ -326,7 +331,12 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const brass = new THREE.MeshStandardMaterial({ color: 0xc89b4a, roughness: 0.55, roughnessMap: br.roughnessMap, normalMap: br.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), metalness: 1, envMapIntensity: 1.4 });
   const granite = new THREE.MeshStandardMaterial({ map: tx('granite_tile_04_diff_1k.jpg', 1, true), color: 0xb9b2a6, roughness: 0.5, emissive: 0x0d0c0a });
   const frosted = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.45, 1.22, 0.9) });             // lit glass (bloom makes it glow)
-  const glass = new THREE.MeshStandardMaterial({ color: 0x9fb2b8, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
+  // the glass (world/lobbyGlass.js): Fresnel reflection added over what shows through; from the street by day a
+  // mirror, from inside the room's own reflection, the lobby glowing through it after dark. Each lobby is a room
+  // the glass knows (to tell inside from outside, and for its captured reflection)
+  const peaceRoom = lobbyRoom('peace', { x0: PEACE.x0, x1: PEACE.x1, z0: PEACE.z0, z1: PEACE.z1, y0: Y0, y1: Y0 + PEACE.h, probe: [-46.5, Y0 + 1.7, -226] });
+  const aiaRoom = lobbyRoom('aia', { x0: AIA.x0, x1: AIA.x1, z0: AIA.z0, z1: AIA.z1, y0: Y0, y1: Y0 + AIA.h, probe: [-39, Y0 + 1.7, -145.5] });
+  const peaceGlass = lobbyGlass(peaceRoom), aiaGlass = lobbyGlass(aiaRoom), aiaGlassIn = lobbyGlass(aiaRoom, { interior: true });
   const dark = new THREE.MeshStandardMaterial({ color: 0x141210, roughness: 0.7 });
   // a geometry's UVs in metres / tile (planes and boxes; anything else is left as it is)
   const metricUV = (geo, tile = 1) => {
@@ -368,6 +378,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     }
   }
   const lights = [];   // extra light sources for world/lighting.js's pool
+  const liftLeaves = [];
   const clerestory = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.75, 0.62, 0.45) });   // dim glazing round the drum
   // a club armchair in oxblood leather (the Jasmine Lounge's): a rounded plinth, a loose cushion, a back that leans a
   // little with a stitched panel line, rolled arms, short tapered walnut legs on brass cups; geometry shared
@@ -392,7 +403,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   // walls: south (Nanjing Rd, the door), east (the Bund, windows on the lounge), north (lifts), west (desk, staff door)
   walls(P.x0, P.z1, P.x1, P.z1, P.h, pcx, pcz, [[P.door[0] - P.x0, P.door[1] - P.x0]]);
   walls(P.x1, P.z1, P.x1, P.z0, P.h, pcx, pcz, [[16, 19], [22, 25], [27.5, 30.5]], 3.6);                 // windows onto the Bund (glazed below)
-  walls(P.x1, P.z0, P.x0, P.z0, P.h, pcx, pcz);
+  walls(P.x1, P.z0, P.x0, P.z0, P.h, pcx, pcz, [[P.x1 - LIFT_X - 0.7, P.x1 - LIFT_X + 0.7]], 2.6);   // (the lift that comes: a real doorway, its car behind)
   walls(P.x0, P.z0, P.x0, P.z1, P.h, pcx, pcz, [[(P.z1 - 21.1) - P.z0 - 0.66, (P.z1 - 21.1) - P.z0 + 0.66]], 2.4);   // the staff door (its opening behind the door leaf)
   // the lounge's windows onto the Bund: bronze frames in three lights with a transom, a marble upstand, drapes tied back
   {
@@ -401,7 +412,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const drape = new THREE.MeshStandardMaterial({ map: drapeTex, roughness: 0.85 });
     for (const [a, b] of [[16, 19], [22, 25], [27.5, 30.5]]) {
       const z0 = P.z1 - a, z1 = P.z1 - b, zc2 = (z0 + z1) / 2, W = Math.abs(z1 - z0), xw = P.x1 - 0.12;
-      add(new THREE.PlaneGeometry(W, 3.45), glass, P.x1 - 0.1, Y0 + 0.15 + 3.45 / 2, zc2, Math.PI / 2);
+      add(new THREE.PlaneGeometry(W, 3.45), peaceGlass, P.x1 - 0.1, Y0 + 0.15 + 3.45 / 2, zc2, Math.PI / 2);
       box(0.3, 0.15, W, marbleDark, P.x1 - 0.15, Y0, zc2);                                                   // the upstand
       for (const dz of [-W / 2, W / 2]) box(0.12, 3.45, 0.09, bronzeW, xw, Y0 + 0.15, zc2 + dz);            // jambs
       box(0.12, 0.1, W, bronzeW, xw, Y0 + 3.5, zc2); box(0.12, 0.07, W, bronzeW, xw, Y0 + 2.75, zc2);       // head, transom
@@ -606,17 +617,70 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const card = new THREE.MeshStandardMaterial({ color: 0xa88458, roughness: 0.9 }), bag = new THREE.MeshStandardMaterial({ color: 0x1d1d22, roughness: 0.7 });
     [[0.66, -0.45, 0.36, 0.22, card], [0.66, 0.05, 0.3, 0.3, card], [0.66, 0.5, 0.28, 0.18, bag], [1.16, -0.4, 0.34, 0.26, card], [1.16, 0.3, 0.4, 0.2, card], [0.08, -0.3, 0.32, 0.4, bag], [0.08, 0.35, 0.36, 0.3, card]]
       .forEach(([y, dz, w, h, m]) => box(0.3, h, w, m, sx, Y0 + y, sz + dz)); }
-  // the lift lobby: three brass lift doors in the north wall, dials over them
+  // the lift lobby: three brass lift doors in the north wall, a dial over each (a needle over the floors, as the
+  // hotel's lifts have had since 1929); the middle lift is the one that answers the call: its doors part on a
+  // walnut-and-mirror car
   const liftDoor = new THREE.MeshStandardMaterial({ map: liftDoorTexture(), color: 0xffffff, roughness: 0.38, metalness: 1, envMapIntensity: 1.5 });
+  const dialTex = canvasTex(512, 256, (x, w, h) => {
+    const cx = w / 2, cy = h - 14, r = h - 30;
+    const g = x.createRadialGradient(cx, cy, 10, cx, cy, r); g.addColorStop(0, '#f1e3bf'); g.addColorStop(1, '#d9c08a');
+    x.fillStyle = '#00000000'; x.clearRect(0, 0, w, h);
+    x.fillStyle = '#9a7434'; x.beginPath(); x.arc(cx, cy, r + 12, Math.PI, 0); x.closePath(); x.fill();          // the brass bezel
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, Math.PI, 0); x.closePath(); x.fill();                    // the cream face
+    x.strokeStyle = '#3a2a14'; x.lineWidth = 2; x.beginPath(); x.arc(cx, cy, r - 8, Math.PI, 0); x.stroke();
+    x.fillStyle = '#2a1e10'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '600 30px "Noto Serif SC", serif';
+    LIFT_FLOORS.forEach((f, k) => { const a = liftAngle(k); x.fillText(f, cx + Math.cos(a) * (r - 40), cy - Math.sin(a) * (r - 40));
+      x.beginPath(); x.moveTo(cx + Math.cos(a) * (r - 8), cy - Math.sin(a) * (r - 8)); x.lineTo(cx + Math.cos(a) * (r - 20), cy - Math.sin(a) * (r - 20)); x.stroke(); });
+    for (let k = 0; k < 7; k++) { const a = Math.PI * (k + 0.5) / 7; x.fillStyle = 'rgba(120,88,40,0.35)'; x.beginPath(); x.moveTo(cx, cy); x.arc(cx, cy, 34, Math.PI + a - 0.06, Math.PI + a + 0.06); x.fill(); }   // a Deco sunburst at the hub
+  });
+  const dialMat = new THREE.MeshStandardMaterial({ map: dialTex, transparent: true, roughness: 0.5, metalness: 0.3, emissive: 0x1e160a, emissiveMap: dialTex });
+  const needleMat = new THREE.MeshStandardMaterial({ color: 0x14100a, roughness: 0.4, metalness: 0.6 });
+  const dials = {};
   for (const x of [-52, -48, -44]) {
-    box(1.4, 2.6, 0.08, brass, x, Y0, P.z0 + 0.06);
-    add(new THREE.PlaneGeometry(1.36, 2.56), liftDoor, x, Y0 + 1.3, P.z0 + 0.105);              // the engraved Art Deco face
-    add(new THREE.CircleGeometry(0.28, 24, 0, Math.PI), brass, x, Y0 + 2.95, P.z0 + 0.06);
+    if (x === LIFT_X) {
+      // the doorway: brass jambs through the wall's thickness, a soffit, a brass sill; the two leaves just behind the
+      // wall, sliding apart into it (each wears its half of the engraved face)
+      for (const s2 of [-1, 1]) box(0.08, 2.6, 0.22, brass, x + s2 * 0.74, Y0, P.z0);
+      box(1.56, 0.06, 0.22, brass, x, Y0 + 2.56, P.z0);
+      box(1.48, 0.012, 0.26, brass, x, Y0, P.z0 - 0.02);
+      for (const s2 of [-1, 1]) {
+        const leaf = new THREE.Group(); leaf.position.set(x + s2 * 0.35, Y0, P.z0 - 0.07); group.add(leaf);
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2.56, 0.035), brass); slab.position.y = 1.28; leaf.add(slab);
+        const fg = new THREE.PlaneGeometry(0.7, 2.56), uv = fg.attributes.uv;
+        for (let k = 0; k < uv.count; k++) uv.setX(k, (s2 < 0 ? 0 : 0.5) + uv.getX(k) * 0.5);
+        const face = new THREE.Mesh(fg, liftDoor); face.position.set(0, 1.28, 0.019); leaf.add(face);
+        liftLeaves.push({ leaf, x0: x + s2 * 0.35, s: s2 });
+      }
+      // the car: walnut to the rail, bronze-tinted mirror above, a brass handrail, a frosted ceiling lit warm,
+      // a marble floor, a brass panel of buttons by the door
+      const cz0 = P.z0 - 0.1, cz1 = P.z0 - 1.75, ccz = (cz0 + cz1) / 2, mirror = new THREE.MeshStandardMaterial({ color: 0x8f7c62, metalness: 1, roughness: 0.08, envMapIntensity: 1.3 });
+      add(new THREE.PlaneGeometry(1.5, 1.65), marble, x, Y0 + 0.003, ccz, 0, -Math.PI / 2);
+      for (const [ax, az, bx, bz] of [[x - 0.75, cz1, x + 0.75, cz1], [x - 0.75, cz0, x - 0.75, cz1], [x + 0.75, cz0, x + 0.75, cz1]]) {
+        wall(ax, az, bx, bz, Y0, Y0 + 0.95, walnut, x, ccz); wall(ax, az, bx, bz, Y0 + 0.95, Y0 + 2.5, mirror, x, ccz); wall(ax, az, bx, bz, Y0 + 2.5, Y0 + 2.6, walnut, x, ccz);
+      }
+      box(1.4, 0.04, 0.04, brass, x, Y0 + 0.92, cz1 + 0.07);
+      for (const s2 of [-1, 1]) box(0.04, 0.04, 1.45, brass, x + s2 * 0.69, Y0 + 0.92, ccz);
+      add(new THREE.PlaneGeometry(1.5, 1.65), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.95, 0.82, 0.62) }), x, Y0 + 2.6, ccz, 0, Math.PI / 2);
+      box(0.02, 0.5, 0.16, brass, x + 0.735, Y0 + 1.0, cz0 - 0.2);
+      for (let k = 0; k < 5; k++) { const b2 = add(new THREE.CylinderGeometry(0.014, 0.014, 0.01, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 1.1, 0.75) }), x + 0.722, Y0 + 1.15 - k * 0.07, cz0 - 0.2); b2.rotation.z = Math.PI / 2; }
+      lights.push({ x, y: Y0 + 2.3, z: ccz, intensity: 3, distance: 3.5, color: new THREE.Color(1.0, 0.84, 0.6) });
+    } else {
+      box(1.4, 2.6, 0.08, brass, x, Y0, P.z0 + 0.06);
+      add(new THREE.PlaneGeometry(1.36, 2.56), liftDoor, x, Y0 + 1.3, P.z0 + 0.105);              // the engraved Art Deco face
+    }
+    add(new THREE.PlaneGeometry(0.64, 0.32), dialMat, x, Y0 + 2.83 + 0.16 - 0.02, P.z0 + 0.065);     // the floor dial
+    const pivot = new THREE.Group(); pivot.position.set(x, Y0 + 2.8275, P.z0 + 0.075); group.add(pivot);
+    const needle = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.2, 0.004).translate(0, 0.1, 0), needleMat); pivot.add(needle);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.01, 12), brass); hub.rotation.x = Math.PI / 2; pivot.add(hub);
+    const f0 = x === LIFT_X ? 6 : Math.floor(Math.random() * LIFT_FLOORS.length);
+    dials[x] = { pivot, floor: f0, want: f0, t: 8 + Math.random() * 20 }; pivot.rotation.z = liftAngle(f0) - Math.PI / 2;
     box(1.8, 0.12, 0.12, walnut, x, Y0 + 2.62, P.z0 + 0.08);
   }
-  // the call buttons: a brass plate with an up and a down, between the doors and the glass panels
-  { const ringP = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.3, 0.8) });
-    for (const x of [-50.85, -46.85]) { box(0.12, 0.28, 0.02, brass, x, Y0 + 1.0, P.z0 + 0.03); for (const dy of [0.07, -0.07]) { const b2 = add(new THREE.CylinderGeometry(0.02, 0.02, 0.012, 16), ringP, x, Y0 + 1.14 + dy, P.z0 + 0.045); b2.rotation.x = Math.PI / 2; } } }
+  // the call buttons: a brass plate with an up and a down, between the doors and the glass panels; they light when
+  // pressed (the attendant presses the one by him)
+  const callUnlit = new THREE.MeshStandardMaterial({ color: 0xd9c08a, roughness: 0.3, metalness: 0.6, emissive: 0x2a2010 }), callLit = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.8, 1.4, 0.8) });
+  const callUp = [];
+  for (const x of [-50.85, -46.85]) { box(0.12, 0.28, 0.02, brass, x, Y0 + 1.0, P.z0 + 0.03); for (const dy of [0.07, -0.07]) { const b2 = add(new THREE.CylinderGeometry(0.02, 0.02, 0.012, 16), callUnlit, x, Y0 + 1.14 + dy, P.z0 + 0.045); b2.rotation.x = Math.PI / 2; if (dy > 0) callUp.push(b2); } }
   // the Jasmine Lounge: round tables, chairs, a grand piano by the windows
   for (const [x, z] of [[-38.2, -230], [-38.4, -234.5], [-38.2, -238], [-41.5, -232], [-41.6, -236.4]]) {
     add(new THREE.CylinderGeometry(0.45, 0.45, 0.04, 24), marbleDark, x, Y0 + 0.74, z); add(new THREE.CylinderGeometry(0.05, 0.12, 0.72, 10), brass, x, Y0 + 0.36, z);
@@ -698,7 +762,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const drum = new THREE.Group(); drum.position.set(doorX, Y0, -212.2); group.add(drum);
   const R = 1.35, H = 2.75;
   for (const c of [Math.PI / 2, -Math.PI / 2]) {
-    const arc = new THREE.Mesh(new THREE.CylinderGeometry(R, R, H, 28, 1, true, c - 0.95, 1.9), glass); arc.position.y = H / 2; arc.renderOrder = 3; drum.add(arc);
+    const arc = new THREE.Mesh(new THREE.CylinderGeometry(R, R, H, 28, 1, true, c - 0.95, 1.9), peaceGlass); arc.position.y = H / 2; arc.renderOrder = 3; drum.add(arc);
     for (const a of [c - 0.95, c + 0.95]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, H, 8), brass); post.position.set(Math.sin(a) * R, H / 2, Math.cos(a) * R); drum.add(post); }
     for (const y of [0.06, 0.95, H - 0.04]) { const rail = new THREE.Mesh(new THREE.TorusGeometry(R, 0.022, 6, 28, 1.9), brass); rail.rotation.set(Math.PI / 2, 0, -(c - 0.95) + Math.PI / 2 - 1.9); rail.position.y = y; drum.add(rail); }
   }
@@ -706,7 +770,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const vanes = new THREE.Group(); drum.add(vanes);
   for (let i = 0; i < 4; i++) {
     const w = new THREE.Group(); w.rotation.y = -i * Math.PI / 2; vanes.add(w);
-    const v = new THREE.Mesh(new THREE.PlaneGeometry(R - 0.08, H - 0.12), glass); v.position.set((R - 0.08) / 2 + 0.04, H / 2, 0); w.add(v);
+    const v = new THREE.Mesh(new THREE.PlaneGeometry(R - 0.08, H - 0.12), peaceGlass); v.position.set((R - 0.08) / 2 + 0.04, H / 2, 0); w.add(v);
     for (const [bx, by, bw, bh] of [[R - 0.06, H / 2, 0.05, H - 0.1], [(R) / 2, 0.08, R - 0.04, 0.07], [(R) / 2, H - 0.08, R - 0.04, 0.06]]) { const f = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.05), brass); f.position.set(bx, by, 0); w.add(f); }
     const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.7, 8), brass); bar.rotation.z = Math.PI / 2; bar.position.set(R * 0.62, 1.05, 0.07); w.add(bar);
     const bar2 = bar.clone(); bar2.position.z = -0.07; w.add(bar2);
@@ -790,7 +854,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     box(dep, 0.16, 3.6, granite, xd, Y0 + 4.75, zc); box(dep + 0.5, 0.03, 3.4, marbleDark, xd + 0.25, Y0 - 0.01, zc);
     const bronze = new THREE.MeshStandardMaterial({ color: 0x6b4a26, roughness: 0.35, metalness: 0.95, envMapIntensity: 1.3 });
     box(0.08, 0.12, 3.4, bronze, A.x1 + 0.02, Y0 + 4.18, zc);                                            // the transom bar
-    box(0.02, 0.5, 3.36, glass, A.x1 + 0.02, Y0 + 4.24, zc);                                             // the fanlight: glass in a bronze grille
+    box(0.02, 0.5, 3.36, aiaGlass, A.x1 + 0.02, Y0 + 4.24, zc);                                             // the fanlight: glass in a bronze grille
     for (let k = -3; k <= 3; k++) box(0.03, 0.5, 0.025, bronze, A.x1 + 0.03, Y0 + 4.24, zc + k * 0.45);
     box(0.03, 0.025, 3.36, bronze, A.x1 + 0.03, Y0 + 4.5, zc);
     for (const s of [-1, 1]) {
@@ -799,7 +863,8 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       const W = 1.68, Hh = 4.15, fr = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.07), bronze); m.position.set(x, y, 0); leaf.add(m); };
       fr(W, 0.16, -W / 2, 0.08); fr(W, 0.12, -W / 2, Hh - 0.06); fr(0.12, Hh, -0.06, Hh / 2); fr(0.12, Hh, -W + 0.06, Hh / 2); fr(W, 0.08, -W / 2, 1.05); fr(W, 0.06, -W / 2, 2.7);
       fr(0.05, Hh - 0.3, -W / 2, Hh / 2);
-      const pane = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.2, Hh - 0.3), glass); pane.position.set(-W / 2, Hh / 2, 0); pane.renderOrder = 3; leaf.add(pane);
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.2, Hh - 0.3), aiaGlassIn)   // (folded back into the room: room glass)
+     ; pane.position.set(-W / 2, Hh / 2, 0); pane.renderOrder = 3; leaf.add(pane);
       const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8), brass); pull.position.set(-W + 0.22, 1.15, -s * 0.06); leaf.add(pull);   // (on the room side)
       // the lantern on the jamb outside
       const lz = zc + s * 3.25;
@@ -841,7 +906,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     const GL = 1.5, GH = 0.98, GW = 0.2, gx = A.gateX, TOP = GH + 0.025;   // TOP: the lid's top; the wings and the balustrades keep to it
     const steel = new THREE.MeshStandardMaterial({ color: 0xd6d9dd, metalness: 0.9, roughness: 0.42, roughnessMap: br.roughnessMap, normalMap: br.normalMap, normalScale: new THREE.Vector2(0.25, 0.25), envMapIntensity: 1.3 });
     const lid = new THREE.MeshStandardMaterial({ color: 0x08090b, metalness: 0.2, roughness: 0.06, envMapIntensity: 1.6 });
-    const wingGlass = new THREE.MeshStandardMaterial({ color: 0xd9eef2, roughness: 0.04, metalness: 0.1, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 1.8 });
+    const wingGlass = lobbyGlass(aiaRoom, { interior: true, roughness: 0.02 });   // (in the room: it shows the room)
     const tex2 = (w, h, f) => canvasTex(w, h, (x) => f(x, w, h));
     const arrowTex = tex2(64, 64, (x, w) => { x.fillStyle = '#050805'; x.fillRect(0, 0, w, w); x.fillStyle = '#3dff7a'; x.beginPath(); x.moveTo(14, 26); x.lineTo(34, 26); x.lineTo(34, 14); x.lineTo(54, 32); x.lineTo(34, 50); x.lineTo(34, 38); x.lineTo(14, 38); x.closePath(); x.fill(); });
     const crossTex = tex2(64, 64, (x, w) => { x.fillStyle = '#080505'; x.fillRect(0, 0, w, w); x.strokeStyle = '#ff3b30'; x.lineWidth = 9; x.lineCap = 'round'; x.beginPath(); x.moveTo(18, 18); x.lineTo(46, 46); x.moveTo(46, 18); x.lineTo(18, 46); x.stroke(); });
@@ -940,7 +1005,11 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   // the hotel's security: middle-aged men in dark suits with earpieces, one on the Nanjing Road door, one
   // at the lifts (world/outfits.js)
   const guard = (id, x, z, yaw, o) => { const g = placePerson(id, 'lin', x, z, yaw); if (g) dressHotelSecurity(g, o); return g; };
-  guard('liftGuard', -46, P.z0 + 1.6, 0, { glasses: true });
+  guard('liftGuard', -45.1, P.z0 + 1.7, -0.25, { glasses: true });
+  // the lift attendant: one of the hotel's Peace Ambassadors in a black tuxedo, standing by the call button (the
+  // hotel's lifts have had no operator for years: someone waits in the lift lobby, greets you, presses the call
+  // button for you and sees you in)
+  { const a = placePerson('liftMan', 'p4', -50.25, P.z0 + 0.78, 0.3); if (a) dressPeaceAmbassador(a); }
   guard('doorman', doorX + 2.6, -210.4, -0.35);                       // beside the revolving door, facing the street
   placePerson('guestA', 'vivian', -54.6, -221.0, -2.4, 'talk1');
   placePerson('guestB', 'p5', -55.8, -222.1, 0.8, 'talk2');
@@ -949,7 +1018,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   const worker = placePerson('aiaWorker', 'p3', A.x1 + 3, -145.5, -Math.PI / 2, 'walk');
   if (worker) worker.root.visible = false;
 
-  const S = { key: false, said: {}, workerT: 20, workerPhase: 'away', guardPhone: 0, guardT: 0, caught: 0, inside: null, drumSpin: 0 };
+  const S = { key: false, said: {}, lift: { phase: 'idle', t: 0, doors: 0, doorsWant: 0, hold: 0, called: false, greeted: false, last: null }, workerT: 20, workerPhase: 'away', guardPhone: 0, guardT: 0, caught: 0, inside: null, drumSpin: 0 };
   const L0 = () => getLife();
   // what the hotel's staff say depends on the hour: the greeting, and what the Jazz Bar is doing (doors at 19:00,
   // the band from 20:00 to 00:30)
@@ -1027,6 +1096,105 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     S.drumSpin += ((inDoor ? 1.6 : 0) - S.drumSpin) * Math.min(1, dt * 2); vanes.rotation.y += S.drumSpin * dt;
     if (inDoor && !S.doormanSaid && ppl.doorman) { S.doormanSaid = true; sayLine(DOOR_HELLO[part()], 2.2); }
     if (!inDoor && pp.z > -209) S.doormanSaid = false;
+    updateLift(dt, pp);
+  }
+
+  // ---------- the lift lobby: the attendant, the call, the lift coming down, its doors ----------
+  const LIFT = { x: LIFT_X, btn: new THREE.Vector3(-50.85, Y0 + 1.21, P.z0 + 0.052), stand: { x: -50.25, z: P.z0 + 0.78, yaw: 0.3 } };
+  const LIFT_HELLO = {
+    morning: ['早上好，纪先生。上楼吗？我帮您叫电梯。', 'Good morning, Mr Ji. Going up? Let me call the lift for you.'],
+    noon: ['中午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
+    afternoon: ['下午好，纪先生。上楼吗？我帮您叫电梯。', 'Good afternoon, Mr Ji. Going up? Let me call the lift for you.'],
+    evening: ['晚上好，纪先生。上楼吗？我帮您叫电梯。', 'Good evening, Mr Ji. Going up? Let me call the lift for you.'],
+  };
+  const liftSay = (zh, en, secs = 3) => { const a = ppl.liftMan; hud.bark({ speaker: { zh: '和平大使', en: 'Peace Ambassador' }, text: { zh, en }, seconds: secs, at: a ? [a.root.position.x, a.root.position.y + 1.6, a.root.position.z] : null, sex: 'm' }); };
+  const _reach = new THREE.Vector3(), _pole = new THREE.Vector3(), _gest = new THREE.Vector3();
+  const turnTo = (p, yaw, dt, rate = 5) => { let d = yaw - p.root.rotation.y; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; p.root.rotation.y += d * Math.min(1, dt * rate); return Math.abs(d) < 0.06; };
+  // the index finger out, the rest curled: to press a button
+  const fingerOut = (hand, w) => { hand.traverse((b) => { const m = /Finger([0-4])(\d?)$/.exec(b.name); if (!m || m[1] === '1') return; b.rotation.z += (m[1] === '0' ? 0.4 : 1.1) * w; }); };
+  // the palm turned up and open, toward the car: "please"
+  const palmUp = (side) => (hand, w) => { hand.rotation.x += (side === 'L' ? -1.1 : 1.1) * w; };
+  // a call: the lift sets off from wherever it is, a floor every 0.7 s
+  function callLift() {
+    const L1 = S.lift; if (L1.called) return; L1.called = true; L1.doorsWant = 0;
+    const d = dials[LIFT.x]; d.want = 0;
+    for (const b of callUp.slice(0, 1)) b.material = callLit;
+    audio && audio.cue && audio.cue('tick', 0, 0.25);
+  }
+  function liftArrived() {
+    const L1 = S.lift; L1.called = false; L1.doorsWant = 1; L1.hold = 14;
+    for (const b of callUp) b.material = callUnlit;
+    audio && audio.cue && audio.cue('ping', 0, 0.5);
+  }
+  function updateLift(dt, pp) {
+    const L1 = S.lift, a = ppl.liftMan, l = L0(), hasKey = S.key || (l && l.flags.hotelKey);
+    const dx = pp.x - LIFT.x, dz = pp.z - P.z0, dist = Math.hypot(pp.x - LIFT.stand.x, pp.z - LIFT.stand.z), upstairs = pp.y > Y0 + 3;
+    // you came down in it: the doors stand open behind you a moment
+    const jumped = L1.last && Math.hypot(pp.x - L1.last.x, pp.z - L1.last.z) > 6;
+    L1.last = { x: pp.x, z: pp.z };
+    if (jumped && Math.abs(dx) < 1 && dz < 3 && !upstairs) {
+      L1.doors = 1; L1.doorsWant = 1; L1.hold = 3; dials[LIFT.x].floor = dials[LIFT.x].want = 0; L1.phase = 'bye'; L1.t = 1.2;
+    }
+    // the dials: the called lift's needle runs to G; the others drift from floor to floor
+    for (const [x, d] of Object.entries(dials)) {
+      if (Number(x) !== LIFT.x) { d.t -= dt; if (d.t <= 0) { d.want = Math.floor(Math.random() * LIFT_FLOORS.length); d.t = 15 + Math.random() * 25; } }
+      if (Number(x) === LIFT.x && !L1.called && L1.doors < 0.01 && L1.phase === 'idle') { d.t -= dt; if (d.t <= 0) { d.want = 1 + Math.floor(Math.random() * (LIFT_FLOORS.length - 1)); d.t = 20 + Math.random() * 30; } }
+      if (Math.abs(d.want - d.floor) > 0.01) d.floor += Math.sign(d.want - d.floor) * Math.min(Math.abs(d.want - d.floor), dt / 0.7);
+      else if (Number(x) === LIFT.x && L1.called) liftArrived();
+      d.pivot.rotation.z = liftAngle(d.floor) - Math.PI / 2;
+    }
+    // the doors: apart over 1.6 s, held, then together again (not while you're in the doorway)
+    L1.hold = Math.max(0, L1.hold - dt);
+    const inWay = Math.abs(dx) < 0.8 && dz < 0.9 && !upstairs;
+    if (L1.doorsWant && L1.hold <= 0 && !inWay) { L1.doorsWant = 0; audio && audio.cue && audio.cue('bump', 0, 0.15); }
+    L1.doors += Math.sign(L1.doorsWant - L1.doors) * Math.min(Math.abs(L1.doorsWant - L1.doors), dt / 1.6);
+    const o = L1.doors * L1.doors * (3 - 2 * L1.doors) * 0.68;
+    for (const lf of liftLeaves) lf.leaf.position.x = lf.x0 + lf.s * o;
+    // through the open doors: up you go
+    if (L1.doors > 0.8 && hasKey && Math.abs(dx) < 0.7 && dz < 0.75 && !upstairs && L1.phase !== 'bye') { L1.phase = 'idle'; L1.doorsWant = 0; L1.hold = 0; onLift && onLift(); }
+    if (!a || !a.root.visible) return;
+    // the attendant
+    L1.t -= dt;
+    const home = LIFT.stand, facePlayer = Math.atan2(pp.x - a.root.position.x, pp.z - a.root.position.z);
+    let look = dist < 7 && !upstairs ? [pp.x, pp.z] : null, reachR = 0, reachL = 0;
+    if (dist > 9 || upstairs) { if (L1.phase !== 'idle' && L1.phase !== 'wait' && L1.phase !== 'gesture') L1.phase = 'idle'; L1.greeted = L1.phase === 'idle' ? false : L1.greeted; }
+    switch (L1.phase) {
+      case 'idle':
+        turnTo(a, home.yaw, dt, 2);
+        if (dist < 4.2 && !upstairs && !L1.greeted && pp.z < P.z0 + 6) {
+          L1.greeted = true;
+          if (hasKey) { const [zh, en] = LIFT_HELLO[part()]; liftSay(zh, en, 3); L1.phase = 'greet'; L1.t = 1.4; }
+          else { liftSay('您好，先生。请问您是住店客人吗？电梯需要刷房卡。', 'Good day, sir. Are you staying with us? The lifts take a room card.', 3.4); }
+        }
+        break;
+      case 'greet': turnTo(a, facePlayer, dt, 4); if (L1.t <= 0) L1.phase = 'turn'; break;
+      case 'turn': if (turnTo(a, Math.atan2(LIFT.btn.x - a.root.position.x, LIFT.btn.z - a.root.position.z) + 0.25, dt, 6)) { L1.phase = 'press'; L1.t = 1.15; } break;
+      case 'press': {
+        const k = 1.15 - L1.t;   // 0..1.15: up to the button (0.5 s), the press (0.25 s), back (0.4 s)
+        reachR = k < 0.5 ? k / 0.5 : k < 0.75 ? 1 : Math.max(0, 1 - (k - 0.75) / 0.4);
+        if (k >= 0.55 && !L1.called && L1.doors < 0.5) callLift();
+        if (L1.t <= 0) { L1.phase = 'wait'; reachR = 0; if (L1.doors > 0.5) { L1.phase = 'gesture'; L1.t = 2.2; } }
+        break;
+      }
+      case 'wait': turnTo(a, dist < 7 ? facePlayer : home.yaw, dt, 3); if (L1.doors > 0.6) { L1.phase = 'gesture'; L1.t = 2.4; liftSay('电梯到了，纪先生，您请。', "Here's the lift, Mr Ji. After you.", 2.6); } break;
+      case 'gesture': {
+        turnTo(a, Math.atan2(pp.x - a.root.position.x, pp.z - a.root.position.z) * 0.5 + 0.5 * 0.3, dt, 3);
+        const k = L1.t; reachL = k > 2.0 ? (2.4 - k) / 0.4 : k > 0.5 ? 1 : Math.max(0, k / 0.5);
+        if (L1.t <= 0) L1.phase = 'idle';
+        break;
+      }
+      case 'bye': turnTo(a, facePlayer, dt, 4); if (L1.t <= 0) { const m = nowMin(); liftSay(m >= 22 * 60 || m < 5 * 60 ? '纪先生，这么晚还出去？外面凉，您慢走。' : '纪先生，您慢走。', m >= 22 * 60 || m < 5 * 60 ? "Going out this late, Mr Ji? It's cool out there. Take care." : 'Have a good day, Mr Ji.', 2.6); L1.phase = 'idle'; L1.greeted = true; } break;
+    }
+    // the arms: the right hand to the button, the elbow down and out; the left palm up toward the car
+    a.root.updateMatrixWorld(true);
+    _pole.set(-Math.cos(a.root.rotation.y), -1, Math.sin(a.root.rotation.y)).normalize();
+    a.setReach('R', reachR > 0 ? _reach.copy(LIFT.btn).add(new THREE.Vector3(0, 0, 0.03)) : null, reachR, { pole: _pole, hand: fingerOut });
+    if (reachL > 0) {
+      const fy = a.root.rotation.y, fx = Math.sin(fy), fz = Math.cos(fy);                  // ahead of him, out to his left, at the waist
+      _gest.set(a.root.position.x + fx * 0.3 + fz * 0.5, a.root.position.y + 1.08, a.root.position.z + fz * 0.3 - fx * 0.5);
+      a.setReach('L', _gest, reachL, { pole: new THREE.Vector3(fz, -1, -fx).normalize(), hand: palmUp('L') });
+    } else a.setReach('L', null, 0);
+    a.update(dt, reachR > 0 || L1.phase === 'turn' ? null : look);
   }
 
   // ---------- what E does ----------
@@ -1042,7 +1210,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   ];
   const PROMPT = {
     pReception: () => [T('前台', 'Front desk'), T('交谈', 'Talk')], pConcierge: () => [T('礼宾部', 'Concierge'), waitingAt(L0(), 'hotel').length ? T('取快递', 'Collect your parcels') : T('交谈', 'Talk')],
-    pLifts: () => [T('电梯', 'Lifts'), T('上楼', 'Go up')], pStaff: () => [T('员工通道', 'Staff only'), T('推门', 'Try the door')],
+    pLifts: () => [T('电梯', 'Lifts'), S.lift.doors > 0.6 ? T('上楼', 'Go up') : S.lift.called ? T('电梯下来了', 'On its way down') : T('叫电梯', 'Call the lift')], pStaff: () => [T('员工通道', 'Staff only'), T('推门', 'Try the door')],
     aDesk: () => [T('前台', 'Reception'), T('交谈', 'Talk')], aQR: () => [T('访客预约', 'Visitor sign-in'), T('扫码', 'Scan')], aLifts: () => [T('电梯', 'Lifts'), T('呼叫', 'Call')],
   };
   // the desk staff look up now and then; busy with a guest or the screen otherwise
@@ -1058,9 +1226,13 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
       else say(T('礼宾部', 'Concierge'), '目前没有您的快递哦。需要叫车的话我帮您约。', "Nothing waiting for you at the moment. If you need a car, I can book one.", 3);
     } else if (id === 'pLifts') {
       if (!(S.key || l.flags.hotelKey)) say(T('保安', 'Security'), '先生，电梯需要刷房卡，住客才能上去。', 'Sorry, sir, the lifts need a room card. Guests only.', 3);
-      else {
+      else if (S.lift.doors > 0.6) {
         if (!S.said.lift) { S.said.lift = true; say(T('保安', 'Security'), '纪先生，六楼南边在装修，您那间不受影响。', "Mr Ji. The south end of six is being refitted, sir; your room's not affected.", 3.4); }
-        onLift && onLift();
+        S.lift.doorsWant = 0; onLift && onLift();
+      } else if (!S.lift.called) {
+        // the attendant does it for you, if he's there; otherwise you press it yourself
+        if (ppl.liftMan && ppl.liftMan.root.visible && ['idle', 'wait'].includes(S.lift.phase)) { S.lift.greeted = true; S.lift.phase = 'turn'; liftSay('好的，纪先生，我来。', 'Allow me, Mr Ji.', 1.8); }
+        else callLift();
       }
     } else if (id === 'pStaff') {
       if (staffSees()) say(T('前台', 'Front desk'), '先生，那边是员工通道哦。', "Sir, that's the staff corridor.", 2.6);
@@ -1084,6 +1256,8 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
     // someone with a badge takes you through (Yu'an): a gate opens and the guard lets you be
     escort(lane = 1, secs = 7) { const f = flaps.find((q) => q.z === A.gates[lane]); if (f) f.until = secs; S.escorted = true; if (audio && audio.cue) audio.cue('ping', 0, 0.3); },
     get escorted() { return !!S.escorted; },
+    glassInfo: () => lobbyRooms().map((r) => ({ id: r.id, inside: r.inside, env: !!r.env, at: r.at, mats: r.mats.map((m) => ({ env: !!m.envMap, ...Object.fromEntries(Object.entries(m.userData.lobbyGlass.U).filter(([k]) => ['gTrans', 'gGain', 'gBox'].includes(k)).map(([k, v]) => [k, v.value])) })) })),   // (tools)
+    liftState: () => ({ ...S.lift, floor: dials[LIFT_X].floor }),   // (tools)
     // the two guests talking in the hall (world/ambient.js gives them new things to say)
     talkPairs() {
       const a = ppl.guestA, b = ppl.guestB; if (!a || !b) return [];
@@ -1092,10 +1266,11 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
         who: { a: { persona: 'office', card: 'a woman in her forties from Hong Kong staying at the Peace Hotel for a family wedding, chatty', at: at(a) }, b: { persona: 'office', card: 'her younger sister who lives in Shanghai, dry, practical', at: at(b) } } }];
     },
     talkables() {
-      const P2 = { receptionist: 'receptionist', concierge: 'concierge', liftGuard: 'liftGuard', doorman: 'doorman', aiaDesk: 'aiaDesk', aiaGuard: 'aiaGuard' };
+      const P2 = { receptionist: 'receptionist', concierge: 'concierge', liftGuard: 'liftGuard', liftMan: 'liftMan', doorman: 'doorman', aiaDesk: 'aiaDesk', aiaGuard: 'aiaGuard' };
       return Object.entries(P2).filter(([k]) => ppl[k] && ppl[k].root.visible).map(([k, persona]) => { const r = ppl[k].root.position; return { key: k, persona, x: r.x, y: r.y + 1.62, z: r.z, hold() {} }; });
     },
     update(dt, pp) {
+      captureLobbies(renderer, scene, pp); updateLobbyGlass(dt, pp);
       const nearPeace = pp.z < -200 && pp.z > -262, nearAia = pp.z < -125 && pp.z > -165;
       if (nearPeace) updatePeace(dt, pp);
       if (nearAia) updateAia(dt, pp);
