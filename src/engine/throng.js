@@ -16,7 +16,7 @@
 //
 // The same arithmetic runs here (for the liveliness numbers and the tests) and in the vertex shader; keep
 // them in step (world/throngView.js THRONG_GLSL).
-import { NJ, METRO } from '../world/layout.js';
+import { NJ, METRO, NJ_BELT_Z } from '../world/layout.js';
 
 const Z_N = NJ.z0 + 4.6, Z_S = NJ.z1 - 1.6;   // the walking strip (north edge clear of the metro wells and lamp row)
 
@@ -38,7 +38,7 @@ export function throngStretches() {
   return [
     { x0: -40, x1: h.x1 + 1.5, bands: [[Z_N, Z_S]] },                 // the Bund end to Henan Road
     { x0: h.x0 - 1.5, x1: NJ.xWest + 3,                                // Henan Road to Xizang Road
-      bands: [[Z_N, tz - th - clear], [tz - th + clear, tz + th - clear], [tz + th + clear, Z_S]] },
+      bands: [[Z_N, NJ_BELT_Z - 0.5], [NJ_BELT_Z + 0.5, tz - th - clear], [tz - th + clear, tz + th - clear], [tz + th + clear, Z_S]] },   // (and nobody walks down the line of the lamp posts)
   ];
 }
 
