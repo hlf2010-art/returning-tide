@@ -547,10 +547,12 @@ export function createAudio() {
       if (!ctx || !wind) return out;
       const att = (d, ref, ro) => ref / (ref + ro * (Math.max(d, ref) - ref));
       const wx = windExp ? windExp.gain.value : 1, rx = riverExp ? riverExp.gain.value : 1;
-      out.push({ id: 'wind', kind: 'wind', level: wind.wg.gain.value * 0.6 * wx });
+      // the synthesised wind, river and city wash, as far as they are still up (useBeds fades them out)
+      const sw = synth.wind ? synth.wind.gain.value : 1, sr = synth.river ? synth.river.gain.value : 1, sc = synth.city ? synth.city.gain.value : 1;
+      out.push({ id: 'wind', kind: 'wind', level: wind.wg.gain.value * 0.6 * wx * sw });
       if (wind.leaves.gain.value > 0.001) out.push({ id: 'leaves', kind: 'wind', level: wind.leaves.gain.value });
-      out.push({ id: 'river', kind: 'water', level: 0.4 * rx * att(Math.abs(32 - lx), 6, 1) });
-      out.push({ id: 'city', kind: 'traffic', level: 0.9 * 0.05 * att(Math.hypot(-150 - lx, 0.3 * lz), 40, 1) });
+      out.push({ id: 'river', kind: 'water', level: 0.4 * rx * sr * att(Math.abs(32 - lx), 6, 1) });
+      out.push({ id: 'city', kind: 'traffic', level: 0.9 * 0.05 * sc * att(Math.hypot(-150 - lx, 0.3 * lz), 40, 1) });
       if (murmur) { out.push({ id: 'murmur', kind: 'chatter', level: murmur.g.gain.value }); if (murmur.street) out.push({ id: 'nanjing-din', kind: 'chatter', level: murmur.street.gain.value }); }
       if (rain) out.push({ id: 'rain', kind: 'rain', level: rain.g.gain.value });
       if (boat) out.push({ id: 'boat', kind: 'boat', level: boat.bg.gain.value * 0.3 });

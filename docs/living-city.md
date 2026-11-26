@@ -9,7 +9,7 @@ Each shot is a fixed camera at a fixed hour, at a person's eye height (1.68 m ab
 | id | Place | Hour | Camera (x, y, z) | Looking at | What is in frame |
 |---|---|---|---|---|---|
 | `nanjing` | Nanjing Road East near Henan Road (`NJ` in `src/world/layout.js`) | 18:00 | -478, 1.83, -198.5 | -380, 6.5, -201.5 | The pedestrian street just east of the Henan Road crossing and metro Exit 7, looking east along the shopfronts and neon |
-| `customs` | The promenade at the Customs House | 17:45 | 21, 4.68, 2 | -36, 13, 34 | The promenade deck in the foreground; across the road, the Customs House with its clock tower and the HSBC dome, floodlit |
+| `customs` | The promenade at the Customs House | 17:45 | 21, 4.68, 2 | -36, 13, 34 | The promenade deck in the foreground; across the road, the Customs House with its clock tower and the HSBC dome (floodlit from 18:00) |
 | `hankou` | The Hankou Road crossing | 18:15 | 0.4, 1.83, 3.5 | -40, 3, -0.5 | From the foot of the promenade stair, across the zebra on Zhongshan East 1st Road and into Hankou Road |
 | `morning` | The Bund at 8 am | 08:00 | 21, 4.68, -38 | -24, 12, -160 | North along the promenade in morning light: joggers, the tai chi group (until 8:15), the northern Bund's façades |
 
@@ -65,7 +65,30 @@ node tools/shot.mjs http://localhost:4174/ <outDir> hero
 
 This writes `<id>.png`, `<id>-live.png` (with the overlay) and `hero.json`, against a build served by `npx vite preview --port 4174`. `window.__bund.heroShot(id)` holds one shot, `endShot()` lets go, and `runShots({ settle, measure })` runs the benchmark from the console.
 
-## Baseline (24 November 2026)
+## Today (26 November 2026)
+
+Rerun on master after the night-city, e-bike, crowd and lobby work, with the same tool and settings as the first baseline below (headless Chromium, SwiftShader, Mac M4 preset, 1280×720, five samples after the shot settled). Raw numbers: `hero.json` from `node tools/shot.mjs <url> <dir> hero`.
+
+| | Nanjing Rd 18:00 | Customs House 17:45 | Hankou Rd 18:15 | Bund 08:00 |
+|---|---|---|---|---|
+| People in view (near / mid / impostor) | **206** (3 / 21 / 181) | **142** (12 / 68 / 62) | **93** (8 / 68 / 17) | **239** (12 / 25 / 202) |
+| Vehicles in view | 0 (pedestrian street) | 18 (taxi 5, car 8, NEV 2, bus 3) | 2–4 (taxi, NEV, bus; the signal cycle) | 20 (taxi 5, car 11, NEV 2, bus 1, boat 1) |
+| Distinct activities (within 120 m) | 3–4 (walking, together, on a tour, on the phone) | 5.6 (+ waiting to cross, a tour group, standing) | 5.4 | **9** (tai chi, jogging, photographing, selfies, looking at the view, a tour...) |
+| Audible kinds | **5** (chatter, music ×2, traffic, wind, Henan Rd's vehicles) | **6** (chatter, water, wind, traffic, boat, vehicles) | 6 | 6 |
+| Draw calls | **1,146** (was 2,478) | 843 (was 1,678) | 873 (was 1,794) | 842 (was 2,178) |
+| Triangles | 3.5 M (was 3.0 M) | 3.1 M (was 1.9 M) | 3.0 M (was 1.9 M) | 2.5 M (was 1.9 M) |
+
+What changed since the 24th:
+
+- **People more than doubled** in three of the four shots, and the mid tier (cards under 40 m) carries most of the extra on the Bund. Every shot is still under the provisional range, Nanjing Road most of all (206 against 600–1,500).
+- **Draw calls halved** everywhere (instancing, the interiors drawn only near their block). Triangles went up with the people and the cars; Nanjing Road sits right at the 3.5 M bound, so it has no room for more full-detail people without a cheaper mid tier.
+- **The Customs House at 17:45 is now dark:** the Bund's floodlights switch on at 18:00 (`engine/timeOfDay.js`), so the façades are silhouettes against the dusk. That is what the real Bund does; the reference footage for this shot should be checked for its minute.
+- **The sound count was fixed** (`engine/live.js` `bedSources`). Since the recorded beds took over on the 25th, the meter still counted the synthesised wind, river and murmur that had been faded out, plus the placed talkers that had been silenced, and did not count the beds themselves. It now counts what is actually playing. The tool also waits for shop music within earshot to start before it measures (software rendering takes about 12 s to load a track).
+- Nanjing Road still has few distinct activities in view: nearly everyone is walking. Window-shopping, shop doors and the payment speakers happen nearer than the camera's crowd.
+
+![Before and after, 24 and 26 November](hero-before-after.jpg)
+
+## First baseline (24 November 2026)
 
 Measured in headless Chromium with software rendering (SwiftShader), Mac M4 preset, 1280×720. The numbers below are means of five samples taken after the shot settled.
 
@@ -142,6 +165,6 @@ How they were reached:
 
 ## Not verified
 
-- **No GPU frame time has been measured.** The Mac run (`?bench`) supplies it.
+- **No GPU frame time has been measured.** The Mac run (`?bench`) supplies it. On 26 November the run was still waiting for the Mac.
 - **The targets have not been checked against footage.** Counting the reference footage per shot is the next step.
 - Occlusion is 2-D, against building footprints. People hidden behind other people, trees or the bus shelters still count as "in view".

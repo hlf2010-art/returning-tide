@@ -1,5 +1,5 @@
 // The liveliness numbers (src/engine/live.js) and the hero shots (src/engine/bench.js). npm test.
-import { LIVE, vehicleKind, activityOf, countPeople, countVehicles, frameWindow, audibleSummary, flatLive } from '../src/engine/live.js';
+import { LIVE, vehicleKind, activityOf, countPeople, countVehicles, frameWindow, audibleSummary, flatLive, bedSources, BED_KIND } from '../src/engine/live.js';
 import { HERO_SHOTS, percentile, frameSummary, sampleSummary, shotsReport } from '../src/engine/bench.js';
 import { NJ, L, groundHeight } from '../src/world/layout.js';
 let failed = 0;
@@ -34,6 +34,10 @@ for (let i = 0; i < 10; i++) fw.push(16, 4);
 ok(fw.stats().avgMs === 16 && fw.stats().p95Ms === 16, 'it only keeps the last n frames');
 const au = audibleSummary([{ id: 'wind', kind: 'wind', level: 0.2 }, { id: 'a', kind: 'vehicle', level: 0.05 }, { id: 'b', kind: 'vehicle', level: 0.0001 }, { id: 'clock', kind: 'clock', level: 0.1 }]);
 ok(au.count === 3 && au.kinds.vehicle === 1 && au.top[0].id === 'wind', 'audible: only sources above the threshold, loudest first, counted by kind');
+const bs = bedSources({ crowd: 0.6, traffic: 0.2, river: 0.005, boats: 0.1, wind: 0.3, mystery: 1 });
+ok(bs.length === 5 && bs.find((s) => s.id === 'bed:crowd').kind === 'chatter' && bs.find((s) => s.id === 'bed:boats').kind === 'boat', 'the recorded beds count as sources of their kind; unknown beds are left out');
+const bau = audibleSummary(bs);
+ok(bau.kinds.chatter === 1 && bau.kinds.wind === 1 && !bau.kinds.water && Object.keys(BED_KIND).length === 5, 'a bed below the threshold is not audible (the river far from the railing)');
 const flat = flatLive({ people: { near: 1, mid: 2, impostor: 3, total: 6 }, vehicles: v, activities: { count: 4 }, audible: au, draw: { calls: 100, triangles: 2e5 } });
 ok(flat.people === 6 && flat.vehicles === 4 && flat.audible === 3 && flat.calls === 100, 'a sample flattens to plain numbers for the benchmark');
 

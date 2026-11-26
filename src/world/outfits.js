@@ -200,7 +200,7 @@ export function greyHair(person) {
 // ---- a front-desk receptionist's uniform: the coat taken to a dark suit (shirt and hands as they were) and a red silk
 // scarf knotted at the throat, as corporate front desks in China often dress their staff; sets her apart from an
 // agent in her own clothes on the same body ----
-const scarfMat = new THREE.MeshStandardMaterial({ color: 0xb3122a, roughness: 0.45, sheen: 0.5 });
+const scarfMat = new THREE.MeshStandardMaterial({ color: 0xb3122a, roughness: 0.45 });
 export function dressReceptionist(person, { scarf = true, badge = false } = {}) {
   person.root.traverse((o) => { if (o.isMesh && /_body$/.test(o.material.name)) o.material = recolor(o.material, 'suit', SUIT.body); });
   const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);

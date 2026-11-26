@@ -398,7 +398,7 @@ export function createInteriors({ scene, people, hud, audio, getLife, save, play
   {
     const bronzeW = new THREE.MeshStandardMaterial({ color: 0x4a3420, roughness: 0.35, metalness: 0.85, envMapIntensity: 1.2 });
     const drapeTex = canvasTex(256, 64, (x, w, h) => { for (let i = 0; i < w; i++) { const v = 0.78 + 0.22 * Math.sin(i / w * Math.PI * 14) * Math.sin(i / w * Math.PI * 3 + 1); x.fillStyle = `rgb(${Math.round(222 * v)},${Math.round(200 * v)},${Math.round(160 * v)})`; x.fillRect(i, 0, 1, h); } });
-    const drape = new THREE.MeshStandardMaterial({ map: drapeTex, roughness: 0.85, sheen: 0.5 });
+    const drape = new THREE.MeshStandardMaterial({ map: drapeTex, roughness: 0.85 });
     for (const [a, b] of [[16, 19], [22, 25], [27.5, 30.5]]) {
       const z0 = P.z1 - a, z1 = P.z1 - b, zc2 = (z0 + z1) / 2, W = Math.abs(z1 - z0), xw = P.x1 - 0.12;
       add(new THREE.PlaneGeometry(W, 3.45), glass, P.x1 - 0.1, Y0 + 0.15 + 3.45 / 2, zc2, Math.PI / 2);
