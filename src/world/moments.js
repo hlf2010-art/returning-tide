@@ -6,14 +6,21 @@
 //   photo    a couple at the railing ask you to take their picture with the Pearl behind them: you
 //            frame it yourself (Space or a click), they tell you if you cut their heads off
 //   phone    someone walking past drops their phone; pick it up and get it back to them
+// and round the Peace Hotel:
+//   hotelshot a family at the hotel's door on Nanjing Road ask for a picture with the bronze 和平饭店 over the door
+//   bikehelp  at the Jiujiang Road bay, a visitor from abroad can't unlock a shared bike (it wants a Chinese phone
+//             number): scan one for them on your phone, or tell them about adding a foreign card to Alipay
+//   keycard   a guest's key card on the pavement outside the door: hand it to the security man at the door
+//   teascam   on Nanjing Road two friendly young women are taking a tourist to a "tea festival" (the tea-house scam
+//             that travel guides warn about): warn him, send him to a proper tea house, or stay out of it
 // At most one at a time, each at most once a day, at the hours they'd happen, never in the middle of
 // something else. Off for measurement tools (?q=) unless ?moments.
 import * as THREE from 'three';
 import { createPerson } from './people.js';
-import { groundHeight, METRO, NJ, addDynamicCollider } from './layout.js';
+import { groundHeight, METRO, NJ, L as LAYOUT, addDynamicCollider } from './layout.js';
 import { blocked } from '../engine/crowd.js';
 import { questState } from '../engine/quests.js';
-import { receive } from '../engine/life.js';
+import { receive, pay } from '../engine/life.js';
 import { getLang } from '../ui/i18n.js';
 import { PEARL } from './skyline.js';
 
@@ -38,6 +45,16 @@ export const MOMENT_QUESTS = [
     start: (L) => M(L).phone === 'found', onStart: (L) => { questState(L).tracked = 'm-phone'; },
     fail: (L) => M(L).phone === 'gone',
     steps: [{ id: 'return', text: B('把手机还给失主（穿深色外套，往前走了）', 'Give the phone back to its owner (dark jacket, walked on ahead)'), target: (L) => M(L).ownerAt || null, done: (L) => M(L).phone === 'returned' }] },
+  { id: 'm-hotelshot', giver: 'family', title: B('和平饭店门口的合影', 'A photo at the Peace Hotel'),
+    summary: B('一家三口想在和平饭店门口拍张合影。', 'A family would like a picture at the Peace Hotel\'s door.'),
+    start: (L) => M(L).hotelshot === 'framing', onStart: (L) => { questState(L).tracked = 'm-hotelshot'; },
+    fail: (L) => M(L).hotelshot === 'declined',
+    steps: [{ id: 'shoot', text: B('把一家人和门头上的“和平饭店”都拍进去（空格 / 点击）', 'Get the family and the hotel\'s name over the door in the frame (Space / click)'), done: (L) => M(L).hotelshot === 'done' }] },
+  { id: 'm-keycard', giver: 'hotelguard', title: B('捡到的房卡', 'A dropped key card'),
+    summary: B('和平饭店门口的人行道上，有位客人掉了房卡。', 'A guest has dropped a key card on the pavement outside the Peace Hotel.'),
+    start: (L) => M(L).keycard === 'found', onStart: (L) => { questState(L).tracked = 'm-keycard'; },
+    fail: (L) => M(L).keycard === 'gone',
+    steps: [{ id: 'give', text: B('交给饭店门口的保安', 'Hand it to the security man at the hotel\'s door'), target: () => ({ x: DOOR_GUARD.x, z: DOOR_GUARD.z, label: B('保安', 'Security') }), done: (L) => M(L).keycard === 'returned' }] },
 ];
 
 // ---- the lines (recorded: tools/voice/extract.mjs finds [who, zh, en]) ----
@@ -65,16 +82,52 @@ const PHONE_BACK = [
 ];
 const PHONE_COFFEE = ['owner', '我转给你了，拿着拿着。', 'There, I\'ve sent it. Go on, take it.'];
 const PHONE_NO = ['owner', '好人啊，谢谢谢谢！', 'You\'re a good one. Thanks, really!'];
-export const MOMENT_LINES = [...LOST_METRO, ...LOST_BUND, LOST_THANKS, LOST_NO, LOST_FOLLOW, LOST_HERE, LOST_WAIT, LOST_HAIL, PHOTO_ASK, PHOTO_GOOD, PHOTO_PEARL, PHOTO_CUT, PHOTO_FAR, PHOTO_MEH, PHOTO_BYE, ...PHONE_BACK, PHONE_COFFEE, PHONE_NO];
+// round the Peace Hotel
+const FAM_ASK = ['family', '你好！能帮我们一家拍张照吗？要把门头上“和平饭店”那几个字拍进去。', 'Hi! Could you take a picture of the three of us? With the "Peace Hotel" letters over the door in it.'];
+const FAM_GOOD = ['family', '拍得真好，连上面的字都拍清楚了！谢谢你！', 'That\'s lovely, you can even read the name! Thank you!'];
+const FAM_SIGN = ['family', '上面“和平饭店”几个字没拍进去，能再来一张吗？', 'The hotel\'s name over the door isn\'t in it. One more?'];
+const FAM_CUT = ['family', '哎呀，我们的头被切掉了，再拍一张吧？', 'Oh dear, you\'ve cut our heads off. One more?'];
+const FAM_FAR = ['family', '可以再近一点吗？人太小了。', 'Could you come a bit closer? We\'re tiny.'];
+const FAM_MEH = ['family', '没事没事，就这张吧，谢谢！', 'Never mind, that one will do. Thanks!'];
+const FAM_BYE = ['family', '好吧，没关系，谢谢。', 'Oh, all right. Thanks anyway.'];
+const BV_HAIL = ['bikevisitor', '你好，不好意思……你会用这个单车吗？', 'Hi, sorry… do you know how these bikes work?'];
+const BV_ASK = [['bikevisitor', '我扫了码，可它一直要我填中国的手机号。', 'I scanned the code, but it keeps asking for a Chinese phone number.'], ['bikevisitor', '我只是想骑着到处转转。', 'I only wanted to ride around a bit.']];
+const BV_MINE = ['bikevisitor', '真的吗？太感谢了！我先推到江边拍几张照，再骑，骑完一定锁在停车点。', 'Really? Thank you so much! I\'ll walk it to the river for a few photos first, then ride, and lock it in a bay after.'];
+const BV_ALIPAY = ['bikevisitor', '我试试……绑上了！开锁了！太棒了，谢谢你！', 'Let me try… It\'s added! It\'s unlocked! Brilliant, thank you!'];
+const BV_NO = ['bikevisitor', '没关系，那我还是走路吧。', 'No worries, I\'ll walk then.'];
+const KC_GIVE = ['hotelguard', '房卡？谢谢您，纪先生。我马上交给前台，他们会把这张卡注销，再给客人补一张。', 'A key card? Thank you, Mr Ji. I\'ll take it to the front desk now; they\'ll cancel it and make the guest a new one.'];
+const TS_HAIL = ['teatourist', '不好意思！能问你个事吗？', 'Excuse me! Can I ask you something?'];
+const TS_ASK = ['teatourist', '这两位说附近有个茶艺节，请我一起去喝茶。这个……正常吗？', 'These two say there\'s a tea festival nearby and they\'ve invited me along. Is that… normal?'];
+const TS_GIRL = ['teagirl', '就在旁边，很近的！传统茶艺，很有意思的。', 'It\'s just round the corner! A traditional tea ceremony, really interesting.'];
+const TS_GIRL_GO = ['teagirl', '……算了，我们走吧。', '…Forget it. Let\'s go.'];
+const TS_THANKS = ['teatourist', '天哪，我差点就去了。真的谢谢你！', 'Oh my god, I nearly went. Thank you, really!'];
+const TS_YU = ['teatourist', '好主意，我自己去。谢谢！', 'Good idea. I\'ll go on my own. Thanks!'];
+const TS_GO = ['teatourist', '好吧……那我跟她们去看看。', 'Oh, okay… I\'ll go and have a look with them, then.'];
+export const MOMENT_LINES = [FAM_ASK, FAM_GOOD, FAM_SIGN, FAM_CUT, FAM_FAR, FAM_MEH, FAM_BYE, BV_HAIL, ...BV_ASK, BV_MINE, BV_ALIPAY, BV_NO, KC_GIVE, TS_HAIL, TS_ASK, TS_GIRL, TS_GIRL_GO, TS_THANKS, TS_YU, TS_GO, ...LOST_METRO, ...LOST_BUND, LOST_THANKS, LOST_NO, LOST_FOLLOW, LOST_HERE, LOST_WAIT, LOST_HAIL, PHOTO_ASK, PHOTO_GOOD, PHOTO_PEARL, PHOTO_CUT, PHOTO_FAR, PHOTO_MEH, PHOTO_BYE, ...PHONE_BACK, PHONE_COFFEE, PHONE_NO];
 
 // who's speaking, on screen (main.js gives sceneTalk these too)
-export const MOMENT_NAMES = { tourist: ['游客', 'Visitor'], couple: ['路人', 'Passer-by'], owner: ['路人', 'Passer-by'] };
-const ROLES = { tourist: ['c5', 'c6', 'c7', 'p4'], couple: [['c1', 'p1'], ['c3', 'c6'], ['p2', 'p3']], owner: ['p1', 'p3', 'c6', 'c7'] };
+export const MOMENT_NAMES = { tourist: ['游客', 'Visitor'], couple: ['路人', 'Passer-by'], owner: ['路人', 'Passer-by'], family: ['游客', 'Visitor'],
+  bikevisitor: ['外国游客', 'Visitor'], teatourist: ['外国游客', 'Visitor'], teagirl: ['年轻女孩', 'Young woman'], hotelguard: ['保安', 'Security'] };
+const ROLES = { tourist: ['c5', 'c6', 'c7', 'p4'], couple: [['c1', 'p1'], ['c3', 'c6'], ['p2', 'p3']], owner: ['p1', 'p3', 'c6', 'c7'],
+  family: [['c3', 'c5', 'k1'], ['c1', 'c6', 'k2'], ['c8', 'p1', 'k1'], ['c2', 'c7', 'k2']], bikevisitor: ['c5', 'c6', 'c7', 'p4'], teatourist: ['c5', 'c7', 'p4'], teagirls: [['c1', 'c8'], ['c2', 'c8'], ['c1', 'c2']] };
+// round the Peace Hotel (world/interiors.js): the security man beside its revolving door on Nanjing Road; the bronze name
+// over the door; the shared bikes' bay on Jiujiang Road (world/sharedBikes.js)
+const DOOR_GUARD = { x: -45.4, z: -210.4 };
+const HOTEL_NAME = new THREE.Vector3(-48, LAYOUT.curbH + 4.4, -211.86);
+const nearPeace = (b) => b.y < 3 && ((b.z > -212 && b.z < -186 && b.x > -100 && b.x < -28) || (b.x > -34 && b.x < -26 && b.z > -262 && b.z < -186));
+const nearBay = (b) => b.y < 3 && b.x > -66 && b.x < -28 && b.z > -138 && b.z < -112;
+// a photo: what has to be in it, what they say about it, which flag records it, which way they face for it
+const SHOTS = {
+  pearl: { key: 'photo', subject: [new THREE.Vector3(PEARL.x, 93, PEARL.z), new THREE.Vector3(PEARL.x, 272, PEARL.z)], poseH: -Math.PI / 2,
+    lines: { good: PHOTO_GOOD, miss: PHOTO_PEARL, cut: PHOTO_CUT, far: PHOTO_FAR, meh: PHOTO_MEH, bye: PHOTO_BYE } },
+  hotel: { key: 'hotelshot', subject: [HOTEL_NAME], poseH: 0,
+    lines: { good: FAM_GOOD, miss: FAM_SIGN, cut: FAM_CUT, far: FAM_FAR, meh: FAM_MEH, bye: FAM_BYE } },
+};
 const turnTo = (h, want, k) => { let d = want - h; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return h + d * Math.min(1, k); };
 const onDeck = (b) => b.y > 2 && b.x > 3 && b.x < 25.5;
 const onNanjing = (b) => b.x < -60 && b.x > NJ.xWest && Math.abs(b.z - NJ.zc) < 9;
 
-export function createMoments({ scene, people, player, camera, canvas, hud, audio, voice, sceneTalk, getLife, save, getHour, isFree, enabled = true }) {
+export function createMoments({ scene, people, player, camera, canvas, hud, audio, voice, sceneTalk, getLife, save, getHour, isFree, getBikes = () => null, enabled = true }) {
   const S = { cool: 150, check: 3, cur: null, framing: null, flash: 0 };
   const L0 = () => getLife();
   const day = () => L0().clock.day;
@@ -87,7 +140,7 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
     const p = createPerson(people, role);
     p.root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     scene.add(p.root);
-    const a = { p, x, z, y: groundHeight(x, z, 9), h, goal: null, speed: 1.25, stopAt: 0.5, anim: 'idle', look: null, v: 0, box: addDynamicCollider('npc'), follow: false };
+    const a = { p, kid: !!(people.manifest.cast[role] || {}).child, x, z, y: groundHeight(x, z, 9), h, goal: null, speed: 1.25, stopAt: 0.5, anim: 'idle', look: null, v: 0, box: addDynamicCollider('npc'), follow: false };
     p.root.position.set(a.x, a.y, a.z); p.root.rotation.y = h;
     return a;
   }
@@ -205,7 +258,7 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
         if (z < -250 || z > 88 || blocked(x, z, 0.3) || blocked(x, z + 0.75, 0.3)) return null;
         const A = actor(pair[0], x, z, Math.PI / 2), Bb = actor(pair[1], x, z + 0.75, Math.PI / 2);   // looking at the river until you're near
         A.anim = 'idle'; Bb.anim = 'look';
-        return { kind: 'photo', a: A, b: Bb, t: 0, tries: 0 };
+        return { kind: 'photo', a: A, b: Bb, t: 0, tries: 0, shot: SHOTS.pearl };
       },
       update(c, dt, b) {
         const d = Math.hypot(b.x - c.a.x, b.z - c.a.z);
@@ -214,7 +267,7 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
           if (c.asked) { c.a.face = b; c.a.look = d < 10 ? [b.x, b.z] : null; }
           if (c.t > 200 && d > 30) return 'end';
         } else if (c.stage === 'pose') {
-          for (const p of [c.a, c.b]) { p.face = null; p.h = turnTo(p.h, -Math.PI / 2, dt * 4); p.anim = 'idle'; p.look = [b.x, b.z]; }   // backs to the river, smiling at you
+          for (const p of [c.a, c.b]) { p.face = null; p.h = turnTo(p.h, c.shot.poseH, dt * 4); p.anim = 'idle'; p.look = [b.x, b.z]; }   // backs to the river, smiling at you
         } else if (c.stage === 'after') {
           if (c.t > c.leaveAt) { c.stage = 'off'; for (const p of [c.a, c.b]) { p.face = null; p.look = null; p.goal = { x: 19, z: p.z + (c.a.z > -80 ? -70 : 70) }; p.speed = 1.1; } }
         } else if (c.stage === 'off' && (d > 45 || (!c.a.goal && !c.b.goal))) return 'end';
@@ -281,7 +334,181 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
         return true;
       },
     },
+
+    // ---- round the Peace Hotel ----
+    hotelshot: {
+      when: (m) => m >= 8 * 60 && m < 21 * 60 + 30,
+      where: (b) => nearPeace(b) && b.z > -211 && b.x < -36 && Math.hypot(b.x + 48, b.z + 207) < 30,
+      spawn() {
+        const fam = pickRole(ROLES.family); if (!fam) return null;
+        // to the west of the door, under the canopy's edge (the guests come and go straight through the middle), facing the street
+        const at = [[-50.5, -208.7], [-49.6, -208.7], [-50.05, -208.3]];
+        if (at.some(([x, z]) => blocked(x, z, 0.2))) return null;
+        const [A, Bb, K] = fam.map((r, k) => actor(r, at[k][0], at[k][1], 0));
+        A.anim = 'idle'; Bb.anim = 'look'; K.anim = 'idle';
+        return { kind: 'hotelshot', a: A, b: Bb, c: K, t: 0, tries: 0, shot: SHOTS.hotel };
+      },
+      update(c, dt, b) {
+        const d = Math.hypot(b.x - c.a.x, b.z - c.a.z);
+        if (c.stage == null) {
+          if (d < 8 && !c.asked) { c.asked = true; c.a.face = b; c.a.anim = 'wave'; c.a.look = [b.x, b.z]; say(c.a, FAM_ASK); setTimeout(() => { if (S.cur === c) c.a.anim = 'idle'; }, 2600); }
+          if (c.asked) { c.a.face = b; c.a.look = d < 10 ? [b.x, b.z] : null; c.c.look = d < 10 ? [b.x, b.z] : null; }
+          if (c.t > 200 && d > 30) return 'end';
+        } else if (c.stage === 'pose') {
+          for (const p of [c.a, c.b, c.c]) { p.face = null; p.h = turnTo(p.h, c.shot.poseH, dt * 4); p.anim = 'idle'; p.look = [b.x, b.z]; }
+        } else if (c.stage === 'after') {
+          if (c.t > c.leaveAt) { c.stage = 'off'; for (const p of [c.a, c.b, c.c]) { p.face = null; p.look = null; p.goal = { x: -31 + Math.random(), z: -200 + Math.random() * 2 }; p.speed = 1.0; } }   // off to the river
+        } else if (c.stage === 'off' && (d > 40 || (!c.a.goal && !c.b.goal))) return 'end';
+      },
+      prompt: (c) => (c.stage == null ? { target: T('一家三口', 'A family'), action: T('帮他们拍照', 'Take their photo') } : null),
+      interact(c) { c.stage = 'pose'; M(L0()).hotelshot = 'framing'; frame(true); save && save(); return true; },
+    },
+    bikehelp: {
+      when: (m) => m >= 7 * 60 + 30 && m < 21 * 60,
+      where: (b) => nearBay(b) && !!getBikes(),
+      spawn(b) {
+        const B = getBikes(), role = pickRole(ROLES.bikevisitor); if (!B || !role) return null;
+        const bike = B.parkedNear(-49 + (Math.random() - 0.5) * 6, -129, 4, 'jiujiang'); if (!bike) return null;
+        if (Math.hypot(bike.x - b.x, bike.z - b.z) < 4) return null;                       // (not under your nose: you see him at it)
+        const a = actor(role, bike.x, -127.65, Math.PI); a.anim = 'phone'; a.face = { x: bike.x, z: bike.z };
+        return { kind: 'bikehelp', a, bike, t: 0 };
+      },
+      update(c, dt, b) {
+        const a = c.a, d = Math.hypot(b.x - a.x, b.z - a.z);
+        if (c.stage == null) {
+          if (d < 7 && !c.greeted) { c.greeted = true; a.face = b; a.anim = 'idle'; a.look = [b.x, b.z]; say(a, BV_HAIL); }
+          if (c.greeted) { a.face = b; a.look = d < 9 ? [b.x, b.z] : null; }
+          if (c.t > 220 && d > 30) return 'end';
+        } else if (c.stage === 'wheel' || c.stage === 'walk') {
+          if (!a.goal && c.path.length) { a.goal = c.path.shift(); a.stopAt = 0.5; a.speed = 1.1; }
+          if (c.ride) {                                                                   // the bike at his right, his hands on the bars
+            const h = a.h, fx = Math.sin(h), fz = Math.cos(h), rx = -fz, rz = fx, m = c.ride.mesh;
+            m.position.set(a.x + rx * 0.42 + fx * 0.2, a.y, a.z + rz * 0.42 + fz * 0.2); m.rotation.y = h; m.updateMatrixWorld();
+            a.p.setReach('L', new THREE.Vector3(0.27, 1.04, 0.21).applyMatrix4(m.matrixWorld), 1);
+            a.p.setReach('R', new THREE.Vector3(-0.27, 1.04, 0.21).applyMatrix4(m.matrixWorld), 1);
+          }
+          if ((!a.goal && !c.path.length) || d > 45) return 'end';
+        }
+      },
+      prompt: (c) => (c.stage == null ? { target: T('外国游客', 'A visitor'), action: T('帮他', 'Help him') } : null),
+      interact(c) {
+        const a = c.a, L = L0(), b = player.body, B = getBikes(), o = c.bike;
+        c.stage = 'talk'; a.face = b; a.look = [b.x, b.z]; a.anim = 'idle';
+        talkWith(a, [...BV_ASK, { ask: [
+          { zh: '我用我的手机帮你扫一辆，骑完锁在画线的停车点就行。', en: 'I\'ll unlock one on my phone. Just lock it in a marked bay when you\'re done.', set: 'mine', then: [BV_MINE] },
+          { zh: '支付宝里可以绑外国银行卡，绑好了用支付宝扫就能骑。', en: 'You can add a foreign card to Alipay, then scan it with Alipay.', set: 'alipay', then: [BV_ALIPAY] },
+          { zh: '不好意思，我也不太清楚。', en: 'Sorry, I don\'t really know.', set: 'no', then: [BV_NO] },
+        ] }], (set) => {
+          M(L).bikehelp = set;
+          a.face = null; a.look = null; a.anim = 'idle';
+          // out to the kerb with it, down to the river (riding's not allowed on the Bund: he'll walk it along), or off on foot
+          if (set === 'no') { c.stage = 'walk'; c.path = [{ x: -40, z: -126.8 }, { x: -31, z: -126 }, { x: -31, z: -160 }]; }
+          else {
+            if (set === 'mine' && L.wallet) pay(L, { method: 'wechat', amount: 1.5, to: '共享单车', memo: T('帮游客扫码开锁', 'A bike for a visitor'), kind: 'ride' });
+            c.ride = B && B.take(o); if (c.ride) scene.add(c.ride.mesh);
+            c.stage = 'wheel'; c.path = [{ x: a.x + 1.5, z: -126.6 }, { x: -40, z: -126.3 }, { x: -30.6, z: -126 }, { x: -30.6, z: -165 }];
+          }
+          save && save();
+        });
+        return true;
+      },
+    },
+    keycard: {
+      when: (m) => m >= 7 * 60 && m < 23 * 60 + 30,
+      where: (b) => nearPeace(b) && Math.hypot(b.x + 48, b.z + 208) > 9 && Math.hypot(b.x + 48, b.z + 208) < 34,
+      spawn() {
+        for (let k = 0; k < 6; k++) {
+          const x = -52.5 + Math.random() * 3.2, z = -208.8 + Math.random() * 2.4;
+          if (blocked(x, z, 0.15)) continue;
+          const card = cardMesh(); card.position.set(x, groundHeight(x, z, 1) + 0.002, z); card.rotation.y = Math.random() * 6.28; scene.add(card);
+          return { kind: 'keycard', card, t: 0 };
+        }
+        return null;
+      },
+      update(c, dt, b) {
+        const L = L0();
+        if (c.card && !c.held) {
+          const d = Math.hypot(b.x - c.card.position.x, b.z - c.card.position.z);
+          c.card.userData.face.material.emissiveIntensity = d < 16 ? Math.max(0, Math.sin(c.t * 2.4)) ** 12 * 0.9 : 0;   // a glint now and then as the light catches it
+          if (d < 5 && !c.hinted) { c.hinted = true; hud.toast(T('门口地上有张卡片，在反光。', 'A card on the pavement by the door, catching the light.'), 3); }
+          if (c.t > 300 && d > 25) return 'end';
+        }
+        if (c.held && M(L).keycard === 'returned' && c.t > c.doneAt + 2) return 'end';
+        if (c.held && M(L).keycard === 'found' && c.t - c.heldAt > 900) { M(L).keycard = 'gone'; save && save(); return 'end'; }
+      },
+      cands(c) {
+        if (c.card && !c.held) { const p = c.card.position; return [{ id: 'moment:pick', x: p.x, y: p.y + 0.03, z: p.z, reach: 2.2, cone: 0.75 }]; }
+        if (c.held && M(L0()).keycard === 'found' && !sceneTalk.active) return [{ id: 'moment:give', x: DOOR_GUARD.x, y: LAYOUT.curbH + 1.55, z: DOOR_GUARD.z, reach: 3, cone: 0.6 }];
+        return [];
+      },
+      prompt: (c, id) => (id === 'moment:pick' ? { target: T('一张卡片', 'A card'), action: T('捡起来', 'Pick it up') } : { target: T('保安', 'Security'), action: T('把房卡交给他', 'Give him the key card') }),
+      interact(c, id) {
+        const L = L0();
+        if (id === 'moment:pick') {
+          c.held = true; c.heldAt = c.t; scene.remove(c.card); M(L).keycard = 'found'; save && save();
+          hud.toast(T('一张和平饭店的房卡，卡套上手写着“7 楼”。应该是哪位客人掉的。', 'A Peace Hotel key card; "7th floor" is written on its sleeve. A guest must have dropped it.'), 4);
+          return true;
+        }
+        sceneTalk.play([KC_GIVE], { at: () => [DOOR_GUARD.x, LAYOUT.curbH + 1.6, DOOR_GUARD.z], onDone: () => { M(L).keycard = 'returned'; M(L).keycards = (M(L).keycards || 0) + 1; c.doneAt = c.t; save && save(); } });
+        return true;
+      },
+    },
+    teascam: {
+      when: (m) => m >= 10 * 60 && m < 20 * 60,
+      where: (b) => b.y < 3 && b.x < -36 && b.x > -150 && Math.abs(b.z - NJ.zc) < 9,
+      spawn(b) {
+        const tour = pickRole(ROLES.teatourist), girls = pickRole(ROLES.teagirls); if (!tour || !girls) return null;
+        const x = Math.max(-140, Math.min(-52, b.x - (14 + Math.random() * 10))), z = NJ.zc + (Math.random() - 0.5) * 4;   // a little way west along the street
+        if ([[x, z], [x - 1.1, z - 0.5], [x - 1.1, z + 0.5]].some(([px, pz]) => blocked(px, pz, 0.25))) return null;
+        const A = actor(tour, x, z, -Math.PI / 2), G1 = actor(girls[0], x - 1.1, z - 0.5, Math.PI / 2 - 0.4), G2 = actor(girls[1], x - 1.1, z + 0.5, Math.PI / 2 + 0.4);
+        A.anim = 'idle'; G1.anim = 'talk1'; G2.anim = 'talk2'; G1.look = [A.x, A.z]; G2.look = [A.x, A.z]; A.look = [G1.x, G1.z];
+        return { kind: 'teascam', a: A, b: G1, c: G2, t: 0 };
+      },
+      update(c, dt, b) {
+        const a = c.a, d = Math.hypot(b.x - a.x, b.z - a.z);
+        if (c.stage == null) {
+          if (d < 6 && !c.greeted) { c.greeted = true; a.face = b; a.look = [b.x, b.z]; say(a, TS_HAIL); }
+          if (c.greeted) { a.face = b; a.look = d < 8 ? [b.x, b.z] : null; }
+          if (c.t > 200 && d > 30) return 'end';                                            // off they went, before you came by
+        } else if (c.stage === 'off') {
+          if (d > 45 || [c.a, c.b, c.c].every((p) => !p.goal)) return 'end';
+        }
+      },
+      prompt: (c) => (c.stage == null ? { target: T('外国游客', 'A visitor'), action: T('听听他问什么', 'Hear what he\'s asking') } : null),
+      interact(c) {
+        const a = c.a, L = L0(), b = player.body;
+        c.stage = 'talk'; a.face = b; a.look = [b.x, b.z];
+        talkWith(a, [TS_ASK, TS_GIRL, { ask: [
+          { zh: '小心，这是专门骗游客的“茶托”。喝几杯茶，最后给你一张几千块的账单。', en: 'Careful: it\'s the tea-house scam. A few cups of tea, then a bill for thousands.', set: 'warn', then: [TS_GIRL_GO, TS_THANKS] },
+          { zh: '想喝茶的话，去豫园的湖心亭茶楼，菜单上明码标价。', en: 'If you want tea, try the Huxinting teahouse at Yu Garden. The prices are on the menu.', set: 'yuyuan', then: [TS_GIRL_GO, TS_YU] },
+          { zh: '我也不清楚，你自己决定吧。', en: 'No idea. Up to you.', set: 'no', then: [TS_GO] },
+        ] }], (set) => {
+          M(L).teascam = set; if (set !== 'no') M(L).teaWarned = (M(L).teaWarned || 0) + 1;
+          c.stage = 'off';
+          for (const p of [c.a, c.b, c.c]) { p.face = null; p.look = null; p.anim = 'idle'; p.speed = 1.3; p.stopAt = 0.6; }
+          if (set === 'no') for (const [k, p] of [c.a, c.b, c.c].entries()) p.goal = { x: p.x - 60, z: NJ.zc - 1 + k };   // off with them, west
+          else { c.b.goal = { x: c.b.x - 55, z: NJ.zc + 3 }; c.c.goal = { x: c.c.x - 55, z: NJ.zc + 3.6 }; c.b.speed = c.c.speed = 1.6; c.a.goal = { x: -36, z: NJ.zc }; }
+          save && save();
+        });
+        return true;
+      },
+    },
   };
+  // a Peace Hotel key card in its paper sleeve: dark green, the name in gold
+  let cardTex = null;
+  function cardMesh() {
+    if (!cardTex && typeof document !== 'undefined') {
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 160; const x = cv.getContext('2d');
+      x.fillStyle = '#16362c'; x.fillRect(0, 0, 256, 160); x.strokeStyle = '#c9a24a'; x.lineWidth = 4; x.strokeRect(8, 8, 240, 144);
+      x.fillStyle = '#d9b46a'; x.textAlign = 'center'; x.font = '700 40px "Songti SC","Noto Serif SC",serif'; x.fillText('和平饭店', 128, 78);
+      x.font = '600 18px Georgia,serif'; x.fillText('PEACE HOTEL · 1929', 128, 112);
+      cardTex = new THREE.CanvasTexture(cv); cardTex.colorSpace = THREE.SRGBColorSpace;
+    }
+    const g = new THREE.Group();
+    const face = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.002, 0.06), new THREE.MeshStandardMaterial({ map: cardTex, roughness: 0.35, emissive: 0xfff2d0, emissiveIntensity: 0 }));
+    face.castShadow = true; g.add(face); g.userData.face = face;
+    return g;
+  }
   function phoneMesh() {
     const g = new THREE.Group();
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.009, 0.155), new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.3, metalness: 0.5 }));
@@ -307,19 +534,20 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
     audio && audio.cue && audio.cue('shutter', 0, 0.8);
     vf.querySelector('.flash').classList.remove('on'); void vf.offsetWidth; vf.querySelector('.flash').classList.add('on');
     camera.updateMatrixWorld();
-    const people2 = [c.a, c.b].map((p) => { const h = head(p); return { h: ndc(h), w: ndc(new THREE.Vector3(p.x, p.y + 1.0, p.z)) }; });
-    const pearl = [ndc(new THREE.Vector3(PEARL.x, 93, PEARL.z)), ndc(new THREE.Vector3(PEARL.x, 272, PEARL.z))].some((q) => q.ok);
+    const people2 = [c.a, c.b, c.c].filter(Boolean).map((p) => { const h = head(p); return { h: ndc(h), w: ndc(new THREE.Vector3(p.x, p.y + (p.kid ? 0.6 : 1.0), p.z)) }; });
+    const pearl = c.shot.subject.some((q) => ndc(q).ok);                                  // (the Pearl, or the hotel's name over its door)
     const inFrame = people2.every((q) => q.h.ok && q.w.ok && q.h.y < 0.84);
-    const big = people2.every((q) => Math.abs(q.h.y - q.w.y) > 0.13);
+    const big = people2.slice(0, 2).every((q) => Math.abs(q.h.y - q.w.y) > 0.13);
     c.tries++;
     S.pendingShot = true;
     const L = L0();
     let line;
-    if (inFrame && pearl && big) line = PHOTO_GOOD; else if (c.tries >= 3) line = PHOTO_MEH;
-    else line = !inFrame ? PHOTO_CUT : !big ? PHOTO_FAR : PHOTO_PEARL;
+    const Ls = c.shot.lines;
+    if (inFrame && pearl && big) line = Ls.good; else if (c.tries >= 3) line = Ls.meh;
+    else line = !inFrame ? Ls.cut : !big ? Ls.far : Ls.miss;
     say(c.a, line);
-    if (line === PHOTO_GOOD || line === PHOTO_MEH) {
-      M(L).photo = 'done'; if (line === PHOTO_GOOD) M(L).photoGood = (M(L).photoGood || 0) + 1;
+    if (line === Ls.good || line === Ls.meh) {
+      M(L)[c.shot.key] = 'done'; if (line === Ls.good) M(L).photoGood = (M(L).photoGood || 0) + 1;
       frame(false); c.stage = 'after'; c.leaveAt = c.t + 18; S.showCard = true; save && save();
     }
   }
@@ -338,9 +566,10 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
   function end() {
     const c = S.cur; if (!c) return;
     if (S.framing) frame(false);
-    drop(c.a); drop(c.b); if (c.phone) scene.remove(c.phone);
+    drop(c.a); drop(c.b); drop(c.c); if (c.phone) scene.remove(c.phone); if (c.card) scene.remove(c.card); if (c.ride) scene.remove(c.ride.mesh);
     const L = L0();
-    if (c.kind === 'photo' && M(L).photo === 'framing') M(L).photo = 'declined';
+    if (c.shot && M(L)[c.shot.key] === 'framing') M(L)[c.shot.key] = 'declined';
+    if (c.kind === 'keycard' && M(L).keycard === 'found') M(L).keycard = 'gone';
     if (c.kind === 'lost' && M(L).lost === 'walk') M(L).lost = 'gone';
     if (c.kind === 'phone' && M(L).phone === 'found') M(L).phone = 'gone';
     S.cur = null; S.cool = 240 + Math.random() * 180; save && save();
@@ -351,6 +580,7 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
     const L = L0();
     // a fresh moment: yesterday's answers don't carry over
     if (kind === 'lost') { M(L).lost = null; M(L).lostTo = null; } if (kind === 'photo') M(L).photo = null; if (kind === 'phone') { M(L).phone = null; M(L).ownerAt = null; }
+    if (kind === 'hotelshot') M(L).hotelshot = null; if (kind === 'keycard') M(L).keycard = null;
     S.cur = c; markDone(kind);
     return true;
   }
@@ -362,13 +592,13 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
     // tools: start one now (near you, if there's room)
     force(kind) { if (S.cur) end(); return start(kind); },
     end,
-    others() { const c = S.cur; return c ? [c.a, c.b].filter(Boolean).map((a) => ({ x: a.x, z: a.z, vx: 0, vz: 0 })) : []; },
+    others() { const c = S.cur; return c ? [c.a, c.b, c.c].filter(Boolean).map((a) => ({ x: a.x, z: a.z, vx: 0, vz: 0 })) : []; },
     update(dt, { playing = true } = {}) {
       if (dt <= 0) return;
       const b = player.body, c = S.cur;
       if (c) {
         c.t += dt;
-        for (const a of [c.a, c.b]) if (a) stepActor(a, dt, b);
+        for (const a of [c.a, c.b, c.c]) if (a) stepActor(a, dt, b);
         if (KINDS[c.kind].update(c, dt, b) === 'end') end();
         return;
       }
@@ -385,7 +615,7 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
       const c = S.cur; if (!c || S.framing || sceneTalk.active) return [];
       if (KINDS[c.kind].cands) return KINDS[c.kind].cands(c);
       if (c.stage != null) return [];
-      const h = head(c.a); return [{ id: 'moment:talk', x: h.x, y: h.y - 0.25, z: h.z, reach: c.kind === 'photo' ? 5.5 : 3.2, cone: 0.6 }];   // (a photo is taken from a few steps back)
+      const h = head(c.a); return [{ id: 'moment:talk', x: h.x, y: h.y - 0.25, z: h.z, reach: c.shot ? 5.5 : 3.2, cone: 0.6 }];   // (a photo is taken from a few steps back)
     },
     owns: (id) => id.startsWith('moment:'),
     prompt(id) { const c = S.cur; return c ? KINDS[c.kind].prompt(c, id) : null; },
@@ -395,7 +625,7 @@ export function createMoments({ scene, people, player, camera, canvas, hud, audi
       if (sceneTalk.asking && sceneTalk.key(code)) return true;
       if (S.framing) {
         if (code === 'Space') { shoot(); return true; }
-        if (code === 'Escape' || code === 'KeyQ') { const c = S.framing; frame(false); M(L0()).photo = 'declined'; say(c.a, PHOTO_BYE); c.stage = 'after'; c.leaveAt = c.t + 6; save && save(); return true; }
+        if (code === 'Escape' || code === 'KeyQ') { const c = S.framing; frame(false); M(L0())[c.shot.key] = 'declined'; say(c.a, c.shot.lines.bye); c.stage = 'after'; c.leaveAt = c.t + 6; save && save(); return true; }
       }
       return false;
     },

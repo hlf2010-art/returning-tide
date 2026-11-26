@@ -16,12 +16,12 @@
   --accent: #c8a35a; --accent-2: #a8823f; --accent-ink: #1a1408; --accent-soft: rgba(200, 163, 90, 0.16);
   --hair: rgba(200, 163, 90, 0.24); --hair-strong: rgba(200, 163, 90, 0.52);
   /* the material: the river at night, as behind the character page */
-  --deco-bg: linear-gradient(180deg, rgba(16, 38, 45, 0.92) 0%, rgba(8, 16, 20, 0.94) 100%);
-  --deco-bg-strong: linear-gradient(180deg, rgba(16, 38, 45, 0.97) 0%, rgba(7, 11, 15, 0.98) 100%);
+  --deco-bg: linear-gradient(180deg, rgba(16, 38, 45, 0.7) 0%, rgba(8, 16, 20, 0.76) 100%);
+  --deco-bg-strong: linear-gradient(180deg, rgba(16, 38, 45, 0.76) 0%, rgba(7, 11, 15, 0.84) 100%);
   --glass: rgba(11, 26, 32, 0.9); --glass-strong: rgba(7, 11, 15, 0.96);
   --deco-edge: 1px solid rgba(200, 163, 90, 0.45);
   --deco-drop: 0 18px 44px rgba(0, 0, 0, 0.55);
-  --deco-r: 2px;
+  --deco-r: 14px;
   --gold-fill: linear-gradient(180deg, #e7c97f 0%, #d2ad66 50%, #b48a3e 100%);
   --chamfer: polygon(9px 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 9px 100%, 0 50%);
   --cut: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
@@ -35,7 +35,7 @@
 #settings .panel, #journal .panel, #saves .panel, #workbook .panel, #shop-menu .in, #worldmap .wm-legend,
 #entrance-labels .ent, #mission-card, #ride-card, #ride-sub .ch span, #drive-hud, .glass {
   background: var(--deco-bg) !important;
-  -webkit-backdrop-filter: blur(6px) !important; backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.15) !important; backdrop-filter: blur(14px) saturate(1.15) !important;
   border: var(--deco-edge) !important;
   box-shadow: var(--deco-drop) !important;
   border-radius: var(--deco-r) !important;
@@ -44,7 +44,7 @@
 }
 #settings .panel, #journal .panel, #saves .panel, #workbook .panel, #shop-menu .in, #talk, #build, #mission-card, #ride-card, #subtitle {
   background: var(--deco-bg-strong) !important;
-  outline: 1px solid rgba(200, 163, 90, 0.16); outline-offset: -6px;   /* the inner rule */
+  outline: 1px solid rgba(200, 163, 90, 0.14); outline-offset: -6px;   /* the inner rule (it follows the rounded corners) */
 }
 /* the big panels get a gold keyline across the top, like the brass rail over a lift door */
 #settings .panel, #journal .panel, #saves .panel, #workbook .panel {
@@ -52,9 +52,9 @@
 }
 
 /* ---- keys and buttons ---- */
-kbd { min-width: 1.7em; padding: 0.12em 0.5em; border-radius: 2px; border: 1px solid rgba(200, 163, 90, 0.65);
+kbd { min-width: 1.7em; padding: 0.12em 0.5em; border-radius: 6px; border: 1px solid rgba(200, 163, 90, 0.65);
   background: rgba(11, 14, 22, 0.85); color: var(--gold); font: 600 0.8em var(--ui); box-shadow: none; text-shadow: none; }
-.mbtn { border-radius: 2px !important; padding: 13px 28px; font: 600 13px var(--rt-serif) !important; letter-spacing: var(--caps) !important; text-transform: uppercase !important;
+.mbtn { border-radius: 10px !important; padding: 13px 28px; font: 600 13px var(--rt-serif) !important; letter-spacing: var(--caps) !important; text-transform: uppercase !important;
   color: var(--text); border: 1px solid rgba(200, 163, 90, 0.5) !important;
   background: rgba(11, 14, 22, 0.55) !important;
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
@@ -63,14 +63,14 @@ kbd { min-width: 1.7em; padding: 0.12em 0.5em; border-radius: 2px; border: 1px s
 html[lang="zh-CN"] .mbtn { letter-spacing: 0.32em !important; font-size: 14px !important; }
 .mbtn:hover:not(:disabled), .mbtn:focus-visible { background: rgba(200, 163, 90, 0.12) !important; border-color: var(--gold) !important; color: var(--gold-2); transform: translateY(-1px); }
 .mbtn.primary { color: var(--accent-ink) !important; text-shadow: none; border-color: transparent !important; font-weight: 700 !important;
-  background: var(--gold-fill) !important; clip-path: var(--chamfer); padding-left: 34px; padding-right: 34px;
+  background: var(--gold-fill) !important; clip-path: none; border-radius: 10px !important; padding-left: 34px; padding-right: 34px;
   box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.7), 0 8px 24px rgba(200, 163, 90, 0.22) !important; }
 .mbtn.primary:hover:not(:disabled), .mbtn.primary:focus-visible { color: var(--accent-ink) !important; background: linear-gradient(180deg, #f1d896 0%, #dcb874 50%, #c09548 100%) !important; }
 .mbtn:disabled { color: rgba(242, 233, 219, 0.6) !important; background: rgba(242, 233, 219, 0.08) !important; border-color: rgba(242, 233, 219, 0.18) !important; box-shadow: none !important; }
 .mbtn.ghost, #settings .mbtn.small { background: transparent !important; box-shadow: none !important; }
 
 /* segmented choices: a ruled track; the chosen one in gold */
-.seg { padding: 3px; gap: 2px; border-radius: 2px; border: 1px solid var(--hair-strong);
+.seg { padding: 3px; gap: 2px; border-radius: 10px; border: 1px solid var(--hair-strong);
   background: rgba(8, 10, 17, 0.6); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .seg button { border-radius: 1px; padding: 6px 14px; font: 500 12.5px var(--ui); letter-spacing: 0.04em; color: var(--muted); text-shadow: none; transition: background 0.25s var(--ease), color 0.25s; }
 .seg button:hover { background: rgba(200, 163, 90, 0.1); color: var(--text); }
@@ -104,7 +104,7 @@ input[type=range]::-moz-range-thumb { width: 11px; height: 11px; border: 0; bord
   font: 600 12px var(--rt-serif) !important; letter-spacing: 0.2em !important; text-transform: uppercase; text-shadow: none; }
 #sub-source { color: var(--faint) !important; }
 #sub-text { font: 400 17.5px/1.65 var(--rt-serif) !important; color: var(--text); }
-.opt { border-radius: 2px !important; padding: 6px 14px !important; color: var(--muted) !important; border: 1px solid transparent; }
+.opt { border-radius: 8px !important; padding: 6px 14px !important; color: var(--muted) !important; border: 1px solid transparent; }
 .opt.sel { background: rgba(200, 163, 90, 0.12) !important; color: var(--gold-2) !important; border-color: var(--hair-strong); text-shadow: none; box-shadow: none; }
 .opt.sel .mk { color: var(--gold) !important; }
 #bark-who { color: var(--gold) !important; font-family: var(--rt-serif); letter-spacing: 0.14em; }
@@ -167,19 +167,19 @@ html[lang="zh-CN"] #settings .ph, html[lang="zh-CN"] #journal .ph, html[lang="zh
 #settings .row:last-of-type { border-bottom: 0; }
 #settings .slide output { color: var(--gold-2) !important; font-variant-numeric: tabular-nums; }
 #settings .ai-status { color: var(--muted) !important; }
-#settings input:not([type=range]), #talk input, #ai-server, #ai-model { border-radius: 2px !important; border: 1px solid var(--hair-strong) !important; color: var(--text) !important;
+#settings input:not([type=range]), #talk input, #ai-server, #ai-model { border-radius: 8px !important; border: 1px solid var(--hair-strong) !important; color: var(--text) !important;
   background: rgba(6, 8, 14, 0.7) !important; box-shadow: none; }
 #settings input:not([type=range]):focus, #talk input:focus { border-color: var(--gold) !important; outline: none; }
 #journal .ph .clock, #workbook .ph .wh { color: var(--muted) !important; font: 500 13px var(--rt-serif) !important; letter-spacing: 0.08em !important; text-transform: none !important; }
-#talk button { border-radius: 2px !important; background: transparent !important; border: 1px solid var(--hair-strong) !important; color: var(--gold-2); }
-#shop-menu button[data-i] { border-bottom-color: var(--hair) !important; border-radius: 2px; }
+#talk button { border-radius: 8px !important; background: transparent !important; border: 1px solid var(--hair-strong) !important; color: var(--gold-2); }
+#shop-menu button[data-i] { border-bottom-color: var(--hair) !important; border-radius: 6px; }
 #shop-menu button[data-i]:hover { background: rgba(200, 163, 90, 0.1) !important; }
 #build button { border-radius: 2px !important; color: var(--accent-ink) !important; background: var(--gold-fill) !important; }
 #worldmap .wm-legend button { border-radius: 2px !important; color: var(--text) !important; }
 #worldmap .wm-legend button:hover { background: rgba(200, 163, 90, 0.1) !important; }
 
 /* ---- the title screen: its own design lives in style.css (v4); here only what sits on it ---- */
-#entry .cityline { bottom: 14px !important; height: auto !important; padding: 8px 20px; width: max-content; max-width: calc(100vw - 48px); border-radius: 2px;
+#entry .cityline { bottom: 14px !important; height: auto !important; padding: 8px 20px; width: max-content; max-width: calc(100vw - 48px); border-radius: 12px;
   background: rgba(9, 12, 20, 0.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1px solid var(--hair-strong); box-shadow: none;
   letter-spacing: 0.08em !important; text-transform: none !important; font-family: var(--rt-serif); }
 #entry .cityline #entry-time { margin-left: 18px !important; color: var(--gold-2); }
@@ -191,7 +191,7 @@ html[lang="zh-CN"] #settings .ph, html[lang="zh-CN"] #journal .ph, html[lang="zh
 #drive-hud { padding: 8px 16px !important; }
 
 /* ---- lists and actions inside panels ---- */
-#journal .q { border-radius: 2px !important; border: 1px solid var(--hair) !important; background: rgba(11, 14, 22, 0.5) !important; box-shadow: none !important; }
+#journal .q { border-radius: 10px !important; border: 1px solid var(--hair) !important; background: rgba(11, 14, 22, 0.5) !important; box-shadow: none !important; }
 #journal .q:hover { background: rgba(200, 163, 90, 0.07) !important; border-color: var(--hair-strong) !important; }
 #journal .q.on, #journal .q.sel, #journal .q[aria-selected="true"] { background: rgba(200, 163, 90, 0.12) !important; color: var(--text) !important; border-color: var(--gold) !important; border-left-width: 3px !important; text-shadow: none; box-shadow: none !important; }
 #journal .q.on .kind, #journal .q.sel .kind { color: var(--gold) !important; } #journal .q.on .st, #journal .q.sel .st { color: var(--muted) !important; }
@@ -282,7 +282,7 @@ html[lang="zh-CN"] #settings .ph, html[lang="zh-CN"] #journal .ph, html[lang="zh
 }
 .mbtn.primary, #begin.mbtn { position: relative; overflow: hidden; isolation: isolate;
   background: var(--brass) !important; color: var(--brass-ink) !important; text-shadow: var(--engrave) !important;
-  font-weight: 700 !important; clip-path: var(--chamfer); box-shadow: none !important; }
+  font-weight: 700 !important; clip-path: none; border-radius: 10px !important; box-shadow: none !important; }
 /* two engraved rules inside the plaque */
 .mbtn.primary:not([data-ico])::after, #begin.mbtn::after { content: ''; position: absolute; inset: 4px 16px; pointer-events: none; z-index: -1;
   border-top: 1px solid rgba(92, 62, 16, 0.38); border-bottom: 1px solid rgba(92, 62, 16, 0.38);

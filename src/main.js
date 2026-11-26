@@ -50,6 +50,8 @@ import { pickTarget, segmentHitsBox, BLOCKING_TAGS } from './engine/targeting.js
 import { createWeather } from './engine/weather.js';
 import { createRain, RAIN_LAYER } from './world/rain.js';
 import { createSnow } from './world/snow.js';
+import { createSharedBikes } from './world/sharedBikes.js';
+import { createPeaceStreet, STREET_NAMES } from './world/peaceStreet.js';
 import { plan as climatePlan, at as climateAt } from './engine/climate.js';
 import { weatherUniforms, ssrMask, setArchLight } from './world/materials.js';
 import { todState, passedLateNight } from './engine/timeOfDay.js';
@@ -402,10 +404,10 @@ async function boot() {
   // Line 2: down an exit's stairs, through the gates, a real train under the river to Lujiazui and back (world/metro.js)
   world.metro = createMetro({ scene, camera, renderer: R.renderer, hud, audio, voice, player, people, travel, getLife: () => life, save: () => saveLife(), open: () => hourState.metro, onPudongSoon: () => world.ljz.buildAsync() });
   // the story: a sat-down conversation, and dinner with Dad (world/story.js, world/dinner.js)
-  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], fang: ['老方', 'Old Fang'], ...MOMENT_NAMES } });
+  world.sceneTalk = createSceneTalk({ voice, getLife: () => life, save: () => saveLife(), names: { dad: ['爸爸', 'Dad'], fang: ['老方', 'Old Fang'], ...MOMENT_NAMES, ...STREET_NAMES } });
   world.dinner = createDinner({ scene, people, player, getLife: () => life, save: () => saveLife(), sceneTalk: world.sceneTalk, onMode: seatMode, hud });
   // small things that happen on the street (world/moments.js): off for measurement tools unless ?moments
-  world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(),
+  world.moments = createMoments({ scene, people, player, camera, canvas: R.renderer.domElement, hud, audio, voice, sceneTalk: world.sceneTalk, getLife: () => life, save: () => saveLife(), getBikes: () => world.bikes,
     getHour: () => life.clock.minute, isFree: () => mode === 'play' && !phone.isOpen && !talk.open && !world.sceneTalk.active, enabled: !!people && (!params.has('q') || params.has('moments')) && !BENCH_URL });
   // something of your own (engine/studio.js): lending the gimbal on the promenade at dusk, the desk in 612
   world.fieldTest = createFieldTest({ scene, people, player, hud, audio, voice, getLife: () => life, save: () => saveLife(), getCrowdView: () => world.crowdView, getRain: () => weather.rain,
@@ -414,7 +416,10 @@ async function boot() {
   // the year (world/yearWorld.js): Marlowe Finch on IFC 28F, the flat he rents, days played as a card, the stall; arrivals at Lujiazui go through it
   world.year = createYearWorld({ scene, people, player, hud, audio, voice, travel, sceneTalk: world.sceneTalk, dests, getLife: () => life, save: () => saveLife(), lifeOn: params.get('life') !== '0',
     freeze: (on) => { player.enabled = !on && mode === 'play'; if (on) { player.clearInput(); hud.prompt(false); } }, onWork: () => openWork('desk'), onSeason: (days, gap) => openSeason(days, gap) });
-  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk];
+  world.bikes = createSharedBikes({ scene, player, hud, audio, getLife: () => life, save: () => saveLife() });   // shared bikes in their bays off the Bund and by the metro
+  // outside the Peace Hotel's door: the heritage plaques, a volunteer, a street sweeper (world/peaceStreet.js)
+  world.peaceStreet = createPeaceStreet({ scene, people, player, sceneTalk: world.sceneTalk, onCard: showInfoCard, getMinute: () => life.clock.minute, getRain: () => weather.rain });
+  places = [interiors, upper, jazz, dests, driving, makers, world.friends, world.metro, world.dinner, world.moments, world.cruise, world.dumpling, world.fieldTest, world.workDesk, world.bikes, world.peaceStreet];
   places.push(world.year);
   // the sightseeing trains: E at a stopped one to ride (seat mode; world/tram.js has the seat)
   places.push({ candidates: () => world.trams.candidates(player.body), owns: (id) => id === 'tram',
@@ -500,8 +505,9 @@ function lock() {
   try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch { /* handled by pointerlockerror */ }
 }
 // a card for an evening somewhere (the Jazz Bar): E or click to carry on
-function showInfoCard({ place, line, fare = '', back = '' }) {
+function showInfoCard({ place, line, fare = '', back = '', kicker = null }) {
   const c = document.getElementById('ride-card'); if (!c) return;
+  const k = c.querySelector('.kicker [data-t]'); if (k) k.textContent = kicker || tx('rideArrived');
   c.querySelector('.place').textContent = place; c.querySelector('.line').textContent = line;
   c.querySelector('.fare').textContent = fare; c.querySelector('.back').textContent = back; c.querySelector('.go').textContent = tx('rideContinue');
   c.classList.add('on'); c.dataset.info = '1';
@@ -514,7 +520,7 @@ function travel(during, opts) {
   const from = mode; mode = 'travel'; player.enabled = false; player.clearInput(); hud.prompt(false); target = null;
   veil.cover(during, opts).then(() => { if (mode === 'travel') { mode = opts && opts.to ? opts.to : from === 'travel' ? 'play' : from; player.enabled = mode === 'play'; if (mode === 'play') player.lookOnly = false; player.clearInput(); } });
 }
-function closeInfoCard() { const c = document.getElementById('ride-card'); if (c && c.dataset.info) { c.classList.remove('on'); delete c.dataset.info; return true; } return false; }
+function closeInfoCard() { const c = document.getElementById('ride-card'); if (c && c.dataset.info) { c.classList.remove('on'); delete c.dataset.info; const k = c.querySelector('.kicker [data-t]'); if (k) k.textContent = tx('rideArrived'); return true; } return false; }
 // talking with Vivian at the car (1-4), or sat in it (the car sale has the camera)
 function saleMode(m) {
   if (m === 'sale') { mode = 'sale'; player.enabled = false; player.lookOnly = false; player.clearInput(); hud.prompt(false); target = null; }
@@ -1683,7 +1689,10 @@ function frame(now) {
   else if (!riding && mode !== 'sale-seat' && mode !== 'bench') player.update(mode === 'pause' ? 0 : dt);
   const seated = mode === 'seat' || (mode === 'pause' && pausedFrom === 'seat') || driving;
   { const st = player.stamina, show = mode === 'play' && (player.running || st.level < 0.995 || st.winded > 0); hud.stamina(st.level, show, st.exhausted || st.winded > 0); }
-  if (world.playerBody) { world.playerBody.setVisible(!riding && !seated); if (!riding && !seated) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
+  if (world.bikes) world.bikes.update(mode === 'pause' ? 0 : dt);
+  if (world.peaceStreet) world.peaceStreet.update(mode === 'pause' ? 0 : dt, player.body);
+  const onBike = world.bikes && world.bikes.riding && !world.bikes.pushing;   // (on a bike his standing legs would be wrong: the bike's bars are what you see)
+  if (world.playerBody) { world.playerBody.setVisible(!riding && !seated && !onBike); if (!riding && !seated) world.playerBody.update(mode === 'pause' ? 0 : dt, player, camera.position); }
   world.confront.late(mode === 'pause' ? 0 : dt);                                      // ...and after it: its people, your hands, the camera's kicks
 
   // weather (frozen while paused): every value is exactly the approved clear scene at 0

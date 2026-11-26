@@ -432,5 +432,11 @@
  "hotellift": {
   "zh": "zm_025",
   "en": "bm_george"
- }
+ },
+ "family": { "zh": "zf_077", "en": "af_nova", "speed": 1.03 },
+ "bikevisitor": { "zh": "zm_052", "en": "bm_lewis" },
+ "teatourist": { "zh": "zm_029", "en": "am_michael" },
+ "teagirl": { "zh": "zf_001", "en": "af_jessica", "speed": 1.06 },
+ "volunteer": { "zh": "zf_006", "en": "af_nicole" },
+ "sweeper": { "zh": "zm_031", "en": "am_onyx", "speed": 0.95 }
 }

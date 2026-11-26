@@ -319,3 +319,78 @@ export function dressPeaceAmbassador(person) {
   person.outfit = 'peaceAmbassador';
   return person;
 }
+
+// ---- out on Nanjing Road East: a volunteer (志愿者) and a street sweeper (环卫工人) ----
+// a band round an upper arm (the person's frame), sized to the sleeve under it
+function armBand(person, side, mat, h = 0.085) {
+  const root = person.root, up = root.getObjectByName(`Bip01_${side}_UpperArm`), fore = root.getObjectByName(`Bip01_${side}_Forearm`); if (!up || !fore) return null;
+  root.updateMatrixWorld(true);
+  const toBody = new THREE.Matrix4().compose(root.position, root.quaternion, new THREE.Vector3(1, 1, 1)).invert();
+  const p0 = up.getWorldPosition(new THREE.Vector3()).applyMatrix4(toBody), p1 = fore.getWorldPosition(new THREE.Vector3()).applyMatrix4(toBody), at = p0.clone().lerp(p1, 0.42);
+  const pts = bodyPoints(person, /_body/).filter((p) => Math.abs(p.y - at.y) < 0.03 && Math.hypot(p.x - at.x, p.z - at.z) < 0.09);
+  const r = pts.length ? pts.reduce((m, p) => Math.max(m, Math.hypot(p.x - at.x, p.z - at.z)), 0) + 0.005 : 0.055;
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 18, 1, true), mat);
+  return attach(person, `Bip01_${side}_UpperArm`, band, at, side === 'L' ? Math.PI / 2 : -Math.PI / 2);
+}
+function cap(person, color, brim = 0.07) {
+  const head = bodyPoints(person, /_head$/); if (!head.length) return;
+  const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity), m = new THREE.MeshStandardMaterial({ color, roughness: 0.75 });
+  const g = new THREE.Group();
+  const crown = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), m); crown.scale.set(1.02, 0.78, 1.12); g.add(crown);
+  const peak = new THREE.Mesh(new THREE.CylinderGeometry(brim, brim, 0.008, 18, 1, false, -Math.PI / 2, Math.PI), m); peak.scale.set(1, 1, 0.9); peak.position.set(0, 0.002, 0.07); g.add(peak);
+  attach(person, 'Bip01_Head', g, new THREE.Vector3(0, top - 0.075, 0.008));
+}
+let bandTex = null;
+// the volunteer: a red cap and a red armband with 志愿者 in yellow (Shanghai's street volunteers at the Bund end of Nanjing Road)
+export function dressVolunteer(person) {
+  if (!bandTex && typeof document !== 'undefined') {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d');
+    x.fillStyle = '#c4161c'; x.fillRect(0, 0, 256, 64); x.fillStyle = '#ffd400'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '900 40px "PingFang SC","Noto Sans SC",sans-serif';
+    x.fillText('志愿者', 64, 34); x.fillText('志愿者', 192, 34); bandTex = new THREE.CanvasTexture(c); bandTex.colorSpace = THREE.SRGBColorSpace;
+  }
+  armBand(person, 'L', new THREE.MeshStandardMaterial({ map: bandTex, color: bandTex ? 0xffffff : 0xc4161c, roughness: 0.7, side: THREE.DoubleSide }));
+  cap(person, 0xc4161c, 0.075);
+  person.outfit = 'volunteer';
+  return person;
+}
+// the sweeper: the courier's red jacket (body p3) to sanitation orange, two silver reflective bands round the chest and
+// the arms, an orange cap, a bamboo broom in the right hand (returned: its head swings as he sweeps)
+const reflMat = new THREE.MeshStandardMaterial({ color: 0xd9dcde, roughness: 0.25, metalness: 0.4, emissive: 0x2a2a2a });
+export function dressSweeper(person) {
+  person.root.traverse((o) => {
+    if (!o.isMesh || !/_body$/.test(o.material.name)) return;
+    o.material = recolor(o.material, 'sanitation', (r, g, b) => {
+      if (!(r > g * 1.5 && r > b * 1.4 && r > 60)) return null;
+      const k = Math.min(1.25, lum(r, g, b) / 70); return [Math.min(255, 245 * k), Math.min(255, 104 * k), Math.min(255, 22 * k)];
+    });
+  });
+  const head = bodyPoints(person, /_head$/), body = bodyPoints(person, /_body/);
+  if (head.length && body.length) {
+    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity);
+    for (const y of [top - 0.48, top - 0.68]) {                                // the reflective bands round the jacket
+      const ring = body.filter((p) => Math.abs(p.y - y) < 0.012 && Math.abs(p.x) < 0.2);
+      if (ring.length < 8) continue;
+      const rx = ring.reduce((m, p) => Math.max(m, Math.abs(p.x)), 0) + 0.008, rz = ring.reduce((m, p) => Math.max(m, Math.abs(p.z)), 0) + 0.008, cz = ring.reduce((s, p) => s + p.z, 0) / ring.length;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.045, 24, 1, true), reflMat); band.scale.set(rx, 1, rz);
+      const g = new THREE.Group(); g.add(band); attach(person, 'Bip01_Spine1', g, new THREE.Vector3(0, y, cz));   // (in a group: attach sets the scale of what it hangs)
+    }
+  }
+  for (const s of ['L', 'R']) armBand(person, s, reflMat, 0.04);
+  cap(person, 0xf06a16, 0.07);
+  // the broom: a bamboo handle and a fan of twigs, from the hand down and forward to the ground
+  const hand = person.root.getObjectByName('Bip01_R_Hand'); let broom = null;
+  if (hand) {
+    person.root.updateMatrixWorld(true);
+    const toBody = new THREE.Matrix4().compose(person.root.position, person.root.quaternion, new THREE.Vector3(1, 1, 1)).invert(), hp = hand.getWorldPosition(new THREE.Vector3()).applyMatrix4(toBody);
+    const g = new THREE.Group(), swing = new THREE.Group(); g.add(swing);
+    const end = new THREE.Vector3(0.12, -hp.y + 0.12, 0.62), len = end.length();
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.013, len, 8), new THREE.MeshStandardMaterial({ color: 0x9a7b45, roughness: 0.6 }));
+    stick.position.copy(end).multiplyScalar(0.5); stick.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().normalize()); swing.add(stick);
+    const twigs = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.42, 14, 1, true), new THREE.MeshStandardMaterial({ color: 0x8a7442, roughness: 0.95, side: THREE.DoubleSide }));
+    twigs.scale.set(1, 1, 0.3); twigs.position.copy(end).addScaledVector(end.clone().normalize(), -0.19); twigs.quaternion.copy(stick.quaternion); twigs.rotateX(Math.PI); swing.add(twigs);
+    attach(person, 'Bip01_R_Hand', g, hp);
+    broom = swing;
+  }
+  person.outfit = 'sweeper';
+  return broom;
+}
