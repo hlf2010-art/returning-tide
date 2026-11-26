@@ -208,7 +208,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   const far = new THREE.Mesh(geo, mat); far.frustumCulled = false; far.name = 'crowd-impostors';
   group.add(far);
   // soft contact shadows under the far figures
-  const blobTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,0.55)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+  const blobTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,0.72)'); g.addColorStop(0.45, 'rgba(0,0,0,0.42)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
   const blobs = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.9, 0.9).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), N);
   blobs.frustumCulled = false; blobs.count = 0; blobs.name = 'crowd-blobs'; group.add(blobs);
   const _m = new THREE.Matrix4();
@@ -414,7 +414,10 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
       frameNo++;
       let n = 0, nu = 0;
       for (const a of crowd.agents) {
-        if (a.gone || a.out || a.inside || live.has(a.id)) continue;
+        if (a.gone || a.out || a.inside) continue;
+        // the full people near you: a contact shadow under them too (the sun's shadow map only reaches them
+        // where the sun does; in Nanjing Road's shade, at night and indoors, this is what grounds them)
+        if (live.has(a.id)) { _m.makeTranslation(a.x, a.y + 0.02, a.z); blobs.setMatrixAt(n, _m); iPos.setXYZW(n, a.x, -1000, a.z, a.heading); iCell.setXYZW(n, 0, 0, 8, 0); iTint.setXYZ(n, 0, 0, 0); n++; continue; }
         const inMid = midFade[a.id] >= 1;
         const dx = a.x - eye.x, dz = a.z - eye.z;
         if (dx * dx + dz * dz > 330 * 330) continue;

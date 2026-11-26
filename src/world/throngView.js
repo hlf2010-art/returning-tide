@@ -11,22 +11,19 @@ import { COLS, ROWS, CW, CH, FRAME_W, FRAME_H, coatOf, lightAt, crowdDaylight } 
 const Y = 0.15;   // the pedestrian street's paving (world/layout.js groundHeight)
 
 // keep in step with engine/throng.js throngAt and throngDistanceFade
-const VERT = /* glsl */ `
+const PLACE = /* glsl */ `
   attribute vec4 iTrack;      // xEast, xWest, z, speed (signed; 0 stands)
   attribute vec4 iPhase;      // start, weave phase, stride phase, hash
   attribute vec4 iLook;       // atlas block x, block y, pose (-1/-2 walking, 8 standing, 9 photographing), heading
   attribute vec4 iCoat;       // coat tint rgb, scale
   uniform float uTime, uActive;
-  uniform vec3 uLight;
-  uniform vec2 atlasSize;
   uniform vec4 uFade;         // near in, near full, far start, far gone
-  varying vec2 vUv; varying vec3 vTint; varying float vFade;
-  #include <common>
-  #include <fog_pars_vertex>
   float sm(float a, float b, float x) { float t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
-  void main() {
-    float len = iTrack.x - iTrack.y, v = iTrack.w, fade = clamp((uActive - iPhase.w) * 25.0, 0.0, 1.0);
-    vec3 wp; float heading = iLook.w, pose = iLook.z;
+  // where person is now, which way they face, which step, and how much of them is drawn
+  void throngPlace(out vec3 wp, out float heading, out float pose, out float fade) {
+    float len = iTrack.x - iTrack.y, v = iTrack.w;
+    fade = clamp((uActive - iPhase.w) * 25.0, 0.0, 1.0);
+    heading = iLook.w; pose = iLook.z;
     if (v == 0.0) { wp = vec3(iPhase.x, ${Y.toFixed(2)}, iTrack.z); }
     else {
       float av = abs(v), s = mod(iPhase.x + av * uTime, len);
@@ -37,6 +34,18 @@ const VERT = /* glsl */ `
     }
     float d = distance(cameraPosition.xz, wp.xz);
     fade *= sm(uFade.x, uFade.y, d) * (1.0 - sm(uFade.z, uFade.w, d));
+  }
+`;
+const VERT = /* glsl */ `
+  uniform vec3 uLight;
+  uniform vec2 atlasSize;
+  varying vec2 vUv; varying vec3 vTint; varying float vFade;
+  #include <common>
+  #include <fog_pars_vertex>
+  ${PLACE}
+  void main() {
+    vec3 wp; float heading, pose, fade;
+    throngPlace(wp, heading, pose, fade);
     vFade = fade;
     if (fade < 0.01) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }   // (nothing to draw: off the screen)
     vec3 toCam = cameraPosition - wp; toCam.y = 0.0;
@@ -52,6 +61,41 @@ const VERT = /* glsl */ `
     vec4 mvPosition = viewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mvPosition;
     #include <fog_vertex>
+  }`;
+// the soft contact shadow under each of them (as the far crowd's blobs): a ground quad, darker at the middle
+const BLOB_VERT = /* glsl */ `
+  varying vec2 vQ; varying float vFade;
+  #include <common>
+  #include <fog_pars_vertex>
+  ${PLACE}
+  void main() {
+    vec3 wp; float heading, pose, fade;
+    throngPlace(wp, heading, pose, fade);
+    vFade = fade; vQ = position.xy * 2.0;
+    if (fade < 0.01) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
+    vec3 p = wp + vec3(position.x * iCoat.w, 0.02, position.y * iCoat.w);
+    vec4 mvPosition = viewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    #include <fog_vertex>
+  }`;
+const BLOB_FRAG = /* glsl */ `
+  varying vec2 vQ; varying float vFade;
+  #include <common>
+  #include <fog_pars_fragment>
+  void main() {
+    float r = length(vQ);
+    float a = 0.72 * pow(1.0 - clamp(r, 0.0, 1.0), 1.4) * vFade;
+    if (a < 0.004) discard;
+    gl_FragColor = vec4(0.0, 0.0, 0.0, a);
+    #ifdef USE_FOG
+      float fogDepth = vFogDepth;
+      #ifdef FOG_EXP2
+        float fogFactor = 1.0 - exp(- fogDensity * fogDensity * fogDepth * fogDepth);
+      #else
+        float fogFactor = smoothstep(fogNear, fogFar, fogDepth);
+      #endif
+      gl_FragColor.a *= 1.0 - fogFactor;
+    #endif
   }`;
 const FRAG = /* glsl */ `
   uniform sampler2D atlas; varying vec2 vUv; varying vec3 vTint; varying float vFade;
@@ -98,6 +142,19 @@ export function createThrongView({ group, atlas, roles, count }) {
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false; mesh.name = 'nanjing-throng';
   group.add(mesh);
+  // their contact shadows: the same people, a ground quad each (0.9 m, as the far crowd's), one more draw call
+  const quad = new THREE.PlaneGeometry(0.9, 0.9);
+  const bgeo = new THREE.InstancedBufferGeometry();
+  bgeo.index = quad.index; bgeo.attributes.position = quad.attributes.position;
+  for (const k of ['iTrack', 'iPhase', 'iLook', 'iCoat']) bgeo.setAttribute(k, geo.getAttribute(k));
+  bgeo.instanceCount = T.n;
+  const bmat = new THREE.ShaderMaterial({ fog: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2,
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uTime: { value: 0 }, uActive: { value: 1 }, uFade: { value: mat.uniforms.uFade.value } }]),
+    vertexShader: BLOB_VERT, fragmentShader: BLOB_FRAG });
+  bmat.uniforms.uFade.value = mat.uniforms.uFade.value;
+  const blobs = new THREE.Mesh(bgeo, bmat);
+  blobs.frustumCulled = false; blobs.name = 'nanjing-throng-blobs'; blobs.renderOrder = -1;
+  group.add(blobs);
   let time = 0, active = 1;
   return {
     data: T, mesh,
@@ -110,10 +167,12 @@ export function createThrongView({ group, atlas, roles, count }) {
       // scene-lit people nearer (the atlas is lit evenly from the front: shirts would glow down the street)
       const l = lightAt(-300, NJ_ZC, 0), k = 0.72 + 0.28 * crowdDaylight();
       mat.uniforms.uTime.value = time; mat.uniforms.uActive.value = active; mat.uniforms.uLight.value.set(l[0] * k, l[1] * k, l[2] * k);
-      mesh.visible = active > 0.005 && T.n > 0;
+      bmat.uniforms.uTime.value = time; bmat.uniforms.uActive.value = active;
+      mesh.visible = blobs.visible = active > 0.005 && geo.instanceCount > 0;
     },
-    setCount(n) { geo.instanceCount = Math.max(0, Math.min(T.n, Math.round(n))); },
-    dispose() { group.remove(mesh); geo.dispose(); mat.dispose(); },
+    setCount(n) { geo.instanceCount = bgeo.instanceCount = Math.max(0, Math.min(T.n, Math.round(n))); },
+    get count() { return geo.instanceCount; },
+    dispose() { group.remove(mesh, blobs); geo.dispose(); mat.dispose(); bgeo.dispose(); bmat.dispose(); },
   };
 }
 const NJ_ZC = -201;

@@ -120,9 +120,10 @@ export function throngDistanceFade(p, ex, ez) {
 }
 
 // everyone drawn at all from (ex, ez) at time t, for the liveliness numbers: [{ x, z, activity }]
-export function throngPeople(T, t, active, ex, ez) {
+// (n: how many are drawn, world/throngView.js setCount)
+export function throngPeople(T, t, active, ex, ez, n = T.n) {
   const out = [];
-  for (let i = 0; i < T.n; i++) {
+  for (let i = 0, m = Math.min(n, T.n); i < m; i++) {
     const p = throngAt(T, i, t, active);
     if (p.fade * throngDistanceFade(p, ex, ez) < 0.5) continue;
     out.push({ x: p.x, z: p.z, activity: !p.moving ? (p.pose === 9 ? 'photographing' : 'window-shopping') : p.together ? 'walking together' : 'walking' });

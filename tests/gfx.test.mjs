@@ -1,5 +1,5 @@
 // Graphics settings (src/engine/gfx.js): presets, GPU detection, custom tweaks, the frame cap. npm test.
-import { PRESETS, LOD, presetForGpu, resolve, tweak, shouldDraw, treeStep, loadGfx, saveGfx } from '../src/engine/gfx.js';
+import { PRESETS, LOD, presetForGpu, resolve, tweak, shouldDraw, treeStep, loadGfx, saveGfx, CROWD_LEVELS, loadCrowd, saveCrowd, crowdCounts } from '../src/engine/gfx.js';
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
 ok(presetForGpu('ANGLE (NVIDIA, NVIDIA GeForce RTX 4080 SUPER (0x00002702) Direct3D11 vs_5_0 ps_5_0, D3D11)') === 'ultra', 'RTX 4080 SUPER -> ultra');
@@ -31,4 +31,14 @@ const mem = new Map(), store = { getItem: (k) => mem.get(k) ?? null, setItem: (k
 ok(loadGfx('Apple GPU', store).preset === 'mac' && loadGfx('Apple GPU', store).detected, 'first run: picked for the GPU');
 saveGfx(t, store);
 ok(loadGfx('RTX 4090', store).scale === 1.1 && loadGfx('RTX 4090', store).preset === 'custom', 'after that: what you chose, whatever the GPU says');
+// Crowds: its own setting, saved on its own
+const cs = new Map(), cstore = { getItem: (k) => cs.get(k) ?? null, setItem: (k, v) => cs.set(k, v) };
+ok(loadCrowd(cstore) === 'medium', 'Crowds: medium until chosen');
+ok(saveCrowd('low', cstore) && loadCrowd(cstore) === 'low' && !saveCrowd('huge', cstore) && loadCrowd(cstore) === 'low', 'Crowds: a choice is kept between sessions; nonsense is refused');
+saveGfx(resolve({ preset: 'mac' }), cstore);
+ok(loadGfx('Apple GPU', cstore).preset === 'mac' && loadCrowd(cstore) === 'low', 'Crowds: choosing it leaves the graphics preset as it was');
+const lo = crowdCounts('medium', 'low'), me = crowdCounts('medium', 'medium'), hi = crowdCounts('medium', 'high');
+ok(me.people === LOD.medium.people && me.throng === LOD.medium.throng && me.nearPeople === LOD.medium.nearPeople && me.mid === LOD.medium.mid, 'Crowds medium: the level of detail\'s own numbers');
+ok(['people', 'throng', 'nearPeople', 'mid'].every((k) => lo[k] < me[k] && me[k] < hi[k]), 'Crowds low < medium < high for the throng, the crowd, the full people and the middle tier');
+ok(lo.throng <= me.throng * 0.35 && lo.nearPeople >= 3 && Object.keys(CROWD_LEVELS).join() === 'low,medium,high', 'low is a real step down (about a third of the throng), never fewer than 3 full people');
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);
