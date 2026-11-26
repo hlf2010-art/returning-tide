@@ -1,8 +1,8 @@
-// Staff dressed from the bodies we already have (world/people.js). The Peace Hotel's security men on
-// the doors and at the lifts are middle-aged men in dark suits: Old Lin's body (Rocketbox
+// Staff dressed from the bodies we already have (world/people.js). The Peace Hotel's security man on
+// the Nanjing Road door is a middle-aged man in a dark suit: Old Lin's body (Rocketbox
 // Business_Male_02, the library's middle-aged man in a suit) with his hair back to black and the navy
 // suit taken to black, a coiled earpiece wire from the right ear into the collar, a small gold badge
-// on the left lapel; the one at the lifts also wears glasses (so the two don't read as twins).
+// on the left lapel (glasses as an option).
 // The recoloured textures are made once per style and shared; the props hang off the skeleton's
 // bones, placed from the skinned mesh itself (ear, lapel), so they follow the head and chest.
 import * as THREE from 'three';

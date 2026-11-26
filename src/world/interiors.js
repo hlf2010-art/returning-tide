@@ -1103,10 +1103,9 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   };
   { const r = placePerson('receptionist', 'p2', P.x0 + 0.7, -227.6, Math.PI / 2); if (r) dressReceptionist(r, { scarf: false, badge: true }); }   // the hotel's front-desk dark suit, a gold name badge
   { const c = placePerson('concierge', 'p3', P.x0 + 0.7, -237.5, Math.PI / 2); if (c) dressConcierge(c); }                                     // the concierge: dark suit, the golden crossed keys on his lapels
-  // the hotel's security: middle-aged men in dark suits with earpieces, one on the Nanjing Road door, one
-  // at the lifts (world/outfits.js)
+  // the hotel's security: a middle-aged man in a dark suit with an earpiece on the Nanjing Road door (world/outfits.js).
+  // (No guard at the lifts: the Peace Ambassador is the one person there.)
   const guard = (id, x, z, yaw, o) => { const g = placePerson(id, 'lin', x, z, yaw); if (g) dressHotelSecurity(g, o); return g; };
-  guard('liftGuard', -42.75, P.z0 + 0.95, -0.6, { glasses: true });   // (by the end lift's jamb, back to the wall, turned toward the hall: out of the way)
   // the lift attendant: one of the hotel's Peace Ambassadors in a black tuxedo, standing by the call button (the
   // hotel's lifts have had no operator for years: someone waits in the lift lobby, greets you, presses the call
   // button for you and sees you in)
@@ -1196,7 +1195,6 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   const manner = (id, o) => { if (ppl[id]) manners[id] = createManner(ppl[id], { home: ppl[id].home, ...o }); };
   manner('receptionist', { kind: 'desk', notice: 4.6, greet: 3.7 });
   manner('concierge', { kind: 'desk', notice: 4.6, greet: 3.7 });
-  manner('liftGuard', { kind: 'guard', notice: 4.5, greet: 2.4 });
   manner('doorman', { kind: 'host', notice: 4.8, greet: 3.0, step: 0.25, onGreet: (a) => {
     if (a.id === 'player') sayLine(DOOR_HELLO[part()], 2.2);
     else if (a.id === 'guestC') guestLine(ppl.doorman, a.leaving ? '您慢走。' : '欢迎光临。', a.leaving ? 'Have a good evening.' : 'Welcome.');
@@ -1406,9 +1404,11 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
       if (items.length) { for (const it of items) it.where = 'me'; say(T('礼宾部', 'Concierge'), `纪先生，您的快递，一共${items.length}件，都在这儿。`, `Mr Ji, your parcels: ${items.length}, all here.`, 3); hud.toast(T(`取回：${items.map((i) => i.name).join('、')}`, `Collected: ${items.map((i) => i.en).join(', ')}`), 3.6); save && save(); }
       else say(T('礼宾部', 'Concierge'), '目前没有您的快递哦。需要叫车的话我帮您约。', "Nothing waiting for you at the moment. If you need a car, I can book one.", 3);
     } else if (id === 'pLifts') {
-      if (!(S.key || l.flags.hotelKey)) say(T('保安', 'Security'), '先生，电梯需要刷房卡，住客才能上去。', 'Sorry, sir, the lifts need a room card. Guests only.', 3);
+      // (the Peace Ambassador by the call button says it; with nobody at the lifts the card reader does)
+      const amb = ppl.liftMan && ppl.liftMan.root.visible;
+      if (!(S.key || l.flags.hotelKey)) { if (amb) liftSay('先生，电梯需要刷房卡，住客才能上去。', 'Sorry, sir, the lifts need a room card. Guests only.', 3); else hud.toast(T('电梯需要刷房卡', 'The lifts need a room card'), 2.4); }
       else if (S.lift.doors > 0.6) {
-        if (!S.said.lift) { S.said.lift = true; say(T('保安', 'Security'), '纪先生，六楼南边在装修，您那间不受影响。', "Mr Ji. The south end of six is being refitted, sir; your room's not affected.", 3.4); }
+        if (!S.said.lift && amb) { S.said.lift = true; liftSay('纪先生，六楼南边在装修，您那间不受影响。', "Mr Ji. The south end of six is being refitted, sir; your room's not affected.", 3.4); }
         S.lift.doorsWant = 0; onLift && onLift();
       } else if (!S.lift.called) {
         // the attendant does it for you, if he's there; otherwise you press it yourself
@@ -1447,7 +1447,7 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
         who: { a: { persona: 'office', card: 'a woman in her forties from Hong Kong staying at the Peace Hotel for a family wedding, chatty', at: at(a) }, b: { persona: 'office', card: 'her younger sister who lives in Shanghai, dry, practical', at: at(b) } } }];
     },
     talkables() {
-      const P2 = { receptionist: 'receptionist', concierge: 'concierge', liftGuard: 'liftGuard', liftMan: 'liftMan', doorman: 'doorman', aiaDesk: 'aiaDesk', aiaGuard: 'aiaGuard' };
+      const P2 = { receptionist: 'receptionist', concierge: 'concierge', liftMan: 'liftMan', doorman: 'doorman', aiaDesk: 'aiaDesk', aiaGuard: 'aiaGuard' };
       return Object.entries(P2).filter(([k]) => ppl[k] && ppl[k].root.visible).map(([k, persona]) => { const r = ppl[k].root.position; return { key: k, persona, x: r.x, y: r.y + 1.62, z: r.z, hold() {} }; });
     },
     update(dt, pp) {
