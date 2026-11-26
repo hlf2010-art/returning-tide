@@ -22,7 +22,7 @@ const Z = (zh, en) => [W, zh, en], N = (zh, en) => ['nar', zh, en];
 const said = (L, k) => !!(heart(L, W).said || {})[k];
 
 const P = {
-  id: W, name: B('许知微', 'Xu Zhiwei'), short: B('知微', 'Zhiwei'), age: 28, sex: 'f', color: '#3d5a80', avatar: ['c4', 'c1'], height: 1.78, voice: { pitch: 1.02, rate: 1.1 },
+  id: W, name: B('许知微', 'Xu Zhiwei'), short: B('知微', 'Zhiwei'), age: 28, sex: 'f', color: '#3d5a80', avatar: ['zhiwei', 'c4', 'c1'], height: 1.78, voice: { pitch: 1.02, rate: 1.1 },
   role: B('产品与工业设计师；他第一个项目的设计负责人，交付也是她带', 'Product and industrial designer; design lead on his first engagement, and she runs its delivery'),
   ambition: B('三十岁之前升高级经理，然后是合伙人', 'Senior manager before thirty; then partner'),
   how: 'You are a product and industrial designer, the design lead on his first engagement at the firm, and you run its delivery; he was hired from Silicon Valley at nearly your level, which you noticed. You have a rule about not getting close to colleagues.',
