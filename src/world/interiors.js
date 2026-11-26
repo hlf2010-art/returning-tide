@@ -33,6 +33,7 @@ import { createPerson } from './people.js';
 import { dressHotelSecurity, dressReceptionist, dressConcierge, dressPeaceAmbassador, dressPianist } from './outfits.js';
 import { createJazzPlayer } from '../engine/jazzPlayer.js';
 import { createSeatedPose } from './driverPose.js';
+import { createPeaceGuests } from './peaceGuests.js';
 import { getLang } from '../ui/i18n.js';
 import { waitingAt } from '../engine/shopping.js';
 import { JAZZ } from './jazzBar.js';
@@ -1167,6 +1168,9 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   // what the hotel's staff say depends on the hour: the greeting, and what the Jazz Bar is doing (doors at 19:00,
   // the band from 20:00 to 00:30)
   const nowMin = () => { const L = getLife && getLife(); return L ? L.clock.minute : 1200; };
+  // the hall's comings and goings: check-ins and check-outs, the museum tours, couples taking photos, the evening's
+  // jazz crowd, the lounge at mealtimes, the bellman and his cart (world/peaceGuests.js)
+  const guests = createPeaceGuests({ scene: group, people, Y0, player, getMinute: nowMin, getDay: () => (getLife && getLife() ? getLife().clock.day : 1) });
   const part = () => { const m = nowMin(); return m < 4 * 60 ? 'evening' : m < 11 * 60 ? 'morning' : m < 13 * 60 ? 'noon' : m < 18 * 60 ? 'afternoon' : 'evening'; };
   const DOOR_HELLO = { morning: ['hotelguard', '早上好，纪先生。', 'Good morning, Mr Ji.'], noon: ['hotelguard', '中午好，纪先生。', 'Good afternoon, Mr Ji.'], afternoon: ['hotelguard', '下午好，纪先生。', 'Good afternoon, Mr Ji.'], evening: ['hotelguard', '晚上好，纪先生。', 'Good evening, Mr Ji.'] };
   const DESK_KEY = {
@@ -1247,15 +1251,17 @@ export function createInteriors({ scene, renderer, people, hud, audio, getLife, 
   function updatePeace(dt, pp) {
     const actors = [{ id: 'player', x: pp.x, z: pp.z, y: pp.y }];
     const gc = ppl.guestC; if (gc && gc.root.visible && GC.phase !== 'inCar') actors.push({ id: 'guestC', x: gc.root.position.x, z: gc.root.position.z, leaving: GC.phase === 'out' });
-    for (const [id, m] of Object.entries(manners)) m.update(dt, actors);
+    const mannerActors = actors.concat(guests.actors());
+    for (const [id, m] of Object.entries(manners)) m.update(dt, mannerActors);
     for (const id of ['guestA', 'guestB']) if (ppl[id]) ppl[id].update(dt, null);
     // the revolving door turns as anyone goes through
     const inDoor = (x, z) => Math.abs(x - doorX) < 1.4 && Math.abs(z - -212.2) < 1.6;
-    const turning = actors.some((a) => inDoor(a.x, a.z));
+    const turning = actors.some((a) => inDoor(a.x, a.z)) || guests.inDoor(inDoor);
     S.drumSpin += ((turning ? 1.6 : 0) - S.drumSpin) * Math.min(1, dt * 2); vanes.rotation.y += S.drumSpin * dt;
     updateGuest(dt, pp);
     updateLift(dt, pp, actors);
     updatePianist(dt, pp);
+    guests.update(dt, pp);
   }
 
   // ---------- a guest of the hotel's: in through the revolving door, up in the lift; later down and out ----------
