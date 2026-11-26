@@ -80,3 +80,27 @@ export function loadGfx(gpuName, store = globalThis.localStorage) {
 export function saveGfx(g, store = globalThis.localStorage) {
   try { store.setItem(KEY, JSON.stringify(g.preset === 'custom' ? { ...g, detected: undefined } : { preset: g.preset })); } catch { /* private mode */ }
 }
+
+// Crowds (Settings > Graphics): how many people, on top of the level of detail, chosen on its own so a
+// heavy street can be thinned without touching anything else. Scales Nanjing Road's throng and the
+// simulated crowd (people), the full animated people near you (near) and the GPU-instanced middle tier
+// (mid). Saved on its own (it never turns the preset into "custom").
+export const CROWD_LEVELS = {
+  low:    { people: 0.5, throng: 0.3, near: 0.5, mid: 0.4 },
+  medium: { people: 1, throng: 1, near: 1, mid: 1 },
+  high:   { people: 1.3, throng: 1.5, near: 1.34, mid: 1.4 },
+};
+const CROWD_KEY = 'bund.crowd';
+export function loadCrowd(store = globalThis.localStorage) {
+  try { const v = store.getItem(CROWD_KEY); return CROWD_LEVELS[v] ? v : 'medium'; } catch { return 'medium'; }
+}
+export function saveCrowd(level, store = globalThis.localStorage) {
+  if (!CROWD_LEVELS[level]) return false;
+  try { store.setItem(CROWD_KEY, level); } catch { /* private mode */ }
+  return true;
+}
+// the numbers for a level of detail at a crowd level: { people, throng, nearPeople, mid }
+export function crowdCounts(lod, level = 'medium') {
+  const d = LOD[lod] || LOD.medium, f = CROWD_LEVELS[level] || CROWD_LEVELS.medium;
+  return { people: Math.round(d.people * f.people), throng: Math.round((d.throng || 0) * f.throng), nearPeople: Math.max(3, Math.round(d.nearPeople * f.near)), mid: Math.round((d.mid || 0) * f.mid) };
+}

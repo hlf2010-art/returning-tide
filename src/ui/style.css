@@ -267,6 +267,7 @@ html[lang="zh-CN"] #pause h1 { font: 900 clamp(48px, 7vw, 88px)/1 var(--serif); 
 #settings .ph { display: flex; justify-content: space-between; align-items: center; font: 700 13px var(--ui); letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 #settings .x { appearance: none; border: 0; background: none; color: rgba(244,241,234,0.7); font-size: 16px; cursor: pointer; }
 #settings .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; font: 500 14px var(--ui); color: var(--ink); }
+#settings .row[hidden] { display: none; }                         /* (the reload notice: only when a reload would change something) */
 
 /* HUD v3 */
 #place { left: clamp(22px, 7vw, 120px); bottom: clamp(70px, 14vh, 140px); }
