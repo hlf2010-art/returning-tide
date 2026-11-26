@@ -19,6 +19,7 @@ import { riverExposure, windExposure, trafficBed, hornRate, HORN, BUS_SIGH, BOAT
 import { peopleNear } from './soundscape.js';
 import { L } from '../world/layout.js';
 import { createBeds } from './beds.js';
+import { bedSources } from './live.js';
 
 export function createAmbience(audio, { clipUrl = null } = {}) {
   let ctx = null, env = null, sfx = null, out = null, beds = null, bedsOn = false;
@@ -347,9 +348,12 @@ export function createAmbience(audio, { clipUrl = null } = {}) {
     audible(lx, lz, ly = 1.7) {
       const out = [];
       if (!ctx) return out;
-      if (bed && bed.level > 0.01) out.push({ id: 'traffic-bed', kind: 'traffic', level: 0.42 * bed.level });
+      // once the recorded beds play, the synthesised traffic bed and the placed talkers are silenced (update):
+      // the beds are counted instead
+      if (bedsOn && beds) out.push(...bedSources(Object.fromEntries(beds.names().filter((n) => beds.playing(n)).map((n) => [n, beds.level(n)]))));
+      else if (bed && bed.level > 0.01) out.push({ id: 'traffic-bed', kind: 'traffic', level: 0.42 * bed.level });
       for (const s of shots) { const d = Math.hypot(s.x - lx, s.z - lz, s.y - ly); out.push({ id: s.id, kind: s.kind, level: s.at ? s.at(lx, lz) : s.level * att(d, s.ref, s.rolloff) }); }
-      for (const s of talkers) if (s.who && tNow < s.until) out.push({ id: `talker:${s.who.id ?? '?'}`, kind: 'chatter', level: 0.32 * att(Math.hypot(s.who.x - lx, s.who.z - lz), 2, 1.3) });
+      if (!bedsOn) for (const s of talkers) if (s.who && tNow < s.until) out.push({ id: `talker:${s.who.id ?? '?'}`, kind: 'chatter', level: 0.32 * att(Math.hypot(s.who.x - lx, s.who.z - lz), 2, 1.3) });
       return out;
     },
     get reverb() { return rev ? { wet: +rev.wet.toFixed(3), id: rev.id } : null; },

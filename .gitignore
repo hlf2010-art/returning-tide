@@ -9,3 +9,7 @@ dist/
 # agent worktrees
 .claude/
 returning-tide-build-*.zip
+
+# Python bytecode
+__pycache__/
+*.pyc

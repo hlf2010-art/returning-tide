@@ -1,6 +1,7 @@
 // The credits screen (src/ui/credits.js): every licensed thing the game ships is credited.   node tests/credits.test.mjs
 import { existsSync, readdirSync } from 'node:fs';
 import { CREDITS, creditsHtml } from '../src/ui/credits.js';
+import { TRACKS, LICENCE } from '../src/engine/speakers.js';
 
 let failed = 0;
 const ok = (c, m) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${m}`); if (!c) failed++; };
@@ -25,6 +26,14 @@ const shipped = [
 ].filter((p) => existsSync(p));
 const missing = shipped.filter((p) => !covers(p));
 ok(shipped.length > 10 && missing.length === 0, `every shipped model and recorded sound has a credit${missing.length ? ` (missing: ${missing.join(', ')})` : ''}`);
+// every sound file anywhere under public/ is credited: by a credit's files, or as a shop track (credited in
+// Settings under the music, docs/music.md). A new recording dropped in without a credit fails here
+const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${d}/${e.name}`) : [`${d}/${e.name}`]));
+const sounds = walk('public').filter((p) => /\.(mp3|ogg|oga|wav|m4a|aac|flac|opus|webm)$/i.test(p));
+const tracks = new Set(Object.values(TRACKS).map((t) => `public/music/${t.file}`));
+const uncredited = sounds.filter((p) => !covers(p) && !tracks.has(p));
+ok(sounds.length > 2000 && uncredited.length === 0, `every one of the ${sounds.length} sound files under public/ is credited${uncredited.length ? ` (not: ${uncredited.slice(0, 8).join(', ')}${uncredited.length > 8 ? ', ...' : ''})` : ''}`);
+ok(LICENCE.name === 'CC0 1.0' && Object.values(TRACKS).every((t) => t.artist && /^https:\/\/opengameart\.org\/content\//.test(t.page) && existsSync(`public/music/${t.file}`)), 'every shop track names its composer and its CC0 page, and its file is shipped');
 for (const c of CREDITS) for (const f of c.files) ok(existsSync(f), `${c.id}: ${f} exists (a credit for something removed should go too)`);
 
 // the list
