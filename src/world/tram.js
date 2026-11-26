@@ -42,12 +42,13 @@ function makePath(R) {
 }
 
 // ---- the model: built once per car kind, then instanced ----
-function signTexture() {
-  const [c, x] = makeCanvas(512, 96);
-  x.fillStyle = '#1b1410'; x.fillRect(0, 0, 512, 96);
+function signTexture(w = 624) {
+  // w: the board's proportions at 96 px high (the car's board 6.5 : 1, the kiosk's 5.3 : 1), so the characters keep theirs
+  const [c, x] = makeCanvas(w, 96);
+  x.fillStyle = '#1b1410'; x.fillRect(0, 0, w, 96);
   x.fillStyle = '#f2d27a'; x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.font = `700 46px ${FONT.serif}`; x.fillText('南京路步行街  观光车', 256, 40);
-  x.font = `500 20px ${FONT.sans}`; x.fillStyle = '#e8dcc0'; x.fillText('NANJING ROAD SIGHTSEEING TRAM', 256, 78);
+  x.font = `700 46px ${FONT.serif}`; x.fillText('南京路步行街  观光车', w / 2, 40);
+  x.font = `500 20px ${FONT.sans}`; x.fillStyle = '#e8dcc0'; x.fillText('NANJING ROAD SIGHTSEEING TRAM', w / 2, 78);
   return tex(c, { repeat: false, aniso: 4 });
 }
 // the ticket kiosk's faces: front (toward the lane) with its service window, the fare board and the QR
@@ -77,16 +78,23 @@ function kioskFaces() {
     qr(x, 60, 500, 54, 7); qr(x, 398, 500, 54, 11);
     x.fillStyle = '#1677ff'; x.fillRect(54, 494, 66, 4); x.fillStyle = '#07c160'; x.fillRect(392, 494, 66, 4);   // Alipay blue, WeChat green
   });
-  const side = face(512, 640, (x, w, h) => {
+  // the back (1.8 m wide) and the two ends (1.3 m): the same route board, each canvas in its own face's
+  // proportions so the lettering isn't squeezed
+  const sideFace = (W) => face(W, 640, (x, w, h) => {
     base(x, w, h);
-    x.fillStyle = '#1c1c1c'; x.textAlign = 'center'; x.font = `700 28px ${FONT.sans}`; x.fillText('线路图  ROUTE', 256, 70);
-    x.strokeStyle = '#1f6e3a'; x.lineWidth = 8; x.beginPath(); x.moveTo(60, 200); x.lineTo(452, 200); x.stroke();
-    [['西藏中路', 60], ['世纪广场', 256], ['河南中路', 452]].forEach(([n, X]) => { x.fillStyle = '#fff'; x.beginPath(); x.arc(X, 200, 14, 0, 7); x.fill(); x.strokeStyle = '#1f6e3a'; x.lineWidth = 5; x.stroke();
-      x.fillStyle = '#1c1c1c'; x.font = `600 20px ${FONT.sans}`; x.fillText(n, X, 246); });
-    x.font = `500 18px ${FONT.sans}`; x.fillStyle = '#444'; x.fillText('请勿在车道内停留  Please keep clear of the lane', 256, 330);
+    const fit = (t, wt, px, X, Y, max) => { x.font = `${wt} ${px}px ${FONT.sans}`; const k = Math.min(1, max / x.measureText(t).width); x.font = `${wt} ${px * k}px ${FONT.sans}`; x.fillText(t, X, Y); };
+    x.fillStyle = '#1c1c1c'; x.textAlign = 'center'; fit('线路图  ROUTE', 700, 28, w / 2, 70, w * 0.9);
+    const a = w * 0.12, b = w * 0.88;
+    x.strokeStyle = '#1f6e3a'; x.lineWidth = 8; x.beginPath(); x.moveTo(a, 200); x.lineTo(b, 200); x.stroke();
+    [['西藏中路', a], ['世纪广场', w / 2], ['河南中路', b]].forEach(([n, X]) => { x.fillStyle = '#fff'; x.beginPath(); x.arc(X, 200, 14, 0, 7); x.fill(); x.strokeStyle = '#1f6e3a'; x.lineWidth = 5; x.stroke();
+      x.fillStyle = '#1c1c1c'; fit(n, 600, 20, X, 246, w * 0.3); });
+    x.fillStyle = '#444';
+    if (w >= 480) fit('请勿在车道内停留  Please keep clear of the lane', 500, 18, w / 2, 330, w * 0.92);
+    else { fit('请勿在车道内停留', 500, 18, w / 2, 320, w * 0.9); fit('Please keep clear of the lane', 500, 18, w / 2, 346, w * 0.9); }
   });
+  const side = sideFace(512), end = sideFace(Math.round(640 * 1.3 / 2.3));
   const glow = face(512, 640, (x) => { x.fillStyle = '#000'; x.fillRect(0, 0, 512, 640); x.fillStyle = '#fff'; x.fillRect(70, 134, 372, 222); x.fillStyle = '#888'; x.fillRect(56, 20, 400, 84); });   // the lit window and the red header
-  return { front, side, glow };
+  return { front, side, end, glow };
 }
 function locoParts() {
   const b = { body: new Batch(), trim: new Batch(), roof: new Batch(), frame: new Batch(), glass: new Batch(), lamp: new Batch(), tyre: new Batch(), sign: new Batch() };
@@ -166,13 +174,13 @@ export function createTrams({ scene, people, audio, addCollider, rnd = Math.rand
   trains.forEach((t, i) => { t.num = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.45), numMats[i % numMats.length]); group.add(t.num); });
   // ticket kiosks at the stops, on the 金带 beside the lane: a white booth with its window to the lane, a
   // fare board and pay-by-phone codes, a dark roof cap and the line's name on top
-  { const kt = new Batch(), sign = new THREE.MeshBasicMaterial({ map: signTexture() }), F = kioskFaces();
+  { const kt = new Batch(), sign = new THREE.MeshBasicMaterial({ map: signTexture(507) }), F = kioskFaces();
     const fm = new THREE.MeshStandardMaterial({ map: F.front, roughness: 0.45, emissive: 0xffe6c0, emissiveIntensity: 0, emissiveMap: F.glow });
-    const sm = new THREE.MeshStandardMaterial({ map: F.side, roughness: 0.45 }), plain = new THREE.MeshStandardMaterial({ color: 0xeceae4, roughness: 0.5 });
+    const sm = new THREE.MeshStandardMaterial({ map: F.side, roughness: 0.45 }), em = new THREE.MeshStandardMaterial({ map: F.end, roughness: 0.45 }), plain = new THREE.MeshStandardMaterial({ color: 0xeceae4, roughness: 0.5 });
     kioskGlow = fm;
     for (const x of route.stops) {
       const kz = NJ.zc - 1.3 - 2.1 - 0.9;                                                 // (north of the 金带, clear of the crowd's middle walk)
-      const booth = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.3, 1.3), [sm, sm, plain, plain, fm, sm]);   // +z (the lane side) is the front
+      const booth = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.3, 1.3), [em, em, plain, plain, fm, sm]);   // +z (the lane side) is the front
       booth.position.set(x, 0.15 + 1.15, kz); booth.castShadow = booth.receiveShadow = true; group.add(booth);
       kt.box(x, 2.45, kz, 2.2, 0.16, 1.7); kt.box(x, 0.15, kz, 1.84, 0.08, 1.34);
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.36), sign); pl.position.set(x, 2.78, kz); group.add(pl);

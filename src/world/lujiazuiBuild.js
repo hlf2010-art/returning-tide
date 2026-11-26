@@ -4,7 +4,7 @@
 // from world/lujiazuiLayout.js; nothing here decides a position you can stand on.
 import * as THREE from 'three';
 import { Batch } from './geo.js';
-import { makeCanvas, tex, rng, FONT, glowTexture } from './canvas.js';
+import { makeCanvas, tex, rng, FONT, glowTexture, fitText } from './canvas.js';
 import { asLight, TOD } from './dayNight.js';
 import { markCanvas } from '../ui/brands.js';
 import { LINE_COLOR } from './nanjingRoad.js';
@@ -217,7 +217,7 @@ export function buildApple(g, m, lights, trees = []) {
   for (const p of A.planters) { const [x, z] = applePt(p.ang, p.r); stone.cyl(x, yP, z, p.rr, p.rr, 0.42, 24); wood.cyl(x, yP + 0.42, z, p.rr + 0.06, p.rr + 0.06, 0.06, 24); trees.push({ x, z, y: yP + 0.48, h: 6 + (p.r % 2), r: 2.3, solid: false }); }
   // the shops' names over their fronts: an HSBC branch on the right (as you look in from the steps), a Starbucks
   // (letters and mark on the walkway's white fascia above each, as in the photographs)
-  const brand = (slug, color, text, ang, w) => { const [c, x] = makeCanvas(1024, 128); x.clearRect(0, 0, 1024, 128); x.drawImage(markCanvas(slug, { color, size: 120, pad: 0.04 }), 10, 4, 120, 120); x.fillStyle = slug === 'hsbc' ? '#222' : color; x.font = `800 92px ${FONT.sans}`; x.textBaseline = 'middle'; x.fillText(text, 150, 68);
+  const brand = (slug, color, text, ang, w) => { const [c, x] = makeCanvas(1024, 128); x.clearRect(0, 0, 1024, 128); x.drawImage(markCanvas(slug, { color, size: 120, pad: 0.04 }), 10, 4, 120, 120); x.fillStyle = slug === 'hsbc' ? '#222' : color; x.font = `800 92px ${FONT.sans}`; x.textBaseline = 'middle'; fitText(x, text, 150, 68, 1024 - 160);
     const mat = new THREE.MeshBasicMaterial({ map: tex(c, { repeat: false, aniso: 8 }), transparent: true, side: THREE.DoubleSide, depthWrite: false }); mat.userData.todSkip = true;
     const y = rampY(Math.abs(ang)) - 0.5, [px, pz] = applePt(ang, A.rampIn - 0.34), p = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 8), mat); p.position.set(px, y, pz); p.rotation.y = Math.atan2(...dirOf(B(ang) + 180)); p.renderOrder = 2; g.add(p); };
   brand('hsbc', '#1F4E79', '申江银行 SHENJIANG BANK', 112, 6.4); brand('starbucks', '#1E5C4F', 'HARBOUR COFFEE', -128, 6.4);
@@ -307,9 +307,10 @@ export function buildApple(g, m, lights, trees = []) {
 }
 // the Forum's video wall: a soft gradient with a few tiles of light (no imagery, no brand beyond the store's own)
 function forumTex() {
-  const [c, x] = makeCanvas(1024, 256), gd = x.createLinearGradient(0, 0, 1024, 256);
-  gd.addColorStop(0, '#1d2b4a'); gd.addColorStop(0.5, '#5a3f7a'); gd.addColorStop(1, '#d8805a'); x.fillStyle = gd; x.fillRect(0, 0, 1024, 256);
-  x.fillStyle = 'rgba(255,255,255,0.85)'; x.font = `600 44px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('Today at Lumen', 512, 128);
+  // (1024 x 390: the wall's own proportions, 28 degrees of the drum by 3 m, so the lettering isn't stretched)
+  const [c, x] = makeCanvas(1024, 390), gd = x.createLinearGradient(0, 0, 1024, 390);
+  gd.addColorStop(0, '#1d2b4a'); gd.addColorStop(0.5, '#5a3f7a'); gd.addColorStop(1, '#d8805a'); x.fillStyle = gd; x.fillRect(0, 0, 1024, 390);
+  x.fillStyle = 'rgba(255,255,255,0.85)'; x.font = `600 44px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('Today at Lumen', 512, 195);
   return tex(c, { repeat: false, aniso: 8 });
 }
 // lit shop windows without any brand: warm rooms, plinths, a figure or two (the mall's fronts)

@@ -371,27 +371,29 @@ function buildJinMao(group, x, z) {
 }
 
 function ledTexture() {
-  // a building-sized LED screen: the image drawn small, then shown as a grid of round pixels with dark
-  // gaps between, a slight brightness falloff at the edges, so it reads as a screen in the façade
-  const [src, sx] = makeCanvas(128, 64);
-  const g = sx.createLinearGradient(0, 0, 128, 64);
+  // a building-sized LED screen, 56 m x 72 m: the image drawn small in the screen's own proportions,
+  // then shown as a grid of round pixels with dark gaps between, a slight brightness falloff at the
+  // edges, so it reads as a screen in the façade (and the letters aren't stretched)
+  const SW = 112, SH = 144;
+  const [src, sx] = makeCanvas(SW, SH);
+  const g = sx.createLinearGradient(0, 0, SW, SH);
   g.addColorStop(0, '#16307a'); g.addColorStop(1, '#3a1466');
-  sx.fillStyle = g; sx.fillRect(0, 0, 128, 64);
+  sx.fillStyle = g; sx.fillRect(0, 0, SW, SH);
   sx.fillStyle = '#fff'; sx.textAlign = 'center'; sx.textBaseline = 'middle';
-  sx.font = `700 38px ${FONT.sans}`;
-  sx.fillText('I', 27, 34); sx.fillText('SH', 99, 34);
-  sx.fillStyle = '#ff3355'; sx.font = '38px sans-serif'; sx.fillText('♥', 54, 35);
-  const px = sx.getImageData(0, 0, 128, 64).data;
-  const [c, ctx] = makeCanvas(512, 256);
-  ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, 512, 256);
-  for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) {
-    const i = (y * 128 + x) * 4, e = 0.82 + 0.18 * Math.min(1, Math.min(x, 127 - x, y * 2, (63 - y) * 2) / 10);
+  sx.font = `700 54px ${FONT.sans}`;
+  sx.fillText('I', 34, 44); sx.fillText('SH', 56, 106);
+  sx.fillStyle = '#ff3355'; sx.font = '50px sans-serif'; sx.fillText('♥', 74, 46);
+  const px = sx.getImageData(0, 0, SW, SH).data;
+  const [c, ctx] = makeCanvas(SW * 4, SH * 4);
+  ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, SW * 4, SH * 4);
+  for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
+    const i = (y * SW + x) * 4, e = 0.82 + 0.18 * Math.min(1, Math.min(x, SW - 1 - x, y, SH - 1 - y) / 10);
     ctx.fillStyle = `rgb(${(px[i] * e) | 0},${(px[i + 1] * e) | 0},${(px[i + 2] * e) | 0})`;
     ctx.beginPath(); ctx.arc(x * 4 + 2, y * 4 + 2, 1.45, 0, Math.PI * 2); ctx.fill();
   }
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  for (let y = 0; y < 256; y += 32) ctx.fillRect(0, y, 512, 1);          // the cabinet joints
-  for (let x = 0; x < 512; x += 64) ctx.fillRect(x, 0, 1, 256);
+  for (let y = 0; y < SH * 4; y += 64) ctx.fillRect(0, y, SW * 4, 1);          // the cabinet joints
+  for (let x = 0; x < SW * 4; x += 64) ctx.fillRect(x, 0, 1, SH * 4);
   return tex(c, { repeat: false, aniso: 8 });
 }
 
@@ -499,12 +501,15 @@ function signTexture(lines, colour, w = 1024, h = 256) {
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = colour;
   ctx.shadowColor = colour; ctx.shadowBlur = 14;
-  if (lines.length === 1) { ctx.font = `900 ${h * 0.72}px ${FONT.sans}`; ctx.fillText(lines[0], w / 2, h * 0.54); }
-  else { ctx.font = `900 ${h * 0.5}px ${FONT.sans}`; ctx.fillText(lines[0], w / 2, h * 0.33); ctx.font = `800 ${h * 0.3}px ${FONT.sans}`; ctx.fillText(lines[1], w / 2, h * 0.78); }
+  // (each line shrinks to fit the width rather than spilling off or being squeezed)
+  const line = (t, wt, px, y) => { ctx.font = `${wt} ${px}px ${FONT.sans}`; const k = Math.min(1, (w * 0.9) / ctx.measureText(t).width); ctx.font = `${wt} ${px * k}px ${FONT.sans}`; ctx.fillText(t, w / 2, y); };
+  if (lines.length === 1) line(lines[0], 900, h * 0.72, h * 0.54);
+  else { line(lines[0], 900, h * 0.5, h * 0.33); line(lines[1], 800, h * 0.3, h * 0.78); }
   return tex(c, { repeat: false, aniso: 8 });
 }
+// (the canvas takes the board's own shape, so the letters keep theirs)
 function sign(group, lines, colour, x, y, z, w, h, gain = 1.6) {
-  const m = new THREE.MeshBasicMaterial({ map: signTexture(lines, colour), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const m = new THREE.MeshBasicMaterial({ map: signTexture(lines, colour, 1024, Math.round(1024 * h / w)), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
   m.color.setScalar(gain);
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
   mesh.position.set(x, y, z); mesh.rotation.y = -Math.PI / 2;                          // faces west, across the river
@@ -516,8 +521,11 @@ function tickerTexture(text) {
   const [c, ctx] = makeCanvas(2048, 128);
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 2048, 128);
   ctx.font = `800 92px ${FONT.sans}`; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
-  const wd = ctx.measureText(text).width; let x = 0;
-  while (x < 2048) { ctx.fillText(text, x, 68); x += wd + 120; }
+  // the message repeats a whole number of times across the canvas, so the scroll has no seam where a
+  // copy is cut short (the font shrinks a touch to make it divide exactly)
+  const w0 = ctx.measureText(text).width, n = Math.ceil(2048 / (w0 + 120)), k = (2048 / n - 120) / w0;
+  ctx.font = `800 ${(92 * k).toFixed(2)}px ${FONT.sans}`;
+  for (let i = 0; i < n; i++) ctx.fillText(text, i * 2048 / n, 68);
   // LED pixels
   const img = ctx.getImageData(0, 0, 2048, 128);
   for (let y = 0; y < 128; y++) for (let xx = 0; xx < 2048; xx++) if ((xx % 6) > 3 || (y % 6) > 3) { const i = (y * 2048 + xx) * 4; img.data[i] *= 0.15; img.data[i + 1] *= 0.15; img.data[i + 2] *= 0.15; }
