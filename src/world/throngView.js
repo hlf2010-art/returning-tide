@@ -5,6 +5,7 @@
 // Faded in and out with a screen-door dither (no blending, no sorting): near the camera, where the
 // simulated crowd takes over, and at the ends of each stretch of street.
 import * as THREE from 'three';
+import { PEOPLE_LAYER } from './peopleReflect.js';
 import { THRONG, buildThrong } from '../engine/throng.js';
 import { COLS, ROWS, CW, CH, FRAME_W, FRAME_H, coatOf, lightAt, crowdDaylight } from './crowdView.js';
 
@@ -140,7 +141,7 @@ export function createThrongView({ group, atlas, roles, count }) {
   });
   mat.uniforms.atlas.value = atlas.texture;
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.frustumCulled = false; mesh.name = 'nanjing-throng';
+  mesh.frustumCulled = false; mesh.name = 'nanjing-throng'; mesh.layers.enable(PEOPLE_LAYER);   // (and in the paving's reflection)
   group.add(mesh);
   // their contact shadows: the same people, a ground quad each (0.9 m, as the far crowd's), one more draw call
   const quad = new THREE.PlaneGeometry(0.9, 0.9);

@@ -11,7 +11,7 @@ import '@fontsource/inter/600.css';
 import '@fontsource/inter/800.css';
 import * as THREE from 'three';
 import { createRenderer } from './engine/renderer.js';
-import { loadGfx, saveGfx, tweak as gfxTweak, detail as gfxDetail, shouldDraw, treeStep, resolve as gfxResolve, loadCrowd, saveCrowd, crowdCounts } from './engine/gfx.js';
+import { loadGfx, saveGfx, tweak as gfxTweak, detail as gfxDetail, shouldDraw, treeStep, resolve as gfxResolve, loadCrowd, saveCrowd, crowdCounts, lightingOf, setLighting } from './engine/gfx.js';
 import { createPlayer } from './engine/player.js';
 import { createAudio } from './engine/audio.js';
 import { L, NJ, npcs as npcLayout } from './world/layout.js';
@@ -65,7 +65,8 @@ import { createCruise } from './world/cruise.js';
 import { createDumpling } from './world/dumpling.js';
 import { createEntrances, entranceList } from './world/entrances.js';
 import { underCover } from './world/layout.js';
-import { colliders } from './world/layout.js';
+import { colliders, groundHeight } from './world/layout.js';
+import { createPeopleReflection } from './world/peopleReflect.js';
 import { crossing, addDynamicCollider } from './world/layout.js';
 import { createTraffic } from './engine/traffic.js';
 import { startFlinch } from './engine/flinch.js';
@@ -375,7 +376,7 @@ async function boot() {
     });
     ebikeView = createEbikeView({ scene, people, roles: ['c5', 'c1'].filter((r) => people.manifest.cast[r]) });
   }
-  world = { ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }), aiaLife };
+  world = { peopleMirror: createPeopleReflection(), ebikes, ebikeView, pulse, dressing, lamps, people, baristas, entrances, cruise, dumpling, dawn: createDawn({ scene, people, addCollider: addDynamicCollider }), buses, nanjing, henan, sky, skyline, river, bund, street, clue, lighting, npcs, pouch, vehicles, signals, pedestrians, vehicleBoxes, rain, playerBody, trees, belongings, didi, rideFlow, huracan, carSale, interiors, upper, jazz, dest: dests, driving, roads, makerspace: makers, walkers: createWalkers({ scene, people }), hailers: createHailers({ scene, people, traffic, vehicles, audio }), shoppers: createShoppers({ scene, people, traffic, vehicles, audio, doors: nanjing.doors }), trams: createTrams({ scene, people, audio, addCollider: addDynamicCollider }), streetLife: createStreetLife({ scene, people }), aiaLife };
   // the evening crowd (engine/crowd.js, world/crowdView.js): how many from the level of detail;
   // tools (?q=) run a light one unless ?crowd=<density> says otherwise
   if (people && params.get('crowd') !== '0' && !(params.has('q') && !params.has('crowd'))) {
@@ -722,7 +723,7 @@ function syncSettings() {
     const c = llm.conf();
     const k = seg.dataset.setting;
     const cur = k.startsWith('g.') ? String(typeof gfx[k.slice(2)] === 'boolean' ? +gfx[k.slice(2)] : gfx[k.slice(2)])
-      : { crowd: crowdLevel, music: worldMusic.on ? 'on' : 'off', lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.newLines === 'server' ? 'server' : voice.newLines, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
+      : { crowd: crowdLevel, lighting: lightingOf(gfx), music: worldMusic.on ? 'on' : 'off', lang: getLang(), subs: subtitlesOn ? 'on' : 'off', sound: audio.muted ? 'off' : 'on', voices: voice.mode, voiceServer: voice.newLines === 'server' ? 'server' : voice.newLines, ai: c.mode === 'browser' ? 'browser' : c.mode === 'off' ? 'off' : 'auto', tips: tips.on ? 'on' : 'off' }[k];
     for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.v === cur);
   }
   syncGfx();
@@ -763,8 +764,9 @@ function setCrowdLevel(v) {
   }
   syncSettings();
 }
-function setGfx(key, value) {
-  gfx = gfxTweak(gfx, key, value);
+function setGfx(key, value) { setGfxAll(gfxTweak(gfx, key, value)); }
+function setGfxAll(next) {
+  gfx = next;
   saveGfx(gfx);
   if (!params.has('q')) R.apply(gfx);
   if (world) world.river.setMirrorSize(gfx.mirror);
@@ -785,8 +787,9 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('.seg[data-setting] button');
   if (b) {
     const k = b.parentElement.dataset.setting, v = b.dataset.v;
-    if (k.startsWith('g.')) { if (!b.disabled) setGfx(k.slice(2), ['ao', 'ssr', 'bloom', 'auto'].includes(k.slice(2)) ? v === '1' : ['preset', 'lod'].includes(k.slice(2)) ? v : Number(v)); return; }
+    if (k.startsWith('g.')) { if (!b.disabled) setGfx(k.slice(2), ['ao', 'ssr', 'refl', 'bloom', 'auto'].includes(k.slice(2)) ? v === '1' : ['preset', 'lod'].includes(k.slice(2)) ? v : Number(v)); return; }
     if (k === 'crowd') { setCrowdLevel(v); return; }
+    if (k === 'lighting') { setGfxAll(setLighting(gfx, v)); return; }
     if (k === 'lang') setLang(v);
     if (k === 'subs') subtitlesOn = v === 'on';
     if (k === 'sound' && (audio.muted !== (v === 'off'))) audio.toggleMute();
@@ -1803,6 +1806,9 @@ function frame(now) {
 
   cullPeople(camera.position);   // people far away aren't drawn; only those near cast shadows (world/people.js)
   if (!debug.noReflect) world.river.renderReflection(R.renderer, scene, camera);
+  // people mirrored in the paving under the eye (world/peopleReflect.js; Lighting: Medium and High)
+  world.peopleMirror.set(R.peopleReflections && !debug.noReflect, gfx.scale >= 1 ? 0.5 : 0.42);
+  world.peopleMirror.render(R.renderer, scene, camera, groundHeight(camera.position.x, camera.position.z, camera.position.y - 1.6));
   R.renderer.info.reset();
   R.renderer.shadowMap.needsUpdate = true;
   R.frame(t);

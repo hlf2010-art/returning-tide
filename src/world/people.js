@@ -11,6 +11,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { createSprings } from './springs.js';
 import { dropMaps, shrink } from './texCap.js';
+import { PEOPLE_LAYER, PEOPLE_REFLECT_FAR } from './peopleReflect.js';
 
 const ARM = (side) => new RegExp(`^Bip01_${side}_(Clavicle|UpperArm|Forearm|Hand|Finger)`);
 const boneOf = (track) => track.name.slice(0, track.name.lastIndexOf('.'));
@@ -849,12 +850,13 @@ export function cullPeople(eye) {
     if (!P.root.parent) { if ((P.gone = (P.gone || 0) + 1) > 1800) LIVE.delete(P); continue; }   // (a minute detached: let it go)
     P.gone = 0;
     P.root.getWorldPosition(_pp);
-    const d = _pp.distanceTo(eye), near = d < PERSON_FAR, shade = d < PERSON_SHADOW;
+    const d = _pp.distanceTo(eye), near = d < PERSON_FAR, shade = d < PERSON_SHADOW, mirrored = d < PEOPLE_REFLECT_FAR;
     for (const a of P.acc) a.visible = d < ACCESSORY_FAR;
     for (const m of P.meshes) {
       if (m.userData.cs === undefined) { m.userData.cs = m.castShadow; m.userData.v0 = m.visible; }   // what its owner asked for
       m.visible = m.userData.v0 && near;
       m.castShadow = m.userData.cs && shade;
+      if (mirrored) m.layers.enable(PEOPLE_LAYER); else m.layers.disable(PEOPLE_LAYER);   // in the paving's reflection (world/peopleReflect.js)
     }
   }
 }

@@ -9,6 +9,7 @@ import { asLight, glassByDay } from './dayNight.js';
 import * as THREE from 'three';
 import { L, NJ, METRO, METRO_DEPTH, DUMPLING, njRuns, njCross } from './layout.js';
 import { Batch, batchSet, flush } from './geo.js';
+import { mirrorPeople } from './materials.js';
 import { tiers } from './bund.js';
 import { makeCanvas, tex, rng, FONT } from './canvas.js';
 import { towerAtlas } from './skyline.js';
@@ -490,7 +491,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
     x.fillStyle = '#6b2a22'; x.fillRect(0, 0, 256, 256);
     for (let i = 0; i < 2600; i++) { const v = r0(); x.fillStyle = v < 0.45 ? 'rgba(40,12,10,0.55)' : v < 0.8 ? 'rgba(170,90,78,0.45)' : 'rgba(225,200,190,0.5)'; x.fillRect(r0() * 256, r0() * 256, 1 + r0() * 2, 1 + r0() * 2); }
     x.fillStyle = 'rgba(20,8,6,0.8)'; x.fillRect(0, 0, 256, 2); x.fillRect(0, 0, 2, 256);
-    const belt = new THREE.MeshStandardMaterial({ map: tex(c), roughness: 0.3, metalness: 0.05 });
+    const belt = mirrorPeople(new THREE.MeshStandardMaterial({ map: tex(c), roughness: 0.3, metalness: 0.05 }), { sheen: 1.5 });   // (polished: people show in it)
     group.add(P.belt.mesh(belt, 'nj-golden-belt')); }
   group.add(P.paving.mesh(M.sidewalk, 'nj-paving'), P.asphalt.mesh(M.asphalt, 'henan-asphalt'), P.granite.mesh(M.granite, 'nj-granite'));
   const paint = new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.6 }), yellow = new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.6 });
