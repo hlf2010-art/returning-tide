@@ -302,7 +302,7 @@ async function boot() {
     traffic.setObstacles([-1.5, 0, 1.5].map((dx) => ({ x: HURACAN_SPOT.x + dx, z: HURACAN_SPOT.z, r: 1.15 })));   // and walk round it
   });
   // the Peace Hotel's ground floor and the AIA lobby (world/interiors.js); their lamps join the light pool
-  const interiors = createInteriors({ scene, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp() });
+  const interiors = createInteriors({ scene, renderer: R.renderer, people, hud, audio, getLife: () => life, save: () => saveLife(), player, onCard: showInfoCard, onLift: () => upper.goUp() });
   const aiaLife = createAiaLife({ scene, people, hud, getLife: () => life });   // agents and their clients in the AIA lobby (world/aiaLife.js)
   // up the lifts: the sixth floor and room 612 (world/hotelUpper.js)
   const upper = createHotelUpper({ scene, hud, audio, getLife: () => life, save: () => saveLife(), player, travel });

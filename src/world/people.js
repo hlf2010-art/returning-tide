@@ -502,6 +502,43 @@ export function spreadArms(root, rad) {
   }
 }
 
+// Reaching (two-bone IK on the arm, laid over whatever clip is playing): the hand goes to a point in the world,
+// the elbow bending in the plane the clip already has it in (or down and out, if the arm is straight), the
+// upper arm then swung so shoulder-to-hand points at the target. w blends it in and out (0..1).
+// The forearm's length is shoulder..elbow..wrist from the pose itself, so it fits any body.
+const _ik = { s: new THREE.Vector3(), e: new THREE.Vector3(), h: new THREE.Vector3(), t: new THREE.Vector3(), a: new THREE.Vector3(), b: new THREE.Vector3(), n: new THREE.Vector3(),
+  q: new THREE.Quaternion(), pq: new THREE.Quaternion(), wq: new THREE.Quaternion(), keep: new THREE.Quaternion(), keep2: new THREE.Quaternion() };
+function rotateBoneWorld(bone, qWorld) {   // bone's world rotation premultiplied by qWorld, as a local rotation
+  bone.getWorldQuaternion(_ik.wq); _ik.wq.premultiply(qWorld);
+  bone.parent.getWorldQuaternion(_ik.pq).invert(); bone.quaternion.copy(_ik.pq.multiply(_ik.wq)); bone.updateMatrixWorld(true);
+}
+export function reachArm(root, side, target, w, pole = null) {
+  if (!target || w <= 0.001) return;
+  const up = root.getObjectByName(`Bip01_${side}_UpperArm`), fo = root.getObjectByName(`Bip01_${side}_Forearm`), ha = root.getObjectByName(`Bip01_${side}_Hand`);
+  if (!up || !fo || !ha) return;
+  const { s, e, h, t, a, b, n, q } = _ik;
+  _ik.keep.copy(up.quaternion); _ik.keep2.copy(fo.quaternion);
+  up.getWorldPosition(s); fo.getWorldPosition(e); ha.getWorldPosition(h); t.copy(target);
+  const l1 = s.distanceTo(e), l2 = e.distanceTo(h), d = THREE.MathUtils.clamp(s.distanceTo(t), Math.abs(l1 - l2) + 1e-3, l1 + l2 - 1e-3);
+  // 1. the elbow: bend it to the angle that puts the hand d from the shoulder
+  a.subVectors(s, e).normalize(); b.subVectors(h, e).normalize();
+  n.crossVectors(a, b);
+  if (n.lengthSq() < 1e-6) { n.copy(pole || new THREE.Vector3(0, -1, 0)).cross(a); }
+  n.normalize();
+  const cur = Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1)), want = Math.acos(THREE.MathUtils.clamp((l1 * l1 + l2 * l2 - d * d) / (2 * l1 * l2), -1, 1));
+  rotateBoneWorld(fo, q.setFromAxisAngle(n, want - cur));
+  // 2. the upper arm: shoulder-to-hand onto shoulder-to-target
+  ha.getWorldPosition(h);
+  a.subVectors(h, s).normalize(); b.subVectors(t, s).normalize();
+  rotateBoneWorld(up, q.setFromUnitVectors(a, b));
+  // 3. the elbow's swing about that line: toward the pole (down and out by default) if one is given
+  if (pole) {
+    fo.getWorldPosition(e); const ax = b, el = a.subVectors(e, s), proj = el.sub(ax.clone().multiplyScalar(el.dot(ax))), pl = pole.clone().sub(ax.clone().multiplyScalar(pole.dot(ax)));
+    if (proj.lengthSq() > 1e-6 && pl.lengthSq() > 1e-6) { proj.normalize(); pl.normalize(); let ang = Math.acos(THREE.MathUtils.clamp(proj.dot(pl), -1, 1)); if (n.crossVectors(proj, pl).dot(ax) < 0) ang = -ang; rotateBoneWorld(up, q.setFromAxisAngle(ax, ang)); }
+  }
+  if (w < 0.999) { up.quaternion.copy(_ik.keep.slerp(up.quaternion, w)); fo.quaternion.copy(_ik.keep2.slerp(fo.quaternion, w)); up.updateMatrixWorld(true); }
+}
+
 export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null, keepHair = false, tone = null } = {}) {
   avatar.updateMatrixWorld(true);
   let body = null;
@@ -886,6 +923,7 @@ export function createPerson(people, role) {
   const phoneClip = CLIPS.find((c) => c.name === 'phone');
   const phoneLayer = phoneClip ? mixer.clipAction(new THREE.AnimationClip('phone:hold', phoneClip.duration, phoneClip.tracks.filter((t) => PHONE_LAYER.test(boneOf(t))))) : null;
   if (phoneLayer) { phoneLayer.play(); phoneLayer.setEffectiveWeight(0); phoneLayer.time = phoneClip.duration * (0.15 + Math.random() * 0.6); }
+  const reach = { R: { at: null, w: 0, pole: null, hand: null }, L: { at: null, w: 0, pole: null, hand: null } };
   const person = {
     springs, accessories: [],
     root, mixer, role, sex, speeds, anchors, bones, umbrellaHand: hand, child: !!kid, size: kid ? kid.k : 1,
@@ -909,6 +947,9 @@ export function createPerson(people, role) {
       const d = phoneClip.duration;                                     // stay in the stretch where the phone is up
       if (phoneLayer.time < d * 0.12 || phoneLayer.time > d * 0.88) phoneLayer.time = d * 0.12;
     },
+    // reach: a hand ('R' / 'L') to a world point (Vector3), weight 0..1 (see reachArm); pole: where the elbow
+    // points; hand(bone, w): a last touch to the hand (a finger out to press a button, a palm turned up)
+    setReach(side, at, w, { pole = null, hand = null } = {}) { const r = reach[side]; r.at = at; r.w = at ? w : 0; r.pole = pole; r.hand = hand; },
     // pose: { twist, lean } from engine/flinch.js flinchPose(), or null
     setFlinch(pose) { flinch = pose; },
     // speed (m/s) drives walk / jog playback so the stride matches the ground
@@ -919,6 +960,7 @@ export function createPerson(people, role) {
     // look: world [x, z] to turn the head (and a little of the neck) toward, or null
     update(dt, look = null) {
       if (dt > 0) { mixer.update(dt); spreadArms(root, armOut); }       // (nothing moves in no time; see play)
+      if (reach.R.w > 0.001 || reach.L.w > 0.001) { root.updateMatrixWorld(true); for (const k of ['R', 'L']) { const r = reach[k]; if (r.w > 0.001) { reachArm(root, k, r.at, r.w, r.pole); if (r.hand) r.hand(bones[k], r.w); } } }
       root.updateMatrixWorld(true);
       if (flinch && (Math.abs(flinch.twist) > 1e-3 || Math.abs(flinch.lean) > 1e-3)) {
         const ry = root.rotation.y;
