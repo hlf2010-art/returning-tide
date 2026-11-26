@@ -258,3 +258,12 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
 - **A generated hair shell** for a cut the old body never had (sheet hair `style: "shell"`, `hair_shell()` in build_hero.py): the scalp pushed out by the hair's thickness, hanging straight below the head's widest ring, a skirt to the cut with a soft belly and tuck, kept clear of the ears, open over the face (`face_open_deg`). The swept fringe (`fringe_sweep`) runs from low over one brow up to the parting. Its edge follows that line instead of the grid's steps: the boundary vertices are moved onto it, and steep parts are filled with fans. In the game it gets the same strand shading as kept hair, darker roots, and its lower and open edges break into uneven tips (`hairShellMaterial`).
 - **Neck:** with `conformNeck: false` on a Rocketbox body, the new neck below the chin is dropped and her old neck meets the new jaw. The rest of the new neck takes the old neck's colour, measured on whichever primitive holds it. The whole body is retinted to her face's tone.
 - Still to improve: her lips read a little full and pouty, the neck join under the ear is visible from the side, the bob is sleek where her reference is layered and tousled, and there's a tiny light speck where the ear sits under the hair.
+
+## Round 16 (26 November): Lin Yu'an, and a neck join for any street body
+
+![before and after](hero-faces/round16-yuan.jpg)
+
+- **Yu'an's own role** (`yuan`) on Female_Adult_07, with a sheet built from her portrait: dark brown-black hair to the jaw, a side-swept fringe from the other side (`fringe_sweep: -1`), and new sheet controls for how low the fringe starts and how far it rises (`fringe_low_m`, `fringe_rise_m`).
+- **Neck join, reworked for Rocketbox bodies** (Zhiwei's fix only worked because her old neck reached up under the jaw). The old neck's ragged top is trimmed along the new jaw line, on every primitive that holds it. The new neck reaches down over what is left, tapering 25 % inside it so its flared edge stays hidden. It is cut per pixel on a level line rather than along its triangles' ragged edges (`neckcut` in skinToned), and takes the old neck's colour, sampled only from skin-like texels, so a brown leather collar no longer counts.
+- Ji Bai and Gu Nian render pixel-identical to before.
+- Still to improve: Yu'an's hair is shorter and sleeker than her reference's soft, layered shoulder-length cut. Her lips read a little full, like Zhiwei's. A faint level line remains where her new neck meets the old one.

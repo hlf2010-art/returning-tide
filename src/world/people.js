@@ -141,10 +141,10 @@ function skinToned(src, tone, hair = null, neckCol = null) {
     // the new neck's lowest centimetres take the old body's skin colour, so its cut edge (ragged, on an open
     // collar) melts into the old neck instead of showing as pale shards
     if (neckCol) {
-      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float neckmix; varying float vNeckMix;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvNeckMix = neckmix;');
-      sh.fragmentShader = sh.fragmentShader.replace('uniform vec3 uTone;', 'uniform vec3 uTone; uniform vec3 uNeckCol; varying float vNeckMix;')
-        .replace('diffuseColor.rgb *= mix(vec3(1.0), uTone, hSkin);', 'diffuseColor.rgb *= mix(vec3(1.0), uTone, hSkin);\n        diffuseColor.rgb = mix(diffuseColor.rgb, uNeckCol, vNeckMix);');
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float neckmix; attribute float neckcut; varying float vNeckMix; varying float vNeckCut;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvNeckMix = neckmix; vNeckCut = neckcut;');
+      sh.fragmentShader = sh.fragmentShader.replace('uniform vec3 uTone;', 'uniform vec3 uTone; uniform vec3 uNeckCol; varying float vNeckMix; varying float vNeckCut;')
+        .replace('diffuseColor.rgb *= mix(vec3(1.0), uTone, hSkin);', 'if (vNeckCut < 0.0) discard;\n        diffuseColor.rgb *= mix(vec3(1.0), uTone, hSkin);\n        diffuseColor.rgb = mix(diffuseColor.rgb, uNeckCol, vNeckMix);');
     }
   };
   m.customProgramCacheKey = () => (hair ? 'skin-toned-scalp' : 'skin-toned') + (neckCol ? '-neck' : '');
@@ -737,13 +737,40 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
       if (n) autoTint = mean.map((x, i) => THREE.MathUtils.clamp(lin(want[i]) / Math.max(0.01, lin(x / n)), 0.4, 2.5));
     });
   }
+  // Rocketbox bodies (unconformed): the old neck's top edge, where the head's triangles were cut away, is ragged,
+  // and under the ears, where the old jaw was wider, it stuck out past the new neck in shards. It is trimmed
+  // along the new jaw's line (from 1 cm under the chin, rising to the ears), on whichever primitive holds it,
+  // and the new neck then reaches down over what is left of it.
+  let oldNeckTop = -Infinity;
+  if (!keepHair && !conform) {
+    const parts = [];
+    avatar.traverse((o) => { if (o.isSkinnedMesh && o.skeleton.bones[0] === bones[0] && o.geometry.index) parts.push(o); });
+    const w = new THREE.Vector3();
+    for (const o of parts) {
+      const op = o.geometry.attributes.position, ki = o.geometry.index.array, kept = [];
+      for (let t = 0; t < ki.length; t += 3) {
+        w.set(0, 0, 0);
+        for (let k = 0; k < 3; k++) w.add(P[0].fromBufferAttribute(op, ki[t + k]));
+        w.divideScalar(3).applyMatrix4(o.matrixWorld);
+        const jaw = oldChin - 1 + 0.6 * Math.max(0, nose.z - 2 - w.z);
+        if (!(w.y > jaw && w.y < oldChin + 4 && Math.abs(w.x - nose.x) < 9 && w.z > nose.z - 18)) kept.push(ki[t], ki[t + 1], ki[t + 2]);
+      }
+      if (kept.length < ki.length) { const ng3 = o.geometry.clone(); ng3.setIndex(kept); o.geometry = ng3; }
+      // (the top of what is left, in front)
+      const ki2 = o.geometry.index.array;
+      for (let i = 0; i < ki2.length; i++) {
+        w.fromBufferAttribute(op, ki2[i]).applyMatrix4(o.matrixWorld);
+        if (Math.abs(w.x - nose.x) < 2 && w.z > nose.z - 9 && w.y < oldChin + 1 && w.y > oldNeckTop) oldNeckTop = w.y;
+      }
+    }
+  }
   // the rest of the body's skin (hands, wrists) takes the same tone as the new face
   if (tone && neckTex && skinSum[3] > 50) retintBodySkin(body, [0, 1, 2].map((i) => skinSum[i] / skinSum[3]), tone.map((c) => c / 255));
   // the old neck's colour as it is now drawn (after the retint), just under where the new neck ends
   let oldNeckCol = null;
   if (neckTex && !conform) {
-    // where the old neck skin left in place starts (the new neck's end, if little of the old neck was dropped)
-    const lowY = neckProfile.size > 2 ? Math.min(...neckProfile.keys()) / 2 : neckEnd - 1.5;
+    // where the old neck skin left in place starts (its trimmed top on a Rocketbox body; else the new neck's end)
+    const lowY = Number.isFinite(oldNeckTop) ? oldNeckTop - 0.5 : neckProfile.size > 2 ? Math.min(...neckProfile.keys()) / 2 : neckEnd - 1.5;
     // on whichever primitive holds it (Rocketbox bodies: not the largest one)
     const parts = [];
     avatar.traverse((o) => { if (o.isSkinnedMesh && o.skeleton.bones[0] === bones[0] && o.geometry.index && o.geometry.attributes.uv) parts.push(o); });
@@ -756,7 +783,9 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
           w.fromBufferAttribute(op, ki[i]).applyMatrix4(o.matrixWorld);
           if (w.y > lowY || w.y < lowY - 3 || Math.abs(w.x - nose.x) > 4 || w.z < nose.z - 9) continue;
           const c = t2(ou.getX(ki[i]), ou.getY(ki[i]));
-          if (c[0] - c[2] < 0.06) continue;   // skin only
+          // skin only (not a brown leather collar: skin is lighter, and warm without being saturated)
+          const sat = (c[0] - c[2]) / Math.max(c[0], 0.01);
+          if (c[0] - c[2] < 0.06 || !(c[0] >= c[1] && c[1] >= c[2]) || 0.3 * c[0] + 0.55 * c[1] + 0.15 * c[2] < 0.38 || sat > 0.5) continue;
           sum[0] += c[0]; sum[1] += c[1]; sum[2] += c[2]; sum[3]++;
         }
       }
@@ -767,7 +796,7 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
     if (nc && tone && !(skinSum[3] > 50)) { for (const o of parts) retintBodySkin(o, nc, tone.map((c) => c / 255)); nc = sampleNeck(); }
     // (a little darker for the Hunyuan bodies, whose skin has its shading baked in; lighter for the Rocketbox ones,
     // whose old neck renders lighter than its map: matched by eye)
-    if (nc) oldNeckCol = nc.map((c) => (keepHair ? 0.8 : 1.3) * Math.pow(c, 2.2));
+    if (nc) oldNeckCol = nc.map((c) => (keepHair ? 0.8 : 1) * Math.pow(c, 2.2));
   }
   let eyeY = null;
   headScene.traverse((o) => { if (o.isMesh && /^eye-[lr]$/.test(o.name)) eyeY = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).y; });
@@ -776,15 +805,36 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
     if (!o.isMesh || (keepHair && /^hair/i.test(o.material.name))) return;
     const geo = o.geometry.clone();
     if (!keepHair && !conform && o.morphTargetDictionary !== undefined && geo.index) {
-      // a body with its whole old neck up to the jaw (Rocketbox): the new neck goes (its lower end poked out through
-      // the collar, and its colour never quite matched)
+      // a Rocketbox body, its old neck trimmed under the new jaw above: the new neck reaches down over what is left
       const p = geo.attributes.position, ix = geo.index.array, up = [], w = new THREE.Vector3();
-      const cutY = newChin;   // (the old neck reaches up under the jaw)
+      // (as far up as the old neck reaches under the jaw, with 1.5 cm of overlap)
+      const cutY = Math.min(newChin, newNose.y + (oldNeckTop - nose.y) / (100 * s) - 0.015);
+      // where it overlaps the old neck it tapers in by 25 %, under the old neck's skin, so its cut edge (ragged,
+      // flaring towards the shoulders) stays hidden inside it
+      const topY = cutY + 0.015, ring = [];
+      for (let v = 0; v < p.count; v++) { w.fromBufferAttribute(p, v).applyMatrix4(o.matrixWorld); if (Math.abs(w.y - topY) < 0.004) ring.push(w.x, w.z); }
+      if (ring.length > 8) {
+        let cx = 0, cz = 0; for (let i = 0; i < ring.length; i += 2) { cx += ring[i]; cz += ring[i + 1]; }
+        cx /= ring.length / 2; cz /= ring.length / 2;
+        let rad = 0; for (let i = 0; i < ring.length; i += 2) rad = Math.max(rad, Math.hypot(ring[i] - cx, ring[i + 1] - cz));
+        const inv = new THREE.Matrix4().copy(o.matrixWorld).invert();
+        for (let v = 0; v < p.count; v++) {
+          w.fromBufferAttribute(p, v).applyMatrix4(o.matrixWorld);
+          if (w.y >= topY + 0.01) continue;
+          const k = 1 - 0.25 * THREE.MathUtils.smoothstep(topY + 0.01 - w.y, 0, 0.02);
+          const d = Math.hypot(w.x - cx, w.z - cz), nd = Math.min(d, rad) * k;
+          if (d > 1e-6) { w.x = cx + (w.x - cx) * nd / d; w.z = cz + (w.z - cz) * nd / d; w.applyMatrix4(inv); p.setXYZ(v, w.x, w.y, w.z); }
+        }
+      }
       for (let t = 0; t < ix.length; t += 3) {
         let hi = -Infinity; for (let k = 0; k < 3; k++) hi = Math.max(hi, w.fromBufferAttribute(p, ix[t + k]).applyMatrix4(o.matrixWorld).y);
         if (hi > cutY) up.push(ix[t], ix[t + 1], ix[t + 2]);
       }
       geo.setIndex(up);
+      // (and the triangles across the line are cut per pixel, level, not along their ragged edges: see skinToned)
+      const nc = new Float32Array(p.count);
+      for (let v = 0; v < p.count; v++) nc[v] = w.fromBufferAttribute(p, v).applyMatrix4(o.matrixWorld).y - cutY;
+      geo.setAttribute('neckcut', new THREE.BufferAttribute(nc, 1));
     }
     if (/lash/i.test(o.name) && geo.index && eyeY !== null) {
       // only the upper lashes: at game distances the lower row is a grey smudge under the eye
@@ -855,6 +905,7 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
           nm[v] = 1 - THREE.MathUtils.smoothstep(hw.y, jaw - 0.03, jaw);
         }
         geo.setAttribute('neckmix', new THREE.BufferAttribute(nm, 1));
+        if (!geo.attributes.neckcut) geo.setAttribute('neckcut', new THREE.BufferAttribute(new Float32Array(n).fill(1), 1));
       }
       mat = skinToned(mat, tint || autoTint, keepHair ? hairFrame(nose, body.matrixWorld) : null, neckCol);
     }   // (the tongue has no map: it keeps its own colour)

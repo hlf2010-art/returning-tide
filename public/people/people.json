@@ -95,6 +95,16 @@
    "conformNeck": false,
    "bytes": 2243732
   },
+  "yuan": {
+   "avatar": "Lin Yu'an (close-up head from her character sheet on Female_Adult_07)",
+   "sex": "f",
+   "named": true,
+   "file": "c1.glb",
+   "head": "yuan/head.glb",
+   "skinTone": [140, 98, 82],
+   "conformNeck": false,
+   "bytes": 2654580
+  },
   "c4": {
    "avatar": "Business_Female_04",
    "sex": "f",
