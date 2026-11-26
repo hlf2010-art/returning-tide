@@ -156,7 +156,8 @@ export const RIDER_BRANDS = {
   jingsong: { jacket: [31, 127, 224], helmet: 0x1f7fe0, box: 0x1f7fe0 },
 };
 const helmetMats = {};
-export function dressRider(person, brand = 'yellow') {
+// the jacket alone, re-dyed (e-bike riders frozen on their seats wear their helmet on the bike: world/ebikeView.js)
+export function dyeRider(person, brand = 'yellow') {
   const B = RIDER_BRANDS[brand] || RIDER_BRANDS.yellow, [hr, hg, hb] = B.jacket;
   person.root.traverse((o) => {
     if (!o.isMesh || !/_body$/.test(o.material.name)) return;
@@ -167,6 +168,11 @@ export function dressRider(person, brand = 'yellow') {
       return [Math.min(255, hr * k), Math.min(255, hg * k), Math.min(255, hb * k)];
     });
   });
+  return person;
+}
+export function dressRider(person, brand = 'yellow') {
+  const B = RIDER_BRANDS[brand] || RIDER_BRANDS.yellow;
+  dyeRider(person, brand);
   const head = bodyPoints(person, /_head$/);
   if (head.length) {
     const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity);

@@ -1,8 +1,8 @@
 // E-bikes on the side streets (engine/ebikes.js): no overlaps, never off their lanes, never through a
 // red or onto a busy zebra, bunching ahead of the stop line, couriers pulling in, the hour's density.
-import { createEbikes, EBIKE_LANES, EBIKE } from '../src/engine/ebikes.js';
+import { createEbikes, EBIKE_LANES, EBIKE, courierStops } from '../src/engine/ebikes.js';
 import { createSignalController, TRAFFIC_CONFIG } from '../src/engine/traffic.js';
-import { L } from '../src/world/layout.js';
+import { L, NJ, manner } from '../src/world/layout.js';
 
 let failed = 0;
 const ok = (cond, msg) => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${msg}`); if (!cond) failed++; };
@@ -91,6 +91,55 @@ const onLane = (r) => {
   for (let i = 0; i < 20 / DT; i++) W.update(DT);
   ok(W.stats.spawnedSide === 0, 'with the side streets\' ends in view, no one appears there out of nothing');
   ok(EBIKE_LANES.every((l) => !(l.ax > L.westCurbX && l.ax < L.eastCurbX)), 'no lane is on the Bund road');
+}
+
+// 5. pickups: off the bike, to Linger's hatch or round the corner into a Nanjing Road shop, back with a bag,
+// the box opened and shut, and away; one courier at a counter at a time; on foot only on the pavements
+{
+  const doors = [{ x: -530, z: NJ.z0, dir: 1 }, { x: -545, z: NJ.z1, dir: -1 }, { x: -480, z: NJ.z0, dir: 1 }, { x: -470, z: NJ.z1, dir: -1 }, { x: -700, z: NJ.z0, dir: 1 }];
+  const stops = courierStops(EBIKE_LANES, doors);
+  const all = [...stops.values()].flat();
+  ok(all.some((s) => s.id === 'manner') && all.filter((s) => s.kind === 'door').length >= 4, `pickups: Linger's hatch and the Nanjing Road doors by Henan Road (${all.length})`);
+  ok(!all.some((s) => s.id.includes('-700')), 'no door too far from the corner to walk to');
+  const ctl = createSignalController();
+  const E = createEbikes({ count: 80, rng: seeded(11), signal: henanSignal(ctl), doors });
+  const seen = new Map(), phases = new Set();
+  let atManner = 0, onRoad = 0, hiddenAtHatch = 0, lidLeftOpen = 0, done = 0, bagHome = 0, maxAtCounter = 0, footInHenanRoad = 0, looks = 0, calls = 0;
+  const prevPhone = new Map();
+  for (let i = 0; i < 900 / DT; i++) {
+    ctl.update(DT, { boxOccupied: false, crosswalkOccupied: false });
+    E.update(DT);
+    const counter = new Map();
+    for (const r of E.riders) {
+      if (r.phone && prevPhone.get(r) !== r.phoneN) { if (r.phone === 'look') looks++; else calls++; }
+      prevPhone.set(r, r.phoneN);
+      if (r.task && r.task.kind === 'pickup') { const id = r.task.stop.id; counter.set(id, (counter.get(id) || 0) + 1); }
+      const f = r.foot;
+      if (!f) { if (seen.has(r)) { done++; if (seen.get(r).bag) bagHome++; seen.delete(r); } if (r.state !== 'park' && r.lid > 0) lidLeftOpen++; continue; }
+      phases.add(f.phase);
+      seen.set(r, { bag: seen.has(r) && seen.get(r).bag || f.bag || f.phase === 'load' });
+      if (r.task.stop.id === 'manner') {
+        if (f.phase === 'wait') atManner++;
+        if (f.hidden) hiddenAtHatch++;
+        if (f.z > -L.street.roadHalfW + 0.9) onRoad++;                     // never out in Hankou Road's traffic
+      } else {
+        if (f.x > NJ.henan.x0 + 0.9 && f.x < NJ.henan.x1 - 0.9) footInHenanRoad++;
+      }
+    }
+    for (const n of counter.values()) maxAtCounter = Math.max(maxAtCounter, n);
+  }
+  ok(E.stats.pickups >= 6, `couriers collect orders (${E.stats.pickups} pickups in 15 minutes)`);
+  ok(atManner > 0 && hiddenAtHatch === 0, `at Linger they wait at the hatch, in sight (${(atManner * DT).toFixed(0)} s)`);
+  ok(['off', 'walk', 'wait', 'back', 'load', 'on'].every((p) => phases.has(p)), `the whole round: ${[...phases].join(' > ')}`);
+  ok(done >= 4 && bagHome === done, `every finished pickup came back with the bag and loaded it (${bagHome}/${done})`);
+  ok(onRoad === 0 && footInHenanRoad === 0, `on foot only on the pavements (Hankou ${onRoad}, Henan ${footInHenanRoad})`);
+  ok(lidLeftOpen === 0, `no box rides off with its lid open (${lidLeftOpen})`);
+  ok(maxAtCounter <= 1, `one courier at a counter at a time (${maxAtCounter})`);
+  ok(looks > 10 && calls > 5 && E.stats.phoneStops > 0, `phones: ${looks} looks, ${calls} calls, ${E.stats.phoneStops} pull-ins to answer one`);
+  // shut: no pickups
+  const C = createEbikes({ count: 80, rng: seeded(11), signal: henanSignal(createSignalController()), doors, open: () => false });
+  for (let i = 0; i < 300 / DT; i++) C.update(DT);
+  ok(C.stats.pickups === 0, `with the shops shut, nobody collects (${C.stats.pickups})`);
 }
 
 if (failed) { console.log(`${failed} failed`); process.exit(1); }

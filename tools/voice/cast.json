@@ -438,5 +438,8 @@
  "teatourist": { "zh": "zm_029", "en": "am_michael" },
  "teagirl": { "zh": "zf_001", "en": "af_jessica", "speed": 1.06 },
  "volunteer": { "zh": "zf_006", "en": "af_nicole" },
- "sweeper": { "zh": "zm_031", "en": "am_onyx", "speed": 0.95 }
+ "sweeper": { "zh": "zm_031", "en": "am_onyx", "speed": 0.95 },
+ "rider": { "zh": "zm_091", "en": "am_echo", "speed": 1.1 },
+ "riderapp": { "zh": "zf_049", "en": "af_alloy" },
+ "barista": { "zh": "zf_026", "en": "af_jessica", "speed": 1.06 }
 }

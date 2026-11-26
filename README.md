@@ -1217,6 +1217,26 @@ The clock (4 game seconds per real second) now drives the light. One pure functi
   Each speaks in recorded voices. Off for measurement tools (`?q=`) unless `?moments`.
   `node tools/streetwalk.mjs` walks through all of it.
 
+## Delivery riders at work (`src/engine/ebikes.js`, `src/world/ebikeView.js`, `src/world/riderLines.js`)
+
+E-bikes run Henan Road's kerb lanes, Hankou Road and Jiujiang Road (never the Bund road or Nanjing Road).
+About a third are couriers in the game's three invented liveries (yellow, Wanji orange, Jingsong blue),
+the same bodies and jackets as the riders who walk Nanjing Road's deliveries in from the cross streets.
+
+- **Pickups.** A courier pulls in at the kerb by Linger on Hankou Road (7:30 to 20:00) or by a Henan Road
+  corner (the shops' hours), gets off, hurries to the takeaway hatch (or round the corner and in through a
+  Nanjing Road shop's automatic doors), waits on the phone, comes back with a kraft coffee bag or a carrier
+  bag, opens the box's lid, puts it in, shuts it and rides off. One courier at a counter at a time. The one
+  near you is a full animated person; further off they wait on the bike.
+- **Phones.** Couriers' phones sit in a clamp on the bars, the map lit. Riding, a call goes under the helmet;
+  stopped at a red, most look at the phone (one-handed over the bars) or call with it at the ear (the screen
+  dark); some pull in just to answer. Commuters check theirs at the lights too.
+- **What you hear** within a few metres: calls to customers, the shop, home ("喂，您好，外卖到了……"), the
+  order number at the hatch and the barista's reply, the app's order alert, "借过借过！" when you're in the
+  way, now and then an older rider in Shanghainese (subtitles only). Voiced like every scripted line.
+- **Settings.** Crowds Low: one courier on foot at a time and no phone poses on the bikes; Medium two; High
+  three. The riders are instanced (a mesh per avatar and pose, the scooters, the lids and the phones).
+
 ## Places: a shengjian shop and the river cruise (phase 4.4)
 
 - **阿潮生煎 A-Chao Shengjian** (`src/world/dumpling.js`), on Nanjing Road East's south side, 66 m in
