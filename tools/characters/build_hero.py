@@ -277,7 +277,9 @@ def hairline(p):
     if face_front:
         # a soft hairline (about 8 mm from bare skin to full hair; the shader breaks it up into wisps), low enough
         # that the forehead seen between the fringe's locks meets hair, not a bare band of skin
-        base = (EYE_L.z + 0.063 + 0.006 * (abs(p.x) / 0.04) ** 2 + 0.10 * max(0.0, abs(p.x) - 0.045)
+        hl = SHEET.get("hairline", {})   # lift_m: higher over the forehead; recede: how far the temples go back
+        base = (EYE_L.z + 0.063 + hl.get("lift_m", 0.0) + 0.006 * hl.get("temple_rise", 1.0) * (abs(p.x) / 0.04) ** 2
+                + 0.10 * hl.get("recede", 1.0) * max(0.0, abs(p.x) - 0.045)
                 + 0.0028 * math.sin(p.x * 230.0 + 0.7) + 0.0014 * math.sin(p.x * 590.0 + 2.1))   # uneven, as real ones are
         return min(1.0, max(0.0, (p.z - base) / 0.010 + 0.5))
     side = abs(p.x) > 0.055
@@ -753,7 +755,9 @@ def brows():
         def frame(p, eye=eye, sgn=sgn):
             lx = (p.x - eye.x) * sgn  # lateral, positive outward
             t = (lx + 0.022) / 0.048  # 0 at the inner end, 1 at the tail
-            centre = eye.z + 0.0160 + 0.003 * math.sin(t * math.pi * 0.9) - 0.001 * t
+            # arch: the rise to the peak (about two thirds along); tail_drop: how far the tail falls
+            centre = (eye.z + 0.0160 + b.get("raise_m", 0.0) + b.get("arch_m", 0.003) * math.sin(min(1.0, t / 0.66) * math.pi * 0.5)
+                      - b.get("tail_drop_m", 0.001) * max(0.0, t - 0.66) / 0.34 - 0.001 * t)
             half = (0.0052 - 0.0030 * t) * b.get("thickness", 1.0)
             return t, centre, half
 
@@ -843,7 +847,8 @@ def lashes():
         for i in range(1, len(rim)):
             acc.append(acc[-1] + (rim[i] - rim[i - 1]).length)
         total = acc[-1]
-        count = 70
+        la = SHEET.get("lashes", {})   # count, length (x), width (x): fuller on a woman's lids
+        count = int(la.get("count", 70))
         for k in range(count):
             t = min(0.999, (k + RNG.random()) / count)
             if t < 0.06:                           # none in the tear duct's corner
@@ -853,14 +858,14 @@ def lashes():
             f = (d_ - acc[i - 1]) / max(1e-9, acc[i] - acc[i - 1])
             p = rim[i - 1].lerp(rim[i], f) + Vector((0, -0.0002, -0.0001))
             lat = Vector((sgn * (0.15 + 0.55 * max(0.0, t - 0.45)), 0, 0))
-            L_ = 0.0056 * (0.45 + 0.55 * math.sin(math.pi * min(1.0, 0.25 + t * 0.85))) * (0.8 + 0.4 * RNG.random())
+            L_ = 0.0056 * la.get("length", 1.0) * (0.45 + 0.55 * math.sin(math.pi * min(1.0, 0.25 + t * 0.85))) * (0.8 + 0.4 * RNG.random())
             d = (Vector((0, -1, -0.15)) + lat + Vector(((RNG.random() - 0.5) * 0.2, 0, 0))).normalized()
             seg = [p]
             for _ in range(4):
                 seg.append(seg[-1] + d * L_ / 4)
                 d = (d + Vector((0, 0.02, 0.32))).normalized()    # the curl
             fwd = Vector((0, -1, 0.25)).normalized()
-            ribbon(seg, [0.00014, 0.00012, 0.00009, 0.00005, 0.00002], fwd, verts, faces, uvs)
+            ribbon(seg, [w * la.get("width", 1.0) for w in (0.00014, 0.00012, 0.00009, 0.00005, 0.00002)], fwd, verts, faces, uvs)
     return make_mesh("lashes", verts, faces, uvs, hair_material("lash-hair", (0.012, 0.010, 0.009)))
 
 

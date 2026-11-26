@@ -51,7 +51,13 @@
    "avatar": "GuNian (Hunyuan3D from her character sheet; Rocketbox Biped rig)",
    "sex": "f",
    "named": true,
-   "file": "gunian.glb", "armOut": 6, "cleanSpecks": true,
+   "file": "gunian.glb",
+   "head": "gunian/head.glb",
+   "keepHair": true,
+   "skinTone": [142, 100, 86],
+   "hairLum": 0.5,
+   "conformNeck": false,
+   "armOut": 6, "cleanSpecks": true,
    "bytes": 4964280
   },
   "p5": {
