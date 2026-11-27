@@ -39,7 +39,7 @@ export function buildLod(root, { tris = 2500 } = {}) {
   // one geometry from all the pieces, uvs moved into their slot
   let nv = 0, ni = 0;
   for (const m of meshes) { nv += m.geometry.attributes.position.count; ni += m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count; }
-  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = new Float32Array(nv * 2), si = new Uint16Array(nv * 4), sw = new Float32Array(nv * 4), tint = new Float32Array(nv), zone = new Float32Array(nv), idx = new Uint32Array(ni);
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = new Float32Array(nv * 2), si = new Uint16Array(nv * 4), sw = new Float32Array(nv * 4), tint = new Float32Array(nv), zone = new Float32Array(nv * 3), idx = new Uint32Array(ni);
   let ov = 0, oi = 0;
   const seen = new Map();
   for (const m of meshes) {
@@ -57,7 +57,7 @@ export function buildLod(root, { tris = 2500 } = {}) {
       // (glTF uvs run top-down, as the canvas does: the maps are flipY = false, and so is the atlas)
       uv[o * 2] = u0 + u * us; uv[o * 2 + 1] = v0 + v * vs;
       for (let c = 0; c < 4; c++) { si[o * 4 + c] = a.skinIndex.getComponent(i, c); sw[o * 4 + c] = a.skinWeight.getComponent(i, c); }
-      tint[o] = body; zone[o] = a.zone ? a.zone.getX(i) : 0;
+      tint[o] = body; if (a.zone) { zone[o * 3] = a.zone.getX(i); zone[o * 3 + 1] = a.zone.getY(i); zone[o * 3 + 2] = a.zone.getZ(i); }
     }
     if (g.index) for (let j = 0; j < g.index.count; j++) idx[oi++] = g.index.getX(j) + ov;
     else for (let j = 0; j < n; j++) idx[oi++] = j + ov;
@@ -68,7 +68,7 @@ export function buildLod(root, { tris = 2500 } = {}) {
   const key = new Map();
   for (let j = 0; j < ni; j++) {
     const v = idx[j];
-    const k = `${pos[v * 3]},${pos[v * 3 + 1]},${pos[v * 3 + 2]},${uv[v * 2]},${uv[v * 2 + 1]},${Math.round(nor[v * 3] * 500)},${Math.round(nor[v * 3 + 1] * 500)},${Math.round(nor[v * 3 + 2] * 500)},${tint[v]},${zone[v]}`;
+    const k = `${pos[v * 3]},${pos[v * 3 + 1]},${pos[v * 3 + 2]},${uv[v * 2]},${uv[v * 2 + 1]},${Math.round(nor[v * 3] * 500)},${Math.round(nor[v * 3 + 1] * 500)},${Math.round(nor[v * 3 + 2] * 500)},${tint[v]},${zone[v * 3]},${zone[v * 3 + 1]},${zone[v * 3 + 2]}`;
     let w = key.get(k); if (w === undefined) { w = v; key.set(k, v); }
     idx[j] = w;
   }
@@ -88,7 +88,7 @@ export function buildLod(root, { tris = 2500 } = {}) {
   geometry.setAttribute('skinIndex', new THREE.BufferAttribute(take(si, 4, Uint16Array), 4));
   geometry.setAttribute('skinWeight', new THREE.BufferAttribute(take(sw, 4, Float32Array), 4));
   geometry.setAttribute('tint', new THREE.BufferAttribute(take(tint, 1, Float32Array), 1));
-  if (meshes.some((m) => m.geometry.attributes.zone)) geometry.setAttribute('zone', new THREE.BufferAttribute(take(zone, 1, Float32Array), 1));   // (world/crowdLooks.js: what is a top, a bottom, hair)
+  if (meshes.some((m) => m.geometry.attributes.zone)) geometry.setAttribute('zone', new THREE.BufferAttribute(take(zone, 3, Float32Array), 3));   // (world/crowdLooks.js: what is a top, a bottom, hair)
   geometry.setIndex(new THREE.BufferAttribute(unique < 65536 ? new Uint16Array(out) : out, 1));
   geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0.9, 0), 1.2);
   const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 2;

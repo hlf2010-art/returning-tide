@@ -1028,8 +1028,16 @@ pixels being drawn. `?gfx=low|mac|high|ultra` and `?lod=` override for a session
 About 380 people at medium detail (≈170 low, ≈610 high, ≈910 ultra): tourists from across China and
 abroad, locals on their way somewhere, older couples, people waiting for buses, and tour groups
 following a guide with a coloured flag (who talks to the group now and then: eight voiced lines), from
-16 Rocketbox people in all (13 of them in the crowd: Chinese, East Asian, European and African visitors,
-dressed for November). They walk a network of lanes
+29 Rocketbox people in all (28 bodies in the crowd, among them older men, a schoolboy in a track-suit uniform
+and children; Crowds Low loads only the first 15). Each body is shared out evenly and never twice in a row (a
+couple, a family, a tour group are always different bodies), and **everyone is dressed as themselves**
+(`world/crowdLooks.js`): their jacket or jumper and their trousers or skirt re-dyed to a colour Shanghai wears in
+late November (the cloth's folds kept: the dye goes by texture island, so a jacket is dyed collar to hem), suits
+dyed as one cloth, their own hair colour (black, browns, dyed teas; grey to silver for the old), a little taller or
+shorter, slimmer or broader, and (near you) scarves, beanies and caps, glasses, face masks fitted to the face,
+backpacks and cross-body bags. The same look at every distance: the full person, the middle tier (per instance)
+and the far card (its tint). Check them all in a line-up at `/tools/characters/crowd.html` (`?zones=1` shows
+what counts as top and bottom). They walk a network of lanes
 laid on the real walkable ground (the promenade's main and inner walks, both pavements of Zhongshan
 Road, Hankou Road, the stair, Nanjing Road out to Henan Road, the metro stairs), keep to the right, give
 each other room, step round you and the street furniture, never into a wall or onto the road except on

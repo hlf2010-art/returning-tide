@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Crowd looks check</title>
-<style>html, body { margin: 0; background: #9aa0a6; } canvas { display: block; }</style>
+<style>html, body { margin: 0; background: #9aa0a6; } canvas { display: block; } b { position: absolute; font: 12px system-ui; color: #fff; text-shadow: 0 0 3px #000; }</style>
 </head>
 <body>
 <script type="module">
@@ -15,7 +15,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { loadPeople, createPerson } from '/src/world/people.js';
-import { markZones, makeLook, lookMaterial, setLookUniforms, makeAccessories, wearAccessories } from '/src/world/crowdLooks.js';
+import { markZones, makeLook, lookMaterial, lookPartOf, setLookUniforms, makeAccessories, wearAccessories } from '/src/world/crowdLooks.js';
 
 const qs = new URLSearchParams(location.search);
 const n = +qs.get('n') || 24, cols = +qs.get('cols') || 8, seed = +qs.get('seed') || 1, raw = qs.get('raw') === '1', yaw = (+qs.get('yaw') || 0) * Math.PI / 180;
@@ -40,9 +40,9 @@ for (let i = 0; i < n; i++) {
   const look = makeLook(a, cast);
   if (!raw) {
     p.root.traverse((o) => {
-      if (!o.isSkinnedMesh || !o.geometry.attributes.zone || !/_body$|_opacity$|hair/i.test(o.material.name)) return;
-      if (qs.get('zones')) { o.material = new THREE.MeshBasicMaterial({ color: 0xffffff }); o.material.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float zone; flat varying float vZ;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvZ = zone;'); sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nflat varying float vZ;').replace('#include <map_fragment>', 'diffuseColor.rgb = vZ < 0.5 ? vec3(0.8) : vZ < 1.5 ? vec3(1.,0.,0.) : vZ < 2.5 ? vec3(0.,0.,1.) : vec3(0.,1.,0.);'); }; return; }
-      o.material = lookMaterial(o.material, ref); setLookUniforms(o.material.userData.look, look);
+      const part = o.isSkinnedMesh ? lookPartOf(o, ref) : null; if (!part) return;
+      if (qs.get('zones')) { o.material = new THREE.MeshBasicMaterial({ color: 0xffffff }); o.material.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 zone; varying vec3 vZ;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvZ = zone;'); sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vZ;').replace('#include <map_fragment>', 'diffuseColor.rgb = vec3(0.8) * (1.0 - min(1.0, vZ.x + vZ.y + vZ.z)) + vec3(vZ.x, vZ.z, vZ.y);'); if (part.mask) { sh.uniforms.lkMask = { value: part.mask }; sh.fragmentShader = sh.fragmentShader.replace('#include <common>', 'uniform sampler2D lkMask;\n#include <common>').replace('diffuseColor.rgb = vec3(0.8)', 'vec4 mk = texture2D(lkMask, vMapUv); diffuseColor.rgb = vec3(0.8) * (1.0 - min(1.0, mk.r + mk.g)) + vec3(mk.r, 0.0, mk.g); //'); } }; if (part.mask) o.material.map = part.mask; return; }
+      o.material = lookMaterial(o.material, part); setLookUniforms(o.material.userData.look, look);
     });
     p.root.scale.set(0.01 * look.w, 0.01 * look.h, 0.01 * look.w);
   }
@@ -50,6 +50,7 @@ for (let i = 0; i < n; i++) {
   if (!raw && !qs.get('zones')) wearAccessories(makeAccessories(p), look);
   p.root.position.set((i % cols) * 0.9, (rows - 1 - Math.floor(i / cols)) * 2.1, 0); p.root.rotation.y = yaw;
   scene.add(p.root);
+  const lab = document.createElement('b'); lab.textContent = role; lab.style.left = `${(i % cols) * 200 + 6}px`; lab.style.top = `${Math.floor(i / cols) * 420 + 4}px`; document.body.appendChild(lab);
 }
 renderer.render(scene, cam);
 window.done = true;

@@ -10,7 +10,7 @@
 // No shadow-map casting: a soft blob underneath, as for the far crowd.
 import * as THREE from 'three';
 import { PEOPLE_LAYER } from './peopleReflect.js';
-import { patchLook } from './crowdLooks.js';
+import { patchLook, lookPartOf } from './crowdLooks.js';
 import { phoneMesh, phoneCase } from './photoPose.js';
 
 const VERT_PARS = /* glsl */ `
@@ -30,7 +30,7 @@ mat4 cmSkinAt(float row) {
 }
 `;
 
-function midMaterial(src, boneTex, tinted, lod = false, ref = null) {
+function midMaterial(src, boneTex, tinted, lod = false, part = null) {
   const m = src.clone();
   m.normalMap = null;                                    // (flat cloth up close is fine at 7-30 m)
   m.vertexColors = false;
@@ -52,9 +52,9 @@ function midMaterial(src, boneTex, tinted, lod = false, ref = null) {
       .replace('#include <common>', '#include <common>\nvarying float vFade;')
       .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
         if (vFade < 0.999) { float dz = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))); if (dz >= vFade) discard; }`);
-    if (ref) patchLook(shader, { instanced: true, ref });                // (the person's own clothes and hair: world/crowdLooks.js)
+    if (part) patchLook(shader, { instanced: true, ...part });                // (the person's own clothes and hair: world/crowdLooks.js)
   };
-  m.customProgramCacheKey = () => `crowdMid${tinted ? 't' : ''}${lod ? 'l' : ''}${ref ? 'k' : ''}|${src.type}`;
+  m.customProgramCacheKey = () => `crowdMid${tinted ? 't' : ''}${lod ? 'l' : ''}${part ? `k${part.mask ? 'm' : ''}${part.hair ? 'h' : ''}` : ''}|${src.type}`;
   return m;
 }
 
@@ -74,10 +74,10 @@ export function createCrowdMid({ group, people, bake, roles, max = 150 }) {
       const g = new THREE.BufferGeometry();
       for (const [k, a] of Object.entries(s.geometry.attributes)) g.setAttribute(k, a);
       g.setIndex(s.geometry.index); g.setAttribute('iAnim', R.iAnim);
-      const looks = !!(R.lk && g.attributes.zone);
-      if (looks) setLook(g, R.lk);
+      const part = R.lk ? lookPartOf(s, R.ref) : null;
+      if (part) setLook(g, R.lk);
       const body = /_body$/i.test(s.material.name || '');
-      const mesh = new THREE.InstancedMesh(g, midMaterial(s.material, b.texture, body, false, looks ? R.ref : null), cap);
+      const mesh = new THREE.InstancedMesh(g, midMaterial(s.material, b.texture, body, false, part), cap);
       mesh.instanceMatrix = R.iMat;
       if (body) { mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3).fill(1), 3).setUsage(THREE.DynamicDrawUsage); R.body = mesh; }
       mesh.count = 0; mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = true;
@@ -113,7 +113,7 @@ export function createCrowdMid({ group, people, bake, roles, max = 150 }) {
     const g = lod.geometry; g.setAttribute('iAnim', R.iAnim);
     const looks = !!(R.lk && g.attributes.zone);
     if (looks) setLook(g, R.lk);
-    const mesh = new THREE.InstancedMesh(g, midMaterial(base, R.b.texture, true, true, looks ? R.ref : null), R.cap);
+    const mesh = new THREE.InstancedMesh(g, midMaterial(base, R.b.texture, true, true, looks ? { ref: R.ref } : null), R.cap);
     mesh.instanceMatrix = R.iMat;
     mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(R.cap * 3).fill(1), 3).setUsage(THREE.DynamicDrawUsage);
     mesh.count = 0; mesh.visible = false; mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = true; mesh.name = 'crowd-mid';

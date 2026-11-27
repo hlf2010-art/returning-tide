@@ -18,7 +18,7 @@ import { nearRank, viewCos } from '../engine/crowd.js';
 import { bakeBones } from './crowdBake.js';
 import { createCrowdMid } from './crowdMid.js';
 import { canopyGeometry } from './umbrella.js';
-import { lookOf, markZones, lookMaterial, setLookUniforms, makeAccessories, wearAccessories, cardTint } from './crowdLooks.js';
+import { lookOf, markZones, lookMaterial, lookPartOf, setLookUniforms, accessoriesFor, wearAccessories, cardTint } from './crowdLooks.js';
 
 // a reaction to being bumped (engine/social.js kinds, set by main.js on a crowd person) -> clip
 const GESTURE = { sorry: 'wave', fine: 'shrug', scold: 'angry', tut: 'look', look: 'look' };
@@ -262,10 +262,11 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
       if (!o.isMesh) return;
       o.castShadow = true; o.receiveShadow = true;
       // its own body and hair materials, for this person's clothes and hair (world/crowdLooks.js)
-      if (ref && o.isSkinnedMesh && o.geometry.attributes.zone && o.material && /_body$|_opacity$|hair/i.test(o.material.name || '')) { o.material = lookMaterial(o.material, ref); lookMats.push(o.material); if (/_body$/i.test(o.material.name)) bodyMat = o.material; }
+      const part = o.isSkinnedMesh ? lookPartOf(o, ref) : null;
+      if (part) { o.material = lookMaterial(o.material, part); lookMats.push(o.material); if (!part.hair) bodyMat = o.material; }
       else if (!bodyMat && o.material && /_body$/i.test(o.material.name || '')) { o.material = bodyMat = o.material.clone(); }
     });
-    const kit = makeAccessories(person);                                     // (scarf, hats, glasses, mask, bags: shown per person)
+    const kit = accessoriesFor(person, people.avatars[role]);                                     // (scarf, hats, glasses, mask, bags: shown per person)
     const phone = phoneMesh(); phone.visible = false; phone.material[0].color.copy(phoneCase(made));
     group.add(person.root, phone);
     const umb = new THREE.Group(); umb.visible = false;
@@ -351,7 +352,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
           for (const id of next) { fading.delete(id); if (!midSet.has(id) && midFade[id] === 0) midYaw[id] = NaN; }
           midSet = next;
         }
-        for (const [id, b] of live) if (!nearSet.has(id)) { b.agent = null; b.person.root.visible = false; b.phone.visible = false; b.umb.visible = false; live.delete(id); }
+        for (const [id, b] of live) if (!nearSet.has(id)) { b.agent = null; b.person.root.visible = false; b.phone.visible = false; b.umb.visible = false; for (const g of b.bags) g.visible = false; live.delete(id); }   // (the carrier bags too: they hang in the group, not on the body)
         for (const id of nearSet) if (!live.has(id)) {
           const a = crowd.agents[id], b = body(a.role);
           if (!b) { nearSet.delete(id); continue; }

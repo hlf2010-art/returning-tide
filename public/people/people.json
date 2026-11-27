@@ -23,6 +23,7 @@
   "p2": {
    "avatar": "Female_Adult_09",
    "sex": "f",
+   "suit": true,
    "file": "p2.glb",
    "bytes": 2786192
   },
@@ -76,6 +77,7 @@
   "c2": {
    "avatar": "Female_Adult_11",
    "sex": "f",
+   "suit": true,
    "file": "c2.glb",
    "bytes": 2731116
   },
@@ -108,6 +110,7 @@
   "c4": {
    "avatar": "Business_Female_04",
    "sex": "f",
+   "suit": true,
    "file": "c4.glb",
    "bytes": 2243732
   },
@@ -155,10 +158,10 @@
    "bytes": 1887000,
    "child": true
   },
-  "n1": {"avatar": "Female_Adult_02", "sex": "f", "file": "n1.glb", "bytes": 2627396, "extra": true},
+  "n1": {"skirt": true, "avatar": "Female_Adult_02", "sex": "f", "file": "n1.glb", "bytes": 2627396, "extra": true},
   "n2": {"avatar": "Female_Adult_05", "sex": "f", "file": "n2.glb", "bytes": 2753160, "extra": true},
-  "n3": {"avatar": "Female_Adult_15", "sex": "f", "file": "n3.glb", "bytes": 2997356, "extra": true},
-  "n4": {"avatar": "Business_Female_01", "sex": "f", "file": "n4.glb", "bytes": 2745312, "extra": true},
+  "n3": {"skirt": true, "avatar": "Female_Adult_15", "sex": "f", "file": "n3.glb", "bytes": 2997356, "extra": true},
+  "n4": {"avatar": "Business_Female_01", "sex": "f", "suit": true, "file": "n4.glb", "bytes": 2745312, "extra": true},
   "n5": {"avatar": "Female_Adult_01", "sex": "f", "fair": true, "file": "n5.glb", "bytes": 2851656, "extra": true},
   "n6": {"avatar": "Male_Adult_06", "sex": "m", "file": "n6.glb", "bytes": 2573908, "extra": true},
   "n7": {"avatar": "Male_Adult_08", "sex": "m", "file": "n7.glb", "bytes": 2153072, "extra": true},

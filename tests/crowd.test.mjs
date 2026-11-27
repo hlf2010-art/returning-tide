@@ -120,4 +120,28 @@ ok(crossing.vehicles.every((v) => mix.find((m) => m.id === v.id)), "the crossing
   for (let i = 0; i < 30 * 310; i += 3) { k.update(0.1, { player: { x: -300, z: 0 }, signal: 'walk' }); for (const a of atRail) if (a.gone || !a.atRail) left.add(a); }
   ok(atRail.every((a) => left.has(a)), `within five minutes every one of them has left the railing (${left.size} of ${atRail.length}; some may come back later as new visitors)`);
 }
+
+// everyone their own (2026-11-27): bodies shared out evenly, a couple or a group never two of the same body,
+// and each person dressed in their own look (world/crowdLooks.js)
+{
+  const ALL = ['p1', 'p2', 'p3', 'p4', 'p5', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'k1', 'k2', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'e1', 'e2', 't1'];
+  let sd = 11; const r4 = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+  const v = createCrowd({ density: 1, rnd: r4, roles: ALL });
+  const use = new Map(); for (const a of v.agents) use.set(a.role, (use.get(a.role) || 0) + 1);
+  const grown = v.agents.filter((a) => !a.child), top = Math.max(...use.values());
+  ok(use.size >= 26 && top / grown.length < 0.08, `${use.size} different bodies in a crowd of ${v.agents.length}; the most worn is ${top} (${(100 * top / grown.length).toFixed(1)}%)`);
+  ok(v.agents.filter((a) => a.partner).every((a) => a.partner.role !== a.role), 'no couple are the same body');
+  let same = 0; for (let i = 1; i < v.agents.length; i++) if (v.agents[i].role === v.agents[i - 1].role) same++;
+  ok(same === 0, 'people made one after another (a tour group, a family) never share a body');
+  const { makeLook } = await import('../src/world/crowdLooks.js');
+  const L = v.agents.slice(0, 200).map((a) => makeLook(a, { sex: ['p2', 'p5', 'c1', 'c2', 'c3', 'c4', 'c8', 'k1', 'n1', 'n2', 'n3', 'n4', 'n5'].includes(a.role) ? 'f' : 'm', elder: /^e/.test(a.role), teen: a.role === 't1', child: !!a.child }));
+  const tops = new Set(L.filter((l) => l.top[3]).map((l) => l.top.slice(0, 3).map((x) => x.toFixed(3)).join()));
+  const blacks = L.filter((l) => l.top[3] && Math.max(...l.top.slice(0, 3)) < 0.02).length;
+  ok(tops.size >= 14 && blacks / L.length < 0.2, `200 people wear ${tops.size} different tops; ${blacks} in black`);
+  const acc = (k) => L.filter((l) => l.acc[k]).length;
+  ok(acc('scarf') > 10 && acc('glasses') > 10 && acc('bag') > 20 && acc('hat') > 5 && acc('mask') > 2, `scarves ${acc('scarf')}, glasses ${acc('glasses')}, bags ${acc('bag')}, hats ${acc('hat')}, masks ${acc('mask')} among 200`);
+  ok(L.every((l) => l.h > 0.9 && l.h < 1.06 && l.w > 0.9 && l.w < 1.12), 'heights and builds stay within a person (0.9-1.06 tall, 0.9-1.12 wide)');
+  const again = makeLook(v.agents[5], { sex: 'm' }), first = makeLook(v.agents[5], { sex: 'm' });
+  ok(JSON.stringify(again) === JSON.stringify(first), 'a look is the same every time for the same person (every tier draws them alike)');
+}
 console.log(failed ? `\n${failed} FAILED` : '\nall passed'); process.exit(failed ? 1 : 0);
