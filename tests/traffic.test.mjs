@@ -227,5 +227,26 @@ const clean = (T) => T.stats.redEntries === 0 && T.stats.blockedEntries === 0 &&
   ok(clean(T) && offZebra === 0, 'traffic safety invariants held throughout the shower');
 }
 
+// a car left on the carriageway (yours, parked in lane sb1 up the road): queued behind, then passed in the other lane
+{
+  const T = make({ seed: 5 });
+  const car = [-1.5, 0, 1.5].map((k) => ({ x: -17.8, z: -60 + k, r: 1.15 }));
+  T.setParked(car);
+  let inside = 0, passed = 0, changes = 0;
+  const was = new Map();
+  run(T, 900, null, (T) => {
+    for (const v of T.vehicles) {
+      if (!v.active || v.lane.dir !== 1) continue;
+      if (v.laneChange && !was.get(`lc${v.id}`)) changes++;
+      was.set(`lc${v.id}`, !!v.laneChange);
+      const z0 = v.z - v.len / 2, z1 = v.z + v.len / 2;
+      for (const o of car) if (Math.abs(o.x - v.x) < v.width / 2 + o.r - 0.25 && o.z > z0 - o.r + 0.25 && o.z < z1 + o.r - 0.25) inside++;
+      if (v.z < -63) was.set(v.id, true); else if (v.z > -55 && was.get(v.id)) { passed++; was.set(v.id, false); }
+    }
+  });
+  ok(inside === 0, `nothing drives through a car parked in the lane (${inside})`);
+  ok(changes > 0 && passed > 10, `the traffic pulls round it into the other lane (${changes} lane changes, ${passed} past it)`);
+}
+
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);
