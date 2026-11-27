@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees, bundTrees, crossing, sideStreets } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT, glowTexture, fitText, grain } from './canvas.js';
+import { createRoadMarkings } from './roadMarkings.js';
 const grainOver = (ctx) => grain(ctx, 256, 256, 14, 5);
 import { T } from './text.js';
 
@@ -73,15 +74,19 @@ function ground(B) {
   // and its top painted yellow; on the building side the kerb top banded yellow and black (bus stops and
   // crossings left bare)
   const kerbTop = CH + 0.0065;
-  for (const [a, b] of [[-FAR, -236.5], [-227.5, -44.5], [-35.5, -3.6], [3.6, FAR]]) {
+  for (const [a, b] of [[-FAR, -241], [-223, -49], [-31, -3.6], [3.6, FAR]]) {
     B.paintYellow.floor(L.eastCurbX - 0.32, L.eastCurbX - 0.17, a, b, y);
     B.paintYellow.floor(L.eastCurbX - 0.155, L.eastCurbX - 0.005, a, b, kerbTop);
   }
   for (let z = -FAR; z < FAR; z += 2) {
-    if (Math.abs(z) < 4.5 || sideStreets.some((st) => z > st.zc - st.roadHalfW - 1 && z < st.zc + st.roadHalfW + 1) || Math.abs(z - 46) < 7 || Math.abs(z + 180) < 7) continue;
+    if (Math.abs(z) < 4.5 || sideStreets.some((st) => z > st.zc - st.roadHalfW - 1 && z < st.zc + st.roadHalfW + 1) || Math.abs(z - 46) < 7 || Math.abs(z + 180) < 7 || (z > -61 && z < -36)) continue;   // (and the parking bays)
     B.paintYellow.floor(L.westCurbX + 0.005, L.westCurbX + 0.155, z, z + 1, kerbTop);
     B.kerbBlack.floor(L.westCurbX + 0.005, L.westCurbX + 0.155, z + 1, z + 2, kerbTop);
   }
+  // speed humps: yellow-and-black rubber across Hankou Road and Jiujiang Road, a car's length short of their zebras
+  const hump = (x, z0, z1) => { for (let z = z0, k = 0; z < z1 - 0.01; z += 0.5, k++) (k % 2 ? B.humpK : B.humpY).box(x, 0, z + 0.25, 0.36, 0.045, 0.49); };
+  hump(-38.5, -S.roadHalfW + 0.1, S.roadHalfW - 0.1);
+  for (const st of sideStreets) if (!st.pedestrian) hump(-38.5, st.zc - st.roadHalfW + 0.1, st.zc + st.roadHalfW - 0.1);
   // manholes
   for (const [x, z] of [[-20, 9], [-10.5, -22], [-62, 1.2], [-44, -1.5], [-14, 48]]) B.iron.cyl(x, 0.002, z, 0.36, 0.36, 0.012, 20);
 }
@@ -196,7 +201,7 @@ function barrierRow(B, x0, x1, y, z) {
 
 export function createStreet(M) {
   const group = new THREE.Group(); group.name = 'street';
-  const B = batchSet(['asphalt', 'sidewalk', 'setts', 'granite', 'paint', 'paintYellow', 'kerbBlack', 'leafGold', 'iron', 'lampGlass', 'steel', 'wood',
+  const B = batchSet(['asphalt', 'sidewalk', 'setts', 'granite', 'paint', 'paintYellow', 'kerbBlack', 'humpY', 'humpK', 'leafGold', 'iron', 'lampGlass', 'steel', 'wood',
     'hoarding', 'red', 'white', 'bikeY', 'bikeB', 'rubber', 'bark', 'leafAutumn', 'leafLitter', 'canvas', 'glassDark2', 'shutter']);
   ground(B);
   for (const z of roadLamps) { roadLamp(B, L.eastCurbX + 0.5, z); roadLamp(B, L.westCurbX - 0.5, z + ROAD_LAMP_WEST_OFFSET); }
@@ -230,13 +235,13 @@ export function createStreet(M) {
     const sx = st.xEnd - 0.5, w = st.z1 - st.z0;
     B.hoarding.box(sx, 0, st.zc, 0.12, 2.5, w);
     for (let z = st.z0; z <= st.z1; z += 1.85) B.steel.box(sx + 0.08, 0, z, 0.06, 2.6, 0.06);
-    B.paintYellow.box(sx + 0.07, 2.3, st.zc, 0.02, 0.2, w);
+    B.humpY.box(sx + 0.07, 2.3, st.zc, 0.02, 0.2, w);
   }
   // Hankou Road ends at a construction hoarding
   const hx = S.xEnd - 0.5;
   B.hoarding.box(hx, 0, 0, 0.12, 2.5, S.halfW * 2);
   for (let z = -S.halfW; z <= S.halfW; z += 1.85) B.steel.box(hx + 0.08, 0, z, 0.06, 2.6, 0.06);
-  B.paintYellow.box(hx + 0.07, 2.3, 0, 0.02, 0.2, S.halfW * 2);
+  B.humpY.box(hx + 0.07, 2.3, 0, 0.02, 0.2, S.halfW * 2);
   place(group, sign(7.2, 1.25, (c, w, h) => {
     c.fillStyle = '#1b4c9c'; c.fillRect(0, 0, w, h); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.font = `700 ${h * 0.5}px ${FONT.sans}`; c.fillText(T.hoarding, w / 2, h * 0.5);
@@ -441,8 +446,10 @@ export function createStreet(M) {
     shutter: std({ map: shutterTex, roughness: 0.5, metalness: 0.5 }),
     leafGold: std({ color: 0xd9a92a, roughness: 0.7, emissive: 0x231806, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
     setts: std({ map: settTex, color: 0xd8d8d4, roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+    humpY: std({ color: 0xd9a514, roughness: 0.6 }), humpK: std({ color: 0x1a1b1d, roughness: 0.8 }),
     kerbBlack: std({ color: 0x1c1d1f, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
   }, group, 'street-');
+  group.add(createRoadMarkings());
 
   return {
     group, lanterns,
