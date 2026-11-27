@@ -1,7 +1,6 @@
 // Zhongshan Road's markings beyond the plain lane lines, as on photographs of 27 November 2026: lane arrows on
 // the approaches to the Hankou Road crossing, the diamond that warns of a crosswalk ahead, hatched guide
-// areas (导流线) where the kerb lane tapers away after the crossing, temporary parking bays along the west
-// kerb (临时停车), yellow bus-stop boxes (公交车站) on the river side, and a yellow no-stopping grid. All of it
+// areas (导流线) where the kerb lane tapers away after the crossing, yellow bus-stop boxes (公交车站) on the river side, and a yellow no-stopping grid. All of it
 // worn: chipped where the tyres run, scuffed at the edges. One mesh, one atlas, one draw call.
 import * as THREE from 'three';
 import { L, crossing } from './layout.js';
@@ -10,7 +9,7 @@ import { makeCanvas, tex, rng, FONT } from './canvas.js';
 const Y = 0.0135;                                    // a hair over the lane paint
 const WHITE = new THREE.Color(0xdcdad2), YELLOW = new THREE.Color(0xc99a22);
 // atlas: 4 x 2 cells of 256 x 512 px; each is drawn "far end up", as a driver sees it coming
-const CELL = { straight: 0, straightRight: 1, left: 2, park: 3, bus: 4, diamond: 5, solid: 7 };
+const CELL = { straight: 0, straightRight: 1, left: 2, bus: 4, diamond: 5, solid: 7 };
 
 function atlas() {
   const W = 256, H = 512, [c, ctx] = makeCanvas(W * 4, H * 2), r = rng(311);
@@ -41,7 +40,6 @@ function atlas() {
     const n = txt.length, step = H / n;
     for (let k = 0; k < n; k++) { ctx.save(); ctx.translate(W / 2, H - step * (k + 0.5)); ctx.scale(1.55, step / 120 * 0.92); ctx.fillText(txt[k], 0, 6); ctx.restore(); }
   };
-  at(CELL.park, () => words('临时停车'));
   at(CELL.bus, () => words('公交车站'));
   at(CELL.diamond, () => { ctx.lineWidth = 22; ctx.beginPath(); ctx.moveTo(W / 2, 14); ctx.lineTo(W - 24, H / 2); ctx.lineTo(W / 2, H - 14); ctx.lineTo(24, H / 2); ctx.closePath(); ctx.stroke(); });
   at(CELL.solid, () => ctx.fillRect(0, 0, W, H));
@@ -126,12 +124,6 @@ export function createRoadMarkings() {
   }
   guide(L.eastCurbX - 0.32, 1, crossing.stopS - 1.2, -24, 3.3);     // northbound, beyond the crossing
   guide(L.westCurbX + 0.3, -1, -crossing.stopS + 1.2, 24, 3.3);     // southbound, beyond it
-
-  // ---- temporary parking along the west kerb, north of the crossing: four bays, 2.5 x 6 m ----
-  const px0 = L.westCurbX + 0.3, px1 = px0 + 2.5, pz0 = -60, pz1 = -36;
-  line(px1, pz0, px1, pz1, 0.15); line(px0, pz0, px1, pz0, 0.15); line(px0, pz1, px1, pz1, 0.15);
-  for (let z = pz0 + 6; z < pz1 - 0.1; z += 6) line(px0, z, px1, z, 0.12);
-  mark(CELL.park, (px0 + px1) / 2, -51, 1.3, 3.6, 1); mark(CELL.park, (px0 + px1) / 2, -39, 1.3, 3.6, 1);
 
   // ---- bus stops on the river side: a yellow dashed box in the kerb lane, 公交车站 in it ----
   for (const zc of [-40, -232]) {

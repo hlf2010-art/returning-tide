@@ -79,7 +79,7 @@ function ground(B) {
     B.paintYellow.floor(L.eastCurbX - 0.155, L.eastCurbX - 0.005, a, b, kerbTop);
   }
   for (let z = -FAR; z < FAR; z += 2) {
-    if (Math.abs(z) < 4.5 || sideStreets.some((st) => z > st.zc - st.roadHalfW - 1 && z < st.zc + st.roadHalfW + 1) || Math.abs(z - 46) < 7 || Math.abs(z + 180) < 7 || (z > -61 && z < -36)) continue;   // (and the parking bays)
+    if (Math.abs(z) < 4.5 || sideStreets.some((st) => z > st.zc - st.roadHalfW - 1 && z < st.zc + st.roadHalfW + 1) || Math.abs(z - 46) < 7 || Math.abs(z + 180) < 7) continue;
     B.paintYellow.floor(L.westCurbX + 0.005, L.westCurbX + 0.155, z, z + 1, kerbTop);
     B.kerbBlack.floor(L.westCurbX + 0.005, L.westCurbX + 0.155, z + 1, z + 2, kerbTop);
   }
