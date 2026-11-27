@@ -175,12 +175,23 @@ export function dressRider(person, brand = 'yellow') {
   dyeRider(person, brand);
   const head = bodyPoints(person, /_head$/);
   if (head.length) {
-    const top = head.reduce((m, p) => Math.max(m, p.y), -Infinity);
+    // fitted to this head, as the seated riders' are (world/ebikeView.js): the skull's width and depth across
+    // the band where a helmet sits, a shell a centimetre proud of the hair, tipped back a little, its rim at
+    // the brow, a short visor, the straps down past the ears
+    const hx = head.reduce((a, p) => a + p.x, 0) / head.length, hz = head.reduce((a, p) => a + p.z, 0) / head.length;
+    const skull = head.concat(bodyPoints(person, /_opacity$|hair/i)).filter((p) => Math.abs(p.x - hx) < 0.14 && Math.abs(p.z - hz) < 0.16);   // (the hair too: the helmet goes over it)
+    const top = skull.reduce((m, p) => Math.max(m, p.y), -Infinity), band = skull.filter((p) => p.y > top - 0.085);
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const p of band) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); }
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2 - 0.006, rx = (x1 - x0) / 2 + 0.012, rz = (z1 - z0) / 2 + 0.02, ry = 0.122, tip = 0.22;
     const m = helmetMats[brand] || (helmetMats[brand] = new THREE.MeshStandardMaterial({ color: B.helmet, roughness: 0.35, metalness: 0.1 }));
-    const g = new THREE.Group();
-    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.135, 16, 10, 0, Math.PI * 2, 0, Math.PI / 1.85), m); shell.scale.set(1, 0.95, 1.12); g.add(shell);
-    const peak = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.012, 0.06), frameMat); peak.position.set(0, 0.0, 0.14); g.add(peak);
-    attach(person, 'Bip01_Head', g, new THREE.Vector3(0, top - 0.1, 0.005));
+    const dark = new THREE.MeshStandardMaterial({ color: 0x1c1d20, roughness: 0.6 });
+    const g = new THREE.Group(), tipped = new THREE.Group(); tipped.rotation.x = tip; g.add(tipped);
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), m); shell.scale.set(rx, ry, rz); tipped.add(shell);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.014, 20, 1, true), dark); rim.scale.set(rx + 0.003, 1, rz + 0.003); rim.position.y = 0.004; tipped.add(rim);
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(rx * 1.3, 0.012, 0.045), frameMat); visor.position.set(0, 0.006, rz + 0.012); visor.rotation.x = -0.1; tipped.add(visor);
+    for (const sd of [-1, 1]) { const strap = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.075, 0.012), dark); strap.position.set(sd * (rx - 0.004), -0.035, rz * 0.15); g.add(strap); }
+    attach(person, 'Bip01_Head', g, new THREE.Vector3(cx, top + 0.022 - ry * Math.cos(tip), cz));
   }
   person.outfit = `rider-${brand}`;
   return person;
