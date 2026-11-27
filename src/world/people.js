@@ -916,7 +916,7 @@ export function reachArm(root, side, target, w, pole = null) {
   if (w < 0.999) { up.quaternion.copy(_ik.keep.slerp(up.quaternion, w)); fo.quaternion.copy(_ik.keep2.slerp(fo.quaternion, w)); up.updateMatrixWorld(true); }
 }
 
-export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null, keepHair = false, tone = null, hairLum = 0.42, conform = true, dropHair = false } = {}) {
+export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null, keepHair = false, tone = null, hairLum = 0.42, conform = true, dropHair = false, fit = null } = {}) {
   avatar.updateMatrixWorld(true);
   let body = null;
   avatar.traverse((o) => { if (o.isSkinnedMesh && (!body || o.geometry.attributes.position.count > body.geometry.attributes.position.count)) body = o; });
@@ -990,8 +990,12 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
   for (let k = 0; k < skinPts.length; k += 3) if (Math.abs(skinPts[k + 1] - (newNose.y - 0.03)) < 0.008) newHalf = Math.max(newHalf, Math.abs(skinPts[k] - newNose.x));
   // a face as wide as the old one, so the kept hair and the collar still fit it
   // and as long from nose to chin (the Hunyuan faces are smaller than MPFB's under a larger skull)
-  const s = nose.y - oldChin > 3 && newNose.y - newChin > 0.03 ? THREE.MathUtils.clamp((nose.y - oldChin) / ((newNose.y - newChin) * 100), 0.8, 1.15) : 1;
-  const sx = oldHalf > 0 && newHalf > 0 ? THREE.MathUtils.clamp(oldHalf / (newHalf * 100 * s), 0.85, 1.12) : 1;
+  let s = nose.y - oldChin > 3 && newNose.y - newChin > 0.03 ? THREE.MathUtils.clamp((nose.y - oldChin) / ((newNose.y - newChin) * 100), 0.8, 1.15) : 1;
+  let sx = oldHalf > 0 && newHalf > 0 ? THREE.MathUtils.clamp(oldHalf / (newHalf * 100 * s), 0.85, 1.12) : 1;
+  // (or as the character's own entry says: `headFit` [scale, width], when the old head is a poor guide, as a
+  // Hunyuan scan's is under its hair: Gu Nian's came out a size large and stretched wide, a flat broad face)
+  const sAuto = s;
+  if (fit) { s = fit[0]; sx = fit[1]; }
   // keepHair: and as deep as the old head inside its hair (about 1.5 cm of it on the centre line at the back),
   // so the hair shell has no empty space behind the ears
   const sz = keepHair && Number.isFinite(oldBack) ? THREE.MathUtils.clamp((nose.z - oldBack - 1.5) / ((newNose.z - newBack) * 100 * s), 0.9, 1.25) : 1;
@@ -1017,7 +1021,8 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
   const skinSum = [0, 0, 0, 0], neckProfile = new Map();
   const ix = g.index.array, keep = [], hairTris = [];
   // not conformed, the new neck keeps its own length: the old neck skin below its end (and 1.5 cm into it) stays
-  const neckEnd = conform ? -Infinity : nose.y + (baseY - newNose.y) * 100 * s + 1.5;
+  // (a head set smaller than the old one keeps its neck reaching as far down: see the stretch below)
+  const neckEnd = conform ? -Infinity : nose.y + (baseY - newNose.y) * 100 * Math.max(s, sAuto) + 1.5;
   const belowNewNeck = (a, b, c) => P[0].fromBufferAttribute(pos, a).add(P[1].fromBufferAttribute(pos, b)).add(P[2].fromBufferAttribute(pos, c)).divideScalar(3).applyMatrix4(body.matrixWorld).y < neckEnd;
   for (let t = 0; t < ix.length; t += 3) {
     const a = ix[t], b = ix[t + 1], c = ix[t + 2];
@@ -1225,6 +1230,18 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
     geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(toBody, o.matrixWorld));
     // (conform: false keeps the new neck as built, over the old neck left under its end: on a neck whose old
     // profile is ragged, an open collar, the stretch folded it into shards)
+    if (fit && s < sAuto && o.morphTargetDictionary !== undefined) {
+      // a head set smaller than the old one: its neck, below the chin, stretched down to where the old-sized
+      // head's neck would end, so it still meets the body
+      const chinW = nose.y + (chinY - newNose.y) * 100 * s, k = (chinW - (nose.y + (baseY - newNose.y) * 100 * sAuto)) / (chinW - (nose.y + (baseY - newNose.y) * 100 * s));
+      const p = geo.attributes.position, w = new THREE.Vector3(), inv = new THREE.Matrix4().copy(body.matrixWorld).invert();
+      for (let v = 0; v < p.count; v++) {
+        w.fromBufferAttribute(p, v).applyMatrix4(body.matrixWorld);
+        if (w.y >= chinW) continue;
+        w.y = chinW - (chinW - w.y) * k;
+        w.applyMatrix4(inv); p.setXYZ(v, w.x, w.y, w.z);
+      }
+    }
     if (keepHair && conform && o.morphTargetDictionary !== undefined && neckProfile.size > 2) conformNeck(geo.attributes.position, body.matrixWorld, neckProfile, oldChin);
     const n = geo.attributes.position.count, sIdx = new Uint16Array(n * 4), sWt = new Float32Array(n * 4);
     const isSkin = o.morphTargetDictionary !== undefined;
@@ -1267,7 +1284,8 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
       mat = new THREE.MeshPhysicalMaterial({ name: mat.name, color: mat.color, map: mat.map, alphaTest: 0.35, alphaToCoverage: true,
         side: THREE.DoubleSide, roughness: 0.9, metalness: 0, specularIntensity: 0.06, envMapIntensity: 0.15 });
     } else if (/cornea/i.test(o.name + mat.name)) {
-      mat = new THREE.MeshPhysicalMaterial({ name: 'cornea', transmission: 0, transparent: true, opacity: 0.12, roughness: 0.02, specularIntensity: 1, depthWrite: false });
+      // (black under its gloss: a white one veiled the iris, and dark brown eyes read grey-blue past arm's length)
+      mat = new THREE.MeshPhysicalMaterial({ name: 'cornea', color: 0x000000, transmission: 0, transparent: true, opacity: 0.12, roughness: 0.02, specularIntensity: 1, depthWrite: false });
     } else if (/teeth/i.test(o.name)) {
       // the side teeth sit in the cheeks' shadow: lit evenly they glint white through the closed lips' corners
       const p = o.geometry.attributes.position, sh = new Float32Array(p.count * 3);
@@ -1391,7 +1409,7 @@ export async function loadPeople(base = './people/', { lean = false } = {}) {
         avatars[role].traverse((o) => { if (o.material && /_opacity$/i.test(o.material.name || '') && o.material.map) shrink(o.material.map, 512); });
       }
       fixHair(avatars[role], c.hairTint || null);
-      if (c.head) swapHead(avatars[role], (await loader.loadAsync(base + c.head)).scene, { tint: c.headTint || null, keepHair: !!c.keepHair, tone: c.skinTone || null, hairLum: c.hairLum || 0.42, conform: c.conformNeck !== false, dropHair: !!c.dropHair });
+      if (c.head) swapHead(avatars[role], (await loader.loadAsync(base + c.head)).scene, { tint: c.headTint || null, keepHair: !!c.keepHair, tone: c.skinTone || null, hairLum: c.hairLum || 0.42, conform: c.conformNeck !== false, dropHair: !!c.dropHair, fit: c.headFit || null });
       if (c.cleanSpecks) cleanSpecks(avatars[role]);
       // the children's rig is the same Biped, named Bip02: rename it so the shared clips bind to it
       if (c.child) avatars[role].traverse((o) => { if (o.name.startsWith('Bip02')) o.name = o.name.replace('Bip02', 'Bip01'); });

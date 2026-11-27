@@ -1616,10 +1616,16 @@ def groom_cards(hs, c0, face_half, bvh_shell):
             d = Vector((s * 0.8, 0.7, -0.3))
         else:                          # falling from the crown, away from the parting near it
             d = Vector((s * 0.9 * near_part + (p.x - c0.x) * 4.0, 0.25, -1.0))
+        # curtain fringe (hair "curtain_fall": the share of the front locks by the parting): from the parting
+        # forward over the corner of the forehead, then down beside the face past the cheekbones to fall with the rest
+        curtain = (fall and not wisp and p.y < c0.y - 0.05 and abs(p.x - part) < 0.045 and p.z > EYE_L.z + 0.05
+                   and rnd.random() < hs.get("curtain_fall", 0.0))
+        if curtain:
+            d = Vector((s * 0.55, -0.55, -0.35))
         # half up: the top section (not the loose locks framing the face) goes back to the tie
-        up = bool(T) and not wisp and p.z > EYE_L.z + half.get("above_m", 0.045) and not (front and abs(p.x - part) > 0.02 and rnd.random() < half.get("loose", 0.35))
+        up = bool(T) and not wisp and not curtain and p.z > EYE_L.z + half.get("above_m", 0.045) and not (front and abs(p.x - part) > 0.02 and rnd.random() < half.get("loose", 0.35))
         reached = False
-        if fall and not up and not wisp:
+        if fall and not up and not wisp and not curtain:
             if p.y < HEAD_J.y - 0.01 and abs(p.x) > 0.03:   # (the sides fall in front of the shoulders)
                 d = Vector((s * 0.08, -0.6, -1.0))
             elif not front:                                 # (the back down the back, fanning out)

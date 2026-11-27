@@ -53,7 +53,7 @@
    "named": true,
    "file": "gunian.glb",
    "head": "gunian/head.glb",
-   "keepHair": false, "dropHair": true,
+   "keepHair": false, "dropHair": true, "headFit": [0.74, 0.95],
    "skinTone": [142, 100, 86],
    "hairLum": 0.5,
    "conformNeck": false,
