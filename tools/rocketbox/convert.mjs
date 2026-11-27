@@ -37,7 +37,23 @@ export const CAST = [
   // children, for families in the crowd (phase 4.3): the adult clips drive them, hips at their own height
   { role: 'k1', avatar: 'Female_Child_01', sex: 'f', child: true },
   { role: 'k2', avatar: 'Male_Child_01', sex: 'm', child: true },
-  { role: 'p5', avatar: 'Business_Female_02', sex: 'f', greyHair: true },  // an older local woman (the library's oldest woman; hair greyed)                     // the player's own body (head hidden in first person)
+  { role: 'p5', avatar: 'Business_Female_02', sex: 'f', greyHair: true },
+  // more of the street (2026-11-27: "everyone looks alike"): more women who aren't in brown jackets, older men,
+  // a schoolboy in a track-suit uniform, knitwear, hoodies; the crowd re-dyes their clothes and hair at runtime
+  // (world/crowdLooks.js). Summer, sports and religious outfits left out: wrong for Shanghai in late November.
+  { role: 'n1', avatar: 'Female_Adult_02', sex: 'f' },                      // white blouse, dark skirt
+  { role: 'n2', avatar: 'Female_Adult_05', sex: 'f' },                      // pink jacket, jeans
+  { role: 'n3', avatar: 'Female_Adult_15', sex: 'f' },                      // blue shirt, skirt, boots
+  { role: 'n4', avatar: 'Business_Female_01', sex: 'f' },                   // black trouser suit
+  { role: 'n5', avatar: 'Female_Adult_01', sex: 'f' },                      // shirt and jeans (fair hair: dyed dark at runtime for most)
+  { role: 'n6', avatar: 'Male_Adult_06', sex: 'm' },                        // red jumper, jeans
+  { role: 'n7', avatar: 'Male_Adult_08', sex: 'm' },                        // light blue shirt
+  { role: 'n8', avatar: 'Male_Adult_13', sex: 'm' },                        // argyle jumper
+  { role: 'n9', avatar: 'Male_Adult_18', sex: 'm' },                        // grey hoodie
+  { role: 'n10', avatar: 'Male_Adult_20', sex: 'm' },                       // brown knit
+  { role: 'e1', avatar: 'Male_Adult_14', sex: 'm', elder: true },          // an older man, balding, grey shirt and khakis
+  { role: 'e2', avatar: 'Business_Male_04', sex: 'm', elder: true, greyHair: true },   // an older man in a waistcoat
+  { role: 't1', avatar: 'Male_Adult_17', sex: 'm', teen: true },           // blue-and-white track jacket: a school uniform  // an older local woman (the library's oldest woman; hair greyed)                     // the player's own body (head hidden in first person)
 ];
 const CLIPS = {
   m: { idle: 'm_idle_neutral_01', look: 'm_idle_look_around_01', talk1: 'm_gestic_talk_neutral_01', talk2: 'm_gestic_talk_relaxed_01', phone: 'm_cell_phone_textmessage', umbrella: 'm_umbrella_idle_01', walk: 'm_walk_neutral_01', jog: 'm_run_slow_01', wave: 'm_wave_01', shrug: 'm_gestic_shrug_01', angry: 'm_idle_angry_01' },
@@ -48,6 +64,8 @@ const CLIPS = {
 const PLAYER_CLIPS = { idle: 'm_idle_neutral_01', walk: 'm_walk_neutral_01', jog: 'm_run_slow_01', sprint: 'm_run_fast_01', phone: 'm_cell_phone_textmessage' };   // phone: the right arm holding something up (a phone, a cup)   // (the library's breathe idles are calm, so getting winded is procedural)
 // ONLY=player converts just the player's avatar and clips and merges them into an existing people.json
 const ONLY = process.env.ONLY || null;
+// ROLES=a,b,c converts just those avatars (no clips) and merges them into the existing people.json
+const ROLES = process.env.ROLES ? new Set(process.env.ROLES.split(',')) : null;
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage();
 page.on('console', (m) => { if (!m.text().startsWith('THREE.FBXLoader')) console.log('[page]', m.text()); });
@@ -171,18 +189,19 @@ await page.evaluate(async () => {
 });
 
 const manifestPath = join(out, 'people.json');
-const manifest = ONLY && existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8'))
+const manifest = (ONLY || ROLES) && existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8'))
   : { source: 'Microsoft Rocketbox (MIT): https://github.com/microsoft/Microsoft-Rocketbox', units: 'centimetres (scale 0.01 at runtime)', cast: {}, clips: {} };
 for (const c of CAST) {
   if (ONLY && c.role !== ONLY) continue;
+  if (ROLES && !ROLES.has(c.role)) continue;
   const b64 = await page.evaluate(([f, g]) => window.convertAvatar(f, g), [c.avatar, !!c.greyHair]);
   const buf = Buffer.from(b64, 'base64');
   writeFileSync(join(out, `${c.role}.glb`), buf);
-  manifest.cast[c.role] = { avatar: c.avatar, sex: c.sex, file: `${c.role}.glb`, bytes: buf.length, ...(c.child ? { child: true } : {}) };
+  manifest.cast[c.role] = { ...(manifest.cast[c.role] || {}), avatar: c.avatar, sex: c.sex, file: `${c.role}.glb`, bytes: buf.length, ...(c.child ? { child: true } : {}), ...(c.elder ? { elder: true } : {}), ...(c.teen ? { teen: true } : {}), ...(ROLES ? { extra: true } : {}) };
   console.log(`${c.role}: ${c.avatar} -> ${(buf.length / 1e6).toFixed(2)} MB`);
 }
 const sets = [['m', 'Business_Male_02', CLIPS.m], ['f', 'Business_Female_03', CLIPS.f], ['player', 'Male_Adult_07', PLAYER_CLIPS]]
-  .filter(([k]) => !ONLY || k === ONLY);
+  .filter(([k]) => !ROLES && (!ONLY || k === ONLY));
 for (const [sex, folder, map] of sets) {
   const r = await page.evaluate(([f, m]) => window.convertAnims(f, m), [folder, map]);
   const buf = Buffer.from(r.b64, 'base64');

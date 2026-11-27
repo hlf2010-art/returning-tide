@@ -46,7 +46,7 @@ const SUIT = {
 };
 
 // points on the skinned body in the person's own frame (metres; +x his left, +y up, +z forward)
-function bodyPoints(person, re) {
+export function bodyPoints(person, re) {
   const root = person.root, out = [];
   root.updateMatrixWorld(true);
   const toBody = new THREE.Matrix4().compose(root.position, root.quaternion, new THREE.Vector3(1, 1, 1)).invert(), v = new THREE.Vector3();
@@ -59,7 +59,7 @@ function bodyPoints(person, re) {
   return out;
 }
 // hang obj on a bone so that it sits at `at` (person's frame) facing his forward
-function attach(person, boneName, obj, at, rotY = 0) {
+export function attach(person, boneName, obj, at, rotY = 0) {
   const root = person.root, bone = root.getObjectByName(boneName); if (!bone) return null;
   root.updateMatrixWorld(true);
   const body = new THREE.Matrix4().compose(root.position, root.quaternion, new THREE.Vector3(1, 1, 1));
@@ -90,7 +90,7 @@ function earpiece(ear) {
   const bud = new THREE.Mesh(new THREE.SphereGeometry(0.0055, 8, 6), wireMat); bud.position.set(0.004, 0, 0.004); g.add(bud);
   return g;
 }
-function glasses() {
+export function glasses() {
   const g = new THREE.Group(), lens = new THREE.TorusGeometry(0.021, 0.0016, 4, 18);
   for (const s of [-1, 1]) { const r = new THREE.Mesh(lens, frameMat); r.scale.set(1.15, 0.85, 1); r.position.set(s * 0.032, 0, 0); g.add(r);
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.0025, 0.0025, 0.1), frameMat); arm.position.set(s * 0.058, 0.003, -0.05); g.add(arm); }

@@ -270,10 +270,10 @@ export const onRoad = (x, z) => (x > L.westCurbX + 0.15 && x < L.eastCurbX - 0.1
 // kinds: tourist (domestic or from abroad), local (on their way somewhere), elder, couple, lingerer,
 // guide (with a flag) and follower (in a tour group)
 const ROLE_POOL = {
-  domestic: ['p1', 'p3', 'p2', 'c1', 'c2', 'c3', 'c4'],
-  abroad: ['p4', 'c5', 'c6', 'c7', 'c8'],
-  local: ['p1', 'p2', 'p3', 'c1', 'c2', 'c3', 'c4'],
-  elder: ['p5', 'p4'],
+  domestic: ['p1', 'p3', 'p2', 'c1', 'c2', 'c3', 'c4', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 't1'],
+  abroad: ['p4', 'c5', 'c6', 'c7', 'c8', 'n5', 'n7', 'n8'],
+  local: ['p1', 'p2', 'p3', 'c1', 'c2', 'c3', 'c4', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n9', 'n10', 't1'],
+  elder: ['p5', 'p4', 'e1', 'e2', 'c4', 'n3'],                     // (the women's bodies greyed and slowed by their look: world/crowdLooks.js)
 };
 const pick = (a, rnd) => a[Math.floor(rnd() * a.length)];
 const SHOP_IN = 0.5;   // of those who stop at a shop front on Nanjing Road, how many go in
@@ -283,6 +283,18 @@ const FEMALE = FEMALE_ROLES;
 export function createCrowd({ net = buildNet(), density = 1, count = null, rnd = Math.random, roles = null, areaWeights = null, groups = null } = {}) {
   const have = roles ? new Set(roles) : null;
   const grown = roles ? roles.filter((r) => !/^k\d/.test(r)) : null;
+  // who plays whom: the body worn least so far, never one of the last few made (a couple, a tour group, people
+  // set off together are made one after another), so no avatar crowds the street and neighbours differ
+  const used = new Map(), recent = [];
+  const pickRole = (pool, rnd) => {
+    const r = rnd();
+    let best = null, bs = Infinity;
+    pool.forEach((role, i) => {
+      const sc = (used.get(role) || 0) + (recent.includes(role) ? 1000 : 0) + ((i * 0.618 + r) % 1) * 0.99;   // (the tie-break turns with the draw)
+      if (sc < bs) { bs = sc; best = role; }
+    });
+    return best;
+  };
   const rolesFor = (k) => { const a = ROLE_POOL[k].filter((r) => !have || have.has(r)); return a.length ? a : (grown && grown.length ? grown : ['p1']); };
   const obs = obstacles();
   let cars = [];                              // things that move and stop (the Strale, parked or driven): [{ x, z, r }]
@@ -302,7 +314,9 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
   let nextId = 0;
   const make = (kind, extra = {}) => {
     const abroad = kind === 'tourist' && rnd() < 0.22;
-    const role = kind === 'elder' ? pick(rolesFor('elder'), rnd) : pick(rolesFor(abroad ? 'abroad' : kind === 'local' || kind === 'commuter' ? 'local' : 'domestic'), rnd);
+    const role = extra.role || (kind === 'elder' ? pickRole(rolesFor('elder'), rnd) : pickRole(rolesFor(abroad ? 'abroad' : kind === 'local' || kind === 'commuter' ? 'local' : 'domestic'), rnd));
+    if (extra.role) rnd();                                                    // (the same draws either way: the rest of the crowd unchanged)
+    used.set(role, (used.get(role) || 0) + 1); recent.push(role); if (recent.length > 5) recent.shift();
     const speed = kind === 'local' || kind === 'commuter' ? 1.25 + rnd() * 0.3 : kind === 'elder' ? 0.72 + rnd() * 0.12 : kind === 'follower' || kind === 'guide' ? 0.88 : 0.95 + rnd() * 0.25;
     const a = {
       id: nextId++, kind, role, abroad, speed, v: 0, x: 0, z: 0, y: CURB, heading: 0, vx: 0, vz: 0,
@@ -406,7 +420,7 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
       // a couple are two different people: a man and a woman where the set allows (never the same avatar twice)
       const a = make('tourist'), want = FEMALE.has(a.role) ? (r) => !FEMALE.has(r) : (r) => FEMALE.has(r);
       const pool = [...rolesFor(a.abroad ? 'abroad' : 'domestic'), ...rolesFor('domestic')].filter((r) => r !== a.role);
-      const other = pool.filter(want), mate = pick(other.length ? other : pool.length ? pool : [a.role], rnd);
+      const other = pool.filter(want), mate = pickRole(other.length ? other : pool.length ? pool : [a.role], rnd);
       const b = make('tourist', { role: mate, abroad: a.abroad }); a.partner = b; b.partner = a; b.leader = a; b.speed = a.speed = 0.85;
       // a family out on the Bund: the child walks on the other side of a parent, a little slower overall
       if (k === 'family' && kids.length) { const c = make('tourist', { role: pick(kids, rnd), child: true, leader: a, side: -0.8, scale: 1, phone: false }); a.kid = c; a.speed = b.speed = c.speed = 0.78; }

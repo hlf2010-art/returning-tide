@@ -267,9 +267,10 @@ async function boot() {
   river.setMirrorSize(gfx.mirror);
   await loadBundKit();                                                   // the Bund's columns and cornices, modelled in Blender (world/bund.js)
   const bund = createBund(M), promenade = createPromenade(M), street = createStreet(M), clue = createClue();
-  // real people (Microsoft Rocketbox, MIT) when their files load; the hand-built figures otherwise
+  // real people (Microsoft Rocketbox, MIT) when their files load; the hand-built figures otherwise (Crowds Low: the original
+  // fifteen street bodies only, not the extra thirteen)
   let people = null;
-  try { people = await loadPeople('./people/', { lean: ['low', 'medium'].includes(bootLod) && params.get('lean') !== '0' }); } catch (err) { console.warn('people assets unavailable, using simple figures', err); }
+  try { people = await loadPeople('./people/', { lean: ['low', 'medium'].includes(bootLod) && params.get('lean') !== '0', extras: bootCrowd !== 'low' && params.get('extras') !== '0' }); } catch (err) { console.warn('people assets unavailable, using simple figures', err); }
   const npcs = people ? createRealNpcs(people) : createNpcs(M);
   // the player's own body, seen when looking down (?body=0 to leave it out)
   const playerBody = people && people.avatars.player && params.get('body') !== '0' ? createPlayerBody(people, { walk: WALK_SPEED, run: RUN_SPEED }) : null;

@@ -1233,10 +1233,12 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
 // lean (the low and medium levels of detail): the crowd's avatars (not the named cast, the player or
 // the family) load without normal maps and with their hair and lashes texture at 512: about 15 MB
 // less each on the GPU (docs/living-city-architecture.md D5); flatter cloth up close, the same at 5 m
-export async function loadPeople(base = './people/', { lean = false } = {}) {
+export async function loadPeople(base = './people/', { lean = false, extras = true } = {}) {
   const res = await fetch(`${base}people.json`);
   if (!res.ok) throw new Error(`people manifest: ${res.status}`);
   const manifest = await res.json();
+  // the crowd's extra bodies (extra: true, 2026-11-27) stay at home on Crowds Low: ~30 MB less to load
+  if (!extras) for (const r of Object.keys(manifest.cast)) if (manifest.cast[r].extra) delete manifest.cast[r];
   const loader = new GLTFLoader();
   const avatars = {}, clips = {};
   await Promise.all([
@@ -1245,7 +1247,7 @@ export async function loadPeople(base = './people/', { lean = false } = {}) {
       mergeByMaterial(avatars[role]);
       if (lean && !c.named && !['lin', 'su', 'player', 'dad'].includes(role)) {
         dropMaps(avatars[role], ['normalMap']);
-        avatars[role].traverse((o) => { if (o.material && /_opacity$/i.test(o.material.name || '') && o.material.map) shrink(o.material.map, 512); });
+        avatars[role].traverse((o) => { if (o.material && (/_opacity$/i.test(o.material.name || '') || (c.extra && /_body$|_head$/i.test(o.material.name || ''))) && o.material.map) shrink(o.material.map, 512); });   // (the crowd's extra bodies: their clothes and faces at 512 too)
       }
       fixHair(avatars[role], c.hairTint || null);
       if (c.head) swapHead(avatars[role], (await loader.loadAsync(base + c.head)).scene, { tint: c.headTint || null, keepHair: !!c.keepHair, tone: c.skinTone || null, hairLum: c.hairLum || 0.42, conform: c.conformNeck !== false });
