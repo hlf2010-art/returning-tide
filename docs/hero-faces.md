@@ -277,3 +277,21 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
   - `locks` (a count): ribbons laid over the shell from random points down to a little past or short of the hair under them, swaying sideways and lifting off towards their tips. Each one's edges thin into strands and its tip breaks up in the game's hair-shell shader, so the outline and surface break into pieces of hair. None are placed on the fringe, whose edge is already cut along its line.
 - Zhiwei: `layers` 0.8, 170 locks. Yu'an: `layers` 0.6, 170 locks, and her hair is longer (26 cm).
 - Still to improve: it still reads as sculpted hair up close rather than individual strands, the curtain's inner side shows a light strip beside the cheek, and Yu'an's fringe is denser than her portrait's.
+
+## Round 18: groomed hair for Zhiwei and Yu'an
+
+Mars: "They need to look like a real person, not some dumb 3D model NPC." Against the photos the biggest miss was the
+hair: both had a blunt helmet fringe, while both photos show a side parting with the hair swept off the face.
+
+- Sheet hair `groom` (build_hero.py `groom_cards`): about 2,600 narrow see-through cards of fine strands, each grown
+  from a root on the scalp and walked along a flow field (away from the parting; the far side's front locks swept
+  diagonally across the forehead; the rest falling to the cut), lying on the hair shell a few millimetres up per
+  layer, kept off the eyes, wandering with one noise field so neighbours clump. Deeper layers use darker bands of
+  the strand texture. `root_color` grows darker roots (Zhiwei). The shell under them is a little shorter and darker.
+- `sweep` replaces `fringe_sweep` (no shell fringe). Skin: `moles` (from the photos), `under_eye`, stronger blush,
+  darker lip colour.
+- Still not good enough: the hairline is a straight edge across the forehead; Yu'an's ends flare out; the face
+  itself is still a smooth, evenly lit MPFB face (lips too full, no skin detail). Photos of each face straight on
+  and from the side would let the portrait be projected onto the head.
+
+![before / after](hero-faces/round18-zhiwei-yuan-before-after.png)

@@ -475,7 +475,7 @@ def skin_material():
     L.new(mot.outputs["Result"], wm.inputs["A"])
     sh = N.new("ShaderNodeMix"); sh.data_type = "RGBA"
     sh.inputs["B"].default_value = (0.30, 0.19, 0.16, 1)
-    sf = N.new("ShaderNodeMath"); sf.operation = "MULTIPLY"; sf.inputs[1].default_value = 0.35
+    sf = N.new("ShaderNodeMath"); sf.operation = "MULTIPLY"; sf.inputs[1].default_value = SHEET["skin"].get("under_eye", 0.35)
     L.new(regs.outputs["Green"], sf.inputs[0]); L.new(sf.outputs[0], sh.inputs["Factor"])
     L.new(wm.outputs["Result"], sh.inputs["A"])
     L.new(sh.outputs["Result"], red.inputs["A"]); L.new(redc.outputs[0], red.inputs["B"])
@@ -521,7 +521,21 @@ def skin_material():
     L.new(hsum.outputs[0], hcl.inputs["Value"])
     sm = N.new("ShaderNodeMath"); sm.operation = "MULTIPLY"; sm.inputs[1].default_value = 1.0
     L.new(hcl.outputs["Result"], sm.inputs[0]); L.new(sm.outputs[0], scalpc.inputs["Factor"])
-    L.new(stc.outputs["Result"], scalpc.inputs["A"])
+    # moles (sheet skin "moles": [dx, dz] from her left eye, in metres), small and soft-edged, on the skin's surface
+    last = stc
+    for mx, mz in s.get("moles", []):
+        hit = bvh_head.ray_cast(Vector((EYE_L.x + mx, EYE_L.y - 0.2, EYE_L.z + mz)), Vector((0, 1, 0)))
+        if hit[0] is None:
+            continue
+        dv = N.new("ShaderNodeVectorMath"); dv.operation = "DISTANCE"; dv.inputs[1].default_value = hit[0]
+        L.new(tex.outputs["Object"], dv.inputs[0])
+        mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = 0.0008; mr.inputs["From Max"].default_value = 0.0016
+        mr.inputs["To Min"].default_value = 0.85; mr.inputs["To Max"].default_value = 0.0
+        L.new(dv.outputs["Value"], mr.inputs["Value"])
+        mm = N.new("ShaderNodeMix"); mm.data_type = "RGBA"; mm.inputs["B"].default_value = (0.12, 0.07, 0.05, 1)
+        L.new(mr.outputs["Result"], mm.inputs["Factor"]); L.new(last.outputs["Result"], mm.inputs["A"])
+        last = mm
+    L.new(last.outputs["Result"], scalpc.inputs["A"])
     L.new(scalpc.outputs["Result"], bs.inputs["Base Color"])
     bs.inputs["Subsurface Weight"].default_value = 0.35
     bs.inputs["Subsurface Radius"].default_value = s["subsurface_radius"]
@@ -877,8 +891,9 @@ def to_srgb(c):
     return 12.92 * c if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
 
 
-def strand_texture(name, color, w=256, h=1024, strands=150):
-    """An alpha texture of strands for the hair cards (tapered, some longer than others)."""
+def strand_texture(name, color, w=256, h=1024, strands=150, fine=False, root=None, bands=0):
+    """An alpha texture of strands for the hair cards (tapered, some longer than others). fine: thin single hairs
+    of uneven tone (lighter and darker hairs side by side), a few stray ones, all reaching the card's root."""
     img = bpy.data.images.new(name, w, h, alpha=True)
     import array
     px = array.array("f", [0.0] * (w * h * 4))
@@ -888,6 +903,16 @@ def strand_texture(name, color, w=256, h=1024, strands=150):
         length = 0.65 + 0.35 * r.random()
         width = 1.6 + 2.2 * r.random()
         shade = 0.7 + 0.6 * r.random()
+        if fine:
+            x0 = w * (0.06 + 0.88 * r.random())   # (clear of the card's sides)
+            if bands:   # bands across: each a card's width, the first (deepest) darkest
+                b = int(r.random() * bands)
+                x0 = w * (b + 0.08 + 0.84 * r.random()) / bands
+            length = 0.8 + 0.2 * r.random() ** 0.5
+            width = 0.7 + 1.0 * r.random()
+            shade = 0.55 + 0.6 * r.random() ** 1.5   # (mostly darker hairs, a few light ones catching the light)
+            if bands:
+                shade *= 0.55 + 0.45 * (b / (bands - 1)) ** 0.7
         wob = r.random() * 6.28
         for y in range(int(h * length)):
             v = y / h
@@ -898,8 +923,10 @@ def strand_texture(name, color, w=256, h=1024, strands=150):
                     a = min(1.0, 1.6 * max(0.0, 1 - abs(xi - x) / ww))
                     i = ((h - 1 - y) * w + xi) * 4
                     if a > px[i + 3]:
+                        rt = 0.0 if root is None else max(0.0, 1.0 - v / 0.22) ** 1.5   # (darker roots, grown out)
                         for ch in range(3):
-                            px[i + ch] = to_srgb(min(1.0, color[ch] * shade))
+                            c = color[ch] if root is None else color[ch] + (root[ch] - color[ch]) * rt
+                            px[i + ch] = to_srgb(min(1.0, c * shade))
                         px[i + 3] = a
     img.pixels = px
     img.pack()
@@ -1040,6 +1067,8 @@ def hair_shell():
         for k in range(NL):
             q = ring[k]; lon = grid[rows][k][2]
             zb = top - length * (1.0 + 0.10 * math.cos(lon)) - 0.025 * max(0.0, -math.cos(lon))   # (over the nape at the back)
+            if hs.get("groom"):   # (under groomed hair: a little shorter, so its locks' ends hang past it)
+                zb += 0.03
             if lay:   # layered: the ends uneven, in pieces of a few centimetres
                 zb -= length * 0.16 * lay * mnoise.noise(Vector((math.cos(lon) * 3.1, math.sin(lon) * 3.1, 7.3)))
             rel = Vector((q.x - c0.x, q.y - c0.y, 0.0))
@@ -1128,7 +1157,252 @@ def hair_shell():
             use[v] += 1
     uvs = [(1.0 if 0 < use[i] < 4 and uvs[i][1] < 0.97 else 0.0, uvs[i][1]) for i in range(len(verts))]
     hair_locks(hs, allrows, kept, R, NL, c0, verts, faces, uvs)
-    return make_mesh("hair-shell", verts, faces, uvs, hair_material("hair-shell", hs["color"]))
+    if hs.get("cards"):
+        HAIR_EXTRA.append(shell_cards(hs, allrows, kept, R, NL, c0, rows))
+    if hs.get("groom"):
+        HAIR_EXTRA.append(groom_cards(hs, c0, face_half, BVHTree.FromPolygons([tuple(v) for v in verts], faces)))
+    col = hs["color"] if not (hs.get("cards") or hs.get("groom")) else [0.75 * (a + 0.45 * (b - a)) for a, b in zip(hs.get("root_color", hs["color"]), hs["color"])]   # (under cards: the dark depth of the hair)
+    return make_mesh("hair-shell", verts, faces, uvs, hair_material("hair-shell", col))
+
+
+HAIR_EXTRA = []
+
+
+def shell_cards(hs, rows_, kept, R, NL, c0, scalp_rows):
+    """Hair cards over a hair shell (sheet hair "cards": how many): see-through strips carrying a texture of fine
+    strands, laid in layers over the shell from its top down each column to where the hair under them ends (the
+    fringe's cut line, or the cut at the ends, give or take a little), each lifted off the shell by a few
+    millimetres more per layer and swaying a little sideways. Real-time hair reads as hair only like this: the
+    shell under them is the dark depth between the strands."""
+    n = int(hs["cards"])
+    rnd = random.Random(hs.get("seed", 11))
+    face_half = math.radians(hs.get("face_open_deg", 50))
+    def surf(rf, kf):
+        r0 = max(0, min(R - 2, int(rf))); fr = min(1.0, max(0.0, rf - r0))
+        k0 = int(math.floor(kf)) % NL; k1 = (k0 + 1) % NL; fk = kf - math.floor(kf)
+        a = rows_[r0][k0].lerp(rows_[r0][k1], fk); b = rows_[r0 + 1][k0].lerp(rows_[r0 + 1][k1], fk)
+        return a.lerp(b, fr)
+    def run_end(k):   # the last kept row down column k from the top
+        r = 0
+        while r + 1 < R and kept(r + 1, k):
+            r += 1
+        return r
+    ends = [run_end(k) if kept(0, k) else -1 for k in range(NL)]
+    verts, faces, uvs = [], [], []
+    layers = 3
+    for i in range(n):
+        layer = i % layers
+        k = rnd.uniform(0, NL)
+        kk = int(k) % NL
+        if ends[kk] < 2:
+            continue
+        lon = 2 * math.pi * k / NL
+        front = min(lon, 2 * math.pi - lon) < face_half * 1.05
+        r_end = ends[kk] + (0.0 if front else rnd.uniform(-1.5, 0.6) * (R - scalp_rows) / 10.0)
+        r_end = max(1.0, min(R - 1.001, r_end))
+        r0 = rnd.uniform(0, min(scalp_rows * 0.35, r_end * 0.4)) if layer else rnd.uniform(0, 2)
+        width = rnd.uniform(0.012, 0.024) * (1.0 if front else 1.25)
+        lift = 0.0015 + 0.0035 * layer + rnd.uniform(0, 0.002) * (1 + hs.get("messy", 0.0))
+        sway = rnd.uniform(-1.0, 1.0) * NL / 144.0 * (1.5 if not front else 0.6) * (1 + 1.5 * hs.get("messy", 0.0))
+        steps = 12
+        pts = []
+        for j in range(steps + 1):
+            t = j / steps
+            rf = r0 + (r_end - r0) * t
+            kf = k + sway * math.sin(t * math.pi * 0.9)
+            q = surf(rf, kf)
+            out = Vector((q.x - c0.x, q.y - c0.y, (q.z - c0.z) if q.z > c0.z else 0.0))
+            out = out.normalized() if out.length > 1e-6 else Vector((0, 0, 1))
+            side = surf(rf, kf + 0.5) - surf(rf, kf - 0.5)
+            side = side.normalized() if side.length > 1e-7 else out.cross(Vector((0, 0, 1))).normalized()
+            pts.append((q + out * lift * (0.6 + 0.4 * t), side, t))
+        base = len(verts)
+        u0 = rnd.choice((0.0, 0.5))   # (two halves of the strand texture, so neighbours differ)
+        for q, side, t in pts:
+            w = width * (1 - 0.35 * t)
+            verts += [q - side * w / 2, q + side * w / 2]
+            uvs += [(u0, 1 - t), (u0 + 0.5, 1 - t)]
+        for j in range(steps):
+            a = base + 2 * j
+            faces.append((a, a + 1, a + 3, a + 2))
+    # curtain: locks from the parting swept off the forehead to the sides of the face and down past the cheeks,
+    # the heavy side (away from the parting) dipping across the forehead before it turns; a few stray hairs
+    nc = int(hs.get("curtain_cards", 0))
+    heavy = -1 if hs.get("sweep", 1) > 0 else 1
+    kp = NL / (2 * math.pi) * math.atan(hs.get("part_x", 0.012) / 0.09)
+    kface = face_half * NL / (2 * math.pi)
+    for i in range(nc):
+        side = heavy if rnd.random() < 0.6 else -heavy
+        hv = side == heavy
+        ks = kp + side * rnd.uniform(0.0, 5.0)
+        ke = side * kface * rnd.uniform(1.0, 1.35)
+        kk = int(round(ks)) % NL
+        r0 = max(0.0, ends[kk] - rnd.uniform(2, 7)) if ends[kk] >= 0 else scalp_rows * 0.55
+        r_end = rnd.uniform(scalp_rows + 1, R - 1.001) if hv else rnd.uniform(scalp_rows - 2, R - 1.001)
+        rh = ends[kk] if ends[kk] >= 0 else r0 + 4
+        dip = rnd.uniform(3, 10) if hv else rnd.uniform(0, 3)   # rows (about 4 mm each) it dips over the forehead
+        width = rnd.uniform(0.010, 0.02)
+        lift = 0.004 + rnd.uniform(0, 0.004) + 0.003 * (i % 3)
+        steps = 18
+        pts = []
+        sw = rnd.uniform(0.35, 0.5)   # the share of its length spent sweeping sideways
+        for j in range(steps + 1):
+            t = j / steps
+            if t <= sw:   # across: from the parting to the side of the face, dipping over the forehead
+                e = t / sw
+                kf = ks + (ke - ks) * (e * e * (3 - 2 * e) if hv else e ** 0.7)
+                rf = r0 + (rh + dip - r0) * math.sin(e * math.pi / 2)
+            else:         # then down the side of the face to the ends
+                e = (t - sw) / (1 - sw)
+                kf = ke + side * 0.6 * e
+                rf = rh + dip + (r_end - rh - dip) * e
+            q = surf(rf, kf)
+            out = Vector((q.x - c0.x, q.y - c0.y, (q.z - c0.z) if q.z > c0.z else 0.0))
+            out = out.normalized() if out.length > 1e-6 else Vector((0, 0, 1))
+            pts.append([q + out * lift * (0.7 + 0.6 * math.sin(math.pi * t)), out, t])
+        for j, pt in enumerate(pts):   # (across the lock: square to its run)
+            dq = pts[min(j + 1, steps)][0] - pts[max(j - 1, 0)][0]
+            pt[1] = pt[1].cross(dq).normalized() if dq.length > 1e-7 else pt[1].cross(Vector((0, 0, 1))).normalized()
+        base = len(verts)
+        u0 = rnd.choice((0.0, 0.5))
+        for q, sv, t in pts:
+            w = width * (1 - 0.5 * t)
+            verts += [q - sv * w / 2, q + sv * w / 2]
+            uvs += [(u0, 1 - t), (u0 + 0.5, 1 - t)]
+        for j in range(steps):
+            a = base + 2 * j
+            faces.append((a, a + 1, a + 3, a + 2))
+    img = strand_texture("hair-strands", hs["color"], w=512, h=1024, strands=hs.get("card_strands", 200), fine=True,
+                         root=hs.get("root_color"))
+    img.filepath_raw = os.path.join(OUT, "hair-strands.png"); img.file_format = "PNG"; img.save()
+    return make_mesh("hair-cards", verts, faces, uvs, hair_material("hair-cards", hs["color"], img))
+
+
+def groom_cards(hs, c0, face_half, bvh_shell):
+    """Groomed hair (sheet hair "groom": how many locks): narrow see-through cards of fine strands, each grown from
+    a root on the scalp and walked along a flow field: away from the parting, the front locks on the far side swept
+    off the forehead to the side of the face, the rest falling to the cut, each lying on the hair under it (a few
+    millimetres more off the scalp for every layer), kept off the face, wandering a little with the noise (one
+    noise field, so neighbouring locks move together as clumps). The shell under them is the depth of the hair."""
+    n = int(hs["groom"])
+    rnd = random.Random(hs.get("seed", 13))
+    part = hs.get("part_x", 0.012)
+    heavy = -1 if hs.get("sweep", 1) > 0 else 1
+    vol = hs.get("volume", 1.0)
+    messy = hs.get("messy", 0.0)
+    lay = hs.get("layers", 0.0)
+    length = hs["length_cm"] / 100.0
+    top = max(co[i].z for i in group_verts_orig["scalp"])
+    # roots: points on the scalp, area-weighted, where the hair grows
+    me = hero.data
+    me.calc_loop_triangles()
+    tris, acc, tot = [], [], 0.0
+    for lt in me.loop_triangles:
+        a, b, c = (me.vertices[v].co for v in lt.vertices)
+        m = (a + b + c) / 3
+        if m.z < EYE_L.z - 0.05 or hairline(m) < 0.3:
+            continue
+        tot += lt.area; tris.append((a.copy(), b.copy(), c.copy())); acc.append(tot)
+    import bisect
+    def root():
+        while True:
+            a, b, c = tris[min(len(tris) - 1, bisect.bisect(acc, rnd.random() * tot))]
+            u, v = rnd.random(), rnd.random()
+            if u + v > 1:
+                u, v = 1 - u, 1 - v
+            p = a + (b - a) * u + (c - a) * v
+            if rnd.random() < hairline(p) ** 2:
+                return p
+    def zcut(p):   # where the cut is, round the head: longer at the front, over the nape at the back
+        lon = math.atan2(p.x - c0.x, c0.y - p.y)
+        z = top - length * (1.0 + 0.10 * math.cos(lon)) - 0.025 * max(0.0, -math.cos(lon))
+        return z - length * 0.16 * lay * mnoise.noise(Vector((math.cos(lon) * 3.1, math.sin(lon) * 3.1, 7.3)))
+    def face_guard(p):   # (off the face: in front of the head between the brows and the jaw, out to the sides)
+        if p.y > c0.y or not (EYE_L.z - 0.012 < p.z < EYE_L.z + 0.075):   # (below the eyes it may lie on the cheek)
+            return p
+        ang = math.atan2(p.x - c0.x, c0.y - p.y)
+        k = min(1.0, max(0.0, (EYE_L.z + 0.075 - p.z) / 0.05))   # (the far side's fringe sweeps down across the forehead)
+        k = k * k * (3 - 2 * k)
+        lim = face_half * ((0.25 + 0.67 * k) if (p.x - part) * heavy > 0 else (0.62 + 0.3 * k))
+        if abs(ang) >= lim:
+            return p
+        r = Vector((p.x - c0.x, p.y - c0.y)).length
+        a2 = math.copysign(lim, ang if abs(ang) > 1e-4 else 1.0)
+        return Vector((c0.x + r * math.sin(a2), c0.y - r * math.cos(a2), p.z))
+    verts, faces, uvs = [], [], []
+    ds = 0.006
+    for i in range(n):
+        p = root()
+        if i % 6 == 0:   # (more along the parting, so it reads as a parting and not a bald stripe)
+            for _ in range(20):
+                if abs(p.x - part) < 0.02 and p.z > top - 0.05:
+                    break
+                p = root()
+        u = rnd.random()   # how far up the stack of hair this lock lies
+        off = 0.002 + (0.004 + 0.010 * u) * vol
+        s = 1.0 if p.x > part else -1.0
+        front = p.y < c0.y - 0.035
+        near_part = math.exp(-((p.x - part) / 0.035) ** 2)
+        if front and s == heavy:      # swept off the forehead to the side
+            d = Vector((s * 1.0, 0.15, -0.45))
+        elif front:                    # back from the parting
+            d = Vector((s * 0.8, 0.7, -0.3))
+        else:                          # falling from the crown, away from the parting near it
+            d = Vector((s * 0.9 * near_part + (p.x - c0.x) * 4.0, 0.25, -1.0))
+        d.normalize()
+        maxL = length * (1.5 if front else 1.35) * (1 + 0.12 * (rnd.random() - 0.5)) + (top - p.z) * 0.3
+        pts, L = [p.copy()], 0.0
+        q = p.copy()
+        while L < maxL and len(pts) < 70:
+            loc, nrm, _, _ = bvh_head.find_nearest(q)
+            if loc is not None:
+                h = (q - loc).dot(nrm)
+                want = off * min(1.0, 0.25 + L / 0.02)   # (rising off the scalp over its first two centimetres)
+                if h < want:
+                    q = q + nrm * (want - h)
+                d = d - nrm * min(0.0, d.dot(nrm)) * 0.9   # (no diving into the head)
+            loc, nrm, _, dist = bvh_shell.find_nearest(q)   # (and lying on the hair shell, once off the scalp)
+            if loc is not None and dist < 0.03 and L > 0.004:
+                if nrm.dot(loc - c0) < 0:
+                    nrm = -nrm
+                h = (q - loc).dot(nrm)
+                want = (0.0008 + 0.007 * u * vol) * min(1.0, L / 0.02)
+                if h < want:
+                    q = q + nrm * (want - h)
+                    d = d - nrm * min(0.0, d.dot(nrm)) * 0.9
+            nz = mnoise.noise_vector(q * 14.0 + Vector((3.1, 1.7, 0.0)))
+            d = (d + Vector((0, 0, -0.16 - 0.4 * min(1.0, L / 0.05))) + nz * (0.05 + 0.12 * messy)).normalized()
+            q = face_guard(q + d * ds)
+            L += ds
+            pts.append(q.copy())
+            if q.z < zcut(q) and L > 0.03:
+                break
+        if len(pts) < 4:
+            continue
+        pts = pts[:-1:2] + [pts[-1]]   # (a vertex every 12 mm is plenty for the mesh)
+        # into a card: across it square to its run, lying on the hair (its normal out of the head)
+        width = rnd.uniform(0.004, 0.009) * (1.0 + 0.5 * u)
+        base = len(verts)
+        band = min(3, int(u * 4 * (0.7 + 0.6 * rnd.random())))   # (the texture's four bands, darkest deepest)
+        u0 = band * 0.25
+        m = len(pts)
+        for j, q in enumerate(pts):
+            t = j / (m - 1)
+            tg = pts[min(j + 1, m - 1)] - pts[max(j - 1, 0)]
+            loc, nrm, _, _ = bvh_head.find_nearest(q)
+            out = (q - loc).normalized() if loc is not None and (q - loc).length > 1e-6 else Vector((0, 0, 1))
+            sd = out.cross(tg)
+            sd = sd.normalized() if sd.length > 1e-9 else Vector((1, 0, 0))
+            w = width * (1 - 0.35 * t ** 2)
+            verts += [q - sd * w / 2, q + sd * w / 2]
+            uvs += [(u0, 1 - t), (u0 + 0.25, 1 - t)]
+        for j in range(m - 1):
+            a = base + 2 * j
+            faces.append((a, a + 1, a + 3, a + 2))
+    img = strand_texture("hair-strands", hs["color"], w=512, h=1024, strands=hs.get("card_strands", 330), fine=True,
+                         root=hs.get("root_color"), bands=4)
+    img.filepath_raw = os.path.join(OUT, "hair-strands.png"); img.file_format = "PNG"; img.save()
+    return make_mesh("hair-cards", verts, faces, uvs, hair_material("hair-cards", hs["color"], img))
 
 
 def hair_locks(hs, rows_, kept, R, NL, c0, verts, faces, uvs):
@@ -1193,7 +1467,7 @@ def hair_locks(hs, rows_, kept, R, NL, c0, verts, faces, uvs):
 brow_ob = brows()
 lash_ob = lashes()
 hair_ob = hair_shell() if SHEET["hair"].get("style") == "shell" else hair_cards()
-parts = [hero, teeth, tongue, *eyes, brow_ob, lash_ob, hair_ob]
+parts = [hero, teeth, tongue, *eyes, brow_ob, lash_ob, hair_ob, *HAIR_EXTRA]
 
 
 # ------------------------------------------------------------------------------------------------ statistics

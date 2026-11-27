@@ -349,6 +349,17 @@ function hairShellMaterial(color, U) {
   return m;
 }
 
+// Hair cards (build_hero.py's shell_cards): see-through strips carrying fine strands, over the dark hair shell.
+// Cut out with alpha to coverage (soft strand edges without sorting), lit along the strands like the shell, with
+// a little of its strand variation on top of the texture's own.
+function hairCardMaterial(map, U) {
+  const m = new THREE.MeshPhysicalMaterial({ name: 'hair-cards', map, alphaTest: 0.45, alphaToCoverage: true, side: THREE.DoubleSide,
+    roughness: 0.55, metalness: 0, specularIntensity: 0.25, envMapIntensity: 0.3 });
+  m.onBeforeCompile = (sh) => strandPatch(sh, U, 'hMask = 0.45;', false);
+  m.customProgramCacheKey = () => 'hair-cards';
+  return m;
+}
+
 // The Hunyuan-generated bodies (Ji Bai, Gu Nian) have smeared, washed-out faces: the texture detail is spread over
 // thousands of UV islands (docs/research-hero-characters.md; one bad eye can be mended: tools/characters/repair_eyes.py). A close-up head built with
 // tools/characters/build_hero.py takes the old head's place: the old head's triangles (skinned mostly to the head
@@ -872,7 +883,9 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
       });
     }
     let mat = o.material;
-    if (/hair-shell/i.test(o.name + mat.name)) {
+    if (/hair-cards/i.test(o.name + mat.name) && mat.map) {
+      mat = hairCardMaterial(mat.map, hairFrame(nose, body.matrixWorld));
+    } else if (/hair-shell/i.test(o.name + mat.name)) {
       mat = hairShellMaterial(mat.color.clone(), hairFrame(nose, body.matrixWorld));
     } else if (/hair|brow|lash/i.test(o.name + mat.name)) {
       // thin dark ribbons: with the default specular, their grazing edges catch the sky and read as white fuzz
