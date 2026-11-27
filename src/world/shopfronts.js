@@ -140,7 +140,7 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
   // A shopfront on a façade. f: { axis: 'x' (the front runs along x, faces ±z) or 'z', plane (the façade's
   // z, or x), out (+1/-1: which way it faces) }; u0..u1 its extent along the front; doorAt: the ways in;
   // type: what the sign says it sells (picks the room). y0 the pavement.
-  function addFront(f, u0, u1, { y0 = 0.15, top = 4.1, doorAt = [], type = null, room: roomId = null, depth = 5 } = {}) {
+  function addFront(f, u0, u1, { y0 = 0.15, top = 4.1, doorAt = [], type = null, room: roomId = null, depth = 5, transom = 2.9 } = {}) {
     const F = frame(f), id = roomId || roomFor(type, rnd), ys = ROOMS[id].yaws;
     let yi = Math.floor(rnd() * ys.length);                 // each room along the front turned to another wall: no twin bays
     // a room behind the stretch of front from ua to ub (along the front), a little wider than it
@@ -166,7 +166,7 @@ export function createShopfronts({ base = './rooms/', size = 512, rnd = Math.ran
         pane(F, room, ba, bb, y0 + 0.32, top, 0.045); pool(F, ba, bb, y0 + 0.012);
         fbox(metal, F, f, cu, y0 + 0.32, 0.02, w, 0.06, 0.1);                                  // sill
         fbox(metal, F, f, cu, top - 0.07, 0.02, w, 0.09, 0.1);                                 // head
-        fbox(metal, F, f, cu, y0 + 2.9, 0.03, w, 0.07, 0.08);                                  // transom
+        if (transom != null && y0 + transom < top - 0.2) fbox(metal, F, f, cu, y0 + transom, 0.03, w, 0.07, 0.08);   // transom
         for (const e of [ba + 0.03, bb - 0.03]) fbox(metal, F, f, e, y0 + 0.32, 0.02, 0.07, top - y0 - 0.32, 0.1);
         const m = Math.max(0, Math.round(w / 1.6) - 1);
         for (let k = 1; k <= m; k++) fbox(metal, F, f, ba + (w * k) / (m + 1), y0 + 0.32, 0.03, 0.045, top - y0 - 0.39, 0.07);

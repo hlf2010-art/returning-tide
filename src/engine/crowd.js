@@ -15,7 +15,7 @@
 // When two people touch anyway, both flinch (engine/flinch.js) and carry on.
 import { njLamps } from '../world/layout.js';
 import { dressingObstacles } from '../world/dressingData.js';
-import { L, deckLamps, DECK_LAMP_X, benches, planterIslands, telescope, lions, streetTrees, stall, colliders, groundHeight, roadLamps, ROAD_LAMP_WEST_OFFSET, crossing, NJ, METRO, inHenan } from '../world/layout.js';
+import { L, deckLamps, DECK_LAMP_X, benches, planterIslands, telescope, lions, streetTrees, bundTrees, stall, colliders, groundHeight, roadLamps, ROAD_LAMP_WEST_OFFSET, crossing, NJ, METRO, inHenan } from '../world/layout.js';
 import { BUS_STOPS } from '../world/trafficMix.js';
 import { startFlinch, stepFlinch, flinchSpeed, FLINCH } from './flinch.js';
 import { SOCIAL } from './social.js';
@@ -211,6 +211,7 @@ export function obstacles() {
   o.push([telescope.x, telescope.z, 0.5]);
   for (const l of lions) for (const dx of [-0.9, 0, 0.9]) o.push([l.x + dx, l.z, 0.8]);
   for (const t of streetTrees) o.push([t.x, t.z, 0.5]);
+  for (const t of bundTrees) o.push([t.x, t.z, 0.75]);                     // (the tree and its stakes)
   o.push([stall.x, stall.z, 1.1]);
   for (const z of roadLamps) { o.push([L.westCurbX - 0.5, z + ROAD_LAMP_WEST_OFFSET, 0.35]); o.push([L.eastCurbX + 0.5, z, 0.35]); }
   for (const p of crossing.vehPoles) o.push([p.x, p.z, 0.4]);

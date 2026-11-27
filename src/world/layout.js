@@ -142,6 +142,28 @@ export const manner = { x: -77.3, zWall: -6.48, depth: 0.85, width: 4.2 };
   manner.pickup = { x: x - 0.35, z: zf + 0.5 };
 }
 export const streetTrees = [{ x: -46, z: 5.2 }, { x: -72, z: -5.2 }, { x: -64, z: 5.2 }];
+// The river side of Zhongshan East 1st Road (photographed November 2026): a row along the kerb of London
+// planes with ginkgos among them, tripod-staked, and between the trees the white art-deco planters, granite
+// benches with timber tops, bronze cabinets and hydrants (world/dressingData.js places those). A module every
+// 8 m from the north end: a tree at its start; kept clear of the crossing and the stair, the two northbound
+// bus stops (world/trafficMix.js BUS_STOPS: z -40 and -232) and the lamp posts and camera on the kerb.
+export const KERB_ROW_X = L.eastCurbX + 1.0;
+export const BUND_ROW = [];       // z of each module's start (its tree, if it has one)
+export const bundTrees = [];      // { x, z, species }
+{
+  const clearOf = (z, list, d) => list.every((q) => Math.abs(z - q) > d);
+  const lampsE = [];
+  for (let z = -410; z <= 420; z += 36) lampsE.push(z);
+  let i = 0;
+  for (let z = L.zNorth + 4; z < 260; z += 8, i++) {                // (on past the south boundary, as far as you can see down the road)
+    if (Math.abs(z) < 14 || !clearOf(z, [-40, -232], 9)) continue;
+    BUND_ROW.push(z);
+    if (!clearOf(z, [...lampsE, 15], 1.4)) continue;
+    // mostly planes; a ginkgo every third tree, and a run of them by the service centre's end of the arcade
+    const ginkgo = i % 3 === 1 || (z > -160 && z < -128);
+    bundTrees.push({ x: KERB_ROW_X, z, species: ginkgo ? 'ginkgo' : 'plane' });
+  }
+}
 export const lions = [{ x: -32.4, z: 76 }, { x: -32.4, z: 90 }];
 export const npcs = {
   pairFocus: { x: 23.7, y: L.deckY + 1.48, z: -15.0 },
@@ -272,6 +294,7 @@ around(sedan.x, sedan.z, 0.95, 2.4, 'car');
 box(bikes.x - 0.9, bikes.x + 0.9, bikes.z0 - 0.3, bikes.z0 + bikes.n * bikes.gap, 'bikes');
 around(stall.x, stall.z, 1.0, 0.75, 'stall');
 for (const t of streetTrees) around(t.x, t.z, 0.3, 0.3, 'tree');
+for (const t of bundTrees) around(t.x, t.z, 0.35, 0.35, 'tree');
 box(manner.x - manner.width / 2, manner.x + manner.width / 2, manner.zWall - 0.1, manner.zWall + manner.depth, 'shop');
 for (const n of npcs.list) { around(n.x, n.z, 0.34, 0.34, 'npc'); colliders[colliders.length - 1].id = n.id; }   // id: so a target can ignore its own body
 for (const p of crossing.vehPoles) around(p.x, p.z, 0.2, 0.2, 'signal');

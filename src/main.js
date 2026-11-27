@@ -24,6 +24,8 @@ import { createRiver } from './world/river.js';
 import { createBridges } from './world/bridges.js';
 import { createBund, loadBundKit } from './world/bund.js';
 import { createPromenade } from './world/promenade.js';
+import { createFloodWall } from './world/floodWall.js';
+import { createSignalTower } from './world/signalTower.js';
 import { createStreet } from './world/street.js';
 import { createLighting, captureEnvironment } from './world/lighting.js';
 import { createClue } from './world/clue.js';
@@ -160,7 +162,7 @@ import { createPhone } from './ui/phone/phone.js';
 import { t as tx, tr, getLang, setLang, onLang } from './ui/i18n.js';
 import { createMinimapState, updateMinimap, zoneAt } from './engine/minimapLogic.js';
 import { createWind, WIND_LEVELS } from './world/wind.js';
-import { planterIslands, streetTrees } from './world/layout.js';
+import { planterIslands, streetTrees, bundTrees } from './world/layout.js';
 import { icon } from './ui/icons.js';
 import './ui/fonts.js';                                     // the display type and colour tokens the theme uses (also loaded by profile.js / season.js)
 import './ui/deco.css';                                     // Bund Deco: loaded last, restyles the UI in the title screen's manner (ui/deco.css)
@@ -239,7 +241,18 @@ let weatherTime = 0, suUmbrella = 0, treeLevel = -1, midDrop = 0;
 // Wind in the trees: a river breeze that rises with the drizzle. Developer control F6 cycles
 // auto / calm / breeze / windy / gale; ?wind=<level> pins it.
 const wind = createWind();
-const TREE_SPOTS = [...streetTrees, ...planterIslands.map((p) => ({ x: (p.x0 + p.x1) / 2, z: (p.z0 + p.z1) / 2 }))];
+// the river-side kerb of Zhongshan Road (layout.js bundTrees), grouped so a long row costs a few draw calls
+function bundTreeClusters() {
+  const groups = new Map();
+  bundTrees.forEach((t, i) => {
+    const k = `${t.species}:${Math.floor((t.z + 300) / 96)}`;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push({ x: t.x, y: L.curbH, z: t.z, species: t.species, seed: 101 + i,
+      h: t.species === 'plane' ? 9.6 + (i % 3) * 0.6 : 8.2 + (i % 2) * 0.9, bare: t.species === 'plane' ? 0.18 : 0.06, away: [-1, 0], lite: true });
+  });
+  return [...groups.values()].map((cluster) => ({ ...cluster[0], cluster }));
+}
+const TREE_SPOTS = [...streetTrees, ...bundTrees, ...planterIslands.map((p) => ({ x: (p.x0 + p.x1) / 2, z: (p.z0 + p.z1) / 2 }))];
 if (params.get('wind') in WIND_LEVELS) wind.setOverride(params.get('wind'));
 const _pairPos = new THREE.Vector3(npcLayout.pairFocus.x, npcLayout.pairFocus.y, npcLayout.pairFocus.z);
 
@@ -298,8 +311,10 @@ async function boot() {
     ...streetTrees.map((t, i) => ({ x: t.x, y: L.curbH, z: t.z, h: 8.4 + (i % 2) * 0.7, species: 'plane', seed: 31 + i, bare: 0.12, away: [0, -Math.sign(t.z)] })),
     ...planterIslands.map((p, i) => ({ x: (p.x0 + p.x1) / 2, y: L.deckY + 0.5, z: (p.z0 + p.z1) / 2 + (i % 2 ? 1.5 : -1.5), h: 4.2 + (i % 3) * 0.3, species: 'camphor', seed: 1 + i })),
     ...nanjing.trees,                                                     // Century Square's planes, People's Park
+    ...bundTreeClusters(),                                                // the Bund's kerb: planes and ginkgos, a mesh pair per 96 m and species
   ], { wetBoost: weatherUniforms.wetBoost });
   scene.add(trees.group);
+  scene.add(createFloodWall(M).group, createSignalTower().group);       // and the Gutzlaff Signal Tower down at Yan'an Road (world/signalTower.js)                                  // the shops in the flood wall's lower level (world/floodWall.js)
   // Manner Coffee's takeaway front on Hankou Road (world/shops.js), lit from inside
   const manner = createManner(L.curbH); scene.add(manner.group);
   const baristas = createBaristas({ scene, people, work: manner.work });   // and the two making the coffee in it (world/baristas.js)

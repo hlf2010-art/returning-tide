@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { L, deckLamps, DECK_LAMP_X, benches, planterIslands, telescope, PIER } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
+import { ARCADE } from './floodWall.js';
 
 const Y = L.deckY, FAR = 430;
 
@@ -50,7 +51,7 @@ export { tree };
 export function createPromenade(M) {
   const group = new THREE.Group(); group.name = 'promenade';
   const st = L.stair, hw = st.halfW;
-  const B = batchSet(['deck', 'granite', 'iron', 'lampGlass', 'hedge', 'wood', 'steel', 'bark', 'leaf', 'binBlue', 'binGrey']);
+  const B = batchSet(['deck', 'granite', 'iron', 'lampGlass', 'hedge', 'topiary', 'wood', 'steel', 'bark', 'leaf', 'binBlue', 'binGrey']);
 
   // deck surface (three slabs around the stair recess) and its granite body
   B.deck.floor(L.wallX, L.deckEdgeX, -FAR, -hw, Y, 4.8);
@@ -67,10 +68,20 @@ export function createPromenade(M) {
   // parapets: along the road edge and down both sides of the stair
   for (const s of [-1, 1]) {
     const zc = s * (FAR + hw + 0.35) / 2, len = FAR - hw - 0.35;
-    B.granite.box(L.wallX + 0.02, Y, zc, 0.36, 1.05, len);
-    B.granite.box(L.wallX + 0.02, Y + 1.05, zc, 0.5, 0.1, len);
-    B.granite.box(3.1, Y, zc, 1.8, 0.42, len);                   // hedge trough behind the parapet
-    B.hedge.box(3.1, Y + 0.42, zc, 1.5, 0.5, len - 0.3);
+    // over the road: a stainless railing on a low granite kerb (posts every 1.8 m, four rails and a flat
+    // top rail), as the flood wall has, so from the street you see the promenade's people through it
+    B.granite.box(L.wallX + 0.06, Y, zc, 0.4, 0.24, len);
+    B.granite.box(L.wallX + 0.06, Y + 0.24, zc, 0.44, 0.04, len);
+    B.steel.box(L.wallX + 0.06, Y + 1.1, zc, 0.09, 0.035, len);
+    for (const hy of [0.46, 0.66, 0.86]) B.steel.box(L.wallX + 0.06, Y + hy, zc, 0.035, 0.035, len);
+    for (let z = hw + 0.6; z < FAR; z += 1.8) B.steel.box(L.wallX + 0.06, Y + 0.28, s * z, 0.05, 0.82, 0.05);
+    B.granite.box(3.1, Y, zc, 1.8, 0.42, len);                   // hedge trough behind it
+    B.hedge.box(3.1, Y + 0.42, zc, 1.5, 0.3, len - 0.3);
+    // and clipped balls of box along it, one every 3 m
+    for (let z = hw + 1.5; z < FAR - 1; z += 3) {
+      const g = new THREE.IcosahedronGeometry(0.46, 1); g.scale(1, 0.85, 1);
+      B.topiary.add(g, { x: 3.1, y: Y + 0.9, z: s * z });
+    }
     B.granite.box((st.x0 + st.x1) / 2 + 0.1, Y, s * (hw + 0.18), st.x1 - st.x0 + 0.2, 1.05, 0.36);
     B.granite.box((st.x0 + st.x1) / 2 + 0.1, Y + 1.05, s * (hw + 0.18), st.x1 - st.x0 + 0.3, 0.1, 0.5);
     B.granite.box(st.x1 + 0.2, Y, s * (hw + 0.18), 0.6, 1.3, 0.6);  // newel at the head of the stair
@@ -78,11 +89,15 @@ export function createPromenade(M) {
   }
 
   // the road-side face of the retaining wall: plinth, piers, coping
+  // (north of the Customs House the wall's lower level is a row of shops instead: world/floodWall.js)
+  const runs = (a, b) => (b <= ARCADE.zN || a >= ARCADE.zS ? [[a, b]] : [[a, ARCADE.zN], [ARCADE.zS, b]].filter(([p, q]) => q - p > 0.1));
   for (const s of [-1, 1]) {
-    const zc = s * (FAR + hw + 0.7) / 2, len = FAR - hw - 0.7;
-    B.granite.box(L.wallX - 0.1, 0, zc, 0.2, 0.6, len);
-    B.granite.box(L.wallX - 0.08, Y - 0.3, zc, 0.3, 0.3, len);
-    for (let z = hw + 3.4; z < FAR; z += 6) B.granite.box(L.wallX - 0.12, 0.6, s * z, 0.24, Y - 0.9, 0.8);
+    const [a, b] = s < 0 ? [-FAR, -hw - 0.7] : [hw + 0.7, FAR];
+    for (const [p, q] of runs(a, b)) {
+      B.granite.box(L.wallX - 0.1, 0, (p + q) / 2, 0.2, 0.6, q - p);
+      B.granite.box(L.wallX - 0.08, Y - 0.3, (p + q) / 2, 0.3, 0.3, q - p);
+    }
+    for (let z = hw + 3.4; z < FAR; z += 6) if (s * z < ARCADE.zN - 0.5 || s * z > ARCADE.zS + 0.5) B.granite.box(L.wallX - 0.12, 0.6, s * z, 0.24, Y - 0.9, 0.8);
   }
 
   // river railing: plinth, posts, rails, pickets
@@ -145,7 +160,7 @@ export function createPromenade(M) {
   const std = (o) => new THREE.MeshStandardMaterial(o);
   flush(B, {
     ...M, bark: std({ color: 0x3a3229, roughness: 0.9 }), leaf: std({ color: 0x2c4a2c, roughness: 0.8, emissive: 0x0b140a }),
-    binBlue: std({ color: 0x1c4f8f, roughness: 0.5, metalness: 0.3 }), binGrey: std({ color: 0x16171a, roughness: 0.5, metalness: 0.3 }),
+    topiary: std({ color: 0x3a5a2e, roughness: 0.9 }), binBlue: std({ color: 0x1c4f8f, roughness: 0.5, metalness: 0.3 }), binGrey: std({ color: 0x16171a, roughness: 0.5, metalness: 0.3 }),
   }, group, 'prom-');
   return { group };
 }

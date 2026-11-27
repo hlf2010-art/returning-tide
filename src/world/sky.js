@@ -35,8 +35,8 @@ export function createSky() {
         vec3 d = normalize(vDir);
         float h = max(d.y, 0.0);
         // blue hour -> deep night (city glow) -> day (haze)
-        vec3 zenith = mix(mix(vec3(0.006, 0.017, 0.07), vec3(0.004, 0.007, 0.02), night), vec3(0.04, 0.2, 0.62), day);
-        vec3 mid = mix(mix(vec3(0.02, 0.058, 0.2), vec3(0.016, 0.022, 0.045), night), vec3(0.14, 0.38, 0.82), day);
+        vec3 zenith = mix(mix(vec3(0.006, 0.017, 0.07), vec3(0.004, 0.007, 0.02), night), vec3(0.07, 0.25, 0.64), day);
+        vec3 mid = mix(mix(vec3(0.02, 0.058, 0.2), vec3(0.016, 0.022, 0.045), night), vec3(0.19, 0.42, 0.8), day);
         vec3 horizon = mix(mix(vec3(0.085, 0.15, 0.32), vec3(0.075, 0.062, 0.07), night), vec3(0.44, 0.63, 0.9), day);
         vec3 col = mix(horizon, mid, smoothstep(0.0, 0.22, h));
         col = mix(col, zenith, smoothstep(0.18, 0.95, h));
@@ -46,6 +46,10 @@ export function createSky() {
         col += vec3(1.0, 0.36, 0.1) * pow(west, 3.0) * exp(-h * 5.0) * 0.75 * glow;         // afterglow
         col += vec3(0.6, 0.2, 0.34) * pow(west, 1.8) * exp(-h * 3.0) * 0.26 * glow;
         col += vec3(0.2, 0.15, 0.3) * east * exp(-h * 9.0) * 0.4 * (1.0 - day);            // Lujiazui haze
+        // a low winter sun warms the haze along the horizon, most toward the sun, a little all round
+        float lowSun = (1.0 - smoothstep(0.08, 0.45, sunDir.y)) * smoothstep(-0.05, 0.05, sunDir.y) * day;
+        float toward = max(dot(flat2, normalize(sunDir.xz + 1e-5)), 0.0);
+        col += vec3(0.42, 0.24, 0.07) * exp(-h * 7.0) * (0.25 + 0.75 * pow(toward, 2.0)) * lowSun;
         // the sun through the haze: a soft disc and a wide bright halo, whiter as it climbs
         float sd = max(dot(d, sunDir), 0.0), up = smoothstep(-0.05, 0.1, sunDir.y);
         col += mix(vec3(1.0, 0.7, 0.4), vec3(1.0, 0.95, 0.85), smoothstep(0.05, 0.4, sunDir.y)) * (pow(sd, 900.0) * 3.0 + pow(sd, 24.0) * 0.32 + pow(sd, 4.0) * 0.1) * up * day;

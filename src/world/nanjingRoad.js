@@ -16,6 +16,7 @@ import { makeCanvas, tex, rng, FONT } from './canvas.js';
 import { towerAtlas } from './skyline.js';
 import { markCanvas } from '../ui/brands.js';
 import { createShopfronts } from './shopfronts.js';
+import { addFloodWallFronts } from './floodWall.js';
 import { createSignAtlas, loadSignFonts } from './shopSigns.js';
 import { LANDMARK_BUILDERS, tower } from './njLandmarks.js';
 import { placedShops } from './njShops.js';
@@ -479,6 +480,7 @@ export function createNanjingRoad(M, { roomSize = 512 } = {}) {
   signAt.draw(); bladeAt.draw(); loadSignFonts().then(() => { signAt.draw(); bladeAt.draw(); });
   const pageMats = (list, atlas, make) => list.forEach((b, k) => { if (b && b.list.length) group.add(b.mesh(make(atlas.textures[k]), `nj-signs-${k}`)); });
   const boardMat = new THREE.MeshStandardMaterial({ color: 0x1b1916, metalness: 0.6, roughness: 0.4 });
+  addFloodWallFronts(fronts);                            // the flood wall's shops on the Bund (world/floodWall.js) share these rooms
   group.add(fronts.build());
   pageMats(signs, signAt, (t) => { const m = new THREE.MeshBasicMaterial({ map: t }); m.color.setScalar(1.35); return asLight(m, 'signs', 0.62); });
   pageMats(letters, signAt, (t) => { const m = new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.5 }); m.color.setScalar(1.5); return asLight(m, 'signs', 0.7); });

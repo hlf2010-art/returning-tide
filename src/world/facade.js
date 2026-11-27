@@ -157,13 +157,22 @@ export function skylineGlass(m, dayColor = [0.46, 0.53, 0.6], f0 = 0.2, { grid =
         // the sunny side lit and the far side in shade, then the sky in it at a glancing angle
         float gg = dot(todGlass, vec3(0.33));
         vec3 deep = mix(vec3(gg), todGlass, 1.4);
-        float sunlit = 0.62 + 0.75 * max(dot(N0, normalize(skSun)), 0.0);
+        // the low sun of a winter afternoon is gold: towers facing it glow warm (the 4 pm photographs)
+        vec3 sunC = mix(vec3(1.0, 0.64, 0.34), vec3(1.0, 0.97, 0.92), smoothstep(0.1, 0.5, skSun.y)) * smoothstep(-0.02, 0.06, skSun.y);
+        float ndl = max(dot(N0, normalize(skSun)), 0.0);
+        vec3 sunlit = vec3(0.62) + 0.75 * ndl * sunC * mix(1.35, 1.0, smoothstep(0.1, 0.5, skSun.y));
         vec3 tint = deep * todAmb * (0.42 + 0.5 * l) * sunlit * (0.88 + 0.24 * h1);
         vec3 refl = fCity(R, fSky(R)) * mix(vec3(1.0), deep * 1.9, 0.85);   // (tinted glass tints what it mirrors)
         vec3 glassD = mix(tint, refl, clamp(F * 1.25 + 0.03, 0.0, 1.0));
         vec3 spanD = deep * todAmb * sunlit * 0.36 + refl * 0.14;
-        vec3 frameD = mix(deep, vec3(0.62, 0.64, 0.67), 0.4) * todAmb * (0.3 + 0.5 * max(dot(N0, normalize(skSun)), 0.0));
+        vec3 frameD = mix(deep, vec3(0.62, 0.64, 0.67), 0.4) * todAmb * (0.3 + 0.5 * ndl * sunC);
         vec3 day = roof ? tint * 0.8 : mix(mix(glassD, spanD, span * 0.85), frameD, mull * 0.5);
+        // and where a pane happens to mirror the sun straight back: a glint (panels a hair off true scatter it)
+        // late in the day the low sun turns a glass wall facing it into a sheet of gold (the haze lit gold, mirrored
+        // at a grazing angle): strongest below 20 degrees of sun
+        float lowSun = 1.0 - smoothstep(0.12, 0.42, skSun.y);
+        if (!roof) day += sunC * vec3(1.0, 0.82, 0.55) * ndl * ndl * lowSun * (0.3 + 0.4 * h1) * (1.0 - 0.5 * span) * todAmb;
+        if (!roof) day += sunC * (pow(max(dot(R, normalize(skSun)), 0.0), 900.0) * 6.0 + pow(max(dot(R, normalize(skSun)), 0.0), 60.0) * 0.18) * (1.0 - span);
         // after dark: the lit floors (mullions cross them), and where a floor is dark the glass mirrors
         // the city-lit sky and the towers around
         vec3 nsky = fSky(R) * 1.7 + vec3(0.06, 0.042, 0.05) * (1.0 - smoothstep(-0.05, 0.4, R.y)) * (1.0 - todDay);
@@ -178,7 +187,7 @@ export function skylineGlass(m, dayColor = [0.46, 0.53, 0.6], f0 = 0.2, { grid =
         float hz = (1.0 - exp(-dist / 1400.0)) * (1.0 - 0.6 * smoothstep(20.0, 420.0, vFW.y)) * mix(0.42, 0.12, todDay) * fHaze;
         diffuseColor.rgb = mix(c, hzC, hz); }`);
   };
-  m.customProgramCacheKey = () => 'skyline-glass-v5' + (grid ? 'g' : '');
+  m.customProgramCacheKey = () => 'skyline-glass-v6' + (grid ? 'g' : '');
   m.needsUpdate = true;
   return m;
 }
