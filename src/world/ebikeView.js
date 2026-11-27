@@ -142,10 +142,10 @@ function scooter(brand) {
   // footrests for a passenger, folded
   for (const sx of [-1, 1]) p.push(box(0.04, 0.025, 0.08, 0x1c1d20, sx * 0.19, 0.4, -0.3));
   // November: a quilted windbreak hung over the apron to the rider's knees, quilting stitched across it,
-  // and padded muffs over the grips
+  // and (the couriers', out in it all day) padded muffs over the grips, the hands in them from behind
   p.push(panel([[0.4, 0.42], [0.52, 0.52], [0.63, 0.76], [0.66, 0.92], [0.62, 0.975], [0.56, 0.95], [0.5, 0.8], [0.42, 0.6]], 0.64, QUILT, { bevel: 0.035, taper: (y) => 0.8 + 0.2 * Math.min(1, Math.max(0, (y - 0.42) / 0.6)) }));
   for (const [yy, zz] of [[0.6, 0.575], [0.75, 0.632], [0.9, 0.67]]) p.push(box(0.6 * (0.85 + 0.15 * (yy - 0.42) / 0.6), 0.008, 0.01, 0x141824, 0, yy, zz, -0.35));
-  for (const sx of [-1, 1]) p.push(part(new THREE.CylinderGeometry(0.06, 0.075, 0.2, 10), QUILT, sx * 0.31, 1.19, 0.5, 0, 0, Math.PI / 2));
+  if (courier) for (const sx of [-1, 1]) p.push(part(new THREE.CylinderGeometry(0.06, 0.075, 0.2, 10), QUILT, sx * 0.31, 1.19, 0.5, 0, 0, Math.PI / 2));
   if (courier) {
     const B = RIDER_BRANDS[brand];
     // the box (its lid is drawn on its own, it opens), a dark label on its back; the rack's frame under it;
@@ -184,6 +184,64 @@ function rotWorld(bone, ax, ang) {                            // turn a bone abo
   bone.updateMatrixWorld(true);
 }
 const X = new THREE.Vector3(1, 0, 0), Z = new THREE.Vector3(0, 0, 1);
+// where the rider sits and reaches (rider-local metres, facing +z): the pelvis over the saddle's front half,
+// the ankles over the floorboard (soles on its mat), the wrists just behind and inside the grips
+const SIT = { y: 0.9, z: -0.17 }, FEET = { x: 0.11, y: 0.43, z: 0.1 }, WRIST = { x: 0.255, y: 1.205, z: 0.44 };
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _n = new THREE.Vector3(), _wq = new THREE.Quaternion();
+function turnWorld(bone, axis, ang) {                          // (as rotWorld, about a world axis already normalized)
+  if (!bone || !ang) return;
+  bone.getWorldQuaternion(_wq); _wq.premultiply(_q.setFromAxisAngle(axis, ang));
+  bone.parent.getWorldQuaternion(_pq).invert(); bone.quaternion.copy(_pq.multiply(_wq)); bone.updateMatrixWorld(true);
+}
+function alignBone(bone, tip, want) {                          // turn bone so the line to tip points along want
+  bone.getWorldPosition(_a); tip.getWorldPosition(_b); _c.subVectors(_b, _a).normalize();
+  const q = new THREE.Quaternion().setFromUnitVectors(_c, want.clone().normalize());
+  const ax = new THREE.Vector3(q.x, q.y, q.z), s = ax.length(); if (s > 1e-6) turnWorld(bone, ax.divideScalar(s), 2 * Math.atan2(s, q.w));
+}
+// a two-bone limb (thigh-calf-foot, upper arm-forearm-hand): the end joint to target, the knee or elbow toward pole
+function twoBone(up, mid, end, target, pole) {
+  if (!up || !mid || !end) return;
+  const s = new THREE.Vector3(), e = new THREE.Vector3(), h = new THREE.Vector3();
+  up.getWorldPosition(s); mid.getWorldPosition(e); end.getWorldPosition(h);
+  const l1 = s.distanceTo(e), l2 = e.distanceTo(h), d = THREE.MathUtils.clamp(s.distanceTo(target), Math.abs(l1 - l2) + 1e-3, l1 + l2 - 1e-3);
+  // the bend: the angle at the knee or elbow that puts the end d from the root, bent toward the pole
+  const a = s.clone().sub(e).normalize(), b = h.clone().sub(e).normalize();
+  const cur = Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1)), want = Math.acos(THREE.MathUtils.clamp((l1 * l1 + l2 * l2 - d * d) / (2 * l1 * l2), -1, 1));
+  const n = new THREE.Vector3().crossVectors(a, b); if (n.lengthSq() < 1e-8) n.crossVectors(a, pole); n.normalize();
+  turnWorld(mid, n, want - cur);
+  // the root: aim it at the target, then swing the knee or elbow round that line toward the pole
+  end.getWorldPosition(h); const ax = target.clone().sub(s).normalize();
+  const q = new THREE.Quaternion().setFromUnitVectors(h.sub(s).normalize(), ax);
+  { const v = new THREE.Vector3(q.x, q.y, q.z), sn = v.length(); if (sn > 1e-6) turnWorld(up, v.divideScalar(sn), 2 * Math.atan2(sn, q.w)); }
+  mid.getWorldPosition(e); const el = e.sub(s), pr = el.addScaledVector(ax, -el.dot(ax)), pl = pole.clone().addScaledVector(ax, -pole.dot(ax));
+  if (pr.lengthSq() > 1e-8 && pl.lengthSq() > 1e-8) {
+    pr.normalize(); pl.normalize(); let ang = Math.acos(THREE.MathUtils.clamp(pr.dot(pl), -1, 1));
+    if (_n.crossVectors(pr, pl).dot(ax) < 0) ang = -ang; turnWorld(up, ax, ang);
+  }
+  return d < s.distanceTo(target) - 0.005;                     // (true: it couldn't reach)
+}
+// the sole flat on the floorboard, the toes a little out
+function levelFoot(foot, toe, sx) { if (foot && toe) alignBone(foot, toe, _d.set(sx * 0.18, -0.06, 1)); }
+// the hand round its grip: knuckles over the bar, the thumb under it toward the middle, the fingers curled under
+function gripHand(root, s, sx) {
+  const b = (n) => root.getObjectByName(`Bip01_${s}_${n}`);
+  const hand = b('Hand'), knuckle = b('Finger2'), thumb = b('Finger0');
+  if (!hand || !knuckle) return;
+  alignBone(hand, knuckle, new THREE.Vector3(sx * 0.3, -0.25, 1));
+  if (thumb) {                                                 // the roll about the hand's own line: the thumb inboard and down
+    hand.getWorldPosition(_a); knuckle.getWorldPosition(_b); const f = _b.clone().sub(_a).normalize();
+    thumb.getWorldPosition(_c); const t = _c.sub(_a).addScaledVector(f, -_c.dot(f)), w = new THREE.Vector3(-sx, -0.7, 0).addScaledVector(f, -new THREE.Vector3(-sx, -0.7, 0).dot(f));
+    if (t.lengthSq() > 1e-8 && w.lengthSq() > 1e-8) { t.normalize(); w.normalize(); let ang = Math.acos(THREE.MathUtils.clamp(t.dot(w), -1, 1)); if (_n.crossVectors(t, w).dot(f) < 0) ang = -ang; turnWorld(hand, f, ang); }
+  }
+  const down = new THREE.Vector3(0, -1, -0.25).normalize();
+  const curl = (bone, ang) => {                                // a finger joint folding toward the palm (down, round the bar)
+    const tip = bone && bone.children.find((c) => c.isBone); if (!tip) return;
+    bone.getWorldPosition(_a); tip.getWorldPosition(_b); const dir = _b.sub(_a).normalize(), ax = new THREE.Vector3().crossVectors(dir, down);
+    if (ax.lengthSq() > 1e-6) turnWorld(bone, ax.normalize(), ang);
+  };
+  for (const k of [1, 2, 3, 4]) { curl(b(`Finger${k}`), 1.05); curl(b(`Finger${k}1`), 1.1); curl(b(`Finger${k}2`), 0.7); }
+  curl(b('Finger01'), 0.5);
+}
 // a phone's place: its centre, and its screen facing `face` with its top toward `up` (rider-local metres)
 function phoneAt(pos, face, up) {
   const z = face.clone().normalize(), y = up.clone().addScaledVector(z, -up.dot(z)).normalize(), x = new THREE.Vector3().crossVectors(y, z);
@@ -205,11 +263,25 @@ async function riderGeometry(people, role, brand = null) {
     rotWorld(bone(`${s}_Foot`), X, -0.1);
     rotWorld(bone(`${s}_Thigh`), Z, s === 'L' ? 0.08 : -0.08);   // knees a little apart
   }
-  rotWorld(bone('Spine'), X, 0.16);                          // a little forward
+  rotWorld(bone('Spine'), X, 0.22);                          // leaning a little to the bars
   for (const s of ['L', 'R']) {
-    rotWorld(bone(`${s}_UpperArm`), X, -0.95);                 // arms out to the bars
+    rotWorld(bone(`${s}_UpperArm`), X, -0.95);                 // arms out to the bars (the IK below finishes them)
     rotWorld(bone(`${s}_UpperArm`), Z, s === 'L' ? -0.18 : 0.18);
     rotWorld(bone(`${s}_Forearm`), X, -0.35);
+  }
+  p.root.updateMatrixWorld(true);
+  // onto the saddle's front half (as people sit on a moped, knees up toward the leg shield), then the
+  // feet flat on the floorboard and both hands round the grips, by IK in the rider's frame
+  {
+    const pv = new THREE.Vector3(); bone('Pelvis').getWorldPosition(pv);
+    const o = new THREE.Vector3(-pv.x, SIT.y - pv.y, SIT.z - pv.z), at = (v) => v.clone().sub(o);
+    for (const s of ['L', 'R']) {
+      const sx = s === 'L' ? 1 : -1;                          // (the rider faces +z; their left is +x)
+      twoBone(bone(`${s}_Thigh`), bone(`${s}_Calf`), bone(`${s}_Foot`), at(new THREE.Vector3(sx * FEET.x, FEET.y, FEET.z)), new THREE.Vector3(sx * 0.25, 0.4, 1));
+      levelFoot(bone(`${s}_Foot`), bone(`${s}_Toe0`), sx);
+      twoBone(bone(`${s}_UpperArm`), bone(`${s}_Forearm`), bone(`${s}_Hand`), at(new THREE.Vector3(sx * WRIST.x, WRIST.y, WRIST.z)), new THREE.Vector3(sx * 0.8, -1, -0.2));
+      gripHand(p.root, s, sx);
+    }
   }
   p.root.updateMatrixWorld(true);
   // (the dyed jacket's material keeps its name ending, so the bake packs it as the clothes)
@@ -243,7 +315,7 @@ async function riderGeometry(people, role, brand = null) {
   // onto the saddle: the pelvis just above it, a little behind the middle
   const pelvis = new THREE.Vector3(), head = new THREE.Vector3(), chest = new THREE.Vector3();
   bone('Pelvis').getWorldPosition(pelvis); bone('Head').getWorldPosition(head); bone('Spine2').getWorldPosition(chest);
-  const off = new THREE.Vector3(-pelvis.x, 0.9 - pelvis.y, -0.3 - pelvis.z);
+  const off = new THREE.Vector3(-pelvis.x, SIT.y - pelvis.y, SIT.z - pelvis.z);
   const ride = freeze().translate(off.x, off.y, off.z); head.add(off); chest.add(off);
   // the skull: the top of the head, and its width and depth across the band where a helmet sits
   const P = ride.attributes.position;
