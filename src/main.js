@@ -80,7 +80,7 @@ import { createVehicles } from './world/vehicles.js';
 import { createVehicleLamps } from './world/vehicleLamps.js';
 import { createDressing } from './world/dressing.js';
 import { createPulse } from './world/pulse.js';
-import { createEbikes } from './engine/ebikes.js';
+import { createEbikes, EBIKE } from './engine/ebikes.js';
 import { createEbikeView } from './world/ebikeView.js';
 import { createSignals } from './world/signals.js';
 import { createPedestrians } from './world/pedestrians.js';
@@ -376,7 +376,8 @@ async function boot() {
   // once it's yours: drive it (world/driving.js)
   // people getting out of its way, and what happens if someone can't (world/roadReactions.js)
   const roads = createRoadReactions({ scene, people, hud, audio, traffic, player, getLife: () => life, save: () => saveLife(), getCrowd: () => world && world.crowd, onHit: (L, info) => carFallout(L, info) });
-  const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads });
+  const driving = createDriving({ huracan, traffic, camera, player, audio, hud, getLife: () => life, save: () => saveLife(), onMode: driveMode, carSale, crowdPeople: () => (world && world.crowd ? world.crowd.onCarriageway() : []), reactions: roads,
+    bikes: () => (world && world.ebikes ? world.ebikes.riders : []) });   // (and you don't drive through e-bikes)
   const dressing = params.get('dress') === '0' ? null : createDressing({ scene, addCollider: addDynamicCollider });   // bikes, bins, bollards... (world/dressing.js)
   const lamps = params.get('lamps') === '0' ? null : createVehicleLamps({ scene });   // night traffic as lamps (world/vehicleLamps.js)
   lampSources = [{ list: traffic.vehicles, z: 0 }, { list: henan.traffic.vehicles, z: NJ.zc }];
@@ -385,6 +386,7 @@ async function boot() {
   if (pulse && audio.onHorn) audio.onHorn((x, z) => pulse.horn(x, z, camera.position));   // a ship's horn turns heads toward the river
   // e-bikes and couriers on Henan Road, Hankou Road and Jiujiang Road (engine/ebikes.js, world/ebikeView.js)
   let ebikes = null, ebikeView = null;
+  const ebikeObs = [];
   if (params.get('ebikes') !== '0' && people) {
     const hc = henan.traffic.controller, _fw = new THREE.Vector3();
     ebikes = createEbikes({
@@ -393,6 +395,17 @@ async function boot() {
       // (the side streets' ends: only where you aren't looking, or far enough off)
       canVanish: (x, z) => { const dx = x - camera.position.x, dz = z - camera.position.z, d = Math.hypot(dx, dz); if (d > 75) return true; camera.getWorldDirection(_fw); return (dx * _fw.x + dz * _fw.z) / (d || 1) < 0.35; },
       blocked: (x, z) => Math.abs(player.body.x - x) < 4 && Math.abs(player.body.z - z) < 3.5,
+      // what's in the road besides them: the Strale (parked or driven), you on foot, a Henan Road car easing in
+      // to the kerb, people on Henan Road's carriageway; ridden round or waited for, never through
+      obstacles: () => {
+        ebikeObs.length = 0;
+        const car = driving.body(), b = player.body;
+        if (car) ebikeObs.push(car);
+        if (!driving.driving && b.y < 1) ebikeObs.push({ x: b.x, z: b.z, hl: 0.3, hw: 0.3, vx: b.vx || 0, vz: b.vz || 0, kind: 'person' });
+        for (const v of henan.traffic.vehicles) if (v.active && Math.abs(v.dx || 0) > 0.3) ebikeObs.push({ x: v.x, z: v.z + NJ.zc, fx: 0, fz: v.lane.dir, hl: v.len / 2, hw: v.width / 2, vx: 0, vz: v.v * v.lane.dir, kind: 'car' });
+        if (world && world.crowd && Math.abs(b.x - NJ.henan.xc) < 120) for (const q of world.crowd.onHenan()) ebikeObs.push({ x: q.x, z: q.z + NJ.zc, hl: 0.3, hw: 0.3, vx: q.vx, vz: q.vz, kind: 'person' });
+        return ebikeObs;
+      },
       // couriers' pickups: Nanjing Road's shop doors by the Henan Road corners; who's open (Linger on Hankou
       // Road 7:30 to 20:00, the shops by the shops' own hours)
       doors: nanjing.doors,
@@ -1024,7 +1037,7 @@ const PROMPTS = {
   },
 };
 const _player = { x: 0, z: 0, vx: 0, vz: 0 };
-let pedBoxes = [], crowdBoxes = [], bumps = null;
+let pedBoxes = [], crowdBoxes = [], ebikeBoxes = [], bumps = null;
 // ---- the protagonist's life and phone (engine/life.js, world/agenda.js, ui/phone) ----
 const LIFE_KEY = slotKey(currentSlot());   // the slot you're playing (ui/saves.js); slot 1 is the original save
 let life = null;
@@ -1531,7 +1544,19 @@ function updateTraffic(dt) {
   world.buses.update(dt);
   world.henan.update(dt, { player: world.driving && world.driving.driving ? null : b, eye: camera.position, rain: weather.rain });
   world.vehicles.update(traffic.vehicles, camera.position);
-  if (world.ebikes) { world.ebikes.setDensity(Math.max(0.15, Math.min(1, hourState.traffic ?? 1))); world.ebikes.update(mode === 'pause' ? 0 : dt); world.ebikeView.update(world.ebikes.riders, camera.position, mode === 'pause' ? 0 : dt); }
+  if (world.ebikes) {
+    world.ebikes.setDensity(Math.max(0.15, Math.min(1, hourState.traffic ?? 1))); world.ebikes.update(mode === 'pause' ? 0 : dt); world.ebikeView.update(world.ebikes.riders, camera.position, mode === 'pause' ? 0 : dt);
+    // the bikes nearest you are solid: you walk round them, not through (they wait for you, or ride round you)
+    if (!ebikeBoxes.length) for (let i = 0; i < 6; i++) ebikeBoxes.push(addDynamicCollider('vehicle'));
+    let n = 0;
+    for (const r of world.ebikes.riders) {
+      if (n >= ebikeBoxes.length) break;
+      if (!r.active || r.state === 'gone' || r.fade < 0.5 || Math.abs(r.x - b.x) > 6 || Math.abs(r.z - b.z) > 6 || b.y > 1) continue;
+      const cx = r.x - r.lane.fx * EBIKE.len / 2, cz = r.z - r.lane.fz * EBIKE.len / 2, ex = Math.abs(r.lane.fx) * EBIKE.len / 2 + Math.abs(r.lane.fz) * EBIKE.width / 2, ez = Math.abs(r.lane.fz) * EBIKE.len / 2 + Math.abs(r.lane.fx) * EBIKE.width / 2;
+      Object.assign(ebikeBoxes[n++], { minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, id: `ebike:${r.id}` });
+    }
+    for (; n < ebikeBoxes.length; n++) Object.assign(ebikeBoxes[n], { minX: 1e6, maxX: 1e6, minZ: 1e6, maxZ: 1e6 });
+  }
   if (world.lamps) world.lamps.update(world.ebikes ? [...lampSources, { list: world.ebikes.riders, z: 0 }] : lampSources, camera.position, hourState.lamps);
   if (world.pulse) world.pulse.update(dt, camera.position, hourState);
   world.pedestrians.update(traffic.peds, dt, camera.position);

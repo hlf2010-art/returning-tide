@@ -1,0 +1,50 @@
+<!doctype html><meta charset="utf-8"><title>photo pose lab</title>
+<style>body{margin:0;background:#888}canvas{display:block}</style>
+<script type="module">
+// Dev lab: crowd people at the railing with phones (world/photoPose.js), several poses side by side
+import * as THREE from 'three';
+import { loadPeople, createPerson } from '/src/world/people.js';
+import { applyPose, palmPhone, PHONE_SIZE, LEAN } from '/src/world/photoPose.js';
+const Q = new URLSearchParams(location.search);
+const W = +(Q.get('w') || 1600), H = +(Q.get('h') || 700);
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9aa4ad);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.0)); const d = new THREE.DirectionalLight(0xffffff, 2.2); d.position.set(2, 4, 3); scene.add(d);
+const cam = new THREE.PerspectiveCamera(30, W / H, 0.01, 80);
+const people = await loadPeople('/people/');
+const roles = (Q.get('roles') || 'p1,p2,c1,c2,p3,c3,p4').split(',');
+const kinds = (Q.get('kinds') || 'land,port,one,selfie,check,v,lean').split(',');
+const phoneMat = [0x222226, 0x222226, 0x222226, 0x222226, 0x9fb6d0, 0x1a1a1e].map((c, i) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.35, metalness: 0.3, emissive: i === 4 ? 0x445566 : 0 }));
+const list = kinds.map((k, i) => {
+  const p = createPerson(people, roles[i % roles.length]);
+  p.root.scale.setScalar(0.01); p.root.position.set((i - (kinds.length - 1) / 2) * 1.1, 0, 0);
+  p.root.rotation.y = +(Q.get('yaw') || 0);
+  scene.add(p.root);
+  const ph = new THREE.Mesh(new THREE.BoxGeometry(...PHONE_SIZE), phoneMat); ph.matrixAutoUpdate = false; scene.add(ph);
+  if (k === 'lean') { const rail = new THREE.Mesh(new THREE.BoxGeometry(1, 0.06, 0.11), new THREE.MeshStandardMaterial({ color: 0x222 })); scene.add(rail); p.rail = rail; }
+  return { p, k, ph };
+});
+function pose(t) {
+  for (const { p, k, ph } of list) {
+    p.play(k === 'check' ? 'phone' : 'idle', 0); p.update(t);
+    let m = null;
+    if (k === 'check') m = palmPhone(p); else m = applyPose(p, k, {});
+    p.root.updateMatrixWorld(true);
+    ph.visible = !!m; if (m) ph.matrix.copy(m);
+    if (p.rail) { const yaw = p.root.rotation.y; p.rail.position.set(p.root.position.x + Math.sin(yaw) * (LEAN.d + 0.02), LEAN.h - 0.03, Math.cos(yaw) * (LEAN.d + 0.02)); p.rail.rotation.y = yaw; }
+  }
+}
+await new Promise((res) => setTimeout(res, 1500));
+pose(0.5);
+window.view = (name, k = null) => {
+  pose(0.016);
+  const V = { front: [0, 1.5, 6], back: [0, 1.6, -6], side: [6, 1.6, 1.5], fq: [3, 1.8, 5] }[name] || name;
+  let target = new THREE.Vector3(0, 1.2, 0);
+  if (k != null) { const it = list[k]; target = it.p.root.position.clone().add(new THREE.Vector3(0, 1.45, 0)); cam.fov = 14; } else cam.fov = 30;
+  if (k != null && window.handView) { const it = list[k]; target = it.p.root.getObjectByName('Bip01_R_Hand').getWorldPosition(new THREE.Vector3()); cam.fov = 6; }
+  cam.position.set(target.x + V[0] * (k != null ? 0.5 : 1), V[1], V[2] * (k != null ? 0.5 : 1)); cam.lookAt(target); cam.updateProjectionMatrix();
+  r.render(scene, cam);
+};
+window.ready = true;
+</script>

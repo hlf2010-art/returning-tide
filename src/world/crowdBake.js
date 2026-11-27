@@ -9,13 +9,18 @@
 // turns and sizes the person.
 import * as THREE from 'three';
 import { createPerson } from './people.js';
+import { applyPose, palmPhone } from './photoPose.js';
 
 // what is baked, and how finely: [clip, seconds from, seconds long (null: all of it), frames]
 // (walk and jog loop exactly; the long idles are sampled sparsely and played slowly, the shader
 // blends neighbouring frames)
+// [name, from, long, frames, clip, pose]: the railing's poses (world/photoPose.js) laid over a clip, as the
+// full people near you do it; a phone in the hand where the pose has one (`phones`: its place per frame)
 export const BAKE_CLIPS = [
   ['walk', 0, null, 30], ['jog', 0, null, 20],
   ['idle', 0, 8, 48], ['look', 0, null, 40], ['phone', 2, 8, 40], ['talk1', 0, 9, 54],
+  ['photo:land', 0, 8, 16, 'phone', 'land'], ['photo:port', 0, 8, 16, 'phone', 'port'], ['photo:one', 0, 8, 16, 'phone', 'one'],
+  ['selfie', 0, 8, 16, 'idle', 'selfie'], ['lean', 0, 8, 16, 'idle', 'lean'],
 ];
 
 export function bakeBones(people, roles) {
@@ -35,19 +40,23 @@ export function bakeBones(people, roles) {
     const clipsOf = Object.fromEntries(Object.entries(p.actions.base).map(([k, a]) => [k, a.getClip()]));
     const plan = [];
     let rows = 0;
-    for (const [name, from, len, frames] of BAKE_CLIPS) {
-      const clip = clipsOf[name] ? name : 'idle';
+    for (const [name, from, len, frames, base, pose] of BAKE_CLIPS) {
+      const clip = clipsOf[base || name] ? base || name : 'idle';
       const full = clipsOf[clip].duration, start = Math.min(from, Math.max(0, full - 0.5)), dur = len ? Math.min(len, full - start) : full;
-      plan.push({ name, clip, start, dur, frames, row: rows });
+      plan.push({ name, clip, start, dur, frames, row: rows, pose: pose || null });
       rows += frames;
     }
     const W = nb * 3, data = new Float32Array(W * rows * 4);
+    const phones = new Float32Array(rows * 16), hasPhone = {};
     for (const c of plan) {
       for (let f = 0; f < c.frames; f++) {
         const time = c.start + c.dur * f / c.frames;
         p.mixer.stopAllAction();
         for (const a of [p.actions.base[c.clip], p.actions.arm[c.clip]]) if (a) { a.reset(); a.setEffectiveWeight(1); a.play(); a.time = time; }
         p.mixer.update(0);
+        p.root.updateMatrixWorld(true);
+        const ph = c.pose ? applyPose(p, c.pose) : c.name === 'phone' ? palmPhone(p) : null;
+        if (ph) { ph.toArray(phones, (c.row + f) * 16); hasPhone[c.name] = true; }
         p.root.updateMatrixWorld(true);
         // world = meshWorld * bindMatrixInverse * (boneWorld * boneInverse) * bindMatrix   (three's skinning)
         _w.multiplyMatrices(ref.matrixWorld, ref.bindMatrixInverse);
@@ -65,7 +74,7 @@ export function bakeBones(people, roles) {
     texture.minFilter = texture.magFilter = THREE.NearestFilter; texture.generateMipmaps = false; texture.needsUpdate = true;
     out[role] = {
       texture, bones: nb, rows, sex: p.sex, child: p.child,
-      speeds: p.speeds, clips: Object.fromEntries(plan.map((c) => [c.name, { row: c.row, frames: c.frames, dur: c.dur }])),
+      speeds: p.speeds, phones, clips: Object.fromEntries(plan.map((c) => [c.name, { row: c.row, frames: c.frames, dur: c.dur, phone: !!hasPhone[c.name] }])),
     };
     p.mixer.stopAllAction();
     for (const m of meshes) m.skeleton.dispose();

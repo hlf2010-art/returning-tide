@@ -102,7 +102,7 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
   const ctl = createSignalController(cfg);
   const lanes = Object.fromEntries(geom.lanes.map((l) => [l.id, { ...l, vehicles: [] }]));
   const cw = geom.crosswalk, road = geom.road;
-  let sights = [], obstacles = [];
+  let sights = [], obstacles = [], parked = [];
   const stats = { redEntries: 0, blockedEntries: 0, yellowGo: 0, yellowStop: 0, minGap: Infinity, overlaps: 0, pedConflicts: 0, recycled: 0 };
 
   // the hour (setDensity): share of the traffic on the road; each vehicle has a rank, and the first
@@ -253,6 +253,22 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
             if (a < acc) { acc = a; why = perm.why; }
           }
         }
+        // a car parked in the lane (yours, left on the road): stop behind it, and after a moment pull out into
+        // the other lane the same way when there's a gap, as drivers do
+        if (parked.length && !veh.laneChange) {
+          const pc = personInPath(veh, parked);
+          if (pc < Infinity) {
+            const a = idm(veh.v, veh.v0, pc - veh.s, veh.v, veh.p, 1.2);
+            if (a < acc) { acc = a; why = 'parked car ahead'; }
+            veh.stuck = veh.v < 0.3 && pc - veh.s < 12 ? (veh.stuck || 0) + dt : 0;
+            if (veh.stuck > 1.5) {
+              const other = Object.values(lanes).find((l) => l !== lane && l.dir === lane.dir);
+              const clear = other && !other.vehicles.some((o) => o.active && o.s > veh.s - veh.len - 9 && o.s - o.len < veh.s + 6)
+                && personInPath({ ...veh, lane: other }, parked) === Infinity && personInPath({ ...veh, lane: other }, list, 12) === Infinity;
+              if (clear) { veh.laneChange = { to: other, t: 0, dur: 2.2 }; veh.stuck = 0; }
+            }
+          } else veh.stuck = 0;
+        }
         const ps = personInPath(veh, list);
         if (ps < Infinity) {
           const a = idm(veh.v, veh.v0, ps - veh.s, veh.v, veh.p, 1.6);
@@ -274,6 +290,11 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
         const before = veh.s;
         veh.v = Math.max(0, veh.v + acc * dt);
         veh.s += veh.v * dt;
+        for (const o of parked) {                                               // and never into it
+          if (Math.abs(o.x - veh.x) > veh.width / 2 + o.r - 0.1) continue;
+          const os = o.z * veh.lane.dir - o.r;
+          if (veh.s > os && before <= os + 0.05) { veh.s = Math.max(before, Math.min(veh.s, os)); veh.v = 0; }
+        }
         if (lead) {                                                             // hard guarantee, never needed in practice
           const limit = lead.s - lead.len - 0.4;
           if (veh.s > limit) { stats.overlaps++; veh.s = Math.max(before, limit); veh.v = Math.min(veh.v, lead.v); }
@@ -510,6 +531,8 @@ export function createTraffic({ geom, vehicles: vSpecs, peds: pSpecs = [], confi
     // fixed things in the way (a parked car as a few circles): [{ x, z, r }]
     setObstacles(list) { obstacles = list || []; },
     get obstacles() { return obstacles; },
+    // a car left standing on the carriageway (as circles): the traffic stops behind it and pulls round
+    setParked(list) { parked = (list || []).map((o) => ({ x: o.x, z: o.z, vx: 0, vz: 0, r: o.r, wide: o.r - 0.4, reach: o.r })); },
     // more people who may be on the carriageway: () => [{ x, z, vx, vz, crossing }]
     setExtraPeople(fn) { extraPeople = fn; },
     // a car moves over into the next lane over `dur` seconds (a cut-in)

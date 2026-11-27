@@ -30,7 +30,7 @@ export function onRoad(x, z) {
   return x < L.westCurbX + 0.5 && inSideRoad(x, z);                                                               // Jiujiang Road, Nanjing Road
 }
 
-export function createDriving({ huracan, traffic, camera, player, audio, hud, getLife, save, onMode, carSale, crowdPeople = () => [], reactions = null }) {
+export function createDriving({ huracan, traffic, camera, player, audio, hud, getLife, save, onMode, carSale, crowdPeople = () => [], reactions = null, bikes = () => [] }) {
   const engine = createCarAudio(audio);
   const S = { on: false, demo: false, d: null, cam: 'chase', camPos: new THREE.Vector3(), shake: 0, horn: 0, hand: false, lights: false };
   const owned = () => { const l = getLife(); return !!(l.flags.car && l.flags.carBuy && l.flags.carBuy.stage === 'delivered'); };
@@ -49,6 +49,7 @@ export function createDriving({ huracan, traffic, camera, player, audio, hud, ge
     else Object.assign(c, { minX: Math.min(...pts.map((p) => p[0])), maxX: Math.max(...pts.map((p) => p[0])), minZ: Math.min(...pts.map((p) => p[1])), maxZ: Math.max(...pts.map((p) => p[1])) });
     const [fx, fz] = fwdOf(yaw);
     traffic.setObstacles([-1.5, 0, 1.5].map((k) => ({ x: x + fx * k, z: z + fz * k, r: 1.15 })));
+    traffic.setParked(S.on ? [] : traffic.obstacles);                 // (parked: the traffic queues behind it, then pulls round)
     traffic.setSights([{ id: 'huracan', x, z }]);
   }
   huracan.ready.then((r) => { if (r && owned() && getLife().flags.carPark) { const p = park(); place(p.x, p.z, p.yaw); } });
@@ -63,6 +64,12 @@ export function createDriving({ huracan, traffic, camera, player, audio, hud, ge
       if (!v.active || v.hidden) continue;
       if (Math.hypot(v.x - x, v.z - z) > 9) continue;
       for (const k of [-0.36, 0, 0.36]) if (inside(v.x, v.z + k * v.len, v.width / 2 - 0.1)) return 'car';
+    }
+    // e-bikes and couriers on the side streets: you bump into one as into a car, you don't drive through it
+    for (const r of bikes()) {
+      if (!r.active || r.state === 'gone' || r.fade < 0.5 || Math.abs(r.x - x) > 7 || Math.abs(r.z - z) > 7) continue;
+      const lf = r.lane.fx, lz = r.lane.fz;
+      for (const k of [0.2, 0.875, 1.55]) if (inside(r.x - lf * k, r.z - lz * k, 0.33)) return 'car';
     }
     // people in the road (crossing, stepping out) stop you, but only someone the car is moving into: ahead
     // of it the way it's going, and not already against its side (they step away; the car can always pull
@@ -172,6 +179,12 @@ export function createDriving({ huracan, traffic, camera, player, audio, hud, ge
       return false;
     },
     // the person the traffic yields to while you drive: a car-sized one
+    // the car as a box for the e-bikes (engine/ebikes.js obstacles): parked or driven, once it's built
+    body() {
+      if (!huracan.loaded) return null;
+      const g = huracan.group, [fx, fz] = fwdOf(g.rotation.y), v = S.on && S.d ? S.d.v : 0;
+      return { x: g.position.x, z: g.position.z, fx, fz, hl: CAR.length / 2 + 0.05, hw: CAR.width / 2 + 0.05, vx: fx * v, vz: fz * v, kind: 'car' };
+    },
     trafficBody() { const d = S.d, [fx, fz] = fwdOf(d.yaw); return { x: d.x, z: d.z, vx: fx * d.v, vz: fz * d.v, reach: CAR.length / 2 + 0.3, wide: 0.9 }; },
     update(dt, paused = false) {
       if (!S.on) return;

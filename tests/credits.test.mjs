@@ -17,11 +17,12 @@ ok(CREDITS.filter((c) => c.licenceUrl?.startsWith('./')).every((c) => existsSync
 ok(by.osm && by.osm.who === '© OpenStreetMap contributors' && /odbl/i.test(by.osm.licence.en), 'OpenStreetMap: "© OpenStreetMap contributors" and the ODbL (its licence requires that wording)');
 ok(!by.elevenlabs && !existsSync('tools/voice/eleven.json') && !CREDITS.some((c) => /elevenlabs|non-commercial/i.test(c.who + c.licence.en)), 'nothing shipped is under a non-commercial licence (the ElevenLabs free-plan audio is gone)');
 ok(/MattDoesBlender/.test(by['byd-han']?.who) && /changed/i.test(by['byd-han'].who) && /CC BY 4\.0/.test(by['byd-han'].licence.en), 'the BYD Han (CC BY): author, licence, and that it was changed');
+ok(/Khronos/.test(by.strale?.who) && /logos removed/.test(by.strale.who) && /CC BY 4\.0/.test(by.strale.licence.en), 'the Strale (CC BY): author, licence, and that its logos were taken off');
 ok(/Microsoft/.test(by.rocketbox?.who) && by.rocketbox.licence.en === 'MIT', 'Rocketbox: the MIT copyright line and its licence file');
 
 // nothing licensed ships uncredited
 const shipped = [
-  'public/models/huracan.glb', 'public/models/cars/byd-han.glb', 'public/ambience/lights-out.mp3', 'public/ambience/murmur.mp3',
+  'public/models/cars/strale.glb', 'public/models/cars/byd-han.glb', 'public/ambience/lights-out.mp3', 'public/ambience/murmur.mp3',
   ...['public/ambience/beds', 'public/ambience/pay', 'public/ambience/breath'].flatMap((d) => (existsSync(d) ? readdirSync(d).map((f) => `${d}/${f}`) : [])),
 ].filter((p) => existsSync(p));
 const missing = shipped.filter((p) => !covers(p));
