@@ -6,13 +6,32 @@
 // The wheels are part of the body here and don't turn (a later step).
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { fitText } from './canvas.js';
+import { fitText, makeCanvas, tex, FONT } from './canvas.js';
+import { T } from './text.js';
 
 const NEAR = 38, MAX = 64;            // m to the lighter version; cars of one model at most
 const TAIL_RUN = new THREE.Color(0.55, 0.02, 0.015), TAIL_BRAKE = new THREE.Color(4.2, 0.12, 0.06);
+// taxi: the same car with a lit roof sign (and a taxi's paint, chosen by the caller); one file, one load
+const HAN = { file: 'byd-han.glb', far: 'byd-han-far.glb', len: 4.995, width: 1.91, height: 1.495, wheelbase: 2.92 };
 export const FLEET_MODELS = {
-  'byd-han': { file: 'byd-han.glb', far: 'byd-han-far.glb', len: 4.995, width: 1.91, height: 1.495, wheelbase: 2.92 },
+  'byd-han': HAN,
+  'taxi-han': { ...HAN, taxi: true },
 };
+// the roof sign of a Shanghai taxi: a lit box reading 出租 TAXI both ways, on the roof a little behind its middle
+function taxiRoof(M) {
+  const g = new THREE.Group();
+  const [c, x] = makeCanvas(400, 128);
+  x.fillStyle = '#fff6d8'; x.fillRect(0, 0, 400, 128); x.fillStyle = '#0c5c5c';
+  x.font = `700 78px ${FONT.sans}`; x.textAlign = 'center'; x.textBaseline = 'middle'; fitText(x, `${T.taxi} TAXI`, 200, 68, 370);
+  const map = tex(c, { repeat: false });
+  const face = new THREE.MeshStandardMaterial({ map, emissive: 0xffffff, emissiveMap: map, emissiveIntensity: 1.6, roughness: 0.6 }); face.name = 'taxi-sign';
+  const y = M.height + 0.13, z = -0.12 * M.len / 4.6;
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.22, 0.12), new THREE.MeshStandardMaterial({ color: 0x1d1f21, roughness: 0.5 })); box.position.set(0, y, z);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.2), box.material); base.position.set(0, M.height + 0.01, z);
+  for (const [dz, ry] of [[0.062, 0], [-0.062, Math.PI]]) { const f = new THREE.Mesh(new THREE.PlaneGeometry(0.64, 0.2), face); f.position.set(0, y, z + dz); f.rotation.y = ry; g.add(f); }
+  g.add(box, base);
+  return g;
+}
 // fictional Shanghai new-energy plates (green), a few of them, front and back
 const PLATES = ['沪A·D52817', '沪A·F09M33', '沪A·D7K160', '沪A·DF3389'];
 function plateTexture() {
@@ -67,11 +86,14 @@ export function createFleet({ base = './models/cars/' } = {}) {
     });
     return out;
   }
+  const files = {};                  // one download per file, whichever models share it
+  const fetchFile = (f) => files[f] || (files[f] = new GLTFLoader().loadAsync(base + f));
   async function load(id) {
-    const M = FLEET_MODELS[id], loader = new GLTFLoader();
-    const [near, far] = await Promise.all([loader.loadAsync(base + M.file), loader.loadAsync(base + M.far)]);
+    const M = FLEET_MODELS[id];
+    const [near, far] = await Promise.all([fetchFile(M.file), fetchFile(M.far)]);
     const rec = models[id];
     rec.near = parts(near.scene, true); rec.far = parts(far.scene, false);
+    if (M.taxi && typeof document !== 'undefined') { const roof = taxiRoof(M); rec.near.push(...parts(roof, true)); rec.far.push(...parts(roof, false)); }
     rec.plates = plateGeo.map((g, i) => {
       if (!plateMats[i]) plateMats[i] = new THREE.MeshBasicMaterial({ map: plateTex, toneMapped: true });
       const im = new THREE.InstancedMesh(g, plateMats[i], MAX * 2); im.count = 0; im.frustumCulled = false; im.name = `fleet-plate-${i}`; group.add(im); return im;
