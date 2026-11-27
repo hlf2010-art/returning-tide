@@ -134,7 +134,9 @@
     "curtain": 0.5,
     "style": "shell",
     "face_open_deg": 44,
-    "fringe_sweep": 1
+    "fringe_sweep": 1,
+    "layers": 0.8,
+    "locks": 170
   },
   "rest_face": {
     "mouthPress": 0.15,
