@@ -1,6 +1,6 @@
 {
   "id": "zhiwei",
-  "name": "许知微 Xu Zhiwei",
+  "name": "\u8bb8\u77e5\u5fae Xu Zhiwei",
   "status": "v1: Character Bible F01 (docs/zhiwei-reference.jpg). Own hair cards (an ash-blonde layered bob); on the c4 body.",
   "reference": [
     "docs/zhiwei-reference.jpg",
@@ -77,9 +77,9 @@
       0.22
     ],
     "lips": [
-      0.3,
-      0.12,
-      0.11
+      0.24,
+      0.085,
+      0.08
     ],
     "subsurface_radius": [
       1.0,
@@ -88,12 +88,19 @@
     ],
     "roughness": 0.42,
     "stubble": 0.0,
-    "blush": 0.35,
+    "blush": 0.55,
     "lips_upper": [
-      0.27,
-      0.11,
-      0.1
-    ]
+      0.21,
+      0.075,
+      0.07
+    ],
+    "moles": [
+      [
+        0.006,
+        -0.02
+      ]
+    ],
+    "under_eye": 0.5
   },
   "eyes": {
     "iris": [
@@ -121,9 +128,9 @@
   },
   "hair": {
     "color": [
-      0.42,
-      0.31,
-      0.19
+      0.36,
+      0.27,
+      0.16
     ],
     "length_cm": 19.0,
     "fringe_cm": 7.0,
@@ -134,9 +141,17 @@
     "curtain": 0.5,
     "style": "shell",
     "face_open_deg": 44,
-    "fringe_sweep": 1,
     "layers": 0.8,
-    "locks": 170
+    "locks": 0,
+    "cards": 0,
+    "sweep": 1,
+    "root_color": [
+      0.13,
+      0.09,
+      0.06
+    ],
+    "messy": 0.8,
+    "groom": 2600
   },
   "rest_face": {
     "mouthPress": 0.15,
@@ -145,9 +160,9 @@
   "teeth_width": 0.78,
   "teeth_back": 0.0015,
   "hairline": {
-    "lift_m": 0.006,
+    "lift_m": 0.002,
     "recede": 0.0,
-    "temple_rise": 0.3
+    "temple_rise": 1.3
   },
   "lashes": {
     "count": 110,
