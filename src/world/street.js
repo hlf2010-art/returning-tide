@@ -7,7 +7,7 @@ import { createRoadMarkings } from './roadMarkings.js';
 const grainOver = (ctx) => grain(ctx, 256, 256, 14, 5);
 import { T } from './text.js';
 
-const FAR = 430, S = L.street, CH = L.curbH;
+const FAR = 430, S = L.street, CH = L.curbH, K = 0.16;   // K: a granite kerb's width
 const std = (o) => new THREE.MeshStandardMaterial(o);
 
 function sign(w, h, draw, { emissive = 0.3, px = 256 } = {}) {
@@ -23,19 +23,22 @@ function ground(B) {
   B.asphalt.floor(L.westCurbX, L.eastCurbX, -FAR, FAR, 0, 6);
   B.asphalt.floor(-200, L.westCurbX, -S.roadHalfW, S.roadHalfW, 0, 6);
   // the west sidewalk (and its kerb) runs the length of the Bund, broken where a road comes out
-  const gaps = [[-S.roadHalfW, S.roadHalfW], ...sideStreets.map((st) => [st.zc - st.roadHalfW, st.zc + st.roadHalfW])].sort((a, b) => a[0] - b[0]);
-  let from = -FAR;
-  for (const [g0, g1] of [...gaps, [FAR, FAR]]) {
+  const gaps = [[-S.roadHalfW, S.roadHalfW, K], ...sideStreets.map((st) => [st.zc - st.roadHalfW, st.zc + st.roadHalfW, st.pedestrian ? 0 : K])].sort((a, b) => a[0] - b[0]);
+  let from = -FAR, kFrom = 0;
+  for (const [g0, g1, kg] of [...gaps, [FAR, FAR, 0]]) {
     if (g0 > from) {
       const zc = (from + g0) / 2, len = g0 - from;
-      B.sidewalk.box((L.facadeX + L.westCurbX) / 2, -0.3, zc, 6, 0.3 + CH, len, { tile: 2.4 });
+      // (the paving stops at the back of each kerb: a kerb inside the paving's box shares its face with it, and
+      // the two fight for every pixel down the kerb's length, a flicker along both edges of every street)
+      const p0 = from + kFrom, p1 = g0 - kg;                          // (Nanjing Road's paving meets the pavement flush)
+      B.sidewalk.box((L.facadeX + L.westCurbX + K) / 2, -0.3, (p0 + p1) / 2, L.westCurbX + K - L.facadeX, 0.3 + CH, p1 - p0, { tile: 2.4 });
       B.granite.box(L.westCurbX + 0.08, -0.3, zc, 0.16, 0.3 + CH + 0.005, len);
     }
-    from = g1;
+    from = g1; kFrom = kg;
   }
   for (const s of [-1, 1]) {
-    const sz = s * (S.halfW + S.roadHalfW) / 2;
-    B.sidewalk.box((-200 + L.facadeX) / 2, -0.3, sz, 166, 0.3 + CH, S.halfW - S.roadHalfW, { tile: 2.4 }); // Hankou Rd sidewalks
+    const sz = s * (S.halfW + S.roadHalfW + K) / 2;
+    B.sidewalk.box((-200 + L.facadeX) / 2, -0.3, sz, 166, 0.3 + CH, S.halfW - S.roadHalfW - K, { tile: 2.4 }); // Hankou Rd sidewalks
     B.granite.box((-200 + L.westCurbX) / 2, -0.3, s * (S.roadHalfW + 0.08), 172, 0.3 + CH + 0.005, 0.16);
   }
   // Jiujiang Road and Nanjing Road East: carriageway, pavements both sides, kerbs, a zebra at the mouth
@@ -43,7 +46,7 @@ function ground(B) {
     if (st.pedestrian) continue;                                       // Nanjing Road: world/nanjingRoad.js paves it
     const x0 = st.xEnd - 1.5, rz0 = st.zc - st.roadHalfW, rz1 = st.zc + st.roadHalfW;
     B.asphalt.floor(x0, L.westCurbX, rz0, rz1, 0, 6);
-    for (const [a, b] of [[st.z0, rz0], [rz1, st.z1]]) {
+    for (const [a, b] of [[st.z0, rz0 - K], [rz1 + K, st.z1]]) {
       if (b - a < 0.2) continue;
       B.sidewalk.box((x0 + L.facadeX) / 2, -0.3, (a + b) / 2, L.facadeX - x0, 0.3 + CH, b - a, { tile: 2.4 });
     }
