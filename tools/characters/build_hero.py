@@ -14,6 +14,7 @@ What it makes (see tools/characters/README.md):
 """
 import bpy, addon_utils, bmesh, importlib, json, math, os, random, sys
 from mathutils import Vector, Matrix
+from mathutils import noise as mnoise
 from mathutils.bvhtree import BVHTree
 
 ARGS = sys.argv[1:]
@@ -1029,6 +1030,7 @@ def hair_shell():
             grid[r][k][0] = c0 + v
     # the skirt: from the last ring straight down to the cut, a little belly, tucked under at the ends
     length = hs["length_cm"] / 100.0
+    lay = hs.get("layers", 0.0)
     S = 10
     ring = [grid[rows][k][0] for k in range(NL)]
     skirt = []
@@ -1038,8 +1040,12 @@ def hair_shell():
         for k in range(NL):
             q = ring[k]; lon = grid[rows][k][2]
             zb = top - length * (1.0 + 0.10 * math.cos(lon)) - 0.025 * max(0.0, -math.cos(lon))   # (over the nape at the back)
+            if lay:   # layered: the ends uneven, in pieces of a few centimetres
+                zb -= length * 0.16 * lay * mnoise.noise(Vector((math.cos(lon) * 3.1, math.sin(lon) * 3.1, 7.3)))
             rel = Vector((q.x - c0.x, q.y - c0.y, 0.0))
-            sc = (1 + 0.08 * math.sin(math.pi * min(1.0, t * 1.1)) ** 2) * (1 - 0.07 * max(0.0, (t - 0.75) / 0.25) ** 2)   # (no kink where it leaves the ring)
+            sc = (1 + 0.08 * math.sin(math.pi * min(1.0, t * 1.1)) ** 2) * (1 - 0.07 * (1 - 1.8 * lay) * max(0.0, (t - 0.75) / 0.25) ** 2)   # (no kink where it leaves the ring; layered ends flick out)
+            if lay:   # and tousled: the fall waves a little in and out round the head
+                sc *= 1 + 0.035 * lay * t * mnoise.noise(Vector((math.cos(lon) * 5.0, math.sin(lon) * 5.0, t * 2.0)))
             pt = Vector((c0.x + rel.x * sc, c0.y + rel.y * sc, q.z + (zb - q.z) * t))
             # (outside the head: an ear lobe poked through the skirt)
             hd = Vector((pt.x - c0.x, pt.y - c0.y, 0.0))
@@ -1121,7 +1127,67 @@ def hair_shell():
         for v in f:
             use[v] += 1
     uvs = [(1.0 if 0 < use[i] < 4 and uvs[i][1] < 0.97 else 0.0, uvs[i][1]) for i in range(len(verts))]
+    hair_locks(hs, allrows, kept, R, NL, c0, verts, faces, uvs)
     return make_mesh("hair-shell", verts, faces, uvs, hair_material("hair-shell", hs["color"]))
+
+
+def hair_locks(hs, rows_, kept, R, NL, c0, verts, faces, uvs):
+    """Loose locks over a hair shell (sheet hair "locks": how many): ribbons that start somewhere on the shell and
+    run down it, lifted off it a little more towards their tips, swaying sideways, a little longer or shorter than
+    the hair under them, so the surface breaks into pieces of hair instead of one smooth helmet. Across a ribbon u
+    runs 1, 0, 1 (the game thins its edges into strands); along it v ends at 1 at the tip (broken into tips)."""
+    n_locks = int(hs.get("locks", 0))
+    if not n_locks:
+        return
+    rnd = random.Random(hs.get("seed", 7))
+    def surf(rf, kf):
+        r0 = max(0, min(R - 2, int(rf))); fr = min(1.0, max(0.0, rf - r0))
+        k0 = int(math.floor(kf)) % NL; k1 = (k0 + 1) % NL; fk = kf - math.floor(kf)
+        a = rows_[r0][k0].lerp(rows_[r0][k1], fk); b = rows_[r0 + 1][k0].lerp(rows_[r0 + 1][k1], fk)
+        return a.lerp(b, fr)
+    made = 0
+    for _ in range(n_locks * 4):
+        if made >= n_locks:
+            break
+        k = rnd.uniform(0, NL); r = rnd.uniform(R * 0.05, R * 0.55)
+        lon = 2 * math.pi * k / NL
+        if not kept(int(r), int(k) % NL) or min(lon, 2 * math.pi - lon) < math.radians(hs.get("face_open_deg", 50)) * 1.2:
+            continue   # (not on the fringe: its edge is already cut along its line, and a lock there ends in a step)
+        width = rnd.uniform(0.006, 0.014)
+        lift = rnd.uniform(0.0015, 0.004)
+        sway = rnd.uniform(-1.0, 1.0) * NL / 96.0 * 2.5
+        extra = rnd.uniform(-0.15, 0.08)   # its end, as a share of the hair's length under it
+        steps = 14
+        r_end = min(R - 1.0, (R - 1) * (1 + extra))
+        path = []
+        for j in range(steps + 1):
+            t = j / steps
+            rf = r + (r_end - r) * t
+            kf = k + sway * math.sin(t * math.pi * 0.8)
+            if not kept(min(R - 2, int(rf)), int(kf) % NL) and t > 0:
+                break
+            path.append((surf(min(rf, R - 1.001), kf), t, rf, kf))
+        if len(path) < 4:
+            continue
+        base = len(verts)
+        for i, (q, t, rf, kf) in enumerate(path):
+            qn = path[min(i + 1, len(path) - 1)][0] - path[max(i - 1, 0)][0]
+            side = surf(min(rf, R - 1.001), kf + 0.5) - surf(min(rf, R - 1.001), kf - 0.5)
+            out = Vector((q.x - c0.x, q.y - c0.y, (q.z - c0.z) if q.z > c0.z else 0.0))
+            out = out.normalized() if out.length > 1e-6 else Vector((0, 0, 1))
+            if side.length < 1e-6:
+                side = qn.cross(out)
+            side.normalize()
+            w = width * (1 - 0.6 * t)   # tapering to the tip
+            c = q + out * (lift + 0.004 * t)
+            v = rf / (R - 1) if i < len(path) - 1 else 1.0
+            v = min(1.0, v + (1.0 - v) * (i / (len(path) - 1)) ** 4)
+            for sgn, u in ((-1, 1.0), (0, 0.0), (1, 1.0)):
+                verts.append(c + side * (sgn * w / 2)); uvs.append((u, v))
+        for i in range(len(path) - 1):
+            a = base + 3 * i; b = a + 3
+            faces.append((a, a + 1, b + 1, b)); faces.append((a + 1, a + 2, b + 2, b + 1))
+        made += 1
 
 
 brow_ob = brows()

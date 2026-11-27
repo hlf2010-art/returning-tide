@@ -267,3 +267,13 @@ the review page, Bund-at-dusk light, smiling). The GLB: `public/people/jibai/hea
 - **Neck join, reworked for Rocketbox bodies** (Zhiwei's fix only worked because her old neck reached up under the jaw). The old neck's ragged top is trimmed along the new jaw line, on every primitive that holds it. The new neck reaches down over what is left, tapering 25 % inside it so its flared edge stays hidden. It is cut per pixel on a level line rather than along its triangles' ragged edges (`neckcut` in skinToned), and takes the old neck's colour, sampled only from skin-like texels, so a brown leather collar no longer counts.
 - Ji Bai and Gu Nian render pixel-identical to before.
 - Still to improve: Yu'an's hair is shorter and sleeker than her reference's soft, layered shoulder-length cut. Her lips read a little full, like Zhiwei's. A faint level line remains where her new neck meets the old one.
+
+## Round 17 (27 November): layered hair with loose locks
+
+![before and after](hero-faces/round17-layered-hair.jpg)
+
+- **The hair generator no longer builds a helmet.** New sheet hair controls:
+  - `layers` (0 to 1): the ends are cut unevenly in pieces a few centimetres long (noise round the head), the fall waves a little in and out, and the ends flick out instead of tucking under.
+  - `locks` (a count): ribbons laid over the shell from random points down to a little past or short of the hair under them, swaying sideways and lifting off towards their tips. Each one's edges thin into strands and its tip breaks up in the game's hair-shell shader, so the outline and surface break into pieces of hair. None are placed on the fringe, whose edge is already cut along its line.
+- Zhiwei: `layers` 0.8, 170 locks. Yu'an: `layers` 0.6, 170 locks, and her hair is longer (26 cm).
+- Still to improve: it still reads as sculpted hair up close rather than individual strands, the curtain's inner side shows a light strip beside the cheek, and Yu'an's fringe is denser than her portrait's.

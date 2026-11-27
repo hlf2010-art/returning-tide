@@ -125,7 +125,7 @@
       0.042,
       0.032
     ],
-    "length_cm": 22.0,
+    "length_cm": 26.0,
     "fringe_cm": 7.0,
     "wave": 0.65,
     "volume": 1.15,
@@ -136,7 +136,9 @@
     "face_open_deg": 42,
     "fringe_sweep": -1,
     "fringe_low_m": 0.026,
-    "fringe_rise_m": 0.04
+    "fringe_rise_m": 0.04,
+    "layers": 0.6,
+    "locks": 170
   },
   "rest_face": {
     "mouthPress": 0.15,
