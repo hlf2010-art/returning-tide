@@ -69,8 +69,8 @@
     "ears/r-ear-flap-decr": 0.3,
     "neck/neck-scale-horiz-decr": 0.3,
     "mouth/mouth-scale-vert-decr": 0.2,
-    "eyes/l-eye-height2-decr": 0.15,
-    "eyes/r-eye-height2-decr": 0.15,
+    "eyes/l-eye-height2-decr": 0.0,
+    "eyes/r-eye-height2-decr": 0.0,
     "chin/chin-height-decr": 0.6,
     "mouth/mouth-trans-up": 0.45,
     "nose/nose-trans-up": 0.25,
@@ -123,8 +123,8 @@
       0.022,
       0.018
     ],
-    "density": 0.7,
-    "thickness": 0.5,
+    "density": 0.55,
+    "thickness": 0.42,
     "arch_m": 0.0008,
     "tail_drop_m": 0.003
   },
@@ -168,8 +168,8 @@
   "rest_face": {
     "mouthPress": 0.15,
     "mouthShrugLower": -0.3,
-    "eyeBlinkLeft": 0.18,
-    "eyeBlinkRight": 0.18
+    "eyeBlinkLeft": 0.06,
+    "eyeBlinkRight": 0.06
   },
   "teeth_width": 0.78,
   "teeth_back": 0.0015,
