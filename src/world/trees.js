@@ -258,14 +258,15 @@ function grow(spec, twigsOut, out, leaves) {
     const limbR = limb.map((_, i) => rL * (1 - 0.65 * (i / (limb.length - 1))));
     limbR[0] = trTop * 0.95; limbR[1] = Math.max(limbR[1], trTop * 0.8);
     tube(out, limb, limbR, 7, (t) => [p1, 0, w1At(t), 0], base, 1.2);
-    const nK = RI(...S.kids);
+    // (spec.lite: a long row's trees, seen mostly from the road: fewer, longer branches and bigger sprigs)
+    const nK = spec.lite ? Math.max(3, Math.round(RI(...S.kids) * 0.6)) : RI(...S.kids);
     for (let ki = 0; ki < nK; ki++) {
       const tk = 0.35 + 0.65 * (ki + r() * 0.6) / nK, at = along(limb, Math.min(1, tk)), p2 = r();
       const kd = awayFrom(spread(dirAt(limb, tk), R(...S.kidAngle), r() * 6.283)), lenK = h * S.kidLen * R(0.6, 1) * (1.15 - tk * 0.4);
       const kid = path(at, kd, lenK, 4, S.up * 0.3, S.sag * 1.5, 0.3);
       const w1 = w1At(tk), rK = rL * (0.55 - tk * 0.2);
       tube(out, kid, kid.map((_, i) => Math.max(0.012, rK * (1 - 0.7 * (i / (kid.length - 1))))), 5, (t) => [p1, p2, w1, t * 0.8], base, 1);
-      const nT = RI(...S.twigs);
+      const nT = spec.lite ? Math.max(3, Math.round(RI(...S.twigs) * 0.6)) : RI(...S.twigs);
       for (let ti = 0; ti < nT; ti++) {
         const tt = 0.3 + 0.7 * (ti + r() * 0.7) / nT, at2 = along(kid, Math.min(1, tt));
         const td = spread(dirAt(kid, tt), R(0.5, 1.1), r() * 6.283), lenT = h * 0.13 * S.twigLen * R(0.7, 1.2) * 2;
@@ -274,11 +275,11 @@ function grow(spec, twigsOut, out, leaves) {
         tube(twigsOut, twig, [0.016, 0.011, 0.006].slice(0, twig.length), 3, (t) => [p1, p2, w1, w2 + t * 0.4], base, 1);
         // leaf sprigs along the outer part of the twig and at its tip
         if (spec.bare && r() < spec.bare) continue;
-        const nC = RI(...S.cards);
+        const nC = spec.lite ? Math.round(RI(...S.cards) * 0.8) : RI(...S.cards);
         for (let ci = 0; ci < nC; ci++) {
           const tc = 0.25 + 0.75 * r(), cp = along(twig, tc);
           const jit = [R(-0.45, 0.45), R(-0.3, 0.35), R(-0.45, 0.45)].map((v) => v * S.card);
-          leaves.push({ p: cp.map((v, j) => v + jit[j]), base, br: [p1, p2, w1, w2 + tc * 0.4], crown: crownC, phase: r(), size: S.card * R(0.75, 1.15),
+          leaves.push({ p: cp.map((v, j) => v + jit[j]), base, br: [p1, p2, w1, w2 + tc * 0.4], crown: crownC, phase: r(), size: S.card * R(0.75, 1.15) * (spec.lite ? 1.45 : 1),
             cell: (spec.species === 'plane' && r() < 0.35 ? S.cellsAlt : S.cells)[r() < 0.5 ? 0 : 1], spin: r() * 6.283, tilt: R(0.2, 1.1) });
         }
       }

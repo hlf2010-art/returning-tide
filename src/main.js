@@ -245,10 +245,10 @@ const wind = createWind();
 function bundTreeClusters() {
   const groups = new Map();
   bundTrees.forEach((t, i) => {
-    const k = `${t.species}:${Math.floor((t.z + 300) / 48)}`;
+    const k = `${t.species}:${Math.floor((t.z + 300) / 96)}`;
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push({ x: t.x, y: L.curbH, z: t.z, species: t.species, seed: 101 + i,
-      h: t.species === 'plane' ? 9.6 + (i % 3) * 0.6 : 8.2 + (i % 2) * 0.9, bare: t.species === 'plane' ? 0.18 : 0.06, away: [-1, 0] });
+      h: t.species === 'plane' ? 9.6 + (i % 3) * 0.6 : 8.2 + (i % 2) * 0.9, bare: t.species === 'plane' ? 0.18 : 0.06, away: [-1, 0], lite: true });
   });
   return [...groups.values()].map((cluster) => ({ ...cluster[0], cluster }));
 }
@@ -311,7 +311,7 @@ async function boot() {
     ...streetTrees.map((t, i) => ({ x: t.x, y: L.curbH, z: t.z, h: 8.4 + (i % 2) * 0.7, species: 'plane', seed: 31 + i, bare: 0.12, away: [0, -Math.sign(t.z)] })),
     ...planterIslands.map((p, i) => ({ x: (p.x0 + p.x1) / 2, y: L.deckY + 0.5, z: (p.z0 + p.z1) / 2 + (i % 2 ? 1.5 : -1.5), h: 4.2 + (i % 3) * 0.3, species: 'camphor', seed: 1 + i })),
     ...nanjing.trees,                                                     // Century Square's planes, People's Park
-    ...bundTreeClusters(),                                                // the Bund's kerb: planes and ginkgos, a mesh pair per 48 m and species
+    ...bundTreeClusters(),                                                // the Bund's kerb: planes and ginkgos, a mesh pair per 96 m and species
   ], { wetBoost: weatherUniforms.wetBoost });
   scene.add(trees.group);
   scene.add(createFloodWall(M).group, createSignalTower().group);       // and the Gutzlaff Signal Tower down at Yan'an Road (world/signalTower.js)                                  // the shops in the flood wall's lower level (world/floodWall.js)

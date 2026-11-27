@@ -25,18 +25,18 @@ export const UNITS = [
   { z: [-146, -152], kind: 'grille' },
   { z: [-152, -160], kind: 'shop', sign: 0, room: 'phone_shop' },
   { z: [-160, -163], kind: 'door', no: '73' },
-  { z: [-163, -168], kind: 'shop', sign: 1, room: 'comfy_cafe' },
-  { z: [-168, -175], kind: 'shop', sign: 2, room: 'comfy_cafe', parasol: 0x1e5a3c },
-  { z: [-175, -180], kind: 'shop', sign: 3, room: 'warm_restaurant' },
-  { z: [-180, -186], kind: 'shop', sign: 4, room: 'comfy_cafe', parasol: 0x8c1d26 },
+  { z: [-163, -168], kind: 'shop', menu: true, sign: 1, room: 'comfy_cafe' },
+  { z: [-168, -175], kind: 'shop', menu: true, sign: 2, room: 'comfy_cafe', parasol: 0x1e5a3c },
+  { z: [-175, -180], kind: 'shop', menu: true, sign: 3, room: 'warm_restaurant' },
+  { z: [-180, -186], kind: 'shop', menu: true, sign: 4, room: 'comfy_cafe', parasol: 0x8c1d26 },
   { z: [-186, -189], kind: 'door', no: '77' },
   { z: [-189, -199], kind: 'shop', sign: 5, room: 'museum_of_ethnography', wide: true },
-  { z: [-199, -204], kind: 'shop', sign: 6, room: 'comfy_cafe' },
-  { z: [-204, -210], kind: 'shop', sign: 7, room: 'warm_restaurant' },
+  { z: [-199, -204], kind: 'shop', menu: true, sign: 6, room: 'comfy_cafe' },
+  { z: [-204, -210], kind: 'shop', menu: true, sign: 7, room: 'warm_restaurant' },
   { z: [-210, -213], kind: 'grille' },
   { z: [-213, -218], kind: 'shop', sign: 8, room: 'decor_shop' },
-  { z: [-218, -223], kind: 'shop', sign: 9, room: 'comfy_cafe' },
-  { z: [-223, -229], kind: 'shop', sign: 10, room: 'warm_restaurant', parasol: 0x9a2a1e },
+  { z: [-218, -223], kind: 'shop', menu: true, sign: 9, room: 'comfy_cafe' },
+  { z: [-223, -229], kind: 'shop', menu: true, sign: 10, room: 'warm_restaurant', parasol: 0x9a2a1e },
   { z: [-229, -232], kind: 'door', no: '79' },
   { z: [-232, -238], kind: 'shop', sign: 11, room: 'warm_restaurant' },
   { z: [-238, -243], kind: 'shop', sign: 12, room: 'museum_of_ethnography' },
@@ -127,6 +127,24 @@ function signAtlas() {
 // a sign's cell as uv [u0, v0, u1, v1] (the canvas is flipped on upload: row 0 is the top)
 const cellUV = (i) => { const cx = i % CELL.cols, cy = Math.floor(i / CELL.cols); return [cx / CELL.cols, 1 - (cy + 1) / CELL.rows, (cx + 1) / CELL.cols, 1 - cy / CELL.rows]; };
 
+// The backlit menu boards hung inside the glass of the food shops, over the counter: photographs of the
+// food in a row with names and prices (one atlas of 8 boards, 256 x 160 each, in a 4 x 2 grid)
+const FOODS = [['#d98a3a', '#f3d9a0', '招牌套餐', '¥39'], ['#7a3a22', '#e8c79a', '拿铁', '¥32'], ['#e8c840', '#fff3c4', '鲜果茶', '¥19'], ['#c23a2a', '#f5b070', '炸鸡桶', '¥59'],
+  ['#f2e4d0', '#d07a9a', '冰淇淋', '¥28'], ['#a8442a', '#e0b060', '本帮爆鱼面', '¥36'], ['#6a4a2a', '#d8b890', '美式', '¥26'], ['#d8a030', '#8a3a1a', '披萨', '¥45']];
+function menuAtlas() {
+  const [cv, c] = makeCanvas(1024, 320);
+  FOODS.forEach(([a, b, name, price], i) => {
+    const ox = (i % 4) * 256, oy = Math.floor(i / 4) * 160;
+    c.fillStyle = '#f7f4ec'; c.fillRect(ox, oy, 256, 160);
+    const g = c.createRadialGradient(ox + 128, oy + 62, 8, ox + 128, oy + 62, 90); g.addColorStop(0, b); g.addColorStop(1, a);
+    c.fillStyle = '#2a2622'; c.fillRect(ox + 10, oy + 8, 236, 110); c.fillStyle = g; c.beginPath(); c.ellipse(ox + 128, oy + 64, 84, 46, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.ellipse(ox + 104, oy + 48, 26, 10, -0.3, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#2a2622'; c.font = bold(26); c.textAlign = 'left'; fitText(c, name, ox + 14, oy + 148, 160);
+    c.fillStyle = '#c4242a'; c.font = bold(28, 'Inter, sans-serif'); c.textAlign = 'right'; c.fillText(price, ox + 244, oy + 148);
+  });
+  return tex(cv, { repeat: false });
+}
+
 // a service door's number plate: white figures on a dark blue enamel plate
 function plateTexture(no) {
   const [cv, c] = makeCanvas(128, 64);
@@ -156,7 +174,13 @@ export function createFloodWall(M) {
     const a = [x, y0, z0], b = [x, y0, z1], c = [x, y1, z1], d = [x, y1, z0];
     for (const [p, uv] of [[a, [u0, v0]], [b, [u1, v0]], [c, [u1, v1]], [a, [u0, v0]], [c, [u1, v1]], [d, [u0, v1]]]) { signs.pos.push(...p); signs.uv.push(...uv); }
   };
-  const plates = [];
+  const plates = [], menus = { pos: [], uv: [] };
+  // a menu board, cell k, facing -x, centred at z, its bottom at y
+  const menu = (k, z, y, w = 0.62, h = 0.39) => {
+    const u0 = (k % 4) / 4, u1 = u0 + 0.25, v1 = 1 - Math.floor(k / 4) / 2, v0 = v1 - 0.5, x = X - 0.066;
+    const a = [x, y, z - w / 2], b = [x, y, z + w / 2], c = [x, y + h, z + w / 2], d = [x, y + h, z - w / 2];
+    for (const [p, uv] of [[a, [u0, v0]], [b, [u1, v0]], [c, [u1, v1]], [a, [u0, v0]], [c, [u1, v1]], [d, [u0, v1]]]) { menus.pos.push(...p); menus.uv.push(...uv); }
+  };
   for (const u of UNITS) {
     const zS = u.z[0], zN = u.z[1], zc = (zS + zN) / 2, w = zS - zN;
     // a stone pier at the unit's south end, full height
@@ -176,6 +200,13 @@ export function createFloodWall(M) {
         for (const yy of [CH + 0.8, CH + 1.4]) steel.box(X - 0.115, yy, zc + s * 0.12, 0.05, 0.02, 0.02);
       }
       steel.box(X - 0.25, CH - 0.004, zc, 0.5, 0.012, dw + 0.1);
+      // food shops: a row of backlit menu boards in the glass either side of the door, a thin black frame round each
+      if (u.menu) for (const side of [-1, 1]) for (let k = 0; k < 2; k++) {
+        const mz = zc + side * (dw / 2 + 0.5 + k * 0.7);
+        if (Math.abs(mz - zc) > w / 2 - 0.5) continue;
+        menu((u.sign * 3 + k + (side > 0 ? 2 : 0)) % 8, mz, 1.82);
+        frame.box(X - 0.055, 1.8, mz, 0.01, 0.43, 0.66);
+      }
     } else if (u.kind === 'grille') {
       // a louvred plant-room grille: a frame, slats every 9 cm, the void behind them dark
       const z0 = zN + 0.25, z1 = zS - 0.25, h0 = CH + 0.35, h1 = TOP;
@@ -210,6 +241,11 @@ export function createFloodWall(M) {
     // the box signs light at dusk with the street's neon (dayNight 'signs'); by day they read as lit panels
     const mat = asLight(new THREE.MeshBasicMaterial({ map: signAtlas(), color: new THREE.Color(1.35, 1.35, 1.35) }), 'signs', 0.92);
     const m = new THREE.Mesh(g, mat); m.name = 'flood-signs'; group.add(m);
+    if (menus.pos.length) {
+      const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.Float32BufferAttribute(menus.pos, 3)); mg.setAttribute('uv', new THREE.Float32BufferAttribute(menus.uv, 2));
+      mg.computeVertexNormals(); mg.computeBoundingSphere();
+      const mm = new THREE.Mesh(mg, asLight(new THREE.MeshBasicMaterial({ map: menuAtlas(), color: new THREE.Color(1.15, 1.12, 1.05) }), 'shops', 0.5)); mm.name = 'flood-menus'; group.add(mm);
+    }
     for (const p of plates) {
       const pm = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.15), new THREE.MeshStandardMaterial({ map: plateTexture(p.no), roughness: 0.4 }));
       pm.position.set(X - 0.16, p.y, p.z); pm.rotation.y = -Math.PI / 2; pm.name = `flood-plate-${p.no}`; group.add(pm);

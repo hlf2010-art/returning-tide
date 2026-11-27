@@ -38,10 +38,11 @@ function planter(chain) {
     const fx = sx * 0.36;
     for (const zc of [-0.7, 0.7]) p.push(box(0.03, 0.6, 0.1, CREAM2, fx + sx * 0.012, 0.64, zc));                 // end pilasters
     for (const dz of [-0.05, 0, 0.05]) p.push(box(0.034, 0.6, 0.03, CREAM2, fx + sx * 0.014, 0.64, dz));           // the fluted middle
+    for (const yy of [0.46, 0.64, 0.82]) p.push(part(new THREE.CylinderGeometry(0.032, 0.032, 0.012, 10).rotateZ(Math.PI / 2), 0xcfc7b0, fx + sx * 0.034, yy, 0));   // its rosettes
     // the fan: on each side of the middle pilaster, three black stripes curving up and out from its foot
     // to the rim, thin at the pivot and broadening as they spread
     for (const sg of [-1, 1]) for (let k = 0; k < 3; k++) {
-      const p0 = [sg * 0.085, 0.37], p2 = [sg * (0.24 + 0.205 * k), 0.93], p1 = [sg * (0.16 + 0.27 * k), 0.47 + 0.03 * k], n = 9;
+      const p0 = [sg * 0.085, 0.37], p2 = [sg * (0.24 + 0.205 * k), 0.93], p1 = [sg * (0.16 + 0.27 * k), 0.47 + 0.03 * k], n = 6;
       const at = (t) => [0, 1].map((j) => (1 - t) * (1 - t) * p0[j] + 2 * (1 - t) * t * p1[j] + t * t * p2[j]);
       for (let i = 0; i < n; i++) {
         const [za, ya] = at(i / n), [zb, yb] = at((i + 1) / n), len = Math.hypot(zb - za, yb - ya), wd = 0.026 + 0.05 * ((i + 0.5) / n);
@@ -56,7 +57,7 @@ function planter(chain) {
   const R = (i, k) => { const v = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return v - Math.floor(v); };
   // the azalea: a low dome of dark leaves, the blooms packed over its top and sides (crimson, a few pinks)
   { const g = new THREE.SphereGeometry(0.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(0.62, 0.62, 1.32); p.push(part(g, 0x2d4424, 0, 0.94, 0)); }
-  for (let i = 0; i < 46; i++) {
+  for (let i = 0; i < 34; i++) {
     const th = R(i, 5) * 6.283, ph = Math.acos(1 - R(i, 6) * 0.92), rr = 0.5;
     const x = Math.sin(ph) * Math.cos(th) * rr * 0.62, y = Math.cos(ph) * rr * 0.62, z = Math.sin(ph) * Math.sin(th) * rr * 1.32;
     const g = new THREE.IcosahedronGeometry(0.055 + R(i, 4) * 0.03, 0); g.scale(1, 0.6, 1);
@@ -74,7 +75,7 @@ function planter(chain) {
   }
   if (chain) {
     // a short-link chain hung between the two planters' ends: 0.8 m up, sagging 10 cm
-    const za = 0.79, zb = 2.6 - 0.79, n = 24;
+    const za = 0.79, zb = 2.6 - 0.79, n = 16;
     for (let i = 0; i < n; i++) {
       const t = (i + 0.5) / n, z = za + (zb - za) * t, y = 0.8 - 0.1 * 4 * t * (1 - t);
       p.push(part(new THREE.BoxGeometry(i % 2 ? 0.012 : 0.03, i % 2 ? 0.03 : 0.012, (zb - za) / n * 1.25), 0x2e3134, 0, y, z));
@@ -98,7 +99,7 @@ const KINDS = {
   },
   // the bronze service cabinet, a Bund skyline etched into its faces (four tower outlines), vents at the ends
   bronze: () => {
-    const B = 0x9b7a44, E = 0x5c4525, p = [box(0.5, 1.25, 0.86, B, 0, 0.625, 0), box(0.54, 0.04, 0.9, 0x86693a, 0, 1.27, 0), box(0.54, 0.06, 0.9, 0x5a4a32, 0, 0.03, 0)];
+    const B = 0x7a6440, E = 0x463420, p = [box(0.5, 1.25, 0.86, B, 0, 0.625, 0), box(0.54, 0.04, 0.9, 0x86693a, 0, 1.27, 0), box(0.54, 0.06, 0.9, 0x5a4a32, 0, 0.03, 0)];
     for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) {
       const zc = -0.3 + k * 0.2, w = 0.13, hh = 0.55 + (k % 2) * 0.22 + (k === 3 ? 0.08 : 0), y0 = 0.22, fx = sx * 0.252;
       p.push(box(0.006, hh, 0.008, E, fx, y0 + hh / 2, zc - w / 2), box(0.006, hh, 0.008, E, fx, y0 + hh / 2, zc + w / 2));

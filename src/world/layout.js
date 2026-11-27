@@ -155,7 +155,7 @@ export const bundTrees = [];      // { x, z, species }
   const lampsE = [];
   for (let z = -410; z <= 420; z += 36) lampsE.push(z);
   let i = 0;
-  for (let z = L.zNorth + 4; z < 330; z += 8, i++) {                // (on past the south boundary, as far as you can see down the road)
+  for (let z = L.zNorth + 4; z < 260; z += 8, i++) {                // (on past the south boundary, as far as you can see down the road)
     if (Math.abs(z) < 14 || !clearOf(z, [-40, -232], 9)) continue;
     BUND_ROW.push(z);
     if (!clearOf(z, [...lampsE, 15], 1.4)) continue;
