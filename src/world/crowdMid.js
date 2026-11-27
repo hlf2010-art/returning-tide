@@ -10,6 +10,7 @@
 // No shadow-map casting: a soft blob underneath, as for the far crowd.
 import * as THREE from 'three';
 import { PEOPLE_LAYER } from './peopleReflect.js';
+import { phoneMesh, phoneCase } from './photoPose.js';
 
 const VERT_PARS = /* glsl */ `
 attribute vec4 skinIndex;
@@ -80,6 +81,9 @@ export function createCrowdMid({ group, people, bake, roles, max = 150 }) {
     byRole[role] = R;
   }
   const stats = { drawn: 0, roles: 0 };
+  // the phones in people's hands (where the clip has one: world/crowdBake.js phones), all in one mesh
+  const phones = phoneMesh(Math.max(32, max)); phones.count = 0; phones.name = 'crowd-mid-phones'; group.add(phones);
+  let nPhones = 0; const _pm = new THREE.Matrix4(), _pw = new THREE.Matrix4();
   function grow(R) {                                       // (an avatar more popular than expected)
     const cap = Math.min(max, R.cap * 2); if (cap <= R.cap) return false;
     const a = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4).setUsage(THREE.DynamicDrawUsage); a.array.set(R.iAnim.array);
@@ -111,9 +115,9 @@ export function createCrowdMid({ group, people, bake, roles, max = 150 }) {
     roles: () => Object.keys(byRole),
     has: (role) => !!byRole[role],
     clipsOf: (role) => byRole[role] && byRole[role].b,
-    begin() { for (const k in byRole) byRole[k].n = 0; },
+    begin() { for (const k in byRole) byRole[k].n = 0; nPhones = 0; },
     // one person: x, y, z, yaw, size; clip (a baked name), t (0..1 through it), fade 0..1, coat (THREE.Color or null)
-    push(role, x, y, z, yaw, size, clip, t, fade, coat) {
+    push(role, x, y, z, yaw, size, clip, t, fade, coat, phoneId = 0) {
       const R = byRole[role]; if (!R) return false;
       if (R.n >= R.cap && !grow(R)) return false;
       const c = R.b.clips[clip] || R.b.clips.idle, f = (((t % 1) + 1) % 1) * c.frames, f0 = Math.floor(f);
@@ -122,6 +126,11 @@ export function createCrowdMid({ group, people, bake, roles, max = 150 }) {
       _m.compose(_p.set(x, y, z), _q.setFromAxisAngle(_up, yaw), _s.set(size, size, size));
       _m.toArray(R.iMat.array, i * 16);
       if (R.body) R.body.instanceColor.setXYZ(i, coat ? coat.r : 1, coat ? coat.g : 1, coat ? coat.b : 1);
+      if (c.phone && fade > 0.5 && nPhones < phones.instanceMatrix.count) {
+        _pm.fromArray(R.b.phones, (c.row + f0) * 16);
+        phones.setMatrixAt(nPhones, _pw.multiplyMatrices(_m, _pm));
+        phones.setColorAt(nPhones, phoneCase(phoneId)); nPhones++;
+      }
       return true;
     },
     end() {
@@ -137,6 +146,8 @@ export function createCrowdMid({ group, people, bake, roles, max = 150 }) {
         if (R.body) { R.body.instanceColor.needsUpdate = true; R.body.instanceColor.clearUpdateRanges(); R.body.instanceColor.addUpdateRange(0, R.n * 3); }
       }
       stats.drawn = drawn; stats.roles = used;
+      phones.count = nPhones; phones.visible = nPhones > 0;
+      if (nPhones) { phones.instanceMatrix.needsUpdate = true; phones.instanceColor.needsUpdate = true; }
     },
   };
 }

@@ -22,6 +22,12 @@ import { SOCIAL } from './social.js';
 import { FEMALE_ROLES, roleSex, personaFor } from './streetPeople.js';
 
 const DECK = L.deckY, CURB = L.curbH;
+// the river railing (world/promenade.js): the line of its posts, and how far back someone leaning on its
+// top rail stands (world/photoPose.js LEAN.d)
+export const RAIL = { x: L.deckEdgeX + 0.08, lean: 0.52 };
+// how people hold a phone for a photo (world/photoPose.js): landscape with both hands, portrait with
+// both, portrait with one
+export const SHOTS = ['land', 'land', 'port', 'port', 'one'];
 const BLOCK = new Set(['customs', 'hsbc', 'north-block', 'aia-block', 'peace-block', 'portico', 'hsbc-centre', 'wall', 'railing', 'planter', 'boundary', 'shop', 'bikes', 'shelter', 'nj-north', 'nj-south', 'metro']);
 
 // ---- the walk network ----
@@ -302,12 +308,34 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
       id: nextId++, kind, role, abroad, speed, v: 0, x: 0, z: 0, y: CURB, heading: 0, vx: 0, vz: 0,
       path: null, i: 0, off: (rnd() - 0.5) * 2, state: 'walk', act: null, wait: 0, stops: 0, phase: rnd(),
       group: null, slot: null, phone: kind === 'local' && rnd() < 0.45, persona: abroad ? 'visitor' : kind === 'elder' ? 'elder' : kind === 'local' ? (rnd() < 0.5 ? 'office' : 'youngMan') : (rnd() < 0.5 ? 'student' : 'youngMan'),
-      gone: false, hold: 0, scale: 0.95 + rnd() * 0.1, rank: rnd(), ...extra,
+      gone: false, hold: 0, scale: 0.95 + rnd() * 0.1, rank: rnd(), shot: pick(SHOTS, rnd), ...extra,
     };
     a.persona = personaFor(a.persona, roleSex(a.role));                     // a man's voice for a man
     agents.push(a);
     return a;
   };
+  // At the railing: what someone does there and where exactly they stand. Not one file along a line:
+  // some lean on the top rail, some stand at it with a phone up, some a step or two back to get more in,
+  // a few with their back to the river for a selfie; looking up or down the river, not all straight across.
+  // Couples (the leader decides, `scene`): side by side, one photographing the other, or a selfie together.
+  // some places along the railing draw people more than others (a gap in the trees, the lamp's light, the
+  // best angle on the Pearl): the better of two spots, so the railing has knots of people and gaps between
+  const railPop = (id) => { const x = Math.sin(parseFloat(id.slice(1)) * 12.9898) * 43758.5453; return x - Math.floor(x); };
+  const railPick = () => { const p = pick(net.rail, rnd), q = pick(net.rail, rnd); return rnd() < 0.5 && railPop(q) > railPop(p) ? q : p; };
+  function railSpot(a, n) {
+    const r = rnd(), stander = a.kind === 'stander' || a.kind === 'lingerer';
+    let act = a.kind === 'guide' ? 'guide' : stander ? (r < 0.3 ? 'lean' : r < 0.55 ? 'look' : r < 0.88 ? 'photo' : 'selfie') : (r < 0.15 ? 'lean' : r < 0.35 ? 'look' : r < 0.82 ? 'photo' : 'selfie');
+    let scene = null;
+    if (a.partner && !a.leader && act !== 'guide') { const q = rnd(); scene = q < 0.35 ? 'shoot' : q < 0.55 ? 'selfie2' : 'side'; if (scene === 'shoot') act = 'photo'; if (scene === 'selfie2') act = 'selfie'; }
+    const z = n.z + (rnd() - 0.5) * 2.6;
+    let x, h;
+    if (act === 'lean') { x = RAIL.x - RAIL.lean; h = Math.PI / 2; }
+    else if (act === 'guide') { x = RAIL.x - 0.9; h = -Math.PI / 2 + (rnd() - 0.5) * 0.6; }   // (facing the group)
+    else if (scene === 'shoot') { x = RAIL.x - 2.3 - rnd() * 0.7; h = Math.PI / 2 + (rnd() - 0.5) * 0.3; }
+    else if (act === 'selfie') { x = RAIL.x - 0.6 - rnd() * 0.5; h = -Math.PI / 2 + (rnd() - 0.5) * 0.7; }
+    else { const back = rnd() < (act === 'photo' ? 0.3 : 0.15); x = RAIL.x - 0.58 - (back ? 0.8 + rnd() * 1.4 : rnd() * 0.45); h = Math.PI / 2 + (rnd() - 0.5) * 1.1; }
+    a.act = act; a.scene = scene; a.spot = { x, z, h, done: false }; a.photoAt = null;
+  }
   const deckEnds = ['P0', 'P15'].map((id) => ends.find((e) => e.id === ((net.ends && net.ends[id]) || id))).filter(Boolean);
   function trip(a, { midway = false } = {}) {
     a.bags = a.kind === 'jogger' || a.kind === 'stander' ? 0 : rnd() < 0.1 ? 1 : 0;   // shopping bags in hand (more after a shop: below)
@@ -328,7 +356,7 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
     // tourists on the deck often stop at the railing on the way
     let via = null;
     const deck = (id) => /^(P|I|R|ST)/.test(id);
-    if ((a.kind === 'tourist' || a.kind === 'guide' || a.kind === 'lingerer' || a.kind === 'stander') && rnd() < (a.kind === 'lingerer' || a.kind === 'stander' ? 1 : 0.75)) via = pick(net.rail, rnd);
+    if ((a.kind === 'tourist' || a.kind === 'guide' || a.kind === 'lingerer' || a.kind === 'stander') && rnd() < (a.kind === 'lingerer' || a.kind === 'stander' ? 1 : 0.75)) via = railPick();
     // ... or a shop window on Nanjing Road, if the trip touches it (locals too, now and then)
     const nanjing = (id) => /^(N|M|NW|S)/.test(id);
     if (net.shops && net.shops.length && (nanjing(from.id) || nanjing(to.id)) && a.kind !== 'guide' && a.kind !== 'stander' && rnd() < (a.kind === 'local' ? 0.3 : a.kind === 'lingerer' ? 0.6 : 0.55)) via = pick(net.shops, rnd);
@@ -348,9 +376,9 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
       const vi = via ? p.indexOf(via) : -1;
       if (vi > 0 && via.startsWith('R') && rnd() < (a.kind === 'stander' ? 0.85 : a.kind === 'lingerer' ? 0.65 : 0.2)) {
         const rn = net.by[via];
-        a.x = rn.x - (rnd() < 0.3 ? 0.8 : 0); a.z = rn.z + (rnd() - 0.5) * 4.2; a.i = vi; a.via = null;
-        a.state = 'act'; a.atRail = true; a.heading = Math.PI / 2; a.stops = 1;
-        a.act = rnd() < 0.5 ? 'photo' : rnd() < 0.5 ? 'selfie' : 'look'; if (a.act === 'selfie') a.heading = -Math.PI / 2;
+        railSpot(a, rn); a.spot.done = true;
+        a.x = a.spot.x; a.z = a.spot.z; a.heading = a.spot.h; a.i = vi; a.via = null;
+        a.state = 'act'; a.atRail = true; a.stops = 1;
         a.wait = (a.kind === 'stander' ? 180 + rnd() * 420 : a.kind === 'lingerer' ? 90 + rnd() * 210 : 15 + rnd() * 45) * rnd();
         a.y = groundHeight(a.x, a.z, 9); a.flinch = null; a.stuck = 0; a.gone = false;
         return;
@@ -525,13 +553,11 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
       return;
     }
     if (n.id.startsWith('R') && a.via === n.id) {
-      a.via = null; a.state = 'act'; a.heading = Math.PI / 2; a.atRail = true;
-      const r = rnd();
-      a.act = a.kind === 'guide' ? 'guide' : r < 0.55 ? 'photo' : r < 0.75 ? 'selfie' : 'look';
+      a.via = null; a.state = 'act'; a.atRail = true;
+      railSpot(a, n);
       // how long at the railing: those who came for it (standers) 3-10 minutes, lingerers 1.5-5, the rest
       // a photo or two (people stop at the Bund railing for longer than anywhere else)
       a.wait = a.kind === 'stander' ? 180 + rnd() * 420 : a.kind === 'lingerer' ? 90 + rnd() * 210 : a.kind === 'guide' ? 45 + rnd() * 25 : 15 + rnd() * 45;
-      if (a.act === 'selfie') a.heading = -Math.PI / 2;
       a.stops++;
       return;
     }
@@ -613,15 +639,40 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
           const d = Math.hypot(tx - a.x, tz - a.z); speed = onRoad(a.x, a.z) ? 1.5 : d > 2 ? g.speed * 1.35 : d > 0.4 ? g.speed : 0;
           if (d > 9 && !onRoad(g.x, g.z)) besides(a, g, -Math.sin(g.heading) * 1.5, -Math.cos(g.heading) * 1.5);
         } else if (a.leader) {
-          const l = a.leader, sd = a.side || 1; a.state = l.state; a.act = a.child && (l.act === 'photo' || l.act === 'selfie') ? 'look' : l.act;
-          [tx, tz] = slot(l, 0, 0.62 * sd);
-          if (l.state === 'act') a.heading = l.heading;
-          const d = Math.hypot(tx - a.x, tz - a.z); speed = onRoad(a.x, a.z) ? 1.5 : d > 1.2 ? l.speed * 1.3 : d > 0.15 ? l.speed : 0;
+          const l = a.leader, sd = a.side || 1, wasAct = a.state === 'act'; a.state = l.state;
+          const ready = l.state === 'act' && (!l.spot || l.spot.done);
+          if (l.state !== 'act') { a.act = l.act; a.spot = null; [tx, tz] = slot(l, 0, 0.62 * sd); }
+          else if (!ready) { a.act = 'look'; [tx, tz] = slot(l, 0, 0.62 * sd); }
+          else {
+            // their own part of the scene the leader chose (railSpot), worked out once
+            if (!wasAct || !a.spot) {
+              const sc = l.scene, z0 = l.z + (rnd() - 0.5) * 0.8;
+              if (a.child) a.spot = sc === 'shoot' ? { x: RAIL.x - 0.62, z: z0 + 0.55, pose: true } : { x: l.x - 0.15, z: l.z - 0.7 * sd, act: 'look' };
+              else if (sc === 'shoot') a.spot = { x: RAIL.x - 0.6, z: z0, pose: true };
+              else if (sc === 'selfie2') a.spot = { x: l.x + 0.05, z: l.z + 0.5, act: 'pose', h: l.heading };
+              else { const q = rnd(); a.spot = { x: l.act === 'lean' || q < 0.3 ? RAIL.x - RAIL.lean : l.x + (rnd() - 0.3) * 0.4, z: l.z - 0.62 * sd, act: q < 0.3 ? 'lean' : q < 0.6 ? 'photo' : 'look', h: Math.PI / 2 + (rnd() - 0.5) * 0.6 }; if (a.spot.act === 'lean') a.spot.h = Math.PI / 2; }
+            }
+            const sp = a.spot;
+            tx = sp.x; tz = sp.z;
+            if (sp.pose && l.scene === 'shoot') { a.act = 'pose'; a.heading = Math.atan2(l.x - a.x, l.z - a.z); }   // (facing the camera)
+            else { a.act = sp.pose ? 'look' : l.scene || sp.act !== 'pose' ? sp.act : 'look'; a.heading = sp.h ?? l.heading; }
+          }
+          const d = Math.hypot(tx - a.x, tz - a.z); speed = onRoad(a.x, a.z) ? 1.5 : d > 1.2 ? l.speed * 1.3 : d > 0.15 ? (a.state === 'act' ? 0.6 : l.speed) : 0;
           if (d > 7) besides(a, l, tx - l.x, tz - l.z);
         } else if (a.state === 'act') {
           a.wait -= dta;
-          if (a.wait <= 0) { a.state = 'walk'; a.act = null; a.gesture = null; a.faceTo = null; a.photoAt = null; if (a.atRail) { a.atRail = false; a.i = Math.min(a.i + 1, a.path.length - 1); } }
+          if (a.wait <= 0) { a.state = 'walk'; a.act = null; a.gesture = null; a.faceTo = null; a.photoAt = null; a.spot = null; a.scene = null; if (a.atRail) { a.atRail = false; a.i = Math.min(a.i + 1, a.path.length - 1); } }
           tx = a.x; tz = a.z; speed = 0;
+          // the last step or two to their own place at the railing, then turned to the view
+          const sp = a.spot;
+          if (sp && !sp.done && a.state === 'act') {
+            const d = Math.hypot(sp.x - a.x, sp.z - a.z);
+            sp.t = (sp.t || 0) + dta;
+            if (d < 0.12 || sp.t > 8) { sp.done = true; a.heading = sp.h; }
+            else { tx = sp.x; tz = sp.z; speed = 0.7; }
+          }
+          // the one taking a partner's photo aims at them
+          if (a.scene === 'shoot' && a.partner && sp && sp.done) a.photoAt = [a.partner.x, a.partner.z + 0.0];
         } else if (a.state === 'goto') {
           // called over to something (an accident in the road): walk to a spot, then stand and watch
           const g = a.goal; g.t = (g.t || 0) + dta;
@@ -711,7 +762,7 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
           if (!moving || !bad(nx, nz)) {
             const k = Math.min(1, dta * 4); a.vx += (vx - a.vx) * k; a.vz += (vz - a.vz) * k;
             a.x = nx; a.z = nz; a.y = groundHeight(a.x, a.z, a.y + 0.5); a.v = Math.hypot(a.vx, a.vz); a.stuck = 0;
-            if (a.v > 0.15 && a.state !== 'act') a.heading = Math.atan2(a.vx, a.vz);
+            if (a.v > 0.15 && (a.state !== 'act' || (a.spot && !a.spot.done))) a.heading = Math.atan2(a.vx, a.vz);
             a.phase = (a.phase + a.v * dta / 1.35) % 1;
             stats.far = (stats.far || 0) + 1;
             farGo = true;
@@ -818,7 +869,7 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
         a.x = nx; a.z = nz;
         a.y = groundHeight(a.x, a.z, a.y + 0.5);
         a.v = Math.hypot(a.vx, a.vz);
-        if (a.v > 0.15 && a.state !== 'act' && !(a.flinch && a.flinch.t < FLINCH.stepFor)) a.heading = Math.atan2(a.vx, a.vz);
+        if (a.v > 0.15 && (a.state !== 'act' || (a.spot && !a.spot.done)) && !(a.flinch && a.flinch.t < FLINCH.stepFor)) a.heading = Math.atan2(a.vx, a.vz);
         a.phase = (a.phase + a.v * dta / 1.35) % 1;                     // one stride cycle ~1.35 m
       }
       // how far out people steer round each other: 32 m, drawn in where it's packed so that about 150 do
@@ -850,7 +901,7 @@ export function createCrowd({ net = buildNet(), density = 1, count = null, rnd =
       for (const a of agents) {
         if (a.gone || a.out || !a.atRail || a.state !== 'act') continue;
         n++;
-        if (a.act === 'photo' || a.act === 'selfie') { a.act = 'look'; a.photoAt = null; }
+        if (a.act === 'photo' || a.act === 'selfie' || a.act === 'pose') { a.act = 'look'; a.photoAt = null; a.scene = null; }
         const u = r();
         a.wait = Math.min(a.wait, 2.5 + (u < 0.7 ? (u / 0.7) * 110 : 110 + ((u - 0.7) / 0.3) * 190));
       }
