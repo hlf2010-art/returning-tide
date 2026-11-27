@@ -311,3 +311,24 @@ line of a different colour, and from the side and back the old neck's ragged, tr
   the old neck on Yu'an, and a small highlight glints under Zhiwei's chin.
 
 ![neck before / after](hero-faces/round19-neck-before-after.png)
+
+## Round 20: one skin from jaw to collar (Zhiwei, Yu'an)
+
+Mars, after round 19: the neck still showed where it was stitched; it should read as one piece, with no colour
+difference and no seam. The dither dissolve left dots, and the new neck's single average colour still met the body's
+painted shading in a line.
+
+- Colour, vertex by vertex: each vertex of the new neck's lower part takes the old body's own skin texel under it
+  (the nearest point on the old neck's triangles), so the body's painted shading carries on up the new neck
+  (`neckrgb`, filled in by `shrinkOldNeck`).
+- A crossfade instead of a dither: the new neck's last 3.5 cm is its own see-through mesh (`hero-neck-fade`,
+  sharing the head's vertices), fading out downwards over the old neck, which is brought to lie just under it.
+- Per vertex (`neckfade`): where its foot flares out over a collar or off the old body it is hidden; where nothing
+  of the old body lies under it (a gap behind a collar, the jaw's underside) it stays solid.
+- Skin or cloth is told by the texel (warm and light: Yu'an's dark brown jacket is not skin), so collars keep their
+  shape. The old head's leftovers are cut level just over the fade per pixel, which removed a dark sliver under
+  Zhiwei's ear.
+- Still to do: at an extreme close-up from the side, the very bottom of the throat shows a soft edge against the
+  jacket on Yu'an.
+
+![neck before / after](hero-faces/round20-neck-before-after.png)

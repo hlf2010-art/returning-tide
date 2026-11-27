@@ -125,8 +125,9 @@ function matteHairShell(m) {
 // The skin map toned to the character's skin: a multiplier on the skin only. On the whole map it lifted the dark
 // scalp under the hair (about twice as bright) into a pale band at the hairline; the scalp, brows' shadow and the
 // mouth's inside (dark texels) keep their colour.
-function skinToned(src, tone, hair = null, neckCol = null) {
+function skinToned(src, tone, hair = null, neckCol = null, fade = false) {
   const m = src.clone();
+  if (fade) { m.transparent = true; m.depthWrite = false; }
   const U = { uTone: { value: new THREE.Vector3(...tone) }, uNeckCol: { value: new THREE.Vector3(...(neckCol || [0, 0, 0])) } };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
@@ -141,15 +142,20 @@ function skinToned(src, tone, hair = null, neckCol = null) {
     // the new neck's lowest centimetres take the old body's skin colour, so its cut edge (ragged, on an open
     // collar) melts into the old neck instead of showing as pale shards
     if (neckCol) {
-      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float neckmix; attribute float neckcut; varying float vNeckMix; varying float vNeckCut;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvNeckMix = neckmix; vNeckCut = neckcut;');
-      sh.fragmentShader = sh.fragmentShader.replace('uniform vec3 uTone;', 'uniform vec3 uTone; uniform vec3 uNeckCol; varying float vNeckMix; varying float vNeckCut;')
-        .replace('diffuseColor.rgb *= mix(vec3(1.0), uTone, hSkin);', 'if (vNeckCut < 0.02 * smoothstep(0.3, 0.6, abs(dot(normalize(vNormal), normalize(vViewPosition)))) * fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))))) discard;\n        diffuseColor.rgb *= mix(vec3(1.0), uTone, hSkin);\n        diffuseColor.rgb = mix(diffuseColor.rgb, uNeckCol, vNeckMix);');
+      const F = fade ? ' varying float vNeckFade;' : '';
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float neckmix; attribute float neckcut; attribute vec3 neckrgb; varying float vNeckMix; varying float vNeckCut; varying vec3 vNeckRgb;' + (fade ? ' attribute float neckfade;' + F : ''))
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvNeckMix = neckmix; vNeckCut = neckcut; vNeckRgb = neckrgb;' + (fade ? ' vNeckFade = neckfade;' : ''));
+      sh.fragmentShader = sh.fragmentShader.replace('uniform vec3 uTone;', 'uniform vec3 uTone; varying float vNeckMix; varying float vNeckCut; varying vec3 vNeckRgb;' + F)
+        .replace('diffuseColor.rgb *= mix(vec3(1.0), uTone, hSkin);', (fade ? `if (vNeckCut < 0.0 || vNeckCut >= ${NECK_FADE.toFixed(4)}) discard;\n        diffuseColor.a = mix(1.0, smoothstep(0.0, ${NECK_FADE.toFixed(4)}, vNeckCut), clamp(vNeckFade, 0.0, 1.0)) * (1.0 - clamp(vNeckFade - 1.0, 0.0, 1.0));` : `if (vNeckCut < ${NECK_FADE.toFixed(4)}) discard;`) + '\n        diffuseColor.rgb *= mix(vec3(1.0), uTone, hSkin);\n        diffuseColor.rgb = mix(diffuseColor.rgb, vNeckRgb, vNeckMix);');
     }
   };
-  m.customProgramCacheKey = () => (hair ? 'skin-toned-scalp' : 'skin-toned') + (neckCol ? '-neck' : '');
+  m.customProgramCacheKey = () => (hair ? 'skin-toned-scalp' : 'skin-toned') + (neckCol ? '-neck' : '') + (fade ? '-fade' : '');
   return m;
 }
+
+// the new neck's last centimetres over the old one (head metres): drawn see-through, fading out downwards over
+// the old neck brought just under it, so the two crossfade into one skin instead of meeting in a line
+const NECK_FADE = 0.035;
 
 // where a Rocketbox body's new neck ends (head metres): 3.5 cm under the top of what is left of the old neck in front
 function cutYOf(newChin, newNose, oldNeckTop, nose, s) {
@@ -158,6 +164,12 @@ function cutYOf(newChin, newNose, oldNeckTop, nose, s) {
 
 // the old neck's vertices pulled in to just inside the new neck's surface (geo: the new skin, in the body's space,
 // with its neckcut attribute: height over the new neck's end, head metres; chinUp: the chin's height over it)
+// a Rocketbox texel of skin, not cloth: warm, and lighter than the dark browns of jackets and leather
+function skinTexel(c) {
+  const sat = (c[0] - c[2]) / Math.max(c[0], 0.01);
+  return c[0] >= c[1] && c[1] >= c[2] && c[0] - c[2] >= 0.05 && 0.3 * c[0] + 0.55 * c[1] + 0.15 * c[2] >= 0.36 && sat <= 0.5;
+}
+
 function shrinkOldNeck(avatar, bone0, body, geo, chinUp) {
   const pos = geo.attributes.position, nc = geo.attributes.neckcut, w = new THREE.Vector3();
   const pts = [];
@@ -176,10 +188,10 @@ function shrinkOldNeck(avatar, bone0, body, geo, chinUp) {
   // per height, the neck's centre (the jaw and the ears left out: the points far from the median distance)
   const byBin = Array.from({ length: nb }, () => []);
   for (let i = 0; i < pts.length; i += 4) if (pts[i + 1] >= y0 - BIN && pts[i + 1] <= yTop) byBin[binOf(pts[i + 1])].push(pts[i], pts[i + 2]);
-  const cen = [], rad = [];
+  const cen = [], rad = [], rawRad = [];
   for (let b = 0; b < nb; b++) {
     const a = byBin[b]; let cx = 0, cz = 0, m = a.length / 2;
-    if (!m) { cen.push(b ? cen[b - 1] : null); rad.push(b ? rad[b - 1] : null); continue; }
+    if (!m) { cen.push(b ? cen[b - 1] : null); rad.push(b ? rad[b - 1] : null); rawRad.push(b ? rawRad[b - 1] : null); continue; }
     for (let i = 0; i < a.length; i += 2) { cx += a[i]; cz += a[i + 1]; }
     cx /= m; cz /= m;
     for (let it = 0; it < 2; it++) {
@@ -197,35 +209,121 @@ function shrinkOldNeck(avatar, bone0, body, geo, chinUp) {
     }
     const med = [...r].filter((x) => x > 0).sort((p, q) => p - q);
     const mr = med[med.length >> 1] || 0;
+    const raw = Float32Array.from(r, (x) => x || mr);
     for (let j = 0; j < NA; j++) r[j] = Math.min(r[j] || mr, mr * 0.95);   // (no ears, no jaw)
-    cen.push([cx, cz]); rad.push(r);
+    cen.push([cx, cz]); rad.push(r); rawRad.push(raw);
   }
-  const inv = new THREE.Matrix4();
+  // first, the new neck's colour where it takes the old neck's (neckmix): the old skin's own texel under each of
+  // its vertices (the nearest point on the old neck's triangles, at the same height and direction from the axis),
+  // so the body's painted shading carries on up the new neck instead of one average colour meeting it in a line
+  if (geo.attributes.neckrgb && geo.attributes.neckmix) {
+    const tris = [], A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3();
+    avatar.traverse((o) => {
+      if (!o.isSkinnedMesh || o.skeleton.bones[0] !== bone0 || !o.geometry.index || !o.geometry.attributes.uv || o.name.startsWith('hero-')) return;
+      const tex = texelReader(o.material, 1024); if (!tex) return;
+      const op = o.geometry.attributes.position, ou = o.geometry.attributes.uv, ix = o.geometry.index.array;
+      for (let t = 0; t < ix.length; t += 3) {
+        A.fromBufferAttribute(op, ix[t]).applyMatrix4(o.matrixWorld); B.fromBufferAttribute(op, ix[t + 1]).applyMatrix4(o.matrixWorld); C.fromBufferAttribute(op, ix[t + 2]).applyMatrix4(o.matrixWorld);
+        const cy = (A.y + B.y + C.y) / 3;
+        if (cy < y0 - k * 0.06 || cy > yTop + k * 0.03) continue;
+        const b = binOf(cy); if (!cen[b]) continue;
+        const cx = (A.x + B.x + C.x) / 3 - cen[b][0], cz = (A.z + B.z + C.z) / 3 - cen[b][1];
+        if (Math.hypot(cx, cz) > Math.max(...rad[b]) * 1.6) continue;
+        tris.push({ a: A.clone(), b: B.clone(), c: C.clone(), i: [ix[t], ix[t + 1], ix[t + 2]], ou, tex, bin: b });
+      }
+    });
+    // (by height: each vertex looks only at the triangles a few bins either side)
+    const byTriBin = Array.from({ length: nb }, () => []);
+    for (const T of tris) for (let d = -3; d <= 3; d++) if (T.bin + d >= 0 && T.bin + d < nb) byTriBin[T.bin + d].push(T);
+    const nm = geo.attributes.neckmix, rgb = geo.attributes.neckrgb, tri = new THREE.Triangle(), q = new THREE.Vector3(), bc = new THREE.Vector3();
+    const skinLike = (c) => c[0] >= c[2] && c[0] - c[2] > 0.03 && 0.3 * c[0] + 0.55 * c[1] + 0.15 * c[2] > 0.2;
+    for (let v = 0; v < pos.count && tris.length; v++) {
+      if (!(nm.getX(v) > 0)) continue;
+      w.fromBufferAttribute(pos, v).applyMatrix4(body.matrixWorld);
+      // (the old neck lies a little inside or outside: the nearest point on it from a ray out from the axis)
+      let best = null, bd = Infinity;
+      const vb = binOf(w.y);
+      for (const T of (byTriBin[vb] && byTriBin[vb].length ? byTriBin[vb] : tris)) {
+        tri.set(T.a, T.b, T.c); tri.closestPointToPoint(w, q);
+        const d = q.distanceToSquared(w); if (d < bd) { bd = d; best = T; bc.copy(q); }
+      }
+      if (!best) continue;
+      tri.set(best.a, best.b, best.c); const bary = tri.getBarycoord(bc, new THREE.Vector3());
+      const u = bary.x * best.ou.getX(best.i[0]) + bary.y * best.ou.getX(best.i[1]) + bary.z * best.ou.getX(best.i[2]);
+      const vv = bary.x * best.ou.getY(best.i[0]) + bary.y * best.ou.getY(best.i[1]) + bary.z * best.ou.getY(best.i[2]);
+      // (a UV seam across the triangle: its corners' UVs far apart, the blend between them is somewhere else on the map)
+      const span = Math.max(...best.i.map((i) => best.ou.getX(i))) - Math.min(...best.i.map((i) => best.ou.getX(i)));
+      const c = best.tex(span > 0.25 ? best.ou.getX(best.i[0]) : u, span > 0.25 ? best.ou.getY(best.i[0]) : vv);
+      if (!skinLike(c)) continue;
+      rgb.setXYZ(v, ...c.map((x) => 1.15 * Math.pow(x, 2.2)));
+    }
+    rgb.needsUpdate = true;
+  }
+  const inv = new THREE.Matrix4(), yFade = y0 + k * NECK_FADE;
   avatar.traverse((o) => {
     if (!o.isSkinnedMesh || o.skeleton.bones[0] !== bone0 || !o.geometry.index || o.name.startsWith('hero-')) return;
     const op = o.geometry.attributes.position; let moved = false;
-    const head = /head/i.test(o.material.name);   // (the old head's own primitives: all of it goes inside; clothes keep their shape)
+    const head = /head/i.test(o.material.name);
+    // (skin, by its texel: only skin is moved under the new neck's end, never a collar)
+    const tex = texelReader(o.material, 1024), ouv = o.geometry.attributes.uv;
+    const isSkin = (v) => {
+      if (!tex || !ouv) return head;
+      const c = tex(ouv.getX(v), ouv.getY(v));
+      return skinTexel(c);
+    };   // (the old head's own primitives: all of it goes inside; clothes keep their shape)
     inv.copy(o.matrixWorld).invert();
     for (let v = 0; v < op.count; v++) {
       w.fromBufferAttribute(op, v).applyMatrix4(o.matrixWorld);
-      if (w.y < y0 || w.y > yTop + k * (head ? 0.2 : 0.1)) continue;
+      if (w.y < y0 - k * 0.025 || w.y > yTop + k * (head ? 0.2 : 0.1)) continue;
       const b = binOf(w.y); if (!cen[b]) continue;
       const [cx, cz] = cen[b], dx = w.x - cx, dz = w.z - cz, r = Math.hypot(dx, dz);
-      const R = rad[b][Math.floor((Math.atan2(dz, dx) / (2 * Math.PI) + 1) * NA) % NA] * 0.9;
-      if (!(R > 0) || r <= R || (!head && r > R * (w.y > y0 + k * 0.04 ? 4 : 2.2))) continue;   // (a collar stays low)
-      const f = THREE.MathUtils.smoothstep(w.y, y0, y0 + k * 0.012), nr = r + (R - r) * f;
+      const j = Math.floor((Math.atan2(dz, dx) / (2 * Math.PI) + 1) * NA) % NA, Rs = rawRad[b] ? rawRad[b][j] : 0;
+      if (!(Rs > 0) || r < 1e-6) continue;
+      let nr;
+      const under = Rs - k * 0.0015;   // (just under its skin)
+      if (w.y <= yFade) {
+        // under the new neck's fading end and below it: eased onto its surface, just inside, so the two
+        // crossfade as one skin (in or out); clothes keep their shape
+        if (head) { if (r <= under) continue; nr = under; }   // (the old head's own: all of it in, the jaw's underside too)
+        else {
+          if (r > Rs * 1.6 || !isSkin(v)) continue;   // (a collar)
+          nr = r + (under - r) * THREE.MathUtils.smoothstep(w.y, y0 - k * 0.025, y0);
+        }
+      } else {
+        // above it: inside it, out of sight
+        const R = THREE.MathUtils.lerp(under, rad[b][j] * (head ? 0.75 : 0.9), THREE.MathUtils.smoothstep(w.y, yFade, yFade + k * 0.004));
+        if (r <= R || (!head && r > R * (w.y > y0 + k * 0.04 ? 4 : 2.2))) continue;   // (a collar stays low)
+        nr = R;
+      }
       w.x = cx + dx * nr / r; w.z = cz + dz * nr / r;
       w.applyMatrix4(inv); op.setXYZ(v, w.x, w.y, w.z); moved = true;
     }
     if (moved) { op.needsUpdate = true; o.geometry.computeBoundingSphere(); }
+    if (head) {
+      // and cut level just over the fade, per pixel: a triangle of it from under the fade up to the jaw's corner
+      // (where the new neck curves in) cut across the new skin as a dark sliver
+      const h = new Float32Array(op.count);
+      for (let v = 0; v < op.count; v++) h[v] = (w.fromBufferAttribute(op, v).applyMatrix4(o.matrixWorld).y - yFade) / k;
+      o.geometry.setAttribute('oldcut', new THREE.BufferAttribute(h, 1));
+      o.material = o.material.clone();
+      const prev = o.material.onBeforeCompile;
+      o.material.onBeforeCompile = (sh, r) => {
+        if (prev) prev(sh, r);
+        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float oldcut; varying float vOldCut;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvOldCut = oldcut;');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vOldCut;').replace('void main() {', 'void main() {\n  if (vOldCut > 0.004) discard;');
+      };
+      const key = o.material.customProgramCacheKey.bind(o.material);
+      o.material.customProgramCacheKey = () => key() + '-oldcut';
+    }
     // nothing of the old neck is needed above the new neck's dissolving end: those triangles go (the old head's
     // own primitives, all of them; the body's, only what lies on the neck, so a collar standing off it stays)
     {
       const ix = o.geometry.index.array, keep = [], c = new THREE.Vector3();
       for (let t = 0; t < ix.length; t += 3) {
-        let lo = Infinity; c.set(0, 0, 0);
-        for (let j = 0; j < 3; j++) { w.fromBufferAttribute(op, ix[t + j]).applyMatrix4(o.matrixWorld); lo = Math.min(lo, w.y); c.add(w); }
-        let drop = lo > y0 + k * 0.02 && lo < yTop + k * 0.2;   // (wholly above the dissolve)
+        let lo = Infinity, hi = -Infinity; c.set(0, 0, 0);
+        for (let j = 0; j < 3; j++) { w.fromBufferAttribute(op, ix[t + j]).applyMatrix4(o.matrixWorld); lo = Math.min(lo, w.y); hi = Math.max(hi, w.y); c.add(w); }
+        // (wholly above the fade; of the old head's own, any reaching above it: its slivers poked out at the jaw)
+        let drop = head ? lo > yFade + k * 0.008 || hi > yFade + k * 0.03 : lo > yFade + k * 0.008 && lo < yTop + k * 0.2;
         if (drop && !head) {
           c.divideScalar(3);
           const b = binOf(c.y), [cx, cz] = cen[b] || [c.x, c.z], dx = c.x - cx, dz = c.z - cz;
@@ -237,6 +335,52 @@ function shrinkOldNeck(avatar, bone0, body, geo, chinUp) {
       if (keep.length < ix.length) { const g = o.geometry.clone(); g.setIndex(keep); o.geometry = g; }
     }
   });
+  // the new neck's fading end, vertex by vertex (neckfade): over the old neck brought under it, it fades (1); where
+  // nothing of the old body lies right under it (a gap behind a collar), fading would show the background through
+  // it, so it stays solid (0); and where its foot flares out over a collar or off the old body, it is hidden (2)
+  const nf = geo.attributes.neckfade;
+  if (nf) {
+    const near = Array.from({ length: nb }, () => []), A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3();
+    avatar.traverse((o) => {
+      if (!o.isSkinnedMesh || o.skeleton.bones[0] !== bone0 || !o.geometry.index || o.name.startsWith('hero-')) return;
+      const op = o.geometry.attributes.position, ix = o.geometry.index.array, ouv = o.geometry.attributes.uv;
+      const head = /head/i.test(o.material.name), tex = !head && ouv && texelReader(o.material, 1024);
+      for (let t = 0; t < ix.length; t += 3) {
+        A.fromBufferAttribute(op, ix[t]).applyMatrix4(o.matrixWorld); B.fromBufferAttribute(op, ix[t + 1]).applyMatrix4(o.matrixWorld); C.fromBufferAttribute(op, ix[t + 2]).applyMatrix4(o.matrixWorld);
+        const lo = Math.min(A.y, B.y, C.y), hi = Math.max(A.y, B.y, C.y);
+        if (hi < y0 - k * 0.03 || lo > yFade + k * 0.03) continue;
+        let skin = true;
+        if (tex) {
+          const cs = [0, 1, 2].map((j) => tex(ouv.getX(ix[t + j]), ouv.getY(ix[t + j])));
+          const c = [0, 1, 2].map((i) => (cs[0][i] + cs[1][i] + cs[2][i]) / 3);
+          skin = skinTexel(c);
+        }
+        const T = { t: new THREE.Triangle(A.clone(), B.clone(), C.clone()), skin };
+        for (let b = binOf(lo) - 4; b <= binOf(hi) + 4; b++) if (b >= 0 && b < nb) near[b].push(T);
+      }
+    });
+    const q = new THREE.Vector3(), nrm = new THREE.Vector3(), nc2 = geo.attributes.neckcut;
+    for (let v = 0; v < pos.count; v++) {
+      const c = nc2.getX(v); if (c < -0.01 || c > NECK_FADE + 0.01) continue;
+      w.fromBufferAttribute(pos, v).applyMatrix4(body.matrixWorld);
+      const b = binOf(w.y); if (!cen[b]) continue;
+      let ds = Infinity, rs = 0, dc = Infinity, rc = 0;
+      for (const T of near[b]) {
+        T.t.closestPointToPoint(w, q); const d = q.distanceTo(w) / k;
+        if (T.skin) { if (d < ds) { ds = d; rs = Math.hypot(q.x - cen[b][0], q.z - cen[b][1]); } }
+        else if (d < dc) { dc = d; rc = Math.hypot(q.x - cen[b][0], q.z - cen[b][1]); }
+      }
+      const r = Math.hypot(w.x - cen[b][0], w.z - cen[b][1]), off = THREE.MathUtils.smoothstep(ds, 0.012, 0.025);
+      // (over a collar, or standing well out from the old body's skin, the flare at its foot: hidden; over a
+      // gap: solid)
+      // (only its foot spreading to the shoulders: the jaw's underside, facing down, and the nape, facing back,
+      // stand off the old neck too, with nothing behind them, and stay solid; the avatar faces +z as it loads)
+      nrm.fromBufferAttribute(geo.attributes.normal, v).transformDirection(body.matrixWorld);
+      const foot = nrm.y > -0.3 && nrm.z > -0.5;
+      nf.setX(v, dc < 0.03 && r > rc - k * 0.002 ? 2 : ds < 0.05 && rs < r && foot ? 1 + off : 1 - off);
+    }
+    nf.needsUpdate = true;
+  }
 }
 
 // a geometry of just these triangles (its own compact copy of the vertices they use)
@@ -900,6 +1044,7 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
   let eyeY = null;
   headScene.traverse((o) => { if (o.isMesh && /^eye-[lr]$/.test(o.name)) eyeY = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).y; });
   const made = [], hw = new THREE.Vector3();
+  let fadeNeck = null;
   headScene.traverse((o) => {
     if (!o.isMesh || (keepHair && /^hair/i.test(o.material.name))) return;
     const geo = o.geometry.clone();
@@ -910,7 +1055,8 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
       const cutY = cutYOf(newChin, newNose, oldNeckTop, nose, s);
       // where it overlaps the old neck it tapers in by 25 %, under the old neck's skin, so its cut edge (ragged,
       // flaring towards the shoulders) stays hidden inside it
-      const topY = cutY + 0.02, ring = [];
+      const topY = cutY - 0.05, ring = [];   // (no taper now: the old neck is brought to meet it instead)
+
       for (let v = 0; v < p.count; v++) { w.fromBufferAttribute(p, v).applyMatrix4(o.matrixWorld); if (Math.abs(w.y - topY) < 0.004) ring.push(w.x, w.z); }
       if (ring.length > 8) {
         let cx = 0, cz = 0; for (let i = 0; i < ring.length; i += 2) { cx += ring[i]; cz += ring[i + 1]; }
@@ -1006,7 +1152,23 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
           nm[v] = 1 - THREE.MathUtils.smoothstep(hw.y, jaw - 0.03, jaw);
         }
         geo.setAttribute('neckmix', new THREE.BufferAttribute(nm, 1));
+        // (its colour there: the old neck's at the same place, filled in by shrinkOldNeck on a Rocketbox body)
+        const rgb = new Float32Array(n * 3); for (let v = 0; v < n; v++) rgb.set(neckCol, v * 3);
+        geo.setAttribute('neckrgb', new THREE.BufferAttribute(rgb, 3));
         if (!geo.attributes.neckcut) geo.setAttribute('neckcut', new THREE.BufferAttribute(new Float32Array(n).fill(1), 1));
+      }
+      if (neckCol && !keepHair && geo.index) {
+        // the new neck's end, fading out over the old neck: its own see-through mesh, drawn after the opaque ones
+        const ix = geo.index.array, nc = geo.attributes.neckcut, tris = [];
+        geo.setAttribute('neckfade', new THREE.BufferAttribute(new Float32Array(n).fill(1), 1));   // (0: no old skin under it, stays solid: shrinkOldNeck)
+        for (let t = 0; t < ix.length; t += 3) if (Math.min(nc.getX(ix[t]), nc.getX(ix[t + 1]), nc.getX(ix[t + 2])) < NECK_FADE) tris.push(ix[t], ix[t + 1], ix[t + 2]);
+        if (tris.length) {
+          // (sharing the head's vertices, so the colours filled in later by shrinkOldNeck are its too)
+          const fg = new THREE.BufferGeometry();
+          for (const [name, at] of Object.entries(geo.attributes)) fg.setAttribute(name, at);
+          fg.setIndex(tris);
+          fadeNeck = [fg, skinToned(mat, tint || autoTint, null, neckCol, true)];
+        }
       }
       mat = skinToned(mat, tint || autoTint, keepHair ? hairFrame(nose, body.matrixWorld) : null, neckCol);
     }   // (the tongue has no map: it keeps its own colour)
@@ -1018,6 +1180,15 @@ export function swapHead(avatar, headScene, { drop = ['Bip01_Head'], tint = null
     sm.position.copy(body.position); sm.quaternion.copy(body.quaternion); sm.scale.copy(body.scale);
     sm.bind(body.skeleton, body.bindMatrix);
     made.push(sm);
+    if (fadeNeck) {
+      const fm = new THREE.SkinnedMesh(...fadeNeck);
+      fm.name = 'hero-neck-fade'; fm.castShadow = false; fm.frustumCulled = false;
+      body.parent.add(fm);
+      fm.position.copy(body.position); fm.quaternion.copy(body.quaternion); fm.scale.copy(body.scale);
+      fm.bind(body.skeleton, body.bindMatrix);
+      made.push(fm);
+      fadeNeck = null;
+    }
     if (keepHair && isSkin && mat.map) {
       // the scalp only: the face's own dark texels (lids, lip line, nostrils) are not hair
       const w = new THREE.Vector3();
