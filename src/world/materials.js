@@ -233,11 +233,34 @@ function puddles(material, sheen = 1, slabs = false, lift = [1, 1, 1], wear = fa
         float tx = -26.5 + 21.0 * wHash(vec2(seg, 2.2)), dT = abs(p.x - tx);
         float inT = step(sh, 0.3) * step(dT, 0.35) * step(-28.0, p.x) * step(p.x, -4.0);
         diffuseColor.rgb *= mix(1.0, 0.76, inT) * (1.0 - 0.35 * step(sh, 0.3) * step(-28.0, p.x) * step(p.x, -4.0) * (1.0 - smoothstep(0.0, 0.03, abs(dT - 0.35))));
-        // crack sealant: thin wandering black lines, here and there
-        vec2 q = p * 0.45 + vec2(wNoise(p * 1.3), wNoise(p * 1.3 + 7.0)) * 0.5;
-        float rdg = abs(wNoise(q) - 0.5);
-        tarLine = (1.0 - smoothstep(0.001, 0.0035, rdg)) * smoothstep(0.66, 0.76, wNoise(p * 0.11 + 3.0));
-        diffuseColor.rgb *= 1.0 - 0.4 * tarLine;
+        // crack sealant, as it is really laid: along the cracks a road actually gets. Short transverse cracks
+        // straight across part of a lane (a slight waver, no loops), and the longitudinal joint cracks that open
+        // where two passes of the paver met, down the centre line and beside the lane lines, in broken runs.
+        // A sealed crack is 1-2 cm of black, a little glossier than the road, faded out where it is thinner
+        // than a pixel so it doesn't crawl in the distance.
+        {
+          bool main = p.x > -28.0 && p.x < -4.0;
+          float al = main ? p.y : p.x, ac = main ? p.x : p.y;             // along the road, across it
+          float fw = max(fwidth(al), fwidth(ac)), W = 0.012, Wp = max(W, fw), fade = W / Wp;
+          float tl = 0.0;
+          // transverse: one place in a 13 m stretch, one stretch in three, over 1.5-5 m of the width
+          float tc = floor(al / 13.0), th = wHash(vec2(tc, 4.1));
+          float ta = (tc + 0.2 + 0.6 * wHash(vec2(tc, 5.3))) * 13.0;
+          float tw = ta + 0.12 * (wNoise(vec2(ac * 0.7, tc)) - 0.5) + 0.012 * ac * (wHash(vec2(tc, 6.7)) - 0.5);          // (a waver, and not quite square)
+          float t0 = main ? -27.0 + 20.0 * wHash(vec2(tc, 7.9)) : -6.0 + 9.0 * wHash(vec2(tc, 7.9)), t1 = t0 + 1.5 + 3.5 * wHash(vec2(tc, 8.3));
+          float tExt = smoothstep(t0, t0 + 0.4, ac) * (1.0 - smoothstep(t1 - 0.4, t1, ac));
+          tl = max(tl, step(th, 0.33) * tExt * (1.0 - smoothstep(0.0, Wp, abs(al - tw))));
+          // longitudinal: down the centre line (main road x -16; the side streets' middles) and beside two lane lines
+          float jc = main ? (abs(p.x + 16.0) < 1.8 ? -16.25 : (abs(p.x + 12.4) < 1.8 ? -12.15 : -19.85)) : (abs(p.y) < 6.0 ? 0.2 : 9999.0);
+          float lc = floor(al / 17.0), lh = wHash(vec2(lc, floor(jc) + 1.3));
+          float l0 = (lc + 0.1 * wHash(vec2(lc, 2.9))) * 17.0, l1 = l0 + 17.0 * (0.25 + 0.6 * wHash(vec2(lc, 3.3)));
+          float lw = jc + 0.08 * (wNoise(vec2(al * 0.35, jc)) - 0.5) + 0.02 * (wNoise(vec2(al * 3.0, 1.0)) - 0.5);
+          float lExt = smoothstep(l0, l0 + 0.5, al) * (1.0 - smoothstep(l1 - 0.5, l1, al));
+          tl = max(tl, step(lh, 0.45) * lExt * (1.0 - smoothstep(0.0, Wp, abs(ac - lw))));
+          // (a line 1.2 cm either side; thinner than a pixel, it is drawn a pixel wide and that much fainter)
+          tarLine = tl * fade;
+        }
+        diffuseColor.rgb *= 1.0 - 0.3 * tarLine;
         // the main road's lanes: wheel paths darker, oil down the middle
         if (p.x > -28.0 && p.x < -4.0) {
           float lc = p.x < -16.0 ? (p.x < -23.2 ? -25.6 : (p.x < -19.6 ? -21.4 : -17.8)) : (p.x > -8.8 ? -6.4 : (p.x > -12.4 ? -10.6 : -14.2));
