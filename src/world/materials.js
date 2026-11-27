@@ -112,7 +112,8 @@ const arch = archMaterial;
 // 1 = freshly rained on. Covered footprints (shop canopy, portico) never get the extra wetness.
 export const weatherUniforms = {
   wetBoost: { value: 0 },
-  groundDamp: { value: 0 },           // 0 = dry stone (no rain lately: no puddles, matte), 1 = the after-rain look
+  groundDamp: { value: 0 },
+  dayGround: { value: 0 },           // daylight 0..1: by day the ground shows its true, paler colour (the night look keeps it dark and glossy)           // 0 = dry stone (no rain lately: no puddles, matte), 1 = the after-rain look
   rainRipples: { value: 0 },          // 0..1: drizzle intensity, drives ripple density
   rippleTime: { value: 0 },           // seconds, frozen while paused
   coverXZ: { value: covers.map((c) => new THREE.Vector4(c.x0, c.x1, c.z0, c.z1)) },
@@ -143,10 +144,11 @@ export function mirrorPeople(material, { wet = '0.0', key = 'plain', sheen = 1 }
 }
 
 // Standing water lies flat: blend the paving normal away wherever roughness is very low.
-function puddles(material, sheen = 1, slabs = false) {
+function puddles(material, sheen = 1, slabs = false, lift = [1, 1, 1]) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.wetBoost = weatherUniforms.wetBoost;
     shader.uniforms.groundDamp = weatherUniforms.groundDamp;
+    shader.uniforms.dayGround = weatherUniforms.dayGround;
     shader.uniforms.coverXZ = weatherUniforms.coverXZ;
     shader.uniforms.rainRipples = weatherUniforms.rainRipples;
     shader.uniforms.rippleTime = weatherUniforms.rippleTime;
@@ -155,7 +157,7 @@ function puddles(material, sheen = 1, slabs = false) {
       .replace('#include <project_vertex>', '#include <project_vertex>\n  vWetXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-      varying vec2 vWetXZ; uniform float wetBoost, groundDamp, rainRipples, rippleTime; uniform vec4 coverXZ[${covers.length}];
+      varying vec2 vWetXZ; uniform float wetBoost, groundDamp, dayGround, rainRipples, rippleTime; uniform vec4 coverXZ[${covers.length}];
       float rHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       // Raindrop rings: each cell of a jittered grid hosts one ring at a time, born at a random
       // moment, expanding and fading. Returns the surface slope (d height / d x, d height / d z).
@@ -181,6 +183,7 @@ function puddles(material, sheen = 1, slabs = false) {
       // relief calmed (no foil-like glint in low sun); the after-rain look comes back with the rain
       roughnessFactor = mix(max(roughnessFactor, 0.86), roughnessFactor, groundDamp);
       diffuseColor.rgb *= mix(1.07, 1.0, groundDamp);
+      diffuseColor.rgb *= mix(vec3(1.0), vec3(${lift.map((v) => v.toFixed(3)).join(', ')}), dayGround * (1.0 - 0.35 * groundDamp));
       normal = normalize(mix(nonPerturbedNormal, normal, mix(0.6, 1.0, groundDamp)));
       float exposed = 1.0;
       for (int i = 0; i < ${covers.length}; i++) { vec4 c = coverXZ[i]; if (vWetXZ.x > c.x && vWetXZ.x < c.y && vWetXZ.y > c.z && vWetXZ.y < c.w) exposed = 0.0; }
@@ -249,7 +252,7 @@ function puddles(material, sheen = 1, slabs = false) {
       roughnessFactor *= mix(0.92 + 0.16 * sHash(floor(vMapUv * 5.0 + 1e-3) + 4.4), 0.86, slabNew);
       roughnessFactor = mix(roughnessFactor, roughnessFactor * 0.62, feetHere);`);
   };
-  return mirrorPeople(material, { wet: 'max(puddle, 0.5 * wetW)', key: `puddles${slabs ? '-slabs' : ''}`, sheen });
+  return mirrorPeople(material, { wet: 'max(puddle, 0.5 * wetW)', key: `puddles${slabs ? '-slabs' : ''}-${lift.join('-')}`, sheen });
 }
 
 // Reflection strength for screen-space reflections, per pixel: standing water (low roughness in the
@@ -293,10 +296,10 @@ export function createMaterials() {
   const wetDeck = wetnessTexture(401, { puddle: 0.36, dry: 0.62, wet: 0.12 }), wetRoad = wetnessTexture(402, { puddle: 0.3, dry: 0.56, wet: 0.12 });
   wetDeck.repeat.set(1 / 2.2, 1 / 2.2); wetRoad.repeat.set(1 / 1.7, 1 / 1.7); // relative to each map's own metre scale: puddles a metre or two across, not whole lanes
   const std = (o) => new THREE.MeshStandardMaterial(o);
-  M.deck = puddles(std({ map: pave.map, normalMap: pave.normalMap, roughnessMap: wetDeck, roughness: 1, metalness: 0, envMapIntensity: 1.0 }));
-  M.sidewalk = puddles(std({ map: walk.map, normalMap: walk.normalMap, roughnessMap: wetnessTexture(403, { puddle: 0.32, dry: 0.7, wet: 0.12 }), roughness: 1, metalness: 0 }), 1, true);
+  M.deck = puddles(std({ map: pave.map, normalMap: pave.normalMap, roughnessMap: wetDeck, roughness: 1, metalness: 0, envMapIntensity: 1.0 }), 1, false, [2.4, 2.35, 2.3]);
+  M.sidewalk = puddles(std({ map: walk.map, normalMap: walk.normalMap, roughnessMap: wetnessTexture(403, { puddle: 0.32, dry: 0.7, wet: 0.12 }), roughness: 1, metalness: 0 }), 1, true, [4.4, 4.4, 4.2]);
   M.sidewalk.roughnessMap.repeat.set(1 / 3, 1 / 3);
-  M.asphalt = puddles(std({ map: asph.map, normalMap: asph.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughnessMap: wetRoad, roughness: 1, metalness: 0 }), 0.35);
+  M.asphalt = puddles(std({ map: asph.map, normalMap: asph.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughnessMap: wetRoad, roughness: 1, metalness: 0 }), 0.35, false, [4.6, 4.2, 3.8]);
   M.granite = mirrorPeople(std({ map: stone, color: 0x8d8a84, roughness: 0.55, metalness: 0 }));
   M.iron = std({ color: 0x141a17, roughness: 0.42, metalness: 0.7 });
   M.steel = std({ color: 0x9aa0a6, roughness: 0.3, metalness: 0.9 });

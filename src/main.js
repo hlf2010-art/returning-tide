@@ -1602,6 +1602,7 @@ function applyHour(dt, { force = false } = {}) {
   const inside = Math.max(under, world && (world.upper.here || world.dest.here || world.makerspace.here) ? 1 : inR(PEACE) || inR(AIA) ? 0.8 : 0);
   w.lighting.setCover(weather.cover); w.lighting.setTime(s, inside, under);
   R.renderer.toneMappingExposure = THREE.MathUtils.lerp(s.exposure * (1 + 0.25 * inside * s.daylight), 0.92, under);
+  weatherUniforms.dayGround.value = s.daylight;
   R.bloom.strength = s.bloom;
   if (world) {
     // the hour's share of everyone; a weekday has about three quarters of a weekend's visitors

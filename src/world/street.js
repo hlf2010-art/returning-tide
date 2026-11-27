@@ -419,7 +419,7 @@ export function createStreet(M) {
     ctx.fillStyle = '#2a2a2a'; ctx.fillRect(0, 0, 256, 256);
     const rows = 6, cols = 4, rh = 256 / rows, cw = 256 / cols;
     for (let j = 0; j < rows; j++) for (let i = -1; i < cols; i++) {
-      const x = i * cw + (j % 2 ? cw / 2 : 0), v = 70 + r() * 38, w = r() * 6;
+      const x = i * cw + (j % 2 ? cw / 2 : 0), v = 92 + r() * 40, w = r() * 6;
       ctx.fillStyle = `rgb(${v + w},${v + w},${v + 2})`; ctx.fillRect(x + 2.5, j * rh + 2.5, cw - 5, rh - 5);
       ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(x + 3, j * rh + 3, cw - 8, 3);
     }
@@ -440,7 +440,7 @@ export function createStreet(M) {
     canvas: std({ color: 0x24406a, roughness: 0.9 }), glassDark2: std({ color: 0x0b1014, roughness: 0.08, metalness: 0.8 }),
     shutter: std({ map: shutterTex, roughness: 0.5, metalness: 0.5 }),
     leafGold: std({ color: 0xd9a92a, roughness: 0.7, emissive: 0x231806, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
-    setts: std({ map: settTex, color: 0xb4b4b0, roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+    setts: std({ map: settTex, color: 0xd8d8d4, roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
     kerbBlack: std({ color: 0x1c1d1f, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
   }, group, 'street-');
 

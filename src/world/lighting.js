@@ -25,8 +25,9 @@ export function createLighting(scene, lanterns, extra = []) {
   const NIGHT = { sky: new THREE.Color(0x5578c8), ground: new THREE.Color(0x2a221c), hemi: 0.55, dir: new THREE.Color(0x6f8fd8), dirI: 0.35 };
   const DEEP = { sky: new THREE.Color(0x34466e), ground: new THREE.Color(0x2a221c), hemi: 0.42 };
   const _grey = new THREE.Color(0xc4c8cc);
-  const _shade = new THREE.Color(0xd2d6dc);   // a low sun's shade light (see below)
-  const DAY = { sky: new THREE.Color(0xa9c6ea), ground: new THREE.Color(0x857462), hemi: 1.25, sun: new THREE.Color(1.0, 0.95, 0.86), low: new THREE.Color(1.0, 0.66, 0.38), sunI: 2.7 };   // a clear, sunny day
+  const _shade = new THREE.Color(0xecdfd0);
+  const _bounce = new THREE.Color(0xb39a80);   // and from below, the sunlit stone fronts and paving throwing warm light back   // a low sun's shade light (see below)
+  const DAY = { sky: new THREE.Color(0xa9c6ea), ground: new THREE.Color(0x857462), hemi: 1.9, sun: new THREE.Color(1.0, 0.95, 0.86), low: new THREE.Color(1.0, 0.66, 0.38), sunI: 2.7 };   // a clear, sunny day
   const T = { day: 0, lamps: 1, sun: { x: 0, y: -1, z: 0 }, inside: 0 };
   let sunShadow = false, cover = 0;   // cover: the day's cloud (engine/climate.js); overcast, the sun's light spreads into the sky's
 
@@ -152,7 +153,7 @@ export function createLighting(scene, lanterns, extra = []) {
       hemi.groundColor.copy(NIGHT.ground).lerp(DAY.ground, d);
       hemi.intensity = THREE.MathUtils.lerp(THREE.MathUtils.lerp(NIGHT.hemi, DEEP.hemi, st.night), DAY.hemi, d);
       // with the sun low the shade is lit by the whole bright sky, not just its blue: paler, a touch brighter
-      { const low = d * (1 - Math.max(0, Math.min(1, (st.sun.y - 0.05) / 0.38))); hemi.color.lerp(_shade, 0.45 * low); hemi.intensity *= 1 + 0.18 * low; }
+      { const low = d * (1 - Math.max(0, Math.min(1, (st.sun.y - 0.05) / 0.38))); hemi.color.lerp(_shade, Math.min(1, 1.5 * low)); hemi.intensity *= 1 + 0.45 * low; hemi.groundColor.lerp(_bounce, 0.6 * low); }
       if (d > 0.001 && st.sun.y > -0.02) {
         // (colour: gold until the sun is well up, about 25 degrees: a late-November afternoon stays warm from 3 pm)
         sky.color.copy(DAY.low).lerp(DAY.sun, Math.max(0, Math.min(1, (st.sun.y - 0.05) / 0.38))).lerp(NIGHT.dir, 1 - d);
@@ -160,6 +161,8 @@ export function createLighting(scene, lanterns, extra = []) {
         if (!sunShadow) sky.position.set(st.sun.x, Math.max(0.05, st.sun.y), st.sun.z);
         if (!sunShadow) sky.target.position.set(0, 0, 0);
       } else { sky.color.copy(NIGHT.dir); sky.intensity = NIGHT.dirI * (1 - 0.4 * st.night); sky.position.set(0.6, 1, -0.2); sky.target.position.set(0, 0, 0); }
+      // the captured surroundings are mostly blue sky: by day they'd tint every shadow blue, so they give way to the hemisphere's paler light
+      scene.environmentIntensity = THREE.MathUtils.lerp(0.9, 0.3, d);
       if (cover > 0 && d > 0.001) { sky.intensity *= 1 - 0.82 * cover; hemi.intensity *= 1 + 0.22 * cover; hemi.color.lerp(_grey, cover * 0.6 * d); }   // overcast: hardly a shadow, a flat bright sky
       if (under > 0) { hemi.intensity *= 1 - under; sky.intensity *= 1 - under; }   // underground (the metro): none of the sky's light
       sky.target.updateMatrixWorld();

@@ -24,63 +24,97 @@ const cyl = (r, h, hex, x, y, z, seg = 10, rx = 0, rz = 0) => part(new THREE.Cyl
 const tube = (ax, ay, bx, by, r, hex, z = 0) => { const len = Math.hypot(bx - ax, by - ay); return part(new THREE.CylinderGeometry(r, r, len, 6), hex, (ax + bx) / 2, (ay + by) / 2, z, 0, 0, Math.atan2(by - ay, bx - ax) - Math.PI / 2); };
 
 const PAINT = 0xffffff, TYRE = 0x141414, DARK = 0x2a2c30, STEEL = 0x8e949a;
-const CREAM = 0xe9e3d2, CREAM2 = 0xd8d1bd, FAN = 0x1c1d1f;
-// The Bund's planters: a cream art-deco box on a stepped neck and a dark base plate, fluted pilasters at the
-// ends and the middle, a black art-deco fan (three curved stripes a side) spreading from the foot of the middle
-// pilaster; red azaleas mounded in it, yellow and violet pansies round the rim, ivy over the edge. Long side
-// along z. `chain`: the chain to the next planter, 2.6 m on.
-function planter(chain) {
-  const p = [];
-  p.push(box(0.86, 0.05, 1.74, 0x55585b, 0, 0.025, 0), box(0.56, 0.12, 1.1, 0x5f6265, 0, 0.11, 0));           // base plate, plinth
-  p.push(box(0.4, 0.12, 0.7, CREAM2, 0, 0.23, 0), box(0.6, 0.05, 1.34, CREAM, 0, 0.315, 0));                   // the neck, its step
-  p.push(box(0.72, 0.6, 1.5, CREAM, 0, 0.64, 0), box(0.78, 0.05, 1.56, CREAM2, 0, 0.965, 0));                   // the box, its rim
-  for (const sx of [-1, 1]) {
-    const fx = sx * 0.36;
-    for (const zc of [-0.7, 0.7]) p.push(box(0.03, 0.6, 0.1, CREAM2, fx + sx * 0.012, 0.64, zc));                 // end pilasters
-    for (const dz of [-0.05, 0, 0.05]) p.push(box(0.034, 0.6, 0.03, CREAM2, fx + sx * 0.014, 0.64, dz));           // the fluted middle
-    for (const yy of [0.46, 0.64, 0.82]) p.push(part(new THREE.CylinderGeometry(0.032, 0.032, 0.012, 10).rotateZ(Math.PI / 2), 0xcfc7b0, fx + sx * 0.034, yy, 0));   // its rosettes
-    // the fan: on each side of the middle pilaster, three black stripes curving up and out from its foot
-    // to the rim, thin at the pivot and broadening as they spread
-    for (const sg of [-1, 1]) for (let k = 0; k < 3; k++) {
-      const p0 = [sg * 0.085, 0.37], p2 = [sg * (0.24 + 0.205 * k), 0.93], p1 = [sg * (0.16 + 0.27 * k), 0.47 + 0.03 * k], n = 6;
-      const at = (t) => [0, 1].map((j) => (1 - t) * (1 - t) * p0[j] + 2 * (1 - t) * t * p1[j] + t * t * p2[j]);
-      for (let i = 0; i < n; i++) {
-        const [za, ya] = at(i / n), [zb, yb] = at((i + 1) / n), len = Math.hypot(zb - za, yb - ya), wd = 0.026 + 0.05 * ((i + 0.5) / n);
-        const g = new THREE.BoxGeometry(0.006, len * 1.08, wd); g.rotateX(Math.atan2(zb - za, yb - ya));
-        p.push(part(g, FAN, fx + sx * 0.004, (ya + yb) / 2, (za + zb) / 2));
-      }
-    }
+const CREAM = 0xe6e0cc, CREAM2 = 0xd9d2bc, FAN = 0x34373a, BOLT = 0xb8b19c;
+// The Bund's planters, as on the photographs: a cream box whose front is a wing. Fluted end blocks hang from
+// the rim to about 40 cm off the ground; a broad fluted middle pilaster, bolted down its ribs, runs on down
+// to a dark stepped base plate; between them the underside sweeps in a quarter-ellipse from each end block
+// down to the pilaster, and four charcoal bands a side sweep the same way up the face, level at the end
+// block, steep where they meet the pilaster. Azaleas mounded in it, pansies round the rim, ivy over the edge. Long side along z.
+// `chain`: the chain to the next planter, 2.6 m on, hung from rings on the end blocks.
+const PL = { top: 1.05, half: 0.75, endIn: 0.58, endBot: 0.43, pil: 0.17, foot: 0.17, cy: 0.25, ea: 0.41, face: 0.31 };
+// the bands are quarter-ellipses, each spanning end block to pilaster: band k leaves the end block level at
+// `top` and meets the pilaster steeply at `pil` (k = 0 is the underside itself); off thickens it outward.
+// Right half, t = 0 at the end block, PI/2 at the pilaster.
+const BANDS = [[0.43, 0.25], [0.55, 0.3], [0.71, 0.5], [0.86, 0.67], [0.995, 0.81]];   // [at the end block, at the pilaster]; 0 = the underside
+const BAND = (k) => ({ top: BANDS[k][0], pil: BANDS[k][1] });
+const ell = (k, t, off = 0) => { const b = BAND(k); return [PL.endIn - (PL.ea + off) * Math.sin(t), b.pil + (b.top - b.pil + off) * Math.cos(t)]; };
+function planterBody() {
+  const sh = new THREE.Shape(), N = 14;
+  sh.moveTo(-PL.half, PL.top); sh.lineTo(PL.half, PL.top); sh.lineTo(PL.half, PL.endBot); sh.lineTo(PL.endIn, PL.endBot);
+  for (let i = 1; i <= N; i++) { const [z, y] = ell(0, (i / N) * Math.PI / 2); sh.lineTo(z, y); }
+  sh.lineTo(PL.pil, PL.foot); sh.lineTo(-PL.pil, PL.foot);
+  for (let i = N - 1; i >= 0; i--) { const [z, y] = ell(0, (i / N) * Math.PI / 2); sh.lineTo(-z, y); }
+  sh.lineTo(-PL.half, PL.endBot); sh.closePath();
+  const g = new THREE.ExtrudeGeometry(sh, { depth: PL.face * 2, bevelEnabled: false, curveSegments: 1 });
+  g.rotateY(-Math.PI / 2); g.translate(PL.face, 0, 0);     // shape x -> world z, extrusion across x
+  return g;
+}
+// one charcoal band (k, see BAND) laid on a face (x = fx), w thick, mirrored by sz
+function planterBand(k, d0, w, fx, sz) {
+  const pos = [], N = 18, clampP = ([z, y]) => [Math.max(PL.pil, z), Math.min(PL.top - 0.04, y)];
+  for (let i = 0; i < N; i++) {
+    const ta = (i / N) * Math.PI / 2, tb = ((i + 1) / N) * Math.PI / 2;
+    const a0 = clampP(ell(k, ta, d0)), b0 = clampP(ell(k, tb, d0)), a1 = clampP(ell(k, ta, d0 + w)), b1 = clampP(ell(k, tb, d0 + w));
+    for (const [z, y] of [a0, b0, b1, a0, b1, a1]) pos.push(fx, y, sz * z);
   }
-  for (const sz of [-1, 1]) for (const dx of [-0.24, 0, 0.24]) p.push(box(0.05, 0.6, 0.03, CREAM2, dx, 0.64, sz * 0.762));   // ribs on the ends
-  // soil, the azalea mound (green underneath, a scatter of red-pink blooms), pansies, ivy
-  p.push(box(0.66, 0.04, 1.44, 0x3a2a1e, 0, 0.93, 0));
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  // wind each quad to face out of its face
+  if ((fx > 0) !== (sz > 0)) { const p = g.attributes.position.array; for (let i = 0; i < p.length; i += 9) for (let j = 0; j < 3; j++) { const t = p[i + 3 + j]; p[i + 3 + j] = p[i + 6 + j]; p[i + 6 + j] = t; } }
+  g.computeVertexNormals();
+  return g;
+}
+function planter(chain) {
+  const p = [part(planterBody(), CREAM)];
+  const F = PL.face;
+  // the base plate: a low dark stepped pyramid under the middle pilaster
+  { const g = new THREE.CylinderGeometry(0.2 * Math.SQRT2, 0.44 * Math.SQRT2, 0.15, 4, 1); g.rotateY(Math.PI / 4); g.scale(0.85, 1, 1); p.push(part(g, 0x4c4f52, 0, 0.075, 0)); }
+  p.push(box(0.5, 0.025, 0.46, 0x5a5d60, 0, 0.16, 0));
+  p.push(box(F * 2 + 0.05, 0.04, PL.half * 2 + 0.05, CREAM2, 0, PL.top + 0.02, 0));              // the rim
+  for (const sx of [-1, 1]) {
+    const fx = sx * F;
+    // the middle pilaster, proud of the face: three wide flutes, a bolt every 13 cm down the outer two
+    p.push(box(0.03, PL.top - PL.foot, PL.pil * 2, CREAM2, fx + sx * 0.015, (PL.top + PL.foot) / 2, 0));
+    for (const dz of [-0.105, 0, 0.105]) p.push(box(0.022, PL.top - PL.foot, 0.07, CREAM, fx + sx * 0.035, (PL.top + PL.foot) / 2, dz));
+    for (const dz of [-0.105, 0.105]) for (let k = 0; k < 6; k++) p.push(part(new THREE.CylinderGeometry(0.013, 0.013, 0.01, 8).rotateZ(Math.PI / 2), BOLT, fx + sx * 0.049, PL.foot + 0.12 + k * 0.135, dz));
+    // the end blocks' flutes
+    for (const sz of [-1, 1]) for (const zz of [0.605, 0.665, 0.725]) p.push(box(0.02, PL.top - PL.endBot, 0.036, CREAM2, fx + sx * 0.01, (PL.top + PL.endBot) / 2, sz * zz));
+    // the bands, four a side
+    for (const sz of [-1, 1]) for (let k = 1; k < 5; k++) p.push(part(planterBand(k, 0, 0.056, fx + sx * 0.003, sz), FAN));
+  }
+  // the ends: flutes across the end blocks' outer faces, and the ring the chain hangs from
+  for (const sz of [-1, 1]) {
+    for (const dx of [-0.2, -0.1, 0, 0.1, 0.2]) p.push(box(0.04, PL.top - PL.endBot, 0.02, CREAM2, dx, (PL.top + PL.endBot) / 2, sz * (PL.half + 0.01)));
+    p.push(part(new THREE.TorusGeometry(0.03, 0.006, 4, 10), 0x2e3134, 0, 0.78, sz * (PL.half + 0.045)));
+  }
+  // soil, the azalea mound (green underneath, red-pink blooms), pansies, ivy
+  const top = PL.top;
+  p.push(box(F * 2 - 0.04, 0.03, PL.half * 2 - 0.06, 0x3a2a1e, 0, top - 0.005, 0));
   const R = (i, k) => { const v = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return v - Math.floor(v); };
-  // the azalea: a low dome of dark leaves, the blooms packed over its top and sides (crimson, a few pinks)
-  { const g = new THREE.SphereGeometry(0.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(0.62, 0.62, 1.32); p.push(part(g, 0x2d4424, 0, 0.94, 0)); }
+  { const g = new THREE.SphereGeometry(0.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(0.56, 0.7, 1.3); p.push(part(g, 0x2d4424, 0, top, 0)); }
   for (let i = 0; i < 34; i++) {
     const th = R(i, 5) * 6.283, ph = Math.acos(1 - R(i, 6) * 0.92), rr = 0.5;
-    const x = Math.sin(ph) * Math.cos(th) * rr * 0.62, y = Math.cos(ph) * rr * 0.62, z = Math.sin(ph) * Math.sin(th) * rr * 1.32;
+    const x = Math.sin(ph) * Math.cos(th) * rr * 0.56, y = Math.cos(ph) * rr * 0.7, z = Math.sin(ph) * Math.sin(th) * rr * 1.3;
     const g = new THREE.IcosahedronGeometry(0.055 + R(i, 4) * 0.03, 0); g.scale(1, 0.6, 1);
-    p.push(part(g, R(i, 7) < 0.62 ? 0xc8163c : R(i, 7) < 0.86 ? 0xe03565 : 0xa50f2a, x, 0.95 + y, z));
+    p.push(part(g, R(i, 7) < 0.62 ? 0xc8163c : R(i, 7) < 0.86 ? 0xe03565 : 0xa50f2a, x, top + 0.01 + y, z));
   }
-  // pansies round the rim, faces up: yellow mostly, some violet, a white
   for (let i = 0; i < 20; i++) {
     const sx = i % 2 ? 1 : -1, z = -0.68 + (i >> 1) * 0.15, c = R(i, 9) < 0.65 ? 0xf3c51c : R(i, 9) < 0.9 ? 0x58288a : 0xf2efe6;
-    const g = new THREE.CylinderGeometry(0.045, 0.035, 0.012, 6); p.push(part(g, c, sx * (0.31 + R(i, 11) * 0.03), 0.985, z));
+    p.push(part(new THREE.CylinderGeometry(0.045, 0.035, 0.012, 6), c, sx * (0.25 + R(i, 11) * 0.03), top + 0.03, z));
   }
-  // ivy trailing over the long sides: strings of small leaves
   for (let i = 0; i < 6; i++) {
-    const sx = i % 2 ? 1 : -1, z0 = -0.6 + i * 0.24, n = 3 + Math.floor(R(i, 10) * 3);
-    for (let k = 0; k < n; k++) { const g = new THREE.IcosahedronGeometry(0.04, 0); g.scale(0.4, 1, 1); p.push(part(g, k % 2 ? 0x3a5a2c : 0x2c4a22, sx * (0.4 + k * 0.004), 0.95 - k * 0.075, z0 + Math.sin(k * 1.7) * 0.03)); }
+    const sx = i % 2 ? 1 : -1, z0 = (i < 3 ? -1 : 1) * (0.64 + 0.04 * R(i, 12)), n = 3 + Math.floor(R(i, 10) * 3);
+    for (let k = 0; k < n; k++) { const g = new THREE.IcosahedronGeometry(0.04, 0); g.scale(0.4, 1, 1); p.push(part(g, k % 2 ? 0x3a5a2c : 0x2c4a22, sx * (F + 0.06 + k * 0.004), top - k * 0.075, z0 + Math.sin(k * 1.7) * 0.03)); }
   }
   if (chain) {
-    // a short-link chain hung between the two planters' ends: 0.8 m up, sagging 10 cm
-    const za = 0.79, zb = 2.6 - 0.79, n = 16;
+    // a steel chain of oval links between this planter's ring and the next one's, sagging 12 cm
+    const za = PL.half + 0.075, zb = 2.6 - za, n = 26, L0 = (zb - za) / n;
     for (let i = 0; i < n; i++) {
-      const t = (i + 0.5) / n, z = za + (zb - za) * t, y = 0.8 - 0.1 * 4 * t * (1 - t);
-      p.push(part(new THREE.BoxGeometry(i % 2 ? 0.012 : 0.03, i % 2 ? 0.03 : 0.012, (zb - za) / n * 1.25), 0x2e3134, 0, y, z));
+      const t = (i + 0.5) / n, z = za + (zb - za) * t, y = 0.78 - 0.12 * 4 * t * (1 - t), slope = -0.12 * 4 * (1 - 2 * t) / (zb - za);
+      const g = new THREE.TorusGeometry(0.018, 0.006, 3, 8); g.scale(1, 1, 1); g.rotateY(Math.PI / 2); g.scale(1, 0.75, L0 / 0.036 * 1.15);
+      if (i % 2) g.rotateZ(Math.PI / 2);
+      g.rotateX(-Math.atan(slope));
+      p.push(part(g, 0x8a8e93, 0, y, z));
     }
-    for (const z of [za - 0.03, zb + 0.03]) p.push(box(0.04, 0.04, 0.04, 0x2e3134, 0, 0.8, z));             // the eyes it hangs from
   }
   return p;
 }
@@ -152,7 +186,26 @@ const KINDS = {
     box(0.26, 0.12, 0.02, 0xd8d8d0, -0.205, 0.6, 0.235), box(0.26, 0.12, 0.02, 0xd8d8d0, 0.205, 0.6, 0.235)],
   bollard: () => [cyl(0.1, 0.82, 0x3b3e43, 0, 0.41, 0, 12), cyl(0.104, 0.07, 0xe9e9e2, 0, 0.66, 0, 12), cyl(0.11, 0.05, 0x2a2c30, 0, 0.845, 0, 12)],
   cabinet: () => [box(0.9, 1.25, 0.5, 0x6d776a, 0, 0.625, 0), box(0.96, 0.05, 0.56, 0x50584e, 0, 1.275, 0), box(0.02, 0.9, 0.3, 0x5a6358, 0, 0.62, 0.255), box(0.92, 0.08, 0.52, 0x3a3f39, 0, 0.04, 0)],
-  hydrant: () => [cyl(0.11, 0.55, 0xb3231e, 0, 0.3, 0, 12), cyl(0.14, 0.06, 0xb3231e, 0, 0.04, 0, 12), cyl(0.08, 0.1, 0x8d1a16, 0, 0.62, 0, 10), cyl(0.045, 0.12, 0xc6c6c0, 0.12, 0.38, 0, 8, 0, Math.PI / 2), cyl(0.045, 0.12, 0xc6c6c0, -0.12, 0.38, 0, 8, 0, Math.PI / 2)],
+  // a classic pillar hydrant: a flanged foot, the barrel, a bolted flange at the top of it, the bonnet and its
+  // dome with a pentagon nut, two capped hose outlets at the sides and the big pumper outlet facing the road
+  hydrant: () => {
+    const RED = 0xbf221c, DK = 0x9a1914, p = [];
+    p.push(cyl(0.155, 0.035, DK, 0, 0.018, 0, 16), part(new THREE.CylinderGeometry(0.118, 0.14, 0.06, 16), RED, 0, 0.065, 0));
+    p.push(part(new THREE.CylinderGeometry(0.108, 0.115, 0.46, 16), RED, 0, 0.325, 0));
+    p.push(cyl(0.142, 0.04, RED, 0, 0.575, 0, 16), cyl(0.13, 0.012, DK, 0, 0.552, 0, 16));
+    for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; p.push(cyl(0.012, 0.05, DK, Math.cos(a) * 0.128, 0.575, Math.sin(a) * 0.128, 6)); }
+    p.push(part(new THREE.CylinderGeometry(0.112, 0.12, 0.13, 16), RED, 0, 0.66, 0));
+    p.push(cyl(0.122, 0.02, DK, 0, 0.73, 0, 16));
+    { const g = new THREE.SphereGeometry(0.115, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1, 0.72, 1); p.push(part(g, RED, 0, 0.738, 0)); }
+    p.push(cyl(0.035, 0.05, DK, 0, 0.845, 0, 5), cyl(0.05, 0.012, DK, 0, 0.822, 0, 12));
+    for (const sz of [-1, 1]) {   // the hose outlets, along the kerb
+      p.push(cyl(0.046, 0.08, RED, 0, 0.62, sz * 0.14, 12, Math.PI / 2), cyl(0.056, 0.03, RED, 0, 0.62, sz * 0.19, 12, Math.PI / 2));
+      p.push(cyl(0.024, 0.03, DK, 0, 0.62, sz * 0.218, 5, Math.PI / 2));
+    }
+    // the pumper outlet, to the road (west, -x), its cap and nut
+    p.push(cyl(0.06, 0.09, RED, -0.15, 0.5, 0, 14, 0, Math.PI / 2), cyl(0.072, 0.035, RED, -0.205, 0.5, 0, 14, 0, Math.PI / 2), cyl(0.028, 0.035, DK, -0.235, 0.5, 0, 5, 0, Math.PI / 2));
+    return p;
+  },
   // a street-name post: two blue blades crossed at the top (Shanghai's are blue with white lettering)
   signpost: () => [cyl(0.04, 2.7, STEEL, 0, 1.35, 0, 8), box(0.95, 0.27, 0.03, 0x1d4c9e, 0.42, 2.5, 0), box(0.03, 0.27, 0.95, 0x1d4c9e, 0, 2.22, 0.42),
     box(0.9, 0.025, 0.035, 0xf2f2f2, 0.42, 2.43, 0), box(0.035, 0.025, 0.9, 0xf2f2f2, 0, 2.15, 0.42)],
