@@ -1,6 +1,6 @@
 // E-bikes on the side streets (engine/ebikes.js): no overlaps, never off their lanes, never through a
 // red or onto a busy zebra, bunching ahead of the stop line, couriers pulling in, the hour's density.
-import { createEbikes, EBIKE_LANES, EBIKE, courierStops } from '../src/engine/ebikes.js';
+import { createEbikes, EBIKE_LANES, EBIKE, courierStops, projectObstacle } from '../src/engine/ebikes.js';
 import { createSignalController, TRAFFIC_CONFIG } from '../src/engine/traffic.js';
 import { L, NJ, manner } from '../src/world/layout.js';
 
@@ -140,6 +140,46 @@ const onLane = (r) => {
   const C = createEbikes({ count: 80, rng: seeded(11), signal: henanSignal(createSignalController()), doors, open: () => false });
   for (let i = 0; i < 300 / DT; i++) C.update(DT);
   ok(C.stats.pickups === 0, `with the shops shut, nobody collects (${C.stats.pickups})`);
+}
+
+// 6. the Strale parked on Hankou Road (world/huracan.js HURACAN_SPOT, nose east): ridden round, never through;
+// someone standing in the road: round them too; someone crossing: waited for
+{
+  const car = { x: -40.6, z: 2.86, hl: 2.28, hw: 1.015, fx: 1, fz: 0, kind: 'car' };
+  const inside = (r, o) => {
+    if (!r.active || r.fade < 0.5 || r.state === 'gone') return false;
+    const p = projectObstacle(r.lane, o), m = 0.02;
+    return p.s1 > r.s - EBIKE.len + m && p.s0 < r.s - m && p.l1 > r.lat - EBIKE.width / 2 + m && p.l0 < r.lat + EBIKE.width / 2 - m;
+  };
+  // (watched: nobody vanishes at the lane's end early, so they all have to get by it)
+  const run = (obs, secs, seed, each, watched = false, px = obs[0].x) => {
+    const E = createEbikes({ count: 60, rng: seeded(seed), obstacles: () => obs, canVanish: () => !watched });
+    let hits = 0, passed = 0, moving = 0;
+    const was = new Map();
+    for (let i = 0; i < secs / DT; i++) {
+      if (each) each(i * DT, obs);
+      E.update(DT);
+      for (const r of E.riders) {
+        if (i * DT > 3) for (const o of obs) if (inside(r, o)) { hits++; if (r.v > 0.3) moving++; }   // (anyone it appeared on top of has slid out by then)
+        if (r.lane.id === 'hankou-e' && r.active) { const x0 = was.get(r); if (x0 != null && x0 < px - 3 && r.x >= px + 2.6) passed++; if (r.x < px - 3 || r.x >= px + 2.6) was.set(r, r.x); }
+      }
+    }
+    return { E, hits, passed, moving };
+  };
+  const a = run([car], 300, 13, null, true);
+  ok(a.hits === 0 && a.E.stats.dodges > 0, `no rider goes through the parked Strale, watched (${a.hits} frames inside it, ${a.E.stats.dodges} moves out round it)`);
+  const free = run([{ x: -62, z: 50, hl: 0.1, hw: 0.1 }], 300, 13, null, false, -62), mid = run([{ ...car, x: -62 }], 300, 13);
+  ok(mid.hits === 0 && mid.passed >= free.passed * 0.5, `parked mid-street, the flow goes on round it (${mid.passed} past it, ${free.passed} with the street clear, ${mid.hits} hits)`);
+  const man = { x: -60, z: 2.2, hl: 0.3, hw: 0.3, kind: 'person' };
+  const b = run([man], 200, 17);
+  ok(b.hits === 0 && b.passed >= free.passed * 0.3, `someone standing in the road: ridden round, never into (${b.hits} hits, ${b.passed} past)`);
+  // a person walking across Hankou Road and back, over and over
+  const walker = { x: -55, z: -4.5, hl: 0.3, hw: 0.3, vx: 0, vz: 1.3, kind: 'person' };
+  const c = run([walker], 240, 19, (t) => { const k = (t * 1.3) % 18, back = k > 9; walker.z = back ? 4.5 - (k - 9) : -4.5 + k; walker.vz = back ? -1.3 : 1.3; });
+  ok(c.moving === 0, `someone crossing: waited for, never ridden into (${c.moving} frames a moving bike touched them; ${c.hits} with them walking into a stopped one)`);
+  // a car parked over Linger's kerb stop: couriers don't pull in on top of it
+  const d = run([{ x: manner.x + manner.width / 2 + 0.6, z: -3.4, hl: 2.28, hw: 1.015, fx: 1, fz: 0, kind: 'car' }], 400, 11);
+  ok(d.hits === 0, `couriers never park inside a car over their stop (${d.hits})`);
 }
 
 if (failed) { console.log(`${failed} failed`); process.exit(1); }
