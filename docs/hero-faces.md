@@ -295,3 +295,19 @@ hair: both had a blunt helmet fringe, while both photos show a side parting with
   and from the side would let the portrait be projected onto the head.
 
 ![before / after](hero-faces/round18-zhiwei-yuan-before-after.png)
+
+## Round 19: the neck seam (Zhiwei, Yu'an)
+
+Mars: "the join at the neck looks strange too". Under the jaw the new neck met the Rocketbox body's neck in a hard
+line of a different colour, and from the side and back the old neck's ragged, trimmed top stuck out of the new one.
+
+- The new neck now ends 3.5 cm under the top of the old one in front and its lowest 2 cm dissolve (a per-pixel
+  dither, not at grazing angles) over the old neck, whose colour the new neck takes there (people.js skinToned).
+- `shrinkOldNeck`: per height, the new neck's centre and radius round it (jaw and ears left out); the old neck's
+  vertices above the new neck's end are drawn in inside it, and its triangles wholly above the dissolve are dropped
+  (on the old head's primitives all of them; on the body's only those lying on the neck, so a collar stays).
+- Hair: a few short fine hairs at the hairline (`groom` wisps), and the locks' ends hang instead of flaring.
+- Still to do: the hairline is still a fairly straight edge, a faint lighter band remains where the dissolve shows
+  the old neck on Yu'an, and a small highlight glints under Zhiwei's chin.
+
+![neck before / after](hero-faces/round19-neck-before-after.png)

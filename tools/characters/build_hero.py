@@ -1072,7 +1072,7 @@ def hair_shell():
             if lay:   # layered: the ends uneven, in pieces of a few centimetres
                 zb -= length * 0.16 * lay * mnoise.noise(Vector((math.cos(lon) * 3.1, math.sin(lon) * 3.1, 7.3)))
             rel = Vector((q.x - c0.x, q.y - c0.y, 0.0))
-            sc = (1 + 0.08 * math.sin(math.pi * min(1.0, t * 1.1)) ** 2) * (1 - 0.07 * (1 - 1.8 * lay) * max(0.0, (t - 0.75) / 0.25) ** 2)   # (no kink where it leaves the ring; layered ends flick out)
+            sc = (1 + 0.08 * math.sin(math.pi * min(1.0, t * 1.1)) ** 2) * (1 - 0.07 * (1 - 1.8 * (0.0 if hs.get("groom") else lay)) * max(0.0, (t - 0.75) / 0.25) ** 2)   # (no kink where it leaves the ring; layered ends flick out)
             if lay:   # and tousled: the fall waves a little in and out round the head
                 sc *= 1 + 0.035 * lay * t * mnoise.noise(Vector((math.cos(lon) * 5.0, math.sin(lon) * 5.0, t * 2.0)))
             pt = Vector((c0.x + rel.x * sc, c0.y + rel.y * sc, q.z + (zb - q.z) * t))
@@ -1090,12 +1090,13 @@ def hair_shell():
         skirt.append(srow)
     allrows = [[g[0] for g in row] for row in grid] + skirt
     force = set()
+    kth = 0.35   # (under groomed hair the shell stops behind the hairline: the locks' roots make the edge)
     def kept(r, k):
         lon = grid[0][k][2]; fr = min(lon, 2 * math.pi - lon)   # angle from the front
         if (r, k) in force:
             return True
         if r <= rows:
-            return keep[r][k] > 0.35 or in_fringe(allrows[r][k]) or (r > rows * 0.45 and fr > face_half)
+            return keep[r][k] > kth or in_fringe(allrows[r][k]) or (r > rows * 0.45 and fr > face_half)
         return fr > face_half
     # the edge round the face and the fringe's lower edge follow the hairline and the fringe's line, not the
     # grid's steps: in each column the first row left out moves up to where the hair ends, and stays
@@ -1110,7 +1111,7 @@ def hair_shell():
             for _ in range(12):
                 m = (lo + hi) / 2
                 q = a.lerp(b, m)
-                if hairline(q) > 0.35 or in_fringe(q):
+                if hairline(q) > kth or in_fringe(q):
                     lo = m
                 else:
                     hi = m
@@ -1343,7 +1344,11 @@ def groom_cards(hs, c0, face_half, bvh_shell):
         s = 1.0 if p.x > part else -1.0
         front = p.y < c0.y - 0.035
         near_part = math.exp(-((p.x - part) / 0.035) ** 2)
-        if front and s == heavy:      # swept off the forehead to the side
+        wisp = front and hairline(p) < 0.97 and rnd.random() < 0.7   # (short fine hairs at the hairline, lying forward)
+        if wisp:
+            d = Vector((heavy * 0.5 + s * 0.2, -0.35, -1.0))
+            off = 0.0008
+        elif front and s == heavy:      # swept off the forehead to the side
             d = Vector((s * 1.0, 0.15, -0.45))
         elif front:                    # back from the parting
             d = Vector((s * 0.8, 0.7, -0.3))
@@ -1351,6 +1356,8 @@ def groom_cards(hs, c0, face_half, bvh_shell):
             d = Vector((s * 0.9 * near_part + (p.x - c0.x) * 4.0, 0.25, -1.0))
         d.normalize()
         maxL = length * (1.5 if front else 1.35) * (1 + 0.12 * (rnd.random() - 0.5)) + (top - p.z) * 0.3
+        if wisp:
+            maxL = rnd.uniform(0.012, 0.03)
         pts, L = [p.copy()], 0.0
         q = p.copy()
         while L < maxL and len(pts) < 70:
@@ -1371,7 +1378,7 @@ def groom_cards(hs, c0, face_half, bvh_shell):
                     q = q + nrm * (want - h)
                     d = d - nrm * min(0.0, d.dot(nrm)) * 0.9
             nz = mnoise.noise_vector(q * 14.0 + Vector((3.1, 1.7, 0.0)))
-            d = (d + Vector((0, 0, -0.16 - 0.4 * min(1.0, L / 0.05))) + nz * (0.05 + 0.12 * messy)).normalized()
+            d = (d + Vector((0, 0, -0.16 - 0.4 * min(1.0, L / 0.05) - 0.8 * max(0.0, L / maxL - 0.6))) + nz * (0.05 + 0.12 * messy)).normalized()   # (the ends hang)
             q = face_guard(q + d * ds)
             L += ds
             pts.append(q.copy())
@@ -1381,7 +1388,7 @@ def groom_cards(hs, c0, face_half, bvh_shell):
             continue
         pts = pts[:-1:2] + [pts[-1]]   # (a vertex every 12 mm is plenty for the mesh)
         # into a card: across it square to its run, lying on the hair (its normal out of the head)
-        width = rnd.uniform(0.004, 0.009) * (1.0 + 0.5 * u)
+        width = rnd.uniform(0.004, 0.009) * (1.0 + 0.5 * u) * (0.5 if wisp else 1.0)
         base = len(verts)
         band = min(3, int(u * 4 * (0.7 + 0.6 * rnd.random())))   # (the texture's four bands, darkest deepest)
         u0 = band * 0.25
