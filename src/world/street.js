@@ -23,18 +23,18 @@ function ground(B) {
   B.asphalt.floor(L.westCurbX, L.eastCurbX, -FAR, FAR, 0, 6);
   B.asphalt.floor(-200, L.westCurbX, -S.roadHalfW, S.roadHalfW, 0, 6);
   // the west sidewalk (and its kerb) runs the length of the Bund, broken where a road comes out
-  const gaps = [[-S.roadHalfW, S.roadHalfW], ...sideStreets.map((st) => [st.zc - st.roadHalfW, st.zc + st.roadHalfW])].sort((a, b) => a[0] - b[0]);
-  let from = -FAR;
-  for (const [g0, g1] of [...gaps, [FAR, FAR]]) {
+  const gaps = [[-S.roadHalfW, S.roadHalfW, K], ...sideStreets.map((st) => [st.zc - st.roadHalfW, st.zc + st.roadHalfW, st.pedestrian ? 0 : K])].sort((a, b) => a[0] - b[0]);
+  let from = -FAR, kFrom = 0;
+  for (const [g0, g1, kg] of [...gaps, [FAR, FAR, 0]]) {
     if (g0 > from) {
       const zc = (from + g0) / 2, len = g0 - from;
       // (the paving stops at the back of each kerb: a kerb inside the paving's box shares its face with it, and
       // the two fight for every pixel down the kerb's length, a flicker along both edges of every street)
-      const p0 = from > -FAR ? from + K : from, p1 = g0 < FAR ? g0 - K : g0;
+      const p0 = from + kFrom, p1 = g0 - kg;                          // (Nanjing Road's paving meets the pavement flush)
       B.sidewalk.box((L.facadeX + L.westCurbX + K) / 2, -0.3, (p0 + p1) / 2, L.westCurbX + K - L.facadeX, 0.3 + CH, p1 - p0, { tile: 2.4 });
       B.granite.box(L.westCurbX + 0.08, -0.3, zc, 0.16, 0.3 + CH + 0.005, len);
     }
-    from = g1;
+    from = g1; kFrom = kg;
   }
   for (const s of [-1, 1]) {
     const sz = s * (S.halfW + S.roadHalfW + K) / 2;
