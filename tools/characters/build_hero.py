@@ -414,6 +414,125 @@ def mouth_detail(c, on_lip, n=None):
     return min(1.0, line + corner + under + philtrum + mouth_in), (1.0 if c.z > m["z"] else 0.0)
 
 
+def photo_image(spec, key):
+    """One of the sheet's reference photos, its alpha 1 where it shows the face's own skin: everything inside the
+    face's inner oval (eyes, brows, nose, mouth, chin), and outside it only skin-coloured pixels (not the hair
+    falling across the cheeks and temples, not the grey backdrop). Returns the image and its median skin colour."""
+    import numpy as np
+    img = bpy.data.images.load(os.path.abspath(spec["file"]), check_existing=False)
+    img.name = "photo-" + key
+    W, H = img.size
+    px = np.array(img.pixels[:], np.float32).reshape(H, W, 4)   # (rows from the bottom; linear colour)
+    rows = lambda y: H - 1 - int(y)
+    samp = np.concatenate([px[rows(y1):rows(y0), x0:x1, :3].reshape(-1, 3) for x0, y0, x1, y1 in spec["skin_boxes"]])
+    med = np.median(samp, axis=0)
+    lum = px[..., :3] @ np.array([0.3, 0.55, 0.15], np.float32)
+    lm = float(med @ np.array([0.3, 0.55, 0.15]))
+    chroma = (px[..., 0] - px[..., 2]) / np.maximum(px[..., 0], 1e-3)
+    cm = float((med[0] - med[2]) / max(med[0], 1e-3))
+    sstep = lambda a, b, x: np.clip((x - a) / (b - a), 0, 1) ** 2 * (3 - 2 * np.clip((x - a) / (b - a), 0, 1))
+    skin = sstep(0.5, 0.75, lum / lm) * sstep(0.45 * cm, 0.75 * cm, chroma) * (1 - sstep(1.5, 1.9, lum / lm))
+    cx, cy, rx, ry = spec["inner"]
+    yy, xx = np.mgrid[0:H, 0:W]
+    d = np.sqrt(((xx - cx) / rx) ** 2 + (((H - 1 - yy) - cy) / ry) ** 2)
+    inner = 1 - sstep(0.7, 1.1, d)
+    # (outside the oval, the photos are mostly hair across the skin, its highlights as warm as skin: the oval only,
+    # unless the sheet says its sides are clear)
+    px[..., 3] = np.maximum(inner, skin) if spec.get("sides_clear") else inner
+    img.pixels[:] = px.ravel()
+    img.pack()
+    print("photo %s: median skin (sRGB) %s" % (key, np.round(med, 3)))
+    return img, med
+
+
+def photo_skin(N, L, under):
+    """The face from the sheet's reference photos (Mars's own character sheet): the front view projected straight
+    on, the side view on the cheeks and jaw from both sides, each where the surface faces its camera. Feature by
+    feature, not one scale: the photo's eyes, mouth and chin land on the mesh's eyes, mouth and chin (a warp in
+    x from the eyes' spacing to the mouth's width, and in height through those three). Outside the photo's reach
+    (hairline, ears, the back of the jaw, below the chin) the painted skin, toned to the photo's, carries on."""
+    ph = SHEET["photo"]
+    fr, sd = ph["front"], ph["side"]
+    cols = {}
+    imgF, medF = photo_image(fr, "front")
+    imgS, medS = photo_image(sd, "side") if sd else (None, None)
+    vs = hero.data.vertices
+    # the mesh's landmarks: eye centres (their front for the profile), the mouth, the chin, the nose's tip
+    side_sign = 1.0 if EYE_L.x > EYE_R.x else -1.0
+    eye_z = (EYE_L.z + EYE_R.z) / 2
+    eye_front = (EYE_L.y + EYE_R.y) / 2 - EYE_RAD * 0.9
+    centre = [v.co for v in vs if abs(v.co.x) < 0.006]
+    chin_z = min(c.z for c in centre if c.y < MOUTH["front"] + 0.03 and c.z > NECK.z)
+    nose_y = min(c.y for c in centre if eye_z - 0.065 < c.z < eye_z - 0.015)
+    print("photo landmarks: eye z %.4f mouth z %.4f chin z %.4f mouth half %.4f eye half %.4f" %
+          (eye_z, MOUTH["z"], chin_z, MOUTH["x"], abs(EYE_L.x - EYE_R.x) / 2))
+    def vmap(z, eye_px, mouth_px, chin_px):
+        k = (mouth_px - eye_px) / (eye_z - MOUTH["z"])
+        if z >= MOUTH["z"]:
+            return eye_px + (eye_z - z) * k
+        k2 = (chin_px - mouth_px) / max(MOUTH["z"] - chin_z, 1e-4)
+        return mouth_px + (MOUTH["z"] - z) * k2
+    sxE = (fr["eye_l"][0] - fr["eye_r"][0]) / abs(EYE_L.x - EYE_R.x)
+    sxM = fr["mouth_half"] / MOUTH["x"]
+    cxF = (fr["eye_l"][0] + fr["eye_r"][0]) / 2
+    WF, HF = imgF.size
+    if sd:
+        WS, HS = imgS.size
+        sy = (sd["eye"][0] - sd["nose"][0]) / (eye_front - nose_y)
+    ca = hero.data.color_attributes.new("photo", "FLOAT_COLOR", "POINT")
+    cw = hero.data.color_attributes.new("photow", "FLOAT_COLOR", "POINT")
+    ears = set(group_verts(hero, "ears", 0.3))
+    for i, v in enumerate(vs):
+        c, n = v.co, v.normal
+        t = min(1.0, max(0.0, (eye_z - c.z) / (eye_z - MOUTH["z"])))
+        uF = cxF + side_sign * c.x * (sxE + (sxM - sxE) * t)
+        vF = vmap(c.z, fr["eye_l"][1], fr["mouth"][1], fr["chin_y"])
+        uS = vS = 0.0
+        if sd:
+            uS = sd["eye"][0] + (c.y - eye_front) * sy
+            vS = vmap(c.z, sd["eye"][1], sd["mouth"][1], sd["chin_y"])
+        f = max(0.0, -n.y) ** 2
+        sw = max(0.0, abs(n.x)) ** 2 if sd else 0.0
+        wf = f / max(f + sw, 1e-6) * min(1.0, (f + sw) * 3)
+        ws = sw / max(f + sw, 1e-6) * min(1.0, (f + sw) * 3)
+        # where the photo reaches: the face, not the scalp, the ears, behind the jaw or under the chin
+        reach = 1.0 - hairline(c) if c.z > NECK.z + 0.04 else 0.0
+        reach *= min(1.0, max(0.0, (c.z - (chin_z - 0.03)) / 0.03))
+        reach *= min(1.0, max(0.0, ((HEAD_J.y - 0.01) - c.y) / 0.025))
+        if i in ears:
+            reach = 0.0
+        ca.data[i].color = (uF / WF, 1 - vF / HF, uS / WS if sd else 0, 1 - vS / HS if sd else 0)
+        cw.data[i].color = (wf, ws, reach, 0)
+    pa = N.new("ShaderNodeAttribute"); pa.attribute_name = "photo"
+    pw = N.new("ShaderNodeAttribute"); pw.attribute_name = "photow"
+    psep = N.new("ShaderNodeSeparateColor"); L.new(pa.outputs["Color"], psep.inputs[0])
+    wsep = N.new("ShaderNodeSeparateColor"); L.new(pw.outputs["Color"], wsep.inputs[0])
+    chan = [psep.outputs[0], psep.outputs[1], psep.outputs[2], pa.outputs["Alpha"]]
+    def sample(img, ui, vi):
+        cmb = N.new("ShaderNodeCombineXYZ")
+        L.new(chan[ui], cmb.inputs[0]); L.new(chan[vi], cmb.inputs[1])
+        tx = N.new("ShaderNodeTexImage"); tx.image = img; tx.interpolation = "Cubic"; tx.extension = "CLIP"
+        L.new(cmb.outputs[0], tx.inputs["Vector"])
+        return tx
+    # the painted skin underneath, toned to the photo's median skin, so where the photo stops nothing changes
+    base = Vector(SHEET["skin"]["base"])
+    tone = N.new("ShaderNodeMix"); tone.data_type = "RGBA"; tone.blend_type = "MULTIPLY"; tone.inputs["Factor"].default_value = 1.0
+    tone.inputs["B"].default_value = (*[float(medF[k]) ** 2.2 / max(base[k], 1e-3) for k in range(3)], 1)   # (pixels: sRGB)
+    L.new(under.outputs["Result"], tone.inputs["A"])
+    last = tone
+    for img, ui, vi, wi in ((imgS, 2, 3, 1), (imgF, 0, 1, 0)):
+        if img is None: continue
+        tx = sample(img, ui, vi)
+        fac = N.new("ShaderNodeMath"); fac.operation = "MULTIPLY"
+        L.new(tx.outputs["Alpha"], fac.inputs[0]); L.new(wsep.outputs[wi], fac.inputs[1])
+        fac2 = N.new("ShaderNodeMath"); fac2.operation = "MULTIPLY"
+        L.new(fac.outputs[0], fac2.inputs[0]); L.new(wsep.outputs[2], fac2.inputs[1])
+        mx = N.new("ShaderNodeMix"); mx.data_type = "RGBA"
+        L.new(fac2.outputs[0], mx.inputs["Factor"]); L.new(last.outputs["Result"], mx.inputs["A"]); L.new(tx.outputs["Color"], mx.inputs["B"])
+        last = mx
+    return last
+
+
 def skin_material():
     s = SHEET["skin"]
     mt, N, L, bs = mat("skin")
@@ -535,6 +654,8 @@ def skin_material():
         mm = N.new("ShaderNodeMix"); mm.data_type = "RGBA"; mm.inputs["B"].default_value = (0.12, 0.07, 0.05, 1)
         L.new(mr.outputs["Result"], mm.inputs["Factor"]); L.new(last.outputs["Result"], mm.inputs["A"])
         last = mm
+    if SHEET.get("photo"):
+        last = photo_skin(N, L, last)
     L.new(last.outputs["Result"], scalpc.inputs["A"])
     L.new(scalpc.outputs["Result"], bs.inputs["Base Color"])
     bs.inputs["Subsurface Weight"].default_value = 0.35
@@ -1596,7 +1717,8 @@ def bake_maps(ob, size, name, extra=True):
         a = np.array(ao.pixels[:], np.float32).reshape(-1, 4)[:, 0]
         c = np.array(imgs["color"].image.pixels[:], np.float32).reshape(-1, 4)
         occ = np.clip(1 - a, 0, 1)[:, None]
-        c[:, :3] *= (1 - 0.6 * occ) * (np.array([1.0, 0.9, 0.85]) ** occ)   # darker, and a little warmer, in the creases
+        ao_k = 0.3 if SHEET.get("photo") else 0.6   # (a photo has its own soft shading in it already)
+        c[:, :3] *= (1 - ao_k * occ) * (np.array([1.0, 0.9, 0.85]) ** occ)   # darker, and a little warmer, in the creases
         imgs["color"].image.pixels[:] = c.ravel()
         imgs["color"].image.save()
         nodes.remove(tx)
@@ -1631,8 +1753,9 @@ if "--export" in FLAGS:
     for e in eyes:
         if not e.name.endswith("cornea"):
             bake_maps(e, 512, e.name, extra=False)
-    for nm_ in ("tint", "region"):
-        hero.data.color_attributes.remove(hero.data.color_attributes[nm_])
+    for nm_ in ("tint", "region", "photo", "photow"):
+        if nm_ in hero.data.color_attributes:
+            hero.data.color_attributes.remove(hero.data.color_attributes[nm_])
     for o in [o for o in scene.objects if o.type == "MESH" and o not in parts]:
         bpy.data.objects.remove(o)
     bpy.ops.object.select_all(action="DESELECT")
