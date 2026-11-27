@@ -1,9 +1,13 @@
-// The Corvina Strale (the game's own invented marque and car: world/supercarModel.js), parked on Hankou Road by the
-// south kerb, nose toward the Bund: the kind of car that is always parked somewhere near the Peace Hotel. It's the car
-// the purchase journey will make yours. Built from code, real scale (~4.5 m). The file keeps its old name (the id
-// 'huracan' is in saves).
+// The Corvina Strale (the game's own invented marque), parked on Hankou Road by the south kerb, nose toward the Bund:
+// the kind of car that is always parked somewhere near the Peace Hotel. It's the car the purchase journey will make
+// yours. Its body is a real, detailed model (public/models/cars/strale.glb: the Khronos "Car Concept", CC BY 4.0,
+// logos removed by tools/cars/supercar.mjs; credits in public/models/cars/CREDITS.md), with a cabin you can see
+// through the glass. If it can't load, the car built in code (world/supercarModel.js) stands in. The file keeps
+// its old name (the id 'huracan' is in saves).
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildStrale } from './supercarModel.js';
+import { fitText } from './canvas.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { addDynamicCollider } from './layout.js';
 
@@ -18,7 +22,7 @@ function mergeBody(root, keep) {
   const under = (o) => { for (let p = o; p; p = p.parent) if (keep.includes(p)) return true; return false; };
   root.traverse((o) => {
     if (!o.isMesh || o.isSkinnedMesh || Array.isArray(o.material) || under(o) || o.geometry.morphAttributes.position) return;
-    const key = `${o.material.uuid}|${Object.keys(o.geometry.attributes).sort().join(',')}`;
+    const at = o.geometry.attributes, key = `${o.material.uuid}|${Object.keys(at).sort().map((k) => `${k}:${at[k].array.constructor.name}:${at[k].itemSize}`).join(',')}`;   // (only alike attributes merge)
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(o);
   });
@@ -30,17 +34,42 @@ function mergeBody(root, keep) {
     const merged = mergeGeometries(geos, false); if (!merged) continue;
     const m = new THREE.Mesh(merged, list[0].material); m.name = list[0].name; m.renderOrder = list[0].renderOrder;
     root.add(m);
-    for (const o of list) { o.parent.remove(o); removed++; }
+    for (const o of list) {
+      // a mesh can be the parent of others (the model's underbody holds the whole car): its children stay, under a
+      // plain node in its place
+      if (o.children.length) { const n = new THREE.Object3D(); n.name = `${o.name}-node`; n.position.copy(o.position); n.quaternion.copy(o.quaternion); n.scale.copy(o.scale); for (const c of [...o.children]) n.add(c); o.parent.add(n); }
+      o.parent.remove(o); removed++;
+    }
   }
   return removed;
+}
+
+const MODEL_URL = './models/cars/strale.glb';
+async function loadBody() {
+  try {
+    const gltf = await new GLTFLoader().loadAsync(MODEL_URL);
+    const root = gltf.scene; root.name = 'corvina-strale';
+    root.traverse((o) => { if (o.isMesh && o.material && o.material.name === 'License') { o.material = o.material.clone(); o.material.map = plateTexture(); o.material.color.set(0xffffff); o.material.needsUpdate = true; } });
+    return root;
+  } catch (err) {
+    console.warn('supercar: model not loaded, the built car stands in', err);
+    return buildStrale();
+  }
+}
+// a Shanghai plate (blue, white letters), invented; the model's plate quad is about 4:1 like the real one
+function plateTexture() {
+  if (typeof document === 'undefined') return null;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d');
+  x.fillStyle = '#1446b8'; x.fillRect(0, 0, 512, 128); x.strokeStyle = '#f2f4f8'; x.lineWidth = 6; x.strokeRect(8, 8, 496, 112);
+  x.fillStyle = '#f4f6fa'; x.font = '700 82px "Noto Sans SC", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; fitText(x, '沪A·S7K12', 256, 68, 470);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
 export function createHuracan(scene) {
   const group = new THREE.Group(); group.name = 'huracan'; scene.add(group);
   const collider = addDynamicCollider('car');
   const S = { root: null, wheels: [], lights: [] };
-  const ready = Promise.resolve().then(() => {
-    const root = buildStrale();
+  const ready = loadBody().then((root) => {
     root.updateMatrixWorld(true);
     // which way is the front: from the front wheels to the rear ones
     const pos = (n) => { const o = root.getObjectByName(n); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };

@@ -4,6 +4,7 @@ import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetT
 import { batchSet, flush, Batch } from './geo.js';
 import { makeCanvas, tex, rng, FONT, glowTexture, fitText, grain } from './canvas.js';
 import { createRoadMarkings } from './roadMarkings.js';
+import { sharedFleet } from './fleet.js';
 const grainOver = (ctx) => grain(ctx, 256, 256, 14, 5);
 import { T } from './text.js';
 
@@ -105,9 +106,19 @@ function roadLamp(B, x, z, armDir) {
   B.lampGlass.add(new THREE.SphereGeometry(0.2, 10, 8), { x, y: CH + 8.85, z });
 }
 
+// a parked car: the real model from the shared fleet (world/fleet.js), the code-built car only where there's no
+// document (tests). Its holder stays in the street group; the fleet draws the body wherever it is.
 function car(group, { x, z, yaw }, paint, isTaxi) {
+  const y = x < L.eastCurbX ? 0 : CH;
+  if (typeof document !== 'undefined') {
+    const holder = new THREE.Object3D(); holder.name = isTaxi ? 'parked-taxi' : 'parked-sedan';
+    holder.position.set(x, y, z); holder.rotation.y = yaw; group.add(holder);
+    const c = sharedFleet().add(isTaxi ? 'taxi-han' : 'byd-han', { paint });
+    c.obj = holder; c.visible = true;
+    return;
+  }
   const { g } = buildCar(paint, isTaxi);
-  g.position.set(x, x < L.eastCurbX ? 0 : CH, z); g.rotation.y = yaw;
+  g.position.set(x, y, z); g.rotation.y = yaw;
   group.add(g);
 }
 

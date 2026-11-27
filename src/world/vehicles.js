@@ -234,14 +234,17 @@ export const PLACEHOLDER_MODELS = Object.keys(MODELS);
 
 // Real models (world/fleet.js) stand in for the four procedural placeholders of the new-energy cars;
 // the ride-hail fleet is mostly BYDs. A car's paint, when its spec has none, from the usual colours.
-const FLEET_FOR = { 'nio-et5': 'byd-han', 'li-l9': 'byd-han', 'aito-m9': 'byd-han', 'luxeed-r7': 'byd-han' };
+// The street's generic sedan and taxi are real cars too now (the code-built box car only stands in until the
+// model has loaded, or where there's no document, in tests).
+const FLEET_FOR = { 'nio-et5': 'byd-han', 'li-l9': 'byd-han', 'aito-m9': 'byd-han', 'luxeed-r7': 'byd-han', sedan: 'byd-han', taxi: 'taxi-han' };
 const FLEET_PAINT = [0xf1f1ef, 0x16181c, 0xb9bdc2, 0x22324a, 0xf1f1ef, 0x6b6f75];
 // a car drawn by the fleet: its group carries the position (and anything attached to the car); until
 // the model has loaded, the street's generic car stands in
 function buildFleetCar(spec, fleet, i) {
   const id = FLEET_MODELS[spec.model] ? spec.model : FLEET_FOR[spec.model];
-  const stand = buildGeneric({ ...spec, model: 'sedan', paint: spec.paint ?? FLEET_PAINT[i % FLEET_PAINT.length] });
-  const car = fleet.add(id, { paint: spec.paint ?? FLEET_PAINT[i % FLEET_PAINT.length] });
+  const paint = spec.model === 'taxi' ? TAXI_LIVERIES[(i * 5 + 3) % TAXI_LIVERIES.length] : spec.paint ?? FLEET_PAINT[i % FLEET_PAINT.length];
+  const stand = buildGeneric({ ...spec, paint });
+  const car = fleet.add(id, { paint });
   return { g: stand.g, wheels: stand.wheels, wheelRadius: 0.34, fleetCar: car, fleetId: id, standIn: stand, setBraking(b) { car.braking = !!b; stand.setBraking(b); } };
 }
 

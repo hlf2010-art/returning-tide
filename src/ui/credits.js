@@ -31,6 +31,14 @@ export const CREDITS = [
     files: ['public/models/cars/byd-han.glb', 'public/models/cars/byd-han-far.glb'],
   },
   {
+    id: 'strale',
+    what: B('汉口路上那辆超跑（科尔维纳 Strale）的车身', 'The supercar on Hankou Road (the Corvina Strale)'),
+    who: '"Car Concept" by the Khronos Group, from the CC0 "Free Concept Car 004" by Unity Fan; changed: logos removed, materials and glass changed, simplified',
+    licence: B('CC BY 4.0', 'CC BY 4.0'),
+    url: 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept', licenceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    files: ['public/models/cars/strale.glb'],
+  },
+  {
     id: 'rocketbox',
     what: B('行人和部分角色的模型与动作', 'People and their animations'),
     who: 'Microsoft Rocketbox avatars, Copyright (c) 2020 Microsoft',

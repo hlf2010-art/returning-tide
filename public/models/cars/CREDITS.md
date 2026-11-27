@@ -6,8 +6,13 @@ assigned by part, simplified to a traffic budget (a near and a far version).
 
 | File | Model | Author | Source |
 |---|---|---|---|
+| `strale.glb` | "Car Concept" (from "Free Concept Car 004", CC0, by Unity Fan) | Khronos Group | https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept |
 | `byd-han.glb`, `byd-han-far.glb` | "Byd Han" | MattDoesBlender | https://sketchfab.com/3d-models/f7ee6b12224543c38f17f9122b4f1eaf |
 
 The game leaves the model's badges off (`src/world/fleet.js` skips the `logo5` parts) and never names the maker:
 drivers call it the Jinghe E7, an invented name. The body is still recognisably the real car's shape; a fully
 original body would remove that last resemblance.
+
+`strale.glb` is made by `tools/cars/supercar.mjs`. The Khronos licence excludes its logos and trademarks, so every
+Khronos and 3D Commerce mark is taken off (the emissive logo map, the plate, the tyre-wall lettering in colour and
+relief); the game shows it as the Corvina Strale, an invented marque, with an invented Shanghai plate.
