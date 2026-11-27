@@ -144,7 +144,7 @@ export function mirrorPeople(material, { wet = '0.0', key = 'plain', sheen = 1 }
 }
 
 // Standing water lies flat: blend the paving normal away wherever roughness is very low.
-function puddles(material, sheen = 1, slabs = false, lift = [1, 1, 1]) {
+function puddles(material, sheen = 1, slabs = false, lift = [1, 1, 1], wear = false) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.wetBoost = weatherUniforms.wetBoost;
     shader.uniforms.groundDamp = weatherUniforms.groundDamp;
@@ -206,6 +206,50 @@ function puddles(material, sheen = 1, slabs = false, lift = [1, 1, 1]) {
       }
       diffuseColor.rgb *= mix(1.0, 0.55, puddle);`);
 
+    if (wear) shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+      // An asphalt carriageway twenty years on: never one even grey. Big soft tonal drifts; rectangles of
+      // newer, darker asphalt where it was dug up and patched; a utility trench filled in along a lane; crack
+      // sealant laid in black snakes; the wheel paths of each lane darker and smoother; oil dripped down the
+      // middle of each lane. All laid out in metres on the ground.
+      float wHash(vec2 p) { return fract(sin(dot(p, vec2(27.17, 113.91))) * 43758.5453); }
+      float wNoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(wHash(i), wHash(i + vec2(1.0, 0.0)), f.x), mix(wHash(i + vec2(0.0, 1.0)), wHash(i + vec2(1.0, 1.0)), f.x), f.y); }
+      float tarLine;`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+      {
+        vec2 p = vWetXZ;
+        float drift = wNoise(p * 0.06) * 0.55 + wNoise(p * 0.21) * 0.3 + wNoise(p * 1.3) * 0.15;
+        diffuseColor.rgb *= 0.82 + 0.34 * drift;
+        // patches: on a 5 x 9 m grid, one cell in eleven, inset by a random margin
+        vec2 cs = vec2(5.0, 9.0), cid = floor(p / cs), f = fract(p / cs);
+        float ph = wHash(cid + 3.7);
+        vec2 m0 = 0.08 + 0.3 * vec2(wHash(cid + 1.1), wHash(cid + 2.3)), m1 = 0.92 - 0.3 * vec2(wHash(cid + 4.9), wHash(cid + 6.1));
+        float inP = step(ph, 0.09) * step(m0.x, f.x) * step(f.x, m1.x) * step(m0.y, f.y) * step(f.y, m1.y);
+        float edgeP = inP * (1.0 - step(0.012, min(min(f.x - m0.x, m1.x - f.x) * cs.x, min(f.y - m0.y, m1.y - f.y) * cs.y)));
+        diffuseColor.rgb *= mix(1.0, 0.76 + 0.1 * wNoise(p * 3.1), inP) * (1.0 - 0.3 * edgeP);
+        // a trench along the road (z) in some 40 m stretches, 0.7 m wide, its seams dark
+        float seg = floor(p.y / 41.0), sh = wHash(vec2(seg, 9.3));
+        float tx = -26.5 + 21.0 * wHash(vec2(seg, 2.2)), dT = abs(p.x - tx);
+        float inT = step(sh, 0.3) * step(dT, 0.35) * step(-28.0, p.x) * step(p.x, -4.0);
+        diffuseColor.rgb *= mix(1.0, 0.76, inT) * (1.0 - 0.35 * step(sh, 0.3) * step(-28.0, p.x) * step(p.x, -4.0) * (1.0 - smoothstep(0.0, 0.03, abs(dT - 0.35))));
+        // crack sealant: thin wandering black lines, here and there
+        vec2 q = p * 0.45 + vec2(wNoise(p * 1.3), wNoise(p * 1.3 + 7.0)) * 0.5;
+        float rdg = abs(wNoise(q) - 0.5);
+        tarLine = (1.0 - smoothstep(0.001, 0.0035, rdg)) * smoothstep(0.66, 0.76, wNoise(p * 0.11 + 3.0));
+        diffuseColor.rgb *= 1.0 - 0.4 * tarLine;
+        // the main road's lanes: wheel paths darker, oil down the middle
+        if (p.x > -28.0 && p.x < -4.0) {
+          float lc = p.x < -16.0 ? (p.x < -23.2 ? -25.6 : (p.x < -19.6 ? -21.4 : -17.8)) : (p.x > -8.8 ? -6.4 : (p.x > -12.4 ? -10.6 : -14.2));
+          float dx = abs(p.x - lc);
+          float wheel = exp(-pow((dx - 0.85) / 0.28, 2.0));
+          diffuseColor.rgb *= 1.0 - 0.1 * wheel;
+          float oil = (1.0 - smoothstep(0.1, 0.35, dx)) * smoothstep(0.7, 0.85, wNoise(vec2(p.x * 5.0, p.y * 2.2)));
+          diffuseColor.rgb *= 1.0 - 0.2 * oil;
+        }
+      }`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      roughnessFactor = mix(roughnessFactor, 0.35, tarLine * 0.8);`);
     if (slabs) shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
       // Paving that has been walked on for twenty-five years: no two granite slabs quite the same shade, now
@@ -252,7 +296,7 @@ function puddles(material, sheen = 1, slabs = false, lift = [1, 1, 1]) {
       roughnessFactor *= mix(0.92 + 0.16 * sHash(floor(vMapUv * 5.0 + 1e-3) + 4.4), 0.86, slabNew);
       roughnessFactor = mix(roughnessFactor, roughnessFactor * 0.62, feetHere);`);
   };
-  return mirrorPeople(material, { wet: 'max(puddle, 0.5 * wetW)', key: `puddles${slabs ? '-slabs' : ''}-${lift.join('-')}`, sheen });
+  return mirrorPeople(material, { wet: 'max(puddle, 0.5 * wetW)', key: `puddles${slabs ? '-slabs' : ''}${wear ? '-wear' : ''}-${lift.join('-')}`, sheen });
 }
 
 // Reflection strength for screen-space reflections, per pixel: standing water (low roughness in the
@@ -299,12 +343,30 @@ export function createMaterials() {
   M.deck = puddles(std({ map: pave.map, normalMap: pave.normalMap, roughnessMap: wetDeck, roughness: 1, metalness: 0, envMapIntensity: 1.0 }), 1, false, [2.4, 2.35, 2.3]);
   M.sidewalk = puddles(std({ map: walk.map, normalMap: walk.normalMap, roughnessMap: wetnessTexture(403, { puddle: 0.32, dry: 0.7, wet: 0.12 }), roughness: 1, metalness: 0 }), 1, true, [4.4, 4.4, 4.2]);
   M.sidewalk.roughnessMap.repeat.set(1 / 3, 1 / 3);
-  M.asphalt = puddles(std({ map: asph.map, normalMap: asph.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughnessMap: wetRoad, roughness: 1, metalness: 0 }), 0.35, false, [4.6, 4.2, 3.8]);
+  M.asphalt = puddles(std({ map: asph.map, normalMap: asph.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughnessMap: wetRoad, roughness: 1, metalness: 0 }), 0.35, false, [4.6, 4.2, 3.8], true);
   M.granite = mirrorPeople(std({ map: stone, color: 0x8d8a84, roughness: 0.55, metalness: 0 }));
   M.iron = std({ color: 0x141a17, roughness: 0.42, metalness: 0.7 });
   M.steel = std({ color: 0x9aa0a6, roughness: 0.3, metalness: 0.9 });
-  M.paint = std({ color: 0xd8d6cf, roughness: 0.55, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  M.paintYellow = std({ color: 0xc79a1e, roughness: 0.55, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  // road paint, worn: chips knocked out where tyres run over it (alpha), grime in what is left
+  const paintWear = (() => {
+    if (typeof document === 'undefined') return null;
+    const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+    const ctx = c.getContext('2d'), img = ctx.createImageData(S, S), d = img.data;
+    let a = 7; const r = () => { a = (a * 16807) % 2147483647; return a / 2147483647; };
+    for (let i = 0; i < S * S; i++) { const v = 200 + r() * 55; d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = v; d[i * 4 + 3] = 255; }
+    for (let i = 0; i < 260; i++) {
+      const x = r() * S, y = r() * S, rad = 0.6 + r() * r() * r() * 5;
+      for (let yy = Math.floor(y - rad); yy <= y + rad; yy++) for (let xx = Math.floor(x - rad); xx <= x + rad; xx++) {
+        if ((xx - x) ** 2 + (yy - y) ** 2 > rad * rad * (0.5 + 0.5 * r())) continue;
+        const q = (((yy % S) + S) % S) * S + (((xx % S) + S) % S); d[q * 4 + 3] = 0;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+    return t;
+  })();
+  M.paint = std({ map: paintWear, alphaTest: paintWear ? 0.5 : 0, color: 0xd8d6cf, roughness: 0.55, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  M.paintYellow = std({ map: paintWear, alphaTest: paintWear ? 0.5 : 0, color: 0xc79a1e, roughness: 0.55, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   M.hedge = std({ color: 0x1c2e1a, roughness: 0.95 });
   M.wood = std({ color: 0x5a4030, roughness: 0.6 });
   M.rubber = std({ color: 0x0b0b0c, roughness: 0.8 });
