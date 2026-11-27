@@ -497,7 +497,7 @@ def photo_skin(N, L, under):
         ws = sw / max(f + sw, 1e-6) * min(1.0, (f + sw) * 3)
         # where the photo reaches: the face, not the scalp, the ears, behind the jaw or under the chin
         reach = 1.0 - hairline(c) if c.z > NECK.z + 0.04 else 0.0
-        reach *= min(1.0, max(0.0, (c.z - (chin_z - 0.03)) / 0.03))
+        reach *= min(1.0, max(0.0, (c.z - (chin_z - 0.004)) / 0.016))   # (under the jaw the photos show the neck in shadow, or the background beside it)
         reach *= min(1.0, max(0.0, ((HEAD_J.y - 0.01) - c.y) / 0.025))
         if i in ears:
             reach = 0.0
@@ -1400,6 +1400,129 @@ def shell_cards(hs, rows_, kept, R, NL, c0, scalp_rows):
     return make_mesh("hair-cards", verts, faces, uvs, hair_material("hair-cards", hs["color"], img))
 
 
+def game_body(path, hair_lum):
+    """The character's own body from the game (sheet "body_glb"), as a BVH in this head's space: placed the way
+    the game's swapHead places this head on it (nose on nose, scaled by nose-to-chin), without its old head and
+    without its old sculpted hair (dark texels, which the game drops as well), so long hair lies on the jacket it
+    will really lie on, not on the bare MPFB body's different back and shoulders. (hair "over_old_hair": keep the
+    old hair below the head in it, for a game body that keeps it as a layer under the new hair.)"""
+    import numpy as np
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.abspath(path))
+    new = [o for o in bpy.data.objects if o not in before]
+    meshes = [o for o in new if o.type == "MESH"]
+    if not meshes:
+        return None
+    ob = max(meshes, key=lambda o: len(o.data.vertices))
+    dg = bpy.context.evaluated_depsgraph_get()
+    me = ob.evaluated_get(dg).to_mesh()
+    mw = ob.matrix_world
+    P = [mw @ v.co for v in me.vertices]
+    if max(p.z for p in P) - min(p.z for p in P) > 10:   # (in centimetres)
+        P = [p * 0.01 for p in P]
+    hg = ob.vertex_groups.get("Bip01_Head")
+    headw = [0.0] * len(P)
+    if hg:
+        for i, v in enumerate(ob.data.vertices):
+            for g in v.groups:
+                if g.group == hg.index:
+                    headw[i] = g.weight
+    hv = [P[i] for i in range(len(P)) if headw[i] > 0.6]
+    zs = sorted(p.z for p in hv)
+    zmid = (zs[0] + zs[-1]) / 2
+    cx = sum(p.x for p in hv) / len(hv)
+    nose = min((p for p in hv if abs(p.x - cx) < 0.02 and p.z < zmid), key=lambda p: p.y)
+    chin = min((p for p in hv if abs(p.x - cx) < 0.02 and p.y < nose.y + 0.05), key=lambda p: p.z)
+    centre = [v.co for v in hero.data.vertices if abs(v.co.x) < 0.006]
+    nn = min((c for c in centre if EYE_L.z - 0.065 < c.z < EYE_L.z - 0.015), key=lambda c: c.y)
+    nc = min((c.z for c in centre if c.y < nn.y + 0.05 and c.z > NECK.z))
+    sc = min(1.15, max(0.8, (nose.z - chin.z) / max(1e-4, nn.z - nc)))   # (clamped as the game clamps it)
+    print("game body: height %.3f, nose-chin %.4f vs %.4f, scale %.3f" % (max(p.z for p in P) - min(p.z for p in P), nose.z - chin.z, nn.z - nc, sc))
+    # its texture, for the old hair's dark texels
+    img = None
+    mt = ob.data.materials[0] if ob.data.materials else None
+    if mt and mt.use_nodes:
+        for nd in mt.node_tree.nodes:
+            if nd.type == "TEX_IMAGE" and nd.image:
+                img = nd.image; break
+    px = None
+    if img:
+        W, H = img.size
+        px = np.array(img.pixels[:], np.float32).reshape(H, W, 4)
+    uvl = me.uv_layers.active.data if me.uv_layers.active else None
+    verts, faces = [], []
+    fit = SHEET.get("game_fit")
+    if fit:
+        # exactly as the game placed this head on that body (people.js swapHead logs it: nose, newNose in
+        # centimetres / glTF metres, y up, and its scales), inverted: body (Blender, metres) to head
+        on, nN, S = fit["nose"], fit["newNose"], 100 * fit["s"]
+        sx_, sz_ = fit["sx"], fit["sz"]
+        def to_head(b):
+            X, Y, Z = 100 * b.x, 100 * b.z, -100 * b.y
+            return Vector((nN[0] + (X - on[0]) / (S * sx_), -(nN[2] + (Z - on[2]) / (S * sz_)), nN[1] + (Y - on[1]) / S))
+        verts = [to_head(p) for p in P]
+    else:
+        for i, p in enumerate(P):
+            verts.append(nn + (p - nose) / sc)
+    me.calc_loop_triangles()
+    for lt in me.loop_triangles:
+        a, b, c = lt.vertices
+        if headw[a] > 0.5 and headw[b] > 0.5 and headw[c] > 0.5:
+            continue
+        if px is not None and uvl is not None and not SHEET["hair"].get("over_old_hair", False):
+            u = sum(uvl[l].uv[0] for l in lt.loops) / 3; v = sum(uvl[l].uv[1] for l in lt.loops) / 3
+            col = px[min(H - 1, max(0, int(v * H))), min(W - 1, max(0, int((u % 1) * W)))]
+            lum = 0.3 * col[0] + 0.55 * col[1] + 0.15 * col[2]
+            if lum < hair_lum and not (col[0] > col[1] * 1.25 and col[0] > 0.3):
+                continue
+        faces.append((a, b, c))
+    ob.evaluated_get(dg).to_mesh_clear()
+    for o in new:
+        bpy.data.objects.remove(o, do_unlink=True)
+    print("game body: %d triangles kept" % len(faces))
+    return BVHTree.FromPolygons([tuple(v) for v in verts], faces)
+
+
+def hair_sheets(hs, bvh_body, clear):
+    """Under long hair, the dark mass of it lying on the body (named as a hair shell, so the game shades it as one
+    and breaks its lower edge and sides into strands): one sheet down the back from the shoulders to the ends,
+    wider below, and one down each side of the chest where the front locks fall, each a grid of points on the game
+    body's jacket (ray cast onto it) a little off it, under the locks. The game drops the old sculpted hair, and
+    these cover the holes it leaves."""
+    fall = hs["fall_cm"] / 100.0
+    top = max(co[i].z for i in group_verts_orig["scalp"])
+    z_bot = top - fall + 0.05
+    verts, faces, uvs = [], [], []
+    def sheet(xs_at, z0, z1, from_back, rows=26, cols=18):
+        base = len(verts); idx = {}
+        for r in range(rows):
+            t = r / (rows - 1)
+            z = z0 + (z1 - z0) * t
+            x0, x1 = xs_at(t)
+            for k in range(cols):
+                x = x0 + (x1 - x0) * k / (cols - 1)
+                o = Vector((x, 0.6 if from_back else -0.6, z))
+                hit = bvh_body.ray_cast(o, Vector((0, -1 if from_back else 1, 0)))
+                if hit[0] is None:
+                    continue
+                n = hit[1] if hit[1].y * (1 if from_back else -1) > 0 else -hit[1]
+                idx[(r, k)] = len(verts)
+                verts.append(hit[0] + n * clear * 0.7)
+                uvs.append((1.0 if k in (0, cols - 1) else 0.0, t))
+        for r in range(rows - 1):
+            for k in range(cols - 1):
+                q = [(r, k), (r, k + 1), (r + 1, k + 1), (r + 1, k)]
+                if all(c in idx for c in q):
+                    f = tuple(idx[c] for c in q)
+                    faces.append(f if from_back else f[::-1])
+    sheet(lambda t: (-0.06 - 0.07 * t, 0.06 + 0.07 * t), NECK.z - 0.015, z_bot, True)
+    for s_ in (1, -1):
+        sheet(lambda t, s_=s_: tuple(sorted((s_ * 0.045, s_ * (0.10 + 0.01 * t)))), NECK.z - 0.035, z_bot + 0.10, False, rows=20, cols=8)
+    col = [0.75 * (a + 0.45 * (b - a)) for a, b in zip(hs.get("root_color", hs["color"]), hs["color"])]
+    print("hair sheets: %d faces" % len(faces))
+    return make_mesh("hair-shell-fall", verts, faces, uvs, hair_material("hair-shell-fall", col))
+
+
 def groom_cards(hs, c0, face_half, bvh_shell):
     """Groomed hair (sheet hair "groom": how many locks): narrow see-through cards of fine strands, each grown from
     a root on the scalp and walked along a flow field: away from the parting, the front locks on the far side swept
@@ -1453,6 +1576,24 @@ def groom_cards(hs, c0, face_half, bvh_shell):
         return Vector((c0.x + r * math.sin(a2), c0.y - r * math.cos(a2), p.z))
     verts, faces, uvs = [], [], []
     ds = 0.006
+    # long hair (sheet hair "fall_cm": crown to ends): it falls past the jaw over the shoulders and down the back,
+    # off the body (the whole MPFB body is in bvh_head) by a jacket's thickness, the back's locks fanning out
+    # across the shoulder blades; "half_up": the top section gathered back to a tie at the back of the head and
+    # falling from there; "wave_cm": soft S-waves along the lengths, neighbouring locks in step
+    fall = hs.get("fall_cm", 0) / 100.0
+    max_x = hs.get("max_x_m", 1.0)
+    half = hs.get("half_up")
+    T = None
+    if half:
+        zt = EYE_L.z + half.get("z_m", 0.03)
+        hit = bvh_head.ray_cast(Vector((0.0, c0.y + 0.35, zt)), Vector((0, -1, 0)))
+        T = (hit[0] if hit[0] is not None else Vector((0.0, c0.y + 0.09, zt))) + Vector((0, 0.014, 0))
+    clear = hs.get("body_clear_m", 0.014)
+    bvh_body = game_body(SHEET["body_glb"], SHEET.get("hair_lum", 0.5)) if fall and SHEET.get("body_glb") else None
+    if bvh_body:
+        clear = hs.get("jacket_clear_m", 0.006)
+        if not hs.get("over_old_hair", False):   # (over the old hair, the game draws its own dark sheet there)
+            HAIR_EXTRA.append(hair_sheets(hs, bvh_body, clear))
     for i in range(n):
         p = root()
         if i % 6 == 0:   # (more along the parting, so it reads as a parting and not a bald stripe)
@@ -1475,20 +1616,43 @@ def groom_cards(hs, c0, face_half, bvh_shell):
             d = Vector((s * 0.8, 0.7, -0.3))
         else:                          # falling from the crown, away from the parting near it
             d = Vector((s * 0.9 * near_part + (p.x - c0.x) * 4.0, 0.25, -1.0))
+        # half up: the top section (not the loose locks framing the face) goes back to the tie
+        up = bool(T) and not wisp and p.z > EYE_L.z + half.get("above_m", 0.045) and not (front and abs(p.x - part) > 0.02 and rnd.random() < half.get("loose", 0.35))
+        reached = False
+        if fall and not up and not wisp:
+            if p.y < HEAD_J.y - 0.01 and abs(p.x) > 0.03:   # (the sides fall in front of the shoulders)
+                d = Vector((s * 0.08, -0.6, -1.0))
+            elif not front:                                 # (the back down the back, fanning out)
+                d = Vector(((p.x - c0.x) * 3.0, 0.35, -1.0))
         d.normalize()
         maxL = length * (1.5 if front else 1.35) * (1 + 0.12 * (rnd.random() - 0.5)) + (top - p.z) * 0.3
+        if fall:
+            maxL = fall * 1.7
         if wisp:
             maxL = rnd.uniform(0.012, 0.03)
         pts, L = [p.copy()], 0.0
         q = p.copy()
-        while L < maxL and len(pts) < 70:
+        fan = (p.x - c0.x) * 1.0 if fall and not front else 0.0
+        while L < maxL and len(pts) < (130 if fall else 70):
             loc, nrm, _, _ = bvh_head.find_nearest(q)
             if loc is not None:
                 h = (q - loc).dot(nrm)
                 want = off * min(1.0, 0.25 + L / 0.02)   # (rising off the scalp over its first two centimetres)
+                if fall and q.z < NECK.z + 0.02 and not bvh_body:   # (over the jacket, not the bare MPFB body)
+                    want += clear * min(1.0, (NECK.z + 0.02 - q.z) / 0.04)
                 if h < want:
                     q = q + nrm * (want - h)
                 d = d - nrm * min(0.0, d.dot(nrm)) * 0.9   # (no diving into the head)
+            if bvh_body and q.z < NECK.z + 0.03:   # (on the game body's jacket and shoulders)
+                loc, nrm, _, dist = bvh_body.find_nearest(q)
+                if loc is not None and dist < 0.08:
+                    if nrm.dot(q - loc) < 0 and dist > 0.02:
+                        nrm = -nrm
+                    h = (q - loc).dot(nrm)
+                    want = clear + 0.006 * u * vol
+                    if h < want:
+                        q = q + nrm * (want - h)
+                        d = d - nrm * min(0.0, d.dot(nrm)) * 0.9
             loc, nrm, _, dist = bvh_shell.find_nearest(q)   # (and lying on the hair shell, once off the scalp)
             if loc is not None and dist < 0.03 and L > 0.004:
                 if nrm.dot(loc - c0) < 0:
@@ -1499,17 +1663,58 @@ def groom_cards(hs, c0, face_half, bvh_shell):
                     q = q + nrm * (want - h)
                     d = d - nrm * min(0.0, d.dot(nrm)) * 0.9
             nz = mnoise.noise_vector(q * 14.0 + Vector((3.1, 1.7, 0.0)))
-            d = (d + Vector((0, 0, -0.16 - 0.4 * min(1.0, L / 0.05) - 0.8 * max(0.0, L / maxL - 0.6))) + nz * (0.05 + 0.12 * messy)).normalized()   # (the ends hang)
-            q = face_guard(q + d * ds)
-            L += ds
+            if up and not reached:
+                # (gathered: along the scalp to the tie, then falling from it)
+                d = (d * 0.35 + (T - q).normalized() * 0.65 + nz * 0.04).normalized()
+                if (q - T).length < 0.016:
+                    reached = True
+                    d = Vector(((q.x - T.x) * 3.0, 0.3, -1.0)).normalized()
+            else:
+                g = -0.16 - 0.4 * min(1.0, L / 0.05) - 0.8 * max(0.0, L / maxL - 0.6)
+                if fall:
+                    g = -0.5 - 0.5 * min(1.0, L / 0.1)
+                    d = d + Vector((fan * 0.03, 0, 0))
+                d = (d + Vector((0, 0, g)) + nz * (0.05 + 0.12 * messy)).normalized()   # (the ends hang)
+                if fall and q.z < NECK.z + 0.04 and abs(q.x - c0.x) > max_x:   # (hanging in, not out past the shoulders)
+                    d = (d - Vector((math.copysign(min(1.5, (abs(q.x - c0.x) - max_x) * 40.0), q.x - c0.x), 0, 0))).normalized()
+            step = ds if not fall or L < 0.08 else ds * 2
+            q = face_guard(q + d * step)
+            L += step
             pts.append(q.copy())
-            if q.z < zcut(q) and L > 0.03:
+            if fall:
+                if q.z < top - fall + 0.05 * mnoise.noise(Vector((p.x * 30, p.y * 30, 1.7))) and L > 0.1:
+                    break
+            elif q.z < zcut(q) and L > 0.03:
                 break
         if len(pts) < 4:
             continue
-        pts = pts[:-1:2] + [pts[-1]]   # (a vertex every 12 mm is plenty for the mesh)
+        if hs.get("wave_cm") and fall:
+            A, lam = hs["wave_cm"] / 100.0, hs.get("wave_len_cm", 6.0) / 100.0
+            ph = 2 * math.pi * mnoise.noise(p * 18.0 + Vector((0.3, 5.1, 2.2)))   # (in step with its neighbours)
+            Ls, acc_ = [0.0], 0.0
+            for j in range(1, len(pts)):
+                acc_ += (pts[j] - pts[j - 1]).length; Ls.append(acc_)
+            src = [q.copy() for q in pts]
+            for j in range(1, len(pts)):
+                if Ls[j] < 0.07:
+                    continue
+                ramp = min(1.0, (Ls[j] - 0.07) / 0.08)
+                tg = (src[min(j + 1, len(src) - 1)] - src[j - 1]).normalized()
+                loc, nrm, _, _ = bvh_head.find_nearest(src[j])
+                out = (src[j] - loc).normalized() if loc is not None and (src[j] - loc).length > 1e-6 else Vector((0, 1, 0))
+                sd = out.cross(tg)
+                if sd.length < 1e-6:
+                    continue
+                sd.normalize()
+                a = 2 * math.pi * Ls[j] / lam + ph
+                pts[j] = src[j] + sd * (A * ramp * math.sin(a)) + out * (0.35 * A * ramp * (1 + math.cos(a)) / 2)
+        if fall:   # (a vertex every 12 mm near the root; the lengths are already 12 mm a step, kept for the waves)
+            k8 = next((j for j, q in enumerate(pts) if (q - pts[0]).length > 0.08), len(pts))
+            pts = pts[:k8:2] + pts[k8::2] + ([pts[-1]] if (len(pts) - k8) % 2 == 0 else [])
+        else:
+            pts = pts[:-1:2] + [pts[-1]]   # (a vertex every 12 mm is plenty for the mesh)
         # into a card: across it square to its run, lying on the hair (its normal out of the head)
-        width = rnd.uniform(0.004, 0.009) * (1.0 + 0.5 * u) * (0.5 if wisp else 1.0)
+        width = rnd.uniform(0.004, 0.009) * (1.0 + 0.5 * u) * (0.5 if wisp else 1.0) * (hs.get("fall_width", 1.6) if fall and not wisp else 1.0)
         base = len(verts)
         band = min(3, int(u * 4 * (0.7 + 0.6 * rnd.random())))   # (the texture's four bands, darkest deepest)
         u0 = band * 0.25
@@ -1595,7 +1800,39 @@ def hair_locks(hs, rows_, kept, R, NL, c0, verts, faces, uvs):
 brow_ob = brows()
 lash_ob = lashes()
 hair_ob = hair_shell() if SHEET["hair"].get("style") == "shell" else hair_cards()
-parts = [hero, teeth, tongue, *eyes, brow_ob, lash_ob, hair_ob, *HAIR_EXTRA]
+
+
+def earrings():
+    """Stud earrings (sheet "earrings": {"radius_m", "color", "pearl"}): a small sphere on each ear lobe, its lowest
+    fleshy point, a little forward of it and out from the head."""
+    e = SHEET.get("earrings")
+    if not e:
+        return []
+    ears = group_verts(hero, "ears", 0.3)
+    out = []
+    for side in (1, -1):
+        vs = [co[i] for i in ears if co[i].x * side > 0]
+        if not vs:
+            continue
+        lobe = min(vs, key=lambda c: c.z)
+        near = [c for c in vs if c.z < lobe.z + 0.008]
+        cen = sum(near, Vector()) / len(near)
+        r = e.get("radius_m", 0.0045)
+        pos = Vector((cen.x + side * r * 0.6, cen.y - 0.001, cen.z + 0.003))
+        ob = uv_sphere("earring-" + ("l" if side > 0 else "r"), r, pos)
+        bpy.context.view_layer.objects.active = ob
+        ob.select_set(True); bpy.ops.object.transform_apply(location=True); ob.select_set(False)
+        mt, N, L, bs = mat("pearl")
+        bs.inputs["Base Color"].default_value = (*e.get("color", [0.86, 0.83, 0.78]), 1)
+        bs.inputs["Roughness"].default_value = 0.18
+        bs.inputs["Coat Weight"].default_value = 0.6 if e.get("pearl", True) else 0.0
+        ob.data.materials.append(mt)
+        for poly in ob.data.polygons: poly.use_smooth = True
+        out.append(ob)
+    return out
+
+
+parts = [hero, teeth, tongue, *eyes, brow_ob, lash_ob, hair_ob, *HAIR_EXTRA, *earrings()]
 
 
 # ------------------------------------------------------------------------------------------------ statistics

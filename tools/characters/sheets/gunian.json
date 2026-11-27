@@ -128,17 +128,39 @@
   },
   "hair": {
     "color": [
-      0.03,
-      0.02,
-      0.015
+      0.06,
+      0.04,
+      0.03
     ],
-    "length_cm": 30.0,
+    "length_cm": 16.0,
     "fringe_cm": 5.5,
     "wave": 0.55,
     "volume": 1.6,
-    "note": "long dark-brown wavy hair (in the game her Hunyuan hair is kept)",
-    "part_x": 0.012,
-    "curtain": 0.6
+    "note": "long dark-brown wavy hair, centre parting, half up: the top tied at the back, the rest falling over the shoulders and down the back (reference sheet back view)",
+    "part_x": 0.0,
+    "curtain": 0.6,
+    "style": "shell",
+    "groom": 2200,
+    "fall_cm": 62.0,
+    "half_up": {
+      "z_m": 0.035,
+      "above_m": 0.04,
+      "loose": 0.35
+    },
+    "wave_cm": 1.3,
+    "wave_len_cm": 11,
+    "sweep": 1,
+    "messy": 0.35,
+    "root_color": [
+      0.02,
+      0.014,
+      0.011
+    ],
+    "face_open_deg": 50,
+    "body_clear_m": 0.016,
+    "fall_width": 1.7,
+    "over_old_hair": true,
+    "max_x_m": 0.12
   },
   "rest_face": {
     "mouthPress": 0.15,
@@ -227,5 +249,32 @@
         ]
       ]
     }
+  },
+  "earrings": {
+    "radius_m": 0.0045,
+    "color": [
+      0.86,
+      0.83,
+      0.78
+    ],
+    "pearl": true
+  },
+  "body_glb": "public/people/gunian.glb",
+  "hair_lum": 0.5,
+  "game_fit": {
+    "note": "people.js swapHead's placement of this head on gunian.glb (log FIT with globalThis.__fit)",
+    "nose": [
+      0.396,
+      154.024,
+      6.664
+    ],
+    "newNose": [
+      0,
+      1.5573,
+      0.1604
+    ],
+    "s": 0.8,
+    "sx": 1.12,
+    "sz": 1.0
   }
 }

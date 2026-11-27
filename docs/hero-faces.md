@@ -332,3 +332,28 @@ painted shading in a line.
   jacket on Yu'an.
 
 ![neck before / after](hero-faces/round20-neck-before-after.png)
+
+## Round 21: Gu Nian from her reference sheet
+
+Mars sent Gu Nian's character sheet (front, side and back in an A-pose, and a portrait; `tools/characters/ref/`).
+The face is projected from those photos (round 20's photo work, `photo` in her sheet), and the hair follows the back
+view: long dark waves, half up and tied at the back of the head, centre parting, pearl studs.
+
+- Hair: strand cards grown over the scalp (`groom` 2200); the top section is gathered to a tie and falls from it
+  (`half_up`); the rest falls over the shoulders and down the back with soft S-waves (`wave_cm`, `wave_len_cm`).
+  Below the neck the locks lie on her own game body (`body_glb`, placed exactly as the game places the head:
+  `game_fit` from swapHead's log), over where her old sculpted hair was (`over_old_hair`), and hang in front of the
+  shoulders rather than out past them (`max_x_m`).
+- The old scan's hair is one surface with her jacket. In the game it is dropped (`dropHair`), and the hole it leaves
+  in the jacket is covered by one smooth dark sheet just under the new locks (people.js `underHairSheet`), so the
+  gaps between locks show hair, never holes or jacket.
+- Her old neck is one surface with the collar, so it is not drawn in under the new neck (that tore the collar into
+  shards); the new neck's crossfade lies over it. Its colour comes from skin texels only (the ivory collar is as
+  warm as skin but paler), and the body's skin is retinted from the old face's skin texels only (the dark hair in
+  the average had turned the V of her chest white).
+- The photo stops at the jaw: under it the photos show the neck in shadow, or the background beside it.
+- Still to do: the collar edge at the base of her neck is a little ragged (the scan's own triangles); the waves are
+  softer than in the photos; brows and the whites of the eyes need another pass; the half-up tie is a band rather
+  than a gathered knot.
+
+![Gu Nian: reference, before, after](hero-faces/round21-gunian-before-after.png)
