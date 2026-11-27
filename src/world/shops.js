@@ -32,20 +32,55 @@ export function createManner(curbH, { x = MANNER.x, zWall = MANNER.zWall } = {})
   add(new THREE.BoxGeometry(0.1, 3.0, D), black, x - W / 2 + 0.05, y0 + 1.5, zWall + D / 2);  // side frames
   add(new THREE.BoxGeometry(0.1, 3.0, D), black, x + W / 2 - 0.05, y0 + 1.5, zWall + D / 2);
   add(new THREE.BoxGeometry(W, 0.9, 0.08), black, x, y0 + 0.45, zf - 0.04);                  // stall riser under the glass
-  // the inside: white tiles, lit from above
-  const tiles = panel(W - 0.2, 2.9, (c, w, h) => {
-    c.fillStyle = '#f4f4f1'; c.fillRect(0, 0, w, h);
-    c.strokeStyle = 'rgba(0,0,0,0.12)'; c.lineWidth = 2;
-    for (let yy = 0; yy < h; yy += h / 18) { c.beginPath(); c.moveTo(0, yy); c.lineTo(w, yy); c.stroke(); }
-    for (let row = 0, yy = 0; yy < h; yy += h / 18, row++) for (let xx = (row % 2) * (w / 32); xx < w; xx += w / 16) { c.beginPath(); c.moveTo(xx, yy); c.lineTo(xx, yy + h / 18); c.stroke(); }
-    // the menu, mounted on the tiles
-    c.fillStyle = '#111'; c.fillRect(w * 0.08, h * 0.08, w * 0.5, h * 0.3);
-    c.fillStyle = '#fff'; c.font = `700 ${h * 0.032}px ${UI}`; c.textBaseline = 'top';
+  // the inside, as their small shops are: white metro tiles to head height (grout, a few tiles a shade off, the
+  // grime lower down by the counter), a light oak bulkhead above with the lit menu box hung on it, oak reveals
+  // at the sides, an oak-slatted ceiling with two warm linear lights and three small pendants over the pass
+  const oakTex = (() => {
+    const [c, k] = makeCanvas(256, 256);
+    k.fillStyle = '#c9a77c'; k.fillRect(0, 0, 256, 256);
+    let sd = 3; const r = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 90; i++) { k.strokeStyle = `rgba(${110 + r() * 40},${70 + r() * 30},${40 + r() * 20},${0.08 + r() * 0.12})`; k.lineWidth = 1 + r() * 2; const y = r() * 256; k.beginPath(); k.moveTo(0, y); k.bezierCurveTo(80, y + (r() - 0.5) * 12, 170, y + (r() - 0.5) * 12, 256, y + (r() - 0.5) * 8); k.stroke(); }
+    return tex(c);
+  })();
+  const oak = std({ map: oakTex, roughness: 0.6, emissive: 0xffe2bf, emissiveMap: oakTex, emissiveIntensity: 0.06 });
+  const tiles = panel(W - 0.2, 2.15, (c, w, h) => {
+    c.fillStyle = '#d9d7d0'; c.fillRect(0, 0, w, h);                           // the grout
+    const rows = 16, th = h / rows, tw = w / 18;
+    let sd = 11; const r = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+    for (let row = 0; row < rows; row++) for (let xx = -(row % 2) * tw / 2; xx < w; xx += tw) {
+      const v = 242 - r() * 6 - (row > rows - 6 ? (row - rows + 6) * 1.6 : 0);
+      c.fillStyle = `rgb(${v},${v - 1},${v - 4})`; c.fillRect(xx + 1.5, row * th + 1.5, tw - 3, th - 3);
+      c.fillStyle = 'rgba(255,255,255,0.35)'; c.fillRect(xx + 2, row * th + 2, tw - 4, th * 0.18);   // the glaze catching the light
+    }
+  }, { emissive: 0.14, px: 512 });
+  tiles.position.set(x, y0 + 1.075, zWall + 0.02); g.add(tiles);
+  add(new THREE.BoxGeometry(W - 0.2, 0.8, 0.03), oak, x, y0 + 2.55, zWall + 0.03);                  // the bulkhead
+  for (const sx of [-1, 1]) add(new THREE.BoxGeometry(0.03, 2.95, D - 0.05), oak, x + sx * (W / 2 - 0.115), y0 + 1.475, zWall + D / 2);   // the reveals
+  add(new THREE.BoxGeometry(W - 0.2, 0.02, D), oak, x, y0 + 2.94, zWall + D / 2);                   // the ceiling
+  for (let i = 0; i < 14; i++) add(new THREE.BoxGeometry(0.025, 0.035, D - 0.04), std({ color: 0x9c7a52, roughness: 0.7 }), x - W / 2 + 0.25 + i * ((W - 0.5) / 13), y0 + 2.915, zWall + D / 2);   // its slats
+  const led = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.7, 1.45, 1.1) });
+  for (const z of [zWall + 0.22, zf - 0.2]) add(new THREE.BoxGeometry(W - 0.6, 0.012, 0.03), led, x, y0 + 2.89, z);
+  for (const dx of [-0.55, -0.1, 0.35]) {                                                          // the pendants over the pass and the hatch
+    add(new THREE.CylinderGeometry(0.003, 0.003, 0.5, 4), black, x + dx, y0 + 2.66, zWall + 0.55);
+    add(new THREE.CylinderGeometry(0.035, 0.07, 0.09, 16, 1, true), black, x + dx, y0 + 2.37, zWall + 0.55).material.side = THREE.DoubleSide;
+    add(new THREE.SphereGeometry(0.028, 10, 6), led, x + dx, y0 + 2.33, zWall + 0.55);
+  }
+  // the menu: a lit box hung on the bulkhead, prices in the chain's manner
+  const menuBox = panel(1.5, 0.52, (c, w, h) => {
+    c.fillStyle = '#121212'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#f4f1ea'; c.textBaseline = 'middle';
     const menu = [['美式 Americano', '10'], ['拿铁 Latte', '15'], ['燕麦拿铁 Oat Latte', '18'], ['澳白 Flat White', '18'], ['桂花拿铁 Osmanthus Latte', '20']];
-    menu.forEach(([n, p], i) => { c.textAlign = 'left'; c.fillText(n, w * 0.1, h * (0.1 + i * 0.054)); c.textAlign = 'right'; c.fillText(p, w * 0.56, h * (0.1 + i * 0.054)); });
-    c.fillStyle = 'rgba(255,255,255,0.6)'; c.textAlign = 'left'; c.font = `500 ${h * 0.022}px ${UI}`; c.fillText('自带杯减5元 · bring your own cup −¥5', w * 0.1, h * 0.375);
-  }, { emissive: 0.32, px: 512 });
-  tiles.position.set(x, y0 + 1.5, zWall + 0.02); g.add(tiles);
+    c.font = `700 ${h * 0.12}px ${UI}`;
+    menu.forEach(([n, pr], i) => { const y = h * (0.15 + i * 0.15); c.textAlign = 'left'; c.fillText(n, w * 0.05, y); c.textAlign = 'right'; c.fillText(pr, w * 0.95, y); });
+    c.fillStyle = 'rgba(244,241,234,0.6)'; c.textAlign = 'left'; c.font = `500 ${h * 0.075}px ${UI}`; c.fillText('自带杯减5元 · bring your own cup −¥5', w * 0.05, h * 0.9);
+  }, { emissive: 0.75, px: 360 });
+  menuBox.position.set(x - 0.35, y0 + 2.5, zWall + 0.1); g.add(menuBox);
+  add(new THREE.BoxGeometry(1.54, 0.56, 0.05), black, x - 0.35, y0 + 2.5, zWall + 0.07);
+  // a shelf on the tiles: retail bags of beans, a row of the tumblers they sell
+  add(new THREE.BoxGeometry(1.3, 0.025, 0.16), oak, x + 1.2, y0 + 1.72, zWall + 0.1);
+  const kraft = std({ color: 0xb48c5c, roughness: 0.9 }), tumbler = std({ color: 0xe9e6df, roughness: 0.35 });
+  for (let i = 0; i < 5; i++) add(new THREE.BoxGeometry(0.12, 0.2, 0.07), kraft, x + 0.7 + i * 0.15, y0 + 1.835, zWall + 0.1);
+  for (let i = 0; i < 4; i++) add(new THREE.CylinderGeometry(0.035, 0.03, 0.16, 12), tumbler, x + 1.25 + i * 0.12, y0 + 1.815 + 0.0, zWall + 0.06).position.x = x + 0.75 + i * 0.2;
   // the back counter (slim: the baristas work in the aisle between it and the window), the
   // espresso machine, grinders, knock box, tamping mat, cups and lids, syrups
   const CT = y0 + 0.93, zc = zWall + 0.38;                                     // counter top, counter front
