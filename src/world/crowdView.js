@@ -18,6 +18,7 @@ import { nearRank, viewCos } from '../engine/crowd.js';
 import { bakeBones } from './crowdBake.js';
 import { createCrowdMid } from './crowdMid.js';
 import { canopyGeometry } from './umbrella.js';
+import { lookOf, markZones, lookMaterial, setLookUniforms, makeAccessories, wearAccessories, cardTint } from './crowdLooks.js';
 
 // a reaction to being bumped (engine/social.js kinds, set by main.js on a crowd person) -> clip
 const GESTURE = { sorry: 'wave', fine: 'shrug', scold: 'angry', tut: 'look', look: 'look' };
@@ -132,7 +133,8 @@ function impostorMaterial(atlas, size) {
 // material, so the same avatar in a camel coat and in black reads as two people, and summer clothes
 // darken toward a 12-degree evening. Kept on the person through every tier: the full person, the
 // middle tier and (paler) the far card. Light colours are mixed toward white so they tint, not paint.
-const COATS = ['#2a2a2e', '#1f2740', '#45464c', '#a98a62', '#8b8468', '#6a2a33', '#d9d2c4', '#3c4a3e', '#5b4636', '#ffffff', '#ffffff', '#ffffff']
+const COATS = ['#2a2a2e', '#1f2740', '#45464c', '#a98a62', '#8b8468', '#6a2a33', '#d9d2c4', '#3c4a3e', '#5b4636', '#a9bcd6', '#d4a5a5', '#a3242c',
+  '#c8b28a', '#7a7a7e', '#eceae6', '#b8902f', '#5d6043', '#a99ac2', '#ffffff', '#ffffff']   // (the throng's cards; the crowd's own people: world/crowdLooks.js)
   .map((c) => new THREE.Color(c));
 const _coat = new THREE.Color();
 export function coatOf(id, out = _coat) {
@@ -176,6 +178,10 @@ function flagMesh(color) {
 
 export function createCrowdView({ scene, renderer, people, crowd, roles, nearCount = 16, midCount = 0, camera, lod = true }) {
   const group = new THREE.Group(); group.name = 'crowd'; scene.add(group);
+  // each person's own clothes, hair and build (world/crowdLooks.js): mark what is a top, a bottom and hair on every body
+  for (const r of roles) if (people.avatars[r]) markZones(people.avatars[r]);
+  const castOf = (role) => people.manifest.cast[role] || {};
+  const look = (a) => lookOf(a, castOf(a.role));
   const atlas = bakeImpostors(renderer, people, roles);
   // the middle tier: GPU-skinned instances from a baked bone texture (world/crowdBake.js, crowdMid.js)
   let mid = null;
@@ -246,12 +252,15 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     if (made >= cap) return null;
     made++;
     const person = createPerson(people, role);
-    let bodyMat = null;
+    let bodyMat = null; const lookMats = [], ref = people.avatars[role].userData.zoneRef;
     person.root.traverse((o) => {
       if (!o.isMesh) return;
       o.castShadow = true; o.receiveShadow = true;
-      if (!bodyMat && o.material && /_body$/i.test(o.material.name || '')) { o.material = bodyMat = o.material.clone(); }   // (its own, for the coat)
+      // its own body and hair materials, for this person's clothes and hair (world/crowdLooks.js)
+      if (ref && o.isSkinnedMesh && o.geometry.attributes.zone && o.material && /_body$|_opacity$|hair/i.test(o.material.name || '')) { o.material = lookMaterial(o.material, ref); lookMats.push(o.material); if (/_body$/i.test(o.material.name)) bodyMat = o.material; }
+      else if (!bodyMat && o.material && /_body$/i.test(o.material.name || '')) { o.material = bodyMat = o.material.clone(); }
     });
+    const kit = makeAccessories(person);                                     // (scarf, hats, glasses, mask, bags: shown per person)
     const phone = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.15, 0.009), phoneMat); phone.visible = false;
     group.add(person.root, phone);
     const umb = new THREE.Group(); umb.visible = false;
@@ -261,7 +270,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     umb.add(shaft, canopy); group.add(umb);
     // paper carrier bags (after a shop), in the hands
     const bags = [0, 1, 2].map(() => { const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ roughness: 0.75 }); const bx = new THREE.Mesh(BAG_BOX, m); bx.position.y = -0.27; bx.castShadow = true; g.add(bx, new THREE.Mesh(BAG_CORD, phoneMat)); g.children[1].position.y = -0.1; g.visible = false; group.add(g); return g; });
-    const b = { person, phone, agent: null, flag: null, umb, canopy, bodyMat, bags };
+    const b = { person, phone, agent: null, flag: null, umb, canopy, bodyMat, bags, lookMats, kit };
     pool.push(b);
     return b;
   }
@@ -282,7 +291,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   let midSet = new Set();
   const midFade = new Float32Array(N), midPhase = new Float32Array(N), midYaw = new Float32Array(N).fill(NaN);
   const fading = new Set();
-  const _fw = new THREE.Vector3();
+  const _fw = new THREE.Vector3(), _ct = [1, 1, 1];
   const view = {
     group, atlas, stats: S,
     setNearCount(n) { nearCount = n; },
@@ -334,8 +343,10 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
           const a = crowd.agents[id], b = body(a.role);
           if (!b) { nearSet.delete(id); continue; }
           b.agent = a; live.set(id, b); b.person.root.visible = true; b.person.root.rotation.y = Number.isNaN(midYaw[id]) ? a.heading : midYaw[id];
-          b.person.root.scale.setScalar(0.01 * (a.scale || 1));                     // the same height as their card
-          if (b.bodyMat) coatOf(a.id, b.bodyMat.color);
+          const lk = look(a), sc = 0.01 * (a.scale || 1);
+          b.person.root.scale.set(sc * lk.w, sc, sc * lk.w);                      // the same height as their card, their own build
+          if (b.lookMats.length) { for (const m of b.lookMats) setLookUniforms(m.userData.look, lk); } else if (b.bodyMat) coatOf(a.id, b.bodyMat.color);
+          wearAccessories(b.kit, lk);
           if (midFade[id] > 0 && a.v > 0.2 && b.person.actions.base.walk) {         // (in step with how they were walking a moment ago)
             b.person.play('walk', 0); b.person.actions.base.walk.time = midPhase[id] * b.person.actions.base.walk.getClip().duration;
           }
@@ -415,7 +426,9 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
             clip = act === 'photo' || act === 'selfie' || a.phone ? 'phone' : act === 'look' || a.kind === 'guide' ? 'look' : act === 'talk' ? 'talk1' : 'idle';
             const c = bk.clips[clip] || bk.clips.idle; t = now / c.dur + hash(id, 5);
           }
-          return mid.push(a.role, a.x, a.y, a.z, yaw, a.scale || 1, clip, t, midFade[id], coatOf(id));
+          const lk = look(a), pushed = mid.push(a.role, a.x, a.y, a.z, yaw, a.scale || 1, clip, t, midFade[id], people.avatars[a.role].userData.zoneRef ? null : coatOf(id));   // (the look dyes the clothes: no coat over it)
+          if (pushed) mid.dress(a.role, lk);
+          return pushed;
         };
         for (const id of midSet) drawMid(id, true);
         for (const id of fading) if (!drawMid(id, false)) fading.delete(id);
@@ -452,8 +465,8 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         iCell.setXYZW(n, c[0], c[1], pose, a.scale || 1);
         // the light they stand in changes slowly: worked out for an eighth of the crowd each frame
         if (tintAt[a.id] < 0 || ((frameNo + a.id) & 7) === 0) { const t3 = lightAt(a.x, a.z, a.y); tint[a.id * 3] = t3[0]; tint[a.id * 3 + 1] = t3[1]; tint[a.id * 3 + 2] = t3[2]; tintAt[a.id] = frameNo; }
-        const cc = coatOf(a.id), ck = 0.45;                  // (the coat, paler: the card is the whole figure, face and all)
-        iTint.setXYZ(n, tint[a.id * 3] * (1 - ck + ck * cc.r), tint[a.id * 3 + 1] * (1 - ck + ck * cc.g), tint[a.id * 3 + 2] * (1 - ck + ck * cc.b));
+        const cc = cardTint(look(a), _ct);                  // (their top's colour, paler: the card is the whole figure, face and all)
+        iTint.setXYZ(n, tint[a.id * 3] * cc[0], tint[a.id * 3 + 1] * cc[1], tint[a.id * 3 + 2] * cc[2]);
         _m.makeTranslation(a.x, a.y + 0.02, a.z); blobs.setMatrixAt(n, _m);
         // an umbrella over the card: up in the raised hand, held a little forward
         const u = umbrellaFor(a, dt);

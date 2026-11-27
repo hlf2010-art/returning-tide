@@ -4,7 +4,7 @@
 //   personaFor(p, sex)     the street persona of that sex nearest to p (itself when it already fits)
 //   sexOf(persona)         'f' | 'm' | null
 // which avatars are women (tools/rocketbox/convert.mjs CAST and the named heroines)
-export const FEMALE_ROLES = new Set(['su', 'p2', 'p5', 'c1', 'c2', 'c3', 'c4', 'c8', 'k1', 'gunian', 'zhiwei', 'yuan']);
+export const FEMALE_ROLES = new Set(['su', 'p2', 'p5', 'c1', 'c2', 'c3', 'c4', 'c8', 'k1', 'n1', 'n2', 'n3', 'n4', 'n5', 'gunian', 'zhiwei', 'yuan']);
 export const roleSex = (role) => (role == null ? null : FEMALE_ROLES.has(role) ? 'f' : 'm');
 
 export const PERSONA_SEX = {

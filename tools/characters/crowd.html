@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crowd looks check</title>
+<style>html, body { margin: 0; background: #9aa0a6; } canvas { display: block; }</style>
+</head>
+<body>
+<script type="module">
+// Dev-only: a line-up of street people, each in their own look (world/crowdLooks.js), as the crowd dresses them.
+//   /tools/characters/crowd.html                 24 people, one of each body, then repeats
+//   /tools/characters/crowd.html?n=32&seed=5&roles=c1,c2&raw=1&cols=8&yaw=0&zones=1
+//   raw=1: the bodies as they come (no look); zones=1: the zones as colours (top red, bottom blue, hair green)
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { loadPeople, createPerson } from '/src/world/people.js';
+import { markZones, makeLook, lookMaterial, setLookUniforms, makeAccessories, wearAccessories } from '/src/world/crowdLooks.js';
+
+const qs = new URLSearchParams(location.search);
+const n = +qs.get('n') || 24, cols = +qs.get('cols') || 8, seed = +qs.get('seed') || 1, raw = qs.get('raw') === '1', yaw = (+qs.get('yaw') || 0) * Math.PI / 180;
+const people = await loadPeople('/people/');
+const roles = (qs.get('roles') || Object.keys(people.manifest.cast).filter((r) => !people.manifest.cast[r].named && !['lin', 'su', 'player', 'dad'].includes(r)).join(',')).split(',');
+const W = cols * 200, H = Math.ceil(n / cols) * 420;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9aa0a6);
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(2, 4, 5); scene.add(sun);
+const cam = new THREE.OrthographicCamera(-W / 2 / 200 * 0.9, W / 2 / 200 * 0.9, 0.95 * H / 420 * 2.1 / 2 + 0, -H / 420 * 2.1 / 2, -20, 20);
+const rows = Math.ceil(n / cols);
+cam.top = rows * 2.1 - 0.05; cam.bottom = -0.05; cam.left = -0.9 * 0.5; cam.right = cols * 0.9 - 0.45; cam.position.set(0, 0, 5); cam.updateProjectionMatrix();
+for (const r of roles) markZones(people.avatars[r]);
+const kinds = ['tourist', 'local', 'tourist', 'elder', 'local', 'tourist'];
+for (let i = 0; i < n; i++) {
+  const role = roles[i % roles.length], cast = people.manifest.cast[role];
+  const p = createPerson(people, role), ref = people.avatars[role].userData.zoneRef;
+  const a = { id: i * 7 + seed * 1000, role, kind: cast.elder ? 'elder' : kinds[i % kinds.length], abroad: false, child: !!cast.child };
+  const look = makeLook(a, cast);
+  if (!raw) {
+    p.root.traverse((o) => {
+      if (!o.isSkinnedMesh || !o.geometry.attributes.zone || !/_body$|_opacity$|hair/i.test(o.material.name)) return;
+      if (qs.get('zones')) { o.material = new THREE.MeshBasicMaterial({ color: 0xffffff }); o.material.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float zone; flat varying float vZ;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvZ = zone;'); sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nflat varying float vZ;').replace('#include <map_fragment>', 'diffuseColor.rgb = vZ < 0.5 ? vec3(0.8) : vZ < 1.5 ? vec3(1.,0.,0.) : vZ < 2.5 ? vec3(0.,0.,1.) : vec3(0.,1.,0.);'); }; return; }
+      o.material = lookMaterial(o.material, ref); setLookUniforms(o.material.userData.look, look);
+    });
+    p.root.scale.set(0.01 * look.w, 0.01 * look.h, 0.01 * look.w);
+  }
+  p.play('idle', 0); p.update(0.01, null);
+  if (!raw && !qs.get('zones')) wearAccessories(makeAccessories(p), look);
+  p.root.position.set((i % cols) * 0.9, (rows - 1 - Math.floor(i / cols)) * 2.1, 0); p.root.rotation.y = yaw;
+  scene.add(p.root);
+}
+renderer.render(scene, cam);
+window.done = true;
+</script>
+</body>
+</html>
