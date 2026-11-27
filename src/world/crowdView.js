@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { PEOPLE_LAYER } from './peopleReflect.js';
 import { createPerson } from './people.js';
 import { holdPhone } from './pedestriansReal.js';
-import { twoBone } from './driverPose.js';
+import { applyPose, blendPose, palmPhone, phoneMesh, phoneCase } from './photoPose.js';
 import { L, deckLamps, DECK_LAMP_X } from './layout.js';
 import { flinchPose } from '../engine/flinch.js';
 import { nearRank, viewCos } from '../engine/crowd.js';
@@ -49,18 +49,20 @@ export function bakeImpostors(renderer, people, roles) {
   roles.forEach((role, ri) => {
     const bx = ri % GRID, by = Math.floor(ri / GRID);
     cells[role] = [bx, by];
-    const views = [];
+    const views = [], phones = [];
     for (let k = 0; k < ROWS; k++) {
       const p = createPerson(people, role);
       p.root.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
       scene.add(p.root); views.push(p);
+      const ph = phoneMesh(); ph.matrixAutoUpdate = false; ph.visible = false; scene.add(ph); phones.push(ph);
     }
     const clips = people.clips[views[0].sex];
     const walkDur = clips.find((c) => c.name === 'walk').duration;
     const poses = [];
     for (let f = 0; f < 8; f++) poses.push(['walk', walkDur * f / 8]);
-    poses.push(['idle', 0.6], ['phone', (clips.find((c) => c.name === 'phone') || { duration: 2 }).duration * 0.4]);
-    poses.forEach(([clip, time], col) => {
+    // (the last column: a phone up for a photo, landscape, in both hands: world/photoPose.js)
+    poses.push(['idle', 0.6], ['phone', (clips.find((c) => c.name === 'phone') || { duration: 2 }).duration * 0.4, 'land']);
+    poses.forEach(([clip, time, held], col) => {
       // pose each view directly (no cross-fades: they run on the mixer's clock, which this jumps about)
       const name = clips.some((c) => c.name === clip) ? clip : 'idle';
       views.forEach((p, k) => {
@@ -70,6 +72,8 @@ export function bakeImpostors(renderer, people, roles) {
         p.root.rotation.set(0, k * Math.PI / 4, 0); p.root.position.set(0, 0, 0); p.root.updateMatrixWorld(true);
         p.bones.chest.getWorldPosition(hips);              // keep the body centred in its cell (walks can drift)
         p.root.position.set(-hips.x, k * FRAME_H, -hips.z); p.root.updateMatrixWorld(true);
+        const m = held ? applyPose(p, held) : null;
+        phones[k].visible = !!m; if (m) phones[k].matrix.copy(m);
       });
       const x = (bx * COLS + col) * CW, y = by * ROWS * CH;
       rt.viewport.set(x, y, CW, CH * ROWS); rt.scissor.set(x, y, CW, CH * ROWS);
@@ -77,6 +81,7 @@ export function bakeImpostors(renderer, people, roles) {
       renderer.render(scene, cam);
     });
     for (const p of views) { scene.remove(p.root); p.root.traverse((o) => { if (o.isSkinnedMesh) o.skeleton.dispose(); }); }
+    for (const ph of phones) scene.remove(ph);
   });
   console.info(`crowd impostors: ${roles.length} avatars baked in ${Math.round(performance.now() - t0)} ms`);
   rt.scissorTest = false; rt.viewport.set(0, 0, W, H); rt.scissor.set(0, 0, W, H);
@@ -252,7 +257,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
       o.castShadow = true; o.receiveShadow = true;
       if (!bodyMat && o.material && /_body$/i.test(o.material.name || '')) { o.material = bodyMat = o.material.clone(); }   // (its own, for the coat)
     });
-    const phone = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.15, 0.009), phoneMat); phone.visible = false;
+    const phone = phoneMesh(); phone.visible = false; phone.material[0].color.copy(phoneCase(made));
     group.add(person.root, phone);
     const umb = new THREE.Group(); umb.visible = false;
     const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.92, 6), phoneMat); shaft.position.y = 0.46;
@@ -261,7 +266,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     umb.add(shaft, canopy); group.add(umb);
     // paper carrier bags (after a shop), in the hands
     const bags = [0, 1, 2].map(() => { const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ roughness: 0.75 }); const bx = new THREE.Mesh(BAG_BOX, m); bx.position.y = -0.27; bx.castShadow = true; g.add(bx, new THREE.Mesh(BAG_CORD, phoneMat)); g.children[1].position.y = -0.1; g.visible = false; group.add(g); return g; });
-    const b = { person, phone, agent: null, flag: null, umb, canopy, bodyMat, bags };
+    const b = { person, phone, agent: null, flag: null, umb, canopy, bodyMat, bags, pk: null, pw: 0 };
     pool.push(b);
     return b;
   }
@@ -269,13 +274,21 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
   const BAG_COLORS = [0xf3f1ec, 0x1a1a1c, 0xb98a55, 0xb3262e, 0xe7d9c4, 0x2b4a7a, 0xe86a2a].map((c) => new THREE.Color(c));
   const flags = crowd.tours.map((t, i) => { const f = flagMesh(t.flag || FLAG_COLORS[i % 4]); group.add(f); return f; });
   const _e = new THREE.Vector3(), _t = new THREE.Vector3(), _p = new THREE.Vector3(), _h = new THREE.Vector3();
-  function raise(b, tx, tz, up = 0) {
-    const bones = b._bones || (b._bones = ['Bip01_R_UpperArm', 'Bip01_R_Forearm', 'Bip01_R_Hand'].map((n) => b.person.root.getObjectByName(n)));
-    if (!bones[2]) return; b.person.bones.head.getWorldPosition(_e);
-    const dx = tx - _e.x, dz = tz - _e.z, d = Math.hypot(dx, dz) || 1, fx = dx / d, fz = dz / d;
-    _t.set(_e.x + fx * 0.32 - fz * 0.04, _e.y - 0.05 + up, _e.z + fz * 0.32 + fx * 0.04); _p.set(-fz * 0.8, -1, fx * 0.8).normalize();
-    twoBone(bones[0], bones[1], bones[2], _t, _p);
+  // at the railing (engine/crowd.js railSpot): which pose now (world/photoPose.js) over which clip, and is a
+  // phone in hand. A photo isn't one long hold: the phone goes up for a few seconds, comes down to look at
+  // what was taken (the texting clip), goes up again; everyone on their own rhythm
+  const PHOTO_CLIP = { land: 'photo:land', port: 'photo:port', one: 'photo:one', selfie: 'selfie', lean: 'lean' };
+  function railPose(a, now) {
+    const act = a.state === 'act' ? a.act : null;
+    if (act === 'photo' || act === 'selfie') {
+      const period = 6 + hash(a.id, 11) * 7, ph = (now / period + hash(a.id, 12)) % 1;
+      const up = ph < (act === 'selfie' ? 0.8 : 0.7);
+      return { kind: up ? (act === 'selfie' ? 'selfie' : a.shot || 'land') : null, base: 'phone', phone: true };
+    }
+    if (act === 'lean') return { kind: 'lean', base: 'idle', phone: false };
+    return null;
   }
+  const _pp = new THREE.Vector3(), _pq2 = new THREE.Quaternion(), _ps = new THREE.Vector3();
   let nearSet = new Set(), rankT = 0, rankFx = 0, rankFz = 0;
   const S = { near: 0, mid: 0, far: 0 };
   // middle tier state per agent: in it (fading in), leaving it (fading out); its own stride phase
@@ -293,7 +306,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
     nearAgents() { return [...live.keys()].map((id) => crowd.agents[id]).filter(Boolean); },
     bodyOf(a) { return live.get(a.id) || null; },
     update(dt, eye, opts = {}) {
-      const t0 = performance.now() / 260;
+      const t0 = performance.now() / 260, nowS = performance.now() / 1000;
       rain = opts.rain || 0;
       // every quarter second, or at once when you turn: the nearest few become full people, those in
       // view first (engine/crowd.js nearRank), with some hysteresis
@@ -352,7 +365,8 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         const moving = a.v > 0.2;
         const act = a.state === 'act' ? a.act : null;
         const gesture = act === 'look' && a.gesture ? GESTURE[a.gesture] : null;
-        b.person.play(moving ? (a.kind === 'jogger' && a.v > 1.6 ? 'jog' : 'walk') : gesture || (act === 'look' || a.kind === 'guide' ? 'look' : 'idle'), 0.35);
+        const rp = moving ? null : railPose(a, nowS);
+        b.person.play(moving ? (a.kind === 'jogger' && a.v > 1.6 ? 'jog' : 'walk') : gesture || (rp ? rp.base : act === 'look' || a.kind === 'guide' ? 'look' : 'idle'), 0.35);
         b.person.setGait(a.v);
         const phoneWalk = moving && a.phone;
         b.person.setPhoneHold(phoneWalk ? 1 : 0);
@@ -361,7 +375,7 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         // a bump: the shoulder swings back, a lean away, a glance at whoever it was (engine/flinch.js)
         const fp = a.flinch ? flinchPose(a.flinch) : null;
         b.person.setFlinch(fp);
-        b.person.update(dt, fp && fp.look ? fp.look : (a.glance && a.glance.until > a.glance.now && a.glance.now > a.glance.from ? a.glance.at : null) || a.faceTo || (Math.hypot(eye.x - a.x, eye.z - a.z) < 3.5 ? [eye.x, eye.z] : null));
+        b.person.update(dt, fp && fp.look ? fp.look : (a.glance && a.glance.until > a.glance.now && a.glance.now > a.glance.from ? a.glance.at : null) || a.faceTo || a.photoAt || (Math.hypot(eye.x - a.x, eye.z - a.z) < 3.5 ? [eye.x, eye.z] : null));
         b.umb.visible = u > 0.02;
         if (b.umb.visible) {
           b.canopy.material.color.copy(UMB_COLORS[Math.floor(hash(a.id, 3) * UMB_COLORS.length)]);
@@ -369,11 +383,18 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
           b.umb.quaternion.setFromEuler(_ue.set(0.06, root.rotation.y, 0, 'YXZ'));
           b.canopy.scale.set(0.15 + 0.85 * u, 0.5 + 0.5 * u, 0.15 + 0.85 * u);
         }
-        const photo = u < 0.3 && (act === 'photo' || act === 'selfie');
-        if (act === 'photo') { if (a.photoAt) raise(b, a.photoAt[0], a.photoAt[1]); else raise(b, a.x + 50, a.z); }
-        if (act === 'selfie') raise(b, a.x - 50, a.z, 0.18);
+        // the railing's poses, eased in and out (down to nothing before changing to another), the phone in
+        // the hands throughout: in the palm while looking at it, up in both hands for the photo
+        const rpu = rp && u < 0.3 ? rp : null, want = rpu ? rpu.kind : null;
+        if (want && want === b.pk) b.pw = Math.min(1, b.pw + dt * 2.2);
+        else { b.pw = Math.max(0, b.pw - dt * 2.2); if (b.pw <= 0) b.pk = want; }
+        const palm = rpu && rpu.phone ? palmPhone(b.person) : null;
+        const sw = b.pw * b.pw * (3 - 2 * b.pw);
+        const held = b.pk && sw > 0.001 ? blendPose(b.person, b.pk, sw, { at: a.photoAt, from: palm }) : null;
+        const photo = !!(rpu && rpu.phone);
         b.phone.visible = photo || phoneWalk;
-        if (b.phone.visible) { holdPhone(b.phone, b.person, root.rotation.y); if (act === 'photo') b.phone.rotateZ(Math.PI / 2); }
+        if (photo) { (held || palm).decompose(_pp, _pq2, _ps); b.phone.position.copy(_pp); b.phone.quaternion.copy(_pq2); }
+        else if (phoneWalk) holdPhone(b.phone, b.person, root.rotation.y);
         // bags: shared between the hands, or all in the left while the right holds a phone or an umbrella
         const nb = a.bags || 0, busyR = b.phone.visible || b.umb.visible || photo, sn = Math.sin(root.rotation.y), cs = Math.cos(root.rotation.y);
         b.bags.forEach((g, i) => {
@@ -412,10 +433,11 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
             const c = bk.clips[clip], sp = (bk.speeds && bk.speeds[clip]) || 1.1;
             midPhase[id] = (midPhase[id] + a.v * dt / (sp * c.dur)) % 1; t = midPhase[id];
           } else {
-            clip = act === 'photo' || act === 'selfie' || a.phone ? 'phone' : act === 'look' || a.kind === 'guide' ? 'look' : act === 'talk' ? 'talk1' : 'idle';
-            const c = bk.clips[clip] || bk.clips.idle; t = now / c.dur + hash(id, 5);
+            const rp = railPose(a, now);
+            clip = rp ? (rp.kind ? PHOTO_CLIP[rp.kind] : rp.base) : a.phone ? 'phone' : act === 'look' || a.kind === 'guide' ? 'look' : act === 'talk' ? 'talk1' : 'idle';
+            const c = bk.clips[clip] || bk.clips.idle; if (!bk.clips[clip]) clip = 'idle'; t = now / c.dur + hash(id, 5);
           }
-          return mid.push(a.role, a.x, a.y, a.z, yaw, a.scale || 1, clip, t, midFade[id], coatOf(id));
+          return mid.push(a.role, a.x, a.y, a.z, yaw, a.scale || 1, clip, t, midFade[id], coatOf(id), id);
         };
         for (const id of midSet) drawMid(id, true);
         for (const id of fading) if (!drawMid(id, false)) fading.delete(id);
@@ -434,7 +456,8 @@ export function createCrowdView({ scene, renderer, people, crowd, roles, nearCou
         const dx = a.x - eye.x, dz = a.z - eye.z;
         if (dx * dx + dz * dz > 330 * 330) continue;
         const c = atlas.cells[a.role] || [0, 0];
-        const pose = a.v > 0.2 ? Math.floor(a.phase * 8) % 8 : a.state === 'act' && (a.act === 'photo' || a.act === 'selfie') ? 9 : 8;
+        const fr = a.v > 0.2 ? null : railPose(a, nowS);
+        const pose = a.v > 0.2 ? Math.floor(a.phase * 8) % 8 : fr && fr.phone && fr.kind ? 9 : 8;
         if (inMid) {                                          // (drawn in the middle tier: only its umbrella and blob here)
           _m.makeTranslation(a.x, a.y + 0.02, a.z); blobs.setMatrixAt(n, _m);
           const u = umbrellaFor(a, dt);
