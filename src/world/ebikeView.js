@@ -4,7 +4,7 @@
 // simplified and packed into one texture (world/crowdLod.js). Each avatar is frozen three ways: riding
 // (both hands on the bars), on a call (the right hand up at the ear, the phone under the helmet's rim)
 // and looking at the phone (held low over the bars, stopped at a light or pulled in).
-// The scooter is a few dozen primitives in vertex colours: a low step-through 电动车 with a quilted
+// The scooter is smooth bodywork panels and parts in vertex colours: a low step-through 电动车 with a quilted
 // windbreak over the bars (it is November); the couriers' has a delivery box on the back in their
 // company's colour, its lid a part of its own (it opens), and a phone in a clamp on the bars, its screen
 // lit with the map. Commuters are the crowd's avatars, their jackets a colour each; couriers are the
@@ -85,18 +85,67 @@ function scooter(brand) {
   }
 
   const body = courier ? DARK : PAINT;
-  p.push(box(0.34, 0.1, 0.62, DARK, 0, 0.3, 0.06));                                        // the floorboard
-  p.push(box(0.36, 0.42, 0.62, body, 0, 0.56, -0.38, -0.12));                              // the rear body under the seat
-  p.push(box(0.3, 0.1, 0.62, SEAT, 0, 0.8, -0.32));                                        // the saddle
-  p.push(box(0.3, 0.62, 0.16, body, 0, 0.62, 0.42, 0.38));                                 // the leg shield / front column
-  p.push(box(0.2, 0.18, 0.5, body, 0, 0.42, 0.62, 0));                                     // front mudguard
-  p.push(part(new THREE.CylinderGeometry(0.03, 0.03, 0.62, 6), CHROME, 0, 1.02, 0.52, 0, 0, Math.PI / 2));   // the handlebar
-  p.push(box(0.2, 0.12, 0.1, body, 0, 0.98, 0.58));                                        // the lamp housing
-  p.push(box(0.12, 0.06, 0.02, 0xf4f2e8, 0, 0.98, 0.635));                                 // the head lamp
-  p.push(box(0.14, 0.05, 0.02, 0x8a1010, 0, 0.62, -0.72));                                 // the tail lamp
-  for (const s of [-1, 1]) p.push(part(new THREE.CylinderGeometry(0.008, 0.008, 0.26, 4), CHROME, s * 0.26, 1.14, 0.5), part(new THREE.CylinderGeometry(0.05, 0.05, 0.015, 10), CHROME, s * 0.27, 1.27, 0.5, Math.PI / 2));   // mirrors
-  // the quilted windbreak over the bars and the rider's knees
-  p.push(box(0.6, 0.55, 0.08, QUILT, 0, 0.78, 0.5, 0.25), box(0.66, 0.06, 0.12, QUILT, 0, 1.06, 0.48));
+  // the bodywork: smooth panels, each a side profile (z, y) drawn as one curve and pushed out across the
+  // bike with rounded edges; taper(y) narrows a panel toward the bottom
+  const panel = (pts, width, hex, { bevel = 0.03, taper = null } = {}) => {
+    const sh = new THREE.Shape(); sh.moveTo(pts[0][0], pts[0][1]);
+    sh.splineThru(pts.slice(1).concat([pts[0]]).map(([z, y]) => new THREE.Vector2(z, y)));
+    const g = new THREE.ExtrudeGeometry(sh, { depth: Math.max(0.01, width - 2 * bevel), bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.8, bevelSegments: 3, curveSegments: 6 });
+    g.rotateY(-Math.PI / 2); g.translate(width / 2 - bevel, 0, 0);
+    if (taper) { const P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setX(i, P.getX(i) * taper(P.getY(i))); }
+    g.computeVertexNormals();
+    return part(g, hex);
+  };
+  // an arc of tube about an axle at (z, y): radius r, from angle a0 to a1 (0 = behind, PI/2 = up), w wide
+  const arc = (z, y, r, a0, a1, tube, w, hex) => {
+    const g = new THREE.TorusGeometry(r, tube, 5, 16, a1 - a0); g.rotateZ(a0); g.scale(1, 1, w / (2 * tube)); g.rotateY(Math.PI / 2);
+    return part(g, hex, 0, y, z);
+  };
+  // the floor: a ribbed rubber mat on a deck, a skirt in the body colour under it
+  p.push(box(0.32, 0.03, 0.46, 0x1c1d20, 0, 0.335, 0.08));
+  for (let k = 0; k < 7; k++) p.push(box(0.26, 0.008, 0.016, 0x2c2e32, 0, 0.352, -0.1 + k * 0.06));
+  p.push(panel([[0.36, 0.33], [0.34, 0.24], [0.18, 0.19], [-0.2, 0.19], [-0.32, 0.27], [-0.3, 0.34], [0.1, 0.335]], 0.3, body, { bevel: 0.025 }));
+  // the rear body: rising from the floor under the seat, sweeping back over the wheel to a tail
+  p.push(panel([[0.0, 0.36], [0.03, 0.6], [-0.08, 0.745], [-0.4, 0.77], [-0.7, 0.76], [-0.88, 0.7], [-0.87, 0.63], [-0.68, 0.62], [-0.42, 0.6], [-0.3, 0.42], [-0.12, 0.33]], 0.3, body, { bevel: 0.035 }));
+  p.push(arc(-0.6, 0.27, 0.33, 0.55, 2.4, 0.03, 0.12, 0x1c1d20));            // the hugger under it, over the wheel
+  // the saddle: a long padded seat, a seam round its edge, a chrome grab rail behind
+  p.push(panel([[0.03, 0.75], [0.0, 0.8], [-0.18, 0.84], [-0.45, 0.865], [-0.6, 0.86], [-0.645, 0.82], [-0.6, 0.77], [-0.3, 0.765], [0.0, 0.745]], 0.29, SEAT, { bevel: 0.04 }));
+  p.push(box(0.27, 0.006, 0.6, 0x2e2f33, 0, 0.8, -0.3));
+  for (const sx of [-1, 1]) p.push(part(new THREE.CylinderGeometry(0.012, 0.012, 0.26, 6), CHROME, sx * 0.16, 0.8, -0.74, Math.PI / 2 - 0.08));
+  p.push(part(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 6), CHROME, 0, 0.79, -0.86, 0, 0, Math.PI / 2));
+  // the leg shield / front column, wider at the top
+  p.push(panel([[0.3, 0.33], [0.4, 0.34], [0.45, 0.56], [0.56, 0.78], [0.6, 0.98], [0.54, 1.02], [0.44, 1.0], [0.38, 0.8], [0.32, 0.56]], 0.42, body, { bevel: 0.035, taper: (y) => 0.66 + 0.34 * Math.min(1, Math.max(0, (y - 0.33) / 0.65)) }));
+  // the front mudguard over the wheel, the fork's dark shrouds
+  p.push(arc(0.62, 0.27, 0.315, 0.9, 2.75, 0.03, 0.14, body));
+  for (const sx of [-1, 1]) p.push(part(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 10), 0x1c1d20, sx * 0.075, 0.6, 0.53, -0.3));
+  // the handlebar cowl: the headlamp in its nose (a lens behind a chrome ring, an LED strip under it),
+  // the indicators at its corners, the speedometer screen on top
+  p.push(panel([[0.42, 0.98], [0.56, 0.99], [0.665, 1.04], [0.65, 1.12], [0.5, 1.145], [0.4, 1.09]], 0.36, body, { bevel: 0.03 }));
+  p.push(part(new THREE.CylinderGeometry(0.085, 0.085, 0.03, 20), 0x1c1d20, 0, 1.075, 0.668, Math.PI / 2 - 0.2));
+  p.push(part(new THREE.CylinderGeometry(0.068, 0.068, 0.03, 20), 0xf6f4ea, 0, 1.075, 0.676, Math.PI / 2 - 0.2));
+  p.push(part(new THREE.TorusGeometry(0.072, 0.008, 5, 20), CHROME, 0, 1.075, 0.69, -0.2));
+  p.push(box(0.16, 0.012, 0.012, 0xfdfcf6, 0, 1.015, 0.655, -0.3));
+  for (const sx of [-1, 1]) p.push(box(0.05, 0.03, 0.03, 0xe8920f, sx * 0.15, 1.06, 0.63));
+  p.push(box(0.15, 0.008, 0.085, 0x0e1216, 0, 1.145, 0.52, -0.12), box(0.12, 0.004, 0.06, 0x24384a, 0, 1.15, 0.52, -0.12));
+  // the bars: black, rubber grips, brake levers in front of them, mirrors on stalks
+  p.push(part(new THREE.CylinderGeometry(0.014, 0.014, 0.6, 8), 0x1c1d20, 0, 1.19, 0.5, 0, 0, Math.PI / 2), part(new THREE.CylinderGeometry(0.02, 0.022, 0.08, 8), 0x1c1d20, 0, 1.155, 0.5));
+  for (const sx of [-1, 1]) {
+    p.push(part(new THREE.CylinderGeometry(0.019, 0.019, 0.12, 10), 0x121212, sx * 0.3, 1.19, 0.5, 0, 0, Math.PI / 2));
+    p.push(box(0.15, 0.012, 0.018, 0x9ba0a6, sx * 0.27, 1.195, 0.545, 0));
+    const st = new THREE.CylinderGeometry(0.008, 0.008, 0.2, 5); p.push(part(st, 0x1c1d20, sx * 0.25, 1.28, 0.49, 0, 0, -sx * 0.32));
+    const mh = new THREE.SphereGeometry(1, 12, 6); mh.scale(0.075, 0.05, 0.016); p.push(part(mh, 0x1c1d20, sx * 0.29, 1.38, 0.49), part(new THREE.CircleGeometry(0.066, 14).scale(1, 0.66, 1), 0x9fb2c0, sx * 0.29, 1.38, 0.472, 0, Math.PI));
+  }
+  // behind: the tail lamp and its indicators, the number plate on its hanger
+  p.push(box(0.2, 0.05, 0.035, 0x8e1414, 0, 0.705, -0.875), box(0.16, 0.02, 0.01, 0xd8302a, 0, 0.71, -0.895));
+  for (const sx of [-1, 1]) p.push(box(0.045, 0.03, 0.03, 0xe8920f, sx * 0.14, 0.69, -0.87));
+  p.push(box(0.05, 0.16, 0.03, 0x1c1d20, 0, 0.56, -0.86), box(0.2, 0.12, 0.006, 0xf0f0ea, 0, 0.47, -0.885, -0.15), box(0.2, 0.022, 0.007, 0x2f8a55, 0, 0.52, -0.888, -0.15));
+  // footrests for a passenger, folded
+  for (const sx of [-1, 1]) p.push(box(0.04, 0.025, 0.08, 0x1c1d20, sx * 0.19, 0.4, -0.3));
+  // November: a quilted windbreak hung over the apron to the rider's knees, quilting stitched across it,
+  // and padded muffs over the grips
+  p.push(panel([[0.4, 0.42], [0.52, 0.52], [0.63, 0.76], [0.66, 0.92], [0.62, 0.975], [0.56, 0.95], [0.5, 0.8], [0.42, 0.6]], 0.64, QUILT, { bevel: 0.035, taper: (y) => 0.8 + 0.2 * Math.min(1, Math.max(0, (y - 0.42) / 0.6)) }));
+  for (const [yy, zz] of [[0.6, 0.575], [0.75, 0.632], [0.9, 0.67]]) p.push(box(0.6 * (0.85 + 0.15 * (yy - 0.42) / 0.6), 0.008, 0.01, 0x141824, 0, yy, zz, -0.35));
+  for (const sx of [-1, 1]) p.push(part(new THREE.CylinderGeometry(0.06, 0.075, 0.2, 10), QUILT, sx * 0.31, 1.19, 0.5, 0, 0, Math.PI / 2));
   if (courier) {
     const B = RIDER_BRANDS[brand];
     // the box (its lid is drawn on its own, it opens), a dark label on its back; the rack's frame under it;
