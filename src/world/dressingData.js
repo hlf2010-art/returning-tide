@@ -6,7 +6,8 @@
 // would stand in something is left out, so a wrong guess here costs a missing bin, not a stuck crowd.
 // Positions follow how Shanghai streets are dressed (bikes in painted bays at corners and metro exits,
 // never on the Bund pavement; bollards at every opening of the pedestrian street), placed by eye.
-import { L, NJ, colliders } from './layout.js';
+import { L, NJ, colliders, BUND_ROW, KERB_ROW_X, bundTrees } from './layout.js';
+import { PARASOLS } from './floodWall.js';
 
 const h = NJ.henan;
 // a row of things: from (x, z), n of them, step (dx, dz)
@@ -26,7 +27,25 @@ const BAYS = [
   ...(() => { const c = NJ.cross.find((q) => q.id === 'shandong'); return c ? bay(c.x1 - 1.3, NJ.z1 + 2.2, 9, 0, 0.66, Math.PI) : []; })(),
 ];
 
+// The river side of Zhongshan East 1st Road, module by module (layout.js BUND_ROW, a tree at each start):
+// two white art-deco planters chained together (the second now and then a bronze cabinet instead), a
+// timber-topped granite bench on the walk side every other module, a hydrant at the kerb every fifth, a
+// smart pole (cameras, a radio module) every sixth. As the real kerb was on 27 November 2026.
+const KERB = BUND_ROW.flatMap((z0, j) => {
+  const x = KERB_ROW_X, out = [{ kind: 'planter', x, z: z0 + 2.7, yaw: 0, r: 0.8 }];
+  out.push(j % 4 === 2 ? { kind: 'bronze', x: x - 0.05, z: z0 + 5.3, yaw: 0, r: 0.6 } : { kind: 'planterEnd', x, z: z0 + 5.3, yaw: 0, r: 0.8 });
+  if (j % 2 === 0) out.push({ kind: 'kerbBench', x: x + 1.55, z: z0 + 4.0, yaw: 0, r: 0.7 });
+  if (j % 5 === 3) out.push({ kind: 'hydrant', x: L.eastCurbX + 0.42, z: z0 + 1.25, yaw: 0, r: 0.25 });
+  if (j % 6 === 4) out.push({ kind: 'smartpole', x, z: z0 + 6.75, yaw: 0, r: 0.25 });
+  return out;
+});
+// the trees' tripod stakes and pit grates: drawn, not checked (they stand in the tree's own footprint)
+const STAKES = bundTrees.map((t) => ({ kind: 'stakes', x: t.x, z: t.z, yaw: 0, r: 0 }));
+
 const PROPS = [
+  ...KERB,
+  // closed parasols outside the flood wall's cafés, furled, in the cafés' colours (world/floodWall.js)
+  ...PARASOLS.map((p) => ({ kind: 'parasol', x: p.x, z: p.z, yaw: 0, colour: p.colour, r: 0.35 })),
   // two-compartment street bins: 可回收物 recyclable (blue) and 干垃圾 residual (black) (Shanghai sorts its rubbish)
   ...[[-66, -6.0], [-50, 6.0], [-62, NJ.z0 + 0.8], [-120, NJ.z1 - 0.8], [-180, NJ.z0 + 0.8], [-240, NJ.z1 - 0.8], [-350, NJ.z0 + 0.8], [-450, NJ.z1 - 0.8],
     [h.x1 + 1.2, NJ.z0 - 2.5], [h.x0 - 1.2, NJ.z1 + 2.5], [19.6, -12], [19.6, 10], [19.6, 48], [19.6, -100], [19.6, -160]].map(([x, z]) => ({ kind: 'bin', x, z, yaw: 0, r: 0.45 })),
@@ -58,7 +77,7 @@ const PROPS = [
 ];
 
 // half-sizes of what each kind stands on, for the checks (and the player's collision for the big ones)
-export const FOOT = { bike: [0.85, 0.28], bin: [0.42, 0.25], bollard: [0.12, 0.12], cabinet: [0.45, 0.25], hydrant: [0.15, 0.15], signpost: [0.1, 0.1], camera: [0.12, 0.12], police: [1.2, 1.4] };
+export const FOOT = { parasol: [0.2, 0.2], planter: [0.4, 0.78], planterEnd: [0.4, 0.78], bronze: [0.27, 0.45], kerbBench: [0.27, 0.95], smartpole: [0.12, 0.12], stakes: [0.1, 0.1], bike: [0.85, 0.28], bin: [0.42, 0.25], bollard: [0.12, 0.12], cabinet: [0.45, 0.25], hydrant: [0.15, 0.15], signpost: [0.1, 0.1], camera: [0.12, 0.12], police: [1.2, 1.4] };
 
 function clear(x, z, hx, hz) {
   for (const b of colliders) {
@@ -84,10 +103,13 @@ export function dressingProps() {
   const out = [];
   for (const b of BAYS) { const [hx, hz] = FOOT.bike; const c = Math.abs(Math.cos(b.yaw)), s = Math.abs(Math.sin(b.yaw)); if (clear(b.x, b.z, hx * c + hz * s, hx * s + hz * c)) out.push({ kind: 'bike', ...b, r: 0 }); }
   for (const p of PROPS) { const [hx, hz] = FOOT[p.kind]; const c = Math.abs(Math.cos(p.yaw || 0)), s = Math.abs(Math.sin(p.yaw || 0)); if (clear(p.x, p.z, hx * c + hz * s, hx * s + hz * c)) out.push(p); }
+  // a planter only hangs its chain to a planter that is there to take it
+  for (const p of out) if (p.kind === 'planter' && !out.some((q) => q.kind === 'planterEnd' && q.x === p.x && Math.abs(q.z - p.z - 2.6) < 0.01)) p.kind = 'planterEnd';
+  out.push(...STAKES);
   return (cache = out);
 }
 // for the crowd: [x, z, r] of the small things in the way (bays are boxes: dressingBoxes)
-export const dressingObstacles = () => dressingProps().filter((p) => p.r > 0 && p.kind !== 'police').map((p) => [p.x, p.z, p.r]);
+export const dressingObstacles = () => dressingProps().filter((p) => p.r > 0 && p.kind !== 'police').flatMap((p) => p.kind === 'planter' ? [[p.x, p.z, p.r], [p.x, p.z + 1.3, 0.5]] : [[p.x, p.z, p.r]]);   // (and a planter's chain)
 // solid boxes for the bays and the police post: { minX, maxX, minZ, maxZ }
 export function dressingBoxes() {
   const props = dressingProps(), boxes = [];

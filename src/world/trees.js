@@ -1,9 +1,12 @@
-// Trees, grown procedurally (no image assets), two species:
+// Trees, grown procedurally (no image assets), three species:
 //   plane   London plane (法国梧桐), Hankou Road's street trees: clear trunk pruned into the
 //           three-forked vase Shanghai's plane trees are known for, mottled peeling bark (cream,
 //           olive, grey-brown), big palmate leaves gone yellow and ochre in November, some fallen.
 //   camphor camphor laurel (香樟), the promenade's planter trees: short trunk, rounded evergreen
 //           crown, dark furrowed bark, small glossy elliptic leaves.
+//   ginkgo  maidenhair tree (银杏), planted with the planes along the Bund's river side of Zhongshan
+//           Road: a straight leader with limbs angled up, grey ridged bark, fan-shaped leaves that turn
+//           butter-gold all at once in late November.
 // Wood: curved tapered tubes (trunk -> limbs -> branches -> twigs) with tiled bark colour + normal
 // maps. Foliage: one instanced mesh of alpha-tested leaf cards per species, each card a sprig of
 // leaves drawn on a canvas atlas, lit with crown-rounded normals so the canopy shades as a volume.
@@ -29,13 +32,18 @@ const SPECIES = {
     kidLen: 0.5, twigs: [7, 9], twigLen: 0.45, cards: [10, 12], card: 0.55, crown: 0.62, cells: [4, 5], cellsAlt: [4, 5],
     up: 0.18, sag: 0.04,
   },
+  ginkgo: {
+    trunkH: 0.46, trunkR: 0.13, limbs: [5, 6], limbAngle: [0.32, 0.55], limbLen: 0.46, kids: [5, 6], kidAngle: [0.45, 0.8],
+    kidLen: 0.4, twigs: [6, 7], twigLen: 0.42, cards: [9, 11], card: 0.5, crown: 0.66, cells: [6, 7], cellsAlt: [6, 7],
+    up: 0.34, sag: 0.03,
+  },
 };
 
 // ---- textures --------------------------------------------------------------------------------
 function barkTextures(kind) {
-  const W = 256, H = 512, r = rng(kind === 'plane' ? 71 : 72);
+  const W = 256, H = 512, r = rng(kind === 'plane' ? 71 : kind === 'ginkgo' ? 73 : 72);
   const [c, ctx] = makeCanvas(W, H), [hc, hctx] = makeCanvas(W, H);
-  const n = tileNoise(256, 8, kind === 'plane' ? 3 : 4, 5);
+  const n = tileNoise(256, 8, kind === 'plane' ? 3 : kind === 'ginkgo' ? 6 : 4, 5);
   const col = ctx.createImageData(W, H), hgt = hctx.createImageData(W, H);
   if (kind === 'plane') {
     // patches where the outer bark has flaked off: cream / pale olive under grey-brown
@@ -63,7 +71,10 @@ function barkTextures(kind) {
       const ridge = Math.pow(Math.abs(Math.sin(u * Math.PI)), 0.6);
       const plate = 0.75 + 0.25 * Math.sin((y / H) * 40 + Math.floor(u) * 2.3 + g2 * 3);
       const hv = ridge * plate * (0.7 + 0.3 * g2), i = (y * W + x) * 4, k = 0.35 + 0.65 * hv;
-      col.data[i] = 92 * k; col.data[i + 1] = 80 * k; col.data[i + 2] = 68 * k; col.data[i + 3] = 255;
+      // (ginkgo: the same furrowed habit, finer and paler, a cool grey)
+      if (kind === 'ginkgo') { col.data[i] = 118 * k + 18; col.data[i + 1] = 112 * k + 18; col.data[i + 2] = 102 * k + 16; }
+      else { col.data[i] = 92 * k; col.data[i + 1] = 80 * k; col.data[i + 2] = 68 * k; }
+      col.data[i + 3] = 255;
       hgt.data[i] = hgt.data[i + 1] = hgt.data[i + 2] = hv * 255; hgt.data[i + 3] = 255;
     }
   }
@@ -72,9 +83,9 @@ function barkTextures(kind) {
   return { map, normalMap };
 }
 
-// one sprig per atlas cell (3 x 2 cells): 0,1 plane sprigs (mixed autumn colours), 2,3 plane
-// sprigs gone browner, 4,5 camphor sprigs
-const ATLAS = { cols: 3, rows: 2, cell: 256 };
+// one sprig per atlas cell (4 x 2 cells): 0,1 plane sprigs (mixed autumn colours), 2,3 plane
+// sprigs gone browner, 4,5 camphor sprigs, 6,7 ginkgo sprigs (late-November gold, a few still lime)
+const ATLAS = { cols: 4, rows: 2, cell: 256 };
 function leafAtlas() {
   const { cols, rows, cell } = ATLAS, [c, ctx] = makeCanvas(cols * cell, rows * cell), r = rng(9);
   const plane = (x, y, s, ang, colr) => {
@@ -106,6 +117,26 @@ function leafAtlas() {
     ctx.strokeStyle = 'rgba(200,220,150,0.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -s * 0.95); ctx.stroke();
     ctx.restore();
   };
+  // ginkgo: a fan on a long stalk, the outer edge scalloped and notched in the middle, fine radiating veins
+  const ginkgo = (x, y, s, ang, colr) => {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    ctx.strokeStyle = '#7a6a2a'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -s * 0.45); ctx.stroke();   // stalk
+    ctx.translate(0, -s * 0.45);
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    const a0 = -Math.PI / 2 - 1.05, a1 = -Math.PI / 2 + 1.05;
+    for (let i = 0; i <= 40; i++) {
+      const a = a0 + (a1 - a0) * (i / 40), mid = Math.abs(i - 20) < 1.5 ? 0.82 : 1;              // the notch
+      const rr = s * 0.62 * mid * (1 + 0.03 * Math.sin(i * 1.9));
+      ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.closePath();
+    const g = ctx.createRadialGradient(0, 0, s * 0.05, 0, 0, s * 0.62);
+    g.addColorStop(0, colr[1]); g.addColorStop(1, colr[0]); ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = 'rgba(120,90,20,0.25)'; ctx.lineWidth = 0.8;
+    for (let k = -5; k <= 5; k++) { const a = -Math.PI / 2 + k * 0.19; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * s * 0.58, Math.sin(a) * s * 0.58); ctx.stroke(); }
+    ctx.restore();
+  };
+  const gold = [['#f2c230', '#d9a81e'], ['#f5cf3e', '#e0b42a'], ['#eebc22', '#c9971a'], ['#f0c838', '#c8a420'], ['#d8c444', '#a8a02a']];
   const autumn = [['#c9a43c', '#8f8a2e'], ['#d2a53a', '#b07a28'], ['#a9a440', '#6f7a2a'], ['#c08a32', '#8a5a22'], ['#9aa04a', '#5f6e2c']];
   const brown = [['#a8742c', '#6e4a1e'], ['#b88a3a', '#7a5524'], ['#8f6a30', '#5a4220']];
   for (let k = 0; k < cols * rows; k++) {
@@ -120,6 +151,15 @@ function leafAtlas() {
         plane(ax, ay, 62 + r() * 18, (i % 2 ? 1 : -1) * (0.5 + r() * 0.4) + (i === n - 1 ? 0 : 0), pal[Math.floor(r() * pal.length)]);
       }
       plane(ox - 6, oy - 150, 66, (r() - 0.5) * 0.4, pal[Math.floor(r() * pal.length)]);
+    } else if (k >= 6) {
+      // ginkgo: short spur shoots along a grey twig, each with a tuft of three to five fans
+      ctx.strokeStyle = '#5e574c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.quadraticCurveTo(ox + 6, oy - 110, ox - 2, oy - 220); ctx.stroke();
+      for (let i = 0; i < 6; i++) {
+        const t = 0.22 + i * 0.14, sx = ox + (i % 2 ? 7 : -7), sy = oy - 220 * t, side = i % 2 ? 1 : -1;
+        const nf = 3 + Math.floor(r() * 3);
+        for (let f = 0; f < nf; f++) ginkgo(sx, sy, 50 + r() * 16, side * (0.35 + f * 0.32) + (r() - 0.5) * 0.3, (k === 7 && r() < 0.3) ? ['#c9c84a', '#9fae38'] : gold[Math.floor(r() * gold.length)]);
+      }
+      for (let f = 0; f < 4; f++) ginkgo(ox - 2, oy - 222, 54, (f - 1.5) * 0.4, gold[Math.floor(r() * gold.length)]);
     } else {
       ctx.strokeStyle = '#4a3b26'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.quadraticCurveTo(ox - 8, oy - 120, ox + 4, oy - 230); ctx.stroke();
       for (let i = 0; i < 11; i++) {
@@ -291,7 +331,8 @@ export function createTrees(specs, { wetBoost = null } = {}) {
   const mats = {};
   // one wood mesh and one leaf mesh per tree (shared materials), so trees out of view are culled
   specs.forEach((spec, ti) => {
-    const species = spec.species, list = [spec];
+    // (spec.cluster: several trees of one species in one pair of meshes, for long rows of street trees)
+    const species = spec.species, list = spec.cluster || [spec];
     // twigs go in their own buffer and are appended last, so low quality can simply not draw them
     const wood = { pos: [], nrm: [], uv: [], base: [], br: [], idx: [] }, twigs = { pos: [], nrm: [], uv: [], base: [], br: [], idx: [] }, leaves = [];
     list.forEach((s) => grow(s, twigs, wood, leaves));
@@ -325,7 +366,7 @@ export function createTrees(specs, { wetBoost = null } = {}) {
     wd.onBeforeCompile = patchWood; wd.customProgramCacheKey = () => 'tree-wood-depth';
     const leafMat = new THREE.MeshStandardMaterial({
       map: atlas, alphaTest: 0.42, side: THREE.DoubleSide, roughness: species === 'camphor' ? 0.5 : 0.75, metalness: 0,
-      emissive: new THREE.Color(species === 'camphor' ? 0x0a1206 : 0x1a1206), emissiveIntensity: 1,   // light through the leaves
+      emissive: new THREE.Color(species === 'camphor' ? 0x0a1206 : species === 'ginkgo' ? 0x2a1d04 : 0x1a1206), emissiveIntensity: 1,   // light through the leaves
     });
     leafMat.onBeforeCompile = (sh) => patchLeaves(sh, false);
     leafMat.customProgramCacheKey = () => 'tree-leaves';

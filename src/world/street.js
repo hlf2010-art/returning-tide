@@ -1,8 +1,9 @@
 // Street level: Zhongshan East 1st Road, Hankou Road and what stands on them.
 import * as THREE from 'three';
-import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees, crossing, sideStreets } from './layout.js';
+import { L, roadLamps, ROAD_LAMP_WEST_OFFSET, taxi, sedan, bikes, stall, streetTrees, bundTrees, crossing, sideStreets } from './layout.js';
 import { batchSet, flush, Batch } from './geo.js';
-import { makeCanvas, tex, rng, FONT, glowTexture, fitText } from './canvas.js';
+import { makeCanvas, tex, rng, FONT, glowTexture, fitText, grain } from './canvas.js';
+const grainOver = (ctx) => grain(ctx, 256, 256, 14, 5);
 import { T } from './text.js';
 
 const FAR = 430, S = L.street, CH = L.curbH;
@@ -49,6 +50,9 @@ function ground(B) {
   }
   B.sidewalk.box((L.eastCurbX + L.wallX) / 2, -0.3, 0, 6, 0.3 + CH, FAR * 2, { tile: 2.4 });           // east sidewalk
   B.granite.box(L.eastCurbX - 0.08, -0.3, 0, 0.16, 0.3 + CH + 0.005, FAR * 2);
+  // the furniture strip along the river-side kerb (trees, planters, cabinets): dark granite setts, as laid
+  B.setts.floor(L.eastCurbX, L.eastCurbX + 1.85, -FAR, -3.6, CH + 0.003, 0.6);
+  B.setts.floor(L.eastCurbX, L.eastCurbX + 1.85, 3.6, FAR, CH + 0.003, 0.6);
 
   // markings: six lanes, double yellow, zebra at the foot of the stair
   const y = 0.012, xs = [-23.2, -19.6, -12.4, -8.8];
@@ -65,6 +69,19 @@ function ground(B) {
   B.paint.floor(-27.3, -16.4, -5.6, -5.2, y); B.paint.floor(-15.6, -4.7, 5.2, 5.6, y);
   for (let z = -3.4; z < 3.2; z += 0.9) B.paint.floor(-33.4, -30.2, z, z + 0.45, y);                   // zebra across Hankou Rd
   for (const st of sideStreets) if (!st.pedestrian) for (let z = st.zc - st.roadHalfW + 0.3; z < st.zc + st.roadHalfW - 0.3; z += 0.9) B.paint.floor(-33.4, -30.2, z, z + 0.45, y);
+  // the kerbs' paint, as on Zhongshan Road: on the river side a solid yellow line along the kerb (no stopping)
+  // and its top painted yellow; on the building side the kerb top banded yellow and black (bus stops and
+  // crossings left bare)
+  const kerbTop = CH + 0.0065;
+  for (const [a, b] of [[-FAR, -236.5], [-227.5, -44.5], [-35.5, -3.6], [3.6, FAR]]) {
+    B.paintYellow.floor(L.eastCurbX - 0.32, L.eastCurbX - 0.17, a, b, y);
+    B.paintYellow.floor(L.eastCurbX - 0.155, L.eastCurbX - 0.005, a, b, kerbTop);
+  }
+  for (let z = -FAR; z < FAR; z += 2) {
+    if (Math.abs(z) < 4.5 || sideStreets.some((st) => z > st.zc - st.roadHalfW - 1 && z < st.zc + st.roadHalfW + 1) || Math.abs(z - 46) < 7 || Math.abs(z + 180) < 7) continue;
+    B.paintYellow.floor(L.westCurbX + 0.005, L.westCurbX + 0.155, z, z + 1, kerbTop);
+    B.kerbBlack.floor(L.westCurbX + 0.005, L.westCurbX + 0.155, z + 1, z + 2, kerbTop);
+  }
   // manholes
   for (const [x, z] of [[-20, 9], [-10.5, -22], [-62, 1.2], [-44, -1.5], [-14, 48]]) B.iron.cyl(x, 0.002, z, 0.36, 0.36, 0.012, 20);
 }
@@ -179,7 +196,7 @@ function barrierRow(B, x0, x1, y, z) {
 
 export function createStreet(M) {
   const group = new THREE.Group(); group.name = 'street';
-  const B = batchSet(['asphalt', 'sidewalk', 'granite', 'paint', 'paintYellow', 'iron', 'lampGlass', 'steel', 'wood',
+  const B = batchSet(['asphalt', 'sidewalk', 'setts', 'granite', 'paint', 'paintYellow', 'kerbBlack', 'leafGold', 'iron', 'lampGlass', 'steel', 'wood',
     'hoarding', 'red', 'white', 'bikeY', 'bikeB', 'rubber', 'bark', 'leafAutumn', 'leafLitter', 'canvas', 'glassDark2', 'shutter']);
   ground(B);
   for (const z of roadLamps) { roadLamp(B, L.eastCurbX + 0.5, z); roadLamp(B, L.westCurbX - 0.5, z + ROAD_LAMP_WEST_OFFSET); }
@@ -382,6 +399,33 @@ export function createStreet(M) {
     }
   });
 
+  // under the Bund's kerb trees: plane leaves and ginkgo fans on the paving, a drift of them in the gutter
+  bundTrees.forEach((t) => {
+    const batch = t.species === 'ginkgo' ? B.leafGold : B.leafLitter;
+    for (let k = 0; k < 46; k++) {
+      const a = lr() * 6.283, d = 0.5 + lr() * lr() * 5, lz = t.z + Math.sin(a) * d * 1.3;
+      let lx = t.x + Math.cos(a) * d * 0.6;
+      if (lx < L.eastCurbX - 0.5 || lx > L.wallX - 0.2) continue;
+      if (lx < L.eastCurbX && lx > L.eastCurbX - 0.12) lx -= 0.15;
+      const y = (lx < L.eastCurbX ? 0 : CH) + 0.014, sz = (t.species === 'ginkgo' ? 0.045 : 0.07) + lr() * 0.05;
+      const g = new THREE.CircleGeometry(sz, 5); g.rotateX(-Math.PI / 2); g.rotateY(lr() * 6.283);
+      batch.add(g, { x: lx, y, z: lz, sx: 1.4 });
+    }
+  });
+
+  // setts: 10 x 15 cm grey granite blocks in stretcher courses, each its own shade, dark joints
+  const settTex = (() => {
+    const [c, ctx] = makeCanvas(256, 256), r = rng(77);
+    ctx.fillStyle = '#2a2a2a'; ctx.fillRect(0, 0, 256, 256);
+    const rows = 6, cols = 4, rh = 256 / rows, cw = 256 / cols;
+    for (let j = 0; j < rows; j++) for (let i = -1; i < cols; i++) {
+      const x = i * cw + (j % 2 ? cw / 2 : 0), v = 70 + r() * 38, w = r() * 6;
+      ctx.fillStyle = `rgb(${v + w},${v + w},${v + 2})`; ctx.fillRect(x + 2.5, j * rh + 2.5, cw - 5, rh - 5);
+      ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(x + 3, j * rh + 3, cw - 8, 3);
+    }
+    grainOver(ctx);
+    return tex(c);
+  })();
   const shutterTex = (() => {
     const [c, ctx] = makeCanvas(64, 256);
     for (let y = 0; y < 256; y += 8) { const g = ctx.createLinearGradient(0, y, 0, y + 8); g.addColorStop(0, '#8b9094'); g.addColorStop(1, '#3f4447'); ctx.fillStyle = g; ctx.fillRect(0, y, 64, 8); }
@@ -395,6 +439,9 @@ export function createStreet(M) {
     leafLitter: std({ color: 0x9a7a1e, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
     canvas: std({ color: 0x24406a, roughness: 0.9 }), glassDark2: std({ color: 0x0b1014, roughness: 0.08, metalness: 0.8 }),
     shutter: std({ map: shutterTex, roughness: 0.5, metalness: 0.5 }),
+    leafGold: std({ color: 0xd9a92a, roughness: 0.7, emissive: 0x231806, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
+    setts: std({ map: settTex, color: 0xb4b4b0, roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+    kerbBlack: std({ color: 0x1c1d1f, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
   }, group, 'street-');
 
   return {
