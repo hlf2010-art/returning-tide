@@ -51,17 +51,39 @@ function part(geo, hex, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
   return g;
 }
 const box = (w, h, d, hex, x, y, z, rx = 0) => part(new THREE.BoxGeometry(w, h, d), hex, x, y, z, rx);
-const TYRE = 0x161616, DARK = 0x26282c, CHROME = 0x9aa0a6, SEAT = 0x1b1b1d, QUILT = 0x1e2433;
+const TYRE = 0x161616, RIM = 0x9da2a8, DARK = 0x26282c, CHROME = 0x9aa0a6, SEAT = 0x1b1b1d, QUILT = 0x1e2433;
 // the box on a courier's rack: centre, size (the lid sits on top, hinged at the front edge)
 const BOX = { y: 1.06, z: -0.62, w: 0.46, h: 0.4, d: 0.44 }, HINGE = { y: BOX.y + BOX.h / 2 + 0.01, z: BOX.z + BOX.d / 2 };
 // the phone clamp on the bars (couriers): where the phone sits, screen up toward the rider
 const MOUNT = new THREE.Matrix4().compose(new THREE.Vector3(0.0, 1.17, 0.6), new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.75, 0, 0)), new THREE.Vector3(1, 1, 1));
 function scooter(brand) {
   const p = [], courier = !!brand;
-  for (const z of [-0.6, 0.62]) {
-    p.push(part(new THREE.CylinderGeometry(0.27, 0.27, 0.1, 16), TYRE, 0, 0.27, z, 0, 0, Math.PI / 2));
-    p.push(part(new THREE.CylinderGeometry(0.15, 0.15, 0.115, 12), CHROME, 0, 0.27, z, 0, 0, Math.PI / 2));
+  // the wheels, 10-inch, as these scooters have: a fat rounded tyre with a tread, a five-spoke alloy rim
+  // round a dark barrel, the hub (the rear one is the motor, a fat drum), a brake disc and caliper in front
+  for (const [z, front] of [[-0.6, false], [0.62, true]]) {
+    const ax = (g) => g.rotateY(Math.PI / 2);
+    p.push(part(ax(new THREE.TorusGeometry(0.212, 0.058, 10, 30)), TYRE, 0, 0.27, z));                      // the tyre
+    for (let k = 0; k < 24; k++) {                                                                       // its tread blocks
+      const a = (k / 24) * Math.PI * 2, r = 0.268;
+      p.push(part(new THREE.BoxGeometry(0.075, 0.012, 0.03), 0x0e0e0e, 0, 0.27 + Math.cos(a) * r, z + Math.sin(a) * r, a));
+    }
+    p.push(part(ax(new THREE.TorusGeometry(0.158, 0.014, 6, 28)), RIM, 0, 0.27, z));                        // the rim's lip, both sides
+    p.push(part(new THREE.CylinderGeometry(0.152, 0.152, 0.07, 22, 1, true), 0x2a2c30, 0, 0.27, z, 0, 0, Math.PI / 2));   // the barrel
+    for (let k = 0; k < 5; k++) {                                                                        // five spokes
+      const a = (k / 5) * Math.PI * 2 + (front ? 0.3 : 0);
+      p.push(part(new THREE.BoxGeometry(0.03, 0.115, 0.016), RIM, 0, 0.27 + Math.cos(a) * 0.098, z + Math.sin(a) * 0.098, a));
+    }
+    p.push(part(new THREE.CylinderGeometry(front ? 0.04 : 0.085, front ? 0.04 : 0.085, front ? 0.13 : 0.12, 16), front ? CHROME : 0x3a3d42, 0, 0.27, z, 0, 0, Math.PI / 2));   // hub / motor
+    if (front) {
+      p.push(part(new THREE.CylinderGeometry(0.095, 0.095, 0.004, 22), 0xb7bbc0, -0.055, 0.27, z, 0, 0, Math.PI / 2));   // the disc
+      p.push(box(0.03, 0.06, 0.05, 0x1d1e21, -0.062, 0.36, z - 0.03));                                                   // its caliper
+      for (const sx of [-1, 1]) p.push(part(new THREE.CylinderGeometry(0.018, 0.018, 0.44, 8), CHROME, sx * 0.075, 0.48, z - 0.04, -0.3));   // the fork legs
+    } else {
+      p.push(box(0.04, 0.06, 0.42, DARK, 0.075, 0.3, z + 0.2));                                          // the swing arm
+      p.push(part(new THREE.CylinderGeometry(0.022, 0.022, 0.26, 8), 0x8a1d1d, 0.075, 0.42, z - 0.04, 0.35));   // the shock's spring
+    }
   }
+
   const body = courier ? DARK : PAINT;
   p.push(box(0.34, 0.1, 0.62, DARK, 0, 0.3, 0.06));                                        // the floorboard
   p.push(box(0.36, 0.42, 0.62, body, 0, 0.56, -0.38, -0.12));                              // the rear body under the seat
@@ -79,7 +101,7 @@ function scooter(brand) {
     const B = RIDER_BRANDS[brand];
     // the box (its lid is drawn on its own, it opens), a dark label on its back; the rack's frame under it;
     // the phone clamp's arm and cradle on the bars
-    p.push(box(BOX.w, BOX.h, BOX.d, B.box, 0, BOX.y, BOX.z), box(0.34, 0.12, 0.012, brand === 'wanji' ? 0xf2672a : 0x1a1a1a, 0, BOX.y + 0.04, BOX.z - BOX.d / 2 - 0.006));
+    p.push(box(BOX.w, BOX.h, BOX.d, B.box, 0, BOX.y, BOX.z), box(BOX.w - 0.05, 0.004, BOX.d - 0.05, 0x8d9296, 0, BOX.y + BOX.h / 2 + 0.002, BOX.z), box(0.34, 0.12, 0.012, brand === 'wanji' ? 0xf2672a : 0x1a1a1a, 0, BOX.y + 0.04, BOX.z - BOX.d / 2 - 0.006));
     p.push(box(0.4, 0.03, 0.36, DARK, 0, BOX.y - BOX.h / 2 - 0.02, BOX.z), box(0.03, 0.2, 0.03, DARK, -0.17, BOX.y - BOX.h / 2 - 0.12, BOX.z + 0.12), box(0.03, 0.2, 0.03, DARK, 0.17, BOX.y - BOX.h / 2 - 0.12, BOX.z + 0.12));
     p.push(part(new THREE.CylinderGeometry(0.008, 0.008, 0.12, 5), DARK, 0, 1.09, 0.56, 0.5));
     const cradle = new THREE.BoxGeometry(0.084, 0.16, 0.014).applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, -0.008)).applyMatrix4(MOUNT);
@@ -241,8 +263,10 @@ export function createEbikeView({ scene, people, roles = [], footMax = () => 2, 
   }
   const bikeMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.15 }); bikeMat.userData.tinted = true; fading(bikeMat, 'ebike');
   // the lids and the phones: one mesh each for every bike
+  // (its underside the box's foil liner, greyed: vertex colours, times the instance's livery colour)
   const lidGeo = new THREE.BoxGeometry(BOX.w + 0.02, 0.04, BOX.d + 0.02).translate(0, 0.02, -(BOX.d + 0.02) / 2);
-  const lids = inst(lidGeo, fading(new THREE.MeshStandardMaterial({ roughness: 0.45 }), 'ebikeLid'), 'ebike-lids');
+  { const vc = new Float32Array(lidGeo.attributes.position.count * 3).fill(1); for (let i = 12; i < 16; i++) vc.set([0.62, 0.64, 0.66], i * 3); lidGeo.setAttribute('color', new THREE.BufferAttribute(vc, 3)); }
+  const lids = inst(lidGeo, fading(new THREE.MeshStandardMaterial({ roughness: 0.45, vertexColors: true }), 'ebikeLid'), 'ebike-lids');
   const phoneBody = inst(new THREE.BoxGeometry(0.072, 0.15, 0.009), fading(new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.3, metalness: 0.5 }), 'ebikePhone'), 'ebike-phones', 160, false);
   const phoneScreen = inst(new THREE.PlaneGeometry(0.064, 0.136).translate(0, 0, 0.0047), fading(new THREE.MeshBasicMaterial({ color: 0xffffff }), 'ebikeScreen'), 'ebike-screens', 160, false);
   (async () => {
