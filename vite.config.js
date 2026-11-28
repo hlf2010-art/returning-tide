@@ -11,8 +11,12 @@ const woff2Only = {
   },
 };
 
+// public/models/local/ holds private models for your own copy (world/huracan.js): never in a build
+import { rmSync } from 'node:fs';
+const noLocalModels = { name: 'no-local-models', apply: 'build', closeBundle() { rmSync('dist/models/local', { recursive: true, force: true }); } };
+
 export default defineConfig({
-  plugins: [woff2Only],
+  plugins: [woff2Only, noLocalModels],
   build: {
     chunkSizeWarningLimit: 1200, target: ['es2020', 'safari14'],   // older Safari (macOS Big Sur) too
     // three.js in a file of its own: it changes far less often than the game, so a returning player's
