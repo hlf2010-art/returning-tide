@@ -13,3 +13,6 @@ returning-tide-build-*.zip
 # Python bytecode
 __pycache__/
 *.pyc
+
+# a private supercar body for your own copy (world/huracan.js LOCAL_URL); never committed or shipped
+public/models/local/

@@ -45,9 +45,25 @@ function mergeBody(root, keep) {
 }
 
 const MODEL_URL = './models/cars/strale.glb';
+// A private body for your own copy only: a .glb you drop at public/models/local/supercar.glb (git ignores that
+// folder, and the build leaves it out, so it never ships). Read only by the dev server (npm run dev), never by a
+// built game. It must be laid out like the old Huracán export the game was written for (wheels named
+// Wheel_02_LF_19 ..., paint on CarPaint/Coloured materials); world/huracan.js does the rest.
+const LOCAL_URL = './models/local/supercar.glb';
+async function loadLocal(loader) {
+  if (!import.meta.env || !import.meta.env.DEV) return null;
+  try {
+    const head = await fetch(LOCAL_URL, { method: 'HEAD' });
+    if (!head.ok || /html/.test(head.headers.get('content-type') || '')) return null;   // (the dev server answers a missing file with the page)
+    const gltf = await loader.loadAsync(LOCAL_URL);
+    console.info('supercar: using your private model', LOCAL_URL);
+    return gltf;
+  } catch (err) { console.warn('supercar: private model not loaded', err); return null; }
+}
 async function loadBody() {
   try {
-    const gltf = await new GLTFLoader().loadAsync(MODEL_URL);
+    const loader = new GLTFLoader();
+    const gltf = (await loadLocal(loader)) || (await loader.loadAsync(MODEL_URL));
     const root = gltf.scene; root.name = 'corvina-strale';
     root.traverse((o) => { if (o.isMesh && o.material && o.material.name === 'License') { o.material = o.material.clone(); o.material.map = plateTexture(); o.material.color.set(0xffffff); o.material.needsUpdate = true; } });
     return root;
